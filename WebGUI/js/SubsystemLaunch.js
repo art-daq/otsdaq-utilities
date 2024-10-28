@@ -463,7 +463,11 @@ SubsystemLaunch.create = function() {
 
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
-				str = "<table cellspacing='5px'>";
+				if(redrawMode != 1)
+					str = "<table class='tableSingleRowMode' cellspacing='5px'>";
+				else
+					str = "<table class='tableDoubleRowMode' cellspacing='5px'>";
+
 				str += "<tr><th colspan=" + fields.length + ">Subsystem Status</th></tr>";
 				//make field header row
 				str += "<tr>";

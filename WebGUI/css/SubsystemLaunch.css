@@ -181,6 +181,13 @@
 			background-color: lightgrey;	
 			white-space: nowrap;		
 		}
+		#subsystemDiv .tableSingleRowMode tr:nth-child(even) td {
+			background-color: 		rgb(227, 215, 209);
+		}
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-2) td,
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-1) td {
+			background-color: 		rgb(227, 215, 209);
+		}
 		.subsystem_fsmIncluded {
 			background-color: white !important;
 		}
