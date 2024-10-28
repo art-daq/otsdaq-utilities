@@ -186,6 +186,8 @@
 		}
 		#subsystemDiv select {
 			text-align: center;
+			min-width: 280px;
+			width: calc(100% - 40px);
 		}
 
 		.subsystem_configAlias_select_info {

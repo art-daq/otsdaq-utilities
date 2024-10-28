@@ -693,17 +693,18 @@ Desktop.createDesktop = function(security) {
 			return;
 		}
 
-		if(name == "Security Settings") 
+		if(name == "/User Settings/Security Settings") 
 		{
 		    window_width  = 730;
 		    window_height = 410;
 		}
-		else if(name == "Edit User Data") 
+		else if(name == "/User Settings/Edit User Data") 
 		{
 		    window_width  = 730;
 		    window_height = 730;
 		}
-		else {
+		else 
+		{
 		    window_width  = _defaultWidth;
 		    window_height = _defaultHeight;
 		}
