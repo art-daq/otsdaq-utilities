@@ -549,7 +549,7 @@ Desktop.createDesktop = function(security) {
 	    var tmpi;
 	    if((tmpi = tmp.indexOf(_lastSystemMessage)) >= 0)
 	    {
-	    	Debug.log("Skipping repeat System Message...");
+	    	// Debug.log("Skipping repeat System Message...");
 	    	tmp = tmp.substr(tmpi+_lastSystemMessage.length+1);
 	    }
 	   
@@ -557,7 +557,7 @@ Desktop.createDesktop = function(security) {
 	    
     	
 	    var msgArr = tmp.split("|");	    
-    	Debug.log("Desktop msgArr.length " + msgArr.length);
+    	// Debug.log("Desktop msgArr.length " + msgArr.length);
 	    
 	    if(msgArr.length < 2) return; //no new messages left
 	    

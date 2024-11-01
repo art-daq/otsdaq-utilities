@@ -649,6 +649,7 @@ else
         } //end setDefaultDashboardColor()
 
         var _oldUserNameWithLock = "";
+		var _oldOtherSubsystemsWithLock = "";
         //=====================================================================================
         this.doSetUserWithLock = function() 
 		{ 
@@ -699,7 +700,8 @@ else
 
         	var jsReq = "Desktop.desktop.dashboard.doSetUserWithLock();";  			
        		
-       		if(_oldUserNameWithLock == usernameWithLock+titleStr && 
+       		if(_oldUserNameWithLock == usernameWithLock && 
+				_oldOtherSubsystemsWithLock == titleStr && 
        				el.style.display == "block")
        			return; //no need to re-write element
 
@@ -717,7 +719,8 @@ else
        					"src='/WebPath/images/dashboardImages/icon-Settings-Unlock.png'>";
        			str += "</a>";
        			el.innerHTML = str; 
-       			_oldUserNameWithLock = ""+titleStr;    
+       			_oldUserNameWithLock = "";
+				_oldOtherSubsystemsWithLock = titleStr;    
        			el.style.display = "block";   			
        			return; 
        		}  	
@@ -742,7 +745,8 @@ else
    			el.innerHTML = str; 
    			el.style.display = "block";
    			
-       		_oldUserNameWithLock = usernameWithLock+titleStr; 
+       		_oldUserNameWithLock = usernameWithLock;
+			_oldOtherSubsystemsWithLock = titleStr; 
         } //end displayUserLock()
 
       	//=====================================================================================

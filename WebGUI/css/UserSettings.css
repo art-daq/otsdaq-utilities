@@ -96,6 +96,8 @@
 		text-decoration: none;
 		font-weight: 800;
 		color: black;
+		height: 20px;    
+		display: block;
 	}
 	.winLayoutLink:hover {
 		text-decoration: underline;

@@ -319,11 +319,19 @@
 				if(serverAlert) Debug.log("Message from Server: " + serverAlert, Debug.HIGH_PRIORITY);
 
 				//get username with lock, "" means no one has lock
-				_usernameWithLock = DesktopContent.getXMLValue(req,"username_with_lock");
-				var pref_username = DesktopContent.getXMLValue(req,"pref_username");				
+				_usernameWithLock 		= DesktopContent.getXMLValue(req,"username_with_lock");
+				var pref_username 		= DesktopContent.getXMLValue(req,"pref_username");
+				var ots_owner 			= DesktopContent.getXMLValue(req,"ots_owner");				
+				var ots_remote_address 	= DesktopContent.getXMLValue(req,"ots_remote_address");		
+				var desktop_user_permissions 	= DesktopContent.getXMLValue(req,"desktop_user_permissions");	
+				
+				
 				var el = document.getElementById("header");
-				el.innerHTML = "This page consists of a Preferences section and an Accounts section for <i><b>" +
-					pref_username + "</b></i>.";
+				el.innerHTML = "This page gives access to preferences/account selections for user <i><b>" +
+					pref_username + "</b></i> on " + ots_owner + " ots" +
+					(ots_remote_address?(" (" + ots_remote_address + ")"):"") +
+					"." + "<br><br>" + 
+					"Your ots access permissions are '" + desktop_user_permissions + ".'";
 
 				//pass preferences to Desktop	but remove user accounts from message to Desktop
 				if(_mailbox)
@@ -605,7 +613,8 @@
 					
 					if(_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 					{
-						htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";	
+						if(_mailbox) //only add jump link if there is a large Preferences section
+							htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";	
 						el.innerHTML = htmlStr;					
 					}
 					else
@@ -1214,13 +1223,15 @@
 		
 		<center>
 		<div id='header'>
-		This page consists of a Preferences section and an Accounts section.
+			This page gives access to preferences/account selections.
 		</div>
-		<br><br></center>
+		<br><br>
+	
+		<div id='jumpToAccounts'></div>
+		</center>
 		
 		<div id="genPreferences" style = "width:100%">
 			
-			<div id='jumpToAccounts'></div>
 			<h1>General Preferences</h1>
 			
 			<center><input class='prefBtn' type='submit' value='Save Preferences' 
