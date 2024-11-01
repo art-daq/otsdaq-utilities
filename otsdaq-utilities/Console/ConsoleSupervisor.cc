@@ -101,10 +101,10 @@ ConsoleSupervisor::ConsoleSupervisor(xdaq::ApplicationStub* stub)
 	{
 		addCustomTriggeredAction(CONSOLE_MISSED_NEEDLE,
 			"System Message");		
-		addCustomTriggeredAction("runtime*4", 
-			"Halt");
-		addCustomTriggeredAction("runtime", 
-			"System Message");
+		// addCustomTriggeredAction("runtime*4", 
+		// 	"Halt");
+		// addCustomTriggeredAction("runtime", 
+		// 	"System Message");
 	} //end test and force custom count list 
 
 	__SUP_COUT__ << "Constructor complete." << __E__;

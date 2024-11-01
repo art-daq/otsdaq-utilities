@@ -1274,6 +1274,13 @@ SubsystemLaunch.create = function() {
 					function()
 					{		
 						Debug.log("Rebooting",targetSubsystem);
+
+						if(subsystemIndex >= SubsystemLaunch.subsystems.length)
+						{
+							Debug.err("The target subsystem-index #" + subsystemIndex + 
+								" was not found. Perhaps a refresh is needed.");
+							return;
+						}
 						window.clearTimeout(_getStatusTimer);
 				
 						SubsystemLaunch.system.error = ""; //clear error for next command response

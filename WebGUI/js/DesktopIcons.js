@@ -711,7 +711,10 @@ else {
       		_openFolderElement = 0;
       		_openFolderPath = ""; //clear
       		_openFolderPtr = undefined; //clear
-      	}
+      	} //end this.closeFolder()
+      	//=====================================================================================
+      	//this.isFolderOpen ~~
+      	this.isFolderOpen = function() { return _openFolderElement; }
 
       	//=====================================================================================
       	//this.clickFolderContents ~~

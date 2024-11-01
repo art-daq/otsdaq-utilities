@@ -652,6 +652,20 @@ DesktopContent.init = function(onloadFunction)
 				DesktopContent._desktopNeedsMouseXY = false;
 				//console.log("_desktopNeedsMouseXY", DesktopContent._desktopNeedsMouseXY);
 				break;
+			case "doWindowTooltip":
+				Debug.log("Received doWindowTooltip from parent desktop");
+				var tooltipEl = document.getElementById("otsDesktopWindowTooltipElement");
+				if(!tooltipEl) //a la Desktop.js:902
+				{
+					DesktopContent.tooltip("ALWAYS", "There is no tooltip for the '<b>" + 
+							DesktopContent.getDesktopWindowTitle() +
+							"</b>' window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
+				}
+				else
+				{
+					DesktopContent.tooltip("ALWAYS", decodeURIComponent(tooltipEl.innerText));
+				}
+				break;
 			default:
 				Debug.log("Illegal response received from Desktop! Notify admins", Debug.HIGH_PRIORITY);
 				return;
@@ -2476,150 +2490,10 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 	else
 		url += "?" + str;
 		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-//	if(search == "") 
-//	{
-//		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-//		var isAllNumbers = true;
-//		for(i;i<url.length;++i)
-//		{
-//			Debug.log(url[i]);
-//			
-//			if(url[i] < "0" || url[i] > "9")
-//			{
-//				isAllNumbers = false;
-//				break;
-//			}				
-//		}
-//		if(isAllNumbers)
-//			url += "/";
-//		url += "?" + str;
-//	}
-//	else
-//	{		
-//		//remove, possibly recursive, former new windows through url
-//		var i = search.indexOf("requestingWindowId");		
-//		if(i >= 0)
-//			search = search.substr(0,i);
-//		
-//		//replace sequence with updated sequence
-//		if(search.substr(0,6) == "?code=") 
-//		{
-//			i = search.substr('&');
-//			search = "?code=" + DesktopContent._sequence + 
-//					(i>0?search.substr(i):"");
-//		}
-//		
-//		//only add & if there are other parameters
-//		if(search.length && search[search.length-1] != '?'
-//				&& search[search.length-1] != '&')
-//			search += '&';
-//		url += search + str;
-//	}
-	
 	Debug.log("DesktopContent.openNewBrowserTab= " + url);
 	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
 	window.open(url,'_blank');	
 
-	
-	return;
-	
-	
-	if(windowPath !== undefined)
-	{
-		//remove leading ? because Desktop.js handling expects no leading ?
-		if(windowPath[0] == '?')
-			windowPath = windowPath.substr(1);
-			
-		//for windowPath, need to check lid=## is terminated with /
-		// check from = that there is nothing but numbers	
-		try
-		{
-			var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-			var isAllNumbers = true;
-			for(i;i<windowPath.length;++i)
-			{
-				//Debug.log(windowPath[i]);
-	
-				if(windowPath[i] < "0" || windowPath[i] > "9")
-				{
-					isAllNumbers = false;
-					break;
-				}				
-			}
-			if(isAllNumbers)
-				windowPath += "/";		
-		}
-		catch(e)
-		{
-			Debug.log("An error occurred while trying to open the window. " +
-					"The window path seems to be invalid:[" + DesktopContent.getExceptionLineNumber(e) + "]: " + e, Debug.HIGH_PRIORITY);
-			return;
-		}
-	}
-	Debug.log("DesktopWindow= " + windowPath);
-
-	Debug.log("name= " + name);
-	Debug.log("subname= " + subname);
-	Debug.log("unique= " + unique);
-
-	var search = DesktopContent._theWindow.parent.parent.window.location.search;
-	url = DesktopContent._theWindow.parent.parent.window.location.pathname;
-		
-	var str = "requestingWindowId=" + DesktopContent._theWindowId;//DesktopContent._myDesktopFrame.id.split('-')[1];
-	str += "&windowName=" + name;
-	str += "&windowSubname=" + subname;
-	str += "&windowUnique=" + unique;
-	str += "&windowPath=" + windowPath;
-		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-	if(search == "") 
-	{
-		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-		var isAllNumbers = true;
-		for(i;i<url.length;++i)
-		{
-			Debug.log(url[i]);
-			
-			if(url[i] < "0" || url[i] > "9")
-			{
-				isAllNumbers = false;
-				break;
-			}				
-		}
-		if(isAllNumbers)
-			url += "/";
-		url += "?" + str;
-	}
-	else
-	{		
-		//remove, possibly recursive, former new windows through url
-		var i = search.indexOf("requestingWindowId");		
-		if(i >= 0)
-			search = search.substr(0,i);
-		
-		//replace sequence with updated sequence
-		if(search.substr(0,6) == "?code=") 
-		{
-			i = search.substr('&');
-			search = "?code=" + DesktopContent._sequence + 
-					(i>0?search.substr(i):"");
-		}
-		
-		//only add & if there are other parameters
-		if(search.length && search[search.length-1] != '?'
-				&& search[search.length-1] != '&')
-			search += '&';
-		url += search + str;
-	}
-	
-	Debug.log("DesktopContent.openNewBrowserTab= " + url);
-	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
-	window.open(url,'_blank');	
 } // end openNewBrowserTab()
 
 //=====================================================================================
@@ -2689,13 +2563,6 @@ DesktopContent.addDesktopIcon = function(caption, altText,
 			activateTableGroupHandler(req);
 		}
 		catch(err) {} //ignore error, this is a place holder for users to define a handler for updating displays when the active groups changed (e.g used by ConfigurationGUI)
-
-//		if(!DesktopContent._blockSystemCheckMailbox &&
-//				DesktopContent._blockSystemCheckMailbox.innerHTML == "")
-//		{
-//			//inform Desktop.js to refresh icons (handled by _checkMailboxes())
-//			DesktopContent._blockSystemCheckMailbox.innerHTML = "RefreshIcons";
-//		}
 
 		//inform Desktop.js to refresh icons (handled by _checkMailboxes())
 		DesktopContent._theDesktopWindow.postMessage(

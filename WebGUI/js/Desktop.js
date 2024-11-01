@@ -538,9 +538,7 @@ Desktop.createDesktop = function(security) {
 
 		if(!req) return; //request failed			
 		
-		var userLock; //tmp hold user with lock
-		userLock = Desktop.getXMLValue(req,"username_with_lock"); //get user with lock
-		Desktop.desktop.dashboard.displayUserLock(userLock);
+		Desktop.desktop.dashboard.displayUserLock(req);
 		
 		var tmp = Desktop.getXMLValue(req,"systemMessages");
 	    if(!tmp) return; //did not find return string	    
@@ -913,12 +911,31 @@ Desktop.createDesktop = function(security) {
 				tooltipEl = 0;
 			}
 		}
+		if(!tooltipEl)
+		{
+			try //try frameset cross-origin approach (if window is in cross-origin frame)
+			{
+				var reqObject = {
+					"windowId":			id,
+					"request": 			"doWindowTooltip"
+				};
+				Debug.log("Sending doWindowTooltip from Desktop");
+				win.getFrame().contentWindow.postMessage(
+					reqObject,"*");
+				return; //assume handled by window!
+			}
+			catch(e)
+			{
+				Debug.log("Ignoring error: " + e);
+				tooltipEl = 0;
+			}
+		}
 					
 
 		if(!tooltipEl)
 		{
-			DesktopContent.tooltip("ALWAYS", "There is no tooltip for the " + tempwin.getWindowName() +
-					" window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
+			DesktopContent.tooltip("ALWAYS", "There is no tooltip for the '<b>" + tempwin.getWindowName() +
+					"</b>' window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
 		}
 		else
 		{
@@ -1960,8 +1977,21 @@ Desktop.mouseMoveSubscriber = function(newHandler)
 //	handle resizing and moving events for desktop
 //	Returning true is important for allowing selection of text of Debug popup windows
 //		(Does it break anything to return true?)
+Desktop._openFolderTimer = 0;
 Desktop.handleBodyMouseMove = function(mouseEvent)
 {
+	//if not moving for 3 seconds, close any open folders
+	if(Desktop._openFolderTimer) window.clearTimeout(Desktop._openFolderTimer);
+	Desktop._openFolderTimer = 0;
+	if(Desktop.desktop.icons.isFolderOpen())
+		Desktop._openFolderTimer = window.setTimeout(
+			function()
+			{
+		Debug.log("Closing folder...");
+		Desktop.desktop.icons.closeFolder();
+			},3000);
+
+			
 	
 	//call each subscriber
 	for(var i=0; i<Desktop._mouseMoveSubscribers.length; ++i)
