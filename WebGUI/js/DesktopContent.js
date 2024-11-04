@@ -1905,10 +1905,11 @@ DesktopContent.tooltipSetAlwaysShow = function(srcFunc,srcFile,id,neverShow,temp
 //
 //	Can change background color and text color with strings bgColor and textColor (e.g. "rgb(255,0,0)" or "red")
 //		Default is yellow bg with black text if nothing passed.
+DesktopContent.popUpVerificationTimeout = 0;
 DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bgColor, 
 		textColor, borderColor, getUserInput, dialogWidth, cancelFunc, 
 		yesButtonText, noAutoComplete, defaultUserInputValue, 
-		cancelButtonText, wantMultilineInput) {	
+		cancelButtonText, wantMultilineInput, justDisplayAndTimeoutPopup) {	
 
 	//	Debug.log("X: " + DesktopContent._mouseOverXmailbox.innerHTML + 
 	//			" Y: " + DesktopContent._mouseOverYmailbox.innerHTML + 
@@ -1918,14 +1919,36 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 
 	//remove pop up if already exist
 	if(DesktopContent._verifyPopUp) 
+	{
 		DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+		DesktopContent._verifyPopUp = 0;
+	}
 
 	//replace REPLACE with replaceVal
 	if(replaceVal != undefined)
 		prompt = prompt.replace(/REPLACE/g, replaceVal); 
 
 
+	//if only timeout and close, setup timeout
+	if(justDisplayAndTimeoutPopup)
+	{
+		if(DesktopContent.popUpVerificationTimeout) 
+			window.clearTimeout(DesktopContent.popUpVerificationTimeout)
+		DesktopContent.popUpVerificationTimeout = window.setTimeout(
+			function()
+			{
+				Debug.log("Timeout close of DesktopContent.popUpVerification");
+				if(DesktopContent._verifyPopUp) 
+				{
+					DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+					DesktopContent._verifyPopUp = 0;
+				}
+			},1000); //in 1 sec;
+	}
+
+
 	//create popup and add to body
+
 
 
 	//setup style first
@@ -1945,7 +1968,8 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	//pop up text style 
 	css += "#" + DesktopContent._verifyPopUpId + "-text " +
 			"{" +
-			"color: " + textColor + ";width: " + dialogWidth + "px; padding-bottom: 10px;" +
+			"color: " + textColor + ";width: " + dialogWidth + "px; " +
+			(!justDisplayAndTimeoutPopup?"padding-bottom: 10px;":"") +
 			"}\n\n";
 	//..and anything in the text div
 	css += "#" + DesktopContent._verifyPopUpId + " *" +
@@ -1997,7 +2021,11 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	}
 							
 	var str = "<div id='" + DesktopContent._verifyPopUpId + "-text'>" + 
-			prompt + "<br>" + userInputStr + "</div>" +
+			prompt + (!justDisplayAndTimeoutPopup?("<br>" + userInputStr):"") + 
+			"</div>";
+			
+	if(!justDisplayAndTimeoutPopup)
+		str +=
 			"<input class='DesktopContent_popUpUserInputButton' type='submit' value='" + 
 			(yesButtonText?yesButtonText:"Yes") + 
 			"' " +
@@ -2009,19 +2037,20 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 			"value='" + (cancelButtonText?cancelButtonText:"Cancel") + "'>";
 	el.innerHTML = str;
 
-	//onmouseup for "Yes" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
-	//onmouseup for "Cancel" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
-
+	if(!justDisplayAndTimeoutPopup)
+	{
+		//onmouseup for "Yes" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
+		//onmouseup for "Cancel" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
+	}
 	
 	Debug.log(prompt);
 	DesktopContent._verifyPopUp = el;
 	el.style.left = "-1000px"; //set off page so actual dimensions can be determined, and then div relocated
 	body.appendChild(el);
-
 
 	if(getUserInput) //place cursor
 	{
@@ -2066,11 +2095,12 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 		}
 		
 	}	
-	else //focus on button, since no text
+	else if(!justDisplayAndTimeoutPopup) //focus on button, since no text
 		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].focus(); 
 	
 	//add key handler to body too for enter & esc
-	el.onkeydown = 
+	if(!justDisplayAndTimeoutPopup)
+		el.onkeydown = 
 			function(event) 
 			{
 		if(event.key == "Enter") // ENTER

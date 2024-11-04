@@ -1583,7 +1583,14 @@
 	            		//draw state from on left
 				    	_context.clearRect(0, 0, _canvas.width, _canvas.height);
 				    	drawState(_currState,_canvas.width/6,_canvas.height/2+15);
-				    	drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
+						try
+						{
+				    		drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
+						}
+						catch(e)
+						{
+							Debug.log("Error with transition state:",e);
+						}
 					    _blackout.style.backgroundColor = 'rgba(' + _TRANS_BLACKOUT_COLOR + ',0)'; //remove blackout for to and from state display
 			    	}
 			    	if(progress != _transitionProgress)
