@@ -753,7 +753,13 @@ function displayTable(appsArray)
                         }
                         else if (columnKeys[j] == "detail") 
                         {
-                            cell.innerHTML = decodeURIComponent(subappInfo[columnKeys[j]]);
+                            // cell.innerText = //decodeURIComponent(
+                            //     subappInfo[columnKeys[j]];
+                            //     //);
+                            var tmpDetail = decodeURIComponent(subappInfo[columnKeys[j]]);
+                            if(tmpDetail.length > 150)
+                                tmpDetail = tmpDetail.substr(0,150) + "...";
+                            cell.innerHTML = tmpDetail;
                         }
                         else if (columnKeys[j] == "context" || columnKeys[j] == "id" || columnKeys[j] == "action") 
                         {

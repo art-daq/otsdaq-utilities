@@ -115,6 +115,14 @@
 				font-family: 'Donegal One', arial;
 				text-align: center;
 			}
+			#warn-box {
+				position: absolute;
+				/* background-color: white; */
+				color: orange;
+				font-size: 18px;
+				font-family: 'Donegal One', arial;
+				text-align: right;
+			}
 			
 			#parameter-setup a, #extras-box a, #alarm-setup-box a,
 			#error-box a, #view-mode-select
@@ -348,7 +356,9 @@
 			var _currState, _prevState;
 			var _canvas, _context, _blackout, _blackoutReveal, 
 				_blackoutRevealText, _blackoutRevealContent, _progressBar,
-				_parameterSetup, _extrasBox, _alarmBox, _errorBox;
+				_parameterSetup, _extrasBox, _alarmBox, _errorBox, _warnBox;
+
+			var _warnBoxTimeout = 0
 			
 			var _timeUpdateTimeout = 0;
 			var _verifyStateTimeout = 0;
@@ -499,6 +509,7 @@
 				_alarmBox.onmousemove = eatParameterMouseEvent;
 				_alarmBox.onmouseup = eatParameterMouseEvent;	
 				_errorBox = document.getElementById("error-box");
+				_warnBox = document.getElementById("warn-box");
 				// initTransitionParameters();				
 
 				
@@ -1057,17 +1068,31 @@
 											_stateNames[_currState] + " to " + _stateNames[i] +
 											". There was a State Machine Soft Error:\n\n" + softError);									
 									}
-									else										
-										Debug.warn("State was changed unexpectedly from " + 
+									else	
+									{		
+										_warnBox.innerText = //Debug.warn(
+											"State was changed unexpectedly from " + 
 											_stateNames[_currState] + " to " + _stateNames[i] +
-											". (Likely another user changed the state)");
+											". (Likely another user changed the state)";//);
+										Debug.log(_warnBox.innerText);
+										window.clearInterval(_warnBoxTimeout);
+										_warnBoxTimeout = window.setInterval(function()
+											{_warnBox.innerText = "";},5000);
+									}
 								}
 								else
 								{
 									if(!_suppressReloginPopups)
-										Debug.warn("State was changed unexpectedly from " + 
+									{
+										_warnBox.innerText = //Debug.warn(
+											"State was changed unexpectedly from " + 
 											_stateNames[_currState] + " to " + _stateNames[i] +
-											". (Likely the server was restarted or another user changed the state)");
+											". (Likely the server was restarted or another user changed the state)";//);
+										Debug.log(_warnBox.innerText);
+										window.clearInterval(_warnBoxTimeout);
+										_warnBoxTimeout = window.setInterval(function()
+											{_warnBox.innerText = "";},5000);
+									}
 									
 								}
 								_suppressReloginPopups = false;
@@ -1490,8 +1515,13 @@
             			    
                             if(unanticipated || _transitionResultingState != _stateNames[_currState]) 
                             {
-                            	Debug.warn("State result not anticipated. Attempting to re-align with server.");
-                            	//alert("Error! State result not anticipated. Attempting to re-align with server.");
+								_warnBox.innerText = //Debug.warn(
+									"State result not anticipated. Attempting to re-align with server.";//);
+								Debug.log(_warnBox.innerText);
+								window.clearInterval(_warnBoxTimeout);
+								_warnBoxTimeout = window.setInterval(function()
+									{_warnBox.innerText = "";},5000);
+                            	
                 				DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachine", "", 
                 						smRequestHandler, //end request handler
 										0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
@@ -1583,7 +1613,14 @@
 	            		//draw state from on left
 				    	_context.clearRect(0, 0, _canvas.width, _canvas.height);
 				    	drawState(_currState,_canvas.width/6,_canvas.height/2+15);
-				    	drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
+						try
+						{
+				    		drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
+						}
+						catch(e)
+						{
+							Debug.log("Error with transition state:",e);
+						}
 					    _blackout.style.backgroundColor = 'rgba(' + _TRANS_BLACKOUT_COLOR + ',0)'; //remove blackout for to and from state display
 			    	}
 			    	if(progress != _transitionProgress)
@@ -1912,6 +1949,13 @@
                 _extrasBox.style.width = _EXTRAS_WIDTH + "px";
                 _extrasBox.style.height = _EXTRAS_HEIGHT + "px";
                 _extrasBox.style.display = "block";
+
+				_warnBox.style.left = (w - _MARGIN - _HUD_X - _EXTRAS_WIDTH - 10) + "px";  
+                _warnBox.style.top =  (_MARGIN + _HUD_Y - 0 - 0 //2 for border //-10 for padding
+                		) + "px";
+				_warnBox.style.width = _EXTRAS_WIDTH + "px";
+				_warnBox.style.height = _EXTRAS_HEIGHT + "px";
+				_warnBox.style.display = "block";				
                 
                 _alarmBox.style.left = (w/2 -_ALARM_WIDTH/2 - 5) + "px";  
                 _alarmBox.style.top =  (h/2 -_ALARM_HEIGHT/2 - 5) + "px";
@@ -2830,6 +2874,9 @@
 	<a onclick='refreshFSM()'>Refresh</a>
 </div>-->
 		
+
+<div id='warn-box'>
+</div>
 
 <div id='extras-box'>
 	<div id='run-number'></div>

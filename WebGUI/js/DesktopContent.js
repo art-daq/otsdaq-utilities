@@ -652,6 +652,20 @@ DesktopContent.init = function(onloadFunction)
 				DesktopContent._desktopNeedsMouseXY = false;
 				//console.log("_desktopNeedsMouseXY", DesktopContent._desktopNeedsMouseXY);
 				break;
+			case "doWindowTooltip":
+				Debug.log("Received doWindowTooltip from parent desktop");
+				var tooltipEl = document.getElementById("otsDesktopWindowTooltipElement");
+				if(!tooltipEl) //a la Desktop.js:902
+				{
+					DesktopContent.tooltip("ALWAYS", "There is no tooltip for the '<b>" + 
+							DesktopContent.getDesktopWindowTitle() +
+							"</b>' window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
+				}
+				else
+				{
+					DesktopContent.tooltip("ALWAYS", decodeURIComponent(tooltipEl.innerText));
+				}
+				break;
 			default:
 				Debug.log("Illegal response received from Desktop! Notify admins", Debug.HIGH_PRIORITY);
 				return;
@@ -1891,10 +1905,11 @@ DesktopContent.tooltipSetAlwaysShow = function(srcFunc,srcFile,id,neverShow,temp
 //
 //	Can change background color and text color with strings bgColor and textColor (e.g. "rgb(255,0,0)" or "red")
 //		Default is yellow bg with black text if nothing passed.
+DesktopContent.popUpVerificationTimeout = 0;
 DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bgColor, 
 		textColor, borderColor, getUserInput, dialogWidth, cancelFunc, 
 		yesButtonText, noAutoComplete, defaultUserInputValue, 
-		cancelButtonText, wantMultilineInput) {	
+		cancelButtonText, wantMultilineInput, justDisplayAndTimeoutPopup) {	
 
 	//	Debug.log("X: " + DesktopContent._mouseOverXmailbox.innerHTML + 
 	//			" Y: " + DesktopContent._mouseOverYmailbox.innerHTML + 
@@ -1904,14 +1919,36 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 
 	//remove pop up if already exist
 	if(DesktopContent._verifyPopUp) 
+	{
 		DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+		DesktopContent._verifyPopUp = 0;
+	}
 
 	//replace REPLACE with replaceVal
 	if(replaceVal != undefined)
 		prompt = prompt.replace(/REPLACE/g, replaceVal); 
 
 
+	//if only timeout and close, setup timeout
+	if(justDisplayAndTimeoutPopup)
+	{
+		if(DesktopContent.popUpVerificationTimeout) 
+			window.clearTimeout(DesktopContent.popUpVerificationTimeout)
+		DesktopContent.popUpVerificationTimeout = window.setTimeout(
+			function()
+			{
+				Debug.log("Timeout close of DesktopContent.popUpVerification");
+				if(DesktopContent._verifyPopUp) 
+				{
+					DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+					DesktopContent._verifyPopUp = 0;
+				}
+			},1000); //in 1 sec;
+	}
+
+
 	//create popup and add to body
+
 
 
 	//setup style first
@@ -1931,7 +1968,8 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	//pop up text style 
 	css += "#" + DesktopContent._verifyPopUpId + "-text " +
 			"{" +
-			"color: " + textColor + ";width: " + dialogWidth + "px; padding-bottom: 10px;" +
+			"color: " + textColor + ";width: " + dialogWidth + "px; " +
+			(!justDisplayAndTimeoutPopup?"padding-bottom: 10px;":"") +
 			"}\n\n";
 	//..and anything in the text div
 	css += "#" + DesktopContent._verifyPopUpId + " *" +
@@ -1983,7 +2021,11 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	}
 							
 	var str = "<div id='" + DesktopContent._verifyPopUpId + "-text'>" + 
-			prompt + "<br>" + userInputStr + "</div>" +
+			prompt + (!justDisplayAndTimeoutPopup?("<br>" + userInputStr):"") + 
+			"</div>";
+			
+	if(!justDisplayAndTimeoutPopup)
+		str +=
 			"<input class='DesktopContent_popUpUserInputButton' type='submit' value='" + 
 			(yesButtonText?yesButtonText:"Yes") + 
 			"' " +
@@ -1995,19 +2037,20 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 			"value='" + (cancelButtonText?cancelButtonText:"Cancel") + "'>";
 	el.innerHTML = str;
 
-	//onmouseup for "Yes" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
-	//onmouseup for "Cancel" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
-
+	if(!justDisplayAndTimeoutPopup)
+	{
+		//onmouseup for "Yes" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
+		//onmouseup for "Cancel" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
+	}
 	
 	Debug.log(prompt);
 	DesktopContent._verifyPopUp = el;
 	el.style.left = "-1000px"; //set off page so actual dimensions can be determined, and then div relocated
 	body.appendChild(el);
-
 
 	if(getUserInput) //place cursor
 	{
@@ -2052,11 +2095,12 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 		}
 		
 	}	
-	else //focus on button, since no text
+	else if(!justDisplayAndTimeoutPopup) //focus on button, since no text
 		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].focus(); 
 	
 	//add key handler to body too for enter & esc
-	el.onkeydown = 
+	if(!justDisplayAndTimeoutPopup)
+		el.onkeydown = 
 			function(event) 
 			{
 		if(event.key == "Enter") // ENTER
@@ -2476,150 +2520,10 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 	else
 		url += "?" + str;
 		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-//	if(search == "") 
-//	{
-//		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-//		var isAllNumbers = true;
-//		for(i;i<url.length;++i)
-//		{
-//			Debug.log(url[i]);
-//			
-//			if(url[i] < "0" || url[i] > "9")
-//			{
-//				isAllNumbers = false;
-//				break;
-//			}				
-//		}
-//		if(isAllNumbers)
-//			url += "/";
-//		url += "?" + str;
-//	}
-//	else
-//	{		
-//		//remove, possibly recursive, former new windows through url
-//		var i = search.indexOf("requestingWindowId");		
-//		if(i >= 0)
-//			search = search.substr(0,i);
-//		
-//		//replace sequence with updated sequence
-//		if(search.substr(0,6) == "?code=") 
-//		{
-//			i = search.substr('&');
-//			search = "?code=" + DesktopContent._sequence + 
-//					(i>0?search.substr(i):"");
-//		}
-//		
-//		//only add & if there are other parameters
-//		if(search.length && search[search.length-1] != '?'
-//				&& search[search.length-1] != '&')
-//			search += '&';
-//		url += search + str;
-//	}
-	
 	Debug.log("DesktopContent.openNewBrowserTab= " + url);
 	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
 	window.open(url,'_blank');	
 
-	
-	return;
-	
-	
-	if(windowPath !== undefined)
-	{
-		//remove leading ? because Desktop.js handling expects no leading ?
-		if(windowPath[0] == '?')
-			windowPath = windowPath.substr(1);
-			
-		//for windowPath, need to check lid=## is terminated with /
-		// check from = that there is nothing but numbers	
-		try
-		{
-			var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-			var isAllNumbers = true;
-			for(i;i<windowPath.length;++i)
-			{
-				//Debug.log(windowPath[i]);
-	
-				if(windowPath[i] < "0" || windowPath[i] > "9")
-				{
-					isAllNumbers = false;
-					break;
-				}				
-			}
-			if(isAllNumbers)
-				windowPath += "/";		
-		}
-		catch(e)
-		{
-			Debug.log("An error occurred while trying to open the window. " +
-					"The window path seems to be invalid:[" + DesktopContent.getExceptionLineNumber(e) + "]: " + e, Debug.HIGH_PRIORITY);
-			return;
-		}
-	}
-	Debug.log("DesktopWindow= " + windowPath);
-
-	Debug.log("name= " + name);
-	Debug.log("subname= " + subname);
-	Debug.log("unique= " + unique);
-
-	var search = DesktopContent._theWindow.parent.parent.window.location.search;
-	url = DesktopContent._theWindow.parent.parent.window.location.pathname;
-		
-	var str = "requestingWindowId=" + DesktopContent._theWindowId;//DesktopContent._myDesktopFrame.id.split('-')[1];
-	str += "&windowName=" + name;
-	str += "&windowSubname=" + subname;
-	str += "&windowUnique=" + unique;
-	str += "&windowPath=" + windowPath;
-		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-	if(search == "") 
-	{
-		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-		var isAllNumbers = true;
-		for(i;i<url.length;++i)
-		{
-			Debug.log(url[i]);
-			
-			if(url[i] < "0" || url[i] > "9")
-			{
-				isAllNumbers = false;
-				break;
-			}				
-		}
-		if(isAllNumbers)
-			url += "/";
-		url += "?" + str;
-	}
-	else
-	{		
-		//remove, possibly recursive, former new windows through url
-		var i = search.indexOf("requestingWindowId");		
-		if(i >= 0)
-			search = search.substr(0,i);
-		
-		//replace sequence with updated sequence
-		if(search.substr(0,6) == "?code=") 
-		{
-			i = search.substr('&');
-			search = "?code=" + DesktopContent._sequence + 
-					(i>0?search.substr(i):"");
-		}
-		
-		//only add & if there are other parameters
-		if(search.length && search[search.length-1] != '?'
-				&& search[search.length-1] != '&')
-			search += '&';
-		url += search + str;
-	}
-	
-	Debug.log("DesktopContent.openNewBrowserTab= " + url);
-	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
-	window.open(url,'_blank');	
 } // end openNewBrowserTab()
 
 //=====================================================================================
@@ -2689,13 +2593,6 @@ DesktopContent.addDesktopIcon = function(caption, altText,
 			activateTableGroupHandler(req);
 		}
 		catch(err) {} //ignore error, this is a place holder for users to define a handler for updating displays when the active groups changed (e.g used by ConfigurationGUI)
-
-//		if(!DesktopContent._blockSystemCheckMailbox &&
-//				DesktopContent._blockSystemCheckMailbox.innerHTML == "")
-//		{
-//			//inform Desktop.js to refresh icons (handled by _checkMailboxes())
-//			DesktopContent._blockSystemCheckMailbox.innerHTML = "RefreshIcons";
-//		}
 
 		//inform Desktop.js to refresh icons (handled by _checkMailboxes())
 		DesktopContent._theDesktopWindow.postMessage(

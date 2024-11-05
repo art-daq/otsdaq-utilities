@@ -85,7 +85,9 @@
 			//=====================================================================================		
 			//init called once body has loaded
 			function init()
-			{							
+			{				
+				Debug.log("init()");
+
 				//check for wiz mode
 				if(DesktopContent._sequence)
 				{
@@ -105,23 +107,57 @@
 				document.getElementById("omni").style.display = "block";
 				
 				document.body.onmouseup = handleBodyMouseUp;
-				_mailbox  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-updateSettingsMailbox");	
-				_settingsLayoutMailbox  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-settingsLayoutMailbox");	
+				try
+				{
+					_mailbox  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-updateSettingsMailbox");	
+					_settingsLayoutMailbox  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-settingsLayoutMailbox");	
+				}
+				catch(e)
+				{
+					_mailbox = undefined;
+					_settingsLayoutMailbox = undefined;
+					Debug.log("Ignoring likely cross-origin settings box... here is the error:",e);
+					var els = document.getElementsByClassName("prefBtn");
+					for(var i=0;i<els.length;++i)
+						els[i].style.display = "none"; //hide ability to save gen preferences if cross-origin
+					var el = document.getElementById("genPreferences");
+					if(el) el.style.display = "none";
+				}
 				
 				var windowTooltip =
-					"Welcome to the User Settings window. Here you can personalize " +
-					"your user experience.\n\n" +
+					"Welcome to the <b>User Settings</b> window. Here you can personalize " +
+					"your user experience.\n\n";
+				
+				windowTooltip += 
 					"Here is what you can personalize:" +
-					"\n\t- Color Scheme: " +
-					"<div style='margin-left:40px'>" +
-					"You can change your color scheme by choosing colors for " +
-					"the desktop dashboard, the desktop background, and desktop windows." +
-					"</div>" +
-					"\n\t- Window Layouts: each user can customize their window layout presets. " +
-					"A layout preset is a set of windows (including their size and position on your " +
-					"desktop) that you can recall any time you would like by clicking 'Layouts' " +
-					"in the top left of the desktop environment and choosing a preset. This is useful" +
-					"of you find yourself always using the same few windows - you can open them all with one click!";
+					"<INDENT>";
+				if(_mailbox)
+					windowTooltip += 
+						"- <b>Color Scheme:</b> " +
+						"<INDENT>You can change your color scheme by choosing colors for " +
+						"the desktop dashboard, the desktop background, and desktop windows." +
+						"</INDENT>" +
+						"- <b>Window Layouts:</b> " +
+						"<INDENT>Each user can customize their window layout presets. " +
+						"A layout preset is a set of windows (including their size and position on your " +
+						"desktop) that you can recall any time you would like by clicking 'Layouts' " +
+						"in the top left of the desktop environment and choosing a preset. This is useful" +
+						"of you find yourself always using the same few windows - you can open them all with one click!" +
+						"</INDENT>";
+
+				windowTooltip += "- <b>Tooltips:</b> " +
+					"<INDENT>Each user can silence any tooltip as they popup. And in this User Settings window, you can silence all tooltips for yourself (or re-enable all tooltips)." +
+					"</INDENT>";
+
+				if(!_mailbox) 
+					windowTooltip += "</INDENT>\nIt looks like this is a Remote Gateway Settings Window. Use the Primary Gateway Setting Window, in the top-right of the desktop, to control <b>Color Scheme</b> and <b>Window Layouts</b>.\n";
+				else
+					windowTooltip += "</INDENT>";
+
+				windowTooltip += 
+					"\nWhen security is enabled, users with admin privileges can create/modify/delete user accounts, " +
+					"and manipulate which user holds the <b>lock</b> (the ots lock mechanism enforces one-user-at-a-time for particular operations).";
+
 				var str = "";
 				//create windows layout div				
 				for(var i=0;i<_NUM_USER_LAYOUTS;++i)
@@ -155,8 +191,9 @@
 			//=====================================================================================
 			//request current settings immediately once page loads
 			function settingsRequest() 
-			{							
-				 
+			{				
+				Debug.log("settingsRequest()");
+
 				//setup input fields
 				var colorDiv = document.getElementById("colorInputs");
 				var el;
@@ -224,7 +261,7 @@
 				 	el.value = parseInt(clr);
 				 	clr = clr.substr(clr.indexOf(",")+1);
 				}
-			}
+			} //end extractRGBtoForm()
 
 			//=====================================================================================
 			//extractLayoutToForm ~~
@@ -265,7 +302,6 @@
 			//handle request for current settings
 			function settingsRequestHandler(req) 
 			{
-
 				Debug.log("settingsRequestHandler " + req.responseText);
 				
 				if(DesktopContent._sequence)
@@ -277,17 +313,33 @@
 					return;
 				}
 				
+
 				//extract alert from server
 				var serverAlert = DesktopContent.getXMLValue(req,"server_alert");
 				if(serverAlert) Debug.log("Message from Server: " + serverAlert, Debug.HIGH_PRIORITY);
 
 				//get username with lock, "" means no one has lock
-				_usernameWithLock = DesktopContent.getXMLValue(req,"username_with_lock");				
+				_usernameWithLock 		= DesktopContent.getXMLValue(req,"username_with_lock");
+				var pref_username 		= DesktopContent.getXMLValue(req,"pref_username");
+				var ots_owner 			= DesktopContent.getXMLValue(req,"ots_owner");				
+				var ots_remote_address 	= DesktopContent.getXMLValue(req,"ots_remote_address");		
+				var desktop_user_permissions 	= DesktopContent.getXMLValue(req,"desktop_user_permissions");	
 				
+				
+				var el = document.getElementById("header");
+				el.innerHTML = "This page gives access to preferences/account selections for user <i><b>" +
+					pref_username + "</b></i> on " + ots_owner + " ots" +
+					(ots_remote_address?(" (" + ots_remote_address + ")"):"") +
+					"." + "<br><br>" + 
+					"Your ots access permissions are '" + desktop_user_permissions + ".'";
+
 				//pass preferences to Desktop	but remove user accounts from message to Desktop
-				var uaStart = req.responseText.indexOf("<users_accounts v"); 
-				var uaEnd = req.responseText.indexOf("</users_accounts>") + String("</users_accounts>").length;				
-				_mailbox.innerHTML = req.responseText.substr(0,uaStart) + req.responseText.substr(uaEnd);
+				if(_mailbox)
+				{
+					var uaStart = req.responseText.indexOf("<users_accounts v"); 
+					var uaEnd = req.responseText.indexOf("</users_accounts>") + String("</users_accounts>").length;				
+					_mailbox.innerHTML = req.responseText.substr(0,uaStart) + req.responseText.substr(uaEnd);
+				}
 					
 				//handle colors
 				var xmlfields = ["pref_bgcolor","pref_dbcolor","pref_wincolor"];
@@ -561,7 +613,8 @@
 					
 					if(_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 					{
-						htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";	
+						if(_mailbox) //only add jump link if there is a large Preferences section
+							htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";	
 						el.innerHTML = htmlStr;					
 					}
 					else
@@ -571,9 +624,9 @@
 				el = document.getElementById("accountsDiv");
 				
 				htmlStr = "";
-
-				if(!DesktopContent._sequence) //in normal mode at jump link
-					htmlStr += "<br><hr width='75%'><center><a href='#' style='color:#880000'>Jump to Preferences Section</a></center><h1>Accounts</h1>";
+				htmlStr += "<br>";
+				if(!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
+					htmlStr += "<hr width='75%'><center><a href='#' style='color:#880000'>Jump to Preferences Section</a></center><h1>Accounts</h1>";
 				
 				htmlStr += "<div id='accountsSearchDiv'>Search: " + 
 					"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
@@ -777,8 +830,9 @@
 				}
 				else
 					setServerSettings();
-			}
+			} //end checkSettingsMailbox()
 			
+			//=====================================================================================
 			//saveGenPreferences ~~
 			function saveGenPreferences(mouseEvent) 
 			{
@@ -1167,49 +1221,58 @@
 	<body onload='//init() called by DesktopContent.js'>	
 		<div id='omni' style='display:none;'> <!-- hide by default until normal mode handling -->
 		
-		<center>This page consists of a Preferences section and an Accounts section.<br><br></center>
-		
+		<center>
+		<div id='header'>
+			This page gives access to preferences/account selections.
+		</div>
+		<br><br>
+	
 		<div id='jumpToAccounts'></div>
-		<div id = "header" style = "width:100%"><h1>General Preferences</h1>
-		 <!--<p align="right" onclick="groupsTips()" class="tip" style='font-size:30px;'>&#10067;</p></div>-->
-
-		<center><input id='prefBtn' type='submit' value='Save Preferences' 
-				onmouseup='saveGenPreferences(); event.stopPropagation(); return false;' />
-		<br>	
-		<h3>Color Scheme:</h3>
-		<table><td>
-		<div id='colorInputs'></div>		
-		<div id='clearDiv'></div>
-		<a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a> 
-		<a onmouseup='defaultColors(); return false;'>Default Colors</a>
-		</td></table>
-		<h3>Desktop Window Arrangement Presets:</h3>		
-		<div id='windLayoutDiv'>
-			<!-- <a onmouseup='Javascript:setLayout(1,event)' class='winLayoutLink' id='winLayoutLink1'><li>Set Current Window Layout as User Preset-1</li></a>		
-			<div class='winLayoutText' id='winLayoutText1'></div>
+		</center>
+		
+		<div id="genPreferences" style = "width:100%">
+			
+			<h1>General Preferences</h1>
+			
+			<center><input class='prefBtn' type='submit' value='Save Preferences' 
+					onmouseup='saveGenPreferences(); event.stopPropagation(); return false;' />
+			<br>	
+			<h3>Color Scheme:</h3>
+			<table><td>
+			<div id='colorInputs'></div>		
+			<div id='clearDiv'></div>
+			<a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a> 
+			<a onmouseup='defaultColors(); return false;'>Default Colors</a>
+			</td></table>
+			<h3>Desktop Window Arrangement Presets:</h3>		
+			<div id='windLayoutDiv'>
+				<!-- <a onmouseup='Javascript:setLayout(1,event)' class='winLayoutLink' id='winLayoutLink1'><li>Set Current Window Layout as User Preset-1</li></a>		
+				<div class='winLayoutText' id='winLayoutText1'></div>
+				<br>
+				<a onmouseup='Javascript:setLayout(2,event)' class='winLayoutLink' id='winLayoutLink2'><li>Set Current Window Layout as User Preset-2</li></a>		
+				<div class='winLayoutText' id='winLayoutText2'></div>
+				<br>
+				<a onmouseup='Javascript:setLayout(3,event)' class='winLayoutLink' id='winLayoutLink3'><li>Set Current Window Layout as User Preset-3</li></a>		
+				<div class='winLayoutText' id='winLayoutText3'></div>
+			
+				<div id='windSystemLayoutDiv' style='display:none'>
+						<hr width='50%'/>
+						<a onmouseup='Javascript:setLayout(4,event)' class='winLayoutLink' id='winSysLayoutLink1'><li>Set Current Window Layout as System Preset-1</li></a>		
+						<div class='winLayoutText' id='winSysLayoutText1'></div>
+						<br>
+						<a onmouseup='Javascript:setLayout(5,event)' class='winLayoutLink' id='winSysLayoutLink2'><li>Set Current Window Layout as System Preset-2</li></a>		
+						<div class='winLayoutText' id='winSysLayoutText2'></div>
+				</div> -->
+			</div></center>
+			
+			
+			<div id='clearDiv'></div>
+			
 			<br>
-			<a onmouseup='Javascript:setLayout(2,event)' class='winLayoutLink' id='winLayoutLink2'><li>Set Current Window Layout as User Preset-2</li></a>		
-			<div class='winLayoutText' id='winLayoutText2'></div>
-			<br>
-			<a onmouseup='Javascript:setLayout(3,event)' class='winLayoutLink' id='winLayoutLink3'><li>Set Current Window Layout as User Preset-3</li></a>		
-			<div class='winLayoutText' id='winLayoutText3'></div>
-		
-			<div id='windSystemLayoutDiv' style='display:none'>
-					<hr width='50%'/>
-					<a onmouseup='Javascript:setLayout(4,event)' class='winLayoutLink' id='winSysLayoutLink1'><li>Set Current Window Layout as System Preset-1</li></a>		
-					<div class='winLayoutText' id='winSysLayoutText1'></div>
-					<br>
-					<a onmouseup='Javascript:setLayout(5,event)' class='winLayoutLink' id='winSysLayoutLink2'><li>Set Current Window Layout as System Preset-2</li></a>		
-					<div class='winLayoutText' id='winSysLayoutText2'></div>
-			</div> -->
-		</div></center>
-		
-		
-		<div id='clearDiv'></div>
-		
-		<br>
-		<center><input id='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center>
+			<center><input class='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center>
 
+		</div> <!-- end genPreferences -->
+		
 		<div id='clearDiv'></div>
 		<h3>Misc. Personal Customizations:</h3>
 	
@@ -1223,7 +1286,7 @@
 		<div id='newAccountFeedbackDiv'></div>
 				<br><br><br><br>
 			
-		</div>
+		
 	</body>
 	
 </html>

@@ -154,8 +154,8 @@ else {
 		    	var err;
 		    	if((err = Desktop.getXMLValue(req,"Error")) && err != "")
 		    	{
-					if(err.indexOf("Remote Desktop Icons") > 0) //demote to warning
-						Debug.warn("Warning: " + err);
+					if(err.indexOf("Remote Gateway desktop icons") > 0) //demote to log
+						Debug.log("Warning: " + err);
 		    		else					
 						Debug.err("Error: " + err, Debug.HIGH_PRIORITY);
 		    		//try to power through error //return;		    		
@@ -711,7 +711,10 @@ else {
       		_openFolderElement = 0;
       		_openFolderPath = ""; //clear
       		_openFolderPtr = undefined; //clear
-      	}
+      	} //end this.closeFolder()
+      	//=====================================================================================
+      	//this.isFolderOpen ~~
+      	this.isFolderOpen = function() { return _openFolderElement; }
 
       	//=====================================================================================
       	//this.clickFolderContents ~~

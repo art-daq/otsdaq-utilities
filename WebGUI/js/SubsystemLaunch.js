@@ -58,6 +58,7 @@ SubsystemLaunch.create = function() {
 	//	SubsystemLaunch.extractSystemStatus(req)
 	//	SubsystemLaunch.extractIteratorStatus(req)
 	//	SubsystemLaunch.resetConsoleCounts()
+	//	SubsystemLaunch.copyText(el)
 	//
 
 	
@@ -87,6 +88,7 @@ SubsystemLaunch.create = function() {
 	//
 	//	this.handleCheckbox(c)
 	//	this.getFsmName()
+	//	this.openChatWindow()
 	
 
 	
@@ -140,6 +142,13 @@ SubsystemLaunch.create = function() {
 		} //end first time landing handling
 
 		window.clearTimeout(_getStatusTimer);
+
+		window.onclick = function()
+		{
+			Debug.log("User clicked window, resetting timer...");
+			window.clearTimeout(_getStatusTimer);
+			_getStatusTimer = window.setTimeout(getCurrentStatus,1000); 
+		} //end window onclick handler
 
 
 		//get all needed info sequentially
@@ -351,7 +360,7 @@ SubsystemLaunch.create = function() {
 				str += SubsystemLaunch.system.state;
 				str += "</td><td id='systemStatusTimeInState'>";
 				str += "</td><td id='systemStatus_runNumber'>";
-				str += "</td><td id='systemStatusActiveUsers'>";
+				str += "</td><td style='cursor:pointer' id='systemStatusActiveUsers' onclick='SubsystemLaunch.openChatWindow();' >";
 				str += "</td></tr>";
 				str += "<tr><td>";
 				//add config alias select
@@ -375,7 +384,7 @@ SubsystemLaunch.create = function() {
 							"</option>";
 					}
 					str += "</select>";
-					str += "</td><td id='systemConfigAliasTranslation' colspan=" + (numOfCols-2) + ">";
+					str += "</td><td id='systemConfigAliasTranslation' colspan=" + (numOfCols-2) + " onclick='SubsystemLaunch.copyText(this);'>";
 					var aliasTranslation = ""; //set as innerText to handle special HTML chars
 					if(selc >= 0)
 					{
@@ -410,12 +419,14 @@ SubsystemLaunch.create = function() {
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
 				{
-					str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Run Type: <label id='systemStatus_lastRunLogEntry' class='subtext'></label>";
+					str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Run Type: <label id='systemStatus_lastRunLogEntry' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 					str += "</td></tr>";
 				}
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Logbook Entry: <label id='systemStatus_lastLogbookEntry' class='subtext'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Logbook Entry: <label id='systemStatus_lastLogbookEntry' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last System Message: <label id='systemStatus_lastSystemMessage' class='subtext'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last System Message: <label id='systemStatus_lastSystemMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "</td></tr>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Log File Rollover Mode: <label id='systemStatus_logRolloverMode' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 
 				//console err/warn count
@@ -423,28 +434,28 @@ SubsystemLaunch.create = function() {
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleInfoCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
 				str += SubsystemLaunch.system.consoleInfoCount;
 				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext'></label>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
-				str += "Last Console Info: <label id='systemStatus_consoleInfoMessage' class='subtext'></label>";
+				str += "Last Console Info: <label id='systemStatus_consoleInfoMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 				str += "<tr><td rowspan=1 style='text-align: right; padding-right: 5px; padding-left: 5px; white-space: nowrap;'>";
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleWarnCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
 				str += SubsystemLaunch.system.consoleWarnCount;
 				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext'></label>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
-				str += "Last Console Warning: <label id='systemStatus_consoleWarnMessage' class='subtext'></label>";
+				str += "Last Console Warning: <label id='systemStatus_consoleWarnMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 				str += "<tr><td rowspan=1 style='text-align: right; padding-right: 5px; white-space: nowrap;'>";
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleErrCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
 				str += SubsystemLaunch.system.consoleErrCount;
 				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext'></label>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
-				str += "Last Console Error: <label id='systemStatus_consoleErrMessage' class='subtext'></label>";
+				str += "Last Console Error: <label id='systemStatus_consoleErrMessage' class='subtext' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 
 
@@ -463,7 +474,11 @@ SubsystemLaunch.create = function() {
 
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
-				str = "<table cellspacing='5px'>";
+				if(redrawMode != 1)
+					str = "<table class='tableSingleRowMode' cellspacing='5px'>";
+				else
+					str = "<table class='tableDoubleRowMode' cellspacing='5px'>";
+
 				str += "<tr><th colspan=" + fields.length + ">Subsystem Status</th></tr>";
 				//make field header row
 				str += "<tr>";
@@ -740,7 +755,7 @@ SubsystemLaunch.create = function() {
 		// Debug.log("getCurrentStatus()");
 		window.clearTimeout(_getStatusTimer);
 
-		//getIterationPlanStatus returns iterator status and does not request next run number (which is expensive)
+		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
 		//	.. so only get run number 1:10
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystemStatus" + 
@@ -885,7 +900,9 @@ SubsystemLaunch.create = function() {
 
 		//Run Launch Status ---------
 		el = document.getElementById("startButtonDiv");
-		if(SubsystemLaunch.system.state != "Running" && (
+		if(SubsystemLaunch.system.state != "Running" && 
+			SubsystemLaunch.iterator.activePlan == "" &&
+			(
 			SubsystemLaunch.iterator.activePlanStatus === undefined || 
 			SubsystemLaunch.iterator.activePlanStatus == "" ||
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" || 
@@ -1005,9 +1022,17 @@ SubsystemLaunch.create = function() {
 
 		el = document.getElementById("systemStatusActiveUsers");
 		el.innerText = 	"# of Active Users: " + SubsystemLaunch.system.activeUserCount;
+		var str = "Click to open the Chat window to send messages or page alerts to active users.";
+		if(SubsystemLaunch.system.activeUserCount > 1) 
+		{
+			str += "\n\nHere is the list of active users:";		
+			for(var i=0; i < SubsystemLaunch.system.activeUserList.length; ++i)
+				str += ("\n  " + (i+1) + ". ") + SubsystemLaunch.system.activeUserList[i];	
+		}
+		el.title = str;
 
-		var fieldIds = ["runNumber", "lastRunLogEntry", "lastLogbookEntry", "lastSystemMessage", "consoleWarnCount", 
-			"consoleWarnMessage", "consoleErrCount", "consoleErrMessage", "consoleInfoCount", "consoleInfoMessage",
+		var fieldIds = ["runNumber", "lastRunLogEntry", "lastLogbookEntry", "lastSystemMessage", "logRolloverMode", 
+			"consoleWarnCount", "consoleWarnMessage", "consoleErrCount", "consoleErrMessage", "consoleInfoCount", "consoleInfoMessage",
 			"consoleFirstErrMessage", "consoleFirstWarnMessage", "consoleFirstInfoMessage"];		
 		for(var i=0; i<fieldIds.length; ++i)
 		{
@@ -1270,6 +1295,13 @@ SubsystemLaunch.create = function() {
 					function()
 					{		
 						Debug.log("Rebooting",targetSubsystem);
+
+						if(subsystemIndex >= SubsystemLaunch.subsystems.length)
+						{
+							Debug.err("The target subsystem-index #" + subsystemIndex + 
+								" was not found. Perhaps a refresh is needed.");
+							return;
+						}
 						window.clearTimeout(_getStatusTimer);
 				
 						SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -1368,7 +1400,16 @@ SubsystemLaunch.create = function() {
 
 			if(command == "Halt" && SubsystemLaunch.system.activeFsm == "iterator")
 			{
-				Debug.log("Do haltIterator");				
+				Debug.log("Do haltIterator");	
+
+				//resume statusing and clear action
+				window.clearTimeout(_getStatusTimer);
+				_getStatusTimer = window.setTimeout(
+					function()
+					{
+						el.selectedIndex = 0; //reset command select box
+						getCurrentStatus();
+					},2000); //in 2 sec			
 
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
 						"&StateMachine=iterateHalt", //end get data 
@@ -1376,16 +1417,7 @@ SubsystemLaunch.create = function() {
 						function(req) //start handler
 						{
 
-					Debug.log("iterateHalt handler ");
-									
-					//resume statusing and clear action
-					window.clearTimeout(_getStatusTimer);
-					_getStatusTimer = window.setTimeout(
-						function()
-						{
-							el.selectedIndex = 0; //reset command select box
-							getCurrentStatus();
-						},2000); //in 2 sec
+					Debug.log("iterateHalt handler ");			
 					
 						}, //end handler
 						0, //handler param
@@ -1395,6 +1427,15 @@ SubsystemLaunch.create = function() {
 			else 
 			{
 				Debug.log("Do fsmName",_fsmName);
+					
+				//resume statusing and clear action
+				window.clearTimeout(_getStatusTimer);
+				_getStatusTimer = window.setTimeout(
+					function()
+					{
+						el.selectedIndex = 0; //reset command select box
+						getCurrentStatus();
+					},2000); //in 2 sec
 
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
 							"&fsmName=" + _fsmName + 
@@ -1402,17 +1443,7 @@ SubsystemLaunch.create = function() {
 							(configAlias?("ConfigurationAlias=" + configAlias):""), //end post data
 						function(req) //start handler
 						{
-					Debug.log(command,"() FSM handler ");
-					
-					//resume statusing and clear action
-					window.clearTimeout(_getStatusTimer);
-					_getStatusTimer = window.setTimeout(
-						function()
-						{
-							el.selectedIndex = 0; //reset command select box
-							getCurrentStatus();
-						},2000); //in 2 sec
-
+					Debug.log(command,"() FSM success handler ");
 						}, //end handler
 						0, //handler param
 						0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
@@ -1764,6 +1795,7 @@ SubsystemLaunch.create = function() {
 				//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
 							"&StateMachine=iteratePlayGenerated" + 
+							"&fsmName=" + _fsmName +
 							"&fsmWindowName=" + encodeURIComponent(parameters), //end get data 
 							"", //end post data
 							function(req) //start handler
@@ -1825,19 +1857,19 @@ SubsystemLaunch.create = function() {
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 					//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
-			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-			"&StateMachine=iterateHalt", //end get data 
-			"", //end post data
-			function(req) //start handler
-			{
-		Debug.log("stop() iterateHalt handler ");
-		window.clearTimeout(_getStatusTimer);
-		_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
-		
-			}, //end handler
-			0, //handler param
-			0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-			true /*targetGatewaySupervisor*/);
+					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+							"&StateMachine=iterateHalt", //end get data 
+							"", //end post data
+							function(req) //start handler
+							{
+						Debug.log("stop() iterateHalt handler ");
+						window.clearTimeout(_getStatusTimer);
+						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+						
+							}, //end handler
+							0, //handler param
+							0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+							true /*targetGatewaySupervisor*/);
 
 				},
 				0,"#efeaea",0,"#770000"); //end popUpVerification
@@ -1852,20 +1884,20 @@ SubsystemLaunch.create = function() {
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
-			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-				"&fsmName=" + _fsmName + 
-				"&StateMachine=Stop", //end get data 
-				"", //end post data
-			function(req) //start handler
-			{
-		Debug.log("stop() FSM handler ");
-		window.clearTimeout(_getStatusTimer);
-		_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
-		
-			}, //end handler
-			0, //handler param
-			0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-			true /*targetGatewaySupervisor*/);
+					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+								"&fsmName=" + _fsmName + 
+								"&StateMachine=Stop", //end get data 
+								"", //end post data
+							function(req) //start handler
+							{
+						Debug.log("stop() FSM handler ");
+						window.clearTimeout(_getStatusTimer);
+						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+						
+							}, //end handler
+							0, //handler param
+							0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+							true /*targetGatewaySupervisor*/);
 
 				},
 				0,"#efeaea",0,"#770000"); //end popUpVerification
@@ -1935,6 +1967,25 @@ SubsystemLaunch.create = function() {
 	//getFsmName() ~~
 	this.getFsmName = function() { Debug.logv({_fsmName}); return _fsmName; }
 
+	//=====================================================================================     
+	this.openChatWindow = function()
+	{
+		Debug.log("this.openChatWindow()");
+
+		DesktopContent.popUpVerification( 
+			"Do you want to open the Chat window to send messages or page alerts to active users?",
+			localOpenChatWindow,
+			0,"#efeaea",0,"#770000");
+		return
+		
+		//===========
+		function localOpenChatWindow()
+		{			
+			Debug.log("localOpenChatWindow()","Chat");
+			DesktopContent.openNewWindow("Chat");
+		} //end localOpenChatWindow()
+
+	} //end this.openChatWindow()
 	
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
@@ -2079,6 +2130,7 @@ SubsystemLaunch.extractSystemStatus = function(req)
 	SubsystemLaunch.system.error = err;		
 	
 	SubsystemLaunch.system.activeUserCount = DesktopContent.getXMLValue(req,"active_user_count") | 0;
+	SubsystemLaunch.system.activeUserList = DesktopContent.getXMLValue(req,"active_user_list").split(',');
 				
 	SubsystemLaunch.system.lastRunLogEntry = DesktopContent.getXMLValue(req,"last_run_log_entry");
 	if(!SubsystemLaunch.system.lastRunLogEntry || SubsystemLaunch.system.lastRunLogEntry == "")
@@ -2101,6 +2153,8 @@ SubsystemLaunch.extractSystemStatus = function(req)
 		SubsystemLaunch.system.lastSystemMessage = "No System Message found.";
 	else
 		SubsystemLaunch.system.lastSystemMessage += " (" + DesktopContent.getXMLValue(req,"last_system_message_time") + ")";
+	
+	SubsystemLaunch.system.logRolloverMode = decodeURIComponent(DesktopContent.getXMLValue(req,"stateMachineLogRollover"));	
 	
 	SubsystemLaunch.system.consoleErrCount = "Console Err #: " + (DesktopContent.getXMLValue(req,"console_err_count") | 0); 
 	SubsystemLaunch.system.consoleWarnCount = "Console Warn #: " + (DesktopContent.getXMLValue(req,"console_warn_count") | 0); 
@@ -2226,3 +2280,22 @@ SubsystemLaunch.resetConsoleCounts = function(s)
 	} //end localSubsystemReset()
 
 } //end SubsystemLaunch.resetConsoleCounts()
+
+//=====================================================================================     
+SubsystemLaunch.copyText = function(el) 
+{
+	const text = el.innerText;
+
+	navigator.clipboard.writeText(text)
+		.then(() => {
+			Debug.log("Text copied to clipboard!",text);
+			DesktopContent.popUpVerification( 
+				"Text copied!",0,
+				0,"#efeaea",0,"#770000",
+				0,0,0,0,0,0,0,0,
+				true /* justDisplayAndTimeoutPopup */);
+		})
+		.catch(err => {
+			Debug.err("Failed to copy: ", err);
+		});
+} //end SubsystemLaunch.copyText()
