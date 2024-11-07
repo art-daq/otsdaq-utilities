@@ -772,6 +772,9 @@
 
 				//get command string if opening a new window
 				var cmdStr = DesktopContent.getParameter(0,"cmd");
+				if(!cmdStr || cmdStr == "")
+					cmdStr = DesktopContent.getParameter(0,"newWindowOps");
+
 					//DesktopContent.getParameter(1); //from  location.search				
 				if (cmdStr && cmdStr != "") 
 				{
