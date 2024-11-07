@@ -162,6 +162,8 @@ try
 {
 	// Commands
 
+	__COUTTV__(requestType);
+
 	//	gatewayLaunchOTS -- and other StartOTS commands
 
 	//	saveTableInfo
@@ -1018,7 +1020,8 @@ try
 			cfgMgr, 
 			tableGroup,
 			TableGroupKey(tableGroupKey),
-			modifiedTables);
+			modifiedTables,
+			false /* refreshAll */);
 
 		try
 		{
@@ -2802,7 +2805,8 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables,
+		false /* refreshAll */);
 
 	// for each field
 	//	return field/value pair in xml
@@ -2905,7 +2909,8 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables,
+		false /* refreshAll */);
 
 	try
 	{
@@ -3081,7 +3086,8 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables,
+		false /* refreshAll */);
 
 	try
 	{
@@ -5911,7 +5917,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	// create new table mgr if not one for active session index
 	if(userConfigurationManagers_.find(mapKey) == userConfigurationManagers_.end())
 	{
-		__SUP_COUT_INFO__ << "Creating new Configuration Manager. time=" << time(0) << __E__;
+		__SUP_COUT__ << "Creating new Configuration Manager. time=" << time(0) << " " << clock() << __E__;
 		userConfigurationManagers_[mapKey] = new ConfigurationManagerRW(username);
 
 		// update table info for each new configuration manager
@@ -5936,7 +5942,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	                                                                 // refresh all table
 	                                                                 // info
 	{
-		__SUP_COUT_INFO__ << "Refreshing all table info." << __E__;
+		__SUP_COUT__ << "Refreshing all table info." << __E__;
 		userConfigurationManagers_[mapKey]->getAllTableInfo(
 			true /* refresh */,
 			0 /* accumulatedWarnings */,
@@ -5946,7 +5952,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 			true /* initializeActiveGroups */);
 	}
 	__SUP_COUTT__ << "Configuration Manager ready. time=" << time(0) << " " << clock() <<
-		" runTimeSeconds=" << userConfigurationManagers_[mapKey]->runTimeSeconds() <<  __E__;
+		" runTimeSeconds()=" << userConfigurationManagers_[mapKey]->runTimeSeconds() <<  __E__;
 
 	// update active sessionIndex last use time
 	userLastUseTime_[mapKey] = now;
@@ -7428,7 +7434,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	__COUT__ << "Retrieving artdaq nodes..." << __E__;
 
 	//	setup active tables based on active groups and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables);
+	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables,
+		false /* refreshAll */);
 
 	std::map<std::string /*type*/,
 	         std::map<std::string /*record*/, std::vector<std::string /*property*/>>>
@@ -7562,7 +7569,8 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 	__SUP_COUT__ << "Saving artdaq nodes..." << __E__;
 
 	//	setup active tables based on active groups and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables);
+	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables,
+		false /* refreshAll */);
 
 	// start node object extraction from nodeString
 	std::map<std::string /*type*/,

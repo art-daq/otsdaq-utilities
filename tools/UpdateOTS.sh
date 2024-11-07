@@ -266,7 +266,7 @@ function updateUserData
 	if ! [ -d $USER_DATA/MessageFacilityConfigurations ]; then
 		mkdir $USER_DATA/MessageFacilityConfigurations
 	fi
-	# echo -e "UpdateOTS.sh:${LINENO}  \t cp $OTSDAQ_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/"
+	echo -e "UpdateOTS.sh:${LINENO}  \t cp $OTSDAQ_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/"
 	cp $OTSDAQ_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/ # undo c++ style comment for Eclipse viewing*/
 	cp $OTS_SOURCE/otsdaq/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/ &>/dev/null # undo c++ style comment for Eclipse viewing*/
 		

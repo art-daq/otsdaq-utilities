@@ -718,7 +718,7 @@
 
 			//setupSpecificTableGroup("artdaqFclTest","46","","anchorTag-RawDataSaverConsumerTable"); return;			
 			// setupSpecificTableGroup("CalVstSidetV2Config","15"); return;
-			// setupTableGroupTreeView("TDAQDevContext","11"); return;
+			// setupTableGroupTreeView("Mu2eShiftConfig","2"); return;
 
 			//mergeGroups("GroupAliasWizBackbone","0","GroupAliasWizBackbone","3","rename");
 			//mergeGroups("  ","2","testContext","3","defaultConfig","1","defaultConfig","4","Rename");
@@ -3900,9 +3900,10 @@
 				treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;";
 				treeViewHandlerStr_ += "<div id='searchbar'>" + 
 											"<span></span>" + 
-											"<input id='tree-view-searchbar'" +
+											"<input id='tree-view-searchbar' " +
+											"title='Type to highlight and seek any matching records. Hit the UP-arrow and DOWN-arrow to scroll the tree-view to the matching records.' " +
 											"placeholder='Search...' " + 
-											"onkeydown='applySearchNode(event)'></input>" + 
+											"onkeydown='applySearchNode(event)' autocomplete='off'></input>" + 
 										"</div>";
 
 
@@ -4077,9 +4078,13 @@
 					localHandleEmptyParent();
 			}
 
+			applySearchNode();
+			return;
+
 			//===========
 			//localHandleEmptyParent ~~
-			function localHandleEmptyParent() {
+			function localHandleEmptyParent() 
+			{
 				//Steps:
 				//	- navigate up tree until UID or LinkUID node found				
 				//		start at parent element.. is it a UID? etc.
@@ -5416,7 +5421,7 @@
 			{
 				if (type == "table" || type == "uid" || type == "link") {
 					toggleTreeChildren(depth, uid);
-					applySearchNode();
+					
 				}
 				else if (type == "value") {
 					//N/A
@@ -5432,36 +5437,86 @@
 
 		//==============================================================================
 		//applySearchNode ~
+		var applySearchNodeSelectedIndex = -1;
 		function applySearchNode(event = null)
 		{
-			var fields = document.getElementsByClassName("treeNode-Value");
+			Debug.log("applySearchNode()",event?event.keyCode:"");
+
+			//38 is UP
+			//40 is DOWN
+
 			var text = document.getElementById("tree-view-searchbar").value; 
 
 			if (event)
 			{
 				// problem with keydown
 				if (event.keyCode >= 48 && event.keyCode <= 90)
-				text = text + event.key;
+				{
+					text = text + event.key;
+					applySearchNodeSelectedIndex = -1; //reset focus index
+				}
 
 				if (event.keyCode === 8)
+				{
 					text = text.slice(0, -1);
+					applySearchNodeSelectedIndex = -1; //reset focus index
+				}
+
+				if (event.keyCode == 38 && //UP key
+						applySearchNodeSelectedIndex > 0) 
+					--applySearchNodeSelectedIndex;
+				if (event.keyCode == 40) //DOWN key
+					++applySearchNodeSelectedIndex;
 			}
 
-			// color the proper target
+			// color the proper target (and focus on selected)
+			var fields = document.getElementsByClassName("treeNode-Value");
+			if(applySearchNodeSelectedIndex >= fields.length)
+				applySearchNodeSelectedIndex = fields.length - 1;
+			var lastEl, lastElIndex = -1;
+			var searchFindIndex = 0;
+			var searchFocusFound = false;
 			for (var i = 0; i < fields.length; i++)
 			{
 				if (text !== "" && fields[i].innerText.toLowerCase().includes(text.toLowerCase()))
 				{
 					fields[i].style.color = "green";
+					fields[i].style.backgroundColor = "yellow";
+
+					if(searchFindIndex == applySearchNodeSelectedIndex)
+					{
+						Debug.logv({applySearchNodeSelectedIndex});
+						fields[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+						searchFocusFound = true;
+						fields[i].style.backgroundColor = "lightyellow";
+
+					}
+					
+					lastEl = fields[i];
+					lastElIndex = searchFindIndex;
+					++searchFindIndex;
 				}
 				else
 				{
 					fields[i].style.color = "inherit";
+					fields[i].style.backgroundColor = "inherit";
 				}
 			}
+
+			if(applySearchNodeSelectedIndex >= 0 && 
+				!searchFocusFound && lastEl)
+			{
+				//scroll to last searched el if none scrolled
+				applySearchNodeSelectedIndex = lastElIndex;
+				Debug.logv({applySearchNodeSelectedIndex});
+				lastEl.style.backgroundColor = "lightyellow";
+				lastEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+
 			if (event)
 				event.stopPropagation();
-		}
+			return false;
+		} //end applySearchNode()
 
 		//==============================================================================
 		//applyTreeFilter ~
@@ -5507,54 +5562,67 @@
 			if (!filter || filter == "" || filter == "*") return;
 
 			//apply new filter
-			var filterArr = filter.split('*');
+			
+			//allow OR with |
+			var filterArr = filter.split('|');
+			var filterArr2 = [];
+			for (var j = 0; j < filterArr.length; ++j) 
+				filterArr2.push(filterArr[j].trim().split('*'));
 
 			//if only one element find exact
-			//for each !"" component find it one after the other..
+			//else for each non-blank component, find it one after the other..
 
 			var filterMatch;
 			for (var i = 0; i < allValues.length; ++i) 
 			{
-				filterMatch = true;
-				valName = allValues[i].innerHTML;
-				if (filterArr.length == 1) 
+				for (var j = 0; j < filterArr2.length; ++j) 
 				{
-					if (valName != filterArr[0])
-						filterMatch = false;
-				}
-				else 
-				{
-					var nextIndex = -1;
-					for (var j = 0; j < filterArr.length; ++j) 
+					filterMatch = true;
+					valName = allValues[i].innerHTML;
+					if (filterArr2[j].length == 1) 
 					{
-						Debug.log("j=" + j + " filterArr[j]=" + filterArr[j] +
-							" nextIndex=" + nextIndex);
-						if (filterArr[j] == "") continue; //skip empty filters
-
-						if (j == 0) //must start with this filter
+						if (valName != filterArr2[j][0])
+							filterMatch = false;
+					}
+					else 
+					{
+						var nextIndex = -1;
+						// for (var j = 0; j < filterArr.length; ++j) 
+						for (var k = 0; k < filterArr2[j].length; ++k) 
 						{
-							if ((nextIndex = valName.indexOf(filterArr[j])) != 0) 
+							Debug.log("j=" + j + " k=" + k + 
+								" filterArr2[j][k]=" + filterArr2[j][k] +
+								" nextIndex=" + nextIndex);
+							if (filterArr2[j][k] == "") continue; //skip empty filters
+
+							if (k == 0) //must start with this filter
+							{
+								if ((nextIndex = valName.indexOf(filterArr2[j][k])) != 0) 
+								{
+									filterMatch = false;
+									break; //done
+								}
+							}
+							else if (k == filterArr2[j].length - 1) //must end with this filter
+							{
+								if (valName.lastIndexOf(filterArr2[j][k]) !=
+									valName.length - filterArr2[j][k].length) 
+								{
+									filterMatch = false;
+									break;
+								}
+							}
+							else if ((nextIndex = valName.indexOf(filterArr2[j][k], nextIndex + 1)) < 0) 
 							{
 								filterMatch = false;
 								break; //done
 							}
-						}
-						else if (j == filterArr.length - 1) //must end with this filter
-						{
-							if (valName.lastIndexOf(filterArr[j]) !=
-								valName.length - filterArr[j].length) 
-							{
-								filterMatch = false;
-								break;
-							}
-						}
-						else if ((nextIndex = valName.indexOf(filterArr[j], nextIndex + 1)) < 0) 
-						{
-							filterMatch = false;
-							break; //done
-						}
+						} //end Wildcard loop
 					}
-				}
+
+					if(filterMatch)
+						break; //found an OR match, so exit
+				} //end OR loop
 
 				if (!filterMatch)	//get to treeNode element
 					allValues[i].parentNode.parentNode.parentNode.style.display = "none";
@@ -5664,7 +5732,7 @@
 			if (!countExpanded)
 				Debug.log("The tree has been expanded as far as possible" +
 					(treeEditingEditIconShownEl_ ? (" with respect to the highlighted node " +
-						"'" + nameOfTargetNode + "'") : "") + "!", Debug.INFO_PRIORITY);
+						"'" + nameOfTargetNode + "'") : "") + "!<br><br>If you expect more fields to be shown, check the upper-left &gt;&gt; menu, and consider whether or not you want to Clear the Tree View Filter, Show Nodes w/State = False, or Show Info Fields.", Debug.INFO_PRIORITY);
 		} //end expandTreeChildrenDepth()
 
 		//==============================================================================
@@ -14399,7 +14467,7 @@
 			ConfigurationAPI.setPopUpPosition(el, w /*w*/, h /*h*/);
 
 			Debug.log("Previous filter = " + lastTreeFilter_);
-			var defaultFilter = lastTreeFilter_ == "" ? "*Port*" : lastTreeFilter_;
+			var defaultFilter = (!lastTreeFilter_ || lastTreeFilter_ == "") ? "*Port*" : lastTreeFilter_;
 
 			var str = "<a id='" +
 				"popUpDialog" +
@@ -14407,7 +14475,7 @@
 				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); return false;'>Cancel</a><br><br>";
 
 			str += "<div id='popUpDialog-div'>";
-			str += "Please enter the filter (* may be used) to select which values are " +
+			str += "Please enter the filter (Note: * may be used as a wildcard, | may be used as an OR to include multiple wildcard needles) to select which values are " +
 				"shown in the tree:<br><br>";
 			str += "<input type='text' id='popUpDialog-filter' value='" +
 					encodeHTML(defaultFilter) + "'></input>";
@@ -18185,12 +18253,16 @@
 
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel)
-					vel.style.backgroundColor = "transparent";
+				{
+					if(vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
+						vel.style.backgroundColor = treeEditingEditIconShownElBackground_; //"transparent";
+				}
 			}
 		} //end bodyMouseMoveHandler()
 
 		//==============================================================================
 		//handleTreeNodeMouseMove ~~
+		var treeEditingEditIconShownElBackground_ = "";
 		function handleTreeNodeMouseMove(depth, uid, event) 
 		{
 			event.stopPropagation();
@@ -18213,6 +18285,7 @@
 			treeEditingEditIconShownEl_ = el;
 			treeEditingEditIconShownEl_.style.display = "block";
 			var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
+			treeEditingEditIconShownElBackground_ = vel.style.backgroundColor;
 			vel.style.backgroundColor = "rgb(218, 194, 194)";
 
 			//try bringing along the comment edit icon, and ignore fails

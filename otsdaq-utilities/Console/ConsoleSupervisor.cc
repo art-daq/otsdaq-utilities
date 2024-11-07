@@ -759,8 +759,8 @@ void ConsoleSupervisor::loadCustomCountList()
 			needle = line;
 		else //action (so have all info)
 		{
-			__SUP_COUTV__(needle);
-			__SUP_COUTV__(line);
+			__SUP_COUTTV__(needle);
+			__SUP_COUTTV__(line);
 			if(i == 1 && needle != CONSOLE_MISSED_NEEDLE) //then force missed Console message as priority 0
 				addCustomTriggeredAction(CONSOLE_MISSED_NEEDLE,	"System Message");	
 			addCustomTriggeredAction(needle,line);

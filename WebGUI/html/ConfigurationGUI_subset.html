@@ -1001,7 +1001,7 @@
 				
 				
 				//create multi-select filter boxes
-				filterBoxesEl.setAttribute("style", "float:left;position:relative;"); //background-color:red;
+				filterBoxesEl.setAttribute("style", "float:left; position:relative; z-index:1"); //background-color:red; //z-index to get above record selection box
 				filterBoxesEl.style.display = defaultShowFilters?"block":"none";
 
 				var H = 150;
@@ -1212,7 +1212,7 @@
 			//create TOP read/write buttons			
 			el = document.createElement("div");
 			var readWriteContainerStyle = "height:" + _RIGHT_PANE_RW_BTN_HEIGHT + "px;" + 
-					"overflow-x:auto; " +
+					"overflow-x:auto; overflow-y: hidden; " +
 					"white-space:nowrap;";
 			el.setAttribute("style", readWriteContainerStyle);
 			_rightPane.appendChild(el); //add field container link
