@@ -3451,9 +3451,12 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		if(missingTables.size())
 		{
 			__COUTV__(missingTables);
-			xmlOut.addTextElementToData("NoTreeLinkWarning", 
-				"These tables were identified as possibly orphaned (No active tables link to these tables, and these tables have no links to other tables): " + 
-				missingTables + ".");
+			std::stringstream ss;
+			ss << "The following member tables of table group '" << 
+				groupName << "(" << groupKey << 
+				")' were identified as possibly orphaned (i.e. no active tables link to these tables, and these tables have no links to other tables):\n\n" << 
+				missingTables << "." << __E__;
+			xmlOut.addTextElementToData("NoTreeLinkWarning", ss.str());
 		}
 	} //end orphaned table check		
 
@@ -3468,7 +3471,11 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		             << StringMacros::mapToString(cfgMgr->getActiveVersions()) << __E__;
 	}
 	else
+	{
 		__SUP_COUTT__ << "Active tables are setup. No issues found." << __E__;
+		__SUP_COUTT__ << "Active table versions: "
+		             << StringMacros::mapToString(cfgMgr->getActiveVersions()) << __E__;
+	}
 
 	
 

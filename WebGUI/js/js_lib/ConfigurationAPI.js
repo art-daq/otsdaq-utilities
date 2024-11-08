@@ -526,6 +526,8 @@ ConfigurationAPI.getStructureStatus = function(rootTableOfStructure,responseHand
 ConfigurationAPI.getSubsetRecords = function(subsetBasePath,
 		filterList,responseHandler,modifiedTables)
 {
+	Debug.log("ConfigurationAPI.getSubsetRecords()");
+
 	var modifiedTablesListStr = "";
 	for(var i=0;modifiedTables && i<modifiedTables.length;++i)
 	{
@@ -805,6 +807,8 @@ ConfigurationAPI.getTreeLinkTable = function(link)
 ConfigurationAPI.getFieldsOfRecords = function(subsetBasePath,recordArr,fieldList,
 		maxDepth,responseHandler,modifiedTables)
 {
+	Debug.log("ConfigurationAPI.getFieldsOfRecords()");
+
 	var modifiedTablesListStr = "";
 	for(var i=0;modifiedTables && i<modifiedTables.length;++i)
 	{
@@ -2874,6 +2878,20 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 {	
 	Debug.log("ConfigurationAPI bitMapDialog");	
 
+
+	DesktopContent.tooltip("Bitmap Editor GUI",
+		"Welcome to the <b>BitMap Editor GUI</b>. Use your left and right mouse " +
+		"buttons to set the [row,column] values in the BitMap. You can click-and-drag your mouse to " +
+		"set multiple cells in one motion. You can also adjust the values assigned to your left and right " +
+		"mouse buttons by adjusting the sliders at the top. To use an external tool, download/upload the BitMap as comma-separated-variable (CSV)." +
+		"<br><br>" +
+		"Use the gray border buttons to set every cell, or an entire row or column." +
+		"<br><br>" + 
+		"When you are done modifying the BitMap cells, click OK to save the aggregated result." + 
+		"<br><br>" +
+		"Note: you can optionally modify various features like Min-value Color, Max-value Color, Display Aspect ratio, etc. in the Table Editor for this table in <i>ots</i> Wiz Mode."
+		);
+
 	var str = "";
 
 	var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
@@ -3378,7 +3396,6 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 					"(bitFieldSize possible values are from 1 to " + (31) + ".)",Debug.HIGH_PRIORITY);
 			return false;
 		}
-
 		
 		if(bitFieldSize > 30)
 		{			
@@ -3485,25 +3502,36 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 		//create empty array for bmpData		
 		bmpData = [];
 		
-		try
-		{			
-			var jsonMatrix = JSON.parse(initBitMapValue);
-			
-			//create place holder 2D array for fill
-			for(var r=0;r<rows;++r)
-			{
-				bmpData.push([]); //create empty row array
-				
-				for(var c=0;c<cols;++c)
-					bmpData[r][c] = 0;
-			}
-			localConvertFullRowColToGrid(jsonMatrix); //also sets bmpDataImage
-		}
-		catch(err)
+		var useDefault = initBitMapValue.length == 0 || 
+			(initBitMapValue.length == ("default").length &&
+			initBitMapValue.toLowerCase() == "default");
+		if(!useDefault)
 		{
-			Debug.log("The input initial value of the bitmap is illegal JSON format. " +					
-					"See error below: \n\n" + err,Debug.HIGH_PRIORITY);
-			Debug.log("Defaulting to initial bitmap with min-value fill.",Debug.HIGH_PRIORITY);
+			try
+			{			
+				var jsonMatrix = JSON.parse(initBitMapValue);
+				
+				//create place holder 2D array for fill
+				for(var r=0;r<rows;++r)
+				{
+					bmpData.push([]); //create empty row array
+					
+					for(var c=0;c<cols;++c)
+						bmpData[r][c] = 0;
+				}
+				localConvertFullRowColToGrid(jsonMatrix); //also sets bmpDataImage
+			}
+			catch(err)
+			{
+				Debug.log("The input initial value of the bitmap is illegal JSON format. " +					
+						"See error below: \n\n" + err,Debug.HIGH_PRIORITY);
+				useDefault = true;				
+			}
+		}	
+		
+		if(useDefault)
+		{
+			Debug.warn("Defaulting to initial bitmap with min-value fill.");
 			
 			//min-value fill			
 			var color;		
@@ -3525,8 +3553,8 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 
 			bmpContext.putImageData(bmpDataImage,0,0);
 			bmp.src = bmpCanvas.toDataURL();			
-		}		
-	}
+		}
+	} //end localInitBitmapData()
 
 	//:::::::::::::::::::::::::::::::::::::::::
 	//localConvertGridToRowCol ~~
@@ -3833,10 +3861,6 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
 		str += fieldName;
-//		fieldName = fieldName.split('\n');
-//		str += "Target UID/Field: &quot;" + 
-//				fieldName[0].split(" : ")[1] + "/" +
-//				fieldName[1].split(" : ")[0] + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
@@ -4222,7 +4246,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 			rowRightNums.style.left = (bmpX + bmpW + axisPaddingMargin + bmpBorderSize) + "px";
 			rowRightNums.style.top = (bmpY - bmpBorderSize) + "px";
 			colTopNums.style.left = (bmpX - bmpBorderSize) + "px";
-			colTopNums.style.top = (bmpY - bmpBorderSize*2 - numberDigitH) + "px";
+			colTopNums.style.top = (bmpY - bmpBorderSize*2 - numberDigitH - axisPaddingMargin) + "px";
 			colBottomNums.style.left = (bmpX - bmpBorderSize) + "px";
 			colBottomNums.style.top = (bmpY + bmpH + bmpBorderSize + axisPaddingMargin + bmpBorderSize + butttonSz + bmpBorderSize) + "px";
 			rowLeftNums.innerHTML = ""; //clear all children

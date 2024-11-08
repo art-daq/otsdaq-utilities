@@ -8149,11 +8149,11 @@
 					Debug.log("Handling bitmap select");
 
 					_editingCellElOldValue = el.textContent;
+					treeEditingNodeInitValue_ = _editingCellElOldValue;
 
 					//let API bitmap dialog handle it
 					ConfigurationAPI.bitMapDialog(
-						//_editingCellElOldTitle, //field name
-						"Target UID/Field: &quot;" +
+						"Target UID/Field: &quot;" + //field name
 						treeEditingTargetUID_ + "/" +
 						treeEditingTargetColumn_ + "&quot;",
 						document.getElementById("treeNode-BitMap-Params-" +
@@ -9544,17 +9544,18 @@
 			else if (colType == "BitMap") 
 			{
 				//let API bitmap dialog handle it
+				var bitMapCellEl = _editingCellEl; //save for close
 				ConfigurationAPI.bitMapDialog(
-					//_editingCellElOldTitle, //field name
-					"Target UID/Field: &quot;" +
-					_editingCellElOldTitle.split('\n')[0].split(" : ")[1] + "/" +
-					_editingCellElOldTitle.split('\n')[1].split(" : ")[0] + "&quot;",
+					"Target UID/Field: &quot;" + //field name
+					_editingCellElOldTitle.split('\n')[1].split(" : ")[1] + "/" +
+					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0] + "&quot;",
 					_tableFixedChoiceData[c],
 					_editingCellElOldValue,
 					function (val) {
 						Debug.log("yes " + val);
-						_editingCellEl.innerHTML = "";
-						_editingCellEl.appendChild(document.createTextNode(val));
+						bitMapCellEl.innerHTML = "";
+						bitMapCellEl.appendChild(document.createTextNode(val));
+						//stop editing if editing
 						_editingCell = false;
 						_editingCellEl = 0;
 
