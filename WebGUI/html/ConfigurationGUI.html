@@ -3715,6 +3715,8 @@
 					Debug.log(warn);
 			}
 			lastTreeWarnStr_ = warn;
+			warn = DesktopContent.getXMLValue(req, "NoTreeLinkWarning");
+			Debug.log("NoTreeLinkWarning:",warn);
 
 
 
@@ -3960,7 +3962,10 @@
 						"var el = document.getElementById(\"treeViewErrors\"); el.style.display = " +
 						"el.style.display == \"none\"?\"block\":\"none\"" +
 						"'>";
-					treeViewHandlerStr_ += "<u>Warning: Errors were detected in this tree!</u>";
+					if (treeErr || err)
+						treeViewHandlerStr_ += "<u>Warning: Errors were detected in this tree!</u>";
+					else 
+						treeViewHandlerStr_ += "<u>Note: Warnings were detected in this tree!</u>";
 					treeViewHandlerStr_ += "</div>";
 					treeViewHandlerStr_ += "<div id='treeViewErrors' style='display:none'>" +
 						(err ? err.replace(/\n/g, "<br>") : "") +
