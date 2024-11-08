@@ -4941,9 +4941,12 @@ ConfigurationAPI.fillEditableFieldElement = function(fieldEl,uid,
 
 	str += "<div style='float:left; margin-left:9px;' id='editableFieldNode-Value-leafNode-" +
 			(depth + "-" + uid) +			
-			"' class='" +
+			"' class='editableFieldNode-Value-leafNode " +
 			"editableFieldNode-Value-leafNode-ColumnName-" + nodeName +
-			"' " +
+			"' " + //also edit if click value:
+			"onclick='ConfigurationAPI.handleEditableFieldClick(" +							 
+				depth + "," + uid + "," + 	
+				"1,\"value\"); event.stopPropagation();' " +
 			">";
 	
 	
@@ -5365,7 +5368,7 @@ ConfigurationAPI.handleEditableFieldClick = function(depth,uid,editClick,type)
 					ConfigurationAPI.bitMapDialog(
 							//_editingCellElOldTitle, //field name
 							"Target Field: &quot;" + 
-							fieldName_ + "&quot;",
+							fieldName + "&quot;",
 							document.getElementById("editableFieldNode-BitMap-Params-" +
 														idString).textContent.split(';'), 
 							ConfigurationAPI.editableFieldEditingOldValue_,

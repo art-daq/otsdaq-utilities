@@ -407,8 +407,7 @@
 			var str;
 			
 			var noMultiSelect = false; // true or false (false for multiselect functionality) 
-			var maintainPreviousSelections = true; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
-
+			
 			var vals = _subsetUIDs;//["One little piggy","two little piggies","three little piggies"];
 			var keys = [];
 			var types = [];
@@ -469,13 +468,13 @@
 					true /* requireCtrlMultiClick */);
 
 				
-			MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
+			MultiSelectBox.initMySelectBoxes(true /* clearPreviousSelections */, "RecordsGroupBox");
 
 			if(selectFirstRecord && vals.length)
 			{ //do after first init, otherwise does not seem to work
 				Debug.log("Selecting first record...");
 				MultiSelectBox.setSelectionElementByIndex(el,0,true);
-				MultiSelectBox.initMySelectBoxes(); //update display
+				MultiSelectBox.initMySelectBoxes(false, "RecordsGroupBox"); //update display
 			}
 			else if(loadSelectedRecord) //apply selectRecords
 			{
@@ -501,8 +500,7 @@
 					} //end record search loop
 				}
 				
-				MultiSelectBox.initMySelectBoxes(); //update display of all multi-select boxes
-									
+				MultiSelectBox.initMySelectBoxes(false /* clearPreviousSelections */, "RecordsGroupBox"); //update display of not of all multi-select boxes, only RecordsGroupBox
 			}
 			
 			//get grouping field values
@@ -1025,8 +1023,7 @@
 						filterBoxesEl.appendChild(el);			
 						
 						var noMultiSelect = false; // true or false (false for multiselect functionality) 
-						var maintainPreviousSelections = false; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
-	
+							
 						var vals = _filterValsObj[i].fieldUniqueValueArray;//["One little piggy","two little piggies","three little piggies"];
 						var keys = [];
 						var types = [];
@@ -1170,6 +1167,8 @@
 				_lastFilterStr = filterStr;
 				Debug.log("records found = " + records.length);
 				console.log(records);
+
+				//clear record selections
 				
 				updateRecordsAndFields(selectFirstRecord,loadSelectedRecord);
 					}, //end getSubsetRecords handler

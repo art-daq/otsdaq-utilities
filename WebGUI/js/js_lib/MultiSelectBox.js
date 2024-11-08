@@ -45,7 +45,7 @@
 //		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 //		mouseUpHandler,
 //		requireCtrlMultiClick,titles)
-//	initMySelectBoxes(clearPreviousSelections)
+//	initMySelectBoxes(clearPreviousSelections, targetId)
 //		  
 //	hasClass(ele,cls)
 //	addClass(ele,cls)
@@ -439,7 +439,7 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 } //end createSelectBox()
 
 //for initializing the highlights if selects are made "manually" (without clicking)
-MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections)
+MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections, targetId)
 {
 	var divs=document.getElementsByClassName('mySelect');
 	for (var el=0; el<divs.length; el++)
@@ -447,6 +447,10 @@ MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections)
 		var select = divs[el];
 		
 		var id = select.getAttribute("id");
+		
+		if(targetId && targetId != "" && targetId != id &&
+			("selbox-" + targetId) != id) continue; //skip non-targets
+
 		var options = select.childNodes;
 		MultiSelectBox.lastOptSelect_[id] = -1;
 		if (!MultiSelectBox.mySelects_[id] ||
