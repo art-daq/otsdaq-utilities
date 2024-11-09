@@ -38,8 +38,8 @@ cet_set_compiler_flags(
  )
  
 # Debug streamer.
-string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
-if(BTYPE_UC STREQUAL DEBUG)
+string(TOUPPER "x${CMAKE_BUILD_TYPE}" BTYPE_UC )
+if(BTYPE_UC STREQUAL XDEBUG)
   add_definitions(-DDEBUGME)
 	if(DEFINED ENV{USE_ASAN})
 		if($ENV{USE_ASAN} GREATER 0)
