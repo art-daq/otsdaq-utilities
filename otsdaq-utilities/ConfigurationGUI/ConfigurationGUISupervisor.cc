@@ -3246,9 +3246,9 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
                                                        const TableGroupKey&    groupKey,
                                                        const std::string&      startPath,
                                                        unsigned int            depth,
-                                                       bool               hideStatusFalse,
-                                                       const std::string& modifiedTables,
-                                                       const std::string& filterList,
+                                                       bool               	   hideStatusFalse,
+                                                       const std::string& 	   modifiedTables,
+                                                       const std::string& 	   filterList,
 													   const std::string&      diffGroupName /* = "" */,
 													   const TableGroupKey&    diffGroupKey /* = TableGroupKey() */)
 {
@@ -3873,9 +3873,11 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 				returnNode = t.isEnabled();
 
 			if(returnNode)
-			{
+			{				
 				parentEl =
 				    xmlOut.addTextElementToParent("node", t.getValueAsString(), parentEl);
+				if(t.isUIDNode())
+					xmlOut.addTextElementToParent("comment", t.getComment(), parentEl);
 				
 				if(diffTree.has_value())
 				{
@@ -4955,7 +4957,8 @@ void ConfigurationGUISupervisor::handleSaveTreeNodeEditXML(HttpXmlDocument&     
                                                            const std::string& author)
 try
 {
-	__SUP_COUT__ << "table " << tableName << "(" << version << ")" << __E__;
+	__SUP_COUT__ << "Editing table " << tableName << "(" << version << ") uid=" << uid << 
+		" type=" << type << __E__;
 
 	// get the current table/version
 	// check if the value is new
@@ -4978,6 +4981,7 @@ try
 	}
 
 	__SUP_COUT__ << "Active version is " << table->getViewVersion() << __E__;
+	__SUP_COUTTV__(table->getView().getComment());
 
 	if(version != table->getViewVersion())
 	{
@@ -4990,6 +4994,8 @@ try
 	unsigned int col = -1;
 	if(type == "uid" || type == "delete-uid" || type == "tree-copy")
 		col = table->getView().getColUID();
+	else if(type == "node-comment")
+		col = table->getView().findCol(TableViewColumnInfo::COL_NAME_COMMENT);
 	else if(type == "link-UID" || type == "link-GroupID" || type == "value" ||
 	        type == "value-groupid" || type == "value-bool" || type == "value-bitmap")
 		col = table->getView().findCol(colName);
@@ -5031,6 +5037,8 @@ try
 
 	TableView* cfgView = table->getTemporaryView(temporaryVersion);
 	cfgView->init();  // prepare maps
+
+	__SUP_COUTTV__(table->getView().getComment());
 
 	// edit/verify new table (throws runtime_errors)
 	try
@@ -5152,7 +5160,7 @@ try
 			                                                      uid);
 		}
 		else if(type == "uid" || type == "value" || type == "value-groupid" ||
-		        type == "value-bool" || type == "value-bitmap")
+		        type == "value-bool" || type == "value-bitmap" || type == "node-comment")
 		{
 			unsigned int row = cfgView->findRow(cfgView->getColUID(), uid);
 			if(!cfgView->setURIEncodedValue(newValue, row, col, author))

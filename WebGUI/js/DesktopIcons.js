@@ -171,7 +171,8 @@ else {
 			}
       		else //it is the wizard
       		{ 
-      			iconArray = req.responseText.split(","); 
+				if(req && req.responseText)
+      				iconArray = req.responseText.split(","); 
       		}
 		    
 			Debug.log("icon Array split: " + iconArray);

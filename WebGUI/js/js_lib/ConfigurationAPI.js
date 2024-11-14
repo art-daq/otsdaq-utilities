@@ -4658,7 +4658,7 @@ ConfigurationAPI.editableFieldHandlersSubscribed_ = false;
 ConfigurationAPI.editableFieldMouseIsSelecting_ = false;
 ConfigurationAPI.editableField_SELECTED_COLOR_ = "rgb(251, 245, 53)";
 ConfigurationAPI.createEditableFieldElement = function(fieldObj,fieldIndex,
-		depthIndex /*optional*/)
+		depthIndex /*optional*/, initValue /*optional*/)
 {
 	var str = "";
 	var depth = depthIndex|0;
@@ -4682,7 +4682,8 @@ ConfigurationAPI.createEditableFieldElement = function(fieldObj,fieldIndex,
 	
 	var valueType = fieldObj.fieldColumnType;
 	var choices = fieldObj.fieldColumnDataChoicesArr;
-	var value = fieldObj.fieldColumnDefaultValue;
+	var value = initValue === undefined?fieldObj.fieldColumnDefaultValue:initValue;
+	Debug.logv({value});
 	var path = fieldObj.fieldRelativePath;
 	var nodeName = fieldObj.fieldColumnName;
 	fieldObj.depthIndex = depth;

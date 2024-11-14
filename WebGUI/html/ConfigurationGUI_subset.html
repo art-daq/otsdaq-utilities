@@ -246,6 +246,8 @@
 		
 		//global vars for saving tables
 		var _modifiedTables;
+
+		var _saveFieldValues = {}; //field : value
 		
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
@@ -559,7 +561,8 @@
 					_rightPaneFields.appendChild(el); //add field to field container
 										
 					el.appendChild(ConfigurationAPI.createEditableFieldElement(
-							recordFields[i],i));
+							recordFields[i],i,undefined /* depthIndex */,
+							_saveFieldValues[recordFields[i].fieldColumnName] /* initValue */));
 					
 					//add clear div
 					el = document.createElement("div");
@@ -1361,12 +1364,14 @@
 				
 				//for each field, set value
 				for(var i=0;i<recFieldValues.length;++i)
-				{
+				{					
 					ConfigurationAPI.setEditableFieldValue(
 							_fields[i],
 							recFieldValues[i].fieldValue,
 							i);
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
 				}
+				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
 			
@@ -1410,7 +1415,9 @@
 							_fields[selectedFieldIndex],
 							recFieldValues[i].fieldValue,
 							selectedFieldIndex);
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
 				}
+				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
 			
