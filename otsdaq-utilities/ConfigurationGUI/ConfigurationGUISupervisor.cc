@@ -606,6 +606,7 @@ try
 		std::string versionStr = CgiDataUtilities::getData(cgiIn, "version");  // from GET
 		int dataOffset = CgiDataUtilities::getDataAsInt(cgiIn, "dataOffset");  // from GET
 		int chunkSize  = CgiDataUtilities::getDataAsInt(cgiIn, "chunkSize");   // from GET
+		//chunkSize is currently ignored, could use to get a few rows at a time
 
 		std::string allowIllegalColumns =
 		    CgiDataUtilities::getData(cgiIn, "allowIllegalColumns");  // from GET
@@ -624,8 +625,14 @@ try
 		if(allTableInfo.find(tableName) != allTableInfo.end())
 		{
 			if(versionStr == "" &&  // take latest version if no version specified
-			   allTableInfo.at(tableName).versions_.size())
-				version = *(allTableInfo.at(tableName).versions_.rbegin());
+			   		allTableInfo.at(tableName).versions_.size())
+			{
+				// Start from the last element
+				auto it = allTableInfo.at(tableName).versions_.rbegin();  
+				if(it->isScratchVersion()) //do not allow SCRATCH_VERSION as default selection
+					++it;  // Move to the second-to-last element
+				version = *it;					
+			}
 			else if(versionStr.find(ConfigurationManager::ALIAS_VERSION_PREAMBLE) == 0)
 			{
 				// convert alias to version

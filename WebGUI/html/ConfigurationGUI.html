@@ -14201,7 +14201,7 @@
 			el.style.display = "none";
 
 			//set position and size
-			var w = isUpload ? 560 : 460;
+			var w = isUpload ? 660 : 460;
 			var h = 460;
 			ConfigurationAPI.setPopUpPosition(el, w /*w*/, h /*h*/);
 
@@ -14211,8 +14211,11 @@
 				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); return false;'>Cancel</a><br><br>";
 
 			str += "<div id='popUpDialog-div'>";
-			str += "Please select the member tables you would like to " +
-				type + ":<br><br>";
+			str += "Please select the member tables " + 
+				(isUpload?", and merge strategy, ":"") +
+				"you would like to " +
+				type + (isUpdate?" - for example, to fix out-of-date column names":"") +
+				":<br><br>";
 
 			str += "</div><br><br>";
 
@@ -14234,20 +14237,45 @@
 
 					str = "";
 					str += "Please select the member tables you would like to " +
-						type + " (member count = " + tableNames.length + "):<br><br>";
+						type + (isUpdate?" - for example, to fix out-of-date column names":"") +
+						" (member count = " + tableNames.length + "):<br><br>";
 
 					if (isUpload) 
 					{
-						str += "For uploading you have two approaches:<br><b>(a)</b> you can either select one or many files " +
-							"in your file browser, or <br><b>(b)</b> you can choose each file individually. <br><br>Choosing files individually " +
-							"allows you to have filename mismatches; choosing multiple files at once will upload tables by table name found in the file name.";
+						str += "For uploading, first choose the table merge strategy, and then select files-to-upload by approach (a) or (b):<br><b>(a)</b> you can either select one or many files " +
+							"in your file browser, or <br><b>(b)</b> you can choose each file individually. <br><br>Choosing files individually, as in <b>(b)</b>, " +
+							"allows you to have filename mismatches; choosing multiple files at once, as in <b>(a)</b>, will upload tables by table name found in the file name.";
 						str += "<br><br>";
+						
+						str += "Select your upload merge strategy: <br>";
+						str += "<select id='popUpDialog-uploadStyleSelect' style='width:360px'>";
+
+						var selectArr = [
+							"Replace all current records with uploaded records", 			//0
+							"Append all uploaded records to current table", 				//1
+							"Append only uploaded records without conflicting UIDs",		//2
+							"Append all uploaded records and replace conflicting UIDs",	//3
+							"Prepend all uploaded records to current table",				//4
+							"Prepend only uploaded records without conflicting UIDs",		//5
+							"Prepend all uploaded records and replace conflicting UIDs"	//6
+						];
+						for (var j = 0; j < selectArr.length; ++j)
+						{
+							str += "<option value='" + j + "'>";
+							str += selectArr[j];	//can display however
+							str += "</option>";
+						}
+						str += "</select>";
+
+						str += "<br><br>";
+
 						str += "<b>(a) Choose multiple files at once:</b><br>";
 						str += "<input type='file' multiple='multiple' id='uploadControlMultipleFiles' " +
 							"accept='.csv' enctype='multipart/form-data' />";
 
 						str += "<br><br>";
 						str += "<b>(b) Choose invidual files:</b><br>";
+
 					}
 					else //is download or update
 					{
@@ -14511,6 +14539,7 @@
 							'change', function (evt)
 							{
 								Debug.log("Multiple files chosen");
+								uploadedFiles = {}; //clear (in case of previous error/attempt)
 								var files = evt.target.files;
 
 								var fileArr = [];
@@ -14591,13 +14620,25 @@
 						var fileKeys = Object.keys(uploadedFiles);
 						if (fileKeys.length == 0) 
 						{
-							Debug.log("There were no selected upload files!", Debug.HIGH_PRIORITY);
+							Debug.err("There were no selected upload files!");
 							return;
 						}
 
 						//save as new version of table, track member versions
 						console.log("_memberMapForGroupSave", _memberMapForGroupSave);
 
+						var uploadStyle = document.getElementById("popUpDialog-uploadStyleSelect").value | 0;
+						Debug.log("CfgGUI localDoUpload uploadStyle = " + uploadStyle);
+						
+						var doReplace = uploadStyle == 0;
+						var doAppend = uploadStyle == 1 || uploadStyle == 2 || uploadStyle == 3;
+						Debug.log("CfgGUI localDoUpload doReplace = " + doReplace);
+						Debug.log("CfgGUI localDoUpload doAppend = " + doAppend);
+						Debug.info("Handling uploaded tables based on merge strategy '" + 
+							document.getElementById("popUpDialog-uploadStyleSelect").options[uploadStyle].innerText + ".'");
+
+						//Note: if this upload code changes, apply to popUpUploadCSVTableForm() => uploadTableFromCSV() => etc. 
+						
 						var fileKeyArr = [];
 						for (var fileKey in uploadedFiles)
 						{
@@ -14606,6 +14647,7 @@
 						}
 
 						localUploadMembers();
+						return;
 
 						////////////////////
 						//localUploadMembers ~~
@@ -14651,70 +14693,311 @@
 							var src = []; //src = [r][c]
 							for (var i = 0; i < srcRows.length; ++i)
 								src.push(srcRows[i].split(colDel));
-							console.log("src", src);
+							console.log("Upload src", src);
 
-							var dataStr = ""; // semi-colon(;) separated rows.. comma(,) separated entries within row
-							for (var r = 0; r < src.length; ++r) {
-								for (var c = 0; c < src[r].length; ++c) //skip row index column
-								{
-									dataStr += encodeURIComponent(src[r][c].
+							//replace special delimiters
+							for (var r = 0; r < src.length; ++r) 
+								for (var c = 0; c < src[r].length; ++c) //skip row index column								
+									src[r][c] = src[r][c].
 											replace(/\$\{OTS_FIELD_DELIMETER\}/g,colDel).
-											replace(/\$\{OTS_RECORD_DELIMETER\}/g,rowDel)) + ",";
-								}
-								dataStr += ";";
-							}
+											replace(/\$\{OTS_RECORD_DELIMETER\}/g,rowDel);
+								
 
-							var reqStr = "Request?RequestType=saveSpecificTable" +
-								"&dataOffset=" + _dataOffset +
-								"&chunkSize=" + (src.length) +
-								"&tableName=" + fileKey +
-								"&version=" + (-1) +
-								"&lookForEquivalent=" + (1) +
-								"&temporary=" + (0) +
-								"&tableComment=" +
-								encodeURIComponent("Uploaded table version");
-							console.log("dataStr",dataStr);
-							console.log("reqStr",reqStr);
+							var tableName = fileKey;
 
-							DesktopContent.XMLHttpRequest(reqStr, "data=" + dataStr,
-								function (req) 
+							//decide if need to load current member table
+							if(!doAppend && doReplace)
+								Debug.log("Do not need to load current member table",tableName);
+							else 
+							{								
+								//now modify final src based on current table and uploaded table
+
+								if (!_memberMapForGroupSave[tableName]) 
 								{
+									Debug.err("Table '" + tableName + "' cannot be uploaded to " +
+										"the group because it is not a member table.");
+									return;
+								}
 
-									var tableName = DesktopContent.getXMLValue(req, "savedName");
-									var version = DesktopContent.getXMLValue(req, "savedVersion");
+								Debug.log("Need to load current member table",
+									tableName,_memberMapForGroupSave[tableName]);
 
-									//save as new version of table, track member versions
-									if (!_memberMapForGroupSave[tableName]) 
+								DesktopContent.XMLHttpRequest("Request?RequestType=getSpecificTable" +
+									"&dataOffset=0&chunkSize=" + _MAX_CHUNK_SIZE +
+									"&allowIllegalColumns=1" +
+									"&tableName=" + tableName +
+									"&version=" + _memberMapForGroupSave[tableName],
+									"",
+									function(req)
 									{
-										Debug.log("Table '" + tableName + "' can not be uploaded to " +
-											"the group because it is not a member table.",
-											Debug.HIGH_PRIORITY);
+										//copied handling from specificTableRequestHandler
+										var xmlRows = req.responseXML.getElementsByTagName("CurrentVersionRows");
+										if (!xmlRows.length) 
+										{
+											Debug.err("The column names failed to load!<br>" +
+												"Go to the 'Table Editor' to check on the validity of the table '" +
+												tableName + "-v" + _memberMapForGroupSave[tableName] + "'...");
+											return;
+										}
+										var rows = req.responseXML.getElementsByTagName(
+											"CurrentVersionRows")[0].getElementsByTagName("Row");
+
+										var currCols = [];
+										//add data to cols										
+										{
+											var rowEntries;
+											for (var r = 0; r < rows.length; ++r) 
+											{
+												rowEntries = rows[r].getElementsByTagName("Entry");
+
+												currCols.push([]);
+												for (var c = 0; c < rowEntries.length; ++c)
+													currCols[currCols.length - 1].push(rowEntries[c].getAttribute("value"));
+											}
+										}
+										console.log("Existing cols", currCols);
+										console.log("Final src", src);
+
+										if(currCols.length && src.length && currCols[0].length != src[0].length)
+										{
+											Debug.err("Column count mismatch! The Table data uploaded to merge with table " +											
+												tableName + "-v" + _memberMapForGroupSave[tableName] + "' has " + 
+												src[0].length + " columns, and the existing member table version has " + 
+												currCols[0].lenght + " columns.");
+											return;
+										}
+
+										//now make final merged cols
+										var cols = [];										
+
+										var uploadStartRow = -1;
+										var existingStartRow = -1;
+										var uploadSize = -1;
+										var existingSize = -1;
+
+										if (!doAppend) //prepending or replacing data, so add first
+										{
+											uploadStartRow = cols.length;
+											localInsertUploadData();
+											uploadSize = cols.length - uploadStartRow;
+										}
+
+										if (!doReplace) //get current values from table
+										{
+											existingStartRow = cols.length;
+											localInsertCurrentData(_CONFIG_DATA_ROW_OFFSET);
+											existingSize = cols.length - existingStartRow;
+										}
+
+										if (doAppend) //appending or replacing data, so add last
+										{
+											uploadStartRow = cols.length;
+											localInsertUploadData();
+											uploadSize = cols.length - uploadStartRow;
+										}
+
+										var colTypeEls = req.responseXML.getElementsByTagName(
+											"CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnType");
+										
+										var colUID = -1;
+										for (var j = 0; j < colTypeEls.length; ++j)
+											if (colTypeEls[j].getAttribute("value") == "UID") 
+												{ colUID = j; break; }
+
+										if (colUID == -1)
+										{
+											Debug.err("Could not find UID column during upload!");
+											return;
+										}
+										
+
+										//now remove conflicting UIDs based on uploadStyle
+										if (uploadStyle != 1 && uploadStyle != 4) 
+										{
+											//delete conficts
+											for (var j = 0; j < uploadSize; ++j) 
+											{
+												//search for conflict
+												for (var r = 0; r < existingSize; ++r) 
+												{
+													if (cols[r + existingStartRow][colUID] ==
+														cols[j + uploadStartRow][colUID]) 
+													{
+														Debug.log("Found conflict");
+
+														if (uploadStyle == 2 || uploadStyle == 5)
+														{
+															Debug.log("Choosing current");
+															//remove from upload
+															cols.splice(j + uploadStartRow, 1);
+															if (uploadStartRow < existingStartRow)
+																--existingStartRow;
+															--uploadSize;
+															--j;
+														}
+														else if (uploadStyle == 3 || uploadStyle == 6) 
+														{
+															Debug.log("Choosing upload");
+															//remove from existing table
+															cols.splice(r + existingStartRow, 1);
+															if (uploadStartRow > existingStartRow)
+																--uploadStartRow;
+															--existingSize;
+															--r;
+														}
+
+														break; //stop search
+													}
+												}
+											} //end loop search for conclicts
+										} //end UID conflict handling
+
+
+										localSaveMergedTable(cols); 
 										return;
-									}
 
-									if (_memberMapForGroupSave[tableName] != version)
-										Debug.log("Modifying member map for table '" +
-											tableName + "' from v" + _memberMapForGroupSave[tableName] +
-											" to v" + version);
-									else
-										Debug.log("Uploaded member was equivalent for table '" +
-											tableName + "' v" + version);
-									_memberMapForGroupSave[tableName] = version;
-									console.log("_memberMapForGroupSave", _memberMapForGroupSave);
+										//localInsertUploadData ~~
+										function localInsertUploadData() 
+										{
+											Debug.log("localInsertUploadData()");
 
-									if (fileKeyArr.length)
-										localUploadMembers();
-									else 
+											for (var r = 0; r < src.length; ++r) 
+											{
+												cols.push([]);
+												for (var c = 0; c < src[r].length; ++c)
+													cols[cols.length - 1].push(src[r][c]);
+											}
+										} //end localInsertUploadData()
+										//-------------------------			
+
+
+										//localInsertCurrentData ~~
+										function localInsertCurrentData() 
+										{
+											Debug.log("localInsertCurrentData()");
+
+											for (var r = 0; r < currCols.length; ++r) 
+											{
+												cols.push([]);
+												for (var c = 0; c < currCols[r].length; ++c)
+													cols[cols.length - 1].push(currCols[r][c]);
+											}
+										}
+										//end localInsertCurrentData()
+										//-------------------------		
+
+
+
+
+
+										//FIRST, always get rows up to data offset
+										localInsertCurrentData(0, _CONFIG_DATA_ROW_OFFSET - 1);
+
+										var uploadStartRow = -1;
+										var existingStartRow = -1;
+										var uploadSize = -1;
+										var existingSize = -1;
+
+										if (!doAppend) //prepending or replacing data, so add first
+										{
+											uploadStartRow = rowOffset;
+											localInsertSourceData();
+											uploadSize = rowOffset - uploadStartRow;
+										}
+
+										if (!doReplace) //get current values from table
+										{
+											existingStartRow = rowOffset;
+											localInsertCurrentData(_CONFIG_DATA_ROW_OFFSET);
+											existingSize = rowOffset - existingStartRow;
+										}
+
+										if (doAppend) //appending or replacing data, so add last
+										{
+											uploadStartRow = rowOffset;
+											localInsertSourceData();
+											uploadSize = rowOffset - uploadStartRow;
+										}
+
+									}, 
+									0, //parameter 
+									0, true  //progressHandler, callHandlerOnErr
+								);
+
+								return;
+							} //end load current member table							
+							
+							//else if here using upload as is
+							console.log("Final src", src);
+							localSaveMergedTable(src); 
+							return;
+
+							////////////////////
+							//localSaveMergedTable ~~
+							function localSaveMergedTable(src) 
+							{
+								Debug.log("localSaveMergedTable()",src);
+								
+								var dataStr = ""; // semi-colon(;) separated rows.. comma(,) separated entries within row
+								for (var r = 0; r < src.length; ++r) 
+								{
+									for (var c = 0; c < src[r].length; ++c) //skip row index column									
+										dataStr += encodeURIComponent(src[r][c]) + ",";
+									dataStr += ";";
+								}
+
+								var reqStr = "Request?RequestType=saveSpecificTable" +
+									"&dataOffset=" + _dataOffset +
+									"&chunkSize=" + (src.length) +
+									"&tableName=" + fileKey +
+									"&version=" + (-1) +
+									"&lookForEquivalent=" + (1) +
+									"&temporary=" + (0) +
+									"&tableComment=" +
+									encodeURIComponent("Uploaded table version");
+								console.log("dataStr",dataStr);
+								console.log("reqStr",reqStr);
+
+								DesktopContent.XMLHttpRequest(reqStr, "data=" + dataStr,
+									function (req) 
 									{
-										Debug.log("New members have been created... now create group");
+										Debug.log("Handle merged table save result.");
 
-										popUpSaveNewGroupForm(
-											groupName,
-											groupKey /*sourceGroupKey*/,
-											2 /*sourceType*/);
-									}
-								}); //end saveSpecificTable request handler
+										var tableName = DesktopContent.getXMLValue(req, "savedName");
+										var version = DesktopContent.getXMLValue(req, "savedVersion");
 
+										//save as new version of table, track member versions
+										if (!_memberMapForGroupSave[tableName]) 
+										{
+											Debug.err("Table '" + tableName + "' can not be uploaded to " +
+												"the group because it is not a member table.");
+											return;
+										}
+
+										if (_memberMapForGroupSave[tableName] != version)
+											Debug.info("Modifying member map for table '" +
+												tableName + "' from v" + _memberMapForGroupSave[tableName] +
+												" to v" + version);
+										else
+											Debug.info("Resulting table data was equivalent for table '" +
+												tableName + "' v" + version);
+										_memberMapForGroupSave[tableName] = version;
+										console.log("_memberMapForGroupSave", _memberMapForGroupSave);
+
+										if (fileKeyArr.length)
+											localUploadMembers();
+										else 
+										{
+											Debug.info("New members have been created... Now use the Table Group save popup to finish creating your new group.");
+
+											popUpSaveNewGroupForm(
+												groupName,
+												groupKey /*sourceGroupKey*/,
+												2 /*sourceType*/);
+										}
+									}); //end saveSpecificTable request handler
+
+							} //end localSaveMergedTable() 
 
 						} //end localUploadMembers() 
 
@@ -15983,8 +16266,7 @@
 					}
 				}
 				rowOffset += src.length;
-			}
-			//end localInsertSourceData()
+			} //end localInsertSourceData()
 
 			//-------------------------			
 
@@ -16038,8 +16320,7 @@
 					}
 				}
 				rowOffset += (rowEnd - rowStart) + 1;
-			}
-			//end localInsertCurrentData(rowStart,rowEnd)
+			} //end localInsertCurrentData(rowStart,rowEnd)
 
 			//-------------------------		
 
@@ -16088,7 +16369,7 @@
 
 			if (colUID == -1)
 			{
-				Debug.log("Could not find UID column during upload!", Debug.HIGH_PRIORITY);
+				Debug.err("Could not find UID column during upload!");
 				return;
 			}
 
