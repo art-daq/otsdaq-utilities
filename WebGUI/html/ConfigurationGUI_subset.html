@@ -246,6 +246,8 @@
 		
 		//global vars for saving tables
 		var _modifiedTables;
+
+		var _saveFieldValues = {}; //field : value
 		
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
@@ -407,8 +409,7 @@
 			var str;
 			
 			var noMultiSelect = false; // true or false (false for multiselect functionality) 
-			var maintainPreviousSelections = true; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
-
+			
 			var vals = _subsetUIDs;//["One little piggy","two little piggies","three little piggies"];
 			var keys = [];
 			var types = [];
@@ -469,13 +470,13 @@
 					true /* requireCtrlMultiClick */);
 
 				
-			MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
+			MultiSelectBox.initMySelectBoxes(true /* clearPreviousSelections */, "RecordsGroupBox");
 
 			if(selectFirstRecord && vals.length)
 			{ //do after first init, otherwise does not seem to work
 				Debug.log("Selecting first record...");
 				MultiSelectBox.setSelectionElementByIndex(el,0,true);
-				MultiSelectBox.initMySelectBoxes(); //update display
+				MultiSelectBox.initMySelectBoxes(false, "RecordsGroupBox"); //update display
 			}
 			else if(loadSelectedRecord) //apply selectRecords
 			{
@@ -501,13 +502,12 @@
 					} //end record search loop
 				}
 				
-				MultiSelectBox.initMySelectBoxes(); //update display of all multi-select boxes
-									
+				MultiSelectBox.initMySelectBoxes(false /* clearPreviousSelections */, "RecordsGroupBox"); //update display of not of all multi-select boxes, only RecordsGroupBox
 			}
 			
 			//get grouping field values
 			//	for record list
-			_rightPaneFields.innerHTML = ""; //clear any existing fields
+			_rightPaneFields.innerHTML = ""; //clear any existing fields (for immediate user feedback)
 			
 			if(!vals.length)
 			{
@@ -550,6 +550,7 @@
 				//		- when clicked becomes selected element
 				//	 	- when pencil is clicked is edit mode
 				//		- tab should move from edit field to edit field
+				_rightPaneFields.innerHTML = ""; //clear any existing fields (in case parallel actions launched)
 				for(var i=0;i<recordFields.length;++i)
 				{
 					//create field
@@ -560,7 +561,8 @@
 					_rightPaneFields.appendChild(el); //add field to field container
 										
 					el.appendChild(ConfigurationAPI.createEditableFieldElement(
-							recordFields[i],i));
+							recordFields[i],i,undefined /* depthIndex */,
+							_saveFieldValues[recordFields[i].fieldColumnName] /* initValue */));
 					
 					//add clear div
 					el = document.createElement("div");
@@ -1001,7 +1003,7 @@
 				
 				
 				//create multi-select filter boxes
-				filterBoxesEl.setAttribute("style", "float:left;position:relative;"); //background-color:red;
+				filterBoxesEl.setAttribute("style", "float:left; position:relative; z-index:1"); //background-color:red; //z-index to get above record selection box
 				filterBoxesEl.style.display = defaultShowFilters?"block":"none";
 
 				var H = 150;
@@ -1024,8 +1026,7 @@
 						filterBoxesEl.appendChild(el);			
 						
 						var noMultiSelect = false; // true or false (false for multiselect functionality) 
-						var maintainPreviousSelections = false; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
-	
+							
 						var vals = _filterValsObj[i].fieldUniqueValueArray;//["One little piggy","two little piggies","three little piggies"];
 						var keys = [];
 						var types = [];
@@ -1109,6 +1110,7 @@
 
 		//=====================================================================================
 		//runFilter ~~
+		var _lastFilterStr = "";
 		function runFilter(selectFirstRecord,loadSelectedRecord) 
 		{
 			Debug.log("Run Filter");
@@ -1148,6 +1150,16 @@
 			//append global filters 
 			filterStr += _recordPreFilterList;
 			Debug.log("filterStr " + filterStr);
+
+			if(filterStr == _lastFilterStr)
+			{
+				Debug.log("No need to rerun filter");
+			
+				Debug.log("records found = " + _subsetUIDs.length);
+				console.log(_subsetUIDs);				
+				updateRecordsAndFields(selectFirstRecord,loadSelectedRecord);
+				return;
+			}				
 			
 			ConfigurationAPI.getSubsetRecords(
 					_subsetBasePath,
@@ -1155,8 +1167,11 @@
 					function(records)
 					{
 				_subsetUIDs = records;
+				_lastFilterStr = filterStr;
 				Debug.log("records found = " + records.length);
 				console.log(records);
+
+				//clear record selections
 				
 				updateRecordsAndFields(selectFirstRecord,loadSelectedRecord);
 					}, //end getSubsetRecords handler
@@ -1212,7 +1227,7 @@
 			//create TOP read/write buttons			
 			el = document.createElement("div");
 			var readWriteContainerStyle = "height:" + _RIGHT_PANE_RW_BTN_HEIGHT + "px;" + 
-					"overflow-x:auto; " +
+					"overflow-x:auto; overflow-y: hidden; " +
 					"white-space:nowrap;";
 			el.setAttribute("style", readWriteContainerStyle);
 			_rightPane.appendChild(el); //add field container link
@@ -1349,12 +1364,14 @@
 				
 				//for each field, set value
 				for(var i=0;i<recFieldValues.length;++i)
-				{
+				{					
 					ConfigurationAPI.setEditableFieldValue(
 							_fields[i],
 							recFieldValues[i].fieldValue,
 							i);
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
 				}
+				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
 			
@@ -1398,7 +1415,9 @@
 							_fields[selectedFieldIndex],
 							recFieldValues[i].fieldValue,
 							selectedFieldIndex);
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
 				}
+				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
 			

@@ -254,14 +254,6 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 			for(var i=0;i<argsInStr;++i)
 				str += arguments[i] + ' ';
 
-			//add call out labels to file [line] text blobs
-			var returnStr;
-
-			if(num < 4) //modify string for popup
-				returnStr = localCallOutDebugLocales(str);
-			if(returnStr)
-				str = returnStr;
-
 
 			if(Debug.level < 0) Debug.level = 0; //check for crazies, 0 is min level
 			if(Debug.mode && num <= Debug.level)
@@ -295,8 +287,10 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
 				var source = window.location.href;
 				source = source.substr(source.lastIndexOf('/'));
-				source = source.substr(0,source.indexOf('?'));
-				
+				var i = source.indexOf('?');
+				if(i > 0) source = source.substr(0,i);
+				else source = source.substr(0,source.indexOf(':'));				
+
 				if(useStrOnly)
 				{
  					console.log("%c" + type + "-Priority" +  
@@ -322,18 +316,39 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 					//pass arguments using special apply for arg consistency
 					console.log.apply(null,consoleArguments);
 				}
-//					console.log("%c" + type + "-Priority" +  
-//						":\t " + Debug.lastLog + " from " + source + ":\n" +
-//						Debug.lastLogger + "::\t",							 
-//						num == 0?"color:#F30;"	//chrome/firefox allow css styling
-//								:(num == 1?"color:#F70" //warn
-//										:(num < 99?"color:#092":"color:#333")),
-//										 arguments); 
+
 				Debug.lastLog = str;
-				Debug.lastLogger = ""; //clear for next
 
 				if(num < 4) //show all high priorities as popup!
+				{
+					//add call out labels to file [line] text blobs
+
+					//also add web source file for call out if not tooltip
+					if(num < 3)
+					{
+						source = Debug.lastLogger.substr(Debug.lastLogger.lastIndexOf('/WebPath/'));
+						var i = source.indexOf('?');
+						if(i > 0) source = source.substr(0,i);
+						else source = source.substr(0,source.indexOf(':'));
+						var line = Debug.lastLogger.substr(0,Debug.lastLogger.lastIndexOf(':'));						
+						line = line.substr(line.lastIndexOf(':'));
+						//get line number, not col number
+						source += line;
+						source = "|At client: " + source + " | \t";
+						console.log("source:",source);
+					}
+					else source = "";
+
+					var returnStr;					
+					//modify string for popup
+					returnStr = localCallOutDebugLocales(
+						source + str);						
+					if(returnStr) //in case of failure, leave alone
+						str = returnStr;
 					Debug.errorPop(str,num);
+				}
+				Debug.lastLogger = ""; //clear for next
+
 			}
 
 			/////////////////////////////////
@@ -355,7 +370,8 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 							returnStr = "";
 
 						//check if : is in a place that make sense (i.e., ":LINE |")
-						if((j = str.lastIndexOf(':',k-2)) <= i) //use k-2 to avoid selecting "err: |" scenarios
+						if((j = str.lastIndexOf(':',k-2)) <= i || //use k-2 to avoid selecting "err: |" scenarios
+							j < 6) 
 						{
 							//not a callout, so skip ahead
 							//previous chunk			
@@ -404,10 +420,11 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 							i = ff + ("</FILE>").length; //proceed after filename
 						} //end <FILE> callout handling
 
-						//look for icc, .cc, .cpp, .hh, and .h 
+						//look for icc, .cc, .cpp, .hh, and .h; and .js/.html
 						if((str[j-2] == '.' && str[j-1] == 'h') || 
-							(str[j-3] == '.' && (str[j-2] == 'h' || str[j-2] == 'c')) || 							
-							(str[j-4] == '.' && (str[j-3] == 'c' || str[j-3] == 'i') && (str[j-2] == 'p' || str[j-2] == 'c')))
+							(str[j-3] == '.' && (str[j-2] == 'h' || str[j-2] == 'c' || str[j-2] == 'j')) || 							
+							(str[j-4] == '.' && (str[j-3] == 'c' || str[j-3] == 'i') && (str[j-2] == 'p' || str[j-2] == 'c')) || 
+							(str[j-5] == '.' && (str[j-4] == 'h')))
 						{
 							//find beginning of blob (first non-file/c++ character)
 							for(l = j-3; l >= i; --l)
@@ -436,12 +453,12 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 							//previous chunk			
 							returnStr += str.substr(i,l-i);
 
-							if(returnStr[returnStr.length-1] != '\n')
+							if(i > 10 && returnStr[returnStr.length-1] != '\n')
 								returnStr += "<br>"; //make sure there is new line before label
 
 							//add start label
 							if(labelStr)
-								returnStr += "<br><b>" + labelStr + "</b>";
+								returnStr += (i > 10?"<br><b>":"") + labelStr + "</b>";
 
 							returnStr += //if filename, add link to CodeEditor
 								DesktopContent.htmlOpen("a", //start macro module table

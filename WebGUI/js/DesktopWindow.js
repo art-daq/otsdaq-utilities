@@ -209,7 +209,7 @@ else {
 			//apply minimum size requirements and maximized state
 			_w = _isMaximized?Desktop.desktop.getDesktopContentWidth():(w < _defaultWindowMinWidth?_defaultWindowMinWidth:w);
 			_h = _isMaximized?Desktop.desktop.getDesktopContentHeight():(h < _defaultWindowMinHeight?_defaultWindowMinHeight:h);
-			_x = _isMaximized?Desktop.desktop.getDesktopContentX():x;
+			_x = _isMaximized?Desktop.desktop.getDesktopContentX()+4:x;
 			_y = _isMaximized?Desktop.desktop.getDesktopContentY():y;
 			
 			//keep window within desktop content bounds

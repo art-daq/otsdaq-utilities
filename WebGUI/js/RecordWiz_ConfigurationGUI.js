@@ -208,9 +208,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	Debug.log("RecordWiz.wiz constructed");
 	RecordWiz.wiz = this; 
 	
-	var windowTooltip = "Welcome to the Record Wizard GUI. Here you can create new records for " +
+	var windowTooltip = "Welcome to the Record Creation Wizard GUI. Here you can create new records for " +
 		"your <i>otsdaq</i> system. \n\n" +
-		"The Record Wizard is presented as a step-by-step process that will walk you through creating the skeleton for your new record.\n\n" +
+		"The <b>Record Creation Wizard</b> is presented as a step-by-step process that will walk you through creating the skeleton for your new record.\n\n" +
 
 		"Briefly, here is a description of the steps: " +
 		"\n\t- 'What type of record do you want to add?'" +
@@ -258,8 +258,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	function xdaqContextTooltip()
 	{
 		DesktopContent.tooltip("XDAQ Contexts",
-			"The lowest level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Context. " + 
-			"What is a XDAQ Context? Why do I need a XDAQ Context? Do I want a new one for my " + _recordAlias + " or not?" + 
+			"What is a XDAQ Context? The lowest level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Context. " + 
+			"Why do I need a XDAQ Context? Do I want a new one for my " + _recordAlias + " or not?" + 
 			"<br><br>" +
 			"XDAQ Contexts are the fundamental executable program building blocks of <i>otsdaq</i>. " +
 			"A XDAQ Context runs a group of XDAQ Applications inside of it. If one of those XDAQ Applications crashes, " +
@@ -274,8 +274,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	function xdaqApplicationTooltip()
 	{
 		DesktopContent.tooltip("XDAQ Applications",
-				"The second level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Application. " + 
-				"What is a XDAQ Application? Why do I need a XDAQ Application? Do I want a new one for my " + _recordAlias + " or not?" + 
+				"What is a XDAQ Application? The second level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Application. " + 
+				"Why do I need a XDAQ Application? Do I want a new one for my " + _recordAlias + " or not?" + 
 				"<br><br>" +
 				"XDAQ Applications are server processes that can be controlled by <i>otsdaq</i> through network messages. " +
 				"Ther can be one or many XDAQ Applciation in a XDAQ Context. If one of those XDAQ Applications crashes, " +

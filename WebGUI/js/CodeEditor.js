@@ -77,7 +77,7 @@ if (1 || !Element.prototype.scrollIntoViewIfNeeded)
 
 //=====================================================================================
 //showTooltip ~~
-var windowTooltip = "Welcome to the Code Editor user interface. " +
+var windowTooltip = "Welcome to the <b>Code Editor</b> user interface. " +
 	"Edit your code, save it, and compile!\n\n" +
 	"Hover your mouse over the icons and buttons to see what they do. " +
 	"If you hover your mouse over the filename additional icons will appear for changing the filename, downloading, uploading, undo, and redo. The buttons in the top corners are described below followed by hot-keys:\n\n" +
@@ -145,7 +145,7 @@ var windowTooltip = "Welcome to the Code Editor user interface. " +
 	"</INDENT>"
 	;
 
-var windowViewModeTooltip = "Welcome to the Code Viewer user interface. " +
+var windowViewModeTooltip = "Welcome to the <b>Code Viewer</b> user interface. " +
 	"You will only be able to view codes without modifying. Your text inputs won't be saved. " +
 	"Contact your administrator if you think you should have modification access."+
 	"<INDENT>\n" +
@@ -170,10 +170,12 @@ var windowViewModeTooltip = "Welcome to the Code Viewer user interface. " +
 
 appMode = "Code Editor";
 
+CodeEditor.showTooltipPrepend = "";
 CodeEditor.showTooltip = function(alwaysShow)
 {
 	DesktopContent.tooltip(
-		(alwaysShow? "ALWAYS" : appMode), windowTooltip); 
+		(alwaysShow? "ALWAYS" : appMode), 
+		CodeEditor.showTooltipPrepend + windowTooltip); 
 	
 	DesktopContent.setWindowTooltip(windowTooltip);
 } //end showTooltip()
@@ -431,7 +433,6 @@ CodeEditor.create = function(standAlone) {
 		}
 
 
-		CodeEditor.showTooltip(_STAND_ALONE);
 		
 		//proceed
 		
@@ -472,16 +473,22 @@ CodeEditor.create = function(standAlone) {
 				{	
 			console.log("getAllowedExtensions",req,errStr);
 			
+			CodeEditor.showTooltipPrepend = "";
 			if(!_READ_ONLY && !req)
 			{
 				if(DesktopContent._sequence)
-					Debug.log("Assuming read-only access (remember the wiz mode sequence access code must be at least 8 characters to allow write access)!\n\nReverting to read-only mode.", Debug.WARN_PRIORITY);
+					CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember the wiz mode sequence access code must be at least 8 characters to allow write access)!\n\nReverting to read-only mode.\n\n";
 				else
-					Debug.log("Assuming read-only access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.", Debug.WARN_PRIORITY);
+					CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
+				Debug.log(CodeEditor.showTooltipPrepend);
 				_READ_ONLY = true;
+
+				CodeEditor.showTooltip(_STAND_ALONE);
 				init();
 				return;
-			}			
+			}	
+			
+			CodeEditor.showTooltip(_STAND_ALONE);		
 
 			if(errStr && errStr != "")
 				Debug.log(errStr,Debug.HIGH_PRIORITY);
@@ -4630,6 +4637,15 @@ CodeEditor.create = function(standAlone) {
 		var c = e.key;
 		Debug.log("keydown c=" + keyCode + " " + c + " shift=" + e.shiftKey + 
 				" ctrl=" + e.ctrlKey + " command=" + _commandKeyDown);
+
+		//ignore and bring back Debog popup
+		if(e.shiftKey && c == "Escape")
+		{			
+			e.preventDefault();
+			e.stopPropagation();
+			try{ Debug.bringBackErrorPop();	} catch(e){;}
+			return;
+		}
 		
 		//set timeout for decoration update
 		CodeEditor.editor.startUpdateHandling(forPrimary);			

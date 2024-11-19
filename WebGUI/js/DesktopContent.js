@@ -98,7 +98,7 @@
 //			dialogWidth [optional], cancelFunc [optional], yesButtonText [optional],
 //			noAutoComplete [optional], defaultUserInputValue [optional], 
 //			cancelButtonText [optional], wantMultilineInput [optional])
-//		DesktopContent.tooltip(uid,tip)
+//		DesktopContent.tooltip(uid,tip,alwaysShow)
 //		DesktopContent.setWindowTooltip(tip)
 //		DesktopContent.getWindowWidth()
 //		DesktopContent.getWindowHeight()
