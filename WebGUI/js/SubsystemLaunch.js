@@ -1842,8 +1842,40 @@ SubsystemLaunch.create = function() {
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" || 
 			SubsystemLaunch.iterator.activePlanStatus == "Error"))
 		{
-			//should never happen!
-			Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
+			if(SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
+			{
+				DesktopContent.popUpVerification( 
+					"There does not appear to be an active Run; do you want to Halt anyway?",
+					function()
+					{
+						Debug.log("User chose to halt!");
+	
+						window.clearTimeout(_getStatusTimer);
+						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+	
+						//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
+						DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+								"&StateMachine=iterateHalt", //end get data 
+								"", //end post data
+								function(req) //start handler
+								{
+							Debug.log("stop() iterateHalt handler ");
+							window.clearTimeout(_getStatusTimer);
+							_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+							
+								}, //end handler
+								0, //handler param
+								0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+								true /*targetGatewaySupervisor*/);
+	
+					},
+					0,"#efeaea",0,"#770000"); //end popUpVerification
+			}
+			else
+			{
+				//should never happen!
+				Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
+			}
 		}
 		else if(SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
 		{
