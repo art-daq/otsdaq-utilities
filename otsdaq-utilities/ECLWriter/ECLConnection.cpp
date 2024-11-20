@@ -180,6 +180,7 @@ bool ECLConnection::Post(ECLEntry_t& e)
 	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, estr);
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, fullURL.c_str());
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // Allow redirects
 	//      curl_easy_setopt(curl_handle, CURLOPT_VERBOSE,1);
 
 	// send all data to this function
@@ -196,21 +197,30 @@ bool ECLConnection::Post(ECLEntry_t& e)
 
 	if(result != CURLE_OK)
 	{
-		__COUT_ERR__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
-		return false;
+		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
+
+		__COUTT__ << "ECL Cleanup" << std::endl;
+		// cleanup curl stuff
+		curl_easy_cleanup(curl_handle);
+		curl_slist_free_all(headers);
+		curl_global_cleanup();
+		__SS_THROW__;
 	}
-	else if(responseBuffer.find("Error") != std::string::npos)
-	{
-		__COUT__ << "Error found in request: " << responseBuffer << __E__;
-		return false;
-	}
-	__COUTV__(responseBuffer);
-	__COUT__ << "ECL Cleanup" << std::endl;
+	
+	__COUTT__ << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	curl_slist_free_all(headers);
-
 	curl_global_cleanup();
+	
+	if(responseBuffer.find("Error") != std::string::npos || 
+		responseBuffer.find("301 Moved Permanently") != std::string::npos)
+	{
+		__SS__ << "Error found in request: " << responseBuffer << __E__;
+		__SS_THROW__;
+	}
+
+	__COUTV__(responseBuffer);
 
 	return true;
 }

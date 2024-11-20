@@ -118,12 +118,19 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 
 	form.field(fields);
 	eclEntry.form(form);
-	ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
-	if(!eclConn.Post(eclEntry))
+	try
 	{
-		retStr = "Failure";
+		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		if(!eclConn.Post(eclEntry))
+			retStr = "Failure";
 	}
-
+	catch(const std::runtime_error& e)
+	{
+		__SS__ << "Exception caught during Logbook ECL connection: " << e.what();
+		__COUT_ERR__ << ss.str();
+		retStr = ss.str();
+	}	
+	
 	// fill return parameters
 	SOAPParameters retParameters("Status", retStr);
 
