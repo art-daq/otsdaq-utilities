@@ -331,7 +331,14 @@
 					pref_username + "</b></i> on " + ots_owner + " ots" +
 					(ots_remote_address?(" (" + ots_remote_address + ")"):"") +
 					"." + "<br><br>" + 
-					"Your ots access permissions are '" + desktop_user_permissions + ".'";
+					"Your ots access permissions are '" + desktop_user_permissions + ".'" + 
+					"<br><br>" + 
+					((_usernameWithLock && _usernameWithLock != "")?
+					(_usernameWithLock + " currently has the " + ots_owner + " ots lock. " + 
+						(_usernameWithLock == pref_username?" <a onclick='lockToUsername(-1,false,\"" +
+						pref_username + "\");'>Click</a> to unlock.":"")):
+					(ots_owner + " ots is currently unlocked. <a onclick='lockToUsername(-1,true,\"" +
+						pref_username + "\");'>Click</a> to lock."));
 
 				//pass preferences to Desktop	but remove user accounts from message to Desktop
 				if(_mailbox)
@@ -1127,13 +1134,21 @@
 			} //end reallyDelete()
 
 			//=====================================================================================
-			function lockToUsername(i, lock)
+			function lockToUsername(i, lock, username)
 			{
-				Debug.log("Settings lockToUsername " + _accountsArray[0][i].getAttribute('value') + " lock " + lock);	
-
 				var data = "";
 				data += "lock=" + (lock?"1":"0") + "&";
-				data += "username=" + _accountsArray[0][i].getAttribute('value');
+
+				if(username)
+				{
+					Debug.log("Settings lockToUsername " + username + " lock " + lock);	
+					data += "username=" + username;
+				}
+				else
+				{
+					Debug.log("Settings lockToUsername " + _accountsArray[0][i].getAttribute('value') + " lock " + lock);	
+					data += "username=" + _accountsArray[0][i].getAttribute('value');
+				}
 
 				_triedNewAccount = false;
 				
