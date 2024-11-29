@@ -34,18 +34,16 @@ void ChatSupervisor::destroy(void)
 	// called by destructor
 }
 
-////==============================================================================
-// void ChatSupervisor::defaultPage(xgi::Input* cgiIn, xgi::Output* out)
-//{
-//	out->getHTTPResponseHeader().addHeader("Access-Control-Allow-Origin","http://correlator2.fnal.gov");
-//	out->getHTTPResponseHeader().addHeader("Pragma", "no-cache");
-//
-//
-//
-//	*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
-//	        "src='/WebPath/html/Chat.html?urn="
-//	     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
-// } //end defaultPage()
+//==============================================================================
+void ChatSupervisor::defaultPage(xgi::Input* cgiIn, xgi::Output* out)
+{
+     out->getHTTPResponseHeader().addHeader("Access-Control-Allow-Origin","*");
+     out->getHTTPResponseHeader().addHeader("Pragma", "no-cache");
+
+     *out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
+             "src='/WebPath/html/Chat.html?urn="
+          << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+ } //end defaultPage()
 
 //==============================================================================
 // forceSupervisorPropertyValues
@@ -66,7 +64,7 @@ void ChatSupervisor::request(const std::string& requestType,
                              HttpXmlDocument&   xmlOut,
                              const WebUsers::RequestUserInfo& /*userInfo*/)
 {
-	//__COUT__ << "requestType: " << requestType << std::endl;
+	__COUTVS__(40,requestType);
 
 	// Commands:
 	// RefreshChat
@@ -143,7 +141,7 @@ void ChatSupervisor::insertActiveUsers(HttpXmlDocument* xmlOut)
 //		each new user causes update to last index
 //	if lastUpdateIndex is current, return nothing
 //	else return full chat user list and new chats
-//	(note: lastUpdateIndex==0 first time and returns only user list. no chats)
+//	(note: lastUpdateIndex==0 first time and returns user list. and all history chats)
 void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
                                        uint64_t           lastUpdateIndex,
                                        const std::string& user)
@@ -164,15 +162,18 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 	for(uint64_t i = 0; i < ChatUsers_.size(); ++i)
 		xmlOut->addTextElementToParent("chat_user", ChatUsers_[i], "chat_users");
 
-	if(!lastUpdateIndex)  // lastUpdateIndex == 0, so just give the <user> entered chat
-	                      // message only
-		lastUpdateIndex = ChatHistoryIndex_[ChatHistoryIndex_.size() - 1] -
-		                  1;  // new user will then get future chats
+	//Changed to give full history!
+	// if(!lastUpdateIndex)  // lastUpdateIndex == 0, so just give the <user> entered chat
+	//                       // message only
+	// 	lastUpdateIndex = ChatHistoryIndex_[ChatHistoryIndex_.size() - 1] -
+	// 	                  1;  // new user will then get future chats
 
 	// get all accounts
 	xmlOut->addTextElementToData("chat_history", "");
 	for(uint64_t i = 0; i < ChatHistoryEntry_.size(); ++i)  // output oldest to new
 	{
+		__COUTT__ << "Chat[" << i << "]: " << 
+			ChatHistoryIndex_[i] << " vs " << lastUpdateIndex << __E__;
 		if(isChatOld(ChatHistoryIndex_[i], lastUpdateIndex))
 			continue;
 

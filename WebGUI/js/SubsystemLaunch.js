@@ -630,9 +630,12 @@ SubsystemLaunch.create = function() {
 						else if(fieldIds[i] == "action")
 						{
 							str += "<select id='subsystem_" + fieldIds[i] + 
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;' "+ 
+								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+ 								
+								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;' " +
 								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
-							str += "<option selected>Select an action:</option>";
+							str += "<option selected>Select an action for &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
 							str += "<option >Configure</option>";
 							// str += "<option >Start</option>";
 							// str += "<option >Stop</option>";
@@ -667,6 +670,8 @@ SubsystemLaunch.create = function() {
 						{
 							str += "<select id='subsystem_" + fieldIds[i] + 
 								"_select_" + s + "' style='padding: 4px; font-size: 14px;' "+ 
+								"title='Click to select the approach/mode for following the top-level Finite State Machine for subsystem &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;' " +
 								"onchange='SubsystemLaunch.launcher.handleSubsystemFsmModeSelect(this.value, " + s + ");'>";							
 							for(var c=0; c < SubsystemLaunch.SUBSYSTEM_FSM_MODES.length; ++c)							
 								str += "<option " + (SubsystemLaunch.subsystems[s].fsmMode == 
@@ -714,7 +719,7 @@ SubsystemLaunch.create = function() {
 			h = _LAUNCH_MIN_W;
 
 		var redrawMode = 1;
-		if(w > 1500)
+		if(w > 2400)
 			redrawMode = 2;
 		Debug.log("redrawWindow to " + w + " - " + h,redrawMode,_lastRedrawMode);	
 		
@@ -1157,8 +1162,9 @@ SubsystemLaunch.create = function() {
 			// progressNum = (Math.random() * 200)|0; //for debugging
 			// if (progressNum > 100) progressNum = 100;  //for debugging
 
-			if (progressNum == 100) //show solid state color
-			{							
+			if (progressNum == 100 || statusString == "Failed") //show solid state color
+			{					
+				progressNum = 100; //force to 100 on Failed		
 				switch (statusString) 
 				{
 					case "Initial":
@@ -1182,7 +1188,8 @@ SubsystemLaunch.create = function() {
 
 						cell.style.cursor = "pointer";
 						cell.onclick =
-							function () {
+							function () 
+							{
 								Debug.log("Cell " + this.id);
 
 								if(this.id == "systemStatusState")
@@ -1198,7 +1205,7 @@ SubsystemLaunch.create = function() {
 								Debug.err("From Subsystem '" +
 									SubsystemLaunch.subsystems[s].name + "'... " + 
 									SubsystemLaunch.subsystems[s].status);
-							};
+							}; //end onclick()
 						break;
 					default: cell.style.background = "";
 				} // end of switch	

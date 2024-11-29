@@ -60,6 +60,7 @@ else {
         var _numOfIcons = 0;
         
         var _deepClickTimer = 0;
+		var _iconInFolderWasClicked = false;
         
         var _folders = [{},[]]; // a folder is a an Object of subfolders and an array of icons
         					//	It has an array of icon objects (in case icon names are not unique,
@@ -528,6 +529,8 @@ else {
       		
       		this.closeFolder(); //close any open folders
 
+			_iconInFolderWasClicked = false; //reset for new folder
+
       		var div = document.createElement("div");
       		div.setAttribute("class", "DesktopIcons-folderDiv");
       		div.style.padding = "0 5px 5px 12px";
@@ -549,7 +552,7 @@ else {
       		_openFolderElement = div;
       		
       		this.openSubFolder(folderName);
-      	}
+      	} //end this.openFolder()
 
       	//=====================================================================================
       	//this.openSubFolder ~~
@@ -690,11 +693,15 @@ else {
 					str,
 					vals,keys,types,
 					"Desktop.desktop.icons.clickFolderContents",
-					noMultiSelect,0,imgURLs,
+					noMultiSelect,
+					0, //"Desktop.desktop.icons.mouseOverFolderContents"
+					imgURLs,
 					"Desktop.desktop.icons.mouseDownFolderContents",
-					"Desktop.desktop.icons.mouseUpFolderContents");
+					"Desktop.desktop.icons.mouseUpFolderContents",
+					0,0, //requireCtrlMultiClick,titles,
+					"Desktop.desktop.icons.mouseMoveFolderContents");
       		MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
-      	}
+      	} //end this.openSubFolder()
 
       	//=====================================================================================
       	//this.closeFolder ~~
@@ -716,24 +723,26 @@ else {
       	//=====================================================================================
       	//this.isFolderOpen ~~
       	this.isFolderOpen = function() { return _openFolderElement; }
+      	//=====================================================================================
+      	//this.wasFolderIconClicked ~~
+      	this.wasFolderIconClicked = function() { return _iconInFolderWasClicked; }
 
       	//=====================================================================================
       	//this.clickFolderContents ~~
-      	this.clickFolderContents = function(el) {
-      		
+      	this.clickFolderContents = function(el) 
+		{  
             var i = MultiSelectBox.getSelectedIndex(el); 
             var selArr = MultiSelectBox.getSelectionArray(el);
             var val = el.textContent;
             var type = el.getAttribute("type-value");
             var key = el.getAttribute("key-value")|0;
 
+			Debug.log("Clicked Folder Content item",val);
 
             MultiSelectBox.dbg("Chosen element index:",i,            		
             		" value:",val,
 					" key:",key,
 					" type:",type);
-
-
 										
             if(type == "icon")
             {
@@ -743,28 +752,47 @@ else {
 				//add folder path - to name
 				var folderPath = _openFolderPath.length > 1?(_openFolderPath + "/"):"";
             	Desktop.desktop.addWindow(folderPath + target[0],"",target[2],target[3]);
+
             	//this.closeFolder(); 
+				_iconInFolderWasClicked = true; //set flag to facilitate closing folder
             }
             else
             	this.openSubFolder(val);
-      	}
+      	} //end this.clickFolderContents()
+
+      	//=====================================================================================
+      	//this.mouseMoveFolderContents ~~
+      	this.mouseMoveFolderContents = function(el,event) 
+		{
+      		event.stopPropagation();
+			//clear timer to keep folder popup open a bit longer
+			if(Desktop._openFolderTimer) 
+			{
+				window.clearTimeout(Desktop._openFolderTimer);
+				Desktop._openFolderTimer = 0;
+				Debug.log("Canceling close folder timer due to user movement.");
+			}
+			return false;
+      	} //end this.mouseMoveFolderContents()
 
       	//=====================================================================================
       	//this.mouseUpFolderContents ~~
       	//	this functionality should mirror addIcon()
-      	this.mouseUpFolderContents = function(el,event) {
+      	this.mouseUpFolderContents = function(el,event) 
+		{
       		if(this.deepClickTimer)
       		{
       			window.clearTimeout(this.deepClickTimer);
       			this.deepClickTimer = 0;
       		}
-      	}
+      	} //end this.mouseUpFolderContents()
 
       	//=====================================================================================
       	//this.mouseDownFolderContents ~~
       	//	this functionality should mirror local function
       	//	deepClickHandler() in addIcon()
-      	this.mouseDownFolderContents = function(el,event) {
+      	this.mouseDownFolderContents = function(el,event) 
+		{
             var i = MultiSelectBox.getSelectedIndex(el); 
             var selArr = MultiSelectBox.getSelectionArray(el);
             var val = el.textContent;
@@ -818,7 +846,7 @@ else {
 
             },500); //end timeout handler
 
-      	}
+      	} //end this.mouseDownFolderContents()
 		
 		//------------------------------------------------------------------
 		//handle class construction ----------------------

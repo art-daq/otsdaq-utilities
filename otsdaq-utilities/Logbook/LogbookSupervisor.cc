@@ -161,13 +161,13 @@ void LogbookSupervisor::init(void)
 	getActiveExperiment();  // init active experiment
 	__COUT__ << "Active Experiment is " << activeExperiment_ << std::endl;
 	mostRecentDayIndex_ = 0;
-}
+} //end init()
 
 //==============================================================================
 void LogbookSupervisor::destroy(void)
 {
 	// called by destructor
-}
+} //end destroy()
 
 //==============================================================================
 void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
@@ -177,7 +177,7 @@ void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
 	     << "&active_experiment=" << activeExperiment_ << "'></frameset></html>";
-}
+} //end defaultPage()
 
 //==============================================================================
 // setSupervisorPropertyDefaults
@@ -191,7 +191,7 @@ void LogbookSupervisor::setSupervisorPropertyDefaults()
 	        "*=1 | CreateExperiment=-1 | RemoveExperiment=-1 | GetExperimentListAdmin=-1 "
 	        "| SetActiveExperiment=-1" +
 	        " | AdminRemoveRestoreEntry=-1");
-}
+} //end setSupervisorPropertyDefaults()
 
 //==============================================================================
 // forceSupervisorPropertyValues
@@ -204,10 +204,9 @@ void LogbookSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
-	//	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NeedUsernameRequestTypes,
-	//			"CreateExperiment | RemoveExperiment | PreviewEntry |
-	// AdminRemoveRestoreEntry");
-}
+		CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
+				"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
+} //end forceSupervisorPropertyValues()
 
 //==============================================================================
 //	request
@@ -226,7 +225,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	//	RefreshLogbook
 	//	PreviewEntry
 	//	ApproveEntry
-	//	AdminRemoveRestoreEntr
+	//	AdminRemoveRestoreEntry
 
 	//
 	//	cgicc::Cgicc cgiIn(in);
@@ -423,7 +422,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
-}
+} //end request()
 
 //==============================================================================
 //	request
@@ -462,7 +461,7 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
-}
+} //end request()
 
 //==============================================================================
 // xoap::MakeSystemLogEntry
@@ -550,7 +549,7 @@ XOAP_CLEANUP:
 
 	return SOAPUtilities::makeSOAPMessageReference("SystemLogEntryStatusResponse",
 	                                               retParameters);
-}
+} //end MakeSystemLogEntry()
 
 //
 ////==============================================================================
@@ -616,7 +615,7 @@ std::string LogbookSupervisor::getActiveExperiment()
 	}
 
 	return activeExperiment_;
-}
+} //end getActiveExperiment()
 
 //==============================================================================
 // setActiveExperiment
@@ -649,7 +648,7 @@ void LogbookSupervisor::setActiveExperiment(std::string experiment)
 	if(entryNeeded)
 		theRemoteWebUsers_.makeSystemLogEntry(
 		    "Experiment was made active.");  // make system logbook entry
-}
+} //end setActiveExperiment()
 
 //==============================================================================
 // validateExperimentName
@@ -668,7 +667,7 @@ bool LogbookSupervisor::validateExperimentName(std::string& exp)
 		}  // remove illegal chars and rewind i
 
 	return true;
-}
+} //end validateExperimentName()
 
 //==============================================================================
 // getExperiments
@@ -701,7 +700,7 @@ void LogbookSupervisor::getExperiments(HttpXmlDocument* xmlOut, std::ostringstre
 		if(out)
 			*out << exps[i] << std::endl;
 	}
-}
+} //end getExperiments()
 
 //==============================================================================
 // createExperiment
@@ -815,7 +814,7 @@ void LogbookSupervisor::createExperiment(std::string      experiment,
 	if(xmlOut)
 		xmlOut->addTextElementToData(
 		    XML_ADMIN_STATUS, "Experiment, " + experiment + ", successfully created.");
-}
+} //end createExperiment()
 
 //==============================================================================
 // webUserSetActiveExperiment
@@ -863,7 +862,7 @@ void LogbookSupervisor::webUserSetActiveExperiment(std::string      experiment,
 		xmlOut->addTextElementToData(
 		    XML_ADMIN_STATUS,
 		    "Active experiment set to " + experiment + " successfully.");
-}
+} //end webUserSetActiveExperiment()
 
 //==============================================================================
 // removeExperiment
@@ -934,13 +933,13 @@ void LogbookSupervisor::removeExperiment(std::string      experiment,
 	if(xmlOut)
 		xmlOut->addTextElementToData(
 		    XML_ADMIN_STATUS, "Experiment, " + experiment + ", successfully removed.");
-}
+} //end removeExperiment()
 
 //==============================================================================
 //	refreshLogbook
 //		returns all the logbook data for active experiment from starting date and back in
 // time for 			duration total number of days.
-//		e.g. data = today, and duration = 1 returns logbook for today from active
+//		e.g. date = today, and duration = 1 returns logbook for today from active
 // experiment 		The entries are returns from oldest to newest
 void LogbookSupervisor::refreshLogbook(time_t              date,
                                        unsigned char       duration,
@@ -1078,7 +1077,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_MOST_RECENT_DAY,
 		                             dayIndexStr);  // send most recent day index
-}
+} //end refreshLogbook()
 
 //==============================================================================
 //	cleanUpPreviews
@@ -1133,7 +1132,7 @@ void LogbookSupervisor::cleanUpPreviews()
 	}
 
 	closedir(dir);
-}
+} //end cleanUpPreviews()
 
 //==============================================================================
 //	savePostPreview
@@ -1251,7 +1250,7 @@ void LogbookSupervisor::savePostPreview(std::string&                        subj
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_PREVIEW_INDEX,
 		                             "1");  // 1 indicates is a preview post
-}
+} //end savePostPreview()
 
 //==============================================================================
 //	movePreviewEntry
@@ -1345,7 +1344,7 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 	sysCmd = "rm -rf " + previewPath;
 	__COUT__ << sysCmd << std::endl << std::endl;
 	system(sysCmd.c_str());
-}
+} //end movePreviewEntry()
 
 //==============================================================================
 //	validateUploadFileType
@@ -1357,7 +1356,7 @@ std::string LogbookSupervisor::validateUploadFileType(const std::string fileType
 			return matchingFileUploadTypes_[i];  // found and done
 
 	return "";  // not valid, return ""
-}
+} //end validateUploadFileType()
 
 //==============================================================================
 //	escapeLogbookEntry
@@ -1366,7 +1365,7 @@ std::string LogbookSupervisor::validateUploadFileType(const std::string fileType
 void LogbookSupervisor::escapeLogbookEntry(std::string& /*entry*/)
 {
 	// NOTE: should already be taken care of by web gui javascript! do we care to check?
-}
+} //end escapeLogbookEntry()
 
 //==============================================================================
 //	hideLogbookEntry
@@ -1466,4 +1465,4 @@ void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
 	}
 	logXml.saveXmlDocument(logPath);
 	__COUT__ << "Success." << std::endl;
-}
+} //end hideLogbookEntry()

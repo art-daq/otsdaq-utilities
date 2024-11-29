@@ -170,8 +170,6 @@ void MacroMakerSupervisor::destroy(void)
 //		override to force supervisor property values (and ignore user settings)
 void MacroMakerSupervisor::forceSupervisorPropertyValues()
 {
-	//	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NeedUsernameRequestTypes,
-	//			"getPermission");
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -1898,6 +1896,14 @@ void MacroMakerSupervisor::loadFEHistory(HttpXmlDocument&   xmldoc,
 
 	std::ifstream read(fileName.c_str());
 	__SUP_COUT__ << fileName << __E__;
+
+	if(!read.is_open() && username != WebUsers::DEFAULT_ADMIN_USERNAME)
+	{
+		__SUP_COUT__ << "Unable to open FE history.hist.. Defaulting to admin's FE history as starting point." << __E__;
+
+		fileName = MACROS_HIST_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/" + "FEhistory.hist";
+		read.open(fileName.c_str());
+	}
 
 	if (read.is_open())
 	{

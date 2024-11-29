@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-		<title>Logbook</title>
+		<title>Logbook</title>		
 
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
 		<style type="text/css">			
@@ -433,9 +433,12 @@
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 			
+			//=====================================================================================
 			//init called once body has loaded
-			function init() {	
-				
+			function init() 
+			{	
+				Debug.log("init()");
+
 				//init area elements
 				for(var i=0;i<_AREAS.length;++i)
 					_areaEls[i] = document.getElementById(_AREAS[i] + 'Area');
@@ -460,8 +463,9 @@
 
 				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
 						"RequestType=GetExperimentList", handleGetExperimentListRequest);					
-			}	
+			} //end init()
 
+			//=====================================================================================
 			//setActiveExperiment ~
 			function setActiveExperiment(experiment) {					
 			    Debug.log("Logbook setActiveExperiment to " + experiment);
@@ -472,6 +476,7 @@
 					currentExperimentHeader.innerHTML = "<font color='white'>Active Experiment is</font> " + _activeExperiment;
 			}			
 			
+			//=====================================================================================
 			//redrawLogbook ~
 			function redrawLogbook() {	
 			    Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
@@ -498,6 +503,7 @@
 			    redrawExpandButtons();
 			}
 			
+			//=====================================================================================
 			//redrawLogbook ~
 			function redrawExpandButtons() {	
 				
@@ -520,12 +526,14 @@
 				}
 			}
 			
+			//=====================================================================================
 			//redrawLogbook ~
 			function toggleArea(i) {	
 				_isAreaExpanded[i] = !_isAreaExpanded[i];
 			    redrawExpandButtons();
 			}
 			
+			//=====================================================================================
 			//fileSelected ~
 			function fileSelected() {
 				var el = document.getElementById('fileToUpload');
@@ -564,6 +572,7 @@
 					fileTypeConcat.substr(0,20) + (fileTypeConcat.length > 20?"...":"");
 			}
             
+			//=====================================================================================
 			//previewPost ~~
 			//	preview user post before submitting to logbook
 			//	hide input, show preview with scroll
@@ -595,6 +604,7 @@
 
 			}
 
+			//=====================================================================================
 			//cancelPost ~~
 			function cancelPost(previewNum) {
 				Debug.log("Logbook cancelPost " );
@@ -605,6 +615,7 @@
 				document.getElementById('PreviewStatus').innerHTML = "Post cancelled.";
 			}
 
+			//=====================================================================================
 			//postToLogbook ~~
 			function postToLogbook(previewNum) {
 				Debug.log("Logbook postToLogbook " );
@@ -619,6 +630,7 @@
 				refreshLogbook();				
 			}
             
+			//=====================================================================================
 			//convertForServer ~
 			//	replace server reserved characters with %<hex> equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
@@ -633,6 +645,7 @@
 				 .replace(/  /g, "%20%20");				
 			}
 			
+			//=====================================================================================
 			//convertForClient ~
 			//	replace server reserved characters with html equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
@@ -648,6 +661,7 @@
 			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
 			}
 			
+			//=====================================================================================
 			//uploadToServer ~~
 			//	upload logbook entry to server.
 			//	Used to upload as temporary previewable post
@@ -683,7 +697,7 @@
                 xhr.send(fd);
 			}
 
-
+			//=====================================================================================
 			//uploadProgress ~~
 			function uploadProgress(evt) {
 				if (evt.lengthComputable) {
@@ -697,17 +711,20 @@
 				}
 			}
 
+			//=====================================================================================
 			//uploadComplete ~
 			// This event is raised when the server send back a response
 			function uploadComplete(evt) {
 				Debug.log("Logbook uploadComplete " +  evt.target.responseText);
 			}
 
+			//=====================================================================================
 			//uploadFailed ~
 			function uploadFailed(evt) {
 				Debug.log("There was an error attempting to upload the file.");
 			}
 
+			//=====================================================================================
 			//uploadCanceled ~
 			function uploadCanceled(evt) {
 				Debug.log("The upload has been canceled by the user or the browser dropped the connection.");
@@ -732,6 +749,7 @@
 				return false; //to stop tab and enter (and unaccepted chars) from propagating to window
 			}
 
+			//=====================================================================================
 			//handleSearchKeyUp ~~ 
 			//	show loader image and set timer for search
 			function handleSearchKeyUp() {				
@@ -751,6 +769,7 @@
 				_ExperimentSearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
 			}
 
+			//=====================================================================================
 			//handleTimeoutSearchKeyUp ~~ 
 			function handleTimeoutSearchKeyUp() {			
 				var el = document.getElementById("experimentTextBox");				
@@ -759,6 +778,7 @@
 				displayExperiments();
 			}
 			
+			//=====================================================================================
 			//createExperiment ~~ 
 			function createExperiment() {	
 				var el = document.getElementById("experimentTextBox");				
@@ -768,6 +788,7 @@
 						"RequestType=CreateExperiment&Experiment="+el.value, handleExperimentChangeRequest);	
 			}
 			
+			//=====================================================================================
 			//removeExperiment ~~ 
 			function removeExperiment() {	
 				var el = document.getElementById("experimentTextBox");				
@@ -777,6 +798,7 @@
 						"RequestType=RemoveExperiment&Experiment="+el.value, handleExperimentChangeRequest);				
 			}
 
+			//=====================================================================================
 			//handleExperimentChangeRequest ~~ 
 			function handleExperimentChangeRequest(req) {							
 				_adminStatusEl.innerHTML = DesktopContent.getXMLValue(req,"logbook_admin_status");				
@@ -785,6 +807,7 @@
 						"RequestType=GetExperimentList", handleGetExperimentListRequest);
 			}
 
+			//=====================================================================================
 			//handleGetExperimentListRequest ~~ 
 			function handleGetExperimentListRequest(req) {
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
@@ -806,6 +829,7 @@
 								//NOTE: call refresh logbook here so that _isAdmin is gauranteed to be set
 			}
 
+			//=====================================================================================
 			//applyExperimentsSearch ~~
 			//	filter _experimentsArray based on needle
 			function applyExperimentsSearch(needle) {
@@ -818,6 +842,7 @@
 						_experimentsShowArray[i] = 0;		//no needle, so hide		
 			}
 			
+			//=====================================================================================
 			//displayExperiments ~~ 
 			//	diplay in reverse so newest at top
 			function displayExperiments() {
@@ -843,6 +868,7 @@
 					el.innerHTML = "No matching experiment found.";
 			}
 			
+			//=====================================================================================
 			//activeExperimentSetRequest ~~ 
 			function activeExperimentSetRequest(experiment) {
 				Debug.log("Logbook activeExperimentSetRequest experiment " + experiment);
@@ -854,6 +880,7 @@
 				el.focus();
 			}
 			
+			//=====================================================================================
 			//clearExperimentInput ~~ 
 			function clearExperimentInput() {
 				var el = document.getElementById("experimentTextBox");	
@@ -863,7 +890,7 @@
 				displayExperiments();
 			}
 
-
+			//=====================================================================================
 			//refreshLogbook ~~ 
 			//	generates request for logbook based on dayIndex and duration 
 			//		dayIndex = 0 for today, 1 for yesterday, etc

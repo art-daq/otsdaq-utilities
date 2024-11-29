@@ -543,19 +543,14 @@ Desktop.createDesktop = function(security) {
 		var tmp = Desktop.getXMLValue(req,"systemMessages");
 	    if(!tmp) return; //did not find return string	    
 		
-	    //disallow repeats (due to broadcast messages hanging around)
-    	//if(_lastSystemMessage == tmp) return;    	
-	    //_lastSystemMessage = tmp;	    
+	    //disallow repeats by skipping (due to broadcast messages hanging around, user messages are always 2nd) 
 	    var tmpi;
 	    if((tmpi = tmp.indexOf(_lastSystemMessage)) >= 0)
 	    {
 	    	// Debug.log("Skipping repeat System Message...");
 	    	tmp = tmp.substr(tmpi+_lastSystemMessage.length+1);
 	    }
-	   
-			//Debug.log("Desktop tmp " + tmp.substr(tmpi+_lastSystemMessage.length+1));
-	    
-    	
+	       	
 	    var msgArr = tmp.split("|");	    
     	// Debug.log("Desktop msgArr.length " + msgArr.length);
 	    
@@ -575,7 +570,7 @@ Desktop.createDesktop = function(security) {
 	    
 	    var str = "";
 	    
-	    for(var i=0;i<msgArr.length;i+=2)
+	    for(var i=0; i+1 < msgArr.length; i+=2)
 	    {
 		    str += "<div style='font-size:12px'>System Message Received at " + Desktop.formatTime(msgArr[i]) + "</div>";
 		    str += "<div>" + 
@@ -1981,16 +1976,35 @@ Desktop._openFolderTimer = 0;
 Desktop.handleBodyMouseMove = function(mouseEvent)
 {
 	//if not moving for 3 seconds, close any open folders
-	if(Desktop._openFolderTimer) window.clearTimeout(Desktop._openFolderTimer);
-	Desktop._openFolderTimer = 0;
-	if(Desktop.desktop.icons.isFolderOpen())
-		Desktop._openFolderTimer = window.setTimeout(
-			function()
-			{
-		Debug.log("Closing folder...");
-		Desktop.desktop.icons.closeFolder();
-			},3000);
-
+	if(Desktop._openFolderTimer &&
+		!Desktop.desktop.icons.wasFolderIconClicked()) 
+	{
+		window.clearTimeout(Desktop._openFolderTimer);
+		Desktop._openFolderTimer = 0;
+	}
+	
+	if(!Desktop._openFolderTimer && 
+		Desktop.desktop.icons.isFolderOpen())
+	{
+		if(Desktop.desktop.icons.wasFolderIconClicked())
+		{
+			Desktop._openFolderTimer = window.setTimeout(
+				function()
+				{
+			Debug.log("Closing folder...");
+			Desktop.desktop.icons.closeFolder();
+				},500);
+		}
+		else
+		{
+			Desktop._openFolderTimer = window.setTimeout(
+				function()
+				{
+			Debug.log("Closing folder...");
+			Desktop.desktop.icons.closeFolder();
+				},3000);
+		}
+	}
 			
 	
 	//call each subscriber

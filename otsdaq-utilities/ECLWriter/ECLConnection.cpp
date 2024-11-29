@@ -6,17 +6,27 @@
 #include <iomanip>
 #include <sstream>
 #include "otsdaq/Macros/CoutMacros.h"
+#include "otsdaq/Macros/StringMacros.h" 
 #include "otsdaq/MessageFacility/MessageFacility.h"
 
+//==============================================================================
 ECLConnection::ECLConnection(std::string user, std::string pwd, std::string url)
 {
 	_user = user;
 	_pwd  = pwd;
 	_url  = url;
 
-	srand(time(NULL));
-}
+	if(!Get("/secureURL", _safe_url))
+	{
+		__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
+		__SS_THROW__;
+	}
+	__COUTTV__(_safe_url);
 
+	srand(time(NULL));
+} //end ECLConnection()
+
+//==============================================================================
 size_t ECLConnection::WriteMemoryCallback(char*        data,
                                           size_t       size,
                                           size_t       nmemb,
@@ -31,12 +41,67 @@ size_t ECLConnection::WriteMemoryCallback(char*        data,
 	}
 
 	return realsize;
-}
+} //end WriteMemoryCallback()
 
+//==============================================================================
+//Note: make sure GET url parameter 's' is URI encoded
 bool ECLConnection::Get(std::string s, std::string& response)
-{
+{	
 	response = "NULL";
 
+	std::string rndString = MakeSaltString();
+	std::string mySalt  = "salt=" + rndString;
+	std::string fullURL;
+	bool needSignature = false;
+	if(s != "/secureURL") //add salt
+	{
+		needSignature = true;
+		//in case of dynamic server downtime, if safe_url is blank, get safe_url
+		if(_safe_url == "" && !Get("/secureURL", _safe_url))
+		{
+			__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
+			__SS_THROW__;
+		}
+		__COUTTV__(_safe_url);
+		
+		fullURL = _safe_url + s;
+		if(s.size() && s[s.size()-1] == '?')
+			; //do nothing
+		else if(fullURL.find('?') != std::string::npos)
+			fullURL += '&';
+		else 
+			fullURL += '?';
+		fullURL += mySalt;
+	}
+	else 
+		fullURL = _url + s;
+
+	__COUT__ << "ECL GET request to " << fullURL << std::endl;
+	__COUTTV__(needSignature);
+
+
+	std::string xSig;
+	if(needSignature)
+	{
+		std::string myData = fullURL.substr(fullURL.find('?')+1);	
+		__COUTTV__(myData);	
+		myData += ":" + _pwd + ":";
+		// myData is now the ECL Hash string -- DO NOT PRINT contains pw
+
+		unsigned char resultMD5[MD5_DIGEST_LENGTH];
+		MD5((unsigned char*)myData.c_str(), myData.size(), resultMD5);
+
+		char        buf[3];
+		for(auto i = 0; i < MD5_DIGEST_LENGTH; i++)
+		{
+			sprintf(buf, "%02x", resultMD5[i]);
+			xSig.append(buf);
+		}
+		__COUT__ << "ECL MD5 Signature is: " << xSig << std::endl;
+	}
+
+
+	
 	char        errorBuffer[CURL_ERROR_SIZE];
 	std::string responseBuffer;
 	CURL*       curl_handle;
@@ -48,11 +113,23 @@ bool ECLConnection::Get(std::string s, std::string& response)
 
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
 
-	std::string fullURL = _url + s;
 
 	/* specify URL to get */
+
+	if(needSignature)
+	{
+		struct curl_slist* headers = NULL;
+		std::string        buff    = "X-User: " + _user;
+		headers                    = curl_slist_append(headers, buff.c_str());
+		headers                    = curl_slist_append(headers, "Content-type: text/xml");
+		headers                    = curl_slist_append(headers, "X-Signature-Method: md5");
+		buff                       = "X-Signature: " + xSig;
+		headers                    = curl_slist_append(headers, buff.c_str());
+
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+	}
 	curl_easy_setopt(curl_handle, CURLOPT_URL, fullURL.c_str());
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // Allow redirects
 
 	/* send all data to this function  */
 	curl_easy_setopt(
@@ -68,24 +145,43 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	/* get it! */
 	CURLcode result = curl_easy_perform(curl_handle);
 
-	/* cleanup curl stuff */
-	curl_easy_cleanup(curl_handle);
-
-	if(result == CURLE_OK)
-		response = responseBuffer;
-	else
+	if(result != CURLE_OK)
 	{
-		__COUT_ERR__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
-		return false;
+		_safe_url = ""; //clear on error
+		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
+
+		__COUTT__ << "ECL Cleanup" << std::endl;
+		// cleanup curl stuff
+		curl_easy_cleanup(curl_handle);
+		// curl_slist_free_all(headers);
+		curl_global_cleanup();
+		__SS_THROW__;
+	}
+	
+	__COUTT__ << "ECL Cleanup" << std::endl;
+	// cleanup curl stuff
+	curl_easy_cleanup(curl_handle);
+	// curl_slist_free_all(headers);
+	curl_global_cleanup();
+	
+	if(responseBuffer.find("Error") != std::string::npos || 
+		responseBuffer.find("301 Moved Permanently") != std::string::npos)
+	{
+		_safe_url = ""; //clear on error
+		__SS__ << "Error found in request: " << responseBuffer << __E__;
+		__SS_THROW__;
 	}
 
-	curl_global_cleanup();
+	__COUTTV__(responseBuffer);
+	response = responseBuffer;
 
 	return true;
-}
+} //end Get()
 
+//==============================================================================
 bool ECLConnection::Search(std::string /*s*/) { return false; }
 
+//==============================================================================
 std::string ECLConnection::MakeSaltString()
 {
 	std::string rndString = "";
@@ -100,19 +196,24 @@ std::string ECLConnection::MakeSaltString()
 	}
 
 	return rndString;
-}
+} //end MakeSaltString()
 
+//==============================================================================
 bool ECLConnection::Post(ECLEntry_t& e)
 {
-	std::string safe_url;
-	if(!Get("/secureURL", safe_url))
-		return false;
+	//in case of dynamic server downtime, get safe_url for each POST
+	if(!Get("/secureURL", _safe_url))
+	{
+		__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
+		__SS_THROW__;
+	}
+	__COUTTV__(_safe_url);
 
 	std::string rndString = MakeSaltString();
 
 	std::string myURL   = "/E/xml_post?";
 	std::string mySalt  = "salt=" + rndString;
-	std::string fullURL = _url + myURL + mySalt;
+	std::string fullURL = _safe_url + myURL + mySalt;
 
 	std::string myData = mySalt + ":" + _pwd + ":";
 
@@ -192,11 +293,12 @@ bool ECLConnection::Post(ECLEntry_t& e)
 
 	// post it!
 
-	__COUT__ << "ECL Posting message" << std::endl;
+	__COUT__ << "ECL Posting message to " << fullURL << std::endl;
 	CURLcode result = curl_easy_perform(curl_handle);
 
 	if(result != CURLE_OK)
 	{
+		_safe_url = ""; //clear on error
 		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
 
 		__COUTT__ << "ECL Cleanup" << std::endl;
@@ -216,15 +318,17 @@ bool ECLConnection::Post(ECLEntry_t& e)
 	if(responseBuffer.find("Error") != std::string::npos || 
 		responseBuffer.find("301 Moved Permanently") != std::string::npos)
 	{
+		_safe_url = ""; //clear on error
 		__SS__ << "Error found in request: " << responseBuffer << __E__;
 		__SS_THROW__;
 	}
 
-	__COUTV__(responseBuffer);
+	__COUTTV__(responseBuffer);
 
 	return true;
-}
+} //end Post()
 
+//==============================================================================
 std::string ECLConnection::EscapeECLString(std::string input)
 {
 	std::string output = input;
@@ -264,8 +368,9 @@ std::string ECLConnection::EscapeECLString(std::string input)
 	}
 
 	return output;
-}
+} //end EscapeECLString()
 
+//==============================================================================
 Attachment_t ECLConnection::MakeAttachmentImage(std::string const& imageFileName)
 {
 	Attachment_t attachment;
@@ -290,8 +395,9 @@ Attachment_t ECLConnection::MakeAttachmentImage(std::string const& imageFileName
 		    ::xml_schema::base64_binary(&buffer[0], size), "image", fileNameShort);
 	}
 	return attachment;
-}
+} //end MakeAttachmentImage()
 
+//==============================================================================
 Attachment_t ECLConnection::MakeAttachmentFile(std::string const& fileName)
 {
 	Attachment_t attachment;
@@ -317,4 +423,4 @@ Attachment_t ECLConnection::MakeAttachmentFile(std::string const& fileName)
 		    ::xml_schema::base64_binary(&buffer[0], size), "file", fileNameShort);
 	}
 	return attachment;
-}
+} //end MakeAttachmentFile()

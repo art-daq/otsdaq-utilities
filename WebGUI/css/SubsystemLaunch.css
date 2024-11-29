@@ -195,6 +195,7 @@
 			text-align: center;
 			min-width: 280px;
 			width: calc(100% - 40px);
+			cursor: pointer;
 		}
 
 		.subsystem_configAlias_select_info {

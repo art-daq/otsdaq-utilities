@@ -549,6 +549,7 @@ SubsystemSquares.create = function() {
 
 
 				els = sdivs[i].getElementsByClassName("subsystem_status");
+				str = ""; //clear
 				if(SubsystemSquares.system.redrawMode > 0)
 					str = statusString;
 				if(SubsystemSquares.system.inTransition)
@@ -620,6 +621,12 @@ SubsystemSquares.create = function() {
 				{
 					for(var c=0; c<SubsystemSquares.subsystems[s].name.length; ++c)
 					{
+						if(c && SubsystemSquares.subsystems[s].name[c] == '_')
+						{
+							name += " "; //convert underscore to space
+							continue;
+						}
+
 						if(c && 
 								SubsystemSquares.subsystems[s].name[c-1] >= 'a' && 
 								SubsystemSquares.subsystems[s].name[c-1] <= 'z' && 
@@ -635,12 +642,13 @@ SubsystemSquares.create = function() {
 				
 
 				els = sdivs[i].getElementsByClassName("subsystem_status");
+				str = ""; //clear
 				if(SubsystemSquares.subsystems[s].redrawMode > 0)
 					str = SubsystemSquares.subsystems[s].status;
 				if(SubsystemSquares.subsystems[s].progress != "100" && SubsystemSquares.subsystems[s].progress != "0")
 					str += _dotDotDot;
 				if(SubsystemSquares.subsystems[s].redrawMode > 1)
-					str += " <label style='font-size:12px'>(" + SubsystemSquares.subsystems[s].detail + ")</label>";
+					str += " <label style='font-size:12px'>(" + SubsystemSquares.subsystems[s].detail + ")</label>";				
 				
 				els[0].innerHTML = str;
 

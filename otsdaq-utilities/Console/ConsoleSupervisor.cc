@@ -809,8 +809,6 @@ void ConsoleSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "GetConsoleMsgs");
-	//	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NeedUsernameRequestTypes,
-	//			"SaveUserPreferences | LoadUserPreferences");
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================

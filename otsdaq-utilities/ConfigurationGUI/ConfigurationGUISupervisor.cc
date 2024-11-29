@@ -154,7 +154,7 @@ void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 	    "getActiveTableGroups"); 
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes,
-	    "*");  // all
+	    "!get*");  // all except read-only requests
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================

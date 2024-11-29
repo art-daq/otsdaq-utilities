@@ -594,7 +594,8 @@ function displayTable(appsArray)
                                 cell.style.cursor = "pointer";
                                 cell.id = "cell-" + i + "-" + j;
                                 cell.onclick =
-                                    function () {
+                                    function () 
+                                    {
                                         Debug.log("Cell " + this.id);
 
                                         var i = this.id.split('-');
@@ -603,7 +604,7 @@ function displayTable(appsArray)
                                         Debug.log(
                                             appsArray[i][columnKeys[j]],
                                             Debug.HIGH_PRIORITY);
-                                    };
+                                    }; //end onclick()
                                 break;
                             default:
                         } // end of switch
@@ -735,7 +736,8 @@ function displayTable(appsArray)
                                     cell.style.cursor = "pointer";
                                     cell.id = "cell-" + i + "-" + j;
                                     cell.onclick =
-                                        function () {
+                                        function ()
+                                        {
                                             Debug.log("Cell " + this.id);
 
                                             var i = this.id.split('-');
@@ -744,7 +746,7 @@ function displayTable(appsArray)
                                             Debug.log(
                                                 subappInfo[columnKeys[j]],
                                                 Debug.HIGH_PRIORITY);
-                                        };
+                                        }; //end onclick()
                                     break;
                                 default:
                             } // end of switch

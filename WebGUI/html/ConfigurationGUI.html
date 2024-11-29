@@ -11906,8 +11906,14 @@
 						"&targetColumn=" + treeEditingTargetColumn_
 						,
 						"newValue=" + newValue, //newValue post in case the value is large 
-						function (req) 
+						function (req, reqParam, errStr) 
 						{
+							if(errStr) 
+							{		
+								Debug.log(errStr,Debug.HIGH_PRIORITY);	
+								editCellCancel();
+								return;
+							}
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err) 
 							{
