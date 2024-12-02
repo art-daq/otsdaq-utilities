@@ -470,12 +470,16 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
 	SOAPParameters parameters("EntryText");
-	//	SOAPParametersV parameters(1);
-	//	parameters[0].setName("EntryText");
+	parameters.addParameter("SubjectText");
 	SOAPUtilities::receive(msg, parameters);
 	std::string EntryText = parameters.getValue("EntryText");
+	std::string SubjectText = parameters.getValue("SubjectText");
+
+	if(SubjectText == "")
+		SubjectText = "System Log";
 
 	__COUT__ << "Received External Supervisor System Entry " << EntryText << std::endl;
+	__COUTV__(SubjectText);
 	__COUT__ << "Active Experiment is  " << activeExperiment_ << std::endl;
 
 	std::string retStr = "Success";
@@ -535,7 +539,7 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 	logXml.addTextElementToParent(XML_LOGBOOK_ENTRY_TIME, fileIndex, entryEl);
 	logXml.addTextElementToParent(XML_LOGBOOK_ENTRY_CREATOR, "SYSTEM LOG", entryEl);
 	logXml.addTextElementToParent(XML_LOGBOOK_ENTRY_TEXT, EntryText, entryEl);
-	logXml.addTextElementToParent(XML_LOGBOOK_ENTRY_SUBJECT, "System Log", entryEl);
+	logXml.addTextElementToParent(XML_LOGBOOK_ENTRY_SUBJECT, SubjectText, entryEl);
 
 	logXml.saveXmlDocument(logPath);
 
@@ -543,10 +547,6 @@ XOAP_CLEANUP:
 
 	// fill return parameters
 	SOAPParameters retParameters("Status", retStr);
-	//	SOAPParametersV retParameters(1);
-	//	retParameters[0].setName("Status");
-	//	retParameters[0].setValue(retStr);
-
 	return SOAPUtilities::makeSOAPMessageReference("SystemLogEntryStatusResponse",
 	                                               retParameters);
 } //end MakeSystemLogEntry()

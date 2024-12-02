@@ -14,23 +14,23 @@ class ChatSupervisor : public CoreSupervisorBase
   public:
 	XDAQ_INSTANTIATOR();
 
-								ChatSupervisor		(xdaq::ApplicationStub* s);
-	virtual 					~ChatSupervisor		(void);
+								ChatSupervisor					(xdaq::ApplicationStub* s);
+	virtual 					~ChatSupervisor					(void);
 
-	void 						destroy				(void);
+	void 						destroy							(void);
 
-	void 						Default				(xgi::Input* in, xgi::Output* out);
+	virtual void				defaultPage						(xgi::Input* in, xgi::Output* out) override;
+	void 						Default							(xgi::Input* in, xgi::Output* out);
+	
+	virtual void 				request							(const std::string&               requestType,
+	             				       							 cgicc::Cgicc&                    cgiIn,
+	             				       							 HttpXmlDocument&                 xmlOut,
+	             				       							 const WebUsers::RequestUserInfo& userInfo) override;
 
-	// virtual void defaultPage(xgi::Input* in, xgi::Output* out) override;
-	virtual void request(const std::string&               requestType,
-	                     cgicc::Cgicc&                    cgiIn,
-	                     HttpXmlDocument&                 xmlOut,
-	                     const WebUsers::RequestUserInfo& userInfo) override;
-
-	virtual void forceSupervisorPropertyValues(void) override;  // override to force
-	                                                            // supervisor property
-	                                                            // values (and ignore user
-	                                                            // settings)
+	virtual void 				forceSupervisorPropertyValues	(void) override;  	// override to force
+	                                                         	  					// supervisor property
+	                                                         	  					// values (and ignore user
+	                                                         	  					// settings)
 
   private:
 	//"Chat History" database associations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

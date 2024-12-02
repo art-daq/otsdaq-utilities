@@ -442,13 +442,15 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
 	SOAPParameters parameters("EntryText");
-	//	SOAPParametersV parameters(1);
-	//	parameters[0].setName("EntryText");
+	parameters.addParameter("SubjectText");
 	SOAPUtilities::receive(msg, parameters);
 	std::string EntryText =
 	    StringMacros::decodeURIComponent(parameters.getValue("EntryText"));
+	std::string SubjectText =
+	    StringMacros::decodeURIComponent(parameters.getValue("SubjectText"));
 
 	__COUT__ << "Received External Supervisor System Entry " << EntryText << std::endl;
+	__COUTV__(SubjectText);
 
 	std::string retStr = "Success";
 
@@ -466,6 +468,7 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 	ECLEntry_t eclEntry;
 	eclEntry.author(StringMacros::escapeString(ECLUser_));
 	eclEntry.category(StringMacros::escapeString(ECLCategory_));
+	eclEntry.subject(StringMacros::escapeString(SubjectText));
 
 	Form_t                 form;
 	Field_t                field;
@@ -477,9 +480,9 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 
 	{
 		std::stringstream ss;
-		ss << "System Generated Log Entry from '" << ExperimentName_ << "'" << __E__;
-		ss << "Active ots users: " << users << __E__;
 		ss << "Message: " << __E__ << EntryText << __E__ << __E__;
+		ss << "This was a System Generated Log Entry from '" << ExperimentName_ << "'" << __E__;
+		ss << "Active ots users: " << users << __E__;
 		field = Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
 		                "text");
 		fields.push_back(field);

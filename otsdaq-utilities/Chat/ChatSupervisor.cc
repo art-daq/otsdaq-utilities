@@ -35,7 +35,7 @@ void ChatSupervisor::destroy(void)
 }
 
 //==============================================================================
-void ChatSupervisor::defaultPage(xgi::Input* cgiIn, xgi::Output* out)
+void ChatSupervisor::defaultPage(xgi::Input* /* cgiIn */, xgi::Output* out)
 {
      out->getHTTPResponseHeader().addHeader("Access-Control-Allow-Origin","*");
      out->getHTTPResponseHeader().addHeader("Pragma", "no-cache");
