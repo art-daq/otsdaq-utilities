@@ -6424,8 +6424,14 @@
 
 			//get active table groups
 			DesktopContent.XMLHttpRequest("Request?RequestType=getActiveTableGroups",
-				"", function (req) 
+				"", 
+				function (req, reqParam, errStr) 
 				{
+					if(errStr && errStr != "")
+					{
+						Debug.err("Error getting active table groups: " + errStr);
+						return;
+					}
 					activateTableGroupHandler(req);
 
 					var name = DesktopContent.getXMLValue(req,
@@ -6434,9 +6440,8 @@
 						groupTypeName + "-ActiveGroupKey");
 
 					if (!name || !key) {
-						Debug.log("Process interrupted. There was no active " +
-							groupTypeName + " Group found.",
-							Debug.HIGH_PRIORITY);
+						Debug.err("Process interrupted. There was no active " +
+							groupTypeName + " Group found.");
 						setupSystemViewMode();
 						return;
 					}
@@ -6444,7 +6449,7 @@
 					ConfigurationAPI.setGroupAliasInActiveBackbone(
 						groupAlias, name, key, 0, setupSystemViewMode);
 
-				},
+				}, //end handler()
 				0, 0, true  //reqParam, progressHandler, callHandlerOnErr
 			); //end of getActiveTableGroups handler
 		} //end wizToActiveTableGroup()
