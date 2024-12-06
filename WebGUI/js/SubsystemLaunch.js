@@ -1670,7 +1670,7 @@ SubsystemLaunch.create = function() {
 						/* textColor [optional] */ undefined, 
 						/* borderColor [optional] */ "#770000", 
 						/* getUserInput [optional] */ true, 
-						/* dialogWidth [optional] */ 250,
+						/* dialogWidth [optional] */ 500,
 						/* cancelFunc [optional] */ 
 						function(entry)
 						{
@@ -1977,7 +1977,7 @@ SubsystemLaunch.create = function() {
 					/* textColor [optional] */ undefined, 
 					/* borderColor [optional] */ "#770000", 
 					/* getUserInput [optional] */ true, 
-					/* dialogWidth [optional] */ 250,
+					/* dialogWidth [optional] */ 500,
 					/* cancelFunc [optional] */ 
 					function(entry)
 					{
