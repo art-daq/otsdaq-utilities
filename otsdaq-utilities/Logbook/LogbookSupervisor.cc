@@ -204,8 +204,8 @@ void LogbookSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
-		CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
-				"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
+	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
+			"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
 } //end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -217,6 +217,8 @@ void LogbookSupervisor::request(const std::string&               requestType,
                                 HttpXmlDocument&                 xmlOut,
                                 const WebUsers::RequestUserInfo& userInfo)
 {
+	__COUTTV__(requestType);
+
 	// Commands
 	//	CreateExperiment
 	//	RemoveExperiment

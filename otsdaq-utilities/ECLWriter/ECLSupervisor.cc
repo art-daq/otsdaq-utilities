@@ -147,6 +147,11 @@ void ECLSupervisor::setSupervisorPropertyDefaults()
 	        "*=1 | CreateExperiment=-1 | RemoveExperiment=-1 | GetExperimentListAdmin=-1 "
 	        "| SetActiveExperiment=-1" +
 	        " | AdminRemoveRestoreEntry=-1");
+
+	CorePropertySupervisorBase::setSupervisorProperty(
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AllowNoLoginRequestTypes,
+	    "RefreshLogbook | GetExperimentList");
+			
 } //end setSupervisorPropertyDefaults()
 
 //==============================================================================
@@ -154,14 +159,14 @@ void ECLSupervisor::setSupervisorPropertyDefaults()
 //		override to force supervisor property values (and ignore user settings)
 void ECLSupervisor::forceSupervisorPropertyValues()
 {
-	CorePropertySupervisorBase::setSupervisorProperty(
+	CorePropertySupervisorBase::addSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "RefreshLogbook");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
-		CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
-				"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
+	CorePropertySupervisorBase::addSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
+			"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
 } //end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -173,6 +178,8 @@ void ECLSupervisor::request(const std::string&               requestType,
                                 HttpXmlDocument&                 xmlOut,
                                 const WebUsers::RequestUserInfo& userInfo)
 {
+	__COUTTV__(requestType);
+
 	// Commands - Note: treat 'Experiment' as ECL Category
 	//	N/A CreateExperiment
 	//	N/A RemoveExperiment
@@ -327,12 +334,50 @@ void ECLSupervisor::getExperiments(HttpXmlDocument* xmlOut, std::ostringstream* 
 	std::string response, url = "/A/xml_category_list";
 	ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
 	eclConn.Get(url,response);
-	__COUTV__(response);
+	__COUTTV__(response);
 
 	std::vector<std::string> exps;
 	std::string name;
 	size_t after = 0;
-	while((name = StringMacros::extractXmlField(response, "category", 0, after, &after, "path")) != "")
+
+	//example response:
+	// <?xml version="1.0" encoding="UTF-8"?>
+	// <category_list>
+	// 		<category path="Accelerator"/>
+	// 		<category path="CRV"/>
+	// 		<category path="CRV/Vertical Slice Test"/>
+	// 		<category path="Calorimeter"/>
+	// 		<category path="Cryogenics"/>
+	// 		<category path="Cryogenics/Cryogenics Construction"/>
+	// 		<category path="Cryogenics/Mu2e Controls"/>
+	// 		<category path="Cryogenics/Mu2e ODH System"/>
+	// 		<category path="Cryogenics/Mu2e Operations"/>
+	// 		<category path="Cryogenics/Mu2e Vacuum"/>
+	// 		<category path="Cryogenics/Muon Campus Operations"/>
+	// 		<category path="Extinction Monitor"/>
+	// 		<category path="Facilities / Building"/>
+	// 		<category path="Global Run"/>
+	// 		<category path="Leak checking"/>
+	// 		<category path="Mu2e team member location"/>
+	// 		<category path="Muon beamline"/>
+	// 		<category path="Planning"/>
+	// 		<category path="Production"/>
+	// 		<category path="Production/MDC18"/>
+	// 		<category path="Production/su2020"/>
+	// 		<category path="Safety"/>
+	// 		<category path="Solenoids"/>
+	// 		<category path="Stopping Target Monitor"/>
+	// 		<category path="TDAQ"/>
+	// 		<category path="Tracker"/>
+	// 		<category path="Tracker/VST"/>
+	// 		<category path="Transfer Lines"/>
+	// 		<category path="help"/>
+	// 		<category path="test"/>
+	// 		<category path="testbeam"/>
+	// </category_list>
+
+	while((name = StringMacros::extractXmlField(response, "category", 0, after, &after, 
+		"path", "\"")) != "")
 	{
 		__COUTTV__(name);		
 		exps.push_back(name);
@@ -481,8 +526,11 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 	{
 		std::stringstream ss;
 		ss << "Message: " << __E__ << EntryText << __E__ << __E__;
-		ss << "This was a System Generated Log Entry from '" << ExperimentName_ << "'" << __E__;
+		ss << "This was a System Generated Log Entry from '" << ExperimentName_ << "' at host '" << 
+			__ENV__("THIS_HOST") << "'" << __E__;
 		ss << "Active ots users: " << users << __E__;
+		ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
+		ss << "Uptime: " << StringMacros::getTimestampString(CorePropertySupervisorBase::getSupervisorUptime()) << __E__;
 		field = Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
 		                "text");
 		fields.push_back(field);

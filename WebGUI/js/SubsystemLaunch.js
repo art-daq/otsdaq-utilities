@@ -1842,8 +1842,7 @@ SubsystemLaunch.create = function() {
 		//if Iterator plan active, then Halt-Iterator
 		//if not, then Stop FSM transition
 
-
-		Debug.log("localStop()");
+		Debug.log("stop()");
 
 		if(SubsystemLaunch.system.state != "Running" && (
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" || 
@@ -1915,29 +1914,14 @@ SubsystemLaunch.create = function() {
 		}
 		else if(SubsystemLaunch.system.state == "Running") //likely, Iterator left open-ended run	
 		{
+
 			DesktopContent.popUpVerification( 
 				"Are you sure you want to Stop the open-ended run?",
 				function()
 				{
 					Debug.log("User chose to stop!");
-					window.clearTimeout(_getStatusTimer);
-					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
-					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-								"&fsmName=" + _fsmName + 
-								"&StateMachine=Stop", //end get data 
-								"", //end post data
-							function(req) //start handler
-							{
-						Debug.log("stop() FSM handler ");
-						window.clearTimeout(_getStatusTimer);
-						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
-						
-							}, //end handler
-							0, //handler param
-							0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-							true /*targetGatewaySupervisor*/);
-
+					localHandleLogEntry();
 				},
 				0,"#efeaea",0,"#770000"); //end popUpVerification
 		}
@@ -1947,6 +1931,98 @@ SubsystemLaunch.create = function() {
 			Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
 		}
 
+
+		return;
+
+		//===========
+		function localHandleLogEntry()
+		{
+			Debug.log("localHandleLogEntry() stop");
+			var transitionActionName = "Stop";			
+				
+			//attempt to get last log entry
+			DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachineLastLogEntry" +
+				"&fsmName=" + _fsmName +
+				"&transition=" + transitionActionName, "", 
+				localPopUpVerify, //end request handler
+				0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
+				false /*doNoShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);   
+				
+			return;
+
+			//================
+			function localPopUpVerify(req)
+			{
+				lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
+				if(lastLogEntry && lastLogEntry != "")
+					lastLogEntry = decodeURIComponent(lastLogEntry);
+				
+				DesktopContent.popUpVerification(
+					/* prompt */
+					"Please enter a logbook entry summarizing the run:"
+					, 
+					/* continueFunc [optional] */
+					function(entry)
+					{
+						Debug.log("User entered logbook entry " + entry);
+
+						//save last entry
+						lastLogEntry = entry;
+						localStop(entry);
+					} //end continueFunc handlere
+					, 
+					/* val [optional] */ undefined,
+					/* bgColor [optional] */ "#efeaea", 
+					/* textColor [optional] */ undefined, 
+					/* borderColor [optional] */ "#770000", 
+					/* getUserInput [optional] */ true, 
+					/* dialogWidth [optional] */ 250,
+					/* cancelFunc [optional] */ 
+					function(entry)
+					{
+						Debug.log("User cancelled transition action",entry);
+
+					} //end cancelFunc handler
+					,
+					/* yesButtonText [optional] */ transitionActionName,
+					/* noAutoComplete [optional] */ true, 
+					/* defaultUserInputValue [optional] */ (lastLogEntry?lastLogEntry:""),							
+					/* cancelButtonText [optional] */ undefined,							
+					/* wantMultilineInput [optional] */ true
+				); //end popUpVerification
+
+				return;
+			} //end localPopUpVerify()
+			
+		} //end localHandleLogEntry()
+
+
+		//===========
+		function localStop(logEntry)
+		{			
+			Debug.log("localStop()");
+			Debug.logv({logEntry});
+
+			window.clearTimeout(_getStatusTimer);
+			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+						"&fsmName=" + _fsmName + 
+						"&StateMachine=Stop", //end get data 
+						"logEntry=" + encodeURIComponent(logEntry), //end post data
+					function(req) //start handler
+					{
+				Debug.log("stop() FSM handler ");
+				window.clearTimeout(_getStatusTimer);
+				_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+				
+					}, //end handler
+					0, //handler param
+					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+					true /*targetGatewaySupervisor*/);
+
+		} //end localStop()
 
 	} //end stop()
 
