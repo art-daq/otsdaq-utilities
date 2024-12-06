@@ -1766,7 +1766,7 @@ std::string ConsoleSupervisor::getStatusProgressDetail(void)
 
 	//return uptime detail
 	std::stringstream ss;
-	ss << "Uptime: " << StringMacros::getTimestampString(CorePropertySupervisorBase::getSupervisorUptime());
+	ss << "Uptime: " << StringMacros::getTimeDurationString(CorePropertySupervisorBase::getSupervisorUptime());
 	
 	//return Err count, Warn count, Last Error msg, Last Warn msg, Last Info msg, Info count
 

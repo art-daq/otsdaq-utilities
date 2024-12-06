@@ -530,7 +530,7 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 			__ENV__("THIS_HOST") << "'" << __E__;
 		ss << "Active ots users: " << users << __E__;
 		ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
-		ss << "Uptime: " << StringMacros::getTimestampString(CorePropertySupervisorBase::getSupervisorUptime()) << __E__;
+		ss << "Uptime: " << StringMacros::getTimeDurationString(CorePropertySupervisorBase::getSupervisorUptime()) << __E__;
 		field = Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
 		                "text");
 		fields.push_back(field);
