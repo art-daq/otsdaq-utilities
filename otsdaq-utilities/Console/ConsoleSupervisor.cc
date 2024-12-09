@@ -809,8 +809,6 @@ void ConsoleSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "GetConsoleMsgs");
-	//	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NeedUsernameRequestTypes,
-	//			"SaveUserPreferences | LoadUserPreferences");
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -1768,20 +1766,8 @@ std::string ConsoleSupervisor::getStatusProgressDetail(void)
 
 	//return uptime detail
 	std::stringstream ss;
-	time_t t = getSupervisorUptime();
-	ss << "Uptime: ";
-	int days = t/60/60/24;
-	if(days > 0)
-	{
-		ss << days << " day" << (days>1?"s":"") << ", ";
-		t -= days * 60*60*24;
-	}
-
-	//HH:MM:SS
-	ss << std::setw(2) << std::setfill('0') << (t/60/60) << ":" <<
-		std::setw(2) << std::setfill('0') << ((t % (60*60))/60) << ":" << 
-		std::setw(2) << std::setfill('0') << (t % 60);
-
+	ss << "Uptime: " << StringMacros::getTimeDurationString(CorePropertySupervisorBase::getSupervisorUptime());
+	
 	//return Err count, Warn count, Last Error msg, Last Warn msg, Last Info msg, Info count
 
 	// size_t 			errorCount_ = 0, warnCount_ = 0;

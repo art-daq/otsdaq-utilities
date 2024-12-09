@@ -4,22 +4,48 @@
 #define __E__ std::endl
 #define QQQQ(X) #X
 #define QUOTE(X) QQQQ(X)
-#define __COUTV__(X) std::cout << QUOTE(X) << " = " << X << __E__
+
+#define __SHORTFILE__ 		(__builtin_strstr(&__FILE__[0], "/srcs/") ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 : __FILE__)
+#define __COUT_HDR_L__ 		":" << std::dec        << __LINE__ << " |\t"
+#define __COUT_HDR__ 		__SHORTFILE__ << ""  << __COUT_HDR_L__
+
+#define __COUTV__(X) 		std::cout << __COUT_HDR__ << QUOTE(X) << " = " << X << __E__
+#define __COUT__ 			std::cout << __COUT_HDR__
 
 #include "otsdaq-utilities/ECLWriter/ECLConnection.h"
 
 #include <boost/program_options.hpp>
 namespace bpo = boost::program_options;
 
+
+//==============================================================================
+std::string encodeURIComponent(const std::string& sourceStr)
+{
+	std::string retStr = "";
+	char        encodeStr[4];
+	for(const auto& c : sourceStr)
+		if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+			retStr += c;
+		else
+		{
+			sprintf(encodeStr, "%%%2.2X", (uint8_t)c);
+			retStr += encodeStr;
+		}
+	return retStr;
+}  // end encodeURIComponent()
+
+
 // IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
 //  consider adding this to a setup script and using environment variables for your
 //  passwords! 			#setup environment for eLOG ECL writing 			# NOTE! do not
 //  put username/pw in saved/committed text files 			export ECL_USER_NAME="emdaq"
 //  export ECL_CATEGORY="general" 			export
-//  ECL_URL="https://dbweb9.fnal.gov:8443/ECL/emphatic" 			if [ "x$ECL_PASSWORD"
+//  ECL_URL="https://hostname:8443/ECL/project" 			if [ "x$ECL_PASSWORD"
 //  == "x" ]; then #when ECL password is not setup, prompt user 					stty
 //  -echo printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
 //  read eclpass 					stty echo export ECL_PASSWORD=$eclpass 			fi
+
+// Note: add quotes for any input parameter with spaces
 
 // use option -h or --help for help
 int main(int argc, char* argv[])
@@ -28,7 +54,7 @@ int main(int argc, char* argv[])
 	descstr << argv[0]
 	        << " --host <ECL host> --user <Username> --pwd <Password> [--cat <Category "
 	           "name>] [--title <Message "
-	           "title>] [message]";
+	           "title>] [--msg message] #add quotes for any entry with spaces";
 	bpo::options_description desc(descstr.str());
 	desc.add_options()("host,i", bpo::value<std::string>(), "ECL Instance Address")(
 	    "user,u", bpo::value<std::string>(), "ECL Username")(
@@ -108,7 +134,25 @@ int main(int argc, char* argv[])
 	eclEntry.form(form);
 
 	ECLConnection eclConn(ECLUser, ECLPwd, ECLHost);
-	if(!eclConn.Post(eclEntry))
+
+	if(ECLCategory == "GetRecent")
+	{
+		__COUT__ << "Getting posts... matching category=" << title << __E__;
+		std::string response, url = "/E/xml_search?l=100&c=" + 
+			encodeURIComponent(title); //limit to 100 
+		eclConn.Get(url,response);
+		__COUTV__(response);
+		return 0;
+	}
+	else if(ECLCategory == "GetCategories")
+	{
+		__COUT__ << "Getting categories..." << __E__;
+		std::string response, url = "/A/xml_category_list";
+		eclConn.Get(url,response);
+		__COUTV__(response);
+		return 0;
+	}
+	else if(!eclConn.Post(eclEntry))
 	{
 		return -1;
 	}

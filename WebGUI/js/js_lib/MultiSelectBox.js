@@ -44,7 +44,7 @@
 //	createSelectBox(el,name,title,vals,keys,types,
 //		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 //		mouseUpHandler,
-//		requireCtrlMultiClick,titles)
+//		requireCtrlMultiClick,titles,mouseMoveHandler)
 //	initMySelectBoxes(clearPreviousSelections, targetId)
 //		  
 //	hasClass(ele,cls)
@@ -292,12 +292,13 @@ MultiSelectBox.myOptionSelect = function(option, index, isSingleSelect, event)
 // These parameters are optional and can be omitted or set to 0: 
 //		keys, types, handler, noMultiSelect, mouseOverHandler, 
 //		iconURLs, mouseDownHandler, mouseUpHandler,
-//		requireCtrlMultiClick
+//		requireCtrlMultiClick, titles, mouseMoveHandler
 // Note: handler is the string name of the function
 MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 		mouseUpHandler,
-		requireCtrlMultiClick,titles)
+		requireCtrlMultiClick,titles,
+		mouseMoveHandler)
 {
 	if(!el) 
 	{ MultiSelectBox.dbg("Invalid Element given to MultiSelectBox: " + el);
@@ -341,8 +342,15 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 			name + "' style='float:left;" + 
 			"width: " + (msW) + "px;" + 
 			"height: " + (msH) + "px;" + 
-			"' name='" + name + "' " +
-			">";
+			"' name='" + name + "' ";
+			
+	str += "onmousemove='";
+	if(mouseMoveHandler && (typeof mouseMoveHandler) == "string") //if mouseMoveHandler supplied as string
+		str += mouseMoveHandler + "(this,event);"; //user selection mouseMoveHandler
+	else if(mouseMoveHandler) //assume it is a function
+		str += mouseMoveHandler.name + "(this,event);"; //user selection mouseMoveHandler
+	str += "' ";
+	str += ">";
 
 	for (var i = 0; i < keys.length;++i)//cactus length
 	{

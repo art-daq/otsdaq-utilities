@@ -458,38 +458,6 @@ DesktopContent.init = function(onloadFunction)
 			}
 			else if(!DesktopContent._sequence)
 				Debug.log("No cookie code and no sequence!");
-			
-			//========
-			function localOnloadHandler()
-			{
-				if(!document.body) //the document is not ready?!
-				{
-					//call self in a bit to try again
-					window.setTimeout(
-						localOnloadHandler,300 /*ms*/);
-					return;
-				}
-
-				try
-				{					
-					if(onloadFunction)
-					{
-						Debug.log("Calling page body onload!");
-						onloadFunction(); //call page's init!
-					}
-					else if(init)
-					{
-						Debug.log("Calling page init!");
-						init(); //call page's init!
-					}
-					else
-						Debug.log("Ignoring missing init()");
-				}
-				catch(e)
-				{
-					Debug.log("Ignoring error in onload init():",e);
-				}
-			} //end localOnloadHandler()
 
 			localOnloadHandler();
 			
@@ -683,6 +651,51 @@ DesktopContent.init = function(onloadFunction)
 				"request":		"getRequestLIDInfo"
 				}, "*");
 	}
+
+	//call self in a bit to try init (in case window messaging not active)
+	window.setTimeout(
+		localOnloadHandler,300 /*ms*/);
+
+	return;
+
+	//========
+	function localOnloadHandler()
+	{
+		if(!document.body) //the document is not ready?!
+		{
+			//call self in a bit to try again
+			window.setTimeout(
+				localOnloadHandler,300 /*ms*/);
+			return;
+		}
+
+		if(DesktopContent._pageInitCalled)
+		{
+			Debug.log("Page init already called.");
+			return;
+		} 
+		DesktopContent._pageInitCalled = true;
+
+		try
+		{					
+			if(onloadFunction)
+			{
+				Debug.log("Calling page body onload!");
+				onloadFunction(); //call page's init!
+			}
+			else if(init)
+			{
+				Debug.log("Calling page init!");
+				init(); //call page's init!
+			}
+			else
+				Debug.log("Ignoring missing init()");
+		}
+		catch(e)
+		{
+			Debug.log("Ignoring error in onload init():",e);
+		}
+	} //end localOnloadHandler()
 	
 } //end DesktopContent.init()
 

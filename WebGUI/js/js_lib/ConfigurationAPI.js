@@ -482,8 +482,14 @@ ConfigurationAPI.getStructureStatus = function(rootTableOfStructure,responseHand
 			"&tableGroupKey=-1" +
 			"&tableName=" + rootTableOfStructure, //end get data 
 			"modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
+				if(errStr) 
+				{
+					Debug.log(errStr,Debug.HIGH_PRIORITY);
+					if(responseHandler) responseHandler();
+					return;
+				}
 				ConfigurationAPI.extractActiveGroups(req);
 				
 				var err = DesktopContent.getXMLValue(req,"Error");
@@ -493,6 +499,7 @@ ConfigurationAPI.getStructureStatus = function(rootTableOfStructure,responseHand
 					if(responseHandler) responseHandler();
 					return;
 				}
+				
 				var json = DesktopContent.getXMLValue(req,"StructureStatusAsJSON");
 				if(responseHandler) responseHandler(json);
 
@@ -545,7 +552,7 @@ ConfigurationAPI.getSubsetRecords = function(subsetBasePath,
 			"startPath=/" + subsetBasePath +  
 			"&filterList=" + filterList + 
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		ConfigurationAPI.extractActiveGroups(req);
 		
@@ -553,7 +560,13 @@ ConfigurationAPI.getSubsetRecords = function(subsetBasePath,
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
 		{
-			Debug.log(err,Debug.HIGH_PRIORITY);
+			Debug.err(err);
+			if(responseHandler) responseHandler(records);
+			return;
+		}
+		if(errStr)
+		{
+			Debug.err(errStr);
 			if(responseHandler) responseHandler(records);
 			return;
 		}
@@ -602,13 +615,19 @@ ConfigurationAPI.getTree = function(treeBasePath,depth,modifiedTables,
 			"startPath=/" + treeBasePath +
 			"&filterList=" + "" + 
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
 		{
 			Debug.log(err,Debug.HIGH_PRIORITY);
 			if(responseHandler) responseHandler(undefined,responseHandlerParam);
+			return;
+		}
+		if(errStr)
+		{
+			Debug.err(errStr);
+			if(responseHandler) responseHandler(undefined,responseHandlerParam)
 			return;
 		}
 
@@ -838,13 +857,19 @@ ConfigurationAPI.getFieldsOfRecords = function(subsetBasePath,recordArr,fieldLis
 			"&recordList=" + recordListStr +  
 			"&fieldList=" + fieldList +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		var recFields = [];
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
 		{
 			Debug.log(err,Debug.HIGH_PRIORITY);
+			if(responseHandler) responseHandler(recFields);
+			return;
+		}
+		if(errStr)
+		{
+			Debug.err(errStr);
 			if(responseHandler) responseHandler(recFields);
 			return;
 		}
@@ -977,7 +1002,7 @@ ConfigurationAPI.getFieldValuesForRecords = function(subsetBasePath,
 			"&recordList=" + recordListStr +
 			"&fieldList=" + fieldListStr + 
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		var recFieldValues = [];
 		var err = DesktopContent.getXMLValue(req,"Error");
@@ -985,6 +1010,12 @@ ConfigurationAPI.getFieldValuesForRecords = function(subsetBasePath,
 		{
 			if(!silenceErrors) Debug.log(err,Debug.HIGH_PRIORITY);
 			if(responseHandler) responseHandler(recFieldValues,err);
+			return;
+		}
+		if(errStr)
+		{
+			Debug.err(errStr);
+			if(responseHandler) responseHandler(recFieldValues,errStr);
 			return;
 		}
 		
@@ -1065,7 +1096,7 @@ ConfigurationAPI.getUniqueFieldValuesForRecords = function(subsetBasePath,record
 			"&recordList=" + recordListStr +  
 			"&fieldList=" + fieldList +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		var fieldUniqueValues = [];
 		var err = DesktopContent.getXMLValue(req,"Error");
@@ -1075,7 +1106,13 @@ ConfigurationAPI.getUniqueFieldValuesForRecords = function(subsetBasePath,record
 			if(responseHandler) responseHandler(fieldUniqueValues);
 			return;
 		}
-		
+		if(errStr)
+		{
+			Debug.err(errStr);
+			if(responseHandler) responseHandler(fieldUniqueValues);
+			return;
+		}		
+
 		var fields = req.responseXML.getElementsByTagName("field");
 
 		for(var i=0;i<fields.length;++i)
@@ -1197,7 +1234,7 @@ ConfigurationAPI.setFieldValuesForRecords = function(subsetBasePath,recordArr,fi
 			"&valueList=" + valueListStr +
 			"&fieldList=" + fieldListStr + 
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
 		var modifiedTables = [];
 		
@@ -1209,6 +1246,13 @@ ConfigurationAPI.setFieldValuesForRecords = function(subsetBasePath,recordArr,fi
 			if(responseHandler) responseHandler(modifiedTables,err);
 			return;
 		}		
+		if(errStr)
+		{
+			Debug.err(errStr);
+			if(responseHandler) responseHandler(modifiedTables,errStr);
+			return;
+		}		
+
 		//modifiedTables
 		var tableNames = req.responseXML.getElementsByTagName("NewActiveTableName");
 		var tableVersions = req.responseXML.getElementsByTagName("NewActiveTableVersion");
@@ -1348,8 +1392,15 @@ ConfigurationAPI.popUpSaveModifiedTablesForm = function(modifiedTables,responseH
 			"&groupName=" + 
 			"&groupKey=-1", //end get params
 			"&modifiedTables=" + modifiedTablesListStr, //end post params
-			function(req) 
+			function(req, reqParam, errStr)
 			{
+		if(errStr) 
+		{
+			Debug.log(errStr,Debug.HIGH_PRIORITY);
+			el.innerHTML = str;
+			return;
+		}
+
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
 		{					
@@ -1465,8 +1516,15 @@ ConfigurationAPI.popUpSaveModifiedTablesForm = function(modifiedTables,responseH
 		DesktopContent.XMLHttpRequest("Request?RequestType=getGroupAliases" +	
 				"",
 				"",
-				function(req) 
+				function(req, reqParam, errStr)
 				{
+			if(errStr) 
+			{
+				Debug.log(errStr,Debug.HIGH_PRIORITY);
+				el.innerHTML = str;
+				return;
+			}
+				
 			var err = DesktopContent.getXMLValue(req,"Error");
 			if(err) 
 			{					
@@ -1918,8 +1976,16 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 					"&groupName=" + 
 					"&groupKey=-1", //end get params
 					"&modifiedTables=" + modifiedTablesListStr, //end post params
-					function(req) 
+					function(req, reqParam, errStr)
 					{
+				if(errStr) 
+				{		
+					Debug.log(errStr,Debug.HIGH_PRIORITY);
+					el.innerHTML = str;
+					if(responseHandler) responseHandler(savedTables,savedGroups,savedAliases);
+					return;
+				}
+					
 				var err = DesktopContent.getXMLValue(req,"Error");
 				if(err) 
 				{					
@@ -2212,8 +2278,15 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 							DesktopContent.XMLHttpRequest("Request?RequestType=getGroupAliases" +	
 									"",
 									"",
-									function(req) 
+									function(req, reqParam, errStr)
 									{
+								if(errStr) 
+								{		
+									Debug.log(errStr,Debug.HIGH_PRIORITY);									
+									if(responseHandler) responseHandler(savedTables,savedGroups,savedAliases);
+									return;
+								}
+									
 								var err = DesktopContent.getXMLValue(req,"Error");
 								if(err) 
 								{					
@@ -2442,7 +2515,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 			//	save new version
 			///////////////////////////////////////////////////////////
 			DesktopContent.XMLHttpRequest(reqStr, "", 
-					function(req,modifiedTableIndex) 
+					function(req, modifiedTableIndex, errStr) 
 					{
 				var err = DesktopContent.getXMLValue(req,"Error");
 				if(err) 
@@ -2454,7 +2527,17 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 					//do not kill on error --- if(el && !doNotKillPopUpEl) el.parentNode.removeChild(el);
 					if(responseHandler) responseHandler(savedTables,savedGroups,savedAliases);
 					return;
-				}						
+				}		
+				if(errStr) 
+				{					
+					Debug.log(errStr,Debug.HIGH_PRIORITY);
+
+					//kill popup dialog
+					var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID); 
+					//do not kill on error --- if(el && !doNotKillPopUpEl) el.parentNode.removeChild(el);
+					if(responseHandler) responseHandler(savedTables,savedGroups,savedAliases);
+					return;
+				}							
 
 				var tableName = DesktopContent.getXMLValue(req,"savedName");
 				var version = DesktopContent.getXMLValue(req,"savedVersion");
@@ -2508,8 +2591,13 @@ ConfigurationAPI.activateGroup = function(groupName, groupKey,
 			"&ignoreWarnings=" + (ignoreWarnings?"1":"0") +
 			"", //end get data
 			"", //end post data
-			function(req) 
+			function(req, reqParam, errStr)
 			{
+		if(errStr) 
+		{		
+			Debug.log(errStr,Debug.HIGH_PRIORITY);									
+			return;
+		} 
 		
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
@@ -2705,7 +2793,7 @@ ConfigurationAPI.setTableAliasInActiveBackbone = function(tableAlias, tableName,
 //		call a done handler.
 //
 //	params = [newBackboneGroupName, doneHandler, doReturnParams]
-ConfigurationAPI.newWizBackboneMemberHandler = function(req,params)
+ConfigurationAPI.newWizBackboneMemberHandler = function(req,params,errStr)
 {
 	var err = DesktopContent.getXMLValue(req,"Error");
 	if(err) 
@@ -2717,6 +2805,16 @@ ConfigurationAPI.newWizBackboneMemberHandler = function(req,params)
 			params[1](); //error so call done handler
 		return;
 	}		
+	if(errStr) 
+	{
+		Debug.log(errStr,Debug.HIGH_PRIORITY);
+		Debug.log("Process interrupted. Failed to modify the currently active Backbone!",Debug.HIGH_PRIORITY);
+
+		if(params[1])
+			params[1](); //error so call done handler
+		return;
+	}		
+	
 
 	var groupAliasName = DesktopContent.getXMLValue(req,"savedName");
 	var groupAliasVersion = DesktopContent.getXMLValue(req,"savedVersion");
@@ -2766,8 +2864,19 @@ ConfigurationAPI.saveGroupAndActivate = function(groupName,tableMap,
 			"&lookForEquivalent=" + (lookForEquivalent?"1":"0") +
 			"", //end get data
 			tableMap, //end post data
-			function(req)
+			function(req, reqParam, errStr)
 			{
+		if(errStr) 
+		{		
+			Debug.log(errStr,Debug.HIGH_PRIORITY);						
+			Debug.log("Process interrupted. Failed to create a new group!" +
+				" Please see details below.",
+				Debug.HIGH_PRIORITY);						
+
+			if(doneHandler)	doneHandler(); //error so call done handler
+			return;
+		}
+
 		var err = DesktopContent.getXMLValue(req,"Error");
 		var name = DesktopContent.getXMLValue(req,"TableGroupName");
 		var key = DesktopContent.getXMLValue(req,"TableGroupKey");
@@ -2841,14 +2950,21 @@ ConfigurationAPI.saveGroupAndActivate = function(groupName,tableMap,
 ConfigurationAPI.getGroupTypeMemberNames = function(groupType,responseHandler)
 {
 	DesktopContent.XMLHttpRequest("Request?RequestType=get" + groupType + "MemberNames", "", 
-			function (req)
-			{	
+			function (req, reqParam, errStr)
+			{
+			
 		var retArr = [];
 		
 		var err = DesktopContent.getXMLValue(req,"Error");
 		if(err) 
 		{
 			Debug.log(err,Debug.HIGH_PRIORITY);
+			if(responseHandler)	responseHandler(retArr);
+			return;
+		}
+		if(errStr) 
+		{		
+			Debug.log(errStr,Debug.HIGH_PRIORITY);						
 			if(responseHandler)	responseHandler(retArr);
 			return;
 		}
@@ -6391,8 +6507,8 @@ ConfigurationAPI.addSubsetRecords = function(subsetBasePath,
 			"startPath=/" + subsetBasePath +  
 			"&recordList=" + recordListStr +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
-			{
+			function(req, reqParam, errStr)
+			{			
 		var modifiedTables = [];
 
 		var err = DesktopContent.getXMLValue(req,"Error");
@@ -6400,6 +6516,13 @@ ConfigurationAPI.addSubsetRecords = function(subsetBasePath,
 		{
 			if(!silenceErrors)
 				Debug.log(err,Debug.HIGH_PRIORITY);
+			responseHandler(modifiedTables,err);
+			return;
+		}
+		if(errStr) 
+		{		
+			if(!silenceErrors)
+				Debug.log(errStr,Debug.HIGH_PRIORITY);			
 			responseHandler(modifiedTables,err);
 			return;
 		}
@@ -6478,15 +6601,21 @@ ConfigurationAPI.deleteSubsetRecords = function(subsetBasePath,
 			"startPath=/" + subsetBasePath +  
 			"&recordList=" + recordListStr +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
-			{
-
+			function(req, reqParam, errStr)
+			{			
 		var err = DesktopContent.getXMLValue(req,"Error");
 		var modifiedTables = [];
 		if(err) 
 		{
 			if(!silenceErrors)
 				Debug.log(err,Debug.HIGH_PRIORITY);
+			responseHandler(modifiedTables,err);
+			return;
+		}
+		if(errStr) 
+		{		
+			if(!silenceErrors)
+				Debug.log(errStr,Debug.HIGH_PRIORITY);	
 			responseHandler(modifiedTables,err);
 			return;
 		}
@@ -6581,15 +6710,21 @@ ConfigurationAPI.renameSubsetRecords = function(subsetBasePath,
 			"&recordList=" + recordListStr +
 			"&newRecordList=" + newRecordListStr +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
-			{
-
+			function(req, reqParam, errStr)
+			{		
 		var err = DesktopContent.getXMLValue(req,"Error");
 		var modifiedTables = [];
 		if(err) 
 		{
 			if(!silenceErrors)
 				Debug.log(err,Debug.HIGH_PRIORITY);
+			responseHandler(modifiedTables,err);
+			return;
+		}
+		if(errStr) 
+		{		
+			if(!silenceErrors)
+				Debug.log(errStr,Debug.HIGH_PRIORITY);	
 			responseHandler(modifiedTables,err);
 			return;
 		}
@@ -6672,15 +6807,21 @@ ConfigurationAPI.copySubsetRecords = function(subsetBasePath,
 			"startPath=/" + subsetBasePath +  
 			"&recordList=" + recordListStr +
 			"&modifiedTables=" + modifiedTablesListStr, //end post data
-			function(req)
-			{
-
+			function(req, reqParam, errStr)
+			{		
 		var err = DesktopContent.getXMLValue(req,"Error");
 		var modifiedTables = [];
 		if(err) 
 		{
 			if(!silenceErrors)
 				Debug.log(err,Debug.HIGH_PRIORITY);
+			responseHandler(modifiedTables,err);
+			return;
+		}
+		if(errStr) 
+		{		
+			if(!silenceErrors)
+				Debug.log(errStr,Debug.HIGH_PRIORITY);	
 			responseHandler(modifiedTables,err);
 			return;
 		}

@@ -333,12 +333,12 @@ function editSecurityHandler(req)
 	console.log("req.responseText",req.responseText);
 	
 	if(selectedSecurityChoice_ == "DigestAccessAuthentication")
-		Debug.log("Digest Access Authentication was enabled successfully!" + 
+		Debug.log("<b>Digest Access Authentication</b> was enabled successfully!" + 
 				"\n\n NOTE: If this is the first time you are enabling users and passwords, " +
-				"then you must get the New Account Code for the admin account from " +
+				"then you must get the <b>New Account Code (NAC)</b> for the admin account from " +
 				"the Edit User Accounts window (in User Settings folder of wiz mode) or " +
-				"the printouts in normal mode. In verbose mode ('ots -v'), the admin New Account Code will be in the linux console; " +
-				"otherwise ('ots'), the admin New Account Code can be retrieved in the Gateway log file. " +
+				"the printouts in normal mode. In verbose mode ('ots -v'), the admin <b>New Account Code (NAC)</b> will be in the linux console; " +
+				"otherwise ('ots'), the admin <b>NAC</b> can be retrieved in the Gateway log file. " +
 				"\n\nAfter the admin account has been setup, new accounts can be made and " +
 				"the admin account will have access to the New Account Codes in the settings " +
 				"web GUI.", 

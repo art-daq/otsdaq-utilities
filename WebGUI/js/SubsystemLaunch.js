@@ -630,9 +630,12 @@ SubsystemLaunch.create = function() {
 						else if(fieldIds[i] == "action")
 						{
 							str += "<select id='subsystem_" + fieldIds[i] + 
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;' "+ 
+								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+ 								
+								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;' " +
 								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
-							str += "<option selected>Select an action:</option>";
+							str += "<option selected>Select an action for &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
 							str += "<option >Configure</option>";
 							// str += "<option >Start</option>";
 							// str += "<option >Stop</option>";
@@ -667,6 +670,8 @@ SubsystemLaunch.create = function() {
 						{
 							str += "<select id='subsystem_" + fieldIds[i] + 
 								"_select_" + s + "' style='padding: 4px; font-size: 14px;' "+ 
+								"title='Click to select the approach/mode for following the top-level Finite State Machine for subsystem &apos;" + 
+								SubsystemLaunch.subsystems[s].name + "&apos;' " +
 								"onchange='SubsystemLaunch.launcher.handleSubsystemFsmModeSelect(this.value, " + s + ");'>";							
 							for(var c=0; c < SubsystemLaunch.SUBSYSTEM_FSM_MODES.length; ++c)							
 								str += "<option " + (SubsystemLaunch.subsystems[s].fsmMode == 
@@ -714,7 +719,7 @@ SubsystemLaunch.create = function() {
 			h = _LAUNCH_MIN_W;
 
 		var redrawMode = 1;
-		if(w > 1500)
+		if(w > 2400)
 			redrawMode = 2;
 		Debug.log("redrawWindow to " + w + " - " + h,redrawMode,_lastRedrawMode);	
 		
@@ -1157,8 +1162,9 @@ SubsystemLaunch.create = function() {
 			// progressNum = (Math.random() * 200)|0; //for debugging
 			// if (progressNum > 100) progressNum = 100;  //for debugging
 
-			if (progressNum == 100) //show solid state color
-			{							
+			if (progressNum == 100 || statusString == "Failed") //show solid state color
+			{					
+				progressNum = 100; //force to 100 on Failed		
 				switch (statusString) 
 				{
 					case "Initial":
@@ -1182,7 +1188,8 @@ SubsystemLaunch.create = function() {
 
 						cell.style.cursor = "pointer";
 						cell.onclick =
-							function () {
+							function () 
+							{
 								Debug.log("Cell " + this.id);
 
 								if(this.id == "systemStatusState")
@@ -1198,7 +1205,7 @@ SubsystemLaunch.create = function() {
 								Debug.err("From Subsystem '" +
 									SubsystemLaunch.subsystems[s].name + "'... " + 
 									SubsystemLaunch.subsystems[s].status);
-							};
+							}; //end onclick()
 						break;
 					default: cell.style.background = "";
 				} // end of switch	
@@ -1663,7 +1670,7 @@ SubsystemLaunch.create = function() {
 						/* textColor [optional] */ undefined, 
 						/* borderColor [optional] */ "#770000", 
 						/* getUserInput [optional] */ true, 
-						/* dialogWidth [optional] */ 250,
+						/* dialogWidth [optional] */ 500,
 						/* cancelFunc [optional] */ 
 						function(entry)
 						{
@@ -1835,15 +1842,46 @@ SubsystemLaunch.create = function() {
 		//if Iterator plan active, then Halt-Iterator
 		//if not, then Stop FSM transition
 
-
-		Debug.log("localStop()");
+		Debug.log("stop()");
 
 		if(SubsystemLaunch.system.state != "Running" && (
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" || 
 			SubsystemLaunch.iterator.activePlanStatus == "Error"))
 		{
-			//should never happen!
-			Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
+			if(SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
+			{
+				DesktopContent.popUpVerification( 
+					"There does not appear to be an active Run; do you want to Halt anyway?",
+					function()
+					{
+						Debug.log("User chose to halt!");
+	
+						window.clearTimeout(_getStatusTimer);
+						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+	
+						//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
+						DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+								"&StateMachine=iterateHalt", //end get data 
+								"", //end post data
+								function(req) //start handler
+								{
+							Debug.log("stop() iterateHalt handler ");
+							window.clearTimeout(_getStatusTimer);
+							_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+							
+								}, //end handler
+								0, //handler param
+								0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+								true /*targetGatewaySupervisor*/);
+	
+					},
+					0,"#efeaea",0,"#770000"); //end popUpVerification
+			}
+			else
+			{
+				//should never happen!
+				Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
+			}
 		}
 		else if(SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
 		{
@@ -1876,29 +1914,14 @@ SubsystemLaunch.create = function() {
 		}
 		else if(SubsystemLaunch.system.state == "Running") //likely, Iterator left open-ended run	
 		{
+
 			DesktopContent.popUpVerification( 
 				"Are you sure you want to Stop the open-ended run?",
 				function()
 				{
 					Debug.log("User chose to stop!");
-					window.clearTimeout(_getStatusTimer);
-					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
-					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-								"&fsmName=" + _fsmName + 
-								"&StateMachine=Stop", //end get data 
-								"", //end post data
-							function(req) //start handler
-							{
-						Debug.log("stop() FSM handler ");
-						window.clearTimeout(_getStatusTimer);
-						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
-						
-							}, //end handler
-							0, //handler param
-							0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-							true /*targetGatewaySupervisor*/);
-
+					localHandleLogEntry();
 				},
 				0,"#efeaea",0,"#770000"); //end popUpVerification
 		}
@@ -1908,6 +1931,98 @@ SubsystemLaunch.create = function() {
 			Debug.err("There does not appear to be an active Run - can not Stop. Perhaps you need to refresh this page to realign with FSM?");				
 		}
 
+
+		return;
+
+		//===========
+		function localHandleLogEntry()
+		{
+			Debug.log("localHandleLogEntry() stop");
+			var transitionActionName = "Stop";			
+				
+			//attempt to get last log entry
+			DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachineLastLogEntry" +
+				"&fsmName=" + _fsmName +
+				"&transition=" + transitionActionName, "", 
+				localPopUpVerify, //end request handler
+				0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
+				false /*doNoShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);   
+				
+			return;
+
+			//================
+			function localPopUpVerify(req)
+			{
+				lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
+				if(lastLogEntry && lastLogEntry != "")
+					lastLogEntry = decodeURIComponent(lastLogEntry);
+				
+				DesktopContent.popUpVerification(
+					/* prompt */
+					"Please enter a logbook entry summarizing the run:"
+					, 
+					/* continueFunc [optional] */
+					function(entry)
+					{
+						Debug.log("User entered logbook entry " + entry);
+
+						//save last entry
+						lastLogEntry = entry;
+						localStop(entry);
+					} //end continueFunc handlere
+					, 
+					/* val [optional] */ undefined,
+					/* bgColor [optional] */ "#efeaea", 
+					/* textColor [optional] */ undefined, 
+					/* borderColor [optional] */ "#770000", 
+					/* getUserInput [optional] */ true, 
+					/* dialogWidth [optional] */ 500,
+					/* cancelFunc [optional] */ 
+					function(entry)
+					{
+						Debug.log("User cancelled transition action",entry);
+
+					} //end cancelFunc handler
+					,
+					/* yesButtonText [optional] */ transitionActionName,
+					/* noAutoComplete [optional] */ true, 
+					/* defaultUserInputValue [optional] */ (lastLogEntry?lastLogEntry:""),							
+					/* cancelButtonText [optional] */ undefined,							
+					/* wantMultilineInput [optional] */ true
+				); //end popUpVerification
+
+				return;
+			} //end localPopUpVerify()
+			
+		} //end localHandleLogEntry()
+
+
+		//===========
+		function localStop(logEntry)
+		{			
+			Debug.log("localStop()");
+			Debug.logv({logEntry});
+
+			window.clearTimeout(_getStatusTimer);
+			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+						"&fsmName=" + _fsmName + 
+						"&StateMachine=Stop", //end get data 
+						"logEntry=" + encodeURIComponent(logEntry), //end post data
+					function(req) //start handler
+					{
+				Debug.log("stop() FSM handler ");
+				window.clearTimeout(_getStatusTimer);
+				_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
+				
+					}, //end handler
+					0, //handler param
+					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+					true /*targetGatewaySupervisor*/);
+
+		} //end localStop()
 
 	} //end stop()
 

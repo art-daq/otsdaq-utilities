@@ -892,7 +892,7 @@
 				}); //end getLastTableGroups
 
 
-			DesktopContent.XMLHttpRequest("Request?RequestType=versionTracking&Type=Get", "",
+			DesktopContent.XMLHttpRequest("Request?RequestType=getVersionTracking", "",
 				versionTrackingHandler);
 		} //end setupSystemViewMode()
 
@@ -2252,14 +2252,14 @@
 					DesktopContent.tooltip(tableName + " Description",
 							"The table description may be useful in determining how to use this " +
 							"table or the meaning of the column fields (admins can edit the description in the Table Editor in wiz mode). Here is the description for " +
-							"the '" + tableName + "' table:<br><br>" +
+							"the '<b>" + tableName + "</b>' table:<br><br>" +
 							"<div style='margin-left:20px'>" +
 							tableDescription + "</div>", true /*alwaysShow*/);
 				else
 					DesktopContent.tooltip("Missing " + tableName + " Description",
-							"There is no table description for '" + 
+							"There is no table description for '<b>" + 
 							tableName + 
-							".' To create or edit a table description, go to the Table Editor in wiz mode.",
+							"</b>.' To create or edit a table description, go to the Table Editor in wiz mode.",
 							true /*alwaysShow*/);
 					}, //end table response handler
 
@@ -6424,8 +6424,14 @@
 
 			//get active table groups
 			DesktopContent.XMLHttpRequest("Request?RequestType=getActiveTableGroups",
-				"", function (req) 
+				"", 
+				function (req, reqParam, errStr) 
 				{
+					if(errStr && errStr != "")
+					{
+						Debug.err("Error getting active table groups: " + errStr);
+						return;
+					}
 					activateTableGroupHandler(req);
 
 					var name = DesktopContent.getXMLValue(req,
@@ -6434,9 +6440,8 @@
 						groupTypeName + "-ActiveGroupKey");
 
 					if (!name || !key) {
-						Debug.log("Process interrupted. There was no active " +
-							groupTypeName + " Group found.",
-							Debug.HIGH_PRIORITY);
+						Debug.err("Process interrupted. There was no active " +
+							groupTypeName + " Group found.");
 						setupSystemViewMode();
 						return;
 					}
@@ -6444,7 +6449,7 @@
 					ConfigurationAPI.setGroupAliasInActiveBackbone(
 						groupAlias, name, key, 0, setupSystemViewMode);
 
-				},
+				}, //end handler()
 				0, 0, true  //reqParam, progressHandler, callHandlerOnErr
 			); //end of getActiveTableGroups handler
 		} //end wizToActiveTableGroup()
@@ -10551,7 +10556,7 @@
 
 			//set position and size
 			var gh = 50;
-			var w = 380;
+			var w = 480;
 			var h = 330;
 			ConfigurationAPI.setPopUpPosition(el, w /*w*/, h - gh * 2 /*h*/,
 				undefined /*padding*/, undefined /*border*/, undefined /*margin*/, undefined /*doNotResize*/,
@@ -11576,11 +11581,25 @@
 		//==============================================================================
 		//editTreeNodeOK
 		var _handlingTreeNodeOK = false;
+		var _handlingTreeNodeOKTimeout = 0;
 		function editTreeNodeOK() 
 		{
 			if(_handlingTreeNodeOK)  //already handling, dont double handle because of HTTP Request
 			{
 				Debug.log("ALREADY handling editTreeNodeOK type " + treeEditingNodeType_);
+
+				//in case it is stuck (beacuse of crazy user clicking), create a timeout
+				window.clearTimeout(_handlingTreeNodeOKTimeout);
+				_handlingTreeNodeOKTimeout = window.setTimeout(function()
+					{
+						if(_handlingTreeNodeOK)
+						{
+							Debug.log("How did this get stuck? Was there crazy user clicking during edits?");
+							_handlingTreeNodeOK = false;
+						}
+					},3 * 1000); //3 seconds
+
+				
 				return; 
 			}
 			try 
@@ -11892,8 +11911,14 @@
 						"&targetColumn=" + treeEditingTargetColumn_
 						,
 						"newValue=" + newValue, //newValue post in case the value is large 
-						function (req) 
+						function (req, reqParam, errStr) 
 						{
+							if(errStr) 
+							{		
+								Debug.log(errStr,Debug.HIGH_PRIORITY);	
+								editCellCancel();
+								return;
+							}
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err) 
 							{

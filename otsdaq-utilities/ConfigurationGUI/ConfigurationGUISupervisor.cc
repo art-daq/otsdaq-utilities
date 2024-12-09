@@ -138,6 +138,10 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
 	    "*");  // all
+	//to enable read-only access to the Configuration Tree:
+	CorePropertySupervisorBase::setSupervisorProperty(
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
+	    "get*"); 
 }  // end setSupervisorPropertyDefaults()
 
 //==============================================================================
@@ -145,12 +149,12 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 //		override to force supervisor property values (and ignore user settings)
 void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 {
-	CorePropertySupervisorBase::setSupervisorProperty(
+	CorePropertySupervisorBase::addSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "getActiveTableGroups");  // none
+	    "getActiveTableGroups"); 
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes,
-	    "*");  // all
+	    "!get*");  // all except read-only requests
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -369,9 +373,13 @@ try
 				__SUP_COUT_ERR__ << "Unable to open command file: " << fn << __E__;
 		}
 	}
-	else if(requestType == "versionTracking")
+	else if(requestType == "versionTracking" || requestType == "getVersionTracking")
 	{
-		std::string type = CgiDataUtilities::getData(cgiIn, "Type");  // from GET
+		std::string type;
+		if(requestType == "getVersionTracking")
+			type = "Get";
+		else
+			type = CgiDataUtilities::getData(cgiIn, "Type");  // from GET
 		__SUP_COUT__ << "type: " << type << __E__;
 
 		if(type == "Get")

@@ -276,8 +276,10 @@
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 			
+			//============================================================
 			//init called once body has loaded
-			function init() {			
+			function init() 
+			{			
 				_inputEl = document.getElementById('inputArea');
 				_historyEl = document.getElementById('chatHistory');
 				_historyContainerEl = document.getElementById('chatHistoryContainer');
@@ -300,7 +302,7 @@
 			    _chatHistoryArray = new Array();
 				for(var i=0;i<_chatHistoryFields.length;++i)
 					_chatHistoryArray.push(new Array());
-				_chatEl.innerHTML = "--- Chats will be displayed here. Old chats will scroll up as new chats are received. ---";
+				_chatEl.innerHTML = "--- Chats will be displayed here. Old chats will scroll up as new chats are received. History is maintained for 30 mintues. ---";
 				
 				window.onresize = redrawChatWindow;
 				_historyEl.onmousewheel = handleUserInputScroll;
@@ -331,27 +333,33 @@
 			    }
 			    else
 			    	_muteSoundsCheckbox.disabled = true;
-			}
+			} //end init()
 
+			//============================================================
 			//handleChatFocus ~		
-			function handleChatFocus(e) {	
+			function handleChatFocus(e)
+			{	
 				_soundsEnabled = false;
 			    //Debug.log("Chat handleChatFocus: " + _soundsEnabled);
 			    if(e) DesktopContent.handleFocus(e);				
-			}
+			} //end handleChatFocus()
 			
+			//============================================================
 			//handleChatBlur ~
 			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link		
-			function handleChatBlur(e) {	
+			function handleChatBlur(e) 
+			{	
 				_soundsEnabled = true;
 			    //Debug.log("Chat handleChatBlur: " + _soundsEnabled);
 			    if(e) DesktopContent.handleBlur(e);				
-			}
+			} //end handleChatBlur()
 			
+			//============================================================
 			//toggleMuteSounds ~
 			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link	
 			//	Note: when from checkbox, event gives stale value.
-			function toggleMuteSounds(e) {	 				
+			function toggleMuteSounds(e) 
+			{	 				
 			    Debug.log("Chat _soundsEnabled: " + _soundsEnabled);
 				if(_muteSoundsCheckbox.disabled) return; //do nothing if disabled in init
 
@@ -364,8 +372,9 @@
 			    }
 
 			    if(!e) _muteSoundsCheckbox.checked = !_muteSoundsCheckbox.checked; //do action if from link
-			}
+			} //end toggleMuteSounds()
 			
+			//============================================================
 			//redrawChatWindow ~
 			// 	refreshes chat window, called when window is resized
 			function redrawChatWindow() {			
@@ -413,11 +422,13 @@
 
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
-			}		
+			} //end redrawChatWindow()		
 
+			//============================================================
 			//handleKeyInput ~
 			// 	handles chat input
-			function handleKeyInput(e) {	
+			function handleKeyInput(e) 
+			{	
 
 			    //Debug.log("Chat handleKeyInput  " + e.key);
 				if(!e.shiftKey && !e.ctrlKey && !e.altKey && e.key == "Enter") {sendChat(); return false;} //if enter, login				
@@ -432,18 +443,31 @@
 					return false; //to stop tab from propagating to window
 				
 				return true;
-			}
+			} //end handleKeyInput()
 
+			//============================================================
 			//sendChat ~
 			// 	send chat to server
-			function sendChat() {	
-
+			function sendChat() 
+			{	
 				if(_inputEl.value == "" || _lastSentChat == _inputEl.value) 
 				{ 
 					_lastTypedChat = _inputEl.value; //restore to compensate for swaps
 					_inputEl.value = ""; 
 					_chatEl.innerHTML += "<div>--- No empty or repeat messages are sent ---</div>";
-					return; }//do nothing for empty or repeat 
+					return; 
+				}//do nothing for empty or repeat 
+
+			    if(_chatUpdateTimer)
+			    	clearTimeout(_chatUpdateTimer);
+			    _chatUpdateTimer = window.setTimeout(getChatUpdates,5000); //schedule next update in case of error
+
+				//add place holder chat for immediate user feedback
+				_chatEl.innerHTML += "<div class='chatEntry newTemporarySelfChat' style='color:" + getColorForUser(_displayName) + "'>" +
+					"<b>(" + formatTime(0) + ") " +
+					_displayName + ":</b> " + 
+					"..." + "</div>"; //important to only have one /div> per entry for truncate
+				
 								
 				var chat = convertForServer(_inputEl.value);
 			    Debug.log("Chat sendChat  ");
@@ -452,7 +476,7 @@
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=SendChat", 
 					"chat="+chat+"&user="+_displayName,
-					0 /*returnHandler*/, 
+					getChatUpdates /*returnHandler*/, 
 					0 /*reqParam*/, 
 					0 /*progressHandler*/, 
 					0 /*callHandlerOnErr*/, 
@@ -460,14 +484,14 @@
 			    
 				_lastSentChat = _lastTypedChat = _inputEl.value;
 			    _inputEl.value = ""; 	//clear input 
-			    
-			    getChatUpdates();
-			}
+			} //end sendChat()
 			
+			//============================================================
 			//convertForServer ~
 			//	replace server reserved characters with %<hex> equivalents
 			//	reserved: ", ', &, <, >
-			function convertForServer(chat) {
+			function convertForServer(chat) 
+			{
 			    return chat
 		         .replace(/&/g, "%26")
 		         .replace(/</g, "%3C")
@@ -478,11 +502,13 @@
 				 .replace(/  /g, "%20%20");				
 			}
 
+			//============================================================
 			//convertForClient ~
 			//	replace html/xhtml reserved characters with equivalent for client display.
 			//	reserved: ", ', &, <, >, newline, space
 			//		also add special things: links
-			function convertForClient(chat) {
+			function convertForClient(chat) 
+			{
 				
 				//insert links----------
 				var lappend = "";
@@ -560,21 +586,25 @@
 			         .replace(/%0A%0D/g, "<br>")			//newline
 			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space
 			    
-			 }
+			 } //end convertForClient()
 			
+			//============================================================
 			//toggleUsersPane ~
 			// 	send chat to server
-			function toggleUsersPane() {							
+			function toggleUsersPane() 
+			{							
 				_displayUsers = !_displayUsers;
 			    Debug.log("Chat toggleUsersPane now is " + _displayUsers);	
 			    redrawChatWindow();
-			}
+			} //end toggleUsersPane()
 			
+			//============================================================
 			//getChatUpdates ~
 			// 	get chat updates from server
 			//	if _lastUpdateIndex doesn't match server, server will give all new info since
 			//	initially _lastUpdateIndex = 0
-			function getChatUpdates() {			
+			function getChatUpdates() 
+			{			
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=RefreshChat",
 					"lastUpdateIndex="+_lastUpdateIndex+"&user="+_displayName,
@@ -583,11 +613,13 @@
 					0 /*progressHandler*/, 
 					0 /*callHandlerOnErr*/, 
 					true /*doNoShowLoadingOverlay*/);
-			}
+			} //end getChatUpdates()
 
+			//============================================================
 			//getActiveUsers ~
 			// 	get active users from server
-			function getActiveUsers() {	
+			function getActiveUsers() 
+			{	
 				DesktopContent.XMLHttpRequest(
 				"Request?RequestType=RefreshUsers",
 				"",
@@ -596,11 +628,13 @@
 				0 /*progressHandler*/, 
 				0 /*callHandlerOnErr*/, 
 				true /*doNoShowLoadingOverlay*/);
-			}
+			} //end getActiveUsers()
 			
+			//============================================================
 			//handleActiveUsers ~
 			// 	handle server response
-			function handleActiveUsers(req) {
+			function handleActiveUsers(req) 
+			{
 				if(!req) return;
 				Debug.log("Chat handleActiveUsers");
 				
@@ -613,11 +647,13 @@
 					_activeUsersStr += "<a class='activeUser' href='Javascript:pageUser(\"" + uarr[i] + "\");' title='Click here to page " + 
 						uarr[i] + " to chat'>" + uarr[i] + "</a><br>";
 				updateChatUsers(); //display			    
-			}
+			} //end handleActiveUsers()
 			
+			//============================================================
 			//handleRefreshChat ~
 			// 	handle server response
-			function handleRefreshChat(req) {
+			function handleRefreshChat(req) 
+			{
 			    //Debug.log("Chat checkUpdates" + req.responseText);
 				
 			    var tmp = DesktopContent.getXMLValue(req,"last_update_index");
@@ -647,12 +683,14 @@
 			    if(_chatUpdateTimer)
 			    	clearTimeout(_chatUpdateTimer);
 			    _chatUpdateTimer = window.setTimeout(getChatUpdates,_REFRESH_INTERVAL); //schedule next update			    
-			}
+			} //end handleRefreshChat()
 
 
+			//============================================================
 			//updateChatUsers ~
 			// 	update chat users from _chatUsersArray
-			function updateChatUsers() {
+			function updateChatUsers() 
+			{
 				if(!_chatUsersArray || !_chatUsersArray[0]) return;
 				
 				var str = ""; //chat users string
@@ -666,14 +704,20 @@
 				
 				//update input text color
 				_inputEl.style.color = getColorForUser(_displayName);
-			}
+			} //end updateChatUsers()
 			
+			//============================================================
 			//updateChatHistory ~
 			// 	add chat history from _chatHistoryArray
-			function updateChatHistory() {
-				
+			function updateChatHistory() 
+			{				
 				if(!_chatHistoryArray || !_chatHistoryArray[0]) return;
 			    
+				//remove all self temporary 
+				var els = document.getElementsByClassName("newTemporarySelfChat");
+				for(var i=0;i<els.length;++i)
+					els[i].parentNode.removeChild(els[i]);
+
 				var newChatFound = false;
 				var str = "";
 				for(var i=0;i<_chatHistoryArray[0].length;++i)
@@ -704,30 +748,36 @@
 				
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
-			}
+			} //end updateChatHistory()
 
+			//============================================================
 			//formatTime ~
-			function formatTime(t) {
-				var date = new Date(t * 1000);
+			function formatTime(t) 
+			{
+				var date = t?(new Date(t * 1000)):(new Date());
 				var mm = date.getMinutes() < 10?"0"+date.getMinutes():date.getMinutes();
 				var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();				
 				return date.getHours() + ":" + mm + ":" + ss;
-			}
+			} //end formatTime()
 			
+			//============================================================
 			//getColorForUser ~
 			//	generate color based on user index in user list
-			function getColorForUser(u) {				
+			function getColorForUser(u) 
+			{				
 				if(!_chatUsersArray || !_chatUsersArray[0]) return "auto";
 			    
 				for(var i=0;i<_chatUsersArray[0].length;++i)
 					if(_chatUsersArray[0][i].getAttribute('value') == u)
 						return getColorForIndex(i);
 				return "auto";		
-			}
+			} //end getColorForUser()
 
+			//============================================================
 			//getColorForIndex ~
 			//	generate color based on user index in user list
-			function getColorForIndex(i) {
+			function getColorForIndex(i) 
+			{
 				var r = ((i+1)%2 * 200) % 256;
 				var g = (i%4 * 200) % 256;
 				var b = (i%8 * 200) % 256; 
@@ -736,33 +786,40 @@
 				return "RGB(" +	r + "," + g + "," + b + ")";
 			}
 
-
+			//============================================================
 			//handleUserScroll ~
 			//	identify when user wants to keep up with live chats
-			function handleUserScroll(e) {							    
+			function handleUserScroll(e) 
+			{							    
 				if(_userMouseInput) //only mess with scroll if user did something with mouse recently
 					_scrollWithNewChats = (_historyEl.scrollTop >=_historyEl.scrollHeight - _historyEl.offsetHeight - 2);	
 
 				DesktopContent.handleScroll(e);
 			}
 			
+			//============================================================
 			//handleUserInputScroll ~
 			//	identify when user used mouse and wants to keep up with live chats
-			function handleUserInputScroll(mouseEvent) {
+			function handleUserInputScroll(mouseEvent) 
+			{
 				_userMouseInput = true;
 				
 				DesktopContent.handleScroll(mouseEvent);
 			}
 
+			//============================================================
 			//handleMouseMoveScroll ~
 			//	identify when user released the mouse, to be considerd by scroll handler
-			function handleMouseMoveScroll(mouseEvent) {
+			function handleMouseMoveScroll(mouseEvent) 
+			{
 				if(_userMouseInput && mouseEvent.which == 0) //mouse button released
 					_userMouseInput = false;
 			}
 			
+			//============================================================
 			//pageUser ~
-			function pageUser(u) {
+			function pageUser(u) 
+			{
 			    Debug.log("Chat pageUser now is " + u);	
 				DesktopContent.XMLHttpRequest("Request?RequestType=PageUser","topage="+u+"&user="+_displayName,handleRefreshChat);
 			}
