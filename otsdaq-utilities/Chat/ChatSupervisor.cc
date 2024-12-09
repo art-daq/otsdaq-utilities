@@ -162,11 +162,7 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 	for(uint64_t i = 0; i < ChatUsers_.size(); ++i)
 		xmlOut->addTextElementToParent("chat_user", ChatUsers_[i], "chat_users");
 
-	//Changed to give full history!
-	// if(!lastUpdateIndex)  // lastUpdateIndex == 0, so just give the <user> entered chat
-	//                       // message only
-	// 	lastUpdateIndex = ChatHistoryIndex_[ChatHistoryIndex_.size() - 1] -
-	// 	                  1;  // new user will then get future chats
+	//if lastUpdateIndex == 0, first request, so give give full history!
 
 	// get all accounts
 	xmlOut->addTextElementToData("chat_history", "");
