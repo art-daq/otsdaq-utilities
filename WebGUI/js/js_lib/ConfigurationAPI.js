@@ -2515,7 +2515,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 			//	save new version
 			///////////////////////////////////////////////////////////
 			DesktopContent.XMLHttpRequest(reqStr, "", 
-					function(req,modifiedTableIndex,errStr) 
+					function(req, modifiedTableIndex, errStr) 
 					{
 				var err = DesktopContent.getXMLValue(req,"Error");
 				if(err) 
