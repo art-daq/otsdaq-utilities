@@ -201,7 +201,7 @@ std::string extractXmlField(const std::string &xml,
 	lo = xml.find("value='", lo) + 7;
 
 	if (returnAfter)
-		*returnAfter = hi + 3; //field.length() + 3;
+		*returnAfter = hi + 3;
 
 	return xml.substr(lo, hi - lo);
 } //end extractXmlField()

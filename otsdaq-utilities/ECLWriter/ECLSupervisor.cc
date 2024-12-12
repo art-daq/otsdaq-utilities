@@ -30,11 +30,12 @@ using namespace ots;
 #define XML_ADMIN_STATUS "logbook_admin_status"
 #define XML_STATUS "logbook_status"
 #define XML_MOST_RECENT_DAY "most_recent_day"
-#define XML_EXPERIMENTS_ROOT "experiments"
-#define XML_EXPERIMENT "experiment"
-#define XML_ACTIVE_EXPERIMENT "active_experiment"
-#define XML_EXPERIMENT_CREATE "create_time"
-#define XML_EXPERIMENT_CREATOR "creator"
+#define XML_TIMEZONE_OFFSET "timezone_offset_hours"
+#define XML_CATEGORY_ROOT "categories"
+#define XML_CATEGORY "category"
+#define XML_ACTIVE_CATEGORY "active_category"
+#define XML_CATEGORY_CREATE "create_time"
+#define XML_CATEGORY_CREATOR "creator"
 
 #define XML_LOGBOOK_ENTRY "logbook_entry"
 #define XML_LOGBOOK_ENTRY_SUBJECT "logbook_entry_subject"
@@ -73,7 +74,18 @@ try
 	ECLHost_     = __ENV__("ECL_URL");  // e.g. https://dbweb6.fnal.gov:8443/ECL/test_beam
 	ECLPwd_      = __ENV__("ECL_PASSWORD");
 	ECLCategory_ = __ENV__("ECL_CATEGORY");
-	ExperimentName_ = __ENV__("OTS_OWNER") + std::string(" ots");
+	CategoryName_ = __ENV__("OTS_OWNER") + std::string(" ots");
+
+
+	// Determine the timezone offset from UTC time in hours
+    std::time_t now = std::time(0);
+    std::tm* localTime = std::localtime(&now);
+    std::tm* utcTime = std::gmtime(&now);
+    int offsetSeconds = std::difftime(std::mktime(localTime), std::mktime(utcTime));
+	timezoneHourOffset_ = offsetSeconds/60/60;
+
+	__SUP_COUTV__(timezoneHourOffset_);
+
 	
 }  // end init()
 catch(const std::runtime_error& e)
@@ -97,14 +109,14 @@ void ECLSupervisor::destroy(void)
 //==============================================================================
 void ECLSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 {
-	__COUT__ << " active experiment " << ECLCategory_ << std::endl;
+	__COUT__ << " active category " << ECLCategory_ << std::endl;
 	*out << "<!DOCTYPE HTML><html lang='en'><head><title>ots</title>" << ECLSupervisor::getIconHeaderString() <<
 	    // end show ots icon
 	    "</head>"
 		<< "<frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
-	     << "&active_experiment=" << ECLCategory_ << "'></frameset></html>";
+	     << "&active_category=" << ECLCategory_ << "'></frameset></html>";
 } //end defaultPage()
 
 //==============================================================================
@@ -144,13 +156,13 @@ void ECLSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 	    std::string() +
-	        "*=1 | CreateExperiment=-1 | RemoveExperiment=-1 | GetExperimentListAdmin=-1 "
-	        "| SetActiveExperiment=-1" +
+	        "*=1 | CreateCategory=-1 | RemoveCategory=-1 | GetCategoryListAdmin=-1 "
+	        "| SetActiveCategory=-1" +
 	        " | AdminRemoveRestoreEntry=-1");
 
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AllowNoLoginRequestTypes,
-	    "RefreshLogbook | GetExperimentList");
+	    "RefreshLogbook | GetCategoryList");
 			
 } //end setSupervisorPropertyDefaults()
 
@@ -166,7 +178,7 @@ void ECLSupervisor::forceSupervisorPropertyValues()
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
 	CorePropertySupervisorBase::addSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
-			"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
+			"CreateCategory | RemoveCategory | PreviewEntry | AdminRemoveRestoreEntry");
 } //end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -180,11 +192,11 @@ void ECLSupervisor::request(const std::string&               requestType,
 {
 	__COUTTV__(requestType);
 
-	// Commands - Note: treat 'Experiment' as ECL Category
-	//	N/A CreateExperiment
-	//	N/A RemoveExperiment
-	//	GetExperimentList
-	//	SetActiveExperiment
+	// Commands - Note: treat 'Category' as ECL Category
+	//	N/A CreateCategory
+	//	N/A RemoveCategory
+	//	GetCategoryList
+	//	SetActiveCategory
 	//	RefreshLogbook
 	//	PreviewEntry
 	//	ApproveEntry
@@ -194,21 +206,21 @@ void ECLSupervisor::request(const std::string&               requestType,
 	// to report to logbook admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,tempStr);
 
-	if(0 && requestType == "CreateExperiment")
+	if(0 && requestType == "CreateCategory")
 	{
-		// check that experiment directory does not exist, and it is not in xml list
-		// create experiment (TODO - could set env variable ECLConnection/$ECL_CATEGORY)
+		// check that category directory does not exist, and it is not in xml list
+		// create category (TODO - could set env variable ECLConnection/$ECL_CATEGORY)
 		// 
 
 		// get creator name
 		std::string creator = userInfo.username_;
 
-		// createExperiment(
-		//     CgiDataUtilities::postData(cgiIn, "Experiment"), creator, &xmlOut);
+		// createCategory(
+		//     CgiDataUtilities::postData(cgiIn, "Category"), creator, &xmlOut);
 
 		__COUT__ << "Created" << std::endl;
 	}
-	else if(0 && requestType == "RemoveExperiment")
+	else if(0 && requestType == "RemoveCategory")
 	{
 		// remove from xml list, but do not remove directory (requires manual delete so
 		// mistakes aren't made)
@@ -216,28 +228,19 @@ void ECLSupervisor::request(const std::string&               requestType,
 
 		// get remover name
 		std::string remover = userInfo.username_;
-		// removeExperiment(
-		//     CgiDataUtilities::postData(cgiIn, "Experiment"), remover, &xmlOut);
+		// removeCategory(
+		//     CgiDataUtilities::postData(cgiIn, "Category"), remover, &xmlOut);
 	}
-	else if(requestType == "GetExperimentList")
+	else if(requestType == "GetCategoryList")
 	{
-		//allow all users to ECL categories:
-		if(0 && userInfo.permissionLevel_ >=
-		   CoreSupervisorBase::getSupervisorPropertyUserPermissionsThreshold(
-		       "GetExperimentListAdmin"))
-		{
-			xmlOut.addTextElementToData("is_admin", "0");  // indicate not an admin
-			return;
-		}
-		// else
-
-		xmlOut.addTextElementToData("is_admin", "1");  // indicate not an admin
-		getExperiments(&xmlOut);
+		//allow all users to ECL categories, but tell GUI not admin since have no access to managing ECL posts directly		
+		xmlOut.addTextElementToData("is_admin", "0");  // indicate not an admin
+		getCategories(&xmlOut);
 	}
-	else if(requestType == "SetActiveExperiment")
+	else if(requestType == "SetActiveCategory")
 	{
-		// check that experiment exists
-		// set active experiment
+		// check that category exists
+		// set active category
 
 		//		if(userPermissions < ADMIN_PERMISSIONS_THRESHOLD)
 		//		{
@@ -245,12 +248,12 @@ void ECLSupervisor::request(const std::string&               requestType,
 		// permissions."); 			goto CLEANUP;
 		//		}
 
-		webUserSetActiveExperiment(CgiDataUtilities::postData(cgiIn, "Experiment"),
+		webUserSetActiveCategory(CgiDataUtilities::postData(cgiIn, "Category"),
 		                           &xmlOut);
 	}
 	else if(requestType == "RefreshLogbook")
 	{
-		// returns logbook for currently active experiment based on date and duration
+		// returns logbook for currently active category based on date and duration
 		// parameters
 
 		std::string Date     = CgiDataUtilities::postData(cgiIn, "Date");
@@ -320,10 +323,10 @@ void ECLSupervisor::request(const std::string&               requestType,
 } //end request()
 
 //==============================================================================
-// getExperiments
-//		if xmlOut, then output experiments to xml
+// getCategories
+//		if xmlOut, then output categories to xml
 //		if out, then output to stream
-void ECLSupervisor::getExperiments(HttpXmlDocument* xmlOut, std::ostringstream* out)
+void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* out)
 {
 	if(ECLUser_ == "" || ECLHost_ == "") //ignore ECL when environment variables are not set
 	{
@@ -377,64 +380,65 @@ void ECLSupervisor::getExperiments(HttpXmlDocument* xmlOut, std::ostringstream* 
 	// </category_list>
 
 	while((name = StringMacros::extractXmlField(response, "category", 0, after, &after, 
-		"path", "\"")) != "")
+		"path=", "\"")) != "")
 	{
+		after += std::string("category").size(); //move forward to prepare for next search
 		__COUTTV__(name);		
 		exps.push_back(name);
 	}
 	
-	// // check that experiment listing doesn't already exist
+	// // check that category listing doesn't already exist
 	// HttpXmlDocument expXml;
-	// if(!expXml.loadXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH))
+	// if(!expXml.loadXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH))
 	// {
-	// 	__COUT__ << "Fatal Error - Experiment database." << std::endl;
-	// 	__COUT__ << "Creating empty experiment database." << std::endl;
+	// 	__COUT__ << "Fatal Error - Category database." << std::endl;
+	// 	__COUT__ << "Creating empty category database." << std::endl;
 
-	// 	expXml.addTextElementToData((std::string)XML_EXPERIMENTS_ROOT);
-	// 	expXml.saveXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH);
+	// 	expXml.addTextElementToData((std::string)XML_CATEGORY_ROOT);
+	// 	expXml.saveXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH);
 	// 	return;
 	// }
 
-	// expXml.getAllMatchingValues(XML_EXPERIMENT, exps);
+	// expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_EXPERIMENT, ECLCategory_);
+		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, ECLCategory_);
 
-	for(unsigned int i = 0; i < exps.size(); ++i)  // loop experiments
+	for(unsigned int i = 0; i < exps.size(); ++i)  // loop categories
 	{
 		if(xmlOut)
-			xmlOut->addTextElementToData(XML_EXPERIMENT, exps[i]);
+			xmlOut->addTextElementToData(XML_CATEGORY, exps[i]);
 		if(out)
 			*out << exps[i] << std::endl;
 	}
-} //end getExperiments()
+} //end getCategories()
 
 //==============================================================================
-// webUserSetActiveExperiment
-//		if experiment exists, set as active
-//		to clear active experiment set to ""
-void ECLSupervisor::webUserSetActiveExperiment(std::string      experiment,
+// webUserSetActiveCategory
+//		if category exists, set as active
+//		to clear active category set to ""
+void ECLSupervisor::webUserSetActiveCategory(std::string      category,
                                                    HttpXmlDocument* xmlOut)
 {
 	// no check, just set
-	ECLCategory_ = experiment;
+	ECLCategory_ = category;
 	if(xmlOut)
 		xmlOut->addTextElementToData(
 		    XML_ADMIN_STATUS,
-		    "Active category set to " + experiment + " successfully.");
-} //end webUserSetActiveExperiment()
+		    "Active category set to " + category + " successfully.");
+} //end webUserSetActiveCategory()
 
 //==============================================================================
 //	refreshLogbook
-//		returns all the logbook data for active experiment from starting date and back in
+//		returns all the logbook data for active category from starting date and back in
 // time for 			duration total number of days.
 //		e.g. date = today, and duration = 1 returns logbook for today from active
-// experiment 		The entries are returns from oldest to newest
-void ECLSupervisor::refreshLogbook(time_t              date,
-                                       unsigned char       duration,
-                                       HttpXmlDocument*    xmlOut,
-                                       std::ostringstream* out,
-                                       std::string         experiment)
+// category 		The entries are returns from oldest to newest
+void ECLSupervisor::refreshLogbook(	time_t              date,
+									unsigned char       duration,
+									HttpXmlDocument*    xmlOut,
+									std::ostringstream* out,
+									std::string         category)
 {
 	if(ECLUser_ == "" || ECLHost_ == "") //ignore ECL when environment variables are not set
 	{
@@ -442,47 +446,179 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 		__SS_THROW__;
 	}
 
-	if(experiment == "")
-		experiment = ECLCategory_;  // default to active experiment
-	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_EXPERIMENT, experiment);  // for success
+	if(category == "")
+		category = ECLCategory_;  // default to active category
+	if(xmlOut) xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
 
-	unsigned int baseDay;
+	unsigned int// baseDay, 
+		mostRecentDayIndex = 0;
+	time_t baseTime;
 
 	if(!date)  // if date is 0 take most recent day and update it
-		baseDay = (time(0) / (60 * 60 * 24));
+		baseTime = time(0);// / (60 * 60 * 24);
 	else
-		baseDay = (date / (60 * 60 * 24));
+		baseTime = date;// / (60 * 60 * 24);
 	
-	__COUTTV__(baseDay);
-	__COUTTV__(duration);
-	__COUTTV__(experiment);
-
-	
-	//add all posts that match
+	if(1) //test xml_get
 	{
-		std::string response, url = "/E/xml_search?l=100&c=" + 
-			StringMacros::encodeURIComponent(experiment); //limit to 100 
+		std::string response, url = "/E/xml_get?e=" + std::string("2502"); //does not return subject!
 		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
 		eclConn.Get(url,response);
 		__COUTV__(response);
+	}
+	
+	//add all posts that match date/duration criteria
+	{
+		__COUTTV__(category);	
+		std::string response, url = "/E/xml_search?l=100&c=" + //limit to 100 
+			StringMacros::encodeURIComponent(category);  //category
+			// "&a=" + std::to_string(duration) + "days" + //after
+			// "&b=" + baseTimeTmBuffer; //before
+		
+		//apply date range		
+		{
+			__COUTTV__(baseTime);
+			__COUTTV__((size_t)duration);
+
+			baseTime += 2*(60 * 60 * 24); //before is non-inclusive, after is inclusive
+			std::tm *baseTimeTm = std::localtime(&baseTime); // Convert to local time
+			char baseTimeTmBuffer[256];
+			strftime(baseTimeTmBuffer, sizeof(baseTimeTmBuffer), "%Y-%m-%d", baseTimeTm);
+			__COUTTV__(baseTimeTmBuffer);	
+			url += "&b=" + std::string(baseTimeTmBuffer) + "+00:00:00"; //before
+
+			//now calculate after from duration in days
+			baseTime -= duration * (60 * 60 * 24);  //before is non-inclusive, after is inclusive
+			baseTimeTm = std::localtime(&baseTime); // Convert to local time
+			strftime(baseTimeTmBuffer, sizeof(baseTimeTmBuffer), "%Y-%m-%d", baseTimeTm);
+			__COUTTV__(baseTimeTmBuffer);	
+			url += "&a=" + std::string(baseTimeTmBuffer) + "+00:00:00"; //after			
+		}
+		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		eclConn.Get(url,response);
+		__COUTV__(response);
+
+		//example response:
+		// <?xml version="1.0" encoding="UTF-8"?>
+		// <entry_list ids_only="False">
+				
+		// 		<entry 
+		// 			id="2502" 
+		// 			author="mu2e_ots" 
+		// 			category="Global Run" 
+		// 			timestamp="12/05/2024 17:49:53"
+		// 			html="yes"
+		// 			formatted="no"
+		// 			form="default"
+		// 			images="0"
+		// 			files="0">
+		// 				<text>Message: &amp;#010;Run stopped. Run &amp;apos;105214&amp;apos; duration so far of 00:11:57.35 seconds.&amp;#010;&amp;#010;This was a System Generated Log Entry from &amp;apos;Mu2e ot>
+		// 				<text-html><![CDATA[<pre class="html_safe_entry">Message: &#010;Run stopped. Run &apos;105214&apos; duration so far of 00:11:57.35 seconds.&#010;&#010;This was a System Generated Log Entry from &apos;Mu2e>
+		// 				<text-cdata><![CDATA[<pre class="html_safe_entry">Message: &#010;Run stopped. Run &apos;105214&apos; duration so far of 00:11:57.35 seconds.&#010;&#010;This was a System Generated Log Entry from &apos;Mu2>
+		// 		</entry>
+		// 		<entry 
+		// 			id="2501" 
+		// 			author="mu2e_ots" 
+		//		...
+
+		//and result to request is:			
+		//  <XML_LOGBOOK_ENTRY>
+		//		<XML_LOGBOOK_ENTRY_TIME>
+		//		<XML_LOGBOOK_ENTRY_CREATOR>
+		//      <XML_LOGBOOK_ENTRY_SUBJECT>
+		//      <XML_LOGBOOK_ENTRY_TEXT>
+		//      <XML_LOGBOOK_ENTRY_FILE value=fileType0>
+		//      <XML_LOGBOOK_ENTRY_FILE value=fileType1> ...
+		//  </XML_LOGBOOK_ENTRY>
+
+		std::string id, author, category, timestamp, files, images, text;
+		size_t after = 0, before = -1, entryCount = 0;
+		std::tm tm;
+
+		while((id = //StringMacros::extractXmlField(response, "entry", 0, after, &after, 
+			StringMacros::rextractXmlField(response, "entry", 0, before, &before,  //e.g. for reverse order
+			"id=", "\"")) != "")
+		{
+			__COUTTV__(id);		
+			++entryCount;
+
+			after = before;
+
+			author = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"author=", "\"");
+			timestamp = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"timestamp=", "\"");
+			__COUTTV__(author);
+			__COUTTV__(timestamp);	
+			tm = {}; //clear	
+			std::istringstream ss(timestamp);	 
+			ss >> std::get_time(&tm, "%m/%d/%Y %H:%M:%S"); // Parse the string into the tm structure			
+			time_t t = std::mktime(&tm); // Convert tm structure to time_t
+
+			if(!date && t > mostRecentDayIndex)
+				mostRecentDayIndex = t; //track most recent entry
+
+			text = StringMacros::extractXmlField(response, "pre class=\"html_safe_entry\"", 0, after, nullptr, 
+				"", ">");
+			__COUTTV__(text.size());
+			__COUTTV__(text);	
+			category = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"category=", "\"");
+
+			if(xmlOut)
+			{
+				auto entryParent = xmlOut->addTextElementToData(XML_LOGBOOK_ENTRY);
+
+				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_TIME, 
+						std::to_string(t), 
+						entryParent);				
+				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_CREATOR, author, entryParent);				
+				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_TEXT, text, entryParent);
+				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_SUBJECT, category + 
+					" - entry #" + id, entryParent);
+			}
+
+			--before; //move back to prepare for next search
+			// after += std::string("entry").size(); //move forward to prepare for next search
+			
+		} //end primary entry extraction loop
+
+		__COUTV__(entryCount);
 	} //end add all posts that match
 
-	if(xmlOut)
-		xmlOut->addTextElementToData(XML_STATUS, "1");  // for success
-	if(out)
-		*out << __COUT_HDR_FL__ << "Today: " << time(0) / (60 * 60 * 24) << std::endl;
+	if(xmlOut) xmlOut->addTextElementToData(XML_STATUS, "1");  // for success
+	if(out)	*out << __COUT_HDR_FL__ << "Today: " << time(0) / (60 * 60 * 24) << std::endl;
 
-	char        dayIndexStr[20];
-	sprintf(dayIndexStr, "%lu", time(0) / (60 * 60 * 24));
-	if(xmlOut)
-		xmlOut->addTextElementToData(XML_MOST_RECENT_DAY,
-		                             dayIndexStr);  // send most recent day index
+	__COUTTV__(mostRecentDayIndex);
+	__COUTTV__(time(0));
+	__COUTTV__(time(0) - mostRecentDayIndex);
+	__COUTTV__((time(0) - mostRecentDayIndex)/(60 * 60 * 24));
+	for(size_t i=0;i<24;++i)
+		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60)/(60 * 60 * 24));
+	for(size_t i=0;i<24;++i)
+		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 - timezoneHourOffset_*60*60)/(60 * 60 * 24));
+	for(size_t i=0;i<24;++i)
+		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 + timezoneHourOffset_*60*60)/(60 * 60 * 24));
+		
+	if(xmlOut && mostRecentDayIndex)
+	{
+		mostRecentDayIndex /= (60 * 60 * 24);
+		__COUTTV__(mostRecentDayIndex);
+		__COUTTV__(time(0) / (60 * 60 * 24) - mostRecentDayIndex);
+		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, //0 is today
+					time(0) / (60 * 60 * 24) - mostRecentDayIndex);  // send most recent day index found in response
+	}
+	else 
+		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, 0); //0 is today
+
+	
+	xmlOut->addNumberElementToData(XML_TIMEZONE_OFFSET, timezoneHourOffset_); 
+	
 } //end refreshLogbook()
 
 //==============================================================================
 // xoap::MakeSystemLogEntry
-//	make a system logbook entry into active experiment's logbook from Supervisor only
+//	make a system logbook entry into active category's logbook from Supervisor only
 //	TODO: (how to enforce?)
 xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
@@ -526,7 +662,7 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 	{
 		std::stringstream ss;
 		ss << "Message: " << __E__ << EntryText << __E__ << __E__;
-		ss << "This was a System Generated Log Entry from '" << ExperimentName_ << "' at host '" << 
+		ss << "This was a System Generated Log Entry from '" << CategoryName_ << "' at host '" << 
 			__ENV__("THIS_HOST") << "'" << __E__;
 		ss << "Active ots users: " << users << __E__;
 		ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
@@ -536,22 +672,16 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 		fields.push_back(field);
 	}
 
-	// field = Field_t(EscapeECLString(ExperimentName_), "Experiment");
-	// fields.push_back(field);
-
-	// field = Field_t(EscapeECLString(users), "ActiveUsers");
-	// fields.push_back(field);
-
-	// field = Field_t(EscapeECLString(EntryText), "Entry");
-	// fields.push_back(field);
-
 	form.field(fields);
 	eclEntry.form(form);
 	try
 	{
 		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
 		if(!eclConn.Post(eclEntry))
+		{
+			__COUT_ERR__ << "Failure to post ECL entry." << __E__;
 			retStr = "Failure";
+		}
 	}
 	catch(const std::runtime_error& e)
 	{

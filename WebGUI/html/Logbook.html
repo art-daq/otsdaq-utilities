@@ -124,7 +124,7 @@
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 			
-			#currentExperimentHeader {
+			#currentCategoryHeader {
 				font-weight: 800;
 		    	font-size: 22px;
 				color: rgb(255,183,74);
@@ -133,7 +133,7 @@
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 			
-			#experimentList {
+			#categoryList {
 				overflow-y: scroll;		
 				text-align: right;
 				padding: 5px;
@@ -143,14 +143,14 @@
 				margin: 10px 0 5px 0;
 			}
 			
-			#clearActiveExperimentDiv a {
+			#clearActiveCategoryDiv a {
 				color: rgb(180,207,237);
 				font-weight: 800;
 				
 			}
 
 			
-			#experimentList a {
+			#categoryList a {
 				font-family: arial;
 				color: rgb(180,207,237);				
 			}
@@ -166,11 +166,11 @@
 				margin: 60px 50px 0 0;
 			}				
 			
-			#experimentTextBox {
+			#categoryTextBox {
 				width: 200px;
 			}
 			
-			#experimentClearIcon {
+			#categoryClearIcon {
 				margin: 6px 0 -6px -30px;
 			}
 
@@ -361,9 +361,9 @@
 			
 			//functions:			
 				//init()	
-				//setActiveExperiment(experiment)
-				//handleExperimentChangeRequest(req)
-				//handleGetExperimentListRequest(req)
+				//setActiveCategory(category)
+				//handleCategoryChangeRequest(req)
+				//handleGetCategoryListRequest(req)
 				//redrawLogbook()
 				//redrawExpandButtons()
 				//toggleArea(i)
@@ -378,15 +378,15 @@
 				//uploadComplete(evt)
 				//uploadFailed(evt)
 				//uploadCanceled(evt)
-				//handleExperimentInputKeyDown(e)
+				//handleCategoryInputKeyDown(e)
 				//handleSearchKeyUp()
 				//handleTimeoutSearchKeyUp()
-				//createExperiment()
-				//removeExperiment()
-				//displayExperiments()
-				//applyExperimentsSearch(needle)
-				//activeExperimentSetRequest(experiment)
-				//clearExperimentInput()
+				//createCategory()
+				//removeCategory()
+				//displayCategories()
+				//applyCategoriesSearch(needle)
+				//activeCategorySetRequest(category)
+				//clearCategoryInput()
 				//refreshLogbook(date,duration)
 				//handleRefreshLogbook(req)
 				//displayLogbookEntry(divEl,entry)
@@ -405,15 +405,15 @@
 			var _MARGIN = 20;
 			var _HIDDEN_HEIGHT = 33;
 			var _AREA_HEIGHTS = [270,390,500];
-			var _MAX_EXPERIMENT_NAME_LENGTH = 25;
+			var _MAX_CATEGORY_NAME_LENGTH = 300;
 			var _DEFAULT_ENTRY_INPUT_TEXT = "Enter the text for your logbook post here.";
 			var _DEFAULT_ENTRY_INPUT_SUBJECT = "Enter subject here.";
 			
 			var _isAreaExpanded = [false, false, true];
 			
-			var _ExperimentSearchTimer = 0;
-			var _activeExperiment = "";
-			var _experimentsShowArray, _experimentsArray;
+			var _CategorySearchTimer = 0;
+			var _activeCategory = "";
+			var _categorysShowArray, _categorysArray;
 						
 			//preload loader spinner gif
 			var _loaderImage = new Image();			
@@ -429,6 +429,8 @@
 			var _mostRecentDayIndex = -1;
 			var _logbookUpdateTimer = 0;
 			var _REFRESH_INTERVAL = 10000; //10 seconds
+
+			var _TIMEZONE_OFFSET_HOURS = (new Date().getTimezoneOffset())/60;
 				
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
@@ -445,8 +447,8 @@
 				
 				_adminStatusEl = document.getElementById('adminStatusDiv');
 				
-				//get active experiment from url
-				setActiveExperiment(DesktopContent.getParameter(1));
+				//get active category from url
+				setActiveCategory(DesktopContent.getParameter(1));
 
 				window.onresize = redrawLogbook;
 				newPostText.value = _DEFAULT_ENTRY_INPUT_TEXT; //init text input
@@ -461,21 +463,21 @@
 						"/WebPath/images/windowContentImages/logbook-expand.png";
 				}
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=GetExperimentList", 		//update experiment list 
-						"", handleGetExperimentListRequest);					
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
+						"", handleGetCategoryListRequest);					
 			} //end init()
 
 			//=====================================================================================
-			//setActiveExperiment ~
-			function setActiveExperiment(experiment) 
+			//setActiveCategory ~
+			function setActiveCategory(category) 
 			{					
-			    Debug.log("Logbook setActiveExperiment to " + experiment);
-				_activeExperiment = experiment;
-				if(!_activeExperiment || _activeExperiment == "")
-				{	_activeExperiment = ""; currentExperimentHeader.innerHTML = "No Active Experiment Set"; 	}
+			    Debug.log("Logbook setActiveCategory to " + category);
+				_activeCategory = category;
+				if(!_activeCategory || _activeCategory == "")
+				{	_activeCategory = ""; currentCategoryHeader.innerHTML = "No Active Category Set"; 	}
 				else
-					currentExperimentHeader.innerHTML = "<font color='white'>Active Experiment is</font> " + _activeExperiment;
-			} //end setActiveExperiment()
+					currentCategoryHeader.innerHTML = "<font color='white'>Active Category is</font> " + _activeCategory;
+			} //end setActiveCategory()
 			
 			//=====================================================================================
 			//redrawLogbook ~
@@ -667,6 +669,7 @@
 			         .replace(/%22/g, "&quot;")				//"
 			         .replace(/%27/g, "&#039;")				//'
 			         .replace(/%0A%0D/g, "<br>")			//newline
+					 .replace(/&#010;/g, "<br>")			//newline
 			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
 			} //end convertForClient()
 			
@@ -745,12 +748,12 @@
 			} //end uploadCanceled()		
 
 			//=====================================================================================
-			//handleExperimentInputKeyDown ~~ 
+			//handleCategoryInputKeyDown ~~ 
 			//	allow alphanumeric character only
 			//	if allowSpace is set, then spaces also allowed
-			function handleExperimentInputKeyDown(e, allowSpace) 
+			function handleCategoryInputKeyDown(e, allowSpace) 
 			{	
-				//Debug.log("Logbook handleExperimentInputKeyDown " + e.keyCode);
+				//Debug.log("Logbook handleCategoryInputKeyDown " + e.keyCode);
 				if(e.key == "Tab") return true;		//if tab focus on next box
 				else if((!e.shiftKey && (e.keyCode >= 48 && e.keyCode <= 57)) || //accept numbers but not shifted numbers
 					(e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
@@ -763,7 +766,7 @@
 					return true;
 				
 				return false; //to stop tab and enter (and unaccepted chars) from propagating to window
-			} //end handleExperimentInputKeyDown()
+			} //end handleCategoryInputKeyDown()
 
 			//=====================================================================================
 			//handleSearchKeyUp ~~ 
@@ -771,150 +774,150 @@
 			function handleSearchKeyUp()
 			{				
 
-				var el = document.getElementById("experimentTextBox");	
-				if(el.value.length > _MAX_EXPERIMENT_NAME_LENGTH)
+				var el = document.getElementById("categoryTextBox");	
+				if(el.value.length > _MAX_CATEGORY_NAME_LENGTH)
 				{
-					el.value = el.value.substr(0,_MAX_EXPERIMENT_NAME_LENGTH);
-					_adminStatusEl.innerHTML = "Max experiment name length is " + _MAX_EXPERIMENT_NAME_LENGTH + ".";
+					el.value = el.value.substr(0,_MAX_CATEGORY_NAME_LENGTH);
+					_adminStatusEl.innerHTML = "Max category name length is " + _MAX_CATEGORY_NAME_LENGTH + ".";
 				}
 				
-				el = document.getElementById("experimentList");
+				el = document.getElementById("categoryList");
 				if(el && el.innerHTML.indexOf("loaderGif") == -1)
 					el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
 					
-				if(_ExperimentSearchTimer) clearTimeout(_ExperimentSearchTimer);
-				_ExperimentSearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
+				if(_CategorySearchTimer) clearTimeout(_CategorySearchTimer);
+				_CategorySearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
 			} //end handleSearchKeyUp()
 
 			//=====================================================================================
 			//handleTimeoutSearchKeyUp ~~ 
 			function handleTimeoutSearchKeyUp() 
 			{			
-				var el = document.getElementById("experimentTextBox");				
+				var el = document.getElementById("categoryTextBox");				
 				Debug.log("Logbook handleTimeoutSearchKeyUp " + el.value);
-				applyExperimentsSearch(el.value);
-				displayExperiments();
+				applyCategoriesSearch(el.value);
+				displayCategories();
 			} //end handleTimeoutSearchKeyUp()
 			
 			//=====================================================================================
-			//createExperiment ~~ 
-			function createExperiment() 
+			//createCategory ~~ 
+			function createCategory() 
 			{	
-				var el = document.getElementById("experimentTextBox");				
-				Debug.log("Logbook createExperiment " + el.value);
+				var el = document.getElementById("categoryTextBox");				
+				Debug.log("Logbook createCategory " + el.value);
 				
-				DesktopContent.XMLHttpRequest("Request?RequestType=CreateExperiment", 
-						"Experiment="+el.value, handleExperimentChangeRequest);	
-			} //end createExperiment()
+				DesktopContent.XMLHttpRequest("Request?RequestType=CreateCategory", 
+						"Category="+el.value, handleCategoryChangeRequest);	
+			} //end createCategory()
 			
 			//=====================================================================================
-			//removeExperiment ~~ 
-			function removeExperiment() 
+			//removeCategory ~~ 
+			function removeCategory() 
 			{	
-				var el = document.getElementById("experimentTextBox");				
-				Debug.log("Logbook removeExperiment " + el.value);
+				var el = document.getElementById("categoryTextBox");				
+				Debug.log("Logbook removeCategory " + el.value);
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=RemoveExperiment", 
-						"Experiment="+el.value, handleExperimentChangeRequest);				
-			} //end removeExperiment()
+				DesktopContent.XMLHttpRequest("Request?RequestType=RemoveCategory", 
+						"Category="+el.value, handleCategoryChangeRequest);				
+			} //end removeCategory()
 
 			//=====================================================================================
-			//handleExperimentChangeRequest ~~ 
-			function handleExperimentChangeRequest(req) 
+			//handleCategoryChangeRequest ~~ 
+			function handleCategoryChangeRequest(req) 
 			{							
 				_adminStatusEl.innerHTML = DesktopContent.getXMLValue(req,"logbook_admin_status");				
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=GetExperimentList", 		//update experiment list 
-						"", handleGetExperimentListRequest);
-			} //end handleExperimentChangeRequest()
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
+						"", handleGetCategoryListRequest);
+			} //end handleCategoryChangeRequest()
 
 			//=====================================================================================
-			//handleGetExperimentListRequest ~~ 
-			function handleGetExperimentListRequest(req) 
+			//handleGetCategoryListRequest ~~ 
+			function handleGetCategoryListRequest(req) 
 			{
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
 
 				if(_isAdmin) 
 				{				
-					//reset active experiment, in case request was a setActiveExperiment request
-					setActiveExperiment(DesktopContent.getXMLValue(req,"active_experiment")); 
+					//reset active category, in case request was a setActiveCategory request
+					setActiveCategory(DesktopContent.getXMLValue(req,"active_category")); 
 					
-					_experimentsArray = req.responseXML.getElementsByTagName("experiment");
-					_experimentsShowArray = new Array(); //init all elements to show
-					for(var i=0;i<_experimentsArray.length;++i) _experimentsShowArray[i] = 1;
+					_categorysArray = req.responseXML.getElementsByTagName("category");
+					_categorysShowArray = new Array(); //init all elements to show
+					for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1;
 					
-					displayExperiments();
+					displayCategories();
 				}				
 
 				redrawLogbook(); //setup window divs based on admin	
 				refreshLogbook(); //refresh logbook, by default start with today for one day
 								//NOTE: call refresh logbook here so that _isAdmin is gauranteed to be set
-			} //end handleGetExperimentListRequest()
+			} //end handleGetCategoryListRequest()
 
 			//=====================================================================================
-			//applyExperimentsSearch ~~
-			//	filter _experimentsArray based on needle
-			function applyExperimentsSearch(needle) 
+			//applyCategoriesSearch ~~
+			//	filter _categorysArray based on needle
+			function applyCategoriesSearch(needle) 
 			{
-				for(var i=0;i<_experimentsArray.length;++i) _experimentsShowArray[i] = 1; //reset show array
+				for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1; //reset show array
 				if(needle == "") return;
-				Debug.log("Logbook applyExperimentsSearch needle " + needle);	
+				Debug.log("Logbook applyCategoriesSearch needle " + needle);	
 
-				for(var i=0;i<_experimentsArray.length;++i)
-					if(_experimentsArray[i].getAttribute('value').indexOf(needle) == -1)
-						_experimentsShowArray[i] = 0;		//no needle, so hide		
-			} //end applyExperimentsSearch()
+				for(var i=0;i<_categorysArray.length;++i)
+					if(_categorysArray[i].getAttribute('value').indexOf(needle) == -1)
+						_categorysShowArray[i] = 0;		//no needle, so hide		
+			} //end applyCategoriesSearch()
 			
 			//=====================================================================================
-			//displayExperiments ~~ 
+			//displayCategories ~~ 
 			//	diplay in reverse so newest at top
-			function displayExperiments() 
+			function displayCategories() 
 			{
-				Debug.log("Logbook displayExperiments _experimentsArray.length " + _experimentsArray.length);	
-				var el = document.getElementById("experimentList");
+				Debug.log("Logbook displayCategories _categorysArray.length " + _categorysArray.length);	
+				var el = document.getElementById("categoryList");
 				
 				var str = "";
 				var atLeastOne = false;
-				for(var i=_experimentsArray.length-1;i >= 0;--i)
-					if(!_experimentsShowArray[i]) continue;
+				for(var i=_categorysArray.length-1;i >= 0;--i)
+					if(!_categorysShowArray[i]) continue;
 					else {
-						str += "<a href='Javascript:activeExperimentSetRequest(\""+ 
-							_experimentsArray[i].getAttribute('value') + "\")' title='Left-click to make " + 
-							_experimentsArray[i].getAttribute('value') +
-							" the active experiment'>" + 
-							_experimentsArray[i].getAttribute('value') + "</a><br>";
+						str += "<a href='Javascript:activeCategorySetRequest(\""+ 
+							_categorysArray[i].getAttribute('value') + "\")' title='Left-click to make " + 
+							_categorysArray[i].getAttribute('value') +
+							" the active category'>" + 
+							_categorysArray[i].getAttribute('value') + "</a><br>";
 						atLeastOne = true;
 					}
 				
 				if(atLeastOne)
 					el.innerHTML = str;
 				else
-					el.innerHTML = "No matching experiment found.";
-			} //end displayExperiments()
+					el.innerHTML = "No matching category found.";
+			} //end displayCategories()
 			
 			//=====================================================================================
-			//activeExperimentSetRequest ~~ 
-			function activeExperimentSetRequest(experiment) 
+			//activeCategorySetRequest ~~ 
+			function activeCategorySetRequest(category) 
 			{
-				Debug.log("Logbook activeExperimentSetRequest experiment " + experiment);
-				DesktopContent.XMLHttpRequest("Request?RequestType=SetActiveExperiment", 		//update experiment list 
-						"Experiment="+experiment, handleExperimentChangeRequest);
+				Debug.log("Logbook activeCategorySetRequest category " + category);
+				DesktopContent.XMLHttpRequest("Request?RequestType=SetActiveCategory", 		//update category list 
+						"Category="+category, handleCategoryChangeRequest);
 
-				var el = document.getElementById("experimentTextBox");	
-				el.value = experiment;
+				var el = document.getElementById("categoryTextBox");	
+				el.value = category;
 				el.focus();
-			} //end activeExperimentSetRequest()
+			} //end activeCategorySetRequest()
 			
 			//=====================================================================================
-			//clearExperimentInput ~~ 
-			function clearExperimentInput() 
+			//clearCategoryInput ~~ 
+			function clearCategoryInput() 
 			{
-				var el = document.getElementById("experimentTextBox");	
+				var el = document.getElementById("categoryTextBox");	
 				el.value = "";
 				el.focus();
-				applyExperimentsSearch(el.value);
-				displayExperiments();
-			} //end clearExperimentInput()
+				applyCategoriesSearch(el.value);
+				displayCategories();
+			} //end clearCategoryInput()
 
 			//=====================================================================================
 			//refreshLogbook ~~ 
@@ -926,10 +929,10 @@
 			function refreshLogbook(dayIndex,duration) 
 			{
 				Debug.log("Logbook refreshLogbook " + dayIndex + " - " + duration);
-				if(_activeExperiment == "")	{ 
-					Debug.log("Logbook refreshLogbook active experiment not set"); 
+				if(_activeCategory == "")	{ 
+					Debug.log("Logbook refreshLogbook active category not set"); 
 					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + 
-						"Currently there is no active experiment selected. Contact an admin if you think this is an error." + "</div>";
+						"Currently there is no active category selected. Contact an admin if you think this is an error." + "</div>";
 					return; 
 				}
 				
@@ -941,31 +944,13 @@
 				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60;
 				if(_mostRecentDayIndex < 0) //most recent day request 
 					reqDate = 0; //to indicate get most recent day
-				DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update experiment list 
+				DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list 
 						"Date="+reqDate+"&Duration="+_refreshDuration, 
 						handleRefreshLogbook);				
 				
 				//always show date
-				reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60; //in seconds
-				var dateObj = new Date(reqDate*1000); //js date object expects ms
-				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
-					displayDate + ")</a>";	
+				refreshDateDisplay();
 				
-				//decorate selection properly
-				var aArr = document.getElementById("logbookHeader").getElementsByTagName("a");
-				//all of the links in the logbook header (0=today, 1=yesterday,.. 6=max days) max days before might be 6 or 7
-				for(var i=0;i<aArr.length;++i) 
-					if(i < 1 && (reqDate == 0 || _refreshDayIndex == _mostRecentDayIndex))
-						aArr[i].setAttribute("class", "logbookSelection");
-					else if(i == 1 && !(reqDate == 0 || _refreshDayIndex == _mostRecentDayIndex))
-						aArr[i].setAttribute("class", "logbookSelection");
-					else if(i > 1 && i < 8 && aArr[i].innerHTML == _refreshDuration) //durations
-						aArr[i].setAttribute("class", "logbookSelection");
-					else
-						aArr[i].setAttribute("class", "logbookNotSelected");
-					//Debug.log("Logbook " + i + ":" + aArr[i].innerHTML);
 			} //end refreshLogbook()
 			
 			//=====================================================================================
@@ -974,9 +959,8 @@
 			//	from newest to oldest
 			function handleRefreshLogbook(req) 
 			{
-				Debug.log("Logbook handleRefreshLogbook ");
-		        Debug.log("Request Response Text " + req.responseText + " ---\nXML " + req.responseXML,Debug.LOW_PRIORITY);
-
+				Debug.log("Logbook handleRefreshLogbook", req.responseText.length);
+		        
 		        var logbookStatus;
 				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed 
 					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + logbookStatus + "</div>";
@@ -994,10 +978,12 @@
 					//	mostRecentDayEl.innerHTML = "Yesterday";
 					//else
 					//	mostRecentDayEl.innerHTML = "Most Recent Day";
+
+					refreshDateDisplay();
 					
 					//extract logbook display
 					var entries = req.responseXML.getElementsByTagName("logbook_entry");
-					setActiveExperiment(DesktopContent.getXMLValue(req,"active_experiment"));
+					setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
 
 					var logbookEl = document.getElementById("logbookDiv");
 					logbookEl.innerHTML = "";
@@ -1015,6 +1001,38 @@
 			} //end handleRefreshLogbook()
 
 			//=====================================================================================
+			//refreshDateDisplay ~~ 
+			function refreshDateDisplay() 
+			{
+				Debug.log("refreshDateDisplay()",_refreshDayIndex);
+				var reqTime = (new Date()).getTime() - _refreshDayIndex*24*60*60*1000; //in ms
+				var dateObj = new Date(reqTime);
+				
+				// (((((new Date()).getTime() + _TIMEZONE_OFFSET_HOURS*60*60*1000)/
+				// 					(1000*60*60*24)) | 0) - 
+				// 				_refreshDayIndex)*24*60*60; //in seconds
+				// var dateObj = new Date(reqDate*1000); //js date object expects ms
+				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
+				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
+					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
+					displayDate + ")</a>";	
+				
+				//decorate selection properly
+				var aArr = document.getElementById("logbookHeader").getElementsByTagName("a");
+				//all of the links in the logbook header (0=today, 1=yesterday,.. 6=max days) max days before might be 6 or 7
+				for(var i=0;i<aArr.length;++i) 
+					if(i < 1 && (reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
+						aArr[i].setAttribute("class", "logbookSelection");
+					else if(i == 1 && !(reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
+						aArr[i].setAttribute("class", "logbookSelection");
+					else if(i > 1 && i < 8 && aArr[i].innerHTML == _refreshDuration) //durations
+						aArr[i].setAttribute("class", "logbookSelection");
+					else
+						aArr[i].setAttribute("class", "logbookNotSelected");
+				//Debug.log("Logbook " + i + ":" + aArr[i].innerHTML);
+			} //end refreshDateDisplay()
+
+			//=====================================================================================
 			//displayLogbookEntry ~~ 
 			//	fields are 
 			//		"logbook_entry_subject"
@@ -1023,7 +1041,7 @@
 			//		"logbook_entry_creator"
 			//		"logbook_entry_file" (can be many) (file name is from "preview_index")
 			//  get field with entry.getElementsByTagName(field)[0].getAttribute("value");
-			//	gets images using _activeExperiment in path
+			//	gets images using _activeCategory in path
 			//		"logbook_entry_hidden"
 			//		"logbook_entry_hider"
 			//		"logbook_entry_hidden_time"
@@ -1083,7 +1101,8 @@
                     var sysLogDiv = document.createElement("div");
 				    sysLogDiv.setAttribute("class", "Logbook-sysLogDiv");
 				    sysLogDiv.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString() + " -- " +
-                          convertForClient(entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+                          convertForClient(
+							entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
 				    omni.appendChild(sysLogDiv);
 				    divEl.appendChild(omni);			    //add entry to div element  
 				    return;	              
@@ -1149,7 +1168,7 @@
 				    if(entry.getElementsByTagName("preview_index")[0]) //is a preview 
 				    	pathPreface += "previews/" + entryId + "/upload_";
 				    else //regular logbook read
-				    	pathPreface += "logbooks/log_" + _activeExperiment + "/uploads/upload_" + entryId + "_";
+				    	pathPreface += "logbooks/log_" + _activeCategory + "/uploads/upload_" + entryId + "_";
 				    
 				    var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
 					var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogImage&src=";
@@ -1238,14 +1257,14 @@
 			//calendarHandler ~~
 			//	parameter is days since Jan 1, 1970
 			function calendarHandler(userDate) 
-			{
-				
+			{				
 				var dateObj = new Date(userDate*1000*60*60*24);
 				Debug.log("Logbook calendarHandler userDate " + userDate + " = " + 
 						dateObj.toDateString());
 				
 				//update display with user date
-				var refreshDayIndex = ((((new Date()).getTime())/(1000*60*60*24)) | 0) - userDate + 1;
+				var refreshDayIndex = ((((new Date()).getTime())/(1000*60*60*24)) | 0) - userDate;
+				Debug.logv({refreshDayIndex});
 				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
 								
 				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
@@ -1259,19 +1278,10 @@
 			//=====================================================================================
 			//advanceByDays ~~
 			//	refresh logbook with new day offset and display next to calendar
-			//	input i is negative back in time
+			//	increasing i is subtracted from _refreshDayIndex to go back in time
 			function advanceByDays(i) 
 			{			
-				refreshLogbook(_refreshDayIndex - i); //positive is back in time
-				
-				Debug.log("Logbook advanceByDays " + _refreshDayIndex + " - " + _refreshDuration);
-				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex + 1)*24*60*60; //in seconds
-				var dateObj = new Date(reqDate*1000); //js date object expects ms
-				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-				
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
-					displayDate + ")</a>";				
+				refreshLogbook(_refreshDayIndex - i); //positive is back in time						
 			} //end advanceByDays()
 
 			//=====================================================================================
@@ -1294,15 +1304,15 @@
 			//	opens up separate window to generate reports
 			function generateReport() 
 			{
-				if(!_activeExperiment || _activeExperiment == "")
+				if(!_activeCategory || _activeCategory == "")
 				{
-					alert("Error! There must be an active experiment selected.");
+					alert("Error! There must be an active category selected.");
 					return;
 				}
 					
 				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
-				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeExperiment=";				
-				window.open(requestURL + _activeExperiment,	'_blank');	//open in new window
+				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeCategory=";				
+				window.open(requestURL + _activeCategory,	'_blank');	//open in new window
 			} //end generateReport()
 
 		</script>
@@ -1312,11 +1322,11 @@
 	
 	<body onload='//init() called by DesktopContent.js'>	
 
-	<center><div class='areaContent' id='currentExperimentHeader'></div></center>
+	<center><div class='areaContent' id='currentCategoryHeader'></div></center>
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='adminArea'>
-		<!-- area where admins control active experiment and create new experiments -->
+		<!-- area where admins control active category and create new categorys -->
 		
 		<table width='100%'>
 			<td width='25px'>
@@ -1340,36 +1350,36 @@
 		<table class='areaContent' width='100%'>
 		<td>
 			<div style='float:left;'>
-				<b>Experiment:</b><br>
-				<input type='text' id='experimentTextBox' spellcheck='false'
+				<b>Category:</b><br>
+				<input type='text' id='categoryTextBox' spellcheck='false'
 					value='' 
-					onkeydown='return handleExperimentInputKeyDown(event)'
+					onkeydown='return handleCategoryInputKeyDown(event)'
 					onkeyup='handleSearchKeyUp()'
 						>
-				<a href='Javascript:clearExperimentInput()' title='Clear Experiment text input'><img
-					id='experimentClearIcon'
+				<a href='Javascript:clearCategoryInput()' title='Clear Category text input'><img
+					id='categoryClearIcon'
 					src='/WebPath/images/windowContentImages/logbook-clear.png'></a>
 				<div style='margin:-5px 0 10px 0;font-size:11px'>(alpha-numeric, dashes, and underscores)</div>
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
-						"Are you sure you want to <u><i>Create</i></u> the new experiment, <i><b>REPLACE</b></i>?<br><br>",
-						createExperiment, document.getElementById("experimentTextBox").value);' 
-					value='Create Experiment' title='Create a new experiment, or re-add to list'><br><br>
+						"Are you sure you want to <u><i>Create</i></u> the new category, <i><b>REPLACE</b></i>?<br><br>",
+						createCategory, document.getElementById("categoryTextBox").value);' 
+					value='Create Category' title='Create a new category, or re-add to list'><br><br>
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
-					"Are you sure you want to <u><i>Remove</i></u> the experiment, <i><b>REPLACE</b></i>?<br><br>",
-					removeExperiment, document.getElementById("experimentTextBox").value,"#ffddd1");'  
-					value='Remove Experiment'  title='Remove an experiment from list' style='color:red'>
+					"Are you sure you want to <u><i>Remove</i></u> the category, <i><b>REPLACE</b></i>?<br><br>",
+					removeCategory, document.getElementById("categoryTextBox").value,"#ffddd1");'  
+					value='Remove Category'  title='Remove an category from list' style='color:red'>
 				<div id='adminStatusDiv'>Status updates are displayed here.</div> 
 			</div>
 			<div style='float:left;margin-left:20px;text-align:right;'>
-				<b>Click to Set Active Experiment:</b>
-				<div id='experimentList'>
-				<font color='grey'>No experiments in list</font>
+				<b>Click to Set Active Category:</b>
+				<div id='categoryList'>
+				<font color='grey'>No categorys in list</font>
 				</div>
-				<div id='clearActiveExperimentDiv'>
-					<a href='Javascript:activeExperimentSetRequest("")' 
-						title='Click to set no active experiment'>Clear Active Experiment</a>
+				<div id='clearActiveCategoryDiv'>
+					<a href='Javascript:activeCategorySetRequest("")' 
+						title='Click to set no active category'>Clear Active Category</a>
 				</div> 
 			</div>
 		</td>
@@ -1411,7 +1421,7 @@
 				<input type="text" id="newPostSubject" spellcheck="false" size='50'
 					onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
 	                onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
-					onkeydown="return handleExperimentInputKeyDown(event,true)"> <!-- keep subject alpha-numeric -->
+					onkeydown="return handleCategoryInputKeyDown(event,true)"> <!-- keep subject alpha-numeric -->
 				<br>
                 <textarea id='newPostText' rows="8" cols="50"
                     onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
@@ -1450,7 +1460,7 @@
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='logbookArea'>
-		<!-- area where logbook for active experiment is shown -->	
+		<!-- area where logbook for active category is shown -->	
 		<table width='100%'>
 			<td width='25px'>
 			<div class='expandBtn'>

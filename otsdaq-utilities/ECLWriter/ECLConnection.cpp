@@ -172,7 +172,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__SS_THROW__;
 	}
 
-	__COUTTV__(responseBuffer);
+	__COUTVS__(2,responseBuffer);
 	response = responseBuffer;
 
 	return true;

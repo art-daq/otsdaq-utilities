@@ -411,7 +411,7 @@ SubsystemLaunch.create = function() {
 					str += "<option selected>Select an FSM action:</option>";
 					str += "<option >Configure</option>";
 					// str += "<option >Start</option>";
-					// str += "<option >Stop</option>";
+					str += "<option >Stop</option>";
 					str += "<option >Halt</option>";
 					str += "</select>";
 
@@ -638,7 +638,7 @@ SubsystemLaunch.create = function() {
 								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
 							str += "<option >Configure</option>";
 							// str += "<option >Start</option>";
-							// str += "<option >Stop</option>";
+							str += "<option >Stop</option>";
 							str += "<option >Halt</option>";
 							str += "</select>";
 						}
@@ -1858,6 +1858,13 @@ SubsystemLaunch.create = function() {
 	
 						window.clearTimeout(_getStatusTimer);
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+						SubsystemLaunch.system.error = ""; //clear error for next command response
+						//force state display for user feedback
+						SubsystemLaunch.system.inTransition = true;
+						SubsystemLaunch.system.transition = "Launching " + "Stop";
+						SubsystemLaunch.system.progress = 0;
+						displayStatus();
 	
 						//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 						DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
@@ -1893,6 +1900,13 @@ SubsystemLaunch.create = function() {
 
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+					SubsystemLaunch.system.error = ""; //clear error for next command response
+					//force state display for user feedback
+					SubsystemLaunch.system.inTransition = true;
+					SubsystemLaunch.system.transition = "Launching " + "Halt";
+					SubsystemLaunch.system.progress = 0;
+					displayStatus();
 
 					//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
@@ -2006,6 +2020,13 @@ SubsystemLaunch.create = function() {
 
 			window.clearTimeout(_getStatusTimer);
 			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+			SubsystemLaunch.system.error = ""; //clear error for next command response
+			//force state display for user feedback
+			SubsystemLaunch.system.inTransition = true;
+			SubsystemLaunch.system.transition = "Launching " + "Stop";
+			SubsystemLaunch.system.progress = 0;
+			displayStatus();
 
 			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
 						"&fsmName=" + _fsmName + 

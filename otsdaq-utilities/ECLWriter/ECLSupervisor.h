@@ -66,8 +66,8 @@ class ECLSupervisor : public CoreSupervisorBase
 
   private:
 
-	void        							getExperiments					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
-	void 									webUserSetActiveExperiment		(std::string experiment, HttpXmlDocument* xmldoc = 0);
+	void        							getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void 									webUserSetActiveCategory		(std::string experiment, HttpXmlDocument* xmldoc = 0);
 	void 									refreshLogbook					(time_t              date,
 	     								              						 unsigned char       duration,
 	     								              						 HttpXmlDocument*    xmldoc     = 0,
@@ -78,7 +78,8 @@ class ECLSupervisor : public CoreSupervisorBase
 	std::string                           	ECLHost_;
 	std::string                           	ECLPwd_;
 	std::string                           	ECLCategory_;
-	std::string                           	ExperimentName_;
+	std::string                           	CategoryName_;
+	size_t									timezoneHourOffset_ = 0;
 
 	const std::string						EscapeECLString					(const std::string& input = "");
 };

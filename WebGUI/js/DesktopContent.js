@@ -1259,6 +1259,7 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 					else
 						requestType = "";
 					errStr = "Request " + requestType + " failed due to insufficient account permissions."; 
+					Debug.err(errStr);
 					
 					if(!doNotOfferSequenceChange && DesktopContent._sequence)
 					{
@@ -1294,17 +1295,17 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 								/*noAutoComplete*/ true);
 						
 						return;						
-					}
-					//return;
+					}					
 				}
 				else if(req.responseText == Globals.REQ_USER_LOCKOUT_RESPONSE) 
 				{					
-					errStr = "Request failed because another user has locked ots. Put your mouse over the lock icon at the top of the dashboard to see who.";
-					//return;
+					errStr = "Request failed because another user has locked ots. Put your mouse over the lock icon at the top of the dashboard to see who.";					
+					Debug.err(errStr);
 				}				
 				else if(req.responseText == Globals.REQ_NO_LOGIN_RESPONSE) 
 				{
 					errStr = "Login has expired.";
+					Debug.err(errStr);
 
 					if(ignoreSystemBlock || !DesktopContent._blockSystemCheckMailbox) //make sure system is alive
 					{
@@ -1315,20 +1316,20 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 								"windowId":			DesktopContent._theWindowId,
 								"request":  		"needToLogin"
 									},"*");
-						//return;
+					
 					}
 				}
 				else if(req.responseText == Globals.REQ_LOCK_REQUIRED_RESPONSE) 
 				{
 					errStr = "Request failed because the request requires the user to lockout the system. Please take over the lock in the Settings area to proceed.";
+					Debug.err(errStr);
 				}
 				else if(!sequence)
 				{    
-
 					if(!req.responseXML) //invalid XML received 
 					{
 						errStr = "Request response is invalid XML!";
-						//return;
+						Debug.err(errStr);
 					}
 					else
 					{

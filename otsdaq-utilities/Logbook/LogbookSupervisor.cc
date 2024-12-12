@@ -18,25 +18,25 @@
 using namespace ots;
 
 const std::string LOGBOOK_PATH = __ENV__("LOGBOOK_DATA_PATH") + std::string("/");
-#define LOGBOOK_EXPERIMENT_LIST_PATH LOGBOOK_PATH + "experiment_list.xml"
-#define LOGBOOK_EXPERIMENT_DIR_PREFACE "log_"
-#define LOGBOOK_UPLOADS_PATH "uploads/"  // within experiment directory
+#define LOGBOOK_CATEGORY_LIST_PATH LOGBOOK_PATH + "category_list.xml"
+#define LOGBOOK_CATEGORY_DIR_PREFACE "log_"
+#define LOGBOOK_UPLOADS_PATH "uploads/"  // within category directory
 #define LOGBOOK_LOGBOOKS_PATH "logbooks/"
 #define LOGBOOK_PREVIEWS_PATH "previews/"
 #define LOGBOOK_FILE_PREFACE "entries_"
 #define LOGBOOK_FILE_EXTENSION ".xml"
 
-#define ACTIVE_EXPERIMENT_PATH LOGBOOK_PATH + "active_experiment.txt"
-#define REMOVE_EXPERIMENT_LOG_PATH LOGBOOK_PATH + "removed_experiments.log"
+#define ACTIVE_CATEGORY_PATH LOGBOOK_PATH + "active_category.txt"
+#define REMOVE_CATEGORY_LOG_PATH LOGBOOK_PATH + "removed_categories.log"
 
 #define XML_ADMIN_STATUS "logbook_admin_status"
 #define XML_STATUS "logbook_status"
 #define XML_MOST_RECENT_DAY "most_recent_day"
-#define XML_EXPERIMENTS_ROOT "experiments"
-#define XML_EXPERIMENT "experiment"
-#define XML_ACTIVE_EXPERIMENT "active_experiment"
-#define XML_EXPERIMENT_CREATE "create_time"
-#define XML_EXPERIMENT_CREATOR "creator"
+#define XML_CATEGORY_ROOT "categories"
+#define XML_CATEGORY "category"
+#define XML_ACTIVE_CATEGORY "active_category"
+#define XML_CATEGORY_CREATE "create_time"
+#define XML_CATEGORY_CREATOR "creator"
 
 #define XML_LOGBOOK_ENTRY "logbook_entry"
 #define XML_LOGBOOK_ENTRY_SUBJECT "logbook_entry_subject"
@@ -59,7 +59,7 @@ XDAQ_INSTANTIATOR_IMPL(LogbookSupervisor)
 
 //==============================================================================
 // sendmail ~~
-//	Helper function to send emails to the subscriber list of the active experiment
+//	Helper function to send emails to the subscriber list of the active category
 int sendmail(const char* to, const char* from, const char* subject, const char* message)
 {
 	int   retval   = -1;
@@ -107,7 +107,7 @@ LogbookSupervisor::LogbookSupervisor(xdaq::ApplicationStub* stub)
 
 	init();
 
-	// TODO allow admins to subscribe to active experiment alerts using System messages
+	// TODO allow admins to subscribe to active category alerts using System messages
 	// (and email)
 }  // end constructor()
 
@@ -158,8 +158,8 @@ void LogbookSupervisor::init(void)
 		}
 	}
 
-	getActiveExperiment();  // init active experiment
-	__COUT__ << "Active Experiment is " << activeExperiment_ << std::endl;
+	getActiveCategory();  // init active category
+	__COUT__ << "Active Category is " << activeCategory_ << std::endl;
 	mostRecentDayIndex_ = 0;
 } //end init()
 
@@ -172,11 +172,11 @@ void LogbookSupervisor::destroy(void)
 //==============================================================================
 void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 {
-	__COUT__ << " active experiment " << activeExperiment_ << std::endl;
+	__COUT__ << " active category " << activeCategory_ << std::endl;
 	*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
-	     << "&active_experiment=" << activeExperiment_ << "'></frameset></html>";
+	     << "&active_category=" << activeCategory_ << "'></frameset></html>";
 } //end defaultPage()
 
 //==============================================================================
@@ -188,8 +188,8 @@ void LogbookSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 	    std::string() +
-	        "*=1 | CreateExperiment=-1 | RemoveExperiment=-1 | GetExperimentListAdmin=-1 "
-	        "| SetActiveExperiment=-1" +
+	        "*=1 | CreateCategory=-1 | RemoveCategory=-1 | GetCategoryListAdmin=-1 "
+	        "| SetActiveCategory=-1" +
 	        " | AdminRemoveRestoreEntry=-1");
 } //end setSupervisorPropertyDefaults()
 
@@ -205,7 +205,7 @@ void LogbookSupervisor::forceSupervisorPropertyValues()
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
 	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
-			"CreateExperiment | RemoveExperiment | PreviewEntry | AdminRemoveRestoreEntry");
+			"CreateCategory | RemoveCategory | PreviewEntry | AdminRemoveRestoreEntry");
 } //end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -220,10 +220,10 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	__COUTTV__(requestType);
 
 	// Commands
-	//	CreateExperiment
-	//	RemoveExperiment
-	//	GetExperimentList
-	//	SetActiveExperiment
+	//	CreateCategory
+	//	RemoveCategory
+	//	GetCategoryList
+	//	SetActiveCategory
 	//	RefreshLogbook
 	//	PreviewEntry
 	//	ApproveEntry
@@ -248,8 +248,8 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	//	{
 	//		bool automaticCommand = requestType == "RefreshLogbook"; //automatic commands
 	// should not refresh cookie code.. only user initiated commands should! 		bool
-	// checkLock = true; 		bool getUser = (requestType == "CreateExperiment") ||
-	//(requestType == "RemoveExperiment") ||
+	// checkLock = true; 		bool getUser = (requestType == "CreateCategory") ||
+	//(requestType == "RemoveCategory") ||
 	//				(requestType == "PreviewEntry") || (requestType ==
 	//"AdminRemoveRestoreEntry"); 		bool requireLock = false;
 	//
@@ -284,12 +284,12 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	// to report to logbook admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,tempStr);
 
-	if(requestType == "CreateExperiment")
+	if(requestType == "CreateCategory")
 	{
-		// check that experiment directory does not exist, and it is not in xml list
-		// create experiment
+		// check that category directory does not exist, and it is not in xml list
+		// create category
 		// create directory
-		// add to experiments list
+		// add to categories list
 		//
 		//		if(userPermissions < ADMIN_PERMISSIONS_THRESHOLD)
 		//		{
@@ -304,12 +304,12 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// get creator name
 		std::string creator = userInfo.username_;
 
-		createExperiment(
-		    CgiDataUtilities::postData(cgiIn, "Experiment"), creator, &xmlOut);
+		createCategory(
+		    CgiDataUtilities::postData(cgiIn, "Category"), creator, &xmlOut);
 
 		__COUT__ << "Created" << std::endl;
 	}
-	else if(requestType == "RemoveExperiment")
+	else if(requestType == "RemoveCategory")
 	{
 		// remove from xml list, but do not remove directory (requires manual delete so
 		// mistakes aren't made)
@@ -322,16 +322,16 @@ void LogbookSupervisor::request(const std::string&               requestType,
 
 		// get remover name
 		std::string remover = userInfo.username_;
-		removeExperiment(
-		    CgiDataUtilities::postData(cgiIn, "Experiment"), remover, &xmlOut);
+		removeCategory(
+		    CgiDataUtilities::postData(cgiIn, "Category"), remover, &xmlOut);
 	}
-	else if(requestType == "GetExperimentList")
+	else if(requestType == "GetCategoryList")
 	{
 		// remove from xml list, but do not remove directory (requires manual delete so
 		// mistakes aren't made)
 		if(userInfo.permissionLevel_ >=
 		   CoreSupervisorBase::getSupervisorPropertyUserPermissionsThreshold(
-		       "GetExperimentListAdmin"))
+		       "GetCategoryListAdmin"))
 		{
 			xmlOut.addTextElementToData("is_admin", "0");  // indicate not an admin
 			return;
@@ -339,12 +339,12 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// else
 
 		xmlOut.addTextElementToData("is_admin", "1");  // indicate not an admin
-		getExperiments(&xmlOut);
+		getCategories(&xmlOut);
 	}
-	else if(requestType == "SetActiveExperiment")
+	else if(requestType == "SetActiveCategory")
 	{
-		// check that experiment exists
-		// set active experiment
+		// check that category exists
+		// set active category
 
 		//		if(userPermissions < ADMIN_PERMISSIONS_THRESHOLD)
 		//		{
@@ -352,12 +352,12 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// permissions."); 			goto CLEANUP;
 		//		}
 
-		webUserSetActiveExperiment(CgiDataUtilities::postData(cgiIn, "Experiment"),
+		webUserSetActiveCategory(CgiDataUtilities::postData(cgiIn, "Category"),
 		                           &xmlOut);
 	}
 	else if(requestType == "RefreshLogbook")
 	{
-		// returns logbook for currently active experiment based on date and duration
+		// returns logbook for currently active category based on date and duration
 		// parameters
 
 		std::string Date     = CgiDataUtilities::postData(cgiIn, "Date");
@@ -451,15 +451,15 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 	}
 	else if(requestType == "LogReport")
 	{
-		std::string activeExperiment =
-		    CgiDataUtilities::getData(cgiIn, "activeExperiment");
-		__COUT__ << " Start Log Report for " << activeExperiment << std::endl;
+		std::string activeCategory =
+		    CgiDataUtilities::getData(cgiIn, "activeCategory");
+		__COUT__ << " Start Log Report for " << activeCategory << std::endl;
 
 		out << "<!DOCTYPE HTML><html lang='en'><header><title>ots Logbook "
 		       "Reports</title></header><frameset col='100%' row='100%'><frame "
 		       "src='/WebPath/html/LogbookReport.html?urn="
 		    << this->getApplicationDescriptor()->getLocalId()
-		    << "&activeExperiment=" << activeExperiment << "'></frameset></html>";
+		    << "&activeCategory=" << activeCategory << "'></frameset></html>";
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
@@ -467,7 +467,7 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 
 //==============================================================================
 // xoap::MakeSystemLogEntry
-//	make a system logbook entry into active experiment's logbook from Supervisor only
+//	make a system logbook entry into active category's logbook from Supervisor only
 //	TODO: (how to enforce?)
 xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
@@ -482,13 +482,13 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 
 	__COUT__ << "Received External Supervisor System Entry " << EntryText << std::endl;
 	__COUTV__(SubjectText);
-	__COUT__ << "Active Experiment is  " << activeExperiment_ << std::endl;
+	__COUT__ << "Active Category is  " << activeCategory_ << std::endl;
 
 	std::string retStr = "Success";
 
 	std::string logPath,
 	    logDirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	                 (std::string)LOGBOOK_EXPERIMENT_DIR_PREFACE + activeExperiment_;
+	                 (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
 
 	char                 dayIndexStr[20];
 	HttpXmlDocument      logXml;
@@ -496,10 +496,10 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 	xercesc::DOMElement* entryEl;
 	DIR*                 dir;
 
-	if(activeExperiment_ == "")
+	if(activeCategory_ == "")
 	{
 		retStr =
-		    "Warning - Currently, no Active Experiment. Turn off the Logbook XDAQ "
+		    "Warning - Currently, no Active Category. Turn off the Logbook XDAQ "
 		    "Application to suppress this message.";
 		__COUT__ << retStr << std::endl;
 		goto XOAP_CLEANUP;
@@ -509,7 +509,7 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 	dir = opendir(logDirPath.c_str());
 	if(!dir)
 	{
-		retStr = "Error - Active Experiment directory missing.";
+		retStr = "Error - Active Category directory missing.";
 		__COUT__ << retStr << std::endl;
 		goto XOAP_CLEANUP;
 	}
@@ -517,7 +517,7 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 
 	sprintf(dayIndexStr, "%6.6lu", time(0) / (60 * 60 * 24));  // get today's index
 
-	logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeExperiment_ + "_" +
+	logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ + "_" +
 	          (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 	__COUT__ << "logPath " << logPath << std::endl;
 
@@ -576,29 +576,29 @@ XOAP_CLEANUP:
 ////LogReport
 ////	Gives controls for generating a logbook report
 ////	NOTE: to create pdf with command line:
-////			paps LogbookData/experiment_list.xml > test.ps
+////			paps LogbookData/category_list.xml > test.ps
 ////			ps2pdfwr test.ps test.pdf
 // void LogbookSupervisor::LogReport(xgi::Input * in, xgi::Output * out )
 // throw (xgi::exception::Exception)
 //{
 //	cgicc::Cgicc cgiIn(in);
-//	std::string activeExperiment = CgiDataUtilities::getData(cgiIn,"activeExperiment");
-//	__COUT__ << " Start Log Report for " << activeExperiment << std::endl;
+//	std::string activeCategory = CgiDataUtilities::getData(cgiIn,"activeCategory");
+//	__COUT__ << " Start Log Report for " << activeCategory << std::endl;
 //	*out << "<!DOCTYPE HTML><html lang='en'><header><title>ots Logbook
 // Reports</title></header><frameset col='100%' row='100%'><frame
 // src='/WebPath/html/LogbookReport.html?urn=" <<
-//			this->getApplicationDescriptor()->getLocalId() << "&activeExperiment=" <<
-// activeExperiment << "'></frameset></html>";
+//			this->getApplicationDescriptor()->getLocalId() << "&activeCategory=" <<
+// activeCategory << "'></frameset></html>";
 //}
 
 //==============================================================================
-// getActiveExperiment
-// 		load active experiment from txt file, must be first line in file
-std::string LogbookSupervisor::getActiveExperiment()
+// getActiveCategory
+// 		load active category from txt file, must be first line in file
+std::string LogbookSupervisor::getActiveCategory()
 {
-	FILE* fp = fopen(std::string((std::string)ACTIVE_EXPERIMENT_PATH).c_str(), "r");
+	FILE* fp = fopen(std::string((std::string)ACTIVE_CATEGORY_PATH).c_str(), "r");
 	if(!fp)
-		activeExperiment_ = "";
+		activeCategory_ = "";
 	else
 	{
 		char line[100];
@@ -613,52 +613,52 @@ std::string LogbookSupervisor::getActiveExperiment()
 		else if(line[strlen(line) - 1] == '\n')
 			line[strlen(line) - 1] = '\0';
 
-		activeExperiment_ = line;
+		activeCategory_ = line;
 	}
 
-	return activeExperiment_;
-} //end getActiveExperiment()
+	return activeCategory_;
+} //end getActiveCategory()
 
 //==============================================================================
-// setActiveExperiment
-//		"" means no experiment is active
-void LogbookSupervisor::setActiveExperiment(std::string experiment)
+// setActiveCategory
+//		"" means no category is active
+void LogbookSupervisor::setActiveCategory(std::string category)
 {
-	FILE* fp = fopen(std::string((std::string)ACTIVE_EXPERIMENT_PATH).c_str(), "w");
+	FILE* fp = fopen(std::string((std::string)ACTIVE_CATEGORY_PATH).c_str(), "w");
 	if(!fp)
 	{
 		__COUT__ << "FATAL ERROR!!! - file write" << std::endl;
 		return;
 	}
 
-	fprintf(fp, "%s", experiment.c_str());
+	fprintf(fp, "%s", category.c_str());
 	fclose(fp);
 
-	if(activeExperiment_ != "" &&
-	   activeExperiment_ != experiment)  // old active experiment is on its way out
+	if(activeCategory_ != "" &&
+	   activeCategory_ != category)  // old active category is on its way out
 		theRemoteWebUsers_.makeSystemLogEntry(
-		    "Experiment was made inactive.");  // make system logbook entry
+		    "Category was made inactive.");  // make system logbook entry
 
 	bool entryNeeded = false;
-	if(experiment != "" &&
-	   activeExperiment_ != experiment)  // old active experiment is on its way out
+	if(category != "" &&
+	   activeCategory_ != category)  // old active category is on its way out
 		entryNeeded = true;
 
-	activeExperiment_ = experiment;
-	__COUT__ << "Active Experiment set to " << activeExperiment_ << std::endl;
+	activeCategory_ = category;
+	__COUT__ << "Active Category set to " << activeCategory_ << std::endl;
 
 	if(entryNeeded)
 		theRemoteWebUsers_.makeSystemLogEntry(
-		    "Experiment was made active.");  // make system logbook entry
-} //end setActiveExperiment()
+		    "Category was made active.");  // make system logbook entry
+} //end setActiveCategory()
 
 //==============================================================================
-// validateExperimentName
+// validateCategoryName
 //		remove all chars that are not alphanumeric, dashes, or underscores
-bool LogbookSupervisor::validateExperimentName(std::string& exp)
+bool LogbookSupervisor::validateCategoryName(std::string& exp)
 {
-	if(exp.length() < EXPERIMENT_NAME_MIN_LENTH ||
-	   exp.length() > EXPERIMENT_NAME_MAX_LENTH)
+	if(exp.length() < CATEGORY_NAME_MIN_LENTH ||
+	   exp.length() > CATEGORY_NAME_MAX_LENTH)
 		return false;
 	for(int i = 0; i < (int)exp.length(); ++i)
 		if(!((exp[i] >= 'a' && exp[i] <= 'z') || (exp[i] >= 'A' && exp[i] <= 'Z') ||
@@ -669,60 +669,60 @@ bool LogbookSupervisor::validateExperimentName(std::string& exp)
 		}  // remove illegal chars and rewind i
 
 	return true;
-} //end validateExperimentName()
+} //end validateCategoryName()
 
 //==============================================================================
-// getExperiments
-//		if xmlOut, then output experiments to xml
+// getCategories
+//		if xmlOut, then output categories to xml
 //		if out, then output to stream
-void LogbookSupervisor::getExperiments(HttpXmlDocument* xmlOut, std::ostringstream* out)
+void LogbookSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* out)
 {
-	// check that experiment listing doesn't already exist
+	// check that category listing doesn't already exist
 	HttpXmlDocument expXml;
-	if(!expXml.loadXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH))
+	if(!expXml.loadXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH))
 	{
-		__COUT__ << "Fatal Error - Experiment database." << std::endl;
-		__COUT__ << "Creating empty experiment database." << std::endl;
+		__COUT__ << "Fatal Error - Category database." << std::endl;
+		__COUT__ << "Creating empty category database." << std::endl;
 
-		expXml.addTextElementToData((std::string)XML_EXPERIMENTS_ROOT);
-		expXml.saveXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH);
+		expXml.addTextElementToData((std::string)XML_CATEGORY_ROOT);
+		expXml.saveXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH);
 		return;
 	}
 
 	std::vector<std::string> exps;
-	expXml.getAllMatchingValues(XML_EXPERIMENT, exps);
+	expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_EXPERIMENT, activeExperiment_);
+		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, activeCategory_);
 
-	for(unsigned int i = 0; i < exps.size(); ++i)  // loop experiments
+	for(unsigned int i = 0; i < exps.size(); ++i)  // loop categories
 	{
 		if(xmlOut)
-			xmlOut->addTextElementToData(XML_EXPERIMENT, exps[i]);
+			xmlOut->addTextElementToData(XML_CATEGORY, exps[i]);
 		if(out)
 			*out << exps[i] << std::endl;
 	}
-} //end getExperiments()
+} //end getCategories()
 
 //==============================================================================
-// createExperiment
-void LogbookSupervisor::createExperiment(std::string      experiment,
+// createCategory
+void LogbookSupervisor::createCategory(std::string      category,
                                          std::string      creator,
                                          HttpXmlDocument* xmlOut)
 {
-	if(!validateExperimentName(experiment))
+	if(!validateCategoryName(category))
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(
-			    XML_ADMIN_STATUS, "Error - Experiment name must be 3-25 characters.");
+			    XML_ADMIN_STATUS, "Error - Category name must be 3-25 characters.");
 		return;
 	}
 
-	__COUT__ << "experiment " << experiment << std::endl;
+	__COUT__ << "category " << category << std::endl;
 
 	// check that directory doesn't already exist
 	std::string dirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	                      (std::string)LOGBOOK_EXPERIMENT_DIR_PREFACE + experiment;
+	                      (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + category;
 
 	__COUT__ << "dirPath " << dirPath << std::endl;
 
@@ -734,43 +734,43 @@ void LogbookSupervisor::createExperiment(std::string      experiment,
 		directoryExists = true;
 	}
 
-	// check that experiment listing doesn't already exist
+	// check that category listing doesn't already exist
 	HttpXmlDocument expXml;
-	if(!expXml.loadXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH))
+	if(!expXml.loadXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH))
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(XML_ADMIN_STATUS,
-			                             "Fatal Error - Experiment database.");
+			                             "Fatal Error - Category database.");
 		return;
 	}
 
 	std::vector<std::string> exps;
-	expXml.getAllMatchingValues(XML_EXPERIMENT, exps);
+	expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	for(unsigned int i = 0; i < exps.size(); ++i)
-		if(experiment == exps[i])
+		if(category == exps[i])
 		{
 			if(xmlOut)
 				xmlOut->addTextElementToData(
 				    XML_ADMIN_STATUS,
-				    "Failed - Experiment, " + experiment + ", already exists.");
+				    "Failed - Category, " + category + ", already exists.");
 			return;
 		}
-	__COUT__ << "experiments count: " << exps.size() << std::endl;
+	__COUT__ << "categories count: " << exps.size() << std::endl;
 
-	// everything checks out, add experiment!
-	// add to experiments xml doc and save
-	//	<experiments>
+	// everything checks out, add category!
+	// add to categories xml doc and save
+	//	<categories>
 	//		...
-	//			<experiment_name = "xx">
+	//			<category_name = "xx">
 	//				<create_time = "##"> <who_created = "aa">
 	xercesc::DOMElement* expEl =
-	    expXml.addTextElementToParent(XML_EXPERIMENT, experiment, XML_EXPERIMENTS_ROOT);
+	    expXml.addTextElementToParent(XML_CATEGORY, category, XML_CATEGORY_ROOT);
 	char createTime[20];
 	sprintf(createTime, "%lu", time(0));
-	expXml.addTextElementToParent(XML_EXPERIMENT_CREATE, createTime, expEl);
-	expXml.addTextElementToParent(XML_EXPERIMENT_CREATOR, creator, expEl);
-	expXml.saveXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH);
+	expXml.addTextElementToParent(XML_CATEGORY_CREATE, createTime, expEl);
+	expXml.addTextElementToParent(XML_CATEGORY_CREATOR, creator, expEl);
+	expXml.saveXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH);
 
 	// create directory only if doesn't already exist
 	if(directoryExists)
@@ -781,7 +781,7 @@ void LogbookSupervisor::createExperiment(std::string      experiment,
 
 		directoryExists = false;
 		dir             = opendir(dirPath.c_str());
-		if(!dir)  // check if uploads directory exists within experiment directory
+		if(!dir)  // check if uploads directory exists within category directory
 		{
 			__COUT__ << "Creating uploads directory" << std::endl;
 			if(-1 == mkdir(dirPath.c_str(), 0755))  // make uploads directory
@@ -789,7 +789,7 @@ void LogbookSupervisor::createExperiment(std::string      experiment,
 				if(xmlOut)
 					xmlOut->addTextElementToData(XML_ADMIN_STATUS,
 					                             "Failed - uploads directory for " +
-					                                 experiment + " was not created.");
+					                                 category + " was not created.");
 				__COUT__ << "Uploads directory failure." << std::endl;
 				return;
 			}
@@ -798,121 +798,121 @@ void LogbookSupervisor::createExperiment(std::string      experiment,
 			closedir(dir);
 
 		xmlOut->addTextElementToData(XML_ADMIN_STATUS,
-		                             "Directory already exists for " + experiment +
-		                                 ", re-added to list of experiments.");
+		                             "Directory already exists for " + category +
+		                                 ", re-added to list of categories.");
 		return;
 	}
-	__COUT__ << "Creating experiment and uploads directory at: " << dirPath << std::endl;
+	__COUT__ << "Creating category and uploads directory at: " << dirPath << std::endl;
 	if(-1 == mkdir(dirPath.c_str(), 0755) ||
 	   -1 == mkdir((dirPath + "/" + (std::string)LOGBOOK_UPLOADS_PATH).c_str(), 0755))
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(
 			    XML_ADMIN_STATUS,
-			    "Failed - directory, " + experiment + ", could not be created.");
+			    "Failed - directory, " + category + ", could not be created.");
 		return;
 	}
 
 	if(xmlOut)
 		xmlOut->addTextElementToData(
-		    XML_ADMIN_STATUS, "Experiment, " + experiment + ", successfully created.");
-} //end createExperiment()
+		    XML_ADMIN_STATUS, "Category, " + category + ", successfully created.");
+} //end createCategory()
 
 //==============================================================================
-// webUserSetActiveExperiment
-//		if experiment exists, set as active
-//		to clear active experiment set to ""
-void LogbookSupervisor::webUserSetActiveExperiment(std::string      experiment,
+// webUserSetActiveCategory
+//		if category exists, set as active
+//		to clear active category set to ""
+void LogbookSupervisor::webUserSetActiveCategory(std::string      category,
                                                    HttpXmlDocument* xmlOut)
 {
-	if(experiment == "")  // clear active experiment
+	if(category == "")  // clear active category
 	{
-		setActiveExperiment(experiment);
+		setActiveCategory(category);
 		if(xmlOut)
 			xmlOut->addTextElementToData(XML_ADMIN_STATUS,
-			                             "Active experiment cleared successfully.");
+			                             "Active category cleared successfully.");
 	}
 
-	// check that experiment listing exists
+	// check that category listing exists
 	HttpXmlDocument expXml;
-	if(!expXml.loadXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH))
+	if(!expXml.loadXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH))
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(XML_ADMIN_STATUS,
-			                             "Fatal Error - Experiment database.");
+			                             "Fatal Error - Category database.");
 		return;
 	}
 	std::vector<std::string> exps;
-	expXml.getAllMatchingValues(XML_EXPERIMENT, exps);
+	expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	unsigned int i;
 	for(i = 0; i < exps.size(); ++i)
-		if(experiment == exps[i])
+		if(category == exps[i])
 			break;
 
 	if(i == exps.size())  // not found
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(
-			    XML_ADMIN_STATUS, "Failed - Experiment, " + experiment + ", not found.");
+			    XML_ADMIN_STATUS, "Failed - Category, " + category + ", not found.");
 		return;
 	}
 
 	// found!
-	setActiveExperiment(experiment);
+	setActiveCategory(category);
 	if(xmlOut)
 		xmlOut->addTextElementToData(
 		    XML_ADMIN_STATUS,
-		    "Active experiment set to " + experiment + " successfully.");
-} //end webUserSetActiveExperiment()
+		    "Active category set to " + category + " successfully.");
+} //end webUserSetActiveCategory()
 
 //==============================================================================
-// removeExperiment
-//		remove experiment from listing only (do NOT remove logbook data directory)
-//		record remover in log file REMOVE_EXPERIMENT_LOG_PATH
-void LogbookSupervisor::removeExperiment(std::string      experiment,
+// removeCategory
+//		remove category from listing only (do NOT remove logbook data directory)
+//		record remover in log file REMOVE_CATEGORY_LOG_PATH
+void LogbookSupervisor::removeCategory(std::string      category,
                                          std::string      remover,
                                          HttpXmlDocument* xmlOut)
 {
-	__COUT__ << "experiment " << experiment << std::endl;
+	__COUT__ << "category " << category << std::endl;
 
-	// check that experiment listing exists
+	// check that category listing exists
 	HttpXmlDocument expXml;
-	if(!expXml.loadXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH))
+	if(!expXml.loadXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH))
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(XML_ADMIN_STATUS,
-			                             "Fatal Error - Experiment database.");
+			                             "Fatal Error - Category database.");
 		return;
 	}
 	std::vector<std::string> exps;
-	expXml.getAllMatchingValues(XML_EXPERIMENT, exps);
+	expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	unsigned int i;
 	for(i = 0; i < exps.size(); ++i)
-		if(experiment == exps[i])
+		if(category == exps[i])
 			break;
 
 	if(i == exps.size())  // not found
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(
-			    XML_ADMIN_STATUS, "Failed - Experiment, " + experiment + ", not found.");
+			    XML_ADMIN_STATUS, "Failed - Category, " + category + ", not found.");
 		return;
 	}
 
 	// found!
 
-	// remove experiment from xml
-	xercesc::DOMElement* parent = expXml.getMatchingElement(XML_EXPERIMENTS_ROOT);
-	xercesc::DOMElement* child  = expXml.getMatchingElement(XML_EXPERIMENT, i);
-	__COUT__ << "experiments original count: " << expXml.getChildrenCount(parent)
+	// remove category from xml
+	xercesc::DOMElement* parent = expXml.getMatchingElement(XML_CATEGORY_ROOT);
+	xercesc::DOMElement* child  = expXml.getMatchingElement(XML_CATEGORY, i);
+	__COUT__ << "categories original count: " << expXml.getChildrenCount(parent)
 	         << std::endl;
 	expXml.recursiveRemoveChild(child, parent);
-	__COUT__ << "experiments new count: " << expXml.getChildrenCount(parent) << std::endl;
+	__COUT__ << "categories new count: " << expXml.getChildrenCount(parent) << std::endl;
 
-	// update removed experiments log
-	FILE* fp = fopen(((std::string)REMOVE_EXPERIMENT_LOG_PATH).c_str(), "a");
+	// update removed categories log
+	FILE* fp = fopen(((std::string)REMOVE_CATEGORY_LOG_PATH).c_str(), "a");
 	if(!fp)
 	{
 		if(xmlOut)
@@ -920,43 +920,43 @@ void LogbookSupervisor::removeExperiment(std::string      experiment,
 		return;
 	}
 	fprintf(fp,
-	        "%s -- %s Experiment removed by %s.\n",
+	        "%s -- %s Category removed by %s.\n",
 	        asctime(localtime(&((time_t const&)(time(0))))),
-	        experiment.c_str(),
+	        category.c_str(),
 	        remover.c_str());
 	fclose(fp);
 
-	expXml.saveXmlDocument((std::string)LOGBOOK_EXPERIMENT_LIST_PATH);  // save database
+	expXml.saveXmlDocument((std::string)LOGBOOK_CATEGORY_LIST_PATH);  // save database
 
-	// unset from activeExperiment_ if is active experiment
-	if(activeExperiment_ == experiment)
-		setActiveExperiment();  // clear active experiment
+	// unset from activeCategory_ if is active category
+	if(activeCategory_ == category)
+		setActiveCategory();  // clear active category
 
 	if(xmlOut)
 		xmlOut->addTextElementToData(
-		    XML_ADMIN_STATUS, "Experiment, " + experiment + ", successfully removed.");
-} //end removeExperiment()
+		    XML_ADMIN_STATUS, "Category, " + category + ", successfully removed.");
+} //end removeCategory()
 
 //==============================================================================
 //	refreshLogbook
-//		returns all the logbook data for active experiment from starting date and back in
+//		returns all the logbook data for active category from starting date and back in
 // time for 			duration total number of days.
 //		e.g. date = today, and duration = 1 returns logbook for today from active
-// experiment 		The entries are returns from oldest to newest
+// category 		The entries are returns from oldest to newest
 void LogbookSupervisor::refreshLogbook(time_t              date,
                                        unsigned char       duration,
                                        HttpXmlDocument*    xmlOut,
                                        std::ostringstream* out,
-                                       std::string         experiment)
+                                       std::string         category)
 {
-	if(experiment == "")
-		experiment = activeExperiment_;  // default to active experiment
+	if(category == "")
+		category = activeCategory_;  // default to active category
 	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_EXPERIMENT, experiment);  // for success
+		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
 
 	// check that directory exists
 	std::string dirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	                      (std::string)LOGBOOK_EXPERIMENT_DIR_PREFACE + experiment;
+	                      (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + category;
 
 	if(out)
 		*out << __COUT_HDR_FL__ << "dirPath " << dirPath << std::endl;
@@ -967,7 +967,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 		if(xmlOut)
 			xmlOut->addTextElementToData(
 			    XML_STATUS,
-			    "Error - Directory for experiment, " + experiment + ", missing.");
+			    "Error - Directory for category, " + category + ", missing.");
 		if(out)
 			*out << __COUT_HDR_FL__ << "Error - Directory missing" << std::endl;
 		return;
@@ -1038,7 +1038,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 	for(unsigned char i = duration; i != 0; --i)
 	{
 		sprintf(dayIndexStr, "%6.6u", baseDay - i + 1);  // get day index, back in time
-		entryPath = dirPath + "/" + LOGBOOK_FILE_PREFACE + experiment + "_" +
+		entryPath = dirPath + "/" + LOGBOOK_FILE_PREFACE + category + "_" +
 		            (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 
 		if(out)
@@ -1145,11 +1145,11 @@ void LogbookSupervisor::savePostPreview(std::string&                        subj
                                         std::string                         creator,
                                         HttpXmlDocument*                    xmlOut)
 {
-	if(activeExperiment_ == "")  // no active experiment!
+	if(activeCategory_ == "")  // no active category!
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(XML_STATUS,
-			                             "Failed - no active experiment currently!");
+			                             "Failed - no active category currently!");
 		return;
 	}
 
@@ -1279,13 +1279,13 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 
 		std::string logPath,
 		    logDirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-		                 (std::string)LOGBOOK_EXPERIMENT_DIR_PREFACE + activeExperiment_;
+		                 (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
 
 		// check that directory exists
 		DIR* dir = opendir(logDirPath.c_str());
 		if(!dir)
 		{
-			__COUT__ << "Error - Active Experiment directory missing: " << logPath
+			__COUT__ << "Error - Active Category directory missing: " << logPath
 			         << std::endl;
 			return;
 		}
@@ -1294,7 +1294,7 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 		char dayIndexStr[20];
 		sprintf(dayIndexStr, "%6.6lu", time(0) / (60 * 60 * 24));  // get today's index
 
-		logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeExperiment_ + "_" +
+		logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ + "_" +
 		          (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 		__COUT__ << "logPath " << logPath << std::endl;
 
@@ -1373,7 +1373,7 @@ void LogbookSupervisor::escapeLogbookEntry(std::string& /*entry*/)
 //	hideLogbookEntry
 //		NOTE: does not actually delete entry, just marks as hidden
 //      removes/restores logbook entry. Requires admin priveleges
-//		Locates the entry within the active experiment and if hide
+//		Locates the entry within the active category and if hide
 //			appends xml fields:
 //				XML_LOGBOOK_ENTRY_HIDDEN
 //				XML_LOGBOOK_ENTRY_HIDER
@@ -1402,8 +1402,8 @@ void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
 
 	std::string logDirPath =
 	    (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	    (std::string)LOGBOOK_EXPERIMENT_DIR_PREFACE + activeExperiment_;
-	std::string logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeExperiment_ +
+	    (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
+	std::string logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ +
 	                      "_" + (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 
 	__COUT__ << "logPath=" << logPath << std::endl;

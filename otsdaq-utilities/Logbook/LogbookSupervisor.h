@@ -36,22 +36,22 @@ class LogbookSupervisor : public CoreSupervisorBase
 	xoap::MessageReference 				MakeSystemLogEntry				(xoap::MessageReference msg);
 
   private:
-	bool        						validateExperimentName			(std::string& experiment);
-	std::string 						getActiveExperiment				(void);
-	void        						setActiveExperiment				(std::string experiment = "");
-	void        						createExperiment				(std::string      experiment,
+	bool        						validateCategoryName			(std::string& category);
+	std::string 						getActiveCategory				(void);
+	void        						setActiveCategory				(std::string category = "");
+	void        						createCategory					(std::string      category,
 	            						                				 std::string      creator,
 	            						                				 HttpXmlDocument* xmldoc = 0);
-	void        						removeExperiment				(std::string      experiment,
+	void        						removeCategory					(std::string      category,
 	            						                				 std::string      remover,
 	            						                				 HttpXmlDocument* xmldoc = 0);
-	void        						getExperiments					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
-	void 								webUserSetActiveExperiment		(std::string experiment, HttpXmlDocument* xmldoc = 0);
+	void        						getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void 								webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
 	void 								refreshLogbook					(time_t              date,
 	     								              					 unsigned char       duration,
 	     								              					 HttpXmlDocument*    xmldoc     = 0,
 	     								              					 std::ostringstream* out        = 0,
-	     								              					 std::string         experiment = "");
+	     								              					 std::string         category = "");
 	void 								cleanUpPreviews					(void);
 	void 								savePostPreview					(std::string&                        subject,
 	                    												 std::string&                        text,
@@ -69,14 +69,13 @@ class LogbookSupervisor : public CoreSupervisorBase
 
 	enum
 	{
-		// ADMIN_PERMISSIONS_THRESHOLD     = 255,
-		EXPERIMENT_NAME_MIN_LENTH       = 3,
-		EXPERIMENT_NAME_MAX_LENTH       = 25,
+		CATEGORY_NAME_MIN_LENTH       = 3,
+		CATEGORY_NAME_MAX_LENTH       = 300,
 		LOGBOOK_PREVIEW_EXPIRATION_TIME = 60 * 20,  // 20 minutes
 	};
 	std::vector<std::string> allowedFileUploadTypes_, matchingFileUploadTypes_;
 
-	std::string  activeExperiment_;
+	std::string  activeCategory_;
 	unsigned int mostRecentDayIndex_;
 };
 }  // namespace ots
