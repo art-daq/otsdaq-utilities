@@ -78,11 +78,22 @@ try
 
 
 	// Determine the timezone offset from UTC time in hours
-    std::time_t now = std::time(0);
-    std::tm* localTime = std::localtime(&now);
-    std::tm* utcTime = std::gmtime(&now);
-    int offsetSeconds = std::difftime(std::mktime(localTime), std::mktime(utcTime));
-	timezoneHourOffset_ = offsetSeconds/60/60;
+    // Get the current time
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+    // Get the current time in UTC
+    std::chrono::zoned_time<std::chrono::system_clock::duration> utcTime{"UTC", now};
+
+    // Get the current local time using the current system's timezone
+    std::chrono::zoned_time<std::chrono::system_clock::duration> localTime{std::chrono::current_zone(), now};
+
+    // Calculate the difference between local time and UTC
+    std::chrono::seconds offset = std::chrono::duration_cast<std::chrono::seconds>(
+        localTime.get_local_time() - utcTime.get_local_time()
+    );
+
+    // Convert the offset to hours and minutes
+    timezoneHourOffset_ = offset.count() / 3600;
 
 	__SUP_COUTV__(timezoneHourOffset_);
 
@@ -450,16 +461,16 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		category = ECLCategory_;  // default to active category
 	if(xmlOut) xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
 
-	unsigned int// baseDay, 
-		mostRecentDayIndex = 0;
+	time_t mostRecentTime = 0;
 	time_t baseTime;
 
+	__COUTTV__(date);
 	if(!date)  // if date is 0 take most recent day and update it
 		baseTime = time(0);// / (60 * 60 * 24);
 	else
-		baseTime = date;// / (60 * 60 * 24);
+		baseTime = date - timezoneHourOffset_*60*60 + 1; //date is 12:00a GMT, so could give wrong day in local timezone
 	
-	if(1) //test xml_get
+	if(0) //test xml_get
 	{
 		std::string response, url = "/E/xml_get?e=" + std::string("2502"); //does not return subject!
 		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
@@ -480,7 +491,32 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			__COUTTV__(baseTime);
 			__COUTTV__((size_t)duration);
 
-			baseTime += 2*(60 * 60 * 24); //before is non-inclusive, after is inclusive
+			if(TTEST(30)) //debug date
+			{			
+				for(size_t i=0;i<24;++i)
+				{
+					__COUTT__ << "i-: " << i << " " << ((baseTime - i*60*60)/(60 * 60 * 24));
+
+					time_t modTime = baseTime - i*60*60;
+					std::tm *baseTimeTm = std::localtime(&modTime); // Convert to local time
+					char translatedDate[256];
+					strftime(translatedDate, sizeof(translatedDate), "%Y-%m-%d", baseTimeTm);
+					__COUTTV__(translatedDate);	
+				}
+				
+				for(size_t i=0;i<24;++i)
+				{				
+					__COUTT__ << "i+: " << i << " " << ((baseTime + i*60*60)/(60 * 60 * 24));
+					time_t modTime = baseTime + i*60*60;
+					std::tm *baseTimeTm = std::localtime(&modTime); // Convert to local time
+					char translatedDate[256];
+					strftime(translatedDate, sizeof(translatedDate), "%Y-%m-%d", baseTimeTm);
+					__COUTTV__(translatedDate);	
+				}
+			}
+
+			// add one day to calculate before
+			baseTime += 1*(60 * 60 * 24); //before is non-inclusive, after is inclusive
 			std::tm *baseTimeTm = std::localtime(&baseTime); // Convert to local time
 			char baseTimeTmBuffer[256];
 			strftime(baseTimeTmBuffer, sizeof(baseTimeTmBuffer), "%Y-%m-%d", baseTimeTm);
@@ -496,7 +532,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		}
 		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
 		eclConn.Get(url,response);
-		__COUTV__(response);
+		__COUTVS__(3,response);
 
 		//example response:
 		// <?xml version="1.0" encoding="UTF-8"?>
@@ -531,7 +567,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		//      <XML_LOGBOOK_ENTRY_FILE value=fileType1> ...
 		//  </XML_LOGBOOK_ENTRY>
 
-		std::string id, author, category, timestamp, files, images, text;
+		std::string id, author, subject, category, timestamp, files, images, text;
 		size_t after = 0, before = -1, entryCount = 0;
 		std::tm tm;
 
@@ -539,31 +575,34 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			StringMacros::rextractXmlField(response, "entry", 0, before, &before,  //e.g. for reverse order
 			"id=", "\"")) != "")
 		{
-			__COUTTV__(id);		
+			__COUTVS__(2,id);		
 			++entryCount;
 
 			after = before;
 
 			author = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
 				"author=", "\"");
+			subject = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"subject=", "\"");
+			category = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"category=", "\"");				
 			timestamp = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
 				"timestamp=", "\"");
-			__COUTTV__(author);
-			__COUTTV__(timestamp);	
+
+			__COUTVS__(2,author);
+			__COUTVS__(2,timestamp);	
 			tm = {}; //clear	
 			std::istringstream ss(timestamp);	 
 			ss >> std::get_time(&tm, "%m/%d/%Y %H:%M:%S"); // Parse the string into the tm structure			
 			time_t t = std::mktime(&tm); // Convert tm structure to time_t
 
-			if(!date && t > mostRecentDayIndex)
-				mostRecentDayIndex = t; //track most recent entry
+			if(!date && t > mostRecentTime)
+				mostRecentTime = t; //track most recent entry
 
 			text = StringMacros::extractXmlField(response, "pre class=\"html_safe_entry\"", 0, after, nullptr, 
 				"", ">");
-			__COUTTV__(text.size());
-			__COUTTV__(text);	
-			category = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
-				"category=", "\"");
+			__COUTVS__(2,text.size());
+			__COUTVS__(2,text);	
 
 			if(xmlOut)
 			{
@@ -575,7 +614,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_CREATOR, author, entryParent);				
 				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_TEXT, text, entryParent);
 				xmlOut->addTextElementToParent(XML_LOGBOOK_ENTRY_SUBJECT, category + 
-					" - entry #" + id, entryParent);
+					" - entry #" + id + " - " + subject, entryParent);
 			}
 
 			--before; //move back to prepare for next search
@@ -589,24 +628,23 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 	if(xmlOut) xmlOut->addTextElementToData(XML_STATUS, "1");  // for success
 	if(out)	*out << __COUT_HDR_FL__ << "Today: " << time(0) / (60 * 60 * 24) << std::endl;
 
-	__COUTTV__(mostRecentDayIndex);
-	__COUTTV__(time(0));
-	__COUTTV__(time(0) - mostRecentDayIndex);
-	__COUTTV__((time(0) - mostRecentDayIndex)/(60 * 60 * 24));
-	for(size_t i=0;i<24;++i)
-		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60)/(60 * 60 * 24));
-	for(size_t i=0;i<24;++i)
-		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 - timezoneHourOffset_*60*60)/(60 * 60 * 24));
-	for(size_t i=0;i<24;++i)
-		__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 + timezoneHourOffset_*60*60)/(60 * 60 * 24));
-		
-	if(xmlOut && mostRecentDayIndex)
+	if(TTEST(30))
 	{
-		mostRecentDayIndex /= (60 * 60 * 24);
-		__COUTTV__(mostRecentDayIndex);
-		__COUTTV__(time(0) / (60 * 60 * 24) - mostRecentDayIndex);
+		__COUTTV__(mostRecentTime);
+		__COUTTV__(time(0));
+		__COUTTV__(time(0) - mostRecentTime);
+		__COUTTV__((time(0) - mostRecentTime)/(60 * 60 * 24));
+		__COUTTV__(timezoneHourOffset_);
+		for(size_t i=0;i<24;++i)
+			__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 + timezoneHourOffset_*60*60)/(60 * 60 * 24));
+	}
+
+	if(xmlOut && mostRecentTime)
+	{
+		__COUTTV__(mostRecentTime);
+		__COUTTV__(((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));
 		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, //0 is today
-					time(0) / (60 * 60 * 24) - mostRecentDayIndex);  // send most recent day index found in response
+					((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));  // send most recent day index found in response
 	}
 	else 
 		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, 0); //0 is today

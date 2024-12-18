@@ -77,7 +77,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		fullURL = _url + s;
 
 	__COUT__ << "ECL GET request to " << fullURL << std::endl;
-	__COUTTV__(needSignature);
+	__COUTVS__(20,needSignature);
 
 
 	std::string xSig;
@@ -97,7 +97,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 			sprintf(buf, "%02x", resultMD5[i]);
 			xSig.append(buf);
 		}
-		__COUT__ << "ECL MD5 Signature is: " << xSig << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL MD5 Signature is: " << xSig << std::endl;
 	}
 
 
@@ -150,7 +150,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		_safe_url = ""; //clear on error
 		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
 
-		__COUTT__ << "ECL Cleanup" << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 		// cleanup curl stuff
 		curl_easy_cleanup(curl_handle);
 		// curl_slist_free_all(headers);
@@ -158,7 +158,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__SS_THROW__;
 	}
 	
-	__COUTT__ << "ECL Cleanup" << std::endl;
+	__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	// curl_slist_free_all(headers);
