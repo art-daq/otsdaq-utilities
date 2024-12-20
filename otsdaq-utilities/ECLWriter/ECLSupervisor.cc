@@ -9,7 +9,6 @@
 #include "otsdaq/TablePlugins/XDAQContextTable/XDAQContextTable.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
-#include "otsdaq-utilities/ECLWriter/ECLConnection.h"
 
 #include <dirent.h>   /*DIR and dirent*/
 #include <sys/stat.h> /*mkdir*/
@@ -77,6 +76,7 @@ try
 	CategoryName_ = __ENV__("OTS_OWNER") + std::string(" ots");
 
 
+
 	// Determine the timezone offset from UTC time in hours
     // Get the current time
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -96,6 +96,9 @@ try
     timezoneHourOffset_ = offset.count() / 3600;
 
 	__SUP_COUTV__(timezoneHourOffset_);
+
+
+	eclConn_ = std::make_unique<ECLConnection>(ECLUser_, ECLPwd_, ECLHost_);
 
 	
 }  // end init()
@@ -346,8 +349,7 @@ void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* o
 	}
 
 	std::string response, url = "/A/xml_category_list";
-	ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
-	eclConn.Get(url,response);
+	eclConn_->Get(url,response);
 	__COUTTV__(response);
 
 	std::vector<std::string> exps;
@@ -472,9 +474,9 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 	
 	if(0) //test xml_get
 	{
-		std::string response, url = "/E/xml_get?e=" + std::string("2502"); //does not return subject!
-		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
-		eclConn.Get(url,response);
+		std::string response, url = "/E/xml_get?e=" + std::string("2502"); 
+		//ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		eclConn_->Get(url,response);
 		__COUTV__(response);
 	}
 	
@@ -530,8 +532,8 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			__COUTTV__(baseTimeTmBuffer);	
 			url += "&a=" + std::string(baseTimeTmBuffer) + "+00:00:00"; //after			
 		}
-		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
-		eclConn.Get(url,response);
+		// ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		eclConn_->Get(url,response);
 		__COUTVS__(3,response);
 
 		//example response:
@@ -570,6 +572,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		std::string id, author, subject, category, timestamp, files, images, text;
 		size_t after = 0, before = -1, entryCount = 0;
 		std::tm tm;
+		std::string preText, postText;
 
 		while((id = //StringMacros::extractXmlField(response, "entry", 0, after, &after, 
 			StringMacros::rextractXmlField(response, "entry", 0, before, &before,  //e.g. for reverse order
@@ -587,7 +590,11 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			category = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
 				"category=", "\"");				
 			timestamp = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
-				"timestamp=", "\"");
+				"timestamp=", "\"");		
+			images = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"images=", "\"");		
+			files = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
+				"files=", "\"");
 
 			__COUTVS__(2,author);
 			__COUTVS__(2,timestamp);	
@@ -602,6 +609,53 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			text = StringMacros::extractXmlField(response, "pre class=\"html_safe_entry\"", 0, after, nullptr, 
 				"", ">");
 			__COUTVS__(2,text.size());
+			if(text.size() == 0)
+			{
+				text = StringMacros::extractXmlField(response, "text", 0, after, nullptr, 
+					"", ">");
+				__COUTVS__(2,text.size());
+			}
+			__COUTVS__(2,text);	
+
+			preText = ""; postText = "";
+			bool needAttachments = false;
+			if(atoi(images.c_str()))
+			{
+				needAttachments = true;
+				preText += "Attached Images: " + images + "\n<br>";
+			}
+			if(atoi(files.c_str()))
+			{
+				needAttachments = true;
+				preText += "Attached Files: " + files + "\n<br>";
+			}
+
+			if(needAttachments)
+			{
+				std::string response, url = "/E/xml_get?e=" + id;
+				// ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+				eclConn_->Get(url,response);
+				__COUTV__(response);
+
+				size_t fileCount = atoi(files.c_str());
+				__COUTV__(fileCount);
+				for(size_t j=0;j<fileCount;++j)
+				{
+					std::string furl = 
+						StringMacros::extractXmlField(response, "attachment", 0, after, nullptr, 
+							"url=", "\"");
+					
+					__COUTVS__(2,furl);	
+					std::string fname = 
+						StringMacros::extractXmlField(response, "attachment", 0, after, nullptr, 
+							"filename=", "\"");
+					
+					__COUTVS__(2,fname);		
+					postText += "<br><a href='" + furl + "'>" + fname + "</a>";																												
+				}
+			} //end attachment handling
+
+			text = preText + (preText.size()?"\n<br>":"") + text + postText;
 			__COUTVS__(2,text);	
 
 			if(xmlOut)
@@ -641,10 +695,18 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 
 	if(xmlOut && mostRecentTime)
 	{
-		__COUTTV__(mostRecentTime);
-		__COUTTV__(((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));
+		size_t mostRecentDayIndex = (mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24);
+		size_t nowDayIndex = (time(0) + timezoneHourOffset_*60*60)/(60 * 60 * 24);		
+		if(TTEST(30))
+		{
+			__COUTTV__(mostRecentDayIndex);
+			__COUTTV__(nowDayIndex);
+			__COUTTV__(mostRecentTime);
+			__COUTTV__(((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));			
+		}
+		__COUTTV__(nowDayIndex - mostRecentTime);
 		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, //0 is today
-					((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));  // send most recent day index found in response
+					nowDayIndex - mostRecentTime);  // send most recent day index found in response
 	}
 	else 
 		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, 0); //0 is today
@@ -714,8 +776,8 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 	eclEntry.form(form);
 	try
 	{
-		ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
-		if(!eclConn.Post(eclEntry))
+		// ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		if(!eclConn_->Post(eclEntry))
 		{
 			__COUT_ERR__ << "Failure to post ECL entry." << __E__;
 			retStr = "Failure";

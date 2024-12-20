@@ -17,7 +17,6 @@ XDAQ_INSTANTIATOR_IMPL(ChatSupervisor)
 
 //==============================================================================
 ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub)
-
     : CoreSupervisorBase(stub)
 {
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);

@@ -179,7 +179,7 @@
 				font-weight: 800;
 			}
 			
-			#logbookHeader a {
+			#logbookHeader a, #currentCategoryHeader a {
 				color: rgb(180, 207, 237);
 				font-weight: 800;
 			}
@@ -357,11 +357,15 @@
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/CalendarPopup.js"></script>
 		
+		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
+		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
+		
 		<script>		
 			
 			//functions:			
 				//init()	
 				//setActiveCategory(category)
+				//toggleCategoryFilter()
 				//handleCategoryChangeRequest(req)
 				//handleGetCategoryListRequest(req)
 				//redrawLogbook()
@@ -473,12 +477,46 @@
 			{					
 			    Debug.log("Logbook setActiveCategory to " + category);
 				_activeCategory = category;
+				var str = "";
 				if(!_activeCategory || _activeCategory == "")
-				{	_activeCategory = ""; currentCategoryHeader.innerHTML = "No Active Category Set"; 	}
+				{	_activeCategory = ""; str += "No Active Category Set"; 	}
 				else
-					currentCategoryHeader.innerHTML = "<font color='white'>Active Category is</font> " + _activeCategory;
+					str += "<font color='white'>Active Category is</font> " + _activeCategory;
+
+				str += "<div style='float:right; margin: 3px 8px 0 -350px;'>" +
+					"<a class='logbookNotSelected' href='#' onclick='toggleCategoryFilter()'>" + 
+						"hide/show Categories" + 
+					"</a></div><div id='categoryFilterMultiselect' style='display:none;'></div>";
+
+				currentCategoryHeader.innerHTML = str;
 			} //end setActiveCategory()
 			
+			//=====================================================================================
+			//toggleCategoryFilter ~
+			function toggleCategoryFilter(toggleCategoryFilter) 
+			{					
+			    Debug.log("Logbook toggleCategoryFilter()");
+
+				if(categoryFilterMultiselect.innerHTML == "")
+				{
+					Debug.log("init category multiselect");
+				}
+				else
+				{
+					//toggle dislpay
+					var display = categoryFilterMultiselect.style.display == "none";
+					if(display)
+					{
+						Debug.log("Show");
+					}
+					else
+					{
+						Debug.log("Hide");
+					}
+				}
+
+			} //end toggleCategoryFilter()
+
 			//=====================================================================================
 			//redrawLogbook ~
 			function redrawLogbook() 

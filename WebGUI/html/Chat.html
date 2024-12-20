@@ -377,7 +377,8 @@
 			//============================================================
 			//redrawChatWindow ~
 			// 	refreshes chat window, called when window is resized
-			function redrawChatWindow() {			
+			function redrawChatWindow() 
+			{			
 
 			    Debug.log("Chat redrawChat to " + window.innerWidth + " - " + window.innerHeight);
 			    
@@ -725,7 +726,9 @@
 					if(_lastReceivedChat != _chatHistoryArray[0][i].getAttribute('value')) //avoid accidental request duplication (timer conflict)
 					{
 						str += "<div class='chatEntry' style='color:" + getColorForUser(_chatHistoryArray[1][i].getAttribute('value')) + "'>" +
-					 		"<b>(" + formatTime(_chatHistoryArray[2][i].getAttribute('value')) + ") " +
+					 		"<b><label style='width:85px; display:inline-block; font-family:monospace; font-weight:normal;'>(" + 
+								formatTime(_chatHistoryArray[2][i].getAttribute('value')) + 
+							")</label> " +
 						 	_chatHistoryArray[1][i].getAttribute('value') + ":</b> " + 
 						 	convertForClient(_chatHistoryArray[0][i].getAttribute('value')) + "</div>"; //important to only have one /div> per entry for truncate
 						

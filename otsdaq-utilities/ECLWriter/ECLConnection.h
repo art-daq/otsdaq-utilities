@@ -37,6 +37,7 @@ class ECLConnection
 	std::string _user;
 	std::string _pwd;
 	std::string _url, _safe_url;
+	time_t		_lastOperationTime = 0;
 };
 
 #endif

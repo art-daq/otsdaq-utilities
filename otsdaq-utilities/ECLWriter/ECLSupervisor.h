@@ -31,6 +31,8 @@
 #include <string>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include "otsdaq-utilities/ECLWriter/ECLConnection.h"
+
 // clang-format off
 namespace ots
 {
@@ -80,6 +82,8 @@ class ECLSupervisor : public CoreSupervisorBase
 	std::string                           	ECLCategory_;
 	std::string                           	CategoryName_;
 	size_t									timezoneHourOffset_ = 0;
+
+	std::unique_ptr<ECLConnection>			eclConn_;
 
 	const std::string						EscapeECLString					(const std::string& input = "");
 };

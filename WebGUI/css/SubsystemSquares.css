@@ -34,13 +34,13 @@
 		}
 
 		.subsystem_square {
-			background-color: green;
+			background-color:rgb(6 176 6); /* green; */
 			margin: 5px; /* must match _MARGIN/2 in js */
 			float: left;
 			border-radius: 5px;
 			cursor: pointer;
 			overflow-x: auto;
-			overflow-y: hidden;
+			overflow-y: hidden;				
 		}
 		
 		.subsystem_name, .subsystem_console {
@@ -50,14 +50,17 @@
 		.subsystem_name {
 			font-weight: bold;
 			margin-top: 5px;
+			font-size: 20px;
 		}
 		.subsystem_console {
 			white-space: nowrap;
-			font-size: 12px;
+			font-size: 14px;
 		}
 		.subsystem_status {
 			position: relative;			
 			margin-left: 5px;
+    		font-size: 20px;
+			white-space: nowrap;
 		}
 
 		/* ===================== end Subsystem status div section  */

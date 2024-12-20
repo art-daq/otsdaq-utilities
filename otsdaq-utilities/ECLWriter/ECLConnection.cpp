@@ -57,6 +57,14 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	{
 		needSignature = true;
 		//in case of dynamic server downtime, if safe_url is blank, get safe_url
+
+		if(time(0) - _lastOperationTime > 5*60 /* 5 minutes */)
+		{
+			__COUTT__ << "Clearing safe URL and re-requesting..." << __E__;
+			_safe_url = "";
+		}
+
+		__COUTTV__(_safe_url);
 		if(_safe_url == "" && !Get("/secureURL", _safe_url))
 		{
 			__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
@@ -175,6 +183,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	__COUTVS__(2,responseBuffer);
 	response = responseBuffer;
 
+	_lastOperationTime = time(0);
 	return true;
 } //end Get()
 
