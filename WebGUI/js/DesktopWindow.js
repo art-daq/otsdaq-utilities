@@ -320,22 +320,19 @@ else {
 		//maximize() ~~~
 		//	maximize window toggle fulls screen mode
 		this.maximize = function() 
-		{
-			 
+		{			 
 			if(_isMinimized) this.unminimize(); //untoggle minimize flag
 			_isMaximized = true;
 			
 			this.windiv.style.display = "inline"; //make sure is visible
 			this.setWindowSizeAndPosition(_x+10,_y,_w,_h);
-			window.parent.document.title= _name;
-			// console.log(document.title, _name, "Maximize()");
-			
+			window.parent.document.title = _name;
+			// console.log(document.title, _name, "Maximize()");			
 		} //end maximize()
 
 		//==============================================================================
 		this.unmaximize = function()
 		{
-
 			_isMaximized = false;
 			
 			this.windiv.style.display = "inline"; //make sure is visible

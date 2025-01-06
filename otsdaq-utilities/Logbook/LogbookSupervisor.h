@@ -48,7 +48,7 @@ class LogbookSupervisor : public CoreSupervisorBase
 	void        						getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
 	void 								webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
 	void 								refreshLogbook					(time_t              date,
-	     								              					 unsigned char       duration,
+	     								              					 uint32_t		     duration,
 	     								              					 HttpXmlDocument*    xmldoc     = 0,
 	     								              					 std::ostringstream* out        = 0,
 	     								              					 std::string         category = "");

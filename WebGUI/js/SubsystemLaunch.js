@@ -189,6 +189,7 @@ SubsystemLaunch.create = function() {
 			_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
 			redrawWindow();
+			redrawWindow(); //do twice in case of new scroll bars
 
 		} //end localGetContextRecordsHandler()
 				
@@ -710,8 +711,8 @@ SubsystemLaunch.create = function() {
 		//adjust link divs to proper size
 		//	use ratio of new-size/original-size to determine proper size
 
-		var w = window.innerWidth | 0;
-		var h = window.innerHeight | 0;	  
+		var w = DesktopContent.getWindowWidth() | 0;
+		var h = DesktopContent.getWindowHeight() | 0;	  
 
 		if(w < _LAUNCH_MIN_W)
 			w = _LAUNCH_MIN_W;

@@ -69,19 +69,19 @@ class ECLSupervisor : public CoreSupervisorBase
   private:
 
 	void        							getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
-	void 									webUserSetActiveCategory		(std::string experiment, HttpXmlDocument* xmldoc = 0);
+	void 									webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
 	void 									refreshLogbook					(time_t              date,
-	     								              						 unsigned char       duration,
+	     								              						 size_t		         duration,
 	     								              						 HttpXmlDocument*    xmldoc     = 0,
 	     								              						 std::ostringstream* out        = 0,
-	     								              						 std::string         experiment = "");
+	     								              						 std::string  		 categoryFilter = "");
 
 	std::string                           	ECLUser_;
 	std::string                           	ECLHost_;
 	std::string                           	ECLPwd_;
 	std::string                           	ECLCategory_;
 	std::string                           	CategoryName_;
-	size_t									timezoneHourOffset_ = 0;
+	int64_t									timezoneHourOffset_ = 0;
 
 	std::unique_ptr<ECLConnection>			eclConn_;
 

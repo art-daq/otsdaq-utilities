@@ -16,7 +16,9 @@
 			}
 			
 			a {
-				color: blue;
+				color: rgb(180,207,237);	
+				font-weight: 800;
+				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 			
 			hr {				
@@ -31,6 +33,7 @@
 				padding: 5px;
 				border: 1px solid black;
 		    	cursor: pointer;
+				height: 23px;
 			}
 			
 			div {
@@ -65,7 +68,8 @@
 
 			.areaContentDiv {
 			    border-radius: 5px;
-				overflow: hidden;
+				/* overflow-x: auto;
+				overflow-y: hidden; */
 			}
 			
 			.areaContent {
@@ -123,6 +127,13 @@
 				margin-left: 10px;
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
+
+			#categoryHeaderLabel {
+				white-space: nowrap;
+				overflow-x: auto;
+				font-size: 22px;
+			}
+
 			
 			#currentCategoryHeader {
 				font-weight: 800;
@@ -278,17 +289,15 @@
 			
 				font-size: 24px;
 				font-weight: 800;
-				/*margin: -30px 0 0 0;*/
-			/*background-color: black;*/
+				
+				cursor: pointer;
+				/*background-color: black;*/
 			}
 			
 			.Logbook-entryTime {
 				float: right;
 				height: 15px;
-				padding: 2px 10px 0 0;
-				
-			/*margin: -30px 0 0 0;*/
-
+				padding: 2px 10px 0 0;				
 			}
 			
 			.Logbook-entryCreator {
@@ -296,8 +305,6 @@
 				float: right;
 				height: 15px;
 				padding: 2px 10px 0 0;
-			
-			/*margin: -30px 0 0 0;*/
 			}
 
 			.Logbook-entryBody {
@@ -364,10 +371,16 @@
 			
 			//functions:			
 				//init()	
+				
 				//setActiveCategory(category)
+				//setResponseCategory(category)
 				//toggleCategoryFilter()
+				//initCategoryFilter(preselects)
+				//handleCategoryFilterChange(el)
+
 				//handleCategoryChangeRequest(req)
 				//handleGetCategoryListRequest(req)
+				
 				//redrawLogbook()
 				//redrawExpandButtons()
 				//toggleArea(i)
@@ -385,13 +398,16 @@
 				//handleCategoryInputKeyDown(e)
 				//handleSearchKeyUp()
 				//handleTimeoutSearchKeyUp()
+				
 				//createCategory()
 				//removeCategory()
 				//displayCategories()
 				//applyCategoriesSearch(needle)
 				//activeCategorySetRequest(category)
 				//clearCategoryInput()
+
 				//refreshLogbook(date,duration)
+				//toggleAutoRefresh()
 				//handleRefreshLogbook(req)
 				//displayLogbookEntry(divEl,entry)
 				//adminRemoveRestoreEntry(entryId, hide)
@@ -408,6 +424,7 @@
 
 			var _MARGIN = 20;
 			var _HIDDEN_HEIGHT = 33;
+			var _CATEGORY_FILTER_HEIGHT = 338;
 			var _AREA_HEIGHTS = [270,390,500];
 			var _MAX_CATEGORY_NAME_LENGTH = 300;
 			var _DEFAULT_ENTRY_INPUT_TEXT = "Enter the text for your logbook post here.";
@@ -417,6 +434,7 @@
 			
 			var _CategorySearchTimer = 0;
 			var _activeCategory = "";
+			var _categoryFilter = ""; //* for all, if "" go with active category
 			var _categorysShowArray, _categorysArray;
 						
 			//preload loader spinner gif
@@ -429,7 +447,7 @@
 			
 			//refreshing logbook
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
-			var _refreshDuration = 1;	//init to 1 day
+			var _refreshDuration = 14;	//init to 2-weeks
 			var _mostRecentDayIndex = -1;
 			var _logbookUpdateTimer = 0;
 			var _REFRESH_INTERVAL = 10000; //10 seconds
@@ -444,6 +462,18 @@
 			function init() 
 			{	
 				Debug.log("init()");
+
+				if(DesktopContent._windowMessagingInactive) //assume in standalone mode
+				{
+					Debug.log("Standalone mode detected -- Enabling navigation prompt");
+					// Enable navigation prompt 
+					//	(to prevent accidental/back/forward/nav leaving the page) "Leave page?" on chrome
+					window.onbeforeunload = function() {
+						return true;
+					};	
+
+					window.parent.document.title = "ots ECL";					
+				}
 
 				//init area elements
 				for(var i=0;i<_AREAS.length;++i)
@@ -467,29 +497,83 @@
 						"/WebPath/images/windowContentImages/logbook-expand.png";
 				}
 
+				//check for category preselects:
+				var preselects = DesktopContent.getDesktopWindowParameter(0,"categories");
+				var preselectsArr = [];
+				if(preselects)
+				{
+					preselectsArr = preselects.split(',');
+					Debug.log("preselectsArr",preselectsArr);
+				}
+
 				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
-						"", handleGetCategoryListRequest);					
-			} //end init()
+						"", handleGetCategoryListRequest, preselectsArr);					
+			} //end init()		
 
 			//=====================================================================================
 			//setActiveCategory ~
 			function setActiveCategory(category) 
 			{					
 			    Debug.log("Logbook setActiveCategory to " + category);
+
 				_activeCategory = category;
 				var str = "";
+				
+				str += "<center>";
+				str += "<div id='categoryHeaderLabel'>";
 				if(!_activeCategory || _activeCategory == "")
 				{	_activeCategory = ""; str += "No Active Category Set"; 	}
 				else
-					str += "<font color='white'>Active Category is</font> " + _activeCategory;
+					str += "<font color='white'>Active Category is</font> " + _activeCategory;				
+				str += "</div>";
 
-				str += "<div style='float:right; margin: 3px 8px 0 -350px;'>" +
-					"<a class='logbookNotSelected' href='#' onclick='toggleCategoryFilter()'>" + 
+				str += "<div style='margin: 3px 8px -21px 0;'>" +
+					"<a href='#' onclick='toggleCategoryFilter()'>" + 
 						"hide/show Categories" + 
-					"</a></div><div id='categoryFilterMultiselect' style='display:none;'></div>";
+					"</a></div>";
+													
+				var el = document.getElementById("categoryFilterMultiselect");
+				var display = el && (categoryFilterMultiselect.style.display != "none");				
+				//if displayed, toggle height to revert to hidden
+				if(display) 
+					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
+
+				str += "<div id='categoryFilterMultiselect' style='display:none" +					
+					"; height:300px; margin-bottom:0px; margin-top:30px;'></div>";
+
+				str += "<a id='toggleAllNoneCategory' style='display:none" + 
+						"; font-size:14px; padding:10px; margin-top:-15px;' " +
+						"href='#' onclick='toggleAllNoneCategorySelect()'>" + 
+							"select all/none" + 
+						"</a>";
+
+				str += "&nbsp;&nbsp;&nbsp; "+
+						"<a id='openSelectedCategoriesTabLink' style='display:none" + 
+						"; font-size:14px; padding:10px; margin-top:-15px;' " +
+						"href='#' target='_blank'>" + 
+							"open selected in new tab" + 
+						"</a>";
+				str += "</center>";
 
 				currentCategoryHeader.innerHTML = str;
 			} //end setActiveCategory()
+
+			//=====================================================================================
+			//setResponseCategory ~
+			function setResponseCategory(category) 
+			{					
+			    Debug.log("Logbook setResponseCategory to " + category);
+
+				if(category.length && category[0] == '!') //improve inverted wording
+					category = "all wo/" + category.substr(1);
+
+
+				var str = "";
+				str += "<font color='white'>Showing Log Entries for </font> " + category;
+				categoryHeaderLabel.innerHTML = str;
+
+				window.parent.document.title = "ots ECL - " + category;
+			} //end setResponseCategory()
 			
 			//=====================================================================================
 			//toggleCategoryFilter ~
@@ -500,22 +584,158 @@
 				if(categoryFilterMultiselect.innerHTML == "")
 				{
 					Debug.log("init category multiselect");
+					initCategoryFilter();
+				}
+
+				//toggle dislpay
+				var display = categoryFilterMultiselect.style.display == "none";
+				if(display)
+				{
+					Debug.log("Show");
+					categoryFilterMultiselect.style.display = "block";
+					toggleAllNoneCategory.style.display = "inline-block";
+					openSelectedCategoriesTabLink.style.display = "inline-block";
+					_AREA_HEIGHTS[0] += _CATEGORY_FILTER_HEIGHT;
+					_areaEls[0].style.height = _AREA_HEIGHTS[0] + "px";
 				}
 				else
 				{
-					//toggle dislpay
-					var display = categoryFilterMultiselect.style.display == "none";
-					if(display)
-					{
-						Debug.log("Show");
-					}
-					else
-					{
-						Debug.log("Hide");
-					}
+					Debug.log("Hide");
+					categoryFilterMultiselect.style.display = "none";
+					toggleAllNoneCategory.style.display = "none";
+					openSelectedCategoriesTabLink.style.display = "none";
+					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
+					_areaEls[0].style.height = _AREA_HEIGHTS[0] + "px";
 				}
 
+				redrawExpandButtons();
 			} //end toggleCategoryFilter()
+
+			//=====================================================================================
+			//initCategoryFilter ~
+			function initCategoryFilter(preselects) 
+			{					
+				_categoryFilter = ""; //clear
+			    Debug.log("Logbook initCategoryFilter()", 
+					_categorysArray.length, preselects);
+
+				//////////// make search box (copied from MultiSelectBoxTest.html)
+				{	
+					var noMultiSelect = false; // true or false (false for multiselect functionality) 
+					var maintainPreviousSelections = true; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
+					
+					var vals = [];
+					for(var i=0;i<_categorysArray.length;++i)
+						vals[i] = _categorysArray[i].getAttribute('value');
+
+					var keys = undefined;
+					var types = undefined;
+										
+					//write to a particular div
+					var el = categoryFilterMultiselect;  
+					MultiSelectBox.createSelectBox(el,
+							"categoryFilterMultiselect",
+							"Category Selection Filter",
+							vals,keys,types,handleCategoryFilterChange,noMultiSelect);
+					
+					if(!preselects)
+	            	{
+						MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
+						return;
+					}	
+					//else set pre-selections as selected	  
+					
+					MultiSelectBox.initMySelectBoxes(true); //init to clear
+
+					var invertedSelection = false;
+					if(preselects.length && preselects[0].length && preselects[0][0] == '!')
+					{
+						invertedSelection = true;
+						preselects[0] = preselects[0].substr(1);
+					}
+
+
+					for(var j=0;j<preselects.length;++j)
+						for(var i=0;i<vals.length;++i)
+							if((preselects[j] == '*' || //all select
+									(!invertedSelection && preselects[j].trim() == vals[i])) || //normal select
+								(invertedSelection && 
+									preselects[j].trim() != vals[i])) //inverted select
+								MultiSelectBox.setSelectionElementByIndex(el,i,true);	
+					MultiSelectBox.initMySelectBoxes(false); //setup selections	
+					
+					handleCategoryFilterChange(el);
+				}
+				//////////// end make search box				
+
+			} //end initCategoryFilter()
+
+			//=====================================================================================
+			//handleCategoryFilterChange ~
+			function handleCategoryFilterChange(el)
+			{
+				Debug.log("handleCategoryFilterChange()");
+
+				var i = MultiSelectBox.getSelectedIndex(el); 
+				var selArr = MultiSelectBox.getSelectionArray(el);
+				if(selArr[i])
+					Debug.log("Chosen element index:",i,            		
+						" value:",el.textContent,
+						" key:",el.getAttribute("key-value"),
+						" type:",el.getAttribute("type-value"));
+				
+				var selStr = "", invSelStr = "";
+				var isAll = true;
+				var countWithout = 0; //see if only 1 to 3 without
+				for(var s in selArr)
+					if(selArr[s])
+						selStr += (selStr.length?", ":"") + 
+							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
+					else 
+					{
+						isAll = false;
+						++countWithout;
+						invSelStr += (invSelStr.length?", ":"") + 
+							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
+					}
+
+				Debug.logv({selStr});	
+				
+				_categoryFilter = isAll?"*":selStr;
+
+				if((selArr.length > 10 && countWithout < 4) || 
+					(selArr.length > 4 && countWithout == 1))
+				{	//then change to wo/ inverted selection
+					_categoryFilter = "!" //(indicator) 
+						+ invSelStr;
+				}
+					
+								
+				var newTabUrl = DesktopContent._localOrigin + "/urn:xdaq-application:lid=" + DesktopContent._localUrnLid + "/";
+
+				newTabUrl += "?categories=" + encodeURIComponent(_categoryFilter);
+				Debug.logv({newTabUrl});	
+					
+				openSelectedCategoriesTabLink.href = newTabUrl;
+			} //end handleCategoryFilterChange()
+			
+			//=====================================================================================
+			//toggleAllNoneCategorySelect ~
+			function toggleAllNoneCategorySelect()
+			{
+				Debug.log("toggleAllNoneCategorySelect()");
+
+				var selArr = MultiSelectBox.getSelectionArray(categoryFilterMultiselect);
+
+				if(!selArr.length) return;
+
+				var setVal = !selArr[0];
+				for(var i=0;i<selArr.length;++i)
+					MultiSelectBox.setSelectionElementByIndex(categoryFilterMultiselect,i,setVal);	
+			
+				MultiSelectBox.initMySelectBoxes(false); //setup selections	
+				handleCategoryFilterChange(categoryFilterMultiselect);
+			} //end toggleAllNoneCategorySelect()
 
 			//=====================================================================================
 			//redrawLogbook ~
@@ -523,23 +743,26 @@
 			{	
 			    Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
 			    
-			    var w = window.innerWidth;
+			    var w = DesktopContent.getWindowWidth();
 			    if(w < 600) w=600; //prevent super squeeze
-			    var h = window.innerHeight;
 			    			    
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					//only show admin area if have privileges
-					if(!i && !_isAdmin) { 
+					if(i == 0 && !_isAdmin) 
+					{ 
 						_areaEls[i].style.display = "none"; 
 						_isAreaExpanded[i] = true; 
-						_AREA_HEIGHTS[i] = 0; 
+
+						var el = document.getElementById("categoryFilterMultiselect");
+						var display = el && (categoryFilterMultiselect.style.display != "none");	
+						_AREA_HEIGHTS[i] = display?_CATEGORY_FILTER_HEIGHT:0; 
 						continue; 
 					}
 					_areaEls[i].style.display = "block"; 
 
-					 _areaEls[i].style.left = _MARGIN + "px";
-					 _areaEls[i].style.width = (w - _MARGIN*2) + "px";
+					_areaEls[i].style.left = _MARGIN + "px";
+					_areaEls[i].style.width = (w - _MARGIN*2) + "px";
 				}
 			    
 			    redrawExpandButtons();
@@ -549,7 +772,7 @@
 			//redrawExpandButtons ~
 			function redrawExpandButtons() 
 			{					
-				var yoff = 20;
+				var yoff = 32;
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					document.getElementById("expandBtnImg"+i+"-hide").style.display = 
@@ -706,11 +929,13 @@
 			         .replace(/%3E/g, "&gt;")				//>
 			         .replace(/%22/g, "&quot;")				//"
 			         .replace(/%27/g, "&#039;")				//'
+					 .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")//tab
 			         .replace(/%0A%0D/g, "<br>")			//newline
-					 .replace(/&#010;/g, "<br>")			//newline
+					 .replace(/&#010;/g, "<br>")			//newline					 
+					 .replace(/\n/g, 	 "<br>")			//newline
 			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
 			} //end convertForClient()
-			
+		
 			//=====================================================================================
 			//uploadToServer ~~
 			//	upload logbook entry to server.
@@ -871,21 +1096,38 @@
 
 			//=====================================================================================
 			//handleGetCategoryListRequest ~~ 
-			function handleGetCategoryListRequest(req) 
+			function handleGetCategoryListRequest(req, preselectsArr) 
 			{
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
+
+				_categorysArray = req.responseXML.getElementsByTagName("category");
 
 				if(_isAdmin) 
 				{				
 					//reset active category, in case request was a setActiveCategory request
 					setActiveCategory(DesktopContent.getXMLValue(req,"active_category")); 
 					
-					_categorysArray = req.responseXML.getElementsByTagName("category");
 					_categorysShowArray = new Array(); //init all elements to show
 					for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1;
 					
 					displayCategories();
-				}				
+				}		
+				
+				initCategoryFilter(preselectsArr);
+
+				if(DesktopContent._windowMessagingInactive) //assume in standalone mode and no user credential for log entry, so just provide link
+				{
+					var str = ""; //create alternate text for posting entry
+
+					var ecl_url = DesktopContent.getXMLValue(req,"ecl_url"); 
+					if(ecl_url && ecl_url != "")
+					{
+						str += "Click <a target='_blank' href='" + ecl_url + 
+							"/E/create_entry'>here</a> to create a new Logbook entry.";
+						postFormDiv.innerHTML = str;
+						_AREA_HEIGHTS[1] = 72; // shrink new post area
+					}
+				}
 
 				redrawLogbook(); //setup window divs based on admin	
 				refreshLogbook(); //refresh logbook, by default start with today for one day
@@ -958,14 +1200,38 @@
 			} //end clearCategoryInput()
 
 			//=====================================================================================
+			//toggleAutoRefresh ~~ 
+			var _autoRefreshTimer = 0;
+			function toggleAutoRefresh() 
+			{
+				Debug.log("Logbook toggleAutoRefresh()");
+				if(_autoRefreshTimer) window.clearTimeout(_autoRefreshTimer);
+				_autoRefreshTimer = 0;
+
+				if(autoRefreshLink.innerText.indexOf("off") > 0)
+				{ //then turn on					
+					autoRefreshLink.innerText = "Auto-refresh is on";
+
+					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
+					refreshLogbook(); //and refresh now!
+				}
+				else //turn off
+				{
+					autoRefreshLink.innerText = "Auto-refresh is off";
+				}
+
+			} //end toggleAutoRefresh()
+			
+			//=====================================================================================
 			//refreshLogbook ~~ 
 			//	generates request for logbook based on dayIndex and duration 
 			//		dayIndex = 0 for today, 1 for yesterday, etc
 			//		duration is number of days in past to request
 			//		if either is undefined, last request value is used
 			//	request is looking for time_t seconds
+			var _delayLogbookRequestTimer = 0;
 			function refreshLogbook(dayIndex,duration) 
-			{
+			{		
 				Debug.log("Logbook refreshLogbook " + dayIndex + " - " + duration);
 				if(_activeCategory == "")	{ 
 					Debug.log("Logbook refreshLogbook active category not set"); 
@@ -982,12 +1248,26 @@
 				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60;
 				if(_mostRecentDayIndex < 0) //most recent day request 
 					reqDate = 0; //to indicate get most recent day
-				DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list 
-						"Date="+reqDate+"&Duration="+_refreshDuration, 
-						handleRefreshLogbook);				
-				
+
+				Debug.logv({_categoryFilter});	
+
 				//always show date
 				refreshDateDisplay();
+
+				Debug.log("Logbook refreshLogbook start timer");
+				if(_delayLogbookRequestTimer) window.clearTimeout(_delayLogbookRequestTimer);
+				_delayLogbookRequestTimer = window.setTimeout(function()
+					{
+						if(_delayLogbookRequestTimer) window.clearTimeout(_delayLogbookRequestTimer);
+						_delayLogbookRequestTimer = 0;
+
+						DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list 
+								"Date=" + reqDate +
+								"&Duration=" + _refreshDuration + 
+								"&CategoryFilter=" + encodeURIComponent(_categoryFilter),  //* for all, if "" go with active category
+								handleRefreshLogbook);	
+					
+					}, 500 /* ms */ ); //end delay handler
 				
 			} //end refreshLogbook()
 			
@@ -998,6 +1278,12 @@
 			function handleRefreshLogbook(req) 
 			{
 				Debug.log("Logbook handleRefreshLogbook", req.responseText.length);
+
+				if(_autoRefreshTimer)  //reset interval, in case of long response times
+				{
+					window.clearTimeout(_autoRefreshTimer);
+					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
+				}
 		        
 		        var logbookStatus;
 				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed 
@@ -1010,25 +1296,35 @@
 						_refreshDayIndex = parseInt(mostRecentDayStr);
 					_mostRecentDayIndex = parseInt(mostRecentDayStr);
 					var mostRecentDayEl = document.getElementById("logbookHeader").getElementsByTagName("a")[0];
-					//if(_mostRecentDayIndex == 0)
-					//	mostRecentDayEl.innerHTML = "Today";
-					//else if(_mostRecentDayIndex == 1)
-					//	mostRecentDayEl.innerHTML = "Yesterday";
-					//else
-					//	mostRecentDayEl.innerHTML = "Most Recent Day";
+					if(_mostRecentDayIndex == 0)
+						mostRecentDayEl.innerHTML = "Today";
+					else if(_mostRecentDayIndex == 1)
+						mostRecentDayEl.innerHTML = "Yesterday";
+					else
+						mostRecentDayEl.innerHTML = "Most Recent Day";
 
 					refreshDateDisplay();
 					
 					//extract logbook display
 					var entries = req.responseXML.getElementsByTagName("logbook_entry");
-					setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
+					// setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
+					setResponseCategory(DesktopContent.getXMLValue(req,"response_category"),1 /* isResponse */);
 
 					var logbookEl = document.getElementById("logbookDiv");
 					logbookEl.innerHTML = "";
 					
 					//display from newest to oldest
 					for(var i=entries.length-1;i>=0;--i)
-						displayLogbookEntry(logbookEl,entries[i]);					
+						displayLogbookEntry(logbookEl,entries[i]);		
+					
+						
+					//add helper to move starting date back
+					var tmp = document.createElement("div");
+					tmp.setAttribute("id", "clearDiv");
+					logbookEl.appendChild(tmp); 
+					var tmp = document.createElement("div");
+					tmp.innerText = "Note: If you are expecting more entries for the selected critieria, try moving the selected date back in time.";
+					logbookEl.appendChild(tmp); 
 				}
 		        
 				 //schedule next update
@@ -1036,7 +1332,46 @@
 			    	clearTimeout(_logbookUpdateTimer);
 		        //_logbookUpdateTimer = window.setTimeout(refreshLogbook,_REFRESH_INTERVAL);  //NOTE: if want refresh every period, uncomment.
 		        																				//currently user must use manual refresh
+
+
+				redrawLogbook(); //in case of new scroll bars
 			} //end handleRefreshLogbook()
+
+			//=====================================================================================
+			//replaceBrWithSpace ~~ 
+			// Replace all <br> tags with a space
+			function replaceBrWithSpace(el) 
+			{
+				el.isBrReplaced = "true";
+				el.querySelectorAll('br').forEach(br => {
+					const space = document.createTextNode(' ');
+					space.isBr = "true"; // Mark it for restoration
+					br.replaceWith(space);
+				});
+
+				var condensedWidth = currentCategoryHeader.offsetWidth;
+				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " + 
+					(condensedWidth-130) + "px;" +
+					"padding-top: 2px; padding-bottom: 10px; color: rgb(216 189 139);");
+			} //end replaceBrWithSpace()
+
+			//=====================================================================================
+			//restoreBr ~~ 
+			// Restore <br> tags
+			function restoreBr(el) 
+			{
+				el.isBrReplaced = undefined;
+				el.childNodes.forEach(node => {
+					if (node.nodeType === Node.TEXT_NODE && node.data.trim() === '' && node.isBr === "true") {
+						const br = document.createElement('br');
+						node.replaceWith(br);
+					}
+				});
+				var condensedWidth = currentCategoryHeader.offsetWidth;
+				el.setAttribute("style", "overflow-x: auto; width: " + 
+					(condensedWidth-130) + "px;" +
+					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
+			} //end restoreBr()
 
 			//=====================================================================================
 			//refreshDateDisplay ~~ 
@@ -1063,7 +1398,7 @@
 						aArr[i].setAttribute("class", "logbookSelection");
 					else if(i == 1 && !(reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
 						aArr[i].setAttribute("class", "logbookSelection");
-					else if(i > 1 && i < 8 && aArr[i].innerHTML == _refreshDuration) //durations
+					else if(i > 1 && i < 15 && aArr[i].innerText == _refreshDuration) //durations
 						aArr[i].setAttribute("class", "logbookSelection");
 					else
 						aArr[i].setAttribute("class", "logbookNotSelected");
@@ -1133,14 +1468,16 @@
 				    divEl.appendChild(omni);			    //add entry to div element  
 				    return;			    	
 			    }
-                          
+                         
+				var entryText = convertForClient(
+					entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+							
                 if(creator == "SYSTEM LOG") //System Logbook Entry
                 {
                     var sysLogDiv = document.createElement("div");
 				    sysLogDiv.setAttribute("class", "Logbook-sysLogDiv");
 				    sysLogDiv.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString() + " -- " +
-                          convertForClient(
-							entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+						entryText;
 				    omni.appendChild(sysLogDiv);
 				    divEl.appendChild(omni);			    //add entry to div element  
 				    return;	              
@@ -1162,7 +1499,19 @@
 			    //subject
 			    tmp = document.createElement("div");
 			    tmp.setAttribute("class", "Logbook-entrySubject");
+			    tmp.setAttribute("title", "Click to expand/collapse log entry.");
 			    tmp.innerHTML = entry.getElementsByTagName("logbook_entry_subject")[0].getAttribute("value");
+				tmp.onclick = function()
+				{
+					//navigate to entry 'body' element
+					var el = this.parentElement.parentElement.children[1];	
+					Debug.log("Toggle expand/collaps entry", el.textContent);
+
+					if(el.isBrReplaced)
+						restoreBr(el);
+					else
+						replaceBrWithSpace(el);
+				}
 			    header.appendChild(tmp);
 			    //time
 			    tmp = document.createElement("div");
@@ -1175,7 +1524,11 @@
 			    tmp.innerHTML = "by " + creator;
 			    header.appendChild(tmp);
 			    //body text
-			    body.innerHTML = convertForClient(entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+			    body.innerHTML = entryText;
+
+				//condition for condensed-view single line by removing <br>
+				replaceBrWithSpace(body); //to toggle call restoreBr(el)
+
 			    //uploads
 			    var uploadsArr = entry.getElementsByTagName("logbook_entry_file");
 			    if(uploadsArr.length)
@@ -1288,7 +1641,8 @@
 			{
 				Debug.log("Logbook calendar xy " + e.pageX + " - " + e.pageY);
 
-				calendarPopup(e.pageX, e.pageY, calendarHandler);
+				//_refreshDayIndex is days into past, 0 for today
+				calendarPopup(e.pageX, e.pageY, calendarHandler, (new Date()).getTime() - _refreshDayIndex * (1000*60*60*24));
 			} //end showCalendar()
 			
 			//=====================================================================================
@@ -1301,7 +1655,9 @@
 						dateObj.toDateString());
 				
 				//update display with user date
-				var refreshDayIndex = ((((new Date()).getTime())/(1000*60*60*24)) | 0) - userDate;
+				var refreshDayIndex = ((((new Date()).getTime()  + _TIMEZONE_OFFSET_HOURS*1000*60*60 )
+					/ (1000*60*60*24)) | 0) 
+					- userDate;
 				Debug.logv({refreshDayIndex});
 				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
 								
@@ -1532,15 +1888,20 @@
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,1);'>1</a> | 
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,2);'>2</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,7);'>7</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,14);'>14</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,30);'>30</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,60);'>60</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,365);'>365</a>
 				days before.
 				<br><br>
 				<a href='Javascript:;' onmouseup='advanceByDays(-1);'>Previous Day</a> |
 				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>			
 			</div>				
-			<div id='generateReport' onmouseup='generateReport();' title='Advanced Logbook Reporting'
+			<!--<div id='generateReport' onmouseup='generateReport();' title='Advanced Logbook Reporting'
 				><img style='margin:-15px 0 0 0' height='48px'
-				src='/WebPath/images/windowContentImages/logbook-report.png'></div>
+				src='/WebPath/images/windowContentImages/logbook-report.png'></div> -->
+			<div id='generateReport' style='float:left'
+			><a id='autoRefreshLink' href="#" onclick="toggleAutoRefresh();" title='Click to toggle auto-refresh enable/disable.'>Auto-refresh is off</a></div>
 			<div id='generateReport' style='float:right' onmouseup='refreshLogbook();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>

@@ -20,6 +20,7 @@ class ECLConnection
 	ECLConnection(std::string user, std::string password, std::string url);
 	~ECLConnection(){};
 
+	const std::string& getSafeURL(void) const { return _safe_url; }
 	bool Post(ECLEntry_t& e);
 	bool Get(std::string, std::string&);
 	bool Search(std::string);

@@ -361,16 +361,14 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// parameters
 
 		std::string Date     = CgiDataUtilities::postData(cgiIn, "Date");
-		std::string Duration = CgiDataUtilities::postData(cgiIn, "Duration");
+		uint32_t Duration 	 = CgiDataUtilities::postDataAsInt(cgiIn, "Duration");
 
 		time_t        date;
-		unsigned char duration;
 		sscanf(Date.c_str(), "%li", &date);           // scan for unsigned long
-		sscanf(Duration.c_str(), "%hhu", &duration);  // scan for unsigned char
 
-		__COUT__ << "date " << date << " duration " << (int)duration << std::endl;
+		__COUT__ << "date " << date << " duration " << Duration << std::endl;
 		std::stringstream str;
-		refreshLogbook(date, duration, &xmlOut, (std::ostringstream*)&str);
+		refreshLogbook(date, Duration, &xmlOut, (std::ostringstream*)&str);
 		__COUT__ << str.str() << std::endl;
 	}
 	else if(requestType == "PreviewEntry")
@@ -944,7 +942,7 @@ void LogbookSupervisor::removeCategory(std::string      category,
 //		e.g. date = today, and duration = 1 returns logbook for today from active
 // category 		The entries are returns from oldest to newest
 void LogbookSupervisor::refreshLogbook(time_t              date,
-                                       unsigned char       duration,
+                                       uint32_t		       duration,
                                        HttpXmlDocument*    xmlOut,
                                        std::ostringstream* out,
                                        std::string         category)
@@ -1035,7 +1033,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 	// read all days selected out
 	//	entries are in file as oldest at top, newest at bottom
 	//	so read oldest files first to have global ordering of old to new
-	for(unsigned char i = duration; i != 0; --i)
+	for(uint32_t i = duration; i != 0; --i)
 	{
 		sprintf(dayIndexStr, "%6.6u", baseDay - i + 1);  // get day index, back in time
 		entryPath = dirPath + "/" + LOGBOOK_FILE_PREFACE + category + "_" +

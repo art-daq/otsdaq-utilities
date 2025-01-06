@@ -33,6 +33,8 @@ using namespace ots;
 #define XML_CATEGORY_ROOT "categories"
 #define XML_CATEGORY "category"
 #define XML_ACTIVE_CATEGORY "active_category"
+#define XML_SAFE_URL "ecl_url"
+#define XML_RESPONSE_CATEGORY "response_category"
 #define XML_CATEGORY_CREATE "create_time"
 #define XML_CATEGORY_CREATOR "creator"
 
@@ -270,17 +272,19 @@ void ECLSupervisor::request(const std::string&               requestType,
 		// returns logbook for currently active category based on date and duration
 		// parameters
 
-		std::string Date     = CgiDataUtilities::postData(cgiIn, "Date");
-		std::string Duration = CgiDataUtilities::postData(cgiIn, "Duration");
+		std::string Date     		= CgiDataUtilities::postData(cgiIn, "Date");
+		uint32_t Duration 			= CgiDataUtilities::postDataAsInt(cgiIn, "Duration");
+		std::string CategoryFilter 	= CgiDataUtilities::postData(cgiIn, "CategoryFilter");
+		
+		__COUTV__(CategoryFilter);
 
 		time_t        date;
-		unsigned char duration;
 		sscanf(Date.c_str(), "%li", &date);           // scan for unsigned long
-		sscanf(Duration.c_str(), "%hhu", &duration);  // scan for unsigned char
 
-		__COUT__ << "date " << date << " duration " << (int)duration << std::endl;
+		__COUT__ << "date " << date << " duration " << Duration << std::endl;
 		std::stringstream str;
-		refreshLogbook(date, duration, &xmlOut, (std::ostringstream*)&str);
+		refreshLogbook(date, Duration, &xmlOut, (std::ostringstream*)&str, 
+			StringMacros::decodeURIComponent(CategoryFilter));
 		__COUT__ << str.str() << std::endl;
 	}
 	// else if(requestType == "PreviewEntry")
@@ -415,7 +419,10 @@ void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* o
 	// expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	if(xmlOut)
+	{
 		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, ECLCategory_);
+		xmlOut->addTextElementToData(XML_SAFE_URL, eclConn_->getSafeURL());		
+	}
 
 	for(unsigned int i = 0; i < exps.size(); ++i)  // loop categories
 	{
@@ -431,7 +438,7 @@ void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* o
 //		if category exists, set as active
 //		to clear active category set to ""
 void ECLSupervisor::webUserSetActiveCategory(std::string      category,
-                                                   HttpXmlDocument* xmlOut)
+											 HttpXmlDocument* xmlOut)
 {
 	// no check, just set
 	ECLCategory_ = category;
@@ -448,10 +455,10 @@ void ECLSupervisor::webUserSetActiveCategory(std::string      category,
 //		e.g. date = today, and duration = 1 returns logbook for today from active
 // category 		The entries are returns from oldest to newest
 void ECLSupervisor::refreshLogbook(	time_t              date,
-									unsigned char       duration,
+									size_t		        duration,
 									HttpXmlDocument*    xmlOut,
 									std::ostringstream* out,
-									std::string         category)
+									std::string		    categoryFilter)
 {
 	if(ECLUser_ == "" || ECLHost_ == "") //ignore ECL when environment variables are not set
 	{
@@ -459,11 +466,12 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		__SS_THROW__;
 	}
 
-	if(category == "")
-		category = ECLCategory_;  // default to active category
-	if(xmlOut) xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
+	if(categoryFilter == "")
+		categoryFilter = ECLCategory_;  // default to active category
+	if(xmlOut) xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, ECLCategory_);  // for success
+	if(xmlOut) xmlOut->addTextElementToData(XML_RESPONSE_CATEGORY, categoryFilter);  // for success
 
-	time_t mostRecentTime = 0;
+	int64_t mostRecentTime = 0;
 	time_t baseTime;
 
 	__COUTTV__(date);
@@ -474,24 +482,77 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 	
 	if(0) //test xml_get
 	{
-		std::string response, url = "/E/xml_get?e=" + std::string("2502"); 
-		//ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
+		std::string response, url = "/E/xml_get?e=" + std::string("1843"); 
+		__COUTV__(url);
+		eclConn_->Get(url,response);
+		__COUTV__(response);
+	}
+	if(0) //test xml_search
+	{
+		std::string response, url = "/E/xml_search?l=5"; //limit to 5  
+		// url += "&c=Facilities / Building";
+		__COUTV__(url);
+		eclConn_->Get(url,response);
+		__COUTV__(response);
+	}
+	if(0) //test xml_search
+	{
+		std::string response, url = "/E/xml_search?l=5"; //limit to 5  
+		url += "&c=" + 
+			StringMacros::encodeURIComponent("Facilities / Building");  //category
+		__COUTV__(url);
+		eclConn_->Get(url,response);
+		__COUTV__(response);
+	}
+	if(0) //test xml_search
+	{
+		std::string response, url = "/E/xml_search?l=5"; //limit to 5  
+		url += "&c=" + 
+			StringMacros::encodeURIComponent("Facilities &#46 Building");  //category
+		__COUTV__(url);
 		eclConn_->Get(url,response);
 		__COUTV__(response);
 	}
 	
 	//add all posts that match date/duration criteria
 	{
-		__COUTTV__(category);	
-		std::string response, url = "/E/xml_search?l=100&c=" + //limit to 100 
-			StringMacros::encodeURIComponent(category);  //category
-			// "&a=" + std::to_string(duration) + "days" + //after
-			// "&b=" + baseTimeTmBuffer; //before
+		__COUTTV__(categoryFilter);	
+		std::string response, url = "/E/xml_search?"; //l=100"; //limit to 100  
+									// "&a=" + std::to_string(duration) + "days" + //after
+									// "&b=" + baseTimeTmBuffer; //before
+		
+		bool applyCategoryFilter = false;
+		bool applyInvertedCategoryFilter = false;
+		std::vector<std::string> acceptCategories;
+		//filter can start with * for all, or with ! for inverted selection (i.e. all without certain categories)
+		if(categoryFilter.size() && categoryFilter[0] != '*' && categoryFilter[0] != '!' && categoryFilter.find(',') == std::string::npos && 
+				categoryFilter.find(" / ") == std::string::npos)
+			url += "l=100&c=" + StringMacros::encodeURIComponent(categoryFilter);  //category
+		else
+		{
+			if(duration > 14)
+				url += "l=1000"; //get more so better chance to find in filter
+			else 
+				url += "l=300"; //get more so better chance to find in filter
+
+			applyCategoryFilter = (categoryFilter.size() && categoryFilter[0] != '*')?true:false;
+			applyInvertedCategoryFilter = (categoryFilter.size() && categoryFilter[0] == '!')?true:false;
+			if(applyCategoryFilter)
+			{
+				if(applyInvertedCategoryFilter) //skip 1st char
+					acceptCategories = StringMacros::getVectorFromString(categoryFilter.substr(1));
+				else
+					acceptCategories = StringMacros::getVectorFromString(categoryFilter);
+				__COUTTV__(StringMacros::vectorToString(acceptCategories));
+			}			
+			__COUTTV__(applyInvertedCategoryFilter);
+			__COUTTV__(applyCategoryFilter);
+		}
 		
 		//apply date range		
 		{
 			__COUTTV__(baseTime);
-			__COUTTV__((size_t)duration);
+			__COUTTV__(duration);
 
 			if(TTEST(30)) //debug date
 			{			
@@ -570,7 +631,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 		//  </XML_LOGBOOK_ENTRY>
 
 		std::string id, author, subject, category, timestamp, files, images, text;
-		size_t after = 0, before = -1, entryCount = 0;
+		size_t after = 0, before = -1, entryCount = 0, lastBefore = -1;
 		std::tm tm;
 		std::string preText, postText;
 
@@ -589,6 +650,28 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 				"subject=", "\"");
 			category = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
 				"category=", "\"");				
+
+
+			if(applyCategoryFilter)
+			{
+				bool found = applyInvertedCategoryFilter;				
+				for(const auto& acceptCategory : acceptCategories)
+					if(category == acceptCategory || 
+						category.find(acceptCategory + "/") != std::string::npos)
+						{
+							found = !applyInvertedCategoryFilter;
+							break;
+						}
+
+				if(!found)
+				{
+					__COUT_TYPE__(TLVL_DEBUG+10) << __COUT_HDR__ << "Skipping unaccepted category: " << category << __E__;
+					lastBefore = before;
+					--before; //move back to prepare for next search
+					continue;
+				}
+			}
+
 			timestamp = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
 				"timestamp=", "\"");		
 			images = StringMacros::extractXmlField(response, "entry", 0, after, nullptr, 
@@ -603,31 +686,39 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			ss >> std::get_time(&tm, "%m/%d/%Y %H:%M:%S"); // Parse the string into the tm structure			
 			time_t t = std::mktime(&tm); // Convert tm structure to time_t
 
+			__COUTVS__(2,t);	
+			__COUTVS__(2,mostRecentTime);	
 			if(!date && t > mostRecentTime)
 				mostRecentTime = t; //track most recent entry
+			__COUTVS__(2,mostRecentTime);	
 
-			text = StringMacros::extractXmlField(response, "pre class=\"html_safe_entry\"", 0, after, nullptr, 
+			size_t foundTextPos;
+			text = StringMacros::extractXmlField(response, "pre class=\"html_safe_entry\"", 0, after, &foundTextPos, 
 				"", ">");
 			__COUTVS__(2,text.size());
-			if(text.size() == 0)
+			if(text.size() == 0 || //if not found
+				foundTextPos > lastBefore) //or found in different entry!
 			{
 				text = StringMacros::extractXmlField(response, "text", 0, after, nullptr, 
 					"", ">");
 				__COUTVS__(2,text.size());
 			}
-			__COUTVS__(2,text);	
+			__COUTVS__(3,text);	
+			if(text.size() > std::string("Message: &#010;").size() && 
+				text[0] == 'M' && text[6] == 'e' && text[7] == ':' && text[9] == '&' && text[10] == '#')
+				text = text.substr(std::string("Message: &#010;").size()); //skip Message header
 
 			preText = ""; postText = "";
 			bool needAttachments = false;
 			if(atoi(images.c_str()))
 			{
 				needAttachments = true;
-				preText += "Attached Images: " + images + "\n<br>";
+				preText += "Attached Images: " + images + "<br>";
 			}
 			if(atoi(files.c_str()))
 			{
 				needAttachments = true;
-				preText += "Attached Files: " + files + "\n<br>";
+				preText += "Attached Files: " + files + "<br>";
 			}
 
 			if(needAttachments)
@@ -635,27 +726,99 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 				std::string response, url = "/E/xml_get?e=" + id;
 				// ECLConnection eclConn(ECLUser_, ECLPwd_, ECLHost_);
 				eclConn_->Get(url,response);
-				__COUTV__(response);
+				__COUTVS__(3,response);
 
 				size_t fileCount = atoi(files.c_str());
 				__COUTV__(fileCount);
+				size_t attachmentAfter = 0;
+
+				if(fileCount) postText += "<br><br>=====> Attached Files:";
 				for(size_t j=0;j<fileCount;++j)
 				{
+					__COUTTV__(attachmentAfter);
 					std::string furl = 
-						StringMacros::extractXmlField(response, "attachment", 0, after, nullptr, 
+						StringMacros::extractXmlField(response, "attachment", 0, attachmentAfter, &attachmentAfter, 
 							"url=", "\"");
 					
 					__COUTVS__(2,furl);	
 					std::string fname = 
-						StringMacros::extractXmlField(response, "attachment", 0, after, nullptr, 
+						StringMacros::extractXmlField(response, "attachment", 0, attachmentAfter, nullptr, 
 							"filename=", "\"");
 					
 					__COUTVS__(2,fname);		
-					postText += "<br><a href='" + furl + "'>" + fname + "</a>";																												
+					postText += "<br>";
+					if(fileCount > 1)
+						postText += "Attached File #" + std::to_string(j+1) + ": ";
+					postText += "<a target='_blank' href='" + furl + "'>" + fname + "</a>";
+					attachmentAfter += 20; //advance to next
+				}
+
+				size_t imageCount = atoi(images.c_str());
+				__COUTVS__(3,imageCount);
+				attachmentAfter = 0;
+				if(imageCount) postText += "<br><br>=====> Attached Images:";
+				for(size_t j=0;j<imageCount;++j)
+				{
+					__COUTTV__(attachmentAfter);
+					attachmentAfter = response.find("type=\"image\"",attachmentAfter);
+					if(attachmentAfter == std::string::npos) break;
+					attachmentAfter = response.rfind("<attachment",attachmentAfter);
+					if(attachmentAfter == std::string::npos) break;
+
+					std::string furl = 
+						StringMacros::extractXmlField(response, "attachment", 0, attachmentAfter, nullptr, 
+							"full_url=", "\"");
+					
+					__COUTVS__(2,furl);	
+					std::string fname = 
+						StringMacros::extractXmlField(response, "attachment", 0, attachmentAfter, nullptr, 
+							"filename=", "\"");
+					
+					__COUTVS__(2,fname);		
+					postText += "<br>";
+					if(imageCount > 1) 
+						postText += "Attached Image #" + std::to_string(j+1) + ": ";
+					postText += "<a target='_blank' href='" + furl + "'>" + fname + "</a>";
+
+					attachmentAfter += 50; //advance to next
 				}
 			} //end attachment handling
 
-			text = preText + (preText.size()?"\n<br>":"") + text + postText;
+
+			// Lambda function to wrap links
+			auto wrapLinks = [](const std::string& inputText) -> std::string {
+				std::string result;
+				std::string::size_type pos = 0;
+				std::string::size_type start;
+
+				while ((start = inputText.find("http://", pos)) != std::string::npos ||
+					(start = inputText.find("https://", pos)) != std::string::npos) {
+					// Append text before the link
+					result.append(inputText, pos, start - pos);
+
+					// Find the end of the URL (stop at space or end of string)
+					std::string::size_type end = inputText.find_first_of(" \t\n!<>(),\"\'", start);
+					if (end == std::string::npos) {
+						end = inputText.size();
+					}
+
+					// Extract the URL
+					std::string url = inputText.substr(start, end - start);
+
+					// Append the <a> tag
+					result += "<a href=\"" + url + "\" target=\"_blank\">" + url + "</a>";
+
+					// Move position to after the URL
+					pos = end;
+				}
+
+				// Append any remaining text
+				result.append(inputText, pos, inputText.size() - pos);
+
+				return result;
+			};
+			
+			text = preText + (preText.size()?"\n<br>":"") + wrapLinks(text) + postText;
 			__COUTVS__(2,text);	
 
 			if(xmlOut)
@@ -671,6 +834,7 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 					" - entry #" + id + " - " + subject, entryParent);
 			}
 
+			lastBefore = before;
 			--before; //move back to prepare for next search
 			// after += std::string("entry").size(); //move forward to prepare for next search
 			
@@ -693,26 +857,28 @@ void ECLSupervisor::refreshLogbook(	time_t              date,
 			__COUTT__ << "i: " << i << " " << ((time(0) - i*60*60 + timezoneHourOffset_*60*60)/(60 * 60 * 24));
 	}
 
-	if(xmlOut && mostRecentTime)
+	if(xmlOut)
 	{
-		size_t mostRecentDayIndex = (mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24);
-		size_t nowDayIndex = (time(0) + timezoneHourOffset_*60*60)/(60 * 60 * 24);		
-		if(TTEST(30))
-		{
-			__COUTTV__(mostRecentDayIndex);
-			__COUTTV__(nowDayIndex);
-			__COUTTV__(mostRecentTime);
-			__COUTTV__(((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));			
-		}
-		__COUTTV__(nowDayIndex - mostRecentTime);
-		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, //0 is today
-					nowDayIndex - mostRecentTime);  // send most recent day index found in response
-	}
-	else 
-		xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, 0); //0 is today
+		xmlOut->addNumberElementToData(XML_TIMEZONE_OFFSET, timezoneHourOffset_); 
 
-	
-	xmlOut->addNumberElementToData(XML_TIMEZONE_OFFSET, timezoneHourOffset_); 
+		if(0 && mostRecentTime) //always return 0 for ECL, because category filter may change, and may want live view of today..
+		{
+			int64_t mostRecentDayIndex = (mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24);
+			int64_t nowDayIndex = (time(0) + timezoneHourOffset_*60*60)/(60 * 60 * 24);		
+			if(TTEST(30))
+			{
+				__COUTTV__(mostRecentDayIndex);
+				__COUTTV__(nowDayIndex);
+				__COUTTV__(mostRecentTime);
+				__COUTTV__(((time(0) - mostRecentTime + timezoneHourOffset_*60*60)/(60 * 60 * 24)));			
+			}
+			__COUTTV__(nowDayIndex - mostRecentDayIndex);
+			xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, //0 is today
+						nowDayIndex - mostRecentDayIndex);  // send most recent day index found in response
+		}
+		else
+			xmlOut->addNumberElementToData(XML_MOST_RECENT_DAY, 0); 
+	}	
 	
 } //end refreshLogbook()
 

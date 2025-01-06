@@ -229,6 +229,7 @@ DesktopContent._mouseMoveSubscribers = [];
 DesktopContent._loginNotifyHandler = undefined; //User code should define this function if action desired when re-login occurs
 
 DesktopContent._pageInitCalled = false;
+DesktopContent._windowMessagingInactive = undefined;
 
 DesktopContent._sequence = 0;
 
@@ -654,7 +655,15 @@ DesktopContent.init = function(onloadFunction)
 
 	//call self in a bit to try init (in case window messaging not active)
 	window.setTimeout(
-		localOnloadHandler,300 /*ms*/);
+		function()
+		{
+			if(!DesktopContent._pageInitCalled)
+			{
+				Debug.log("Perhaps window messaging not active?");
+				DesktopContent._windowMessagingInactive = true;
+			}
+			localOnloadHandler();
+		},300 /*ms*/);
 
 	return;
 
@@ -2344,8 +2353,8 @@ DesktopContent.getColorAsRGBA = function(colorStr)
 
 //=====================================================================================
 //get window and mouse info ~~
-DesktopContent.getWindowWidth = function() { return window.innerWidth-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
-DesktopContent.getWindowHeight = function() { return window.innerHeight-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
+DesktopContent.getWindowWidth = function() { return document.documentElement.clientWidth - 1; } //clientWidth excludes the scroll bards... window.innerWidth-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
+DesktopContent.getWindowHeight = function() { return document.documentElement.clientHeight - 1; } //clientHeight excludes the scroll bards... window.innerHeight-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
 DesktopContent.getBodyWidth = function() { return document.body.offsetWidth; }
 DesktopContent.getBodyHeight = function() { return document.body.offsetHeight; }
 DesktopContent.getWindowScrollLeft = function() { return document.documentElement.scrollLeft || document.body.scrollLeft || 0; }

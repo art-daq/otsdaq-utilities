@@ -238,6 +238,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 			var argsInStr = arguments.length;
 			if(arguments.length > 1 && 
 					arguments[arguments.length-1] !== undefined &&
+					arguments[arguments.length-1] !== null &&
 					arguments[arguments.length-1].DEBUG_PRIORITY !== undefined)
 			{
 				num = arguments[arguments.length-1].DEBUG_PRIORITY;
