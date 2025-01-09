@@ -259,10 +259,10 @@ SubsystemSquares.create = function() {
 				"' class='subsystem_square'";
 			if(s == -1) //Landing Page link for Primary Gateway				 
 				str += "' onclick='SubsystemSquares.clickedSquare(" + s + ");' " +
-					"title='Click to open the Subsystem Launch GUI.' ";					
+					"title='Click to show errors or open the Subsystem Launch GUI.' ";					
 			else if(SubsystemSquares.subsystems[s])// && SubsystemSquares.subsystems[s].landingPage)
 				str += "' onclick='SubsystemSquares.clickedSquare(" + s + ");' " +
-					"title='Click to open Subsystem Landing Page of &apos;" +
+					"title='Click to show errors or open Subsystem Landing Page of &apos;" +
 					SubsystemSquares.subsystems[s].name + "&apos;' ";
 			str += ">";
 
@@ -358,7 +358,7 @@ SubsystemSquares.create = function() {
 			els[0].style.display = redrawMode?"block":"none";
 			els = sdivs[i].getElementsByClassName("subsystem_status");
 			// els[0].style.display = redrawMode?"block":"none";
-			els[0].style.top = (hhh - 1*_MARGIN - 30) + "px";
+			els[0].style.top = (hhh - 1*_MARGIN - 35) + "px";
 
 		} //end square resize loop
 				
@@ -523,21 +523,33 @@ SubsystemSquares.create = function() {
 						statusString != "Configured" &&  
 						statusString != "Paused" &&  
 						statusString != "Running") //including SubsystemSquares.system.inTransition
-					sdivs[i].style.backgroundColor = "lightgray";
+					sdivs[i].style.background = "lightgray";
+				else if(statusString == "Running")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
 				else
-					sdivs[i].style.backgroundColor = "green";
+					sdivs[i].style.background = "rgb(6 176 6)"; //"green";
 
 					
 				if(isRed)
 				{
-					sdivs[i].style.backgroundColor = "darkred";
+					sdivs[i].style.background = "darkred";
 					sdivs[i].style.color = "white";
 					sdivs[i].style.border = "3px solid red";
 					sdivs[i].style.margin = "2px";
+					sdivs[i].style.textShadow = "";
 				}
 				else
 				{
-					sdivs[i].style.color = "black";
+					if(statusString == "Running")
+					{
+						sdivs[i].style.color = "white";
+						sdivs[i].style.textShadow = "1px 1px black";						
+					}
+					{
+						sdivs[i].style.color = "black";
+						sdivs[i].style.textShadow = "";
+					}
+
 					sdivs[i].style.border = "0";
 					sdivs[i].style.margin = "5px";
 				}				
@@ -568,7 +580,8 @@ SubsystemSquares.create = function() {
 					if(secs < 10)	tstr += "0"; //keep to 2 digits
 					tstr += secs;
 						
-					str += " <label style='font-size:12px'>(Time-in-state: " + tstr + ")</label>";
+					str += " <label style='font-size:14px; position: relative;" +
+						"top: -2px;'>(Time-in-state: " + tstr + ")</label>";
 				}
 				els[0].innerHTML = str;
 
@@ -595,22 +608,33 @@ SubsystemSquares.create = function() {
 						statusString != "Configured" &&  
 						statusString != "Paused" &&  
 						statusString != "Running") 
-					sdivs[i].style.backgroundColor = "lightgray";
+					sdivs[i].style.background = "lightgray";
+				else if(statusString == "Running")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
 				else
-					sdivs[i].style.backgroundColor = "green";
+					sdivs[i].style.background =  "rgb(6 176 6)"; //"green";
 
 				SubsystemSquares.subsystems[s].isRed = isRed;
 					
 				if(isRed)
 				{
-					sdivs[i].style.backgroundColor = "darkred";
+					sdivs[i].style.background = "darkred";
 					sdivs[i].style.color = "white";
 					sdivs[i].style.border = "3px solid red";
 					sdivs[i].style.margin = "2px";
+					sdivs[i].style.textShadow = "";
 				}
 				else
 				{
-					sdivs[i].style.color = "black";
+					if(statusString == "Running")
+					{
+						sdivs[i].style.color = "white";
+						sdivs[i].style.textShadow = "1px 1px black";						
+					}
+					{
+						sdivs[i].style.color = "black";
+						sdivs[i].style.textShadow = "";
+					}
 					sdivs[i].style.border = "0";
 					sdivs[i].style.margin = "5px";
 				}
@@ -644,11 +668,12 @@ SubsystemSquares.create = function() {
 				els = sdivs[i].getElementsByClassName("subsystem_status");
 				str = ""; //clear
 				if(SubsystemSquares.subsystems[s].redrawMode > 0)
-					str = SubsystemSquares.subsystems[s].status;
+					str = statusString == "Failed"?statusString:SubsystemSquares.subsystems[s].status;
 				if(SubsystemSquares.subsystems[s].progress != "100" && SubsystemSquares.subsystems[s].progress != "0")
 					str += _dotDotDot;
 				if(SubsystemSquares.subsystems[s].redrawMode > 1)
-					str += " <label style='font-size:12px'>(" + SubsystemSquares.subsystems[s].detail + ")</label>";				
+					str += " <label style='font-size:14px; position: relative;" +
+						"top: -2px;'>(" + SubsystemSquares.subsystems[s].detail + ")</label>";				
 				
 				els[0].innerHTML = str;
 

@@ -304,6 +304,11 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 	{ MultiSelectBox.dbg("Invalid Element given to MultiSelectBox: " + el);
 		throw new Error("Invalid Element given to MultiSelectBox: " + el); return; } 
 	
+	console.log("el.style.width", el.style.width);
+	console.log("el.offsetWidth", el.offsetWidth);
+	if(! el.offsetWidth)
+		el.style.width = "400px";
+
 	el.innerHTML = ""; //delete current contents
 
 	name = "selbox-" + name;
@@ -522,47 +527,10 @@ MultiSelectBox.showSearch = function(boxid)
 		var selRect = $(boxid).getBoundingClientRect();
 
 		searchBox.style.position="absolute";
-		searchBox.style.top=(offsety)+"px";
-		searchBox.style.left=(offsetx)+"px";
+		searchBox.style.top=(offsety+margin)+"px";
+		searchBox.style.left=(offsetx+margin)+"px";
 		searchBox.style.width=(selRect.width-margin*2-30)+"px";//(selRect.width-margin*2-14)+"px";
-		
-	// 	//finding the search input's offset parent is not so straight forward
-	// 	//	since it is initially hidden.
-	// 	//	Use the offset parent of the content table
-	// 	//		sibling[0] := div (of content)
-	// 	//			withing div, child[0] := header, child[1] := table (of content) 
 
-	// 	var selRect = $(boxid).getBoundingClientRect();
-	// 	//table is position:relative.. so go into a child and get offset parent
-	// 	var searchOffsetParent = $(boxid).offsetParent; //get table parent
-	// 		//searchBox.parentElement.children[0].children[1].children[0].offsetParent;
-	// 	//check if there is no offset parent (the body is the offset parent)
-	// 	//	it seems to be the case that body returns a crazy bounding client rect (left = 8 and top = 13?) .. don't understand why
-	// 	var searchOffsetParentIsBody = searchOffsetParent == document.body;
-
-	// 	var offsetRect = 
-	// 	{"left": searchOffsetParentIsBody?0:
-	// 			searchOffsetParent.getBoundingClientRect().left,	//offsetLeft is different
-	// 			"top": searchOffsetParentIsBody?0:
-	// 					searchOffsetParent.getBoundingClientRect().top
-	// 	};
-	// 	//previous attempts to place search input (all fail to solve all cases): 
-	// 	//MultiSelectBox.omnis_[id].getBoundingClientRect();
-	// 	//select.offsetParent.getBoundingClientRect();
-
-	// 	// var offsetx = selRect.left - offsetRect.left,
-	// 	// 		offsety = selRect.top - offsetRect.top;
-
-	// 	var offsetx = offsetRect.left,
-	// 		offsety = offsetRect.top;
-
-	// 	var margin = 5;
-
-	// 	searchBox.style.position="absolute";
-	// 	searchBox.style.top=(offsety)+"px";
-	// 	searchBox.style.left=(offsetx)+"px";
-	// 	searchBox.style.width=(selRect.width-margin*2-30)+"px";
-	// 	//searchBox.style.display = "block"; //for debugging position
 	} //end localPlaceSearchBox()
 	
 	if(!MultiSelectBox.selInitBoxHeight_[boxid])	//init if not yet defined
@@ -669,35 +637,7 @@ MultiSelectBox.performSearchSelect = function(id,el,altstr)
 } //end performSearchSelect()
 
 MultiSelectBox.makeSearchBar = function(id)
-{
-	//remove old existing search bars
-	
-	// var el;
-	// while(el = document.getElementById(id + "search"))
-	// 	el.parentNode.removeChild(el);					
-	
-	// var searchBox=document.createElement("input");
-	// var onchange='MultiSelectBox.searchSelect("' + id + '",this)';
-	
-	// searchBox.setAttribute( "class","hidden");
-	// searchBox.setAttribute( 'type','text');
-	// searchBox.setAttribute( 'id',id + "search");
-	// searchBox.setAttribute( "onpaste"   , onchange);
-	// searchBox.setAttribute( "oncut"     , onchange);
-	// searchBox.setAttribute( "onkeydown" , onchange);
-	// searchBox.setAttribute( "onkeyup"   , onchange);
-	// searchBox.setAttribute( "onkeypress", onchange);
-	// searchBox.setAttribute( "onselect"  , onchange);
-	
-
-	// var searchErrBox=document.createElement("div");
-	
-	// searchErrBox.setAttribute( "class","hidden");
-	// searchErrBox.setAttribute( 'id',id + "searchErr");
-	// searchErrBox.style.color="red";
-	// searchErrBox.style.overflow="hidden";
-	// searchErrBox.style.height="23px";
-	
+{	
 	var interval;
 	function addSearchBox()
 	{
@@ -706,18 +646,6 @@ MultiSelectBox.makeSearchBar = function(id)
 		{
 			if(!MultiSelectBox.mySelects_[id])
 				MultiSelectBox.mySelects_[id] = []; //initialize to empty the selected items
-			
-			
-			
-			//err box no longer displayed...
-			//			searchErrBox.style.position="absolute"; //place above title
-			//			searchErrBox.style.top=(offsety - 37)+"px";
-			//			searchErrBox.style.left=(offsetx + 0)+"px";
-			
-			
-			// MultiSelectBox.omnis_[id].appendChild(searchBox);			
-			// MultiSelectBox.omnis_[id].appendChild(searchErrBox);
-			
 			
 			clearInterval(interval);
 		}

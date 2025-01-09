@@ -223,8 +223,8 @@ else {
       	//	adds an icon subtext wording underneath and image icon (if picfn defined, else alt text icon)
       	this.addIcon = function(subtext, altText, linkurl, uniqueWin, picfn, folderPath) 
       	{
-      	      		
-      		//Debug.log("this.addIcon");
+      	    if(altText == 'X') 		
+      			Debug.log("this.addIcon");
       		      		
       		//same as in DesktopContent.openNewBrowserTab
       		//for linkurl, need to check lid=## is terminated with /
@@ -360,9 +360,14 @@ else {
       		}
       		else
       		{
-				link.addEventListener("click", function(e) {
-					Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
-				}, false);
+				if(altText == 'X' && linkurl == "/") //click unloaded icons to refresh icons
+					link.addEventListener("click", function(e) {
+						Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
+					}, false);
+				else
+					link.addEventListener("click", function(e) {
+						Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
+					}, false);
       		}
 			
       		div = document.createElement("div");

@@ -234,7 +234,7 @@ try
 	unsigned int c;
 
 	// force a starting message
-	__MOUT__ << "DEBUG messages look like this." << __E__;
+	__COUT__ << "DEBUG messages look like this." << __E__;
 
 	while(1)
 	{
@@ -259,9 +259,9 @@ try
 				i = 200;  // mark so things are good for all time. (this indicates things
 				          // are configured to be sent here)
 
-				__MOUT_INFO__ << "INFO messages look like this." << __E__;
-				__MOUT_WARN__ << "WARNING messages look like this." << __E__;
-				__MOUT_ERR__ << "ERROR messages look like this." << __E__;
+				__COUT_INFO__ << "INFO messages look like this." << __E__;
+				__COUT_WARN__ << "WARNING messages look like this." << __E__;
+				__COUT_ERR__ << "ERROR messages look like this." << __E__;
 
 				//				//to debug special packets
 				//				__SS__ << "???";
@@ -400,14 +400,14 @@ try
 			    heartbeatCount % 60 == 59))  // every ~2 min for first 5 messages
 			{
 				++selfGeneratedMessageCount;  // increment internal message count
-				__MOUT__ << "Console is alive and waiting... (if no messages, next "
+				__COUT__ << "Console is alive and waiting... (if no messages, next "
 				            "heartbeat is in two minutes)"
 				         << __E__;
 			}
 			else if(heartbeatCount % (60 * 30) == 59)  // approx every hour
 			{
 				++selfGeneratedMessageCount;  // increment internal message count
-				__MOUT__ << "Console is alive and waiting a long time... (if no "
+				__COUT__ << "Console is alive and waiting a long time... (if no "
 				            "messages, next heartbeat is in one hour)"
 				         << __E__;
 			}

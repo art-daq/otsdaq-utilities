@@ -282,7 +282,7 @@ try
 	{
 		// NOTE: similar to Supervisor version but does not keep active sessions
 		__SUP_COUT_WARN__ << requestType << " command received! " << __E__;
-		__MOUT_WARN__ << requestType << " command received! " << __E__;
+		__COUT_WARN__ << requestType << " command received! " << __E__;
 
 		// now launch
 		__SUP_COUT_INFO__ << "Launching " << requestType << "... " << __E__;

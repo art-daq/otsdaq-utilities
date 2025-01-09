@@ -645,7 +645,7 @@ Desktop.createDesktop = function(security) {
 	{		
 		Debug.log(name + " - " + subname + " - " + url + " - " + unique);
 
-		if(name.indexOf("icons loading...") > 0)
+		if(name.indexOf(" loading...") > 0)
 		{
 			Debug.log("Assuming user is trying to reload icons!");
 			
@@ -2854,12 +2854,16 @@ Desktop.logout = function ()
 
 //==============================================================================
 //formatTime ~~
+var monthArr_ = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 Desktop.formatTime = function(t) 
 {
 	var date = new Date(t * 1000);
 	var mm = date.getMinutes() < 10?"0"+date.getMinutes():date.getMinutes();
-	var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();				
-	return date.getHours() + ":" + mm + ":" + ss;
+	var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();		
+	var m = monthArr_[date.getMonth()]; //+ 1).format("02d");;
+	var d = ('0' + date.getDate()).slice(-2); //zero pad day of month
+	var y = date.getFullYear() - 2000;
+	return d + m + y + "." + date.getHours() + ":" + mm + ":" + ss;
 } //end formatTime()
 
 //==============================================================================

@@ -57,6 +57,14 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	{
 		needSignature = true;
 		//in case of dynamic server downtime, if safe_url is blank, get safe_url
+
+		if(time(0) - _lastOperationTime > 5*60 /* 5 minutes */)
+		{
+			__COUTT__ << "Clearing safe URL and re-requesting..." << __E__;
+			_safe_url = "";
+		}
+
+		__COUTTV__(_safe_url);
 		if(_safe_url == "" && !Get("/secureURL", _safe_url))
 		{
 			__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
@@ -77,7 +85,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		fullURL = _url + s;
 
 	__COUT__ << "ECL GET request to " << fullURL << std::endl;
-	__COUTTV__(needSignature);
+	__COUTVS__(20,needSignature);
 
 
 	std::string xSig;
@@ -97,7 +105,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 			sprintf(buf, "%02x", resultMD5[i]);
 			xSig.append(buf);
 		}
-		__COUT__ << "ECL MD5 Signature is: " << xSig << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL MD5 Signature is: " << xSig << std::endl;
 	}
 
 
@@ -150,7 +158,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		_safe_url = ""; //clear on error
 		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
 
-		__COUTT__ << "ECL Cleanup" << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 		// cleanup curl stuff
 		curl_easy_cleanup(curl_handle);
 		// curl_slist_free_all(headers);
@@ -158,7 +166,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__SS_THROW__;
 	}
 	
-	__COUTT__ << "ECL Cleanup" << std::endl;
+	__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	// curl_slist_free_all(headers);
@@ -172,9 +180,10 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__SS_THROW__;
 	}
 
-	__COUTTV__(responseBuffer);
+	__COUTVS__(2,responseBuffer);
 	response = responseBuffer;
 
+	_lastOperationTime = time(0);
 	return true;
 } //end Get()
 

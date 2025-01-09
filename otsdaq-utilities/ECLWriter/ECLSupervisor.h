@@ -31,6 +31,8 @@
 #include <string>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include "otsdaq-utilities/ECLWriter/ECLConnection.h"
+
 // clang-format off
 namespace ots
 {
@@ -66,19 +68,22 @@ class ECLSupervisor : public CoreSupervisorBase
 
   private:
 
-	void        							getExperiments					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
-	void 									webUserSetActiveExperiment		(std::string experiment, HttpXmlDocument* xmldoc = 0);
+	void        							getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void 									webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
 	void 									refreshLogbook					(time_t              date,
-	     								              						 unsigned char       duration,
+	     								              						 size_t		         duration,
 	     								              						 HttpXmlDocument*    xmldoc     = 0,
 	     								              						 std::ostringstream* out        = 0,
-	     								              						 std::string         experiment = "");
+	     								              						 std::string  		 categoryFilter = "");
 
 	std::string                           	ECLUser_;
 	std::string                           	ECLHost_;
 	std::string                           	ECLPwd_;
 	std::string                           	ECLCategory_;
-	std::string                           	ExperimentName_;
+	std::string                           	CategoryName_;
+	int64_t									timezoneHourOffset_ = 0;
+
+	std::unique_ptr<ECLConnection>			eclConn_;
 
 	const std::string						EscapeECLString					(const std::string& input = "");
 };

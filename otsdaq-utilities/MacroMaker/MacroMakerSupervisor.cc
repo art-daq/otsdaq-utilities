@@ -683,7 +683,7 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 		{
 			__SUP_COUT_ERR__ << "'" << requestType << "' ERROR encountered: " << err
 			                 << __E__;
-			__SUP_MOUT_ERR__ << "'" << requestType << "' ERROR encountered: " << err
+			__SUP_COUT_ERR__ << "'" << requestType << "' ERROR encountered: " << err
 			                 << __E__;
 			err = xmlOut.getMatchingValue("Error", occurance++);
 		}

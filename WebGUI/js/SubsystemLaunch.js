@@ -189,6 +189,7 @@ SubsystemLaunch.create = function() {
 			_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
 			redrawWindow();
+			redrawWindow(); //do twice in case of new scroll bars
 
 		} //end localGetContextRecordsHandler()
 				
@@ -411,7 +412,7 @@ SubsystemLaunch.create = function() {
 					str += "<option selected>Select an FSM action:</option>";
 					str += "<option >Configure</option>";
 					// str += "<option >Start</option>";
-					// str += "<option >Stop</option>";
+					str += "<option >Stop</option>";
 					str += "<option >Halt</option>";
 					str += "</select>";
 
@@ -638,7 +639,7 @@ SubsystemLaunch.create = function() {
 								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
 							str += "<option >Configure</option>";
 							// str += "<option >Start</option>";
-							// str += "<option >Stop</option>";
+							str += "<option >Stop</option>";
 							str += "<option >Halt</option>";
 							str += "</select>";
 						}
@@ -710,8 +711,8 @@ SubsystemLaunch.create = function() {
 		//adjust link divs to proper size
 		//	use ratio of new-size/original-size to determine proper size
 
-		var w = window.innerWidth | 0;
-		var h = window.innerHeight | 0;	  
+		var w = DesktopContent.getWindowWidth() | 0;
+		var h = DesktopContent.getWindowHeight() | 0;	  
 
 		if(w < _LAUNCH_MIN_W)
 			w = _LAUNCH_MIN_W;
@@ -1858,6 +1859,13 @@ SubsystemLaunch.create = function() {
 	
 						window.clearTimeout(_getStatusTimer);
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+						SubsystemLaunch.system.error = ""; //clear error for next command response
+						//force state display for user feedback
+						SubsystemLaunch.system.inTransition = true;
+						SubsystemLaunch.system.transition = "Launching " + "Stop";
+						SubsystemLaunch.system.progress = 0;
+						displayStatus();
 	
 						//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 						DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
@@ -1893,6 +1901,13 @@ SubsystemLaunch.create = function() {
 
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+					SubsystemLaunch.system.error = ""; //clear error for next command response
+					//force state display for user feedback
+					SubsystemLaunch.system.inTransition = true;
+					SubsystemLaunch.system.transition = "Launching " + "Halt";
+					SubsystemLaunch.system.progress = 0;
+					displayStatus();
 
 					//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 					DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
@@ -2006,6 +2021,13 @@ SubsystemLaunch.create = function() {
 
 			window.clearTimeout(_getStatusTimer);
 			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
+
+			SubsystemLaunch.system.error = ""; //clear error for next command response
+			//force state display for user feedback
+			SubsystemLaunch.system.inTransition = true;
+			SubsystemLaunch.system.transition = "Launching " + "Stop";
+			SubsystemLaunch.system.progress = 0;
+			displayStatus();
 
 			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
 						"&fsmName=" + _fsmName + 
@@ -2247,7 +2269,7 @@ SubsystemLaunch.extractSystemStatus = function(req)
 	SubsystemLaunch.system.activeUserCount = DesktopContent.getXMLValue(req,"active_user_count") | 0;
 	SubsystemLaunch.system.activeUserList = DesktopContent.getXMLValue(req,"active_user_list").split(',');
 				
-	SubsystemLaunch.system.lastRunLogEntry = DesktopContent.getXMLValue(req,"last_run_log_entry");
+	SubsystemLaunch.system.lastRunLogEntry = DesktopContent.getXMLValue(req,"last_run_log_entry").substr(0,200); //max length 200
 	if(!SubsystemLaunch.system.lastRunLogEntry || SubsystemLaunch.system.lastRunLogEntry == "")
 	{
 		SubsystemLaunch.system.lastRunLogEntry = "No user entry found";
@@ -2255,68 +2277,64 @@ SubsystemLaunch.extractSystemStatus = function(req)
 			SubsystemLaunch.system.lastRunLogEntry += ", please enter one when starting the the next run.";
 	}
 	else   
-		SubsystemLaunch.system.lastRunLogEntry = decodeURIComponent(SubsystemLaunch.system.lastRunLogEntry);
+		SubsystemLaunch.system.lastRunLogEntry = decodeURIComponent(SubsystemLaunch.system.lastRunLogEntry) + 
+			(SubsystemLaunch.system.lastRunLogEntry.length == 200?"...":"");
 
-	SubsystemLaunch.system.lastLogbookEntry = DesktopContent.getXMLValue(req,"last_logbook_entry");
+	SubsystemLaunch.system.lastLogbookEntry = DesktopContent.getXMLValue(req,"last_logbook_entry").substr(0,200); //max length 200
 	if(SubsystemLaunch.system.lastLogbookEntry == "")
 		SubsystemLaunch.system.lastLogbookEntry = "No logbook entry found.";
 	else
-		SubsystemLaunch.system.lastLogbookEntry += " (" + DesktopContent.getXMLValue(req,"last_logbook_entry_time") + ")";  				
+		SubsystemLaunch.system.lastLogbookEntry += (SubsystemLaunch.system.lastLogbookEntry.length == 200?"... (":" (") + DesktopContent.getXMLValue(req,"last_logbook_entry_time") + ")";  				
 		
-	SubsystemLaunch.system.lastSystemMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_system_message"));
+	SubsystemLaunch.system.lastSystemMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_system_message")).substr(0,200); //max length 200
 	if(SubsystemLaunch.system.lastSystemMessage == "")
 		SubsystemLaunch.system.lastSystemMessage = "No System Message found.";
 	else
-		SubsystemLaunch.system.lastSystemMessage += " (" + DesktopContent.getXMLValue(req,"last_system_message_time") + ")";
+		SubsystemLaunch.system.lastSystemMessage += (SubsystemLaunch.system.lastLogbookEntry.length == 200?"... (":" (") + DesktopContent.getXMLValue(req,"last_system_message_time") + ")";
 	
 	SubsystemLaunch.system.logRolloverMode = decodeURIComponent(DesktopContent.getXMLValue(req,"stateMachineLogRollover"));	
 	
 	SubsystemLaunch.system.consoleErrCount = "Console Err #: " + (DesktopContent.getXMLValue(req,"console_err_count") | 0); 
 	SubsystemLaunch.system.consoleWarnCount = "Console Warn #: " + (DesktopContent.getXMLValue(req,"console_warn_count") | 0); 
 	SubsystemLaunch.system.consoleInfoCount = "Console Info #: " + (DesktopContent.getXMLValue(req,"console_info_count") | 0); 
-
-	SubsystemLaunch.system.consoleErrMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_err_msg"));
-	if(SubsystemLaunch.system.consoleErrMessage == "")
-		SubsystemLaunch.system.consoleErrMessage = "No console err message found.";
-	else
-		SubsystemLaunch.system.consoleErrMessage += " " + DesktopContent.getXMLValue(req,"last_console_err_msg_time") + "";  	
-
-	SubsystemLaunch.system.consoleErrMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_err_msg"));
-	if(SubsystemLaunch.system.consoleErrMessage == "")
-		SubsystemLaunch.system.consoleErrMessage = "No console err message found.";
-	else
-		SubsystemLaunch.system.consoleErrMessage += " " + DesktopContent.getXMLValue(req,"last_console_err_msg_time") + ""; 
 	
-	SubsystemLaunch.system.consoleWarnMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_warn_msg"));
+
+	SubsystemLaunch.system.consoleErrMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_err_msg")).substr(0,500); //max length 200
+	if(SubsystemLaunch.system.consoleErrMessage == "")
+		SubsystemLaunch.system.consoleErrMessage = "No console err message found.";
+	else
+		SubsystemLaunch.system.consoleErrMessage += (SubsystemLaunch.system.consoleErrMessage.length == 500?"... ":" ") + DesktopContent.getXMLValue(req,"last_console_err_msg_time") + ""; 
+	
+	SubsystemLaunch.system.consoleWarnMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_warn_msg")).substr(0,500); //max length 200
 	if(SubsystemLaunch.system.consoleWarnMessage == "")
 		SubsystemLaunch.system.consoleWarnMessage = "No console err message found.";
 	else
-		SubsystemLaunch.system.consoleWarnMessage += " " + DesktopContent.getXMLValue(req,"last_console_warn_msg_time") + "";  	
+		SubsystemLaunch.system.consoleWarnMessage += (SubsystemLaunch.system.consoleWarnMessage.length == 500?"... ":" ") + DesktopContent.getXMLValue(req,"last_console_warn_msg_time") + "";  	
 
-	SubsystemLaunch.system.consoleInfoMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_info_msg"));
+	SubsystemLaunch.system.consoleInfoMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"last_console_info_msg")).substr(0,200); //max length 200
 	if(SubsystemLaunch.system.consoleInfoMessage == "")
 		SubsystemLaunch.system.consoleInfoMessage = "No console err message found.";
 	else
-		SubsystemLaunch.system.consoleInfoMessage += " " + DesktopContent.getXMLValue(req,"last_console_info_msg_time") + "";  	
+		SubsystemLaunch.system.consoleInfoMessage += (SubsystemLaunch.system.consoleInfoMessage.length == 200?"... ":" ") + DesktopContent.getXMLValue(req,"last_console_info_msg_time") + "";  	
 
 		
-	SubsystemLaunch.system.consoleFirstErrMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_err_msg"));
+	SubsystemLaunch.system.consoleFirstErrMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_err_msg")).substr(0,200); //max length 200
 	if(SubsystemLaunch.system.consoleFirstErrMessage == "")
 		SubsystemLaunch.system.consoleFirstErrMessage = "No console err message found.";
 	else
-		SubsystemLaunch.system.consoleFirstErrMessage += " " + DesktopContent.getXMLValue(req,"first_console_err_msg_time") + ""; 
+		SubsystemLaunch.system.consoleFirstErrMessage += (SubsystemLaunch.system.consoleFirstErrMessage.length == 200?"... ":" ") + DesktopContent.getXMLValue(req,"first_console_err_msg_time") + ""; 
 	
-	SubsystemLaunch.system.consoleFirstWarnMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_warn_msg"));
+	SubsystemLaunch.system.consoleFirstWarnMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_warn_msg")).substr(0,200); //max length 200
 	if(SubsystemLaunch.system.consoleFirstWarnMessage == "")
 		SubsystemLaunch.system.consoleFirstWarnMessage = "No console err message found.";
 	else
-		SubsystemLaunch.system.consoleFirstWarnMessage += " " + DesktopContent.getXMLValue(req,"first_console_warn_msg_time") + "";  	
+		SubsystemLaunch.system.consoleFirstWarnMessage += (SubsystemLaunch.system.consoleFirstWarnMessage.length == 200?"... ":" ") + DesktopContent.getXMLValue(req,"first_console_warn_msg_time") + "";  	
 
-	SubsystemLaunch.system.consoleFirstInfoMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_info_msg"));
+	SubsystemLaunch.system.consoleFirstInfoMessage = decodeURIComponent(DesktopContent.getXMLValue(req,"first_console_info_msg")).substr(0,200); //max length 200
 	if(SubsystemLaunch.system.consoleFirstInfoMessage == "")
 		SubsystemLaunch.system.consoleFirstInfoMessage = "No console err message found.";
 	else
-		SubsystemLaunch.system.consoleFirstInfoMessage += " " + DesktopContent.getXMLValue(req,"first_console_info_msg_time") + "";  	
+		SubsystemLaunch.system.consoleFirstInfoMessage += (SubsystemLaunch.system.consoleFirstInfoMessage.length == 200?"... ":" ") + DesktopContent.getXMLValue(req,"first_console_info_msg_time") + "";  	
 
 	// Debug.log("system obj", SubsystemLaunch.system);
 
