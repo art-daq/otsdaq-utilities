@@ -2949,15 +2949,7 @@ Desktop.turtleMove = function()
 		Desktop.turtle.y = document.body.clientHeight-1-Desktop.turtle.inity;
 	else if(Desktop.turtle.inity + Desktop.turtle.y > document.body.clientHeight)
 		Desktop.turtle.y = 1-Desktop.turtle.inity-Desktop.turtle.offsetHeight;
-	
-	// if(Desktop.turtle.initx + Desktop.turtle.x + 
-	// 		Desktop.turtle.offsetWidth >= document.body.clientWidth || 
-	// 		Desktop.turtle.inity + Desktop.turtle.y + 
-	// 		Desktop.turtle.offsetHeight >= document.body.clientHeight)
-	// 	document.body.style.overflow = "hidden";
-	// else
-	// 	document.body.style.overflow = "auto";
-		
+			
 	Desktop.turtle.style.left = Desktop.turtle.initx + Desktop.turtle.x + "px";
 	Desktop.turtle.style.top = Desktop.turtle.inity + Desktop.turtle.y + "px";
 	
