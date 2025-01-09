@@ -12,3 +12,4 @@ WebGUI/js/Debug.js
 *.code-workspace
 spack-build-*
 build-*
+WebGUI/images/otsdaqIcons/generated/
