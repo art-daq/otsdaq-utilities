@@ -466,154 +466,156 @@ CodeEditor.create = function(standAlone) {
 		}
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +
-				"codeEditor" + 
-				"&option=getAllowedExtensions" 
-				, "" /* data */,
-				function(req, reqParam, errStr)
-				{	
-			console.log("getAllowedExtensions",req,errStr);
-			
-			CodeEditor.showTooltipPrepend = "";
-			if(!_READ_ONLY && !req)
-			{
-				if(DesktopContent._sequence)
-					CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember the wiz mode sequence access code must be at least 8 characters to allow write access)!\n\nReverting to read-only mode.\n\n";
-				else
-					CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
-				Debug.log(CodeEditor.showTooltipPrepend);
-				_READ_ONLY = true;
-
-				CodeEditor.showTooltip(_STAND_ALONE);
-				init();
-				return;
-			}	
-			
-			CodeEditor.showTooltip(_STAND_ALONE);		
-
-			if(errStr && errStr != "")
-				Debug.log(errStr,Debug.HIGH_PRIORITY);
-			
-			if(!req) //request failed
-			{
-				Debug.log("Does the Code Editor Supervisor exist? You must connect the web editor to a valid Code Editor Supervisor application (please check your Configuration Tree and then restart ots).",Debug.HIGH_PRIORITY);				
-				return;
-			}
-			else //check for error
-			{
-				if(!errStr || errStr == "")
-					errStr = DesktopContent.getXMLValue(req,"Error");
+			"codeEditor" + 
+			"&option=getAllowedExtensions" 
+			, "" /* data */,
+			function(req, reqParam, errStr)
+			{	
+				console.log("getAllowedExtensions",req,errStr);
 				
-				if(errStr && errStr != "")
+				CodeEditor.showTooltipPrepend = "";
+				if(!_READ_ONLY && !req)
 				{
+					if(DesktopContent._sequence)
+						CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember the wiz mode sequence access code must be at least 8 characters to allow write access)!\n\nReverting to read-only mode.\n\n";
+					else
+						CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
+					Debug.log(CodeEditor.showTooltipPrepend);
+					_READ_ONLY = true;
+
+					CodeEditor.showTooltip(_STAND_ALONE);
+					init();
+					return;
+				}	
+				
+				CodeEditor.showTooltip(_STAND_ALONE);		
+
+				if(errStr && errStr != "")
 					Debug.log(errStr,Debug.HIGH_PRIORITY);
-					Debug.log("Does the Code Editor Supervisor exist? You must connect the web editor to a valid Code Editor Supervisor application (please check your Configuration Tree and then restart ots).",Debug.HIGH_PRIORITY);
+				
+				if(!req) //request failed
+				{
+					Debug.log("Does the Code Editor Supervisor exist? You must connect the web editor to a valid Code Editor Supervisor application (please check your Configuration Tree and then restart ots).",Debug.HIGH_PRIORITY);				
 					return;
 				}
-			}
-			
-			_ALLOWED_FILE_EXTENSIONS = DesktopContent.getXMLValue(req,"AllowedExtensions");
-			console.log("_ALLOWED_FILE_EXTENSIONS",_ALLOWED_FILE_EXTENSIONS);
-			_ALLOWED_FILE_EXTENSIONS = _ALLOWED_FILE_EXTENSIONS.split(',');
-			console.log("_ALLOWED_FILE_EXTENSIONS",_ALLOWED_FILE_EXTENSIONS);
-			
-			DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +
-				 	 "codeEditor" + 
+				else //check for error
+				{
+					if(!errStr || errStr == "")
+						errStr = DesktopContent.getXMLValue(req,"Error");
+					
+					if(errStr && errStr != "")
+					{
+						Debug.log(errStr,Debug.HIGH_PRIORITY);
+						Debug.log("Does the Code Editor Supervisor exist? You must connect the web editor to a valid Code Editor Supervisor application (please check your Configuration Tree and then restart ots).",Debug.HIGH_PRIORITY);
+						return;
+					}
+				}
+				
+				_ALLOWED_FILE_EXTENSIONS = DesktopContent.getXMLValue(req,"AllowedExtensions");
+				console.log("_ALLOWED_FILE_EXTENSIONS",_ALLOWED_FILE_EXTENSIONS);
+				_ALLOWED_FILE_EXTENSIONS = _ALLOWED_FILE_EXTENSIONS.split(',');
+				console.log("_ALLOWED_FILE_EXTENSIONS",_ALLOWED_FILE_EXTENSIONS);
+				
+				DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +
+						"codeEditor" + 
 					"&option=getDirectoryContent" +
 					"&path=/"
 					, "" /* data */,
 					function(req)
 					{	
-				var filePath, fileExtension; 
+						var filePath, fileExtension; 
 
-				//console.log("getDirectoryContent",req);
-
-
-				CodeEditor.editor.handleDirectoryContent(1 /*forPrimary*/, req);
-				CodeEditor.editor.handleDirectoryContent(0 /*forPrimary*/, req);
-
-				//decide how to start display(file or directory)
-				filePath = "";		
-				if(parameterStartFile[0] && parameterStartFile[0] != "")
-				{
-					i = parameterStartFile[0].lastIndexOf('.');
-					//filePath = parameterStartFile[0];
-					if(i > 0) //up to extension
-					{
-						filePath = parameterStartFile[0].substr(0,i);
-						fileExtension = parameterStartFile[0].substr(i+1);
-					}
-					else
-					{
-						filePath = parameterStartFile[0];
-						fileExtension = "";
-					}
-				}
+						//console.log("getDirectoryContent",req);
 
 
+						CodeEditor.editor.handleDirectoryContent(1 /*forPrimary*/, req);
+						CodeEditor.editor.handleDirectoryContent(0 /*forPrimary*/, req);
 
-				if(filePath != "") //show shortcut file
-					CodeEditor.editor.openFile(
-							1 /*forPrimary*/, 
-							filePath	/*path*/,
-							fileExtension /*extension*/, 
-							false /*doConfirm*/,
-							parameterGotoLine[0 /*primary goto line*/] /*gotoLine*/);
-				else //show base directory nav
-				{
-					CodeEditor.editor.openDirectory(
-							1 /*forPrimary*/,
-							parameterOpenDirectory[0] /*path*/,
-							true /*doNotOpenPane*/
-					);				
-					//CodeEditor.editor.toggleDirectoryNav(1 /*forPrimary*/, 1 /*showNav*/);
-				}
-
-				//for secondary pane
-				filePath = "";		
-				if(parameterStartFile[1] && parameterStartFile[1] != "")
-				{
-					i = parameterStartFile[1].lastIndexOf('.');
-					//filePath = parameterStartFile[1];
-					if(i > 0) //up to extension
-					{
-						filePath = parameterStartFile[1].substr(0,i);
-						fileExtension = parameterStartFile[1].substr(i+1);
-					}
-					else
-					{
-						filePath = parameterStartFile[1];
-						fileExtension = "";
-					}
-				}
-
-				if(filePath != "") //show shortcut file
-					CodeEditor.editor.openFile(
-							0 /*forPrimary*/, 
-							filePath	/*path*/,
-							fileExtension /*extension*/, 
-							false /*doConfirm*/,
-							parameterGotoLine[1 /*secondary goto line*/] /*gotoLine*/);
-				else //show base directory nav				
-				{
-					
-					CodeEditor.editor.openDirectory(
-							0 /*forPrimary*/,
-							parameterOpenDirectory[1] /*path*/,
-							true /*doNotOpenPane*/												   
-					);				
-					//CodeEditor.editor.toggleDirectoryNav(0 /*forPrimary*/, 1 /*showNav*/);
-				}
+						//decide how to start display(file or directory)
+						filePath = "";		
+						if(parameterStartFile[0] && parameterStartFile[0] != "")
+						{
+							i = parameterStartFile[0].lastIndexOf('.');
+							//filePath = parameterStartFile[0];
+							if(i > 0) //up to extension
+							{
+								filePath = parameterStartFile[0].substr(0,i);
+								fileExtension = parameterStartFile[0].substr(i+1);
+							}
+							else
+							{
+								filePath = parameterStartFile[0];
+								fileExtension = "";
+							}
+						}
 
 
-				_activePaneIsPrimary = 1; //default active pane to primary
 
-					}); //end get directory contents
-				},
-				0 /*reqParam*/, 0 /*progressHandler*/,
-				true /*callHandlerOnErr*/,
-				0 /*doNotShowLoadingOverlay*/, 0 /*targetGatewaySupervisor*/, 
-				0 /*ignoreSystemBlock*/,
-				true /*doNotOfferSequenceChange*/ //so read-only switch can happen
+						if(filePath != "") //show shortcut file
+							CodeEditor.editor.openFile(
+									1 /*forPrimary*/, 
+									filePath	/*path*/,
+									fileExtension /*extension*/, 
+									false /*doConfirm*/,
+									parameterGotoLine[0 /*primary goto line*/] /*gotoLine*/);
+						else //show base directory nav
+						{
+							CodeEditor.editor.openDirectory(
+									1 /*forPrimary*/,
+									parameterOpenDirectory[0] /*path*/,
+									true /*doNotOpenPane*/
+							);				
+							//CodeEditor.editor.toggleDirectoryNav(1 /*forPrimary*/, 1 /*showNav*/);
+						}
+
+						//for secondary pane
+						filePath = "";		
+						if(parameterStartFile[1] && parameterStartFile[1] != "")
+						{
+							i = parameterStartFile[1].lastIndexOf('.');
+							//filePath = parameterStartFile[1];
+							if(i > 0) //up to extension
+							{
+								filePath = parameterStartFile[1].substr(0,i);
+								fileExtension = parameterStartFile[1].substr(i+1);
+							}
+							else
+							{
+								filePath = parameterStartFile[1];
+								fileExtension = "";
+							}
+						}
+
+						if(filePath != "") //show shortcut file
+							CodeEditor.editor.openFile(
+									0 /*forPrimary*/, 
+									filePath	/*path*/,
+									fileExtension /*extension*/, 
+									false /*doConfirm*/,
+									parameterGotoLine[1 /*secondary goto line*/] /*gotoLine*/);
+						else //show base directory nav				
+						{
+							
+							CodeEditor.editor.openDirectory(
+									0 /*forPrimary*/,
+									parameterOpenDirectory[1] /*path*/,
+									true /*doNotOpenPane*/												   
+							);				
+							//CodeEditor.editor.toggleDirectoryNav(0 /*forPrimary*/, 1 /*showNav*/);
+						}
+
+
+						_activePaneIsPrimary = 1; //default active pane to primary
+
+					}	//end get directory contents handler
+				); //end get directory contents
+
+			}, //end get allowed file extensions handler
+			0 /*reqParam*/, 0 /*progressHandler*/,
+			2 /*callHandlerOnErr*/,
+			0 /*doNotShowLoadingOverlay*/, 0 /*targetGatewaySupervisor*/, 
+			0 /*ignoreSystemBlock*/,
+			true /*doNotOfferSequenceChange*/ //so read-only switch can happen
 		); //end get allowed file extensions
 		
 	} //end init()
