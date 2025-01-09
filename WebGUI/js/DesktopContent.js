@@ -1268,7 +1268,8 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 					else
 						requestType = "";
 					errStr = "Request " + requestType + " failed due to insufficient account permissions."; 
-					Debug.err(errStr);
+					if(callHandlerOnErr && callHandlerOnErr < 2)
+						Debug.err(errStr);
 					
 					if(!doNotOfferSequenceChange && DesktopContent._sequence)
 					{

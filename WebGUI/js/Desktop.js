@@ -1198,6 +1198,13 @@ Desktop.createDesktop = function(security) {
 		if(Desktop.desktop.login.getCookieCode(true))
 			Desktop.XMLHttpRequest("Request?RequestType=getSystemMessages","",
 				_handleSystemMessages);
+
+		
+		Desktop.turtle = document.getElementById('turtle');
+		Desktop.turtle.motion = false;
+		Desktop.turtle.x = 0; 
+		Desktop.turtle.y = 0;
+		Desktop.turtleRedraw();	
 		
 	} //end resetDesktop()
 
@@ -2865,6 +2872,107 @@ Desktop.formatTime = function(t)
 	var y = date.getFullYear() - 2000;
 	return d + m + y + "." + date.getHours() + ":" + mm + ":" + ss;
 } //end formatTime()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtle;
+
+////////////////////////////////////
+Desktop.turtleRedraw = function()
+{
+	Debug.log("turtleRedraw()");
+	Desktop.turtle.initx = Desktop.desktop.getDesktopContentX() + Desktop.desktop.getDesktopContentWidth() 
+		- Desktop.turtle.offsetWidth;
+	Desktop.turtle.inity = Desktop.desktop.getDesktopContentY() + Desktop.desktop.getDesktopContentHeight() 
+		- Desktop.turtle.offsetHeight + 50;
+	if(Desktop.turtle.x == 0)
+	{
+		Desktop.turtle.style.left = Desktop.turtle.initx + "px";		
+		Desktop.turtle.style.top = Desktop.turtle.inity + "px";
+	}
+
+} //end turtleRedraw()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtleClick = function()
+{	
+	Debug.log("turtleClick()");
+	Desktop.turtle.motion  = !Desktop.turtle.motion;
+	
+	if(Desktop.turtle.motion)
+	{
+		if(Desktop.turtle.childNodes[1].style.display == "none")
+		{
+			if(!Desktop.isWizardMode()) //only allow in 'normal' mode
+				Desktop.turtle.childNodes[1].style.display = "block"; //show for first time!
+			else
+				Desktop.turtle.style.display = "none"; //totally disable (to stop clicking)
+			Desktop.turtle.motion = false;
+			return;
+		}
+
+		Desktop.turtle.speed = 5;
+		Desktop.turtle.velx = Math.random()*2-1;
+		Desktop.turtle.vely = Math.random()*2-1;
+		var mag = Desktop.turtle.velx*Desktop.turtle.velx + Desktop.turtle.vely*Desktop.turtle.vely;
+		if(mag == 0)
+			Desktop.turtle.velx = -1;
+		else
+		{
+			mag = Math.sqrt(mag);
+			Desktop.turtle.velx /= mag;
+			Desktop.turtle.vely /= mag;
+		}
+		setTimeout(Desktop.turtleMove,50);
+	}
+	else
+	{
+		//change turtle colors
+		Desktop.XMLHttpRequest("XGI_Turtle","",Desktop.httpTurtleResponse);
+	}
+} //end turtleClick()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtleMove = function()
+{
+	Desktop.turtle.x = Desktop.turtle.x + Desktop.turtle.velx*Desktop.turtle.speed;
+	Desktop.turtle.y = Desktop.turtle.y + Desktop.turtle.vely*Desktop.turtle.speed;
+	
+	if(Desktop.turtle.initx + Desktop.turtle.x + Desktop.turtle.offsetWidth < 0) //test x extreme wrap-arounds
+		Desktop.turtle.x = document.body.clientWidth-1-Desktop.turtle.initx;
+	else if(Desktop.turtle.initx + Desktop.turtle.x > document.body.clientWidth)
+		Desktop.turtle.x = 1-Desktop.turtle.initx-Desktop.turtle.offsetWidth;
+	
+	if(Desktop.turtle.inity + Desktop.turtle.y + Desktop.turtle.offsetHeight < 0) //test y extreme wrap-arounds
+		Desktop.turtle.y = document.body.clientHeight-1-Desktop.turtle.inity;
+	else if(Desktop.turtle.inity + Desktop.turtle.y > document.body.clientHeight)
+		Desktop.turtle.y = 1-Desktop.turtle.inity-Desktop.turtle.offsetHeight;
+	
+	// if(Desktop.turtle.initx + Desktop.turtle.x + 
+	// 		Desktop.turtle.offsetWidth >= document.body.clientWidth || 
+	// 		Desktop.turtle.inity + Desktop.turtle.y + 
+	// 		Desktop.turtle.offsetHeight >= document.body.clientHeight)
+	// 	document.body.style.overflow = "hidden";
+	// else
+	// 	document.body.style.overflow = "auto";
+		
+	Desktop.turtle.style.left = Desktop.turtle.initx + Desktop.turtle.x + "px";
+	Desktop.turtle.style.top = Desktop.turtle.inity + Desktop.turtle.y + "px";
+	
+	if(Desktop.turtle.motion)
+		setTimeout(Desktop.turtleMove,50);
+} //end turtleMove()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.httpTurtleResponse = function(req)
+{
+	Debug.log("httpTurtleResponse()");
+	if(req && req.responseText && req.responseText != "")
+		Desktop.turtle.childNodes[1].src = req.responseText;		
+} //end httpTurtleResponse()
 
 //==============================================================================
 //closeSystemMessage ~~
