@@ -1201,10 +1201,13 @@ Desktop.createDesktop = function(security) {
 
 		
 		Desktop.turtle = document.getElementById('turtle');
-		Desktop.turtle.motion = false;
-		Desktop.turtle.x = 0; 
-		Desktop.turtle.y = 0;
-		Desktop.turtleRedraw();	
+		if(Desktop.turtle)
+		{
+			Desktop.turtle.motion = false;
+			Desktop.turtle.x = 0; 
+			Desktop.turtle.y = 0;
+			Desktop.turtleRedraw();	
+		}
 		
 	} //end resetDesktop()
 
