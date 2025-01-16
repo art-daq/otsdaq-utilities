@@ -36,7 +36,7 @@ var _OFFSET_Y				= 80;
     // isEquivalent(a, b)
 	// setIntersection(list1, list2)
 
-var windowTooltip = "To verify Status Monitoring is enabled, check the Gateway Supervisor parameter that " +
+var _windowTooltip = "To verify Status Monitoring is enabled, check the Gateway Supervisor parameter that " +
 		"controls it. To check app status, set this field to YES in your Context Group Configuration Tree: \n\n" +
 		"<b>XDAQApplicationTable --> \nGatewaySupervisor (record in XDAQApplicationTable) --> \nLinkToSuperivorTable --> \nEnableApplicationStatusMonitoring</b>" +
 		"\n\n" +
@@ -44,14 +44,18 @@ var windowTooltip = "To verify Status Monitoring is enabled, check the Gateway S
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
+var _reloadRemoteContextsTimer = 0;
+
 //=====================================================================================
 //init called once body has loaded
 function init() 
 {					
     Debug.log("App status init");
-    
 
-	DesktopContent.setWindowTooltip(windowTooltip);
+    window.clearTimeout(_reloadRemoteContextsTimer)
+    _reloadRemoteContextsTimer = 0;     
+
+	DesktopContent.setWindowTooltip(_windowTooltip);
     
     
     _statusDivElement = document.getElementById("appStatusDiv");
@@ -254,7 +258,7 @@ function getAppsArray()
 				if(all0)
 				{
 					Debug.log("It appears that active application status monitoring is currently OFF! " +
-							"\n\n\n" + windowTooltip,
+							"\n\n\n" + _windowTooltip,
 							Debug.HIGH_PRIORITY);
 				}            	
 			}
@@ -287,6 +291,7 @@ function getAppsArray()
                     var subappProgress = appSubapps[i].getElementsByTagName("subapp_progress");
                     var subappDetail = appSubapps[i].getElementsByTagName("subapp_detail");
                     var subappUrl = appSubapps[i].getElementsByTagName("subapp_url");
+                    var subappID = appSubapps[i].getElementsByTagName("subapp_id");
                     var subappClass = appSubapps[i].getElementsByTagName("subapp_class");
 
                     _allAppsArray[_allAppsArray.length - 1].subappStatus = new Array();
@@ -299,6 +304,7 @@ function getAppsArray()
                             "progress": subappProgress[j].getAttribute("value"),
                             "detail": subappDetail[j].getAttribute("value"),
                             "class": subappClass[j].getAttribute("value"),
+                            "id": subappID[j].getAttribute("value"),
                             "url": subappUrl[j].getAttribute("value")
                         });
                     }
@@ -474,7 +480,6 @@ function displayTable(appsArray)
     //Add the data rows.
     for (var contextName in _allContextNames) 
     {
-
         row = table.insertRow(-1);
         row.setAttribute("class", "collapsibleRow");
         row.id = contextName;
@@ -763,7 +768,7 @@ function displayTable(appsArray)
                                 tmpDetail = tmpDetail.substr(0,150) + "...";
                             cell.innerHTML = tmpDetail;
                         }
-                        else if (columnKeys[j] == "context" || columnKeys[j] == "id" || columnKeys[j] == "action") 
+                        else if (columnKeys[j] == "context" || columnKeys[j] == "action") 
                         {
                             // Subapps don't have these
                         }
@@ -780,6 +785,26 @@ function displayTable(appsArray)
                             cell.style.textAlign = "center";
                     }
                 }
+            }
+        }
+        
+        if (appRowId == 0) //no apps found
+        {
+            var a = contextName.indexOf(" at ");
+            if(!_reloadRemoteContextsTimer &&  //have not scheduled init
+                a == contextName.length - (" at ").length) //is a remote context missing url
+            {
+                Debug.log("Emtpy context missing url, scheduling init!");
+                _reloadRemoteContextsTimer = window.setTimeout(init, 3000 /* seconds */);            
+            }        
+            else if(a > 0) //is a remote context with no app info
+            {
+                var cell = row.insertCell(-1);
+                cell.innerHTML = contextName.substr(0,a);
+
+                var cell = row.insertCell(-1);
+                cell.innerHTML = "UNKNOWN";
+                cell.className = "statusCell";
             }
         }
     } // done with adding data rows

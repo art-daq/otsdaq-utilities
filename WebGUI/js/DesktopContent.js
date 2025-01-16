@@ -654,26 +654,50 @@ DesktopContent.init = function(onloadFunction)
 	}
 
 	//call self in a bit to try init (in case window messaging not active)
-	window.setTimeout(
-		function()
-		{
-			if(!DesktopContent._pageInitCalled)
-			{
-				Debug.log("Perhaps window messaging not active?");
-				DesktopContent._windowMessagingInactive = true;
-			}
-			localOnloadHandler();
-		},300 /*ms*/);
+	var onloadWatchdogTimer = window.setTimeout(localOnloadWatchdog, 300 /*ms*/);
 
 	return;
 
 	//========
+	function localOnloadWatchdog()
+	{
+		Debug.log("localOnloadWatchdog()",DesktopContent._serverUrnLid);
+
+		window.clearTimeout(onloadWatchdogTimer);
+
+		if(!document.body) //the document is not ready?!
+		{
+			//only allow watchdog test if document is loaded
+			onloadWatchdogTimer = window.setTimeout(
+				localOnloadWatchdog,300 /*ms*/);
+
+			Debug.log("localOnloadWatchdog() body not loaded",DesktopContent._serverUrnLid);
+			return;
+		}
+
+		Debug.log("localOnloadWatchdog() body loaded 1", DesktopContent._serverUrnLid);
+		onloadWatchdogTimer = window.setTimeout(function()
+		{
+			Debug.log("localOnloadWatchdog() body loaded 2", DesktopContent._serverUrnLid);
+			if(!DesktopContent._pageInitCalled)
+			{
+				Debug.log("Perhaps window messaging not active?",DesktopContent._serverUrnLid);
+				DesktopContent._windowMessagingInactive = true;
+			}
+			localOnloadHandler();
+		}, 300 /*ms*/);
+
+	} //end localOnloadWatchdog()
+
+	//========
 	function localOnloadHandler()
 	{
+		window.clearTimeout(onloadWatchdogTimer);
+
 		if(!document.body) //the document is not ready?!
 		{
 			//call self in a bit to try again
-			window.setTimeout(
+			onloadWatchdogTimer = window.setTimeout(
 				localOnloadHandler,300 /*ms*/);
 			return;
 		}
