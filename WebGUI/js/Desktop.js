@@ -2993,8 +2993,6 @@ Desktop.isWizardMode = function()
 //openNewBrowserTab ~~
 Desktop.openNewBrowserTab = function(name,subname,windowPath,unique) 
 { 
-	
-
 	//for windowPath, need to check lid=## is terminated with /
 	// check from = that there is nothing but numbers
 	{

@@ -205,6 +205,8 @@ DesktopContent._serverUrnLid = 0;
 DesktopContent._serverOrigin = "";
 DesktopContent._remoteServerUrnLid = 0;
 DesktopContent._remoteServerOrigin = "";
+DesktopContent._topServerUrnLid = 0;  //this refers to the primary top-level Gateway Supervisor (in primary/top & secondary/remote subsystem topologies)
+DesktopContent._topServerOrigin = ""; //this refers to the primary top-level Gateway Supervisor (in primary/top & secondary/remote subsystem topologies)
 
 DesktopContent._cookieCodeMailbox = 0;
 DesktopContent._updateTimeMailbox = 0;
@@ -366,12 +368,14 @@ DesktopContent.init = function(onloadFunction)
 			event.source.postMessage(
 				{			
 					
-				"windowId":		"unknown",	
-				"request":		"giveRequestLIDInfo",
-				"cookieCode":	DesktopContent._cookieCodeMailbox,
-				"localURN": 	DesktopContent._localUrnLid,
-				"gatewayURN" :	DesktopContent._serverUrnLid,
-				"gatewayOrigin":DesktopContent._serverOrigin
+				"windowId":			"unknown",	
+				"request":			"giveRequestLIDInfo",
+				"cookieCode":		DesktopContent._cookieCodeMailbox,
+				"localURN": 		DesktopContent._localUrnLid,
+				"gatewayURN" :		DesktopContent._serverUrnLid,
+				"gatewayOrigin":	DesktopContent._serverOrigin,
+				"topGatewayURN" :	DesktopContent._topServerUrnLid,
+				"topGatewayOrigin":	DesktopContent._topServerOrigin
 				}, "*");
 			event.stopPropagation();
 			event.stopImmediatePropagation();
@@ -409,6 +413,8 @@ DesktopContent.init = function(onloadFunction)
 			DesktopContent._localUrnLid = event.data.localURN;
 			DesktopContent._serverUrnLid = event.data.gatewayURN;
 			DesktopContent._serverOrigin = event.data.gatewayOrigin;
+			DesktopContent._topServerUrnLid = event.data.topGatewayURN;
+			DesktopContent._topServerOrigin = event.data.topGatewayOrigin;
 			DesktopContent._cookieCodeMailbox = event.data.cookieCode;
 			
 			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
@@ -536,12 +542,21 @@ DesktopContent.init = function(onloadFunction)
 				Debug.log("Gateway Supervisor overriding with Remote Supervisor info!");
 				DesktopContent._serverUrnLid = DesktopContent._remoteServerUrnLid;
 				DesktopContent._serverOrigin = DesktopContent._remoteServerOrigin;
+				DesktopContent._topServerUrnLid = event.data.gatewayURN;
+				DesktopContent._topServerOrigin = event.data.gatewayOrigin;
+				if(DesktopContent._topServerUrnLid)
+				{
+					Debug.log("Primary/Top Gateway Supervisor URN-LID #" + DesktopContent._topServerUrnLid);
+					Debug.log("Primary/Top Gateway Supervisor Origin = " + DesktopContent._topServerOrigin);
+				}
 			}
 
 			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
 			Debug.log("The Desktop Window Title = " + DesktopContent._theWindowTitle);
-			Debug.log("Gateway Supervisor Application URN-LID #" + DesktopContent._serverUrnLid);
-			Debug.log("Gateway Supervisor Application Origin = " + DesktopContent._serverOrigin);
+			Debug.log("Local XDAQ Supervisor URN-LID #" + DesktopContent._localUrnLid);
+			Debug.log("Local XDAQ Supervisor Origin = " + DesktopContent._localOrigin);
+			Debug.log("Local Gateway Supervisor URN-LID #" + DesktopContent._serverUrnLid);
+			Debug.log("Local Gateway Supervisor Origin = " + DesktopContent._serverOrigin);
 
 			if(DesktopContent._pageInitCalled) return;
 			DesktopContent._pageInitCalled = true;
@@ -2506,8 +2521,7 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 // Note: to open a window just using the Desktop icon name, leave subname and unique undefined
 //	window path can optionially be used to send the window additional parameters, or left undefined.
 DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique) 
-{		
-	
+{			
 	if(windowPath !== undefined)
 	{
 		//remove leading ? because Desktop.js handling expects no leading ?
@@ -2543,15 +2557,54 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 					"The window path seems to be invalid:[" + DesktopContent.getExceptionLineNumber(e) + "]: " + e, Debug.HIGH_PRIORITY);
 			return;
 		}
-	}
-	Debug.log("DesktopWindow= " + windowPath);
 
+		//if window path is relative to local gateway, be explicty for cases that top level gateway differs
+		if(windowPath[0] == '/' && 
+			DesktopContent._topServerUrnLid && 
+			DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
+		{
+			Debug.log("Adding local server detail to relative url in window path",windowPath);
+			windowPath = DesktopContent._serverOrigin + windowPath;
+			Debug.log("Modified window path url",windowPath);
+		}
+
+		//propagate remote gateway info (if not already defined)!
+		if(DesktopContent._remoteServerUrnLid && 
+				windowPath.indexOf("remoteServerUrnLid") < 0)
+		{
+			Debug.log("Adding Remote Gateway info to window path",windowPath);
+
+			//determine if need & or ?
+			var qi = windowPath.indexOf('?');			
+			if(qi > 0)
+			{
+				if(qi != windowPath.length - 1) //then need &
+					windowPath += '&';
+				//else ? is last character, so no need for &
+			}
+			else 
+				windowPath += '?';
+
+			windowPath += "remoteServerOrigin=" +
+				encodeURIComponent(DesktopContent._remoteServerOrigin) +
+				"&remoteServerUrnLid=" + DesktopContent._remoteServerUrnLid;
+			
+			Debug.log("Modified window path url",windowPath);
+		} 
+	} //end windowPath defined handling
+
+	Debug.log("DesktopWindow= " + windowPath);
 	Debug.log("name= " + name);
 	Debug.log("subname= " + subname);
 	Debug.log("unique= " + unique);
 
 	//var search = DesktopContent._theWindow.parent.parent.window.location.search;
-	url = DesktopContent._serverOrigin +
+
+	if(DesktopContent._topServerUrnLid)
+		url = DesktopContent._topServerOrigin +
+			"/urn:xdaq-application:lid="+DesktopContent._topServerUrnLid+"/";//DesktopContent._theWindow.parent.parent.window.location.pathname;
+	else	
+		url = DesktopContent._serverOrigin +
 			"/urn:xdaq-application:lid="+DesktopContent._serverUrnLid+"/";//DesktopContent._theWindow.parent.parent.window.location.pathname;
 	
 	

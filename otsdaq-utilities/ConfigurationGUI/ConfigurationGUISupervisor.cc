@@ -209,7 +209,7 @@ try
 	//		---- associated with JavaScript artdaq API
 	//	getArtdaqNodes
 	//	saveArtdaqNodes
-	//  loadArtdaqNodeLayout
+	//  getArtdaqNodeLayout
 	//  saveArtdaqNodeLayout
 	//		---- end associated with JavaScript artdaq API
 	//
@@ -1074,7 +1074,7 @@ try
 		handleSaveArtdaqNodeRecordsXML(
 		    nodeString, subsystemString, xmlOut, cfgMgr, modifiedTables);
 	}
-	else if(requestType == "loadArtdaqNodeLayout")
+	else if(requestType == "getArtdaqNodeLayout")
 	{
 		std::string contextGroupName =
 		    CgiDataUtilities::getData(cgiIn, "contextGroupName");
@@ -7771,9 +7771,9 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 //
 void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
     HttpXmlDocument&        xmlOut,
-    ConfigurationManagerRW* cfgMgr,
+    ConfigurationManager*   cfgMgr, //force read-only config manager to avoid requiring user-lock (i.e., not ConfigurationManagerRW)
     const std::string&      contextGroupName /* = "" */,
-    const TableGroupKey&    contextGroupKey /* = INVALID */)
+    const TableGroupKey&    contextGroupKey /* = INVALID */) const
 {
 	bool usingActiveGroups = (contextGroupName == "" || contextGroupKey.isInvalid());
 
