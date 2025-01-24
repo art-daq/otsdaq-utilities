@@ -676,11 +676,11 @@ DesktopContent.init = function(onloadFunction)
 	//========
 	function localOnloadWatchdog()
 	{
-		Debug.log("localOnloadWatchdog()",DesktopContent._serverUrnLid);
+		Debug.log("localOnloadWatchdog()",DesktopContent._serverUrnLid, document.readyState);
 
 		window.clearTimeout(onloadWatchdogTimer);
 
-		if(!document.body) //the document is not ready?!
+		if(!document.body || document.readyState != "complete") //the document is not ready?!
 		{
 			//only allow watchdog test if document is loaded
 			onloadWatchdogTimer = window.setTimeout(
@@ -2496,6 +2496,40 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 	Debug.log("name= " + name);
 	Debug.log("subname= " + subname);
 	Debug.log("unique= " + unique);
+
+	//if window path is relative to local gateway, then be explict for cases that top level gateway differs
+	if(windowPath[0] == '/' && 
+		DesktopContent._topServerUrnLid && 
+		DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
+	{
+		Debug.log("Adding local server detail to relative url in window path",windowPath);
+		windowPath = DesktopContent._serverOrigin + windowPath;
+		Debug.log("Modified window path url",windowPath);
+	}
+
+	//propagate remote gateway info (if not already defined)!
+	if(DesktopContent._remoteServerUrnLid && 
+		windowPath.indexOf("remoteServerUrnLid") < 0)
+	{
+		Debug.log("Adding Remote Gateway info to window path",windowPath);
+
+		//determine if need & or ?
+		var qi = windowPath.indexOf('?');			
+		if(qi > 0)
+		{
+			if(qi != windowPath.length - 1) //then need &
+				windowPath += '&';
+			//else ? is last character, so no need for &
+		}
+		else 
+			windowPath += '?';
+
+		windowPath += "remoteServerOrigin=" +
+			encodeURIComponent(DesktopContent._remoteServerOrigin) +
+			"&remoteServerUrnLid=" + DesktopContent._remoteServerUrnLid;
+		
+		Debug.log("Modified window path url",windowPath);
+	} 
 	
 	//launch request to desktop
 	DesktopContent._theDesktopWindow.postMessage(
@@ -2558,7 +2592,7 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 			return;
 		}
 
-		//if window path is relative to local gateway, be explicty for cases that top level gateway differs
+		//if window path is relative to local gateway, then be explict for cases that top level gateway differs
 		if(windowPath[0] == '/' && 
 			DesktopContent._topServerUrnLid && 
 			DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
