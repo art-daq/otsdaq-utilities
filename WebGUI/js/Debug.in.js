@@ -547,6 +547,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 }
 else	//IF DEBUG MODE IS OFF!
 {	//do nothing with log functions
+	console.log("Debug mode is OFF. export OTS_DEBUG_MODE=1; before compiling to enable.");
 	console.log = function(){};
 	Debug.log 	= function(){};
 	Debug.logv 	= function(){};

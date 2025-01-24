@@ -202,7 +202,7 @@ SubsystemLaunch.create = function() {
 	//	redrawMode of 1 for compact, 2 for wide
 	function createElements(redrawMode)
 	{
-		Debug.log("createElements()");
+		Debug.log("createElements()", redrawMode);
 
 		Debug.log("createElements() system", SubsystemLaunch.system);
 		
@@ -473,6 +473,8 @@ SubsystemLaunch.create = function() {
 				var fields = ["Included", "Subsystem", "Configure Alias", "State", "Console", "Detail", "FSM Mode", "Manual FSM Action"];
 				var fieldIds = ["fsmIncluded", "name", "configAlias", "status", "console", "detail", "fsmMode", "action"];
 
+				var DETAIL_I = fieldIds.indexOf("detail");
+
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
 				if(redrawMode != 1)
@@ -485,7 +487,7 @@ SubsystemLaunch.create = function() {
 				str += "<tr>";
 				for(var i=0; i<fieldIds.length; ++i)
 				{
-					if(i == 5 && redrawMode == 1)
+					if(i == DETAIL_I && redrawMode == 1)
 					{
 						str += "</tr><tr>";
 						str += "<th colspan=3>" + fields[i] + "</th>";
@@ -542,7 +544,7 @@ SubsystemLaunch.create = function() {
 					str += "<tr>";
 					for(var i=0; i<fieldIds.length; ++i)
 					{
-						if(i == 5 && redrawMode == 1)
+						if(i == DETAIL_I && redrawMode == 1)
 						{
 							str += "</tr><tr>";
 						}
@@ -567,9 +569,13 @@ SubsystemLaunch.create = function() {
 								SubsystemLaunch.subsystems[s].name +
 								"&apos; Console counts and relatch first messages'" +								
 								"'>";
-						else if(i == 5 && redrawMode == 1) //other field <td>s 
+						else if(i == DETAIL_I && redrawMode == 1) //keep detail field small in compressed mode
+						{			
 							str += "<td colspan=3 id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + "'>";
+								"' class='subsystem_" + fieldIds[i] + " compressed_detail'" +
+								// " style='overflow:auto; width: 200px;' " +
+								">";
+						}
 						else //other field <td>s 
 							str += "<td id='subsystem_" + s + "_" + fieldIds[i] +
 								"' class='subsystem_" + fieldIds[i] + "'>";

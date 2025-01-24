@@ -206,6 +206,12 @@
 			text-align: left;
 			font-family: 'Inconsolata', monospace;
 		}
+
+		.compressed_detail {
+			overflow-x: clip;
+    		max-width: 1100px;
+		}
+
 		.subsystem_console {
 			font-family: 'Inconsolata', monospace;
 		}

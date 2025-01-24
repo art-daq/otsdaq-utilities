@@ -296,7 +296,7 @@
 				console.log("artdaqObj",artdaqObj);
 				
 				//get active configuration group
-				DesktopContent.XMLHttpRequest("Request?RequestType=loadArtdaqNodeLayout",
+				DesktopContent.XMLHttpRequest("Request?RequestType=getArtdaqNodeLayout",
 						"", //end post data, 
 						function(req) 
 						{
@@ -501,8 +501,8 @@
 					if(doneHandler) doneHandler();
 					
 					
-						} //end loadArtdaqNodeLayout handler
-				); //end loadArtdaqNodeLayout call
+						} //end getArtdaqNodeLayout handler
+				); //end getArtdaqNodeLayout call
 				
 					}, //end getArtdaqApps handler
 					_modifiedTables); //end getArtdaqApps call
