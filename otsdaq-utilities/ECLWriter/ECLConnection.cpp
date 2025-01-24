@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include "otsdaq/Macros/CoutMacros.h"
-#include "otsdaq/Macros/StringMacros.h" 
+#include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
 
 //==============================================================================
@@ -24,7 +24,7 @@ ECLConnection::ECLConnection(std::string user, std::string pwd, std::string url)
 	__COUTTV__(_safe_url);
 
 	srand(time(NULL));
-} //end ECLConnection()
+}  //end ECLConnection()
 
 //==============================================================================
 size_t ECLConnection::WriteMemoryCallback(char*        data,
@@ -41,24 +41,24 @@ size_t ECLConnection::WriteMemoryCallback(char*        data,
 	}
 
 	return realsize;
-} //end WriteMemoryCallback()
+}  //end WriteMemoryCallback()
 
 //==============================================================================
 //Note: make sure GET url parameter 's' is URI encoded
 bool ECLConnection::Get(std::string s, std::string& response)
-{	
+{
 	response = "NULL";
 
 	std::string rndString = MakeSaltString();
-	std::string mySalt  = "salt=" + rndString;
+	std::string mySalt    = "salt=" + rndString;
 	std::string fullURL;
-	bool needSignature = false;
-	if(s != "/secureURL") //add salt
+	bool        needSignature = false;
+	if(s != "/secureURL")  //add salt
 	{
 		needSignature = true;
 		//in case of dynamic server downtime, if safe_url is blank, get safe_url
 
-		if(time(0) - _lastOperationTime > 5*60 /* 5 minutes */)
+		if(time(0) - _lastOperationTime > 5 * 60 /* 5 minutes */)
 		{
 			__COUTT__ << "Clearing safe URL and re-requesting..." << __E__;
 			_safe_url = "";
@@ -67,49 +67,48 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__COUTTV__(_safe_url);
 		if(_safe_url == "" && !Get("/secureURL", _safe_url))
 		{
-			__SS__ << "Could not retrieve safe URL from input url '" << _url << "'" << __E__;
+			__SS__ << "Could not retrieve safe URL from input url '" << _url << "'"
+			       << __E__;
 			__SS_THROW__;
 		}
 		__COUTTV__(_safe_url);
-		
+
 		fullURL = _safe_url + s;
-		if(s.size() && s[s.size()-1] == '?')
-			; //do nothing
+		if(s.size() && s[s.size() - 1] == '?')
+			;  //do nothing
 		else if(fullURL.find('?') != std::string::npos)
 			fullURL += '&';
-		else 
+		else
 			fullURL += '?';
 		fullURL += mySalt;
 	}
-	else 
+	else
 		fullURL = _url + s;
 
 	__COUT__ << "ECL GET request to " << fullURL << std::endl;
-	__COUTVS__(20,needSignature);
-
+	__COUTVS__(20, needSignature);
 
 	std::string xSig;
 	if(needSignature)
 	{
-		std::string myData = fullURL.substr(fullURL.find('?')+1);	
-		__COUTTV__(myData);	
+		std::string myData = fullURL.substr(fullURL.find('?') + 1);
+		__COUTTV__(myData);
 		myData += ":" + _pwd + ":";
 		// myData is now the ECL Hash string -- DO NOT PRINT contains pw
 
 		unsigned char resultMD5[MD5_DIGEST_LENGTH];
 		MD5((unsigned char*)myData.c_str(), myData.size(), resultMD5);
 
-		char        buf[3];
+		char buf[3];
 		for(auto i = 0; i < MD5_DIGEST_LENGTH; i++)
 		{
 			sprintf(buf, "%02x", resultMD5[i]);
 			xSig.append(buf);
 		}
-		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL MD5 Signature is: " << xSig << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG + 20)
+		    << __COUT_HDR__ << "ECL MD5 Signature is: " << xSig << std::endl;
 	}
 
-
-	
 	char        errorBuffer[CURL_ERROR_SIZE];
 	std::string responseBuffer;
 	CURL*       curl_handle;
@@ -121,7 +120,6 @@ bool ECLConnection::Get(std::string s, std::string& response)
 
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
 
-
 	/* specify URL to get */
 
 	if(needSignature)
@@ -130,14 +128,14 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		std::string        buff    = "X-User: " + _user;
 		headers                    = curl_slist_append(headers, buff.c_str());
 		headers                    = curl_slist_append(headers, "Content-type: text/xml");
-		headers                    = curl_slist_append(headers, "X-Signature-Method: md5");
-		buff                       = "X-Signature: " + xSig;
-		headers                    = curl_slist_append(headers, buff.c_str());
+		headers = curl_slist_append(headers, "X-Signature-Method: md5");
+		buff    = "X-Signature: " + xSig;
+		headers = curl_slist_append(headers, buff.c_str());
 
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_URL, fullURL.c_str());
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // Allow redirects
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);  // Allow redirects
 
 	/* send all data to this function  */
 	curl_easy_setopt(
@@ -155,37 +153,37 @@ bool ECLConnection::Get(std::string s, std::string& response)
 
 	if(result != CURLE_OK)
 	{
-		_safe_url = ""; //clear on error
+		_safe_url = "";  //clear on error
 		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
 
-		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
+		__COUT_TYPE__(TLVL_DEBUG + 20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 		// cleanup curl stuff
 		curl_easy_cleanup(curl_handle);
 		// curl_slist_free_all(headers);
 		curl_global_cleanup();
 		__SS_THROW__;
 	}
-	
-	__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
+
+	__COUT_TYPE__(TLVL_DEBUG + 20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	// curl_slist_free_all(headers);
 	curl_global_cleanup();
-	
-	if(responseBuffer.find("Error") != std::string::npos || 
-		responseBuffer.find("301 Moved Permanently") != std::string::npos)
+
+	if(responseBuffer.find("Error") != std::string::npos ||
+	   responseBuffer.find("301 Moved Permanently") != std::string::npos)
 	{
-		_safe_url = ""; //clear on error
+		_safe_url = "";  //clear on error
 		__SS__ << "Error found in request: " << responseBuffer << __E__;
 		__SS_THROW__;
 	}
 
-	__COUTVS__(2,responseBuffer);
+	__COUTVS__(2, responseBuffer);
 	response = responseBuffer;
 
 	_lastOperationTime = time(0);
 	return true;
-} //end Get()
+}  //end Get()
 
 //==============================================================================
 bool ECLConnection::Search(std::string /*s*/) { return false; }
@@ -205,7 +203,7 @@ std::string ECLConnection::MakeSaltString()
 	}
 
 	return rndString;
-} //end MakeSaltString()
+}  //end MakeSaltString()
 
 //==============================================================================
 bool ECLConnection::Post(ECLEntry_t& e)
@@ -290,7 +288,7 @@ bool ECLConnection::Post(ECLEntry_t& e)
 	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, estr);
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, fullURL.c_str());
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // Allow redirects
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);  // Allow redirects
 	//      curl_easy_setopt(curl_handle, CURLOPT_VERBOSE,1);
 
 	// send all data to this function
@@ -307,7 +305,7 @@ bool ECLConnection::Post(ECLEntry_t& e)
 
 	if(result != CURLE_OK)
 	{
-		_safe_url = ""; //clear on error
+		_safe_url = "";  //clear on error
 		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
 
 		__COUTT__ << "ECL Cleanup" << std::endl;
@@ -317,17 +315,17 @@ bool ECLConnection::Post(ECLEntry_t& e)
 		curl_global_cleanup();
 		__SS_THROW__;
 	}
-	
+
 	__COUTT__ << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	curl_slist_free_all(headers);
 	curl_global_cleanup();
-	
-	if(responseBuffer.find("Error") != std::string::npos || 
-		responseBuffer.find("301 Moved Permanently") != std::string::npos)
+
+	if(responseBuffer.find("Error") != std::string::npos ||
+	   responseBuffer.find("301 Moved Permanently") != std::string::npos)
 	{
-		_safe_url = ""; //clear on error
+		_safe_url = "";  //clear on error
 		__SS__ << "Error found in request: " << responseBuffer << __E__;
 		__SS_THROW__;
 	}
@@ -335,7 +333,7 @@ bool ECLConnection::Post(ECLEntry_t& e)
 	__COUTTV__(responseBuffer);
 
 	return true;
-} //end Post()
+}  //end Post()
 
 //==============================================================================
 std::string ECLConnection::EscapeECLString(std::string input)
@@ -377,7 +375,7 @@ std::string ECLConnection::EscapeECLString(std::string input)
 	}
 
 	return output;
-} //end EscapeECLString()
+}  //end EscapeECLString()
 
 //==============================================================================
 Attachment_t ECLConnection::MakeAttachmentImage(std::string const& imageFileName)
@@ -404,7 +402,7 @@ Attachment_t ECLConnection::MakeAttachmentImage(std::string const& imageFileName
 		    ::xml_schema::base64_binary(&buffer[0], size), "image", fileNameShort);
 	}
 	return attachment;
-} //end MakeAttachmentImage()
+}  //end MakeAttachmentImage()
 
 //==============================================================================
 Attachment_t ECLConnection::MakeAttachmentFile(std::string const& fileName)
@@ -432,4 +430,4 @@ Attachment_t ECLConnection::MakeAttachmentFile(std::string const& fileName)
 		    ::xml_schema::base64_binary(&buffer[0], size), "file", fileNameShort);
 	}
 	return attachment;
-} //end MakeAttachmentFile()
+}  //end MakeAttachmentFile()

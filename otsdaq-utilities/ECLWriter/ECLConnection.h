@@ -21,9 +21,9 @@ class ECLConnection
 	~ECLConnection(){};
 
 	const std::string& getSafeURL(void) const { return _safe_url; }
-	bool Post(ECLEntry_t& e);
-	bool Get(std::string, std::string&);
-	bool Search(std::string);
+	bool               Post(ECLEntry_t& e);
+	bool               Get(std::string, std::string&);
+	bool               Search(std::string);
 
 	static std::string EscapeECLString(std::string input = "");
 
@@ -38,7 +38,7 @@ class ECLConnection
 	std::string _user;
 	std::string _pwd;
 	std::string _url, _safe_url;
-	time_t		_lastOperationTime = 0;
+	time_t      _lastOperationTime = 0;
 };
 
 #endif

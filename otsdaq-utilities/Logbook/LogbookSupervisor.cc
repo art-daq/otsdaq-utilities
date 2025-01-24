@@ -161,13 +161,13 @@ void LogbookSupervisor::init(void)
 	getActiveCategory();  // init active category
 	__COUT__ << "Active Category is " << activeCategory_ << std::endl;
 	mostRecentDayIndex_ = 0;
-} //end init()
+}  //end init()
 
 //==============================================================================
 void LogbookSupervisor::destroy(void)
 {
 	// called by destructor
-} //end destroy()
+}  //end destroy()
 
 //==============================================================================
 void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
@@ -177,7 +177,7 @@ void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
 	     << "&active_category=" << activeCategory_ << "'></frameset></html>";
-} //end defaultPage()
+}  //end defaultPage()
 
 //==============================================================================
 // setSupervisorPropertyDefaults
@@ -191,7 +191,7 @@ void LogbookSupervisor::setSupervisorPropertyDefaults()
 	        "*=1 | CreateCategory=-1 | RemoveCategory=-1 | GetCategoryListAdmin=-1 "
 	        "| SetActiveCategory=-1" +
 	        " | AdminRemoveRestoreEntry=-1");
-} //end setSupervisorPropertyDefaults()
+}  //end setSupervisorPropertyDefaults()
 
 //==============================================================================
 // forceSupervisorPropertyValues
@@ -204,9 +204,10 @@ void LogbookSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
-	CorePropertySupervisorBase::setSupervisorProperty(CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
-			"CreateCategory | RemoveCategory | PreviewEntry | AdminRemoveRestoreEntry");
-} //end forceSupervisorPropertyValues()
+	CorePropertySupervisorBase::setSupervisorProperty(
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
+	    "CreateCategory | RemoveCategory | PreviewEntry | AdminRemoveRestoreEntry");
+}  //end forceSupervisorPropertyValues()
 
 //==============================================================================
 //	request
@@ -304,8 +305,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// get creator name
 		std::string creator = userInfo.username_;
 
-		createCategory(
-		    CgiDataUtilities::postData(cgiIn, "Category"), creator, &xmlOut);
+		createCategory(CgiDataUtilities::postData(cgiIn, "Category"), creator, &xmlOut);
 
 		__COUT__ << "Created" << std::endl;
 	}
@@ -322,8 +322,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 
 		// get remover name
 		std::string remover = userInfo.username_;
-		removeCategory(
-		    CgiDataUtilities::postData(cgiIn, "Category"), remover, &xmlOut);
+		removeCategory(CgiDataUtilities::postData(cgiIn, "Category"), remover, &xmlOut);
 	}
 	else if(requestType == "GetCategoryList")
 	{
@@ -352,8 +351,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// permissions."); 			goto CLEANUP;
 		//		}
 
-		webUserSetActiveCategory(CgiDataUtilities::postData(cgiIn, "Category"),
-		                           &xmlOut);
+		webUserSetActiveCategory(CgiDataUtilities::postData(cgiIn, "Category"), &xmlOut);
 	}
 	else if(requestType == "RefreshLogbook")
 	{
@@ -361,10 +359,10 @@ void LogbookSupervisor::request(const std::string&               requestType,
 		// parameters
 
 		std::string Date     = CgiDataUtilities::postData(cgiIn, "Date");
-		uint32_t Duration 	 = CgiDataUtilities::postDataAsInt(cgiIn, "Duration");
+		uint32_t    Duration = CgiDataUtilities::postDataAsInt(cgiIn, "Duration");
 
-		time_t        date;
-		sscanf(Date.c_str(), "%li", &date);           // scan for unsigned long
+		time_t date;
+		sscanf(Date.c_str(), "%li", &date);  // scan for unsigned long
 
 		__COUT__ << "date " << date << " duration " << Duration << std::endl;
 		std::stringstream str;
@@ -422,7 +420,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
-} //end request()
+}  //end request()
 
 //==============================================================================
 //	request
@@ -449,8 +447,7 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 	}
 	else if(requestType == "LogReport")
 	{
-		std::string activeCategory =
-		    CgiDataUtilities::getData(cgiIn, "activeCategory");
+		std::string activeCategory = CgiDataUtilities::getData(cgiIn, "activeCategory");
 		__COUT__ << " Start Log Report for " << activeCategory << std::endl;
 
 		out << "<!DOCTYPE HTML><html lang='en'><header><title>ots Logbook "
@@ -461,7 +458,7 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
-} //end request()
+}  //end request()
 
 //==============================================================================
 // xoap::MakeSystemLogEntry
@@ -472,7 +469,7 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 	SOAPParameters parameters("EntryText");
 	parameters.addParameter("SubjectText");
 	SOAPUtilities::receive(msg, parameters);
-	std::string EntryText = parameters.getValue("EntryText");
+	std::string EntryText   = parameters.getValue("EntryText");
 	std::string SubjectText = parameters.getValue("SubjectText");
 
 	if(SubjectText == "")
@@ -549,7 +546,7 @@ XOAP_CLEANUP:
 	SOAPParameters retParameters("Status", retStr);
 	return SOAPUtilities::makeSOAPMessageReference("SystemLogEntryStatusResponse",
 	                                               retParameters);
-} //end MakeSystemLogEntry()
+}  //end MakeSystemLogEntry()
 
 //
 ////==============================================================================
@@ -615,7 +612,7 @@ std::string LogbookSupervisor::getActiveCategory()
 	}
 
 	return activeCategory_;
-} //end getActiveCategory()
+}  //end getActiveCategory()
 
 //==============================================================================
 // setActiveCategory
@@ -648,15 +645,14 @@ void LogbookSupervisor::setActiveCategory(std::string category)
 	if(entryNeeded)
 		theRemoteWebUsers_.makeSystemLogEntry(
 		    "Category was made active.");  // make system logbook entry
-} //end setActiveCategory()
+}  //end setActiveCategory()
 
 //==============================================================================
 // validateCategoryName
 //		remove all chars that are not alphanumeric, dashes, or underscores
 bool LogbookSupervisor::validateCategoryName(std::string& exp)
 {
-	if(exp.length() < CATEGORY_NAME_MIN_LENTH ||
-	   exp.length() > CATEGORY_NAME_MAX_LENTH)
+	if(exp.length() < CATEGORY_NAME_MIN_LENTH || exp.length() > CATEGORY_NAME_MAX_LENTH)
 		return false;
 	for(int i = 0; i < (int)exp.length(); ++i)
 		if(!((exp[i] >= 'a' && exp[i] <= 'z') || (exp[i] >= 'A' && exp[i] <= 'Z') ||
@@ -667,7 +663,7 @@ bool LogbookSupervisor::validateCategoryName(std::string& exp)
 		}  // remove illegal chars and rewind i
 
 	return true;
-} //end validateCategoryName()
+}  //end validateCategoryName()
 
 //==============================================================================
 // getCategories
@@ -700,13 +696,13 @@ void LogbookSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstrea
 		if(out)
 			*out << exps[i] << std::endl;
 	}
-} //end getCategories()
+}  //end getCategories()
 
 //==============================================================================
 // createCategory
 void LogbookSupervisor::createCategory(std::string      category,
-                                         std::string      creator,
-                                         HttpXmlDocument* xmlOut)
+                                       std::string      creator,
+                                       HttpXmlDocument* xmlOut)
 {
 	if(!validateCategoryName(category))
 	{
@@ -812,16 +808,16 @@ void LogbookSupervisor::createCategory(std::string      category,
 	}
 
 	if(xmlOut)
-		xmlOut->addTextElementToData(
-		    XML_ADMIN_STATUS, "Category, " + category + ", successfully created.");
-} //end createCategory()
+		xmlOut->addTextElementToData(XML_ADMIN_STATUS,
+		                             "Category, " + category + ", successfully created.");
+}  //end createCategory()
 
 //==============================================================================
 // webUserSetActiveCategory
 //		if category exists, set as active
 //		to clear active category set to ""
 void LogbookSupervisor::webUserSetActiveCategory(std::string      category,
-                                                   HttpXmlDocument* xmlOut)
+                                                 HttpXmlDocument* xmlOut)
 {
 	if(category == "")  // clear active category
 	{
@@ -860,17 +856,16 @@ void LogbookSupervisor::webUserSetActiveCategory(std::string      category,
 	setActiveCategory(category);
 	if(xmlOut)
 		xmlOut->addTextElementToData(
-		    XML_ADMIN_STATUS,
-		    "Active category set to " + category + " successfully.");
-} //end webUserSetActiveCategory()
+		    XML_ADMIN_STATUS, "Active category set to " + category + " successfully.");
+}  //end webUserSetActiveCategory()
 
 //==============================================================================
 // removeCategory
 //		remove category from listing only (do NOT remove logbook data directory)
 //		record remover in log file REMOVE_CATEGORY_LOG_PATH
 void LogbookSupervisor::removeCategory(std::string      category,
-                                         std::string      remover,
-                                         HttpXmlDocument* xmlOut)
+                                       std::string      remover,
+                                       HttpXmlDocument* xmlOut)
 {
 	__COUT__ << "category " << category << std::endl;
 
@@ -931,9 +926,9 @@ void LogbookSupervisor::removeCategory(std::string      category,
 		setActiveCategory();  // clear active category
 
 	if(xmlOut)
-		xmlOut->addTextElementToData(
-		    XML_ADMIN_STATUS, "Category, " + category + ", successfully removed.");
-} //end removeCategory()
+		xmlOut->addTextElementToData(XML_ADMIN_STATUS,
+		                             "Category, " + category + ", successfully removed.");
+}  //end removeCategory()
 
 //==============================================================================
 //	refreshLogbook
@@ -942,7 +937,7 @@ void LogbookSupervisor::removeCategory(std::string      category,
 //		e.g. date = today, and duration = 1 returns logbook for today from active
 // category 		The entries are returns from oldest to newest
 void LogbookSupervisor::refreshLogbook(time_t              date,
-                                       uint32_t		       duration,
+                                       uint32_t            duration,
                                        HttpXmlDocument*    xmlOut,
                                        std::ostringstream* out,
                                        std::string         category)
@@ -964,8 +959,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 	{
 		if(xmlOut)
 			xmlOut->addTextElementToData(
-			    XML_STATUS,
-			    "Error - Directory for category, " + category + ", missing.");
+			    XML_STATUS, "Error - Directory for category, " + category + ", missing.");
 		if(out)
 			*out << __COUT_HDR_FL__ << "Error - Directory missing" << std::endl;
 		return;
@@ -1077,7 +1071,7 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_MOST_RECENT_DAY,
 		                             dayIndexStr);  // send most recent day index
-} //end refreshLogbook()
+}  //end refreshLogbook()
 
 //==============================================================================
 //	cleanUpPreviews
@@ -1132,7 +1126,7 @@ void LogbookSupervisor::cleanUpPreviews()
 	}
 
 	closedir(dir);
-} //end cleanUpPreviews()
+}  //end cleanUpPreviews()
 
 //==============================================================================
 //	savePostPreview
@@ -1250,7 +1244,7 @@ void LogbookSupervisor::savePostPreview(std::string&                        subj
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_PREVIEW_INDEX,
 		                             "1");  // 1 indicates is a preview post
-} //end savePostPreview()
+}  //end savePostPreview()
 
 //==============================================================================
 //	movePreviewEntry
@@ -1344,7 +1338,7 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 	sysCmd = "rm -rf " + previewPath;
 	__COUT__ << sysCmd << std::endl << std::endl;
 	system(sysCmd.c_str());
-} //end movePreviewEntry()
+}  //end movePreviewEntry()
 
 //==============================================================================
 //	validateUploadFileType
@@ -1356,7 +1350,7 @@ std::string LogbookSupervisor::validateUploadFileType(const std::string fileType
 			return matchingFileUploadTypes_[i];  // found and done
 
 	return "";  // not valid, return ""
-} //end validateUploadFileType()
+}  //end validateUploadFileType()
 
 //==============================================================================
 //	escapeLogbookEntry
@@ -1365,7 +1359,7 @@ std::string LogbookSupervisor::validateUploadFileType(const std::string fileType
 void LogbookSupervisor::escapeLogbookEntry(std::string& /*entry*/)
 {
 	// NOTE: should already be taken care of by web gui javascript! do we care to check?
-} //end escapeLogbookEntry()
+}  //end escapeLogbookEntry()
 
 //==============================================================================
 //	hideLogbookEntry
@@ -1398,9 +1392,9 @@ void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
 	days /= 60 * 60 * 24;               // get days
 	sprintf(dayIndexStr, "%6.6lu", days);
 
-	std::string logDirPath =
-	    (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	    (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
+	std::string logDirPath = (std::string)LOGBOOK_PATH +
+	                         (std::string)LOGBOOK_LOGBOOKS_PATH +
+	                         (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
 	std::string logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ +
 	                      "_" + (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 
@@ -1465,4 +1459,4 @@ void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
 	}
 	logXml.saveXmlDocument(logPath);
 	__COUT__ << "Success." << std::endl;
-} //end hideLogbookEntry()
+}  //end hideLogbookEntry()

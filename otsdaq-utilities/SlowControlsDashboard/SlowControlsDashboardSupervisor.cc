@@ -12,18 +12,16 @@ using namespace ots;
 
 #define CONTROLS_SUPERVISOR_DATA_PATH \
 	std::string(__ENV__("SERVICE_DATA_PATH")) + "/ControlsDashboardData/"
-#define PAGES_DIRECTORY 				CONTROLS_SUPERVISOR_DATA_PATH + "pages/"
-#define PAGES_PUBLIC_DIRECTORY 			CONTROLS_SUPERVISOR_DATA_PATH + "pages/public/"
-#define PAGES_PRIVATE_DIRECTORY 		CONTROLS_SUPERVISOR_DATA_PATH + "pages/private/"
+#define PAGES_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/"
+#define PAGES_PUBLIC_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/public/"
+#define PAGES_PRIVATE_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/private/"
 
 XDAQ_INSTANTIATOR_IMPL(SlowControlsDashboardSupervisor)
 
 //==============================================================================
 SlowControlsDashboardSupervisor::SlowControlsDashboardSupervisor(
     xdaq::ApplicationStub* stub)
-    : CoreSupervisorBase(stub)
-	, alarms_()
-	, alarms_timestamp_()
+    : CoreSupervisorBase(stub), alarms_(), alarms_timestamp_()
 {
 	__SUP_COUT__ << "Constructor." << __E__;
 
@@ -36,10 +34,10 @@ SlowControlsDashboardSupervisor::SlowControlsDashboardSupervisor(
 	mkdir(((std::string)(PAGES_PRIVATE_DIRECTORY)).c_str(), 0755);
 
 	interface_              = NULL;
-    alarmNotifyRefreshRate_ = 60;  // seconds
+	alarmNotifyRefreshRate_ = 60;  // seconds
 
-	readOnly_        		= getSupervisorProperty("ReadOnly","1") == "1"?true:false;
-    __SUP_COUTV__(readOnly_);
+	readOnly_ = getSupervisorProperty("ReadOnly", "1") == "1" ? true : false;
+	__SUP_COUTV__(readOnly_);
 
 	init();
 
@@ -80,19 +78,22 @@ void SlowControlsDashboardSupervisor::init(void)
 	{
 		// failed to get plugin type through supervisor table link, so try app property
 		__SUP_COUT__ << "Pluging type was not definded through supervisor table, trying "
-		            "supervisor property..."
-		         << __E__;
+		                "supervisor property..."
+		             << __E__;
 		pluginType = CorePropertySupervisorBase::getSupervisorProperty(
 		    "ControlsInterfacePluginType");
 	}
 
 	try
-	{ 
-		alarmNotifyRefreshRate_ = node.getNode("AlarmCheckRefreshPeriod").getValue<int>(); 
+	{
+		alarmNotifyRefreshRate_ = node.getNode("AlarmCheckRefreshPeriod").getValue<int>();
 		__SUP_COUTV__(alarmNotifyRefreshRate_);
 	}
-	catch(...) {
-		__COUT_WARN__ << "Couldn't find `AlarmCheckRefreshPeriod`. Default alarmNotifyRefreshRate = " << alarmNotifyRefreshRate_ << " seconds." << __E__;
+	catch(...)
+	{
+		__COUT_WARN__ << "Couldn't find `AlarmCheckRefreshPeriod`. Default "
+		                 "alarmNotifyRefreshRate = "
+		              << alarmNotifyRefreshRate_ << " seconds." << __E__;
 	}
 
 	__COUTV__(pluginType);
@@ -116,7 +117,8 @@ void SlowControlsDashboardSupervisor::init(void)
 		__SS_THROW__;
 	}
 
-	interface_->setNewAlarmCallback(std::bind(&SlowControlsDashboardSupervisor::handleNewAlarms, this)); 
+	interface_->setNewAlarmCallback(
+	    std::bind(&SlowControlsDashboardSupervisor::handleNewAlarms, this));
 
 	//
 	// interface_->initialize();
@@ -149,30 +151,33 @@ void SlowControlsDashboardSupervisor::init(void)
 
 	// add interface plugin to state machine list
 	CoreSupervisorBase::theStateMachineImplementation_.push_back(interface_);
-} //end init()
+}  //end init()
 
 //==============================================================================
-void SlowControlsDashboardSupervisor::handleNewAlarms() 
+void SlowControlsDashboardSupervisor::handleNewAlarms()
 {
-	__COUT__ << "DEBUG handleNewAlarms" << __E__; 
-} //end handleNewAlarms()
+	__COUT__ << "DEBUG handleNewAlarms" << __E__;
+}  //end handleNewAlarms()
 
 //==============================================================================
 // Manage channel subscriptions to Interface
 void SlowControlsDashboardSupervisor::checkSlowControlsAlarms(
     SlowControlsDashboardSupervisor* cs)
 {
-	{ //create mutex scope
+	{  //create mutex scope
 		std::lock_guard<std::mutex> lock(cs->alarmCheckThreadErrorMutex_);
 		cs->alarmCheckThreadError_ = "";
 	}
 
 	while(true)
 	{
-		alarms_ = cs->interface_->checkAlarmNotifications(); // note: this calls is potential expensive since it probes the interface every time
+		alarms_ =
+		    cs->interface_
+		        ->checkAlarmNotifications();  // note: this calls is potential expensive since it probes the interface every time
 		alarms_timestamp_ = std::chrono::system_clock::now();
-		if(alarms_.size()) 
-			__COUT__ << "checkSlowControlsAlarms() found count = " << alarms_.size() << __E__;
+		if(alarms_.size())
+			__COUT__ << "checkSlowControlsAlarms() found count = " << alarms_.size()
+			         << __E__;
 
 		try
 		{
@@ -188,14 +193,10 @@ void SlowControlsDashboardSupervisor::checkSlowControlsAlarms(
 					                      " status: " + alarm[3] + "" +
 					                      " severity: " + alarm[4];
 
-					__COUTT__
-						<< "checkSlowControlsAlarms() subject '"	<< subject
-						<< "' message '"		<< message
-						<< "' alarm name '"		<< alarm[5]
-						<< "' notify to '"		<< alarm[8]
-						<< "' at '"				<< alarm[6]
-						<< "' send mail "		<< alarm[7]
-						<< __E__;
+					__COUTT__ << "checkSlowControlsAlarms() subject '" << subject
+					          << "' message '" << message << "' alarm name '" << alarm[5]
+					          << "' notify to '" << alarm[8] << "' at '" << alarm[6]
+					          << "' send mail " << alarm[7] << __E__;
 
 					// toList can be "*", or "Tracker:10", "Ryan, Antonio"
 					// theRemoteWebUsers_.sendSystemMessage(
@@ -223,19 +224,24 @@ void SlowControlsDashboardSupervisor::checkSlowControlsAlarms(
 		{
 			__SS__ << "checkSlowControlsAlarms() ERROR While sendin alarm messages"
 			       << __E__;
-			try	{ throw; } //one more try to printout extra info
-			catch(const std::exception &e)
+			try
+			{
+				throw;
+			}  //one more try to printout extra info
+			catch(const std::exception& e)
 			{
 				ss << "Exception message: " << e.what();
 			}
-			catch(...){}
+			catch(...)
+			{
+			}
 			std::lock_guard<std::mutex> lock(cs->alarmCheckThreadErrorMutex_);
 			cs->alarmCheckThreadError_ = ss.str();
 			__COUT_ERR__ << ss.str();
 		}
 
 		sleep(alarmNotifyRefreshRate_);
-	} //end primary loop
+	}  //end primary loop
 }  // end checkSlowControlsAlarms()
 
 //==============================================================================
@@ -318,7 +324,7 @@ void SlowControlsDashboardSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes, "*");
 
-} // end setSupervisorPropertyDefaults()
+}  // end setSupervisorPropertyDefaults()
 
 //==============================================================================
 // forceSupervisorPropertyValues
@@ -330,12 +336,12 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 
 	if(readOnly_)
 	{
-        CorePropertySupervisorBase::setSupervisorProperty(
-            CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
-            "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
+		CorePropertySupervisorBase::setSupervisorProperty(
+		    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
+		    "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
 			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");  // block users from writing if no write access
 	}
-} //end forceSupervisorPropertyValues()
+}  //end forceSupervisorPropertyValues()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::request(const std::string& requestType,
@@ -373,12 +379,17 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 	{
 		__SS__ << "Unknown error occurred handling request '" << requestType << "!'"
 		       << __E__;
-		try	{ throw; } //one more try to printout extra info
-		catch(const std::exception &e)
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
+		catch(const std::exception& e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT__ << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -500,14 +511,14 @@ void SlowControlsDashboardSupervisor::handleRequest(
 }  // end handleRequest()
 
 //==============================================================================
-void SlowControlsDashboardSupervisor::Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut) 
+void SlowControlsDashboardSupervisor::Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut)
 {
-	std::string channelList = CgiDataUtilities::postData(cgiIn, "pvList");
+	std::string           channelList = CgiDataUtilities::postData(cgiIn, "pvList");
 	std::set<std::string> channels;
 	StringMacros::getSetFromString(channelList, channels);
 
-    xmlOut.addTextElementToData("JSON", PollChannels_(channels));
-} //end Poll()
+	xmlOut.addTextElementToData("JSON", PollChannels_(channels));
+}  //end Poll()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::Poll(cgicc::Cgicc& /*cgiIn*/,
@@ -520,24 +531,28 @@ void SlowControlsDashboardSupervisor::Poll(cgicc::Cgicc& /*cgiIn*/,
 	std::map<int, std::set<std::string>>::iterator mapReference;
 
 	if(UID != "" && (mapReference = channelDependencyLookupMap_.find(std::stoi(UID))) !=
-	                    channelDependencyLookupMap_.end())  // We have their current list of Channel Dependencies
+	                    channelDependencyLookupMap_
+	                        .end())  // We have their current list of Channel Dependencies
 	{
 		uidPollTimeMap_.at(std::stoi(UID)) = std::time(NULL);
-		
-		xmlOut.addTextElementToData("JSON", PollChannels_(mapReference->second));  // add to response
+
+		xmlOut.addTextElementToData(
+		    "JSON", PollChannels_(mapReference->second));  // add to response
 	}
 	else  // UID is not in our map so force them to generate a new one
 	{
-		xmlOut.addTextElementToData("JSON", "{ \"message\": \"NOT_FOUND\"}");  // add to response
+		xmlOut.addTextElementToData("JSON",
+		                            "{ \"message\": \"NOT_FOUND\"}");  // add to response
 	}
-} //end Poll()
+}  //end Poll()
 
 //==============================================================================
-std::string  SlowControlsDashboardSupervisor::PollChannels_(std::set<std::string>& channels, bool resubscibe/*=true*/) 
+std::string SlowControlsDashboardSupervisor::PollChannels_(
+    std::set<std::string>& channels, bool resubscibe /*=true*/)
 {
-    std::string JSONMessage            = "{ ";
+	std::string JSONMessage = "{ ";
 
-	for(auto channel : channels) 
+	for(auto channel : channels)
 	{
 		// channel = channel.substr(0, channel.find(":"));
 
@@ -560,8 +575,7 @@ std::string  SlowControlsDashboardSupervisor::PollChannels_(std::set<std::string
 		}
 		else
 		{
-			__SUP_COUT__ << "No change in value since last poll: " << channel
-			             << __E__;
+			__SUP_COUT__ << "No change in value since last poll: " << channel << __E__;
 		}
 
 		// Handle Channels that disconnect, etc
@@ -576,7 +590,7 @@ std::string  SlowControlsDashboardSupervisor::PollChannels_(std::set<std::string
 	JSONMessage += "}";
 	__SUP_COUT__ << JSONMessage << __E__;
 	return JSONMessage;
-} //end PollChannels_()
+}  //end PollChannels_()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GetChannelSettings(cgicc::Cgicc&    cgiIn,
@@ -631,7 +645,7 @@ void SlowControlsDashboardSupervisor::GetChannelSettings(cgicc::Cgicc&    cgiIn,
 		xmlOut.addTextElementToData(
 		    "JSON", "{ \"message\": \"GetPVSettings\"}");  // add to response
 	}
-} //end GetChannelSettings()
+}  //end GetChannelSettings()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GetChannelArchiverData(cgicc::Cgicc&    cgiIn,
@@ -640,12 +654,12 @@ void SlowControlsDashboardSupervisor::GetChannelArchiverData(cgicc::Cgicc&    cg
 	__SUP_COUT__ << "Requesting archived data!" << __E__;
 
 	std::string channelList = CgiDataUtilities::postData(cgiIn, "pvList");
-	int startTime = stoi(CgiDataUtilities::postData(cgiIn, "startTime"));
-	int endTime = stoi(CgiDataUtilities::postData(cgiIn, "endTime"));
+	int         startTime   = stoi(CgiDataUtilities::postData(cgiIn, "startTime"));
+	int         endTime     = stoi(CgiDataUtilities::postData(cgiIn, "endTime"));
 
 	__SUP_COUT__ << this->getApplicationDescriptor()->getLocalId() << " "
-	             << "Getting History for " << channelList
-				 << " start time: " << startTime << " end time: " << endTime << __E__;
+	             << "Getting History for " << channelList << " start time: " << startTime
+	             << " end time: " << endTime << __E__;
 
 	__SUP_COUT__ << "channelList.size(): " << channelList.size() << __E__;
 	if(channelList.size() > 0 && startTime > 0 && endTime > 0)
@@ -755,30 +769,36 @@ void SlowControlsDashboardSupervisor::GetAlarmsCheck(HttpXmlDocument& xmlOut)
 	__SUP_COUT__ << "Requesting alarms check cache data!" << __E__;
 
 	std::string JSONMessage = "{ ";
-	JSONMessage += "\"last_check\":" + std::to_string(std::chrono::duration_cast<std::chrono::seconds>(alarms_timestamp_.time_since_epoch()).count()) + ",";
-	JSONMessage += "\"total\":" +std::to_string(alarms_.size()) + ",";
+	JSONMessage += "\"last_check\":" +
+	               std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+	                                  alarms_timestamp_.time_since_epoch())
+	                                  .count()) +
+	               ",";
+	JSONMessage += "\"total\":" + std::to_string(alarms_.size()) + ",";
 	JSONMessage += "\"alarms\": [";
-    unsigned int nactive = 0;
-	if(alarms_.size()) 
+	unsigned int nactive = 0;
+	if(alarms_.size())
 	{
-		for(auto& alarmRow : alarms_) 
+		for(auto& alarmRow : alarms_)
 		{
-			JSONMessage +=  "{ ";
+			JSONMessage += "{ ";
 			JSONMessage += "\"name\":\"" + alarmRow[0] + "\",";
-			if(alarmRow.size() > 9 ) 
-			{ // alarm present
+			if(alarmRow.size() > 9)
+			{  // alarm present
 				++nactive;
 				JSONMessage += "\"time\":\"" + alarmRow[1] + "\",";
 				JSONMessage += "\"value\":\"" + alarmRow[2] + "\",";
 				JSONMessage += "\"status\":\"" + alarmRow[3] + "\",";
 				JSONMessage += "\"severity\":\"" + alarmRow[4] + "\",";
 			}
-			JSONMessage = JSONMessage.substr(0, JSONMessage.length() - 1); // get rid of last ,
+			JSONMessage =
+			    JSONMessage.substr(0, JSONMessage.length() - 1);  // get rid of last ,
 			JSONMessage += "},";
-		} //end alarm loop
-		JSONMessage = JSONMessage.substr(0, JSONMessage.length() - 1); // get rid of last ,
+		}  //end alarm loop
+		JSONMessage =
+		    JSONMessage.substr(0, JSONMessage.length() - 1);  // get rid of last ,
 	}
-	JSONMessage += "], \"nactive\": " +std::to_string(nactive);
+	JSONMessage += "], \"nactive\": " + std::to_string(nactive);
 	JSONMessage += "}";
 	xmlOut.addTextElementToData("JSON", JSONMessage);  // add to response
 }  // end GetAlarmsCheck()
@@ -895,7 +915,7 @@ void SlowControlsDashboardSupervisor::GetList(cgicc::Cgicc& /*cgiIn*/,
 			__SUP_SS__ << "Channel list request failed: " << e.what() << __E__;
 			__SUP_SS_THROW__;
 		}
-		
+
 		__SUP_COUT__ << " " << list << __E__;
 
 		xmlOut.addTextElementToData("JSON", list);  // add to response
@@ -1318,7 +1338,8 @@ void SlowControlsDashboardSupervisor::listFiles(std::string               innerD
 				else
 				{
 					pages->push_back(innerDir + dirp->d_name);
-					__SUP_COUT__ << "[FILE]\t" << baseDir << innerDir << dirp->d_name << __E__;
+					__SUP_COUT__ << "[FILE]\t" << baseDir << innerDir << dirp->d_name
+					             << __E__;
 				}
 			}
 		}

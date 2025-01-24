@@ -1,10 +1,7 @@
 
 #include "test/ots_mm_udp_interface.h"
 
-
-#define  MAXBUFLEN 5000
-
-
+#define MAXBUFLEN 5000
 
 //==============================================================================
 // get sockaddr, IPv4 or IPv6:
@@ -19,7 +16,7 @@ void* get_in_addr(struct sockaddr* sa)
 }
 
 //==============================================================================
-int makeSocket(const char* ip, int port, struct sockaddr_in &mm_ai_addr)
+int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 {
 	int             sockfd;
 	struct addrinfo hints, *servinfo, *p;
@@ -62,7 +59,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in &mm_ai_addr)
 
 	freeaddrinfo(servinfo);
 	return sockfd;
-} //end makeSocket()
+}  //end makeSocket()
 
 //==============================================================================
 // receive ~~
@@ -71,11 +68,14 @@ fd_set             fileDescriptor_;
 struct timeval     timeout_;
 struct sockaddr_in fromAddress_;
 socklen_t          addressLength_ = sizeof(fromAddress_);
-int receive(int sockfd,
-    std::string& buffer,  
-	unsigned int timeoutSeconds, unsigned int timeoutUSeconds, bool verbose)
+int                receive(int          sockfd,
+                           std::string& buffer,
+                           unsigned int timeoutSeconds,
+                           unsigned int timeoutUSeconds,
+                           bool         verbose)
 {
-	unsigned long fromIPAddress; unsigned short fromPort;
+	unsigned long  fromIPAddress;
+	unsigned short fromPort;
 
 	// set timeout period for select()
 	timeout_.tv_sec  = timeoutSeconds;
@@ -89,11 +89,14 @@ int receive(int sockfd,
 	if(FD_ISSET(sockfd, &fileDescriptor_))
 	{
 		buffer.resize(MAXBUFLEN);  // NOTE: this is inexpensive according to
-		                                // Lorenzo/documentation in C++11 (only increases
-		                                // size once and doesn't decrease size)
-		if((numberOfBytes = recvfrom(sockfd, &buffer[0], 
-			MAXBUFLEN, 0, 
-			(struct sockaddr*)&fromAddress_, &addressLength_)) == -1)
+		                           // Lorenzo/documentation in C++11 (only increases
+		                           // size once and doesn't decrease size)
+		if((numberOfBytes = recvfrom(sockfd,
+		                             &buffer[0],
+		                             MAXBUFLEN,
+		                             0,
+		                             (struct sockaddr*)&fromAddress_,
+		                             &addressLength_)) == -1)
 		{
 			__SS__ << "Error reading buffer from\tIP:\t";
 			std::string fromIP = inet_ntoa(fromAddress_.sin_addr);
@@ -131,8 +134,8 @@ int receive(int sockfd,
 		{
 			std::string fromIP = inet_ntoa(fromAddress_.sin_addr);
 
-			__COUT__ << "Receiving from: " << fromIP 
-					 << ":" << ntohs(fromPort) << " size: " << buffer.size() << std::endl;
+			__COUT__ << "Receiving from: " << fromIP << ":" << ntohs(fromPort)
+			         << " size: " << buffer.size() << std::endl;
 
 			//			std::stringstream ss;
 			//			ss << "\tRx";
@@ -151,79 +154,80 @@ int receive(int sockfd,
 	else
 	{
 		if(verbose)
-			__COUT__ << "No new messages for " << timeoutSeconds + timeoutUSeconds / 1000000. 
-					 << "s. Read request timed out." << std::endl;
+			__COUT__ << "No new messages for "
+			         << timeoutSeconds + timeoutUSeconds / 1000000.
+			         << "s. Read request timed out." << std::endl;
 		return -1;
 	}
 
 	return 0;
-} //end receive()
+}  //end receive()
 
 //==============================================================================
-ots_mm_udp_interface::ots_mm_udp_interface(const char* mm_ip, int mm_port)
-: mm_sock_(-1) 
+ots_mm_udp_interface::ots_mm_udp_interface(const char* mm_ip, int mm_port) : mm_sock_(-1)
 // , mm_p_(nullptr)
 // , mm_servinfo_(nullptr)
 {
-    __COUT__ << "Constructor" << __E__;
+	__COUT__ << "Constructor" << __E__;
 
-	mm_sock_ = makeSocket(mm_ip, mm_port, mm_ai_addr);// mm_p_);
-} //end constructor()
-
+	mm_sock_ = makeSocket(mm_ip, mm_port, mm_ai_addr);  // mm_p_);
+}  //end constructor()
 
 //==============================================================================
 ots_mm_udp_interface::~ots_mm_udp_interface()
 {
-    __COUT__ << "Destructor" << __E__;
+	__COUT__ << "Destructor" << __E__;
 
 	if(mm_sock_ != -1)
 		close(mm_sock_);
 
 	// if(mm_servinfo_)
 	// 	freeaddrinfo(mm_servinfo_);
-} //end destructor()
+}  //end destructor()
 
 //=========================================================================
 //extract value for field from xml looking forwards from after
 // occurence = 0 is first occurence
-std::string extractXmlField(const std::string &xml,
-												const std::string &field,
-												uint32_t occurrence, size_t after,
-												size_t *returnAfter)
+std::string extractXmlField(const std::string& xml,
+                            const std::string& field,
+                            uint32_t           occurrence,
+                            size_t             after,
+                            size_t*            returnAfter)
 {
 	size_t lo = after, hi;
-	for (uint32_t i = 0; i <= occurrence; ++i)
-		if ((lo = xml.find("<" + field + " ", lo)) == std::string::npos)
+	for(uint32_t i = 0; i <= occurrence; ++i)
+		if((lo = xml.find("<" + field + " ", lo)) == std::string::npos)
 			return "";
-	if ((hi = xml.find("'/>", lo)) == std::string::npos)
+	if((hi = xml.find("'/>", lo)) == std::string::npos)
 		return "";
 
 	lo = xml.find("value='", lo) + 7;
 
-	if (returnAfter)
+	if(returnAfter)
 		*returnAfter = hi + 3;
 
 	return xml.substr(lo, hi - lo);
-} //end extractXmlField()
+}  //end extractXmlField()
 
 //=========================================================================
 //extract value for field from xml looking backwards from before
 // occurence = 0 is first occurence
-std::string rextractXmlField(const std::string &xml,
-												 const std::string &field,
-												 uint32_t occurrence, size_t before)
+std::string rextractXmlField(const std::string& xml,
+                             const std::string& field,
+                             uint32_t           occurrence,
+                             size_t             before)
 {
 	size_t lo = 0, hi = before;
-	for (uint32_t i = 0; i <= occurrence; ++i)
-		if ((lo = xml.rfind("<" + field + " ", hi)) == std::string::npos)
+	for(uint32_t i = 0; i <= occurrence; ++i)
+		if((lo = xml.rfind("<" + field + " ", hi)) == std::string::npos)
 			return "";
-	if ((hi = xml.rfind("'/>", hi)) == std::string::npos)
+	if((hi = xml.rfind("'/>", hi)) == std::string::npos)
 		return "";
 
 	lo = xml.find("value='", lo) + 7;
 
 	return xml.substr(lo, hi - lo);
-} //end rextractXmlField()
+}  //end rextractXmlField()
 
 //==============================================================================
 // getVectorFromString
@@ -237,12 +241,12 @@ std::string rextractXmlField(const std::string &xml,
 //	Note: the size() of delimiters will be one less than the size() of the returned values
 //		unless there is a leading delimiter, in which case vectors will have the same
 // size.
-void getVectorFromString(	const std::string&        inputString,
-							std::vector<std::string>& listToReturn,
-							const std::set<char>&     delimiter,
-							const std::set<char>&     whitespace,
-							std::vector<char>*        listOfDelimiters,
-							bool                      decodeURIComponents)
+void getVectorFromString(const std::string&        inputString,
+                         std::vector<std::string>& listToReturn,
+                         const std::set<char>&     delimiter,
+                         const std::set<char>&     whitespace,
+                         std::vector<char>*        listOfDelimiters,
+                         bool                      decodeURIComponents)
 {
 	unsigned int             i = 0;
 	unsigned int             j = 0;
@@ -267,7 +271,8 @@ void getVectorFromString(	const std::string&        inputString,
 		//__COUT__ << (char)inputString[c] << " " << isDelimiter <<
 		//__E__;//char)lastDelimiter << __E__;
 
-		if(whitespace.find(inputString[c]) != whitespace.end()  // ignore leading white space
+		if(whitespace.find(inputString[c]) !=
+		       whitespace.end()  // ignore leading white space
 		   && i == j)
 		{
 			++i;
@@ -275,7 +280,8 @@ void getVectorFromString(	const std::string&        inputString,
 			// if(isDelimiter)
 			//	foundLeadingDelimiter = true;
 		}
-		else if(whitespace.find(inputString[c]) != whitespace.end() && i != j)  // trailing white space, assume possible end of element
+		else if(whitespace.find(inputString[c]) != whitespace.end() &&
+		        i != j)  // trailing white space, assume possible end of element
 		{
 			// do not change j or i
 		}
@@ -294,7 +300,10 @@ void getVectorFromString(	const std::string&        inputString,
 				listOfDelimiters->push_back(lastDelimiter);
 			}
 
-			listToReturn.push_back(decodeURIComponents ? ots_mm_udp_interface::decodeURIComponent(inputString.substr(i, j - i)) : inputString.substr(i, j - i));
+			listToReturn.push_back(decodeURIComponents
+			                           ? ots_mm_udp_interface::decodeURIComponent(
+			                                 inputString.substr(i, j - i))
+			                           : inputString.substr(i, j - i));
 
 			// setup i and j for next find
 			i = c + 1;
@@ -321,16 +330,22 @@ void getVectorFromString(	const std::string&        inputString,
 			//__COUTV__(lastDelimiter);
 			listOfDelimiters->push_back(lastDelimiter);
 		}
-		listToReturn.push_back(decodeURIComponents ? ots_mm_udp_interface::decodeURIComponent(inputString.substr(i, j - i)) : inputString.substr(i, j - i));
+		listToReturn.push_back(
+		    decodeURIComponents
+		        ? ots_mm_udp_interface::decodeURIComponent(inputString.substr(i, j - i))
+		        : inputString.substr(i, j - i));
 	}
 
 	// assert that there is one less delimiter than values
-	if(listOfDelimiters && listToReturn.size() - 1 != listOfDelimiters->size() && listToReturn.size() != listOfDelimiters->size())
+	if(listOfDelimiters && listToReturn.size() - 1 != listOfDelimiters->size() &&
+	   listToReturn.size() != listOfDelimiters->size())
 	{
-		__SS__ << "There is a mismatch in delimiters to entries (should be equal or one "
-		          "less delimiter): "
-		       << listOfDelimiters->size() << " vs " << listToReturn.size() << __E__;// << "Entries: " << StringMacros::vectorToString(listToReturn) << __E__
-		       //<< "Delimiters: " << StringMacros::vectorToString(*listOfDelimiters) << __E__;
+		__SS__
+		    << "There is a mismatch in delimiters to entries (should be equal or one "
+		       "less delimiter): "
+		    << listOfDelimiters->size() << " vs " << listToReturn.size()
+		    << __E__;  // << "Entries: " << StringMacros::vectorToString(listToReturn) << __E__
+		//<< "Delimiters: " << StringMacros::vectorToString(*listOfDelimiters) << __E__;
 		__SS_THROW__;
 	}
 
@@ -349,20 +364,25 @@ void getVectorFromString(	const std::string&        inputString,
 //		unless there is a leading delimiter, in which case vectors will have the same
 // size.
 std::vector<std::string> getVectorFromString(const std::string&    inputString,
-											const std::set<char>& delimiter,
-											const std::set<char>& whitespace,
-											std::vector<char>*    listOfDelimiters,
-											bool                  decodeURIComponents)
+                                             const std::set<char>& delimiter,
+                                             const std::set<char>& whitespace,
+                                             std::vector<char>*    listOfDelimiters,
+                                             bool                  decodeURIComponents)
 {
 	std::vector<std::string> listToReturn;
 
-	getVectorFromString(inputString, listToReturn, delimiter, whitespace, 
-		listOfDelimiters, decodeURIComponents);
+	getVectorFromString(inputString,
+	                    listToReturn,
+	                    delimiter,
+	                    whitespace,
+	                    listOfDelimiters,
+	                    decodeURIComponents);
 	return listToReturn;
 }  // end getVectorFromString()
 
 //==============================================================================
-std::string vectorToString(const std::vector<std::string>& setToReturn, const std::string& delimeter /*= ", "*/)
+std::string vectorToString(const std::vector<std::string>& setToReturn,
+                           const std::string&              delimeter /*= ", "*/)
 {
 	std::stringstream ss;
 	bool              first = true;
@@ -428,16 +448,17 @@ std::string ots_mm_udp_interface::encodeURIComponent(const std::string& sourceSt
 //==============================================================================
 std::string ots_mm_udp_interface::decodeHTMLEntities(const std::string& sourceStr)
 {
-	std::string retStr = sourceStr;
-	std::vector<std::string> htmlSubstrings({"&lt;","&gt;","&amp;","&quot;","&apos;","&#160;","&#013;"});
-	std::vector<std::string> htmlReplaces({"<",">","&","\"","'"," ","\n"});
-	for(size_t i=0; i < htmlSubstrings.size(); ++i)
+	std::string              retStr = sourceStr;
+	std::vector<std::string> htmlSubstrings(
+	    {"&lt;", "&gt;", "&amp;", "&quot;", "&apos;", "&#160;", "&#013;"});
+	std::vector<std::string> htmlReplaces({"<", ">", "&", "\"", "'", " ", "\n"});
+	for(size_t i = 0; i < htmlSubstrings.size(); ++i)
 	{
 		size_t index = 0;
 		while((index = retStr.find(htmlSubstrings[i], index)) != std::string::npos)
 		{
 			retStr.replace(index, htmlSubstrings[i].size(), htmlReplaces[i]);
-			index += htmlReplaces[i].size(); //advance search location
+			index += htmlReplaces[i].size();  //advance search location
 		}
 	}
 	return retStr;
@@ -447,27 +468,34 @@ std::string ots_mm_udp_interface::decodeHTMLEntities(const std::string& sourceSt
 //returns CSV list of Front-end interface UIDs
 const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 {
-    __COUT__ << "getFrontendMacroInfo()" << __E__;
-	if(fullXML_.size()) return fullXML_;
+	__COUT__ << "getFrontendMacroInfo()" << __E__;
+	if(fullXML_.size())
+		return fullXML_;
 
 	int numbytes;
 
 	std::string sendMessage = "GetFrontendMacroInfo";
 
-	if((numbytes = sendto(mm_sock_, &(sendMessage.c_str()[0]), 
-			sendMessage.size(), 0, (struct sockaddr*)&mm_ai_addr, sizeof(mm_ai_addr))) 
-			== -1)
+	if((numbytes = sendto(mm_sock_,
+	                      &(sendMessage.c_str()[0]),
+	                      sendMessage.size(),
+	                      0,
+	                      (struct sockaddr*)&mm_ai_addr,
+	                      sizeof(mm_ai_addr))) == -1)
 	{
 		__SS__ << "Error on getFrontendMacroInfo() sendto!" << __E__;
 		__SS_THROW__;
 	}
 
-    // __COUTV__(numbytes);
+	// __COUTV__(numbytes);
 
 	// read response ///////////////////////////////////////////////////////////
-	fullXML_ = ""; //clear just in case
-	while(receive(mm_sock_, buffer_, 
-		0 /*timeoutSeconds*/, 200000 /*timeoutUSeconds*/, true /*verbose*/) == 0)
+	fullXML_ = "";  //clear just in case
+	while(receive(mm_sock_,
+	              buffer_,
+	              0 /*timeoutSeconds*/,
+	              200000 /*timeoutUSeconds*/,
+	              true /*verbose*/) == 0)
 	{
 		// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
 		fullXML_ += buffer_;
@@ -475,7 +503,9 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 
 	if(fullXML_.size() == 0)
 	{
-		__SS__ << "FE Macro Info receive failed! Check that a MacroMaker Supervisor is running with UDP Remote Control enabled." << __E__;
+		__SS__ << "FE Macro Info receive failed! Check that a MacroMaker Supervisor is "
+		          "running with UDP Remote Control enabled."
+		       << __E__;
 		__SS_THROW__;
 	}
 
@@ -489,15 +519,15 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 	//	do not use :-separator because of the : in user permissions strings
 
 	return fullXML_;
-} //end getFrontendMacroInfo()
+}  //end getFrontendMacroInfo()
 
 //==============================================================================
 //returns CSV list of Front-end interface UIDs
 std::string ots_mm_udp_interface::getFrontendList()
 {
-    __COUT__ << "getFrontendList()" << __E__;
-	getFrontendMacroInfo(); //init fullXML_
-	
+	__COUT__ << "getFrontendList()" << __E__;
+	getFrontendMacroInfo();  //init fullXML_
+
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
 	//		;<macro name>;<macro permissions req>;<macro tooltip>;<macro num of inputs>;...<input names ;
@@ -506,38 +536,40 @@ std::string ots_mm_udp_interface::getFrontendList()
 	//	do not use :-separator because of the : in user permissions strings
 
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
-	{		
+	{
 		__COUTV__(fullXML_.size());
 		__COUTV__(after);
 		// __COUTV__(value);
 
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
-	
+
 		// __COUTV__(vectorToString(fields));
-		if(fields.size() < 6) continue;
-		
+		if(fields.size() < 6)
+			continue;
+
 		//0 = supervisor name
 		//1 = supervisor lid
 		//2 = type
 		//3 = FE UID
 
-		if(retStr.size()) retStr += ';';
-		retStr += fields[3]; //append FE UID
-		// __COUTV__(retStr);
-	} //end primary loop
-	
+		if(retStr.size())
+			retStr += ';';
+		retStr += fields[3];  //append FE UID
+		                      // __COUTV__(retStr);
+	}                         //end primary loop
+
 	return retStr;
-} //end getFrontendList()
+}  //end getFrontendList()
 
 //==============================================================================
 std::string ots_mm_udp_interface::getCommandList(const std::string& targetFE)
 {
-    __COUT__ << "getCommandList()" << __E__;
-   	getFrontendMacroInfo(); //init fullXML_
+	__COUT__ << "getCommandList()" << __E__;
+	getFrontendMacroInfo();  //init fullXML_
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -546,9 +578,8 @@ std::string ots_mm_udp_interface::getCommandList(const std::string& targetFE)
 	//		;<macro num of outputs>;...<output names ; separated>...
 	//	do not use :-separator because of the : in user permissions strings
 
-
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
 	{
@@ -556,9 +587,10 @@ std::string ots_mm_udp_interface::getCommandList(const std::string& targetFE)
 		// __COUTV__(value);
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
 
-		if(fields.size() < 6) continue;
+		if(fields.size() < 6)
+			continue;
 
-		uint32_t i = 4; //start at first Macro Name, then...
+		uint32_t i = 4;  //start at first Macro Name, then...
 		//i+0 = Macro Name
 		//i+1 = Macro Permissions
 		//i+2 = Macro Tooltip
@@ -566,47 +598,49 @@ std::string ots_mm_udp_interface::getCommandList(const std::string& targetFE)
 		//i+4+N = number of outputs M
 		//i+4+N+M = Macro Name...
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			// __COUTV__(vectorToString(fields));
 
 			//scan through all Macro Names
-			
-			while(fields.size() > i+5) //need type, uid, input count, output count (at least)
-			{			
-				if(retStr.size()) retStr += ';';
-				retStr += fields[i+0]; //append FE Macro Name
+
+			while(fields.size() >
+			      i + 5)  //need type, uid, input count, output count (at least)
+			{
+				if(retStr.size())
+					retStr += ';';
+				retStr += fields[i + 0];  //append FE Macro Name
 
 				// __COUTV__(fields[i+0]);
 				// __COUTV__(fields[i+3]);
 
-				//now navigate to next FE UID, by jumping input and output counts			
-				i += 3 + 1 + atoi(fields[i+3].c_str());
-				
+				//now navigate to next FE UID, by jumping input and output counts
+				i += 3 + 1 + atoi(fields[i + 3].c_str());
+
 				if(fields.size() < i)
 				{
-					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size() << __E__;
+					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size()
+					       << __E__;
 					__SS_THROW__;
 				}
 				// __COUTV__(fields[i]);
 				i += 1 + atoi(fields[i].c_str());
-			} //primary FE UID search with fields from one FE Supervisor
-			
+			}  //primary FE UID search with fields from one FE Supervisor
 
-			break; //found targetFE, so end search
-		} 
+			break;  //found targetFE, so end search
+		}
 
+	}  //end FE search loop
 
-	} //end FE search loop
-	
 	return retStr;
-} //end getCommandList()
+}  //end getCommandList()
 
 //==============================================================================
-int ots_mm_udp_interface::getCommandInputCount(const std::string& targetFE, const std::string& command)
+int ots_mm_udp_interface::getCommandInputCount(const std::string& targetFE,
+                                               const std::string& command)
 {
 	__COUT__ << "getCommandInputCount()" << __E__;
-   	getFrontendMacroInfo(); //init fullXML_
+	getFrontendMacroInfo();  //init fullXML_
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -615,9 +649,8 @@ int ots_mm_udp_interface::getCommandInputCount(const std::string& targetFE, cons
 	//		;<macro num of outputs>;...<output names ; separated>...
 	//	do not use :-separator because of the : in user permissions strings
 
-
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
 	{
@@ -625,9 +658,10 @@ int ots_mm_udp_interface::getCommandInputCount(const std::string& targetFE, cons
 		// __COUTV__(value);
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
 
-		if(fields.size() < 6) continue;
+		if(fields.size() < 6)
+			continue;
 
-		uint32_t i = 4; //start at first Macro Name, then...
+		uint32_t i = 4;  //start at first Macro Name, then...
 		//i+0 = Macro Name
 		//i+1 = Macro Permissions
 		//i+2 = Macro Tooltip
@@ -635,48 +669,49 @@ int ots_mm_udp_interface::getCommandInputCount(const std::string& targetFE, cons
 		//i+4+N = number of outputs M
 		//i+4+N+M = Macro Name...
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			// __COUTV__(vectorToString(fields));
 
 			//scan through all Macro Names
-			
-			while(fields.size() > i+5) //need type, uid, input count, output count (at least)
-			{			
-				
-				if(fields[i+0] == command) //if found uid/command pair, return
+
+			while(fields.size() >
+			      i + 5)  //need type, uid, input count, output count (at least)
+			{
+				if(fields[i + 0] == command)  //if found uid/command pair, return
 				{
-					return atoi(fields[i+3].c_str()); //return input count
+					return atoi(fields[i + 3].c_str());  //return input count
 				}
 				//else keep looking for macro name
 
-				//now navigate to next FE UID, by jumping input and output counts			
-				i += 3 + 1 + atoi(fields[i+3].c_str());
-				
+				//now navigate to next FE UID, by jumping input and output counts
+				i += 3 + 1 + atoi(fields[i + 3].c_str());
+
 				if(fields.size() < i)
 				{
-					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size() << __E__;
+					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size()
+					       << __E__;
 					__SS_THROW__;
 				}
 				// __COUTV__(fields[i]);
 				i += 1 + atoi(fields[i].c_str());
-			} //primary FE UID search with fields from one FE Supervisor
-			
+			}  //primary FE UID search with fields from one FE Supervisor
 
-			break; //found targetFE, so end search
-		} 
-	} //end FE search loop
+			break;  //found targetFE, so end search
+		}
+	}  //end FE search loop
 
-	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command << 
-		"' in FE Macro Info! Check UID and Macro name." << __E__;
+	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command
+	       << "' in FE Macro Info! Check UID and Macro name." << __E__;
 	__SS_THROW__;
-} //end getCommandInputCount()
+}  //end getCommandInputCount()
 
 //==============================================================================
-int ots_mm_udp_interface::getCommandOutputCount(const std::string& targetFE, const std::string& command)
+int ots_mm_udp_interface::getCommandOutputCount(const std::string& targetFE,
+                                                const std::string& command)
 {
 	__COUT__ << "getCommandOutputCount()" << __E__;
-   	getFrontendMacroInfo(); //init fullXML_
+	getFrontendMacroInfo();  //init fullXML_
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -685,9 +720,8 @@ int ots_mm_udp_interface::getCommandOutputCount(const std::string& targetFE, con
 	//		;<macro num of outputs>;...<output names ; separated>...
 	//	do not use :-separator because of the : in user permissions strings
 
-
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
 	{
@@ -695,9 +729,10 @@ int ots_mm_udp_interface::getCommandOutputCount(const std::string& targetFE, con
 		// __COUTV__(value);
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
 
-		if(fields.size() < 6) continue;
+		if(fields.size() < 6)
+			continue;
 
-		uint32_t i = 4; //start at first Macro Name, then...
+		uint32_t i = 4;  //start at first Macro Name, then...
 		//i+0 = Macro Name
 		//i+1 = Macro Permissions
 		//i+2 = Macro Tooltip
@@ -705,54 +740,57 @@ int ots_mm_udp_interface::getCommandOutputCount(const std::string& targetFE, con
 		//i+4+N = number of outputs M
 		//i+4+N+M = Macro Name...
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			// __COUTV__(vectorToString(fields));
 
 			//scan through all Macro Names
-			
-			while(fields.size() > i+5) //need type, uid, input count, output count (at least)
-			{			
+
+			while(fields.size() >
+			      i + 5)  //need type, uid, input count, output count (at least)
+			{
 				bool found = false;
-				if(fields[i+0] == command) //if found uid/command pair, return
+				if(fields[i + 0] == command)  //if found uid/command pair, return
 				{
 					found = true;
 				}
 				//else keep looking for macro name
 
-				//now navigate to next FE UID, by jumping input and output counts			
-				i += 3 + 1 + atoi(fields[i+3].c_str());
-				
+				//now navigate to next FE UID, by jumping input and output counts
+				i += 3 + 1 + atoi(fields[i + 3].c_str());
+
 				if(fields.size() < i)
 				{
-					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size() << __E__;
+					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size()
+					       << __E__;
 					__SS_THROW__;
 				}
 				// __COUTV__(fields[i]);
 
 				if(found)
 				{
-					return atoi(fields[i].c_str()); //return output count
+					return atoi(fields[i].c_str());  //return output count
 				}
 				//else keep looking for macro name
 				i += 1 + atoi(fields[i].c_str());
-			} //primary FE UID search with fields from one FE Supervisor
-			
+			}  //primary FE UID search with fields from one FE Supervisor
 
-			break; //found targetFE, so end search
-		} 
-	} //end FE search loop
+			break;  //found targetFE, so end search
+		}
+	}  //end FE search loop
 
-	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command << 
-		"' in FE Macro Info! Check UID and Macro name." << __E__;
+	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command
+	       << "' in FE Macro Info! Check UID and Macro name." << __E__;
 	__SS_THROW__;
-} //end getCommandOutputCount()
+}  //end getCommandOutputCount()
 
 //==============================================================================
-std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetFE, const std::string& command, int inputIndex)
+std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetFE,
+                                                      const std::string& command,
+                                                      int                inputIndex)
 {
 	// __COUT__ << "getCommandInputName()" << __E__;
-   	getFrontendMacroInfo(); //init fullXML_
+	getFrontendMacroInfo();  //init fullXML_
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -761,9 +799,8 @@ std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetF
 	//		;<macro num of outputs>;...<output names ; separated>...
 	//	do not use :-separator because of the : in user permissions strings
 
-
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
 	{
@@ -771,9 +808,10 @@ std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetF
 		// __COUTV__(value);
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
 
-		if(fields.size() < 6) continue;
+		if(fields.size() < 6)
+			continue;
 
-		uint32_t i = 4; //start at first Macro Name, then...
+		uint32_t i = 4;  //start at first Macro Name, then...
 		//i+0 = Macro Name
 		//i+1 = Macro Permissions
 		//i+2 = Macro Tooltip
@@ -781,52 +819,56 @@ std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetF
 		//i+4+N = number of outputs M
 		//i+4+N+M = Macro Name...
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			// __COUTV__(vectorToString(fields));
 
 			//scan through all Macro Names
-			
-			while(fields.size() > i+5) //need type, uid, input count, output count (at least)
-			{			
-				
-				if(fields[i+0] == command) //if found uid/command pair, return
+
+			while(fields.size() >
+			      i + 5)  //need type, uid, input count, output count (at least)
+			{
+				if(fields[i + 0] == command)  //if found uid/command pair, return
 				{
-					if(i+3+1+inputIndex >= fields.size() || inputIndex >= atoi(fields[i+3].c_str()))
+					if(i + 3 + 1 + inputIndex >= fields.size() ||
+					   inputIndex >= atoi(fields[i + 3].c_str()))
 					{
-						__SS__ << "Illegal input arg index " << inputIndex << " vs " << 
-							 fields[i+3] << " count" << __E__;
+						__SS__ << "Illegal input arg index " << inputIndex << " vs "
+						       << fields[i + 3] << " count" << __E__;
 						__SS_THROW__;
 					}
-					return decodeURIComponent(fields[i+3+1+inputIndex]); //return input arg name
+					return decodeURIComponent(
+					    fields[i + 3 + 1 + inputIndex]);  //return input arg name
 				}
 				//else keep looking for macro name
 
-				//now navigate to next FE UID, by jumping input and output counts			
-				i += 3 + 1 + atoi(fields[i+3].c_str());
-				
+				//now navigate to next FE UID, by jumping input and output counts
+				i += 3 + 1 + atoi(fields[i + 3].c_str());
+
 				if(fields.size() < i)
 				{
-					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size() << __E__;
+					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size()
+					       << __E__;
 					__SS_THROW__;
 				}
 				// __COUTV__(fields[i]);
 				i += 1 + atoi(fields[i].c_str());
-			} //primary FE UID search with fields from one FE Supervisor
-			
+			}  //primary FE UID search with fields from one FE Supervisor
 
-			break; //found targetFE, so end search
-		} 
-	} //end FE search loop
+			break;  //found targetFE, so end search
+		}
+	}  //end FE search loop
 
-	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command << 
-		"' in FE Macro Info! Check UID and Macro name." << __E__;
+	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command
+	       << "' in FE Macro Info! Check UID and Macro name." << __E__;
 	__SS_THROW__;
-} //end getCommandInputName()
+}  //end getCommandInputName()
 
 //==============================================================================
 //Note: if std::map does not complicate interface too much for ROOT/pyton, could make this const std::string& and leverage cache solution
-std::string ots_mm_udp_interface::getCommandOutputName(const std::string& targetFE, const std::string& command, int outputIndex)
+std::string ots_mm_udp_interface::getCommandOutputName(const std::string& targetFE,
+                                                       const std::string& command,
+                                                       int                outputIndex)
 {
 	// // __COUT__ << "getCommandOutputName()" << __E__;
 	// if(feCache_.find(targetFE + "|" + command) != feCache_.end())
@@ -844,7 +886,7 @@ std::string ots_mm_udp_interface::getCommandOutputName(const std::string& target
 	// 		return outputs[outputIndex];
 	// 	}
 	// }
-   	getFrontendMacroInfo(); //init fullXML_
+	getFrontendMacroInfo();  //init fullXML_
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -853,9 +895,8 @@ std::string ots_mm_udp_interface::getCommandOutputName(const std::string& target
 	//		;<macro num of outputs>;...<output names ; separated>...
 	//	do not use :-separator because of the : in user permissions strings
 
-
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
 	{
@@ -863,9 +904,10 @@ std::string ots_mm_udp_interface::getCommandOutputName(const std::string& target
 		// __COUTV__(value);
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
 
-		if(fields.size() < 6) continue;
+		if(fields.size() < 6)
+			continue;
 
-		uint32_t i = 4; //start at first Macro Name, then...
+		uint32_t i = 4;  //start at first Macro Name, then...
 		//i+0 = Macro Name
 		//i+1 = Macro Permissions
 		//i+2 = Macro Tooltip
@@ -873,72 +915,74 @@ std::string ots_mm_udp_interface::getCommandOutputName(const std::string& target
 		//i+4+N = number of outputs M
 		//i+4+N+M = Macro Name...
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			// __COUTV__(vectorToString(fields));
 
 			//scan through all Macro Names
-			
-			while(fields.size() > i+5) //need type, uid, input count, output count (at least)
-			{			
+
+			while(fields.size() >
+			      i + 5)  //need type, uid, input count, output count (at least)
+			{
 				bool found = false;
-				if(fields[i+0] == command) //if found uid/command pair, return
+				if(fields[i + 0] == command)  //if found uid/command pair, return
 				{
 					found = true;
 				}
 				//else keep looking for macro name
 
-				//now navigate to next FE UID, by jumping input and output counts			
-				i += 3 + 1 + atoi(fields[i+3].c_str());
-				
+				//now navigate to next FE UID, by jumping input and output counts
+				i += 3 + 1 + atoi(fields[i + 3].c_str());
+
 				if(fields.size() < i)
 				{
-					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size() << __E__;
+					__SS__ << "Illegal FE Macro info! " << i << " vs " << fields.size()
+					       << __E__;
 					__SS_THROW__;
 				}
 				// __COUTV__(fields[i]);
 
 				if(found)
 				{
-					if(i+1+outputIndex >= fields.size() || outputIndex >= atoi(fields[i].c_str()))
+					if(i + 1 + outputIndex >= fields.size() ||
+					   outputIndex >= atoi(fields[i].c_str()))
 					{
-						__SS__ << "Illegal output arg index " << outputIndex << " vs " << 
-							 fields[i] << " count" << __E__;
+						__SS__ << "Illegal output arg index " << outputIndex << " vs "
+						       << fields[i] << " count" << __E__;
 						__SS_THROW__;
 					}
 
-
 					// feCache_[targetFE + "|" + command]["outputNames-" + std::to_string(outputIndex)] = decodeURIComponent(fields[i+1+outputIndex]);
 					// return feCache_.at(targetFE + "|" + command).at("outputNames-" + std::to_string(outputIndex)); //return output arg name
-					return decodeURIComponent(fields[i+1+outputIndex]);
+					return decodeURIComponent(fields[i + 1 + outputIndex]);
 				}
 				//else keep looking for macro name
 				i += 1 + atoi(fields[i].c_str());
-			} //primary FE UID search with fields from one FE Supervisor
-			
+			}  //primary FE UID search with fields from one FE Supervisor
 
-			break; //found targetFE, so end search
-		} 
-	} //end FE search loop
+			break;  //found targetFE, so end search
+		}
+	}  //end FE search loop
 
-	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command << 
-		"' in FE Macro Info! Check UID and Macro name." << __E__;
+	__SS__ << "Count not find FE '" << targetFE << "' Command '" << command
+	       << "' in FE Macro Info! Check UID and Macro name." << __E__;
 	__SS_THROW__;
-} //end getCommandOutputName()
+}  //end getCommandOutputName()
 
 //==============================================================================
 //	inputs should be ;-separated and URI encoded (to avoid commas and semicolons)
 //	outputs will be ;-separated and URI encoded
-std::string ots_mm_udp_interface::runCommand(const std::string& targetFE, const std::string& command, 
-	const std::string& inputs)
+std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
+                                             const std::string& command,
+                                             const std::string& inputs)
 {
-    __COUT__ << "On '" << targetFE << "' runCommand: " << command << __E__;
+	__COUT__ << "On '" << targetFE << "' runCommand: " << command << __E__;
 
 	__COUTV__(inputs);
-	
+
 	//extract FE Type from FE Macro info...
-	getFrontendMacroInfo(); //init fullXML_
-	std::string feType; 
+	getFrontendMacroInfo();  //init fullXML_
+	std::string feType;
 
 	//Format: 	each line:
 	//		<parent supervisor name>;<parent supervisor lid>;<interface type>;<interface UID>
@@ -948,32 +992,33 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE, const 
 	//	do not use :-separator because of the : in user permissions strings
 
 	std::string value;
-	size_t after = 0;
+	size_t      after = 0;
 
 	std::string retStr;
 	while((value = extractXmlField(fullXML_, "FEMacros", 0, after, &after)) != "")
-	{		
+	{
 		__COUTV__(fullXML_.size());
 		__COUTV__(after);
 		// __COUTV__(value);
 
 		std::vector<std::string> fields = getVectorFromString(value, {';'});
-	
+
 		// __COUTV__(vectorToString(fields));
-		if(fields.size() < 6) continue;
-		
+		if(fields.size() < 6)
+			continue;
+
 		//0 = supervisor name
 		//1 = supervisor lid
 		//2 = type
 		//3 = FE UID
 
-		if(fields[3] == targetFE) 
+		if(fields[3] == targetFE)
 		{
 			feType = fields[2];
 			__COUTV__(feType);
 			break;
 		}
-	} //end primary loop
+	}  //end primary loop
 
 	if(feType.size() == 0)
 	{
@@ -992,152 +1037,170 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE, const 
 	// std::string inputArgs   = StringMacros::decodeURIComponent(bufferFields[5]); //two level ;- and ,- separated
 	// std::string outputArgs  =  StringMacros::decodeURIComponent(bufferFields[6]); // ,- separated
 	// bool        saveOutputs = bufferFields[7] == "1";
-	sendMessage += ";" + feType; // std::string feClassSelected = bufferFields[1];
-	sendMessage += ";" + targetFE; // std::string feUIDSelected = bufferFields[2];  // allow CSV multi-selection
-	sendMessage += ";" + std::string("fe"); // std::string macroType =  bufferFields[3]; // "fe", "public", "private"
-	sendMessage += ";" + encodeURIComponent(command); // std::string macroName = bufferFields[4];
-	
+	sendMessage += ";" + feType;  // std::string feClassSelected = bufferFields[1];
+	sendMessage +=
+	    ";" +
+	    targetFE;  // std::string feUIDSelected = bufferFields[2];  // allow CSV multi-selection
+	sendMessage +=
+	    ";" +
+	    std::string(
+	        "fe");  // std::string macroType =  bufferFields[3]; // "fe", "public", "private"
+	sendMessage +=
+	    ";" + encodeURIComponent(command);  // std::string macroName = bufferFields[4];
+
 	//handle inputs
 	{
 		std::string inputStr;
-		uint32_t numberOfInputs = getCommandInputCount(targetFE, command);
-	
-		
-		std::vector<std::string> inputVec = getVectorFromString(inputs,{';'});
-		uint32_t countOfNonEmptyInputs = 0;
-		for(uint32_t i = 0;i < inputVec.size(); ++i)
+		uint32_t    numberOfInputs = getCommandInputCount(targetFE, command);
+
+		std::vector<std::string> inputVec = getVectorFromString(inputs, {';'});
+		uint32_t                 countOfNonEmptyInputs = 0;
+		for(uint32_t i = 0; i < inputVec.size(); ++i)
 		{
-			if(inputVec[i] == "") continue;	//skip empty inputs	
-			if(countOfNonEmptyInputs) inputStr += ";"; 
-			inputStr += 
-				encodeURIComponent(getCommandInputName(targetFE, command, countOfNonEmptyInputs)) + 
-				"," +
-				inputVec[i]; //already encoded (hopefully)
+			if(inputVec[i] == "")
+				continue;  //skip empty inputs
+			if(countOfNonEmptyInputs)
+				inputStr += ";";
+			inputStr += encodeURIComponent(getCommandInputName(
+			                targetFE, command, countOfNonEmptyInputs)) +
+			            "," + inputVec[i];  //already encoded (hopefully)
 
 			++countOfNonEmptyInputs;
 		}
 		if(numberOfInputs != countOfNonEmptyInputs)
 		{
-			__SS__ << "Input argument mismatch: " << countOfNonEmptyInputs << " vs " << numberOfInputs << " expected." << __E__;
+			__SS__ << "Input argument mismatch: " << countOfNonEmptyInputs << " vs "
+			       << numberOfInputs << " expected." << __E__;
 			__SS_THROW__;
 		}
 		__COUTV__(inputStr);
-		sendMessage += ";" + encodeURIComponent(inputStr); //double encoded
+		sendMessage += ";" + encodeURIComponent(inputStr);  //double encoded
 	}
 
 	//handle outputs, which are ,- separated
 	uint32_t numberOfOutputs = getCommandOutputCount(targetFE, command);
 	{
 		std::string outputStr;
-		
-		for(uint32_t i = 0;i < numberOfOutputs; ++i)
+
+		for(uint32_t i = 0; i < numberOfOutputs; ++i)
 		{
-			if(i) outputStr += ","; 
-			outputStr += 
-				encodeURIComponent(getCommandOutputName(targetFE, command, i));
+			if(i)
+				outputStr += ",";
+			outputStr += encodeURIComponent(getCommandOutputName(targetFE, command, i));
 		}
 
-		sendMessage += ";" + encodeURIComponent(outputStr); //double encoded
+		sendMessage += ";" + encodeURIComponent(outputStr);  //double encoded
 	}
-	
-	sendMessage += ";" + std::string("0"); // bool        saveOutputs = bufferFields[7] == "1";
+
+	sendMessage +=
+	    ";" + std::string("0");  // bool        saveOutputs = bufferFields[7] == "1";
 
 	__COUTV__(sendMessage.size());
 	__COUTV__(sendMessage);
 
-	if((numbytes = sendto(mm_sock_, &(sendMessage.c_str()[0]), 
-			sendMessage.size(), 0, (struct sockaddr*)&mm_ai_addr, sizeof(mm_ai_addr))) 
-			== -1)
+	if((numbytes = sendto(mm_sock_,
+	                      &(sendMessage.c_str()[0]),
+	                      sendMessage.size(),
+	                      0,
+	                      (struct sockaddr*)&mm_ai_addr,
+	                      sizeof(mm_ai_addr))) == -1)
 	{
 		__SS__ << "Error on runCommand() sendto! Error: " << strerror(errno) << __E__;
 
-		{ //check for more error info
-			int error = 0;
-			socklen_t len = sizeof(error);
-			int retval = getsockopt(mm_sock_, SOL_SOCKET, SO_ERROR, &error, &len);
-			if (retval != 0 || error != 0) {
-				ss << "Socket is closed or in error state: " << strerror(error) << std::endl;
+		{  //check for more error info
+			int       error  = 0;
+			socklen_t len    = sizeof(error);
+			int       retval = getsockopt(mm_sock_, SOL_SOCKET, SO_ERROR, &error, &len);
+			if(retval != 0 || error != 0)
+			{
+				ss << "Socket is closed or in error state: " << strerror(error)
+				   << std::endl;
 			}
 		}
 
 		close(mm_sock_);
 		mm_sock_ = -1;
-		
+
 		__SS_THROW__;
 	}
 
-
-
 	// read response ///////////////////////////////////////////////////////////
-	std::string runXML = ""; //clear just in case
+	std::string runXML = "";  //clear just in case
 	//give first response a long time for execution propagation to/from device, but following receives should be short because just from UDP packet splitting
-	if(receive(mm_sock_, buffer_, 
-			10 /*timeoutSeconds*/, 0 /*timeoutUSeconds*/, true /*verbose*/) == 0)
+	if(receive(mm_sock_,
+	           buffer_,
+	           10 /*timeoutSeconds*/,
+	           0 /*timeoutUSeconds*/,
+	           true /*verbose*/) == 0)
 	{
 		// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
 		runXML += buffer_;
-		while(receive(mm_sock_, buffer_, 
-				0 /*timeoutSeconds*/, 200000 /*timeoutUSeconds*/, true /*verbose*/) == 0)
+		while(receive(mm_sock_,
+		              buffer_,
+		              0 /*timeoutSeconds*/,
+		              200000 /*timeoutUSeconds*/,
+		              true /*verbose*/) == 0)
 			runXML += buffer_;
 	}
 
 	__COUTV__(runXML);
 
-
 	if(runXML.size() == 0 || runXML.find("Error") == 0)
 	{
-		__SS__ << "Error running the command. Received buffer: " << (runXML.size() == 0?"<empty>":runXML) << __E__;
+		__SS__ << "Error running the command. Received buffer: "
+		       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
 		__SS_THROW__;
 	}
 
 	//example response:
-		// <ROOT>
-		// 	<DATA>
-		// 		<feMacroExec value='Check Firefly Loss-of-Light'>
-		// 			<exec_time value='Fri Aug 16 18:59:15 2024 CDT'/>
-		// 			<fe_uid value='CFO0'/>
-		// 			<fe_type value='CFOFrontEndInterface'/>
-		// 			<fe_context value='ots::FESupervisor'/>
-		// 			<fe_supervisor value='LID-280'/>
-		// 			<fe_hostname value='mu2e-calo-03.fnal.gov'/>
-		// 			<outputArgs_name value='Link Status'/>
-		// 			<outputArgs_value value='%7B0%3ADEAD%2C%201%3A%20DEAD%2C%202%3ADEAD%2C%203%3ADEAD%2C%204%3A%20DEAD%2C%205%3A%20DEAD%2C%206%2FCFO%3A%20OK%2C%207%2FEVB%3A%20DEAD%7D'/>
-		// 		</feMacroExec>
-		// 	</DATA>
-		// </ROOT>
+	// <ROOT>
+	// 	<DATA>
+	// 		<feMacroExec value='Check Firefly Loss-of-Light'>
+	// 			<exec_time value='Fri Aug 16 18:59:15 2024 CDT'/>
+	// 			<fe_uid value='CFO0'/>
+	// 			<fe_type value='CFOFrontEndInterface'/>
+	// 			<fe_context value='ots::FESupervisor'/>
+	// 			<fe_supervisor value='LID-280'/>
+	// 			<fe_hostname value='mu2e-calo-03.fnal.gov'/>
+	// 			<outputArgs_name value='Link Status'/>
+	// 			<outputArgs_value value='%7B0%3ADEAD%2C%201%3A%20DEAD%2C%202%3ADEAD%2C%203%3ADEAD%2C%204%3A%20DEAD%2C%205%3A%20DEAD%2C%206%2FCFO%3A%20OK%2C%207%2FEVB%3A%20DEAD%7D'/>
+	// 		</feMacroExec>
+	// 	</DATA>
+	// </ROOT>
 
 	//verify outputs
 	{
 		std::string outputStr;
-		
-		size_t after = 0;
+
+		size_t      after = 0;
 		std::string error = extractXmlField(runXML, "Error", 0, after, &after);
 
 		if(error != "")
 		{
 			//error has html entities in it
 			error = decodeHTMLEntities(error);
-			__SS__ << "Error message received after command execution attempt: \n" <<  error << __E__;
+			__SS__ << "Error message received after command execution attempt: \n"
+			       << error << __E__;
 			__SS_THROW__;
 		}
 
-		for(uint32_t i = 0;i < numberOfOutputs; ++i)
+		for(uint32_t i = 0; i < numberOfOutputs; ++i)
 		{
 			std::string expectedOutputName = getCommandOutputName(targetFE, command, i);
 
-			std::string outputName = extractXmlField(runXML, "outputArgs_name", 0, after, &after);
-			std::string outputValue = extractXmlField(runXML, "outputArgs_value", 0, after, &after);
-			__COUT_INFO__ << "Command Result output #" << i << ": " << 
-				outputName << " = " << decodeURIComponent(outputValue) << __E__;
+			std::string outputName =
+			    extractXmlField(runXML, "outputArgs_name", 0, after, &after);
+			std::string outputValue =
+			    extractXmlField(runXML, "outputArgs_value", 0, after, &after);
+			__COUT_INFO__ << "Command Result output #" << i << ": " << outputName << " = "
+			              << decodeURIComponent(outputValue) << __E__;
 
-			if(i) outputStr += ';';
+			if(i)
+				outputStr += ';';
 			outputStr += outputValue;
 		}
 
-		
 		return outputStr;
 	}
 
-	
-
-} //end runCommand()
+}  //end runCommand()
