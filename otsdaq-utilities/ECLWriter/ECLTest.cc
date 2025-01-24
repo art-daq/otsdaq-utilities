@@ -5,18 +5,20 @@
 #define QQQQ(X) #X
 #define QUOTE(X) QQQQ(X)
 
-#define __SHORTFILE__ 		(__builtin_strstr(&__FILE__[0], "/srcs/") ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 : __FILE__)
-#define __COUT_HDR_L__ 		":" << std::dec        << __LINE__ << " |\t"
-#define __COUT_HDR__ 		__SHORTFILE__ << ""  << __COUT_HDR_L__
+#define __SHORTFILE__                                   \
+	(__builtin_strstr(&__FILE__[0], "/srcs/")           \
+	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
+	     : __FILE__)
+#define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
+#define __COUT_HDR__ __SHORTFILE__ << "" << __COUT_HDR_L__
 
-#define __COUTV__(X) 		std::cout << __COUT_HDR__ << QUOTE(X) << " = " << X << __E__
-#define __COUT__ 			std::cout << __COUT_HDR__
+#define __COUTV__(X) std::cout << __COUT_HDR__ << QUOTE(X) << " = " << X << __E__
+#define __COUT__ std::cout << __COUT_HDR__
 
 #include "otsdaq-utilities/ECLWriter/ECLConnection.h"
 
 #include <boost/program_options.hpp>
 namespace bpo = boost::program_options;
-
 
 //==============================================================================
 std::string encodeURIComponent(const std::string& sourceStr)
@@ -33,7 +35,6 @@ std::string encodeURIComponent(const std::string& sourceStr)
 		}
 	return retStr;
 }  // end encodeURIComponent()
-
 
 // IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
 //  consider adding this to a setup script and using environment variables for your
@@ -138,9 +139,9 @@ int main(int argc, char* argv[])
 	if(ECLCategory == "GetRecent")
 	{
 		__COUT__ << "Getting posts... matching category=" << title << __E__;
-		std::string response, url = "/E/xml_search?l=100&c=" + 
-			encodeURIComponent(title); //limit to 100 
-		eclConn.Get(url,response);
+		std::string response,
+		    url = "/E/xml_search?l=100&c=" + encodeURIComponent(title);  //limit to 100
+		eclConn.Get(url, response);
 		__COUTV__(response);
 		return 0;
 	}
@@ -148,7 +149,7 @@ int main(int argc, char* argv[])
 	{
 		__COUT__ << "Getting categories..." << __E__;
 		std::string response, url = "/A/xml_category_list";
-		eclConn.Get(url,response);
+		eclConn.Get(url, response);
 		__COUTV__(response);
 		return 0;
 	}

@@ -41,1589 +41,1164 @@
 #include <otsdaq-utilities/ECLWriter/ECL.hxx>
 
 // Tag_t
-// 
+//
 
-const Tag_t::name_type& Tag_t::
-name () const
-{
-  return this->name_.get ();
-}
+const Tag_t::name_type& Tag_t::name() const { return this->name_.get(); }
 
-Tag_t::name_type& Tag_t::
-name ()
-{
-  return this->name_.get ();
-}
+Tag_t::name_type& Tag_t::name() { return this->name_.get(); }
 
-void Tag_t::
-name (const name_type& x)
-{
-  this->name_.set (x);
-}
+void Tag_t::name(const name_type& x) { this->name_.set(x); }
 
-void Tag_t::
-name (::std::unique_ptr< name_type > x)
-{
-  this->name_.set (std::move (x));
-}
-
+void Tag_t::name(::std::unique_ptr<name_type> x) { this->name_.set(std::move(x)); }
 
 // Attachment_t
-// 
+//
 
-const Attachment_t::type_type& Attachment_t::
-type () const
+const Attachment_t::type_type& Attachment_t::type() const { return this->type_.get(); }
+
+Attachment_t::type_type& Attachment_t::type() { return this->type_.get(); }
+
+void Attachment_t::type(const type_type& x) { this->type_.set(x); }
+
+void Attachment_t::type(::std::unique_ptr<type_type> x) { this->type_.set(std::move(x)); }
+
+const Attachment_t::filename_type& Attachment_t::filename() const
 {
-  return this->type_.get ();
+	return this->filename_.get();
 }
 
-Attachment_t::type_type& Attachment_t::
-type ()
-{
-  return this->type_.get ();
-}
+Attachment_t::filename_type& Attachment_t::filename() { return this->filename_.get(); }
 
-void Attachment_t::
-type (const type_type& x)
-{
-  this->type_.set (x);
-}
+void Attachment_t::filename(const filename_type& x) { this->filename_.set(x); }
 
-void Attachment_t::
-type (::std::unique_ptr< type_type > x)
+void Attachment_t::filename(::std::unique_ptr<filename_type> x)
 {
-  this->type_.set (std::move (x));
+	this->filename_.set(std::move(x));
 }
-
-const Attachment_t::filename_type& Attachment_t::
-filename () const
-{
-  return this->filename_.get ();
-}
-
-Attachment_t::filename_type& Attachment_t::
-filename ()
-{
-  return this->filename_.get ();
-}
-
-void Attachment_t::
-filename (const filename_type& x)
-{
-  this->filename_.set (x);
-}
-
-void Attachment_t::
-filename (::std::unique_ptr< filename_type > x)
-{
-  this->filename_.set (std::move (x));
-}
-
 
 // Field_t
-// 
+//
 
-const Field_t::name_type& Field_t::
-name () const
-{
-  return this->name_.get ();
-}
+const Field_t::name_type& Field_t::name() const { return this->name_.get(); }
 
-Field_t::name_type& Field_t::
-name ()
-{
-  return this->name_.get ();
-}
+Field_t::name_type& Field_t::name() { return this->name_.get(); }
 
-void Field_t::
-name (const name_type& x)
-{
-  this->name_.set (x);
-}
+void Field_t::name(const name_type& x) { this->name_.set(x); }
 
-void Field_t::
-name (::std::unique_ptr< name_type > x)
-{
-  this->name_.set (std::move (x));
-}
-
+void Field_t::name(::std::unique_ptr<name_type> x) { this->name_.set(std::move(x)); }
 
 // Form_t
-// 
+//
 
-const Form_t::field_sequence& Form_t::
-field () const
-{
-  return this->field_;
-}
+const Form_t::field_sequence& Form_t::field() const { return this->field_; }
 
-Form_t::field_sequence& Form_t::
-field ()
-{
-  return this->field_;
-}
+Form_t::field_sequence& Form_t::field() { return this->field_; }
 
-void Form_t::
-field (const field_sequence& s)
-{
-  this->field_ = s;
-}
+void Form_t::field(const field_sequence& s) { this->field_ = s; }
 
-const Form_t::name_type& Form_t::
-name () const
-{
-  return this->name_.get ();
-}
+const Form_t::name_type& Form_t::name() const { return this->name_.get(); }
 
-Form_t::name_type& Form_t::
-name ()
-{
-  return this->name_.get ();
-}
+Form_t::name_type& Form_t::name() { return this->name_.get(); }
 
-void Form_t::
-name (const name_type& x)
-{
-  this->name_.set (x);
-}
+void Form_t::name(const name_type& x) { this->name_.set(x); }
 
-void Form_t::
-name (::std::unique_ptr< name_type > x)
-{
-  this->name_.set (std::move (x));
-}
-
+void Form_t::name(::std::unique_ptr<name_type> x) { this->name_.set(std::move(x)); }
 
 // ECLEntry_t
-// 
+//
 
-const ECLEntry_t::tag_sequence& ECLEntry_t::
-tag () const
+const ECLEntry_t::tag_sequence& ECLEntry_t::tag() const { return this->tag_; }
+
+ECLEntry_t::tag_sequence& ECLEntry_t::tag() { return this->tag_; }
+
+void ECLEntry_t::tag(const tag_sequence& s) { this->tag_ = s; }
+
+const ECLEntry_t::attachment_sequence& ECLEntry_t::attachment() const
 {
-  return this->tag_;
+	return this->attachment_;
 }
 
-ECLEntry_t::tag_sequence& ECLEntry_t::
-tag ()
+ECLEntry_t::attachment_sequence& ECLEntry_t::attachment() { return this->attachment_; }
+
+void ECLEntry_t::attachment(const attachment_sequence& s) { this->attachment_ = s; }
+
+const ECLEntry_t::form_optional& ECLEntry_t::form() const { return this->form_; }
+
+ECLEntry_t::form_optional& ECLEntry_t::form() { return this->form_; }
+
+void ECLEntry_t::form(const form_type& x) { this->form_.set(x); }
+
+void ECLEntry_t::form(const form_optional& x) { this->form_ = x; }
+
+void ECLEntry_t::form(::std::unique_ptr<form_type> x) { this->form_.set(std::move(x)); }
+
+const ECLEntry_t::author_type& ECLEntry_t::author() const { return this->author_.get(); }
+
+ECLEntry_t::author_type& ECLEntry_t::author() { return this->author_.get(); }
+
+void ECLEntry_t::author(const author_type& x) { this->author_.set(x); }
+
+void ECLEntry_t::author(::std::unique_ptr<author_type> x)
 {
-  return this->tag_;
+	this->author_.set(std::move(x));
 }
 
-void ECLEntry_t::
-tag (const tag_sequence& s)
+const ECLEntry_t::category_type& ECLEntry_t::category() const
 {
-  this->tag_ = s;
+	return this->category_.get();
 }
 
-const ECLEntry_t::attachment_sequence& ECLEntry_t::
-attachment () const
+ECLEntry_t::category_type& ECLEntry_t::category() { return this->category_.get(); }
+
+void ECLEntry_t::category(const category_type& x) { this->category_.set(x); }
+
+void ECLEntry_t::category(::std::unique_ptr<category_type> x)
 {
-  return this->attachment_;
+	this->category_.set(std::move(x));
 }
 
-ECLEntry_t::attachment_sequence& ECLEntry_t::
-attachment ()
-{
-  return this->attachment_;
-}
+const ECLEntry_t::subject_optional& ECLEntry_t::subject() const { return this->subject_; }
 
-void ECLEntry_t::
-attachment (const attachment_sequence& s)
-{
-  this->attachment_ = s;
-}
+ECLEntry_t::subject_optional& ECLEntry_t::subject() { return this->subject_; }
 
-const ECLEntry_t::form_optional& ECLEntry_t::
-form () const
-{
-  return this->form_;
-}
+void ECLEntry_t::subject(const subject_type& x) { this->subject_.set(x); }
 
-ECLEntry_t::form_optional& ECLEntry_t::
-form ()
-{
-  return this->form_;
-}
+void ECLEntry_t::subject(const subject_optional& x) { this->subject_ = x; }
 
-void ECLEntry_t::
-form (const form_type& x)
+void ECLEntry_t::subject(::std::unique_ptr<subject_type> x)
 {
-  this->form_.set (x);
+	this->subject_.set(std::move(x));
 }
-
-void ECLEntry_t::
-form (const form_optional& x)
-{
-  this->form_ = x;
-}
-
-void ECLEntry_t::
-form (::std::unique_ptr< form_type > x)
-{
-  this->form_.set (std::move (x));
-}
-
-const ECLEntry_t::author_type& ECLEntry_t::
-author () const
-{
-  return this->author_.get ();
-}
-
-ECLEntry_t::author_type& ECLEntry_t::
-author ()
-{
-  return this->author_.get ();
-}
-
-void ECLEntry_t::
-author (const author_type& x)
-{
-  this->author_.set (x);
-}
-
-void ECLEntry_t::
-author (::std::unique_ptr< author_type > x)
-{
-  this->author_.set (std::move (x));
-}
-
-const ECLEntry_t::category_type& ECLEntry_t::
-category () const
-{
-  return this->category_.get ();
-}
-
-ECLEntry_t::category_type& ECLEntry_t::
-category ()
-{
-  return this->category_.get ();
-}
-
-void ECLEntry_t::
-category (const category_type& x)
-{
-  this->category_.set (x);
-}
-
-void ECLEntry_t::
-category (::std::unique_ptr< category_type > x)
-{
-  this->category_.set (std::move (x));
-}
-
-const ECLEntry_t::subject_optional& ECLEntry_t::
-subject () const
-{
-  return this->subject_;
-}
-
-ECLEntry_t::subject_optional& ECLEntry_t::
-subject ()
-{
-  return this->subject_;
-}
-
-void ECLEntry_t::
-subject (const subject_type& x)
-{
-  this->subject_.set (x);
-}
-
-void ECLEntry_t::
-subject (const subject_optional& x)
-{
-  this->subject_ = x;
-}
-
-void ECLEntry_t::
-subject (::std::unique_ptr< subject_type > x)
-{
-  this->subject_.set (std::move (x));
-}
-
 
 #include <xsd/cxx/xml/dom/parsing-source.hxx>
 
 // Tag_t
 //
 
-Tag_t::
-Tag_t ()
-: ::xml_schema::type (),
-  name_ (this)
+Tag_t::Tag_t() : ::xml_schema::type(), name_(this) {}
+
+Tag_t::Tag_t(const name_type& name) : ::xml_schema::type(), name_(name, this) {}
+
+Tag_t::Tag_t(const Tag_t& x, ::xml_schema::flags f, ::xml_schema::container* c)
+    : ::xml_schema::type(x, f, c), name_(x.name_, f, this)
 {
 }
 
-Tag_t::
-Tag_t (const name_type& name)
-: ::xml_schema::type (),
-  name_ (name, this)
+Tag_t::Tag_t(const ::xercesc::DOMElement& e,
+             ::xml_schema::flags          f,
+             ::xml_schema::container*     c)
+    : ::xml_schema::type(e, f | ::xml_schema::flags::base, c), name_(this)
 {
+	if((f & ::xml_schema::flags::base) == 0)
+	{
+		::xsd::cxx::xml::dom::parser<char> p(e, false, false, true);
+		this->parse(p, f);
+	}
 }
 
-Tag_t::
-Tag_t (const Tag_t& x,
-       ::xml_schema::flags f,
-       ::xml_schema::container* c)
-: ::xml_schema::type (x, f, c),
-  name_ (x.name_, f, this)
+void Tag_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 {
+	while(p.more_attributes())
+	{
+		const ::xercesc::DOMAttr&                   i(p.next_attribute());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
+
+		if(n.name() == "name" && n.namespace_().empty())
+		{
+			this->name_.set(name_traits::create(i, f, this));
+			continue;
+		}
+	}
+
+	if(!name_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("name", "");
+	}
 }
 
-Tag_t::
-Tag_t (const ::xercesc::DOMElement& e,
-       ::xml_schema::flags f,
-       ::xml_schema::container* c)
-: ::xml_schema::type (e, f | ::xml_schema::flags::base, c),
-  name_ (this)
+Tag_t* Tag_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
 {
-  if ((f & ::xml_schema::flags::base) == 0)
-  {
-    ::xsd::cxx::xml::dom::parser< char > p (e, false, false, true);
-    this->parse (p, f);
-  }
+	return new class Tag_t(*this, f, c);
 }
 
-void Tag_t::
-parse (::xsd::cxx::xml::dom::parser< char >& p,
-       ::xml_schema::flags f)
+Tag_t& Tag_t::operator=(const Tag_t& x)
 {
-  while (p.more_attributes ())
-  {
-    const ::xercesc::DOMAttr& i (p.next_attribute ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
+	if(this != &x)
+	{
+		static_cast< ::xml_schema::type&>(*this) = x;
+		this->name_                              = x.name_;
+	}
 
-    if (n.name () == "name" && n.namespace_ ().empty ())
-    {
-      this->name_.set (name_traits::create (i, f, this));
-      continue;
-    }
-  }
-
-  if (!name_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "name",
-      "");
-  }
+	return *this;
 }
 
-Tag_t* Tag_t::
-_clone (::xml_schema::flags f,
-        ::xml_schema::container* c) const
-{
-  return new class Tag_t (*this, f, c);
-}
-
-Tag_t& Tag_t::
-operator= (const Tag_t& x)
-{
-  if (this != &x)
-  {
-    static_cast< ::xml_schema::type& > (*this) = x;
-    this->name_ = x.name_;
-  }
-
-  return *this;
-}
-
-Tag_t::
-~Tag_t ()
-{
-}
+Tag_t::~Tag_t() {}
 
 // Attachment_t
 //
 
-Attachment_t::
-Attachment_t ()
-: ::xml_schema::base64_binary (),
-  type_ (this),
-  filename_ (this)
+Attachment_t::Attachment_t() : ::xml_schema::base64_binary(), type_(this), filename_(this)
 {
 }
 
-Attachment_t::
-Attachment_t (const type_type& type,
-              const filename_type& filename)
-: ::xml_schema::base64_binary (),
-  type_ (type, this),
-  filename_ (filename, this)
+Attachment_t::Attachment_t(const type_type& type, const filename_type& filename)
+    : ::xml_schema::base64_binary(), type_(type, this), filename_(filename, this)
 {
 }
 
-Attachment_t::
-Attachment_t (const ::xml_schema::base64_binary& _xsd_base64_binary_base,
-              const type_type& type,
-              const filename_type& filename)
-: ::xml_schema::base64_binary (_xsd_base64_binary_base),
-  type_ (type, this),
-  filename_ (filename, this)
+Attachment_t::Attachment_t(const ::xml_schema::base64_binary& _xsd_base64_binary_base,
+                           const type_type&                   type,
+                           const filename_type&               filename)
+    : ::xml_schema::base64_binary(_xsd_base64_binary_base)
+    , type_(type, this)
+    , filename_(filename, this)
 {
 }
 
-Attachment_t::
-Attachment_t (const Attachment_t& x,
-              ::xml_schema::flags f,
-              ::xml_schema::container* c)
-: ::xml_schema::base64_binary (x, f, c),
-  type_ (x.type_, f, this),
-  filename_ (x.filename_, f, this)
+Attachment_t::Attachment_t(const Attachment_t&      x,
+                           ::xml_schema::flags      f,
+                           ::xml_schema::container* c)
+    : ::xml_schema::base64_binary(x, f, c)
+    , type_(x.type_, f, this)
+    , filename_(x.filename_, f, this)
 {
 }
 
-Attachment_t::
-Attachment_t (const ::xercesc::DOMElement& e,
-              ::xml_schema::flags f,
-              ::xml_schema::container* c)
-: ::xml_schema::base64_binary (e, f | ::xml_schema::flags::base, c),
-  type_ (this),
-  filename_ (this)
+Attachment_t::Attachment_t(const ::xercesc::DOMElement& e,
+                           ::xml_schema::flags          f,
+                           ::xml_schema::container*     c)
+    : ::xml_schema::base64_binary(e, f | ::xml_schema::flags::base, c)
+    , type_(this)
+    , filename_(this)
 {
-  if ((f & ::xml_schema::flags::base) == 0)
-  {
-    ::xsd::cxx::xml::dom::parser< char > p (e, false, false, true);
-    this->parse (p, f);
-  }
+	if((f & ::xml_schema::flags::base) == 0)
+	{
+		::xsd::cxx::xml::dom::parser<char> p(e, false, false, true);
+		this->parse(p, f);
+	}
 }
 
-void Attachment_t::
-parse (::xsd::cxx::xml::dom::parser< char >& p,
-       ::xml_schema::flags f)
+void Attachment_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 {
-  while (p.more_attributes ())
-  {
-    const ::xercesc::DOMAttr& i (p.next_attribute ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
+	while(p.more_attributes())
+	{
+		const ::xercesc::DOMAttr&                   i(p.next_attribute());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
 
-    if (n.name () == "type" && n.namespace_ ().empty ())
-    {
-      this->type_.set (type_traits::create (i, f, this));
-      continue;
-    }
+		if(n.name() == "type" && n.namespace_().empty())
+		{
+			this->type_.set(type_traits::create(i, f, this));
+			continue;
+		}
 
-    if (n.name () == "filename" && n.namespace_ ().empty ())
-    {
-      this->filename_.set (filename_traits::create (i, f, this));
-      continue;
-    }
-  }
+		if(n.name() == "filename" && n.namespace_().empty())
+		{
+			this->filename_.set(filename_traits::create(i, f, this));
+			continue;
+		}
+	}
 
-  if (!type_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "type",
-      "");
-  }
+	if(!type_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("type", "");
+	}
 
-  if (!filename_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "filename",
-      "");
-  }
+	if(!filename_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("filename", "");
+	}
 }
 
-Attachment_t* Attachment_t::
-_clone (::xml_schema::flags f,
-        ::xml_schema::container* c) const
+Attachment_t* Attachment_t::_clone(::xml_schema::flags      f,
+                                   ::xml_schema::container* c) const
 {
-  return new class Attachment_t (*this, f, c);
+	return new class Attachment_t(*this, f, c);
 }
 
-Attachment_t& Attachment_t::
-operator= (const Attachment_t& x)
+Attachment_t& Attachment_t::operator=(const Attachment_t& x)
 {
-  if (this != &x)
-  {
-    static_cast< ::xml_schema::base64_binary& > (*this) = x;
-    this->type_ = x.type_;
-    this->filename_ = x.filename_;
-  }
+	if(this != &x)
+	{
+		static_cast< ::xml_schema::base64_binary&>(*this) = x;
+		this->type_                                       = x.type_;
+		this->filename_                                   = x.filename_;
+	}
 
-  return *this;
+	return *this;
 }
 
-Attachment_t::
-~Attachment_t ()
-{
-}
+Attachment_t::~Attachment_t() {}
 
 // Field_t
 //
 
-Field_t::
-Field_t ()
-: ::xml_schema::string (),
-  name_ (this)
+Field_t::Field_t() : ::xml_schema::string(), name_(this) {}
+
+Field_t::Field_t(const name_type& name) : ::xml_schema::string(), name_(name, this) {}
+
+Field_t::Field_t(const char* _xsd_string_base, const name_type& name)
+    : ::xml_schema::string(_xsd_string_base), name_(name, this)
 {
 }
 
-Field_t::
-Field_t (const name_type& name)
-: ::xml_schema::string (),
-  name_ (name, this)
+Field_t::Field_t(const ::std::string& _xsd_string_base, const name_type& name)
+    : ::xml_schema::string(_xsd_string_base), name_(name, this)
 {
 }
 
-Field_t::
-Field_t (const char* _xsd_string_base,
-         const name_type& name)
-: ::xml_schema::string (_xsd_string_base),
-  name_ (name, this)
+Field_t::Field_t(const ::xml_schema::string& _xsd_string_base, const name_type& name)
+    : ::xml_schema::string(_xsd_string_base), name_(name, this)
 {
 }
 
-Field_t::
-Field_t (const ::std::string& _xsd_string_base,
-         const name_type& name)
-: ::xml_schema::string (_xsd_string_base),
-  name_ (name, this)
+Field_t::Field_t(const Field_t& x, ::xml_schema::flags f, ::xml_schema::container* c)
+    : ::xml_schema::string(x, f, c), name_(x.name_, f, this)
 {
 }
 
-Field_t::
-Field_t (const ::xml_schema::string& _xsd_string_base,
-         const name_type& name)
-: ::xml_schema::string (_xsd_string_base),
-  name_ (name, this)
+Field_t::Field_t(const ::xercesc::DOMElement& e,
+                 ::xml_schema::flags          f,
+                 ::xml_schema::container*     c)
+    : ::xml_schema::string(e, f | ::xml_schema::flags::base, c), name_(this)
 {
+	if((f & ::xml_schema::flags::base) == 0)
+	{
+		::xsd::cxx::xml::dom::parser<char> p(e, false, false, true);
+		this->parse(p, f);
+	}
 }
 
-Field_t::
-Field_t (const Field_t& x,
-         ::xml_schema::flags f,
-         ::xml_schema::container* c)
-: ::xml_schema::string (x, f, c),
-  name_ (x.name_, f, this)
+void Field_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 {
+	while(p.more_attributes())
+	{
+		const ::xercesc::DOMAttr&                   i(p.next_attribute());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
+
+		if(n.name() == "name" && n.namespace_().empty())
+		{
+			this->name_.set(name_traits::create(i, f, this));
+			continue;
+		}
+	}
+
+	if(!name_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("name", "");
+	}
 }
 
-Field_t::
-Field_t (const ::xercesc::DOMElement& e,
-         ::xml_schema::flags f,
-         ::xml_schema::container* c)
-: ::xml_schema::string (e, f | ::xml_schema::flags::base, c),
-  name_ (this)
+Field_t* Field_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
 {
-  if ((f & ::xml_schema::flags::base) == 0)
-  {
-    ::xsd::cxx::xml::dom::parser< char > p (e, false, false, true);
-    this->parse (p, f);
-  }
+	return new class Field_t(*this, f, c);
 }
 
-void Field_t::
-parse (::xsd::cxx::xml::dom::parser< char >& p,
-       ::xml_schema::flags f)
+Field_t& Field_t::operator=(const Field_t& x)
 {
-  while (p.more_attributes ())
-  {
-    const ::xercesc::DOMAttr& i (p.next_attribute ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
+	if(this != &x)
+	{
+		static_cast< ::xml_schema::string&>(*this) = x;
+		this->name_                                = x.name_;
+	}
 
-    if (n.name () == "name" && n.namespace_ ().empty ())
-    {
-      this->name_.set (name_traits::create (i, f, this));
-      continue;
-    }
-  }
-
-  if (!name_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "name",
-      "");
-  }
+	return *this;
 }
 
-Field_t* Field_t::
-_clone (::xml_schema::flags f,
-        ::xml_schema::container* c) const
-{
-  return new class Field_t (*this, f, c);
-}
-
-Field_t& Field_t::
-operator= (const Field_t& x)
-{
-  if (this != &x)
-  {
-    static_cast< ::xml_schema::string& > (*this) = x;
-    this->name_ = x.name_;
-  }
-
-  return *this;
-}
-
-Field_t::
-~Field_t ()
-{
-}
+Field_t::~Field_t() {}
 
 // Form_t
 //
 
-Form_t::
-Form_t ()
-: ::xml_schema::type (),
-  field_ (this),
-  name_ (this)
+Form_t::Form_t() : ::xml_schema::type(), field_(this), name_(this) {}
+
+Form_t::Form_t(const name_type& name)
+    : ::xml_schema::type(), field_(this), name_(name, this)
 {
 }
 
-Form_t::
-Form_t (const name_type& name)
-: ::xml_schema::type (),
-  field_ (this),
-  name_ (name, this)
+Form_t::Form_t(const Form_t& x, ::xml_schema::flags f, ::xml_schema::container* c)
+    : ::xml_schema::type(x, f, c), field_(x.field_, f, this), name_(x.name_, f, this)
 {
 }
 
-Form_t::
-Form_t (const Form_t& x,
-        ::xml_schema::flags f,
-        ::xml_schema::container* c)
-: ::xml_schema::type (x, f, c),
-  field_ (x.field_, f, this),
-  name_ (x.name_, f, this)
+Form_t::Form_t(const ::xercesc::DOMElement& e,
+               ::xml_schema::flags          f,
+               ::xml_schema::container*     c)
+    : ::xml_schema::type(e, f | ::xml_schema::flags::base, c), field_(this), name_(this)
 {
+	if((f & ::xml_schema::flags::base) == 0)
+	{
+		::xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+		this->parse(p, f);
+	}
 }
 
-Form_t::
-Form_t (const ::xercesc::DOMElement& e,
-        ::xml_schema::flags f,
-        ::xml_schema::container* c)
-: ::xml_schema::type (e, f | ::xml_schema::flags::base, c),
-  field_ (this),
-  name_ (this)
+void Form_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 {
-  if ((f & ::xml_schema::flags::base) == 0)
-  {
-    ::xsd::cxx::xml::dom::parser< char > p (e, true, false, true);
-    this->parse (p, f);
-  }
+	for(; p.more_content(); p.next_content(false))
+	{
+		const ::xercesc::DOMElement&                i(p.cur_element());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
+
+		// field
+		//
+		if(n.name() == "field" && n.namespace_().empty())
+		{
+			::std::unique_ptr<field_type> r(field_traits::create(i, f, this));
+
+			this->field_.push_back(::std::move(r));
+			continue;
+		}
+
+		break;
+	}
+
+	while(p.more_attributes())
+	{
+		const ::xercesc::DOMAttr&                   i(p.next_attribute());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
+
+		if(n.name() == "name" && n.namespace_().empty())
+		{
+			this->name_.set(name_traits::create(i, f, this));
+			continue;
+		}
+	}
+
+	if(!name_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("name", "");
+	}
 }
 
-void Form_t::
-parse (::xsd::cxx::xml::dom::parser< char >& p,
-       ::xml_schema::flags f)
+Form_t* Form_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
 {
-  for (; p.more_content (); p.next_content (false))
-  {
-    const ::xercesc::DOMElement& i (p.cur_element ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
-
-    // field
-    //
-    if (n.name () == "field" && n.namespace_ ().empty ())
-    {
-      ::std::unique_ptr< field_type > r (
-        field_traits::create (i, f, this));
-
-      this->field_.push_back (::std::move (r));
-      continue;
-    }
-
-    break;
-  }
-
-  while (p.more_attributes ())
-  {
-    const ::xercesc::DOMAttr& i (p.next_attribute ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
-
-    if (n.name () == "name" && n.namespace_ ().empty ())
-    {
-      this->name_.set (name_traits::create (i, f, this));
-      continue;
-    }
-  }
-
-  if (!name_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "name",
-      "");
-  }
+	return new class Form_t(*this, f, c);
 }
 
-Form_t* Form_t::
-_clone (::xml_schema::flags f,
-        ::xml_schema::container* c) const
+Form_t& Form_t::operator=(const Form_t& x)
 {
-  return new class Form_t (*this, f, c);
+	if(this != &x)
+	{
+		static_cast< ::xml_schema::type&>(*this) = x;
+		this->field_                             = x.field_;
+		this->name_                              = x.name_;
+	}
+
+	return *this;
 }
 
-Form_t& Form_t::
-operator= (const Form_t& x)
-{
-  if (this != &x)
-  {
-    static_cast< ::xml_schema::type& > (*this) = x;
-    this->field_ = x.field_;
-    this->name_ = x.name_;
-  }
-
-  return *this;
-}
-
-Form_t::
-~Form_t ()
-{
-}
+Form_t::~Form_t() {}
 
 // ECLEntry_t
 //
 
-ECLEntry_t::
-ECLEntry_t ()
-: ::xml_schema::type (),
-  tag_ (this),
-  attachment_ (this),
-  form_ (this),
-  author_ (this),
-  category_ (this),
-  subject_ (this)
+ECLEntry_t::ECLEntry_t()
+    : ::xml_schema::type()
+    , tag_(this)
+    , attachment_(this)
+    , form_(this)
+    , author_(this)
+    , category_(this)
+    , subject_(this)
 {
 }
 
-ECLEntry_t::
-ECLEntry_t (const author_type& author,
-            const category_type& category)
-: ::xml_schema::type (),
-  tag_ (this),
-  attachment_ (this),
-  form_ (this),
-  author_ (author, this),
-  category_ (category, this),
-  subject_ (this)
+ECLEntry_t::ECLEntry_t(const author_type& author, const category_type& category)
+    : ::xml_schema::type()
+    , tag_(this)
+    , attachment_(this)
+    , form_(this)
+    , author_(author, this)
+    , category_(category, this)
+    , subject_(this)
 {
 }
 
-ECLEntry_t::
-ECLEntry_t (const ECLEntry_t& x,
-            ::xml_schema::flags f,
-            ::xml_schema::container* c)
-: ::xml_schema::type (x, f, c),
-  tag_ (x.tag_, f, this),
-  attachment_ (x.attachment_, f, this),
-  form_ (x.form_, f, this),
-  author_ (x.author_, f, this),
-  category_ (x.category_, f, this),
-  subject_ (x.subject_, f, this)
+ECLEntry_t::ECLEntry_t(const ECLEntry_t&        x,
+                       ::xml_schema::flags      f,
+                       ::xml_schema::container* c)
+    : ::xml_schema::type(x, f, c)
+    , tag_(x.tag_, f, this)
+    , attachment_(x.attachment_, f, this)
+    , form_(x.form_, f, this)
+    , author_(x.author_, f, this)
+    , category_(x.category_, f, this)
+    , subject_(x.subject_, f, this)
 {
 }
 
-ECLEntry_t::
-ECLEntry_t (const ::xercesc::DOMElement& e,
-            ::xml_schema::flags f,
-            ::xml_schema::container* c)
-: ::xml_schema::type (e, f | ::xml_schema::flags::base, c),
-  tag_ (this),
-  attachment_ (this),
-  form_ (this),
-  author_ (this),
-  category_ (this),
-  subject_ (this)
+ECLEntry_t::ECLEntry_t(const ::xercesc::DOMElement& e,
+                       ::xml_schema::flags          f,
+                       ::xml_schema::container*     c)
+    : ::xml_schema::type(e, f | ::xml_schema::flags::base, c)
+    , tag_(this)
+    , attachment_(this)
+    , form_(this)
+    , author_(this)
+    , category_(this)
+    , subject_(this)
 {
-  if ((f & ::xml_schema::flags::base) == 0)
-  {
-    ::xsd::cxx::xml::dom::parser< char > p (e, true, false, true);
-    this->parse (p, f);
-  }
+	if((f & ::xml_schema::flags::base) == 0)
+	{
+		::xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+		this->parse(p, f);
+	}
 }
 
-void ECLEntry_t::
-parse (::xsd::cxx::xml::dom::parser< char >& p,
-       ::xml_schema::flags f)
+void ECLEntry_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 {
-  for (; p.more_content (); p.next_content (false))
-  {
-    const ::xercesc::DOMElement& i (p.cur_element ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
+	for(; p.more_content(); p.next_content(false))
+	{
+		const ::xercesc::DOMElement&                i(p.cur_element());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
 
-    // tag
-    //
-    if (n.name () == "tag" && n.namespace_ ().empty ())
-    {
-      ::std::unique_ptr< tag_type > r (
-        tag_traits::create (i, f, this));
+		// tag
+		//
+		if(n.name() == "tag" && n.namespace_().empty())
+		{
+			::std::unique_ptr<tag_type> r(tag_traits::create(i, f, this));
 
-      this->tag_.push_back (::std::move (r));
-      continue;
-    }
+			this->tag_.push_back(::std::move(r));
+			continue;
+		}
 
-    // attachment
-    //
-    if (n.name () == "attachment" && n.namespace_ ().empty ())
-    {
-      ::std::unique_ptr< attachment_type > r (
-        attachment_traits::create (i, f, this));
+		// attachment
+		//
+		if(n.name() == "attachment" && n.namespace_().empty())
+		{
+			::std::unique_ptr<attachment_type> r(attachment_traits::create(i, f, this));
 
-      this->attachment_.push_back (::std::move (r));
-      continue;
-    }
+			this->attachment_.push_back(::std::move(r));
+			continue;
+		}
 
-    // form
-    //
-    if (n.name () == "form" && n.namespace_ ().empty ())
-    {
-      ::std::unique_ptr< form_type > r (
-        form_traits::create (i, f, this));
+		// form
+		//
+		if(n.name() == "form" && n.namespace_().empty())
+		{
+			::std::unique_ptr<form_type> r(form_traits::create(i, f, this));
 
-      if (!this->form_)
-      {
-        this->form_.set (::std::move (r));
-        continue;
-      }
-    }
+			if(!this->form_)
+			{
+				this->form_.set(::std::move(r));
+				continue;
+			}
+		}
 
-    break;
-  }
+		break;
+	}
 
-  while (p.more_attributes ())
-  {
-    const ::xercesc::DOMAttr& i (p.next_attribute ());
-    const ::xsd::cxx::xml::qualified_name< char > n (
-      ::xsd::cxx::xml::dom::name< char > (i));
+	while(p.more_attributes())
+	{
+		const ::xercesc::DOMAttr&                   i(p.next_attribute());
+		const ::xsd::cxx::xml::qualified_name<char> n(
+		    ::xsd::cxx::xml::dom::name<char>(i));
 
-    if (n.name () == "author" && n.namespace_ ().empty ())
-    {
-      this->author_.set (author_traits::create (i, f, this));
-      continue;
-    }
+		if(n.name() == "author" && n.namespace_().empty())
+		{
+			this->author_.set(author_traits::create(i, f, this));
+			continue;
+		}
 
-    if (n.name () == "category" && n.namespace_ ().empty ())
-    {
-      this->category_.set (category_traits::create (i, f, this));
-      continue;
-    }
+		if(n.name() == "category" && n.namespace_().empty())
+		{
+			this->category_.set(category_traits::create(i, f, this));
+			continue;
+		}
 
-    if (n.name () == "subject" && n.namespace_ ().empty ())
-    {
-      this->subject_.set (subject_traits::create (i, f, this));
-      continue;
-    }
-  }
+		if(n.name() == "subject" && n.namespace_().empty())
+		{
+			this->subject_.set(subject_traits::create(i, f, this));
+			continue;
+		}
+	}
 
-  if (!author_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "author",
-      "");
-  }
+	if(!author_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("author", "");
+	}
 
-  if (!category_.present ())
-  {
-    throw ::xsd::cxx::tree::expected_attribute< char > (
-      "category",
-      "");
-  }
+	if(!category_.present())
+	{
+		throw ::xsd::cxx::tree::expected_attribute<char>("category", "");
+	}
 }
 
-ECLEntry_t* ECLEntry_t::
-_clone (::xml_schema::flags f,
-        ::xml_schema::container* c) const
+ECLEntry_t* ECLEntry_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
 {
-  return new class ECLEntry_t (*this, f, c);
+	return new class ECLEntry_t(*this, f, c);
 }
 
-ECLEntry_t& ECLEntry_t::
-operator= (const ECLEntry_t& x)
+ECLEntry_t& ECLEntry_t::operator=(const ECLEntry_t& x)
 {
-  if (this != &x)
-  {
-    static_cast< ::xml_schema::type& > (*this) = x;
-    this->tag_ = x.tag_;
-    this->attachment_ = x.attachment_;
-    this->form_ = x.form_;
-    this->author_ = x.author_;
-    this->category_ = x.category_;
-    this->subject_ = x.subject_;
-  }
+	if(this != &x)
+	{
+		static_cast< ::xml_schema::type&>(*this) = x;
+		this->tag_                               = x.tag_;
+		this->attachment_                        = x.attachment_;
+		this->form_                              = x.form_;
+		this->author_                            = x.author_;
+		this->category_                          = x.category_;
+		this->subject_                           = x.subject_;
+	}
 
-  return *this;
+	return *this;
 }
 
-ECLEntry_t::
-~ECLEntry_t ()
-{
-}
+ECLEntry_t::~ECLEntry_t() {}
 
 #include <ostream>
 
-::std::ostream&
-operator<< (::std::ostream& o, const Tag_t& i)
+::std::ostream& operator<<(::std::ostream& o, const Tag_t& i)
 {
-  o << ::std::endl << "name: " << i.name ();
-  return o;
+	o << ::std::endl << "name: " << i.name();
+	return o;
 }
 
-::std::ostream&
-operator<< (::std::ostream& o, const Attachment_t& i)
+::std::ostream& operator<<(::std::ostream& o, const Attachment_t& i)
 {
-  o << static_cast< const ::xml_schema::base64_binary& > (i);
+	o << static_cast<const ::xml_schema::base64_binary&>(i);
 
-  o << ::std::endl << "type: " << i.type ();
-  o << ::std::endl << "filename: " << i.filename ();
-  return o;
+	o << ::std::endl << "type: " << i.type();
+	o << ::std::endl << "filename: " << i.filename();
+	return o;
 }
 
-::std::ostream&
-operator<< (::std::ostream& o, const Field_t& i)
+::std::ostream& operator<<(::std::ostream& o, const Field_t& i)
 {
-  o << static_cast< const ::xml_schema::string& > (i);
+	o << static_cast<const ::xml_schema::string&>(i);
 
-  o << ::std::endl << "name: " << i.name ();
-  return o;
+	o << ::std::endl << "name: " << i.name();
+	return o;
 }
 
-::std::ostream&
-operator<< (::std::ostream& o, const Form_t& i)
+::std::ostream& operator<<(::std::ostream& o, const Form_t& i)
 {
-  for (Form_t::field_const_iterator
-       b (i.field ().begin ()), e (i.field ().end ());
-       b != e; ++b)
-  {
-    o << ::std::endl << "field: " << *b;
-  }
+	for(Form_t::field_const_iterator b(i.field().begin()), e(i.field().end()); b != e;
+	    ++b)
+	{
+		o << ::std::endl << "field: " << *b;
+	}
 
-  o << ::std::endl << "name: " << i.name ();
-  return o;
+	o << ::std::endl << "name: " << i.name();
+	return o;
 }
 
-::std::ostream&
-operator<< (::std::ostream& o, const ECLEntry_t& i)
+::std::ostream& operator<<(::std::ostream& o, const ECLEntry_t& i)
 {
-  for (ECLEntry_t::tag_const_iterator
-       b (i.tag ().begin ()), e (i.tag ().end ());
-       b != e; ++b)
-  {
-    o << ::std::endl << "tag: " << *b;
-  }
+	for(ECLEntry_t::tag_const_iterator b(i.tag().begin()), e(i.tag().end()); b != e; ++b)
+	{
+		o << ::std::endl << "tag: " << *b;
+	}
 
-  for (ECLEntry_t::attachment_const_iterator
-       b (i.attachment ().begin ()), e (i.attachment ().end ());
-       b != e; ++b)
-  {
-    o << ::std::endl << "attachment: " << *b;
-  }
+	for(ECLEntry_t::attachment_const_iterator b(i.attachment().begin()),
+	    e(i.attachment().end());
+	    b != e;
+	    ++b)
+	{
+		o << ::std::endl << "attachment: " << *b;
+	}
 
-  if (i.form ())
-  {
-    o << ::std::endl << "form: " << *i.form ();
-  }
+	if(i.form())
+	{
+		o << ::std::endl << "form: " << *i.form();
+	}
 
-  o << ::std::endl << "author: " << i.author ();
-  o << ::std::endl << "category: " << i.category ();
-  if (i.subject ())
-  {
-    o << ::std::endl << "subject: " << *i.subject ();
-  }
+	o << ::std::endl << "author: " << i.author();
+	o << ::std::endl << "category: " << i.category();
+	if(i.subject())
+	{
+		o << ::std::endl << "subject: " << *i.subject();
+	}
 
-  return o;
+	return o;
 }
 
 #include <istream>
-#include <xsd/cxx/xml/sax/std-input-source.hxx>
 #include <xsd/cxx/tree/error-handler.hxx>
+#include <xsd/cxx/xml/sax/std-input-source.hxx>
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (const ::std::string& u,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(const ::std::string&            u,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xsd::cxx::tree::error_handler< char > h;
+	::xsd::cxx::tree::error_handler<char> h;
 
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      u, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(u, h, p, f));
 
-  h.throw_if_failed< ::xsd::cxx::tree::parsing< char > > ();
+	h.throw_if_failed< ::xsd::cxx::tree::parsing<char> >();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (const ::std::string& u,
-       ::xml_schema::error_handler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(const ::std::string&            u,
+                                       ::xml_schema::error_handler&    h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      u, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(u, h, p, f));
 
-  if (!d.get ())
-    throw ::xsd::cxx::tree::parsing< char > ();
+	if(!d.get())
+		throw ::xsd::cxx::tree::parsing<char>();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (const ::std::string& u,
-       ::xercesc::DOMErrorHandler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(const ::std::string&            u,
+                                       ::xercesc::DOMErrorHandler&     h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      u, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(u, h, p, f));
 
-  if (!d.get ())
-    throw ::xsd::cxx::tree::parsing< char > ();
+	if(!d.get())
+		throw ::xsd::cxx::tree::parsing<char>();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xsd::cxx::xml::sax::std_input_source isrc (is);
-  return ::entry (isrc, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is);
+	return ::entry(isrc, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       ::xml_schema::error_handler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       ::xml_schema::error_handler&    h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xsd::cxx::xml::sax::std_input_source isrc (is);
-  return ::entry (isrc, h, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is);
+	return ::entry(isrc, h, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       ::xercesc::DOMErrorHandler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       ::xercesc::DOMErrorHandler&     h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::sax::std_input_source isrc (is);
-  return ::entry (isrc, h, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is);
+	return ::entry(isrc, h, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       const ::std::string& sid,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       const ::std::string&            sid,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
-  return ::entry (isrc, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is, sid);
+	return ::entry(isrc, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       const ::std::string& sid,
-       ::xml_schema::error_handler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       const ::std::string&            sid,
+                                       ::xml_schema::error_handler&    h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0,
-    (f & ::xml_schema::flags::keep_dom) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0,
+	                                    (f & ::xml_schema::flags::keep_dom) == 0);
 
-  ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
-  return ::entry (isrc, h, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is, sid);
+	return ::entry(isrc, h, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::std::istream& is,
-       const ::std::string& sid,
-       ::xercesc::DOMErrorHandler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::std::istream&                 is,
+                                       const ::std::string&            sid,
+                                       ::xercesc::DOMErrorHandler&     h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
-  return ::entry (isrc, h, f, p);
+	::xsd::cxx::xml::sax::std_input_source isrc(is, sid);
+	return ::entry(isrc, h, f, p);
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::xercesc::InputSource& i,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::xercesc::InputSource&         i,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xsd::cxx::tree::error_handler< char > h;
+	::xsd::cxx::tree::error_handler<char> h;
 
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      i, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(i, h, p, f));
 
-  h.throw_if_failed< ::xsd::cxx::tree::parsing< char > > ();
+	h.throw_if_failed< ::xsd::cxx::tree::parsing<char> >();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::xercesc::InputSource& i,
-       ::xml_schema::error_handler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::xercesc::InputSource&         i,
+                                       ::xml_schema::error_handler&    h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      i, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(i, h, p, f));
 
-  if (!d.get ())
-    throw ::xsd::cxx::tree::parsing< char > ();
+	if(!d.get())
+		throw ::xsd::cxx::tree::parsing<char>();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::xercesc::InputSource& i,
-       ::xercesc::DOMErrorHandler& h,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(::xercesc::InputSource&         i,
+                                       ::xercesc::DOMErrorHandler&     h,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::parse< char > (
-      i, h, p, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::parse<char>(i, h, p, f));
 
-  if (!d.get ())
-    throw ::xsd::cxx::tree::parsing< char > ();
+	if(!d.get())
+		throw ::xsd::cxx::tree::parsing<char>();
 
-  return ::std::unique_ptr< ::ECLEntry_t > (
-    ::entry (
-      std::move (d), f | ::xml_schema::flags::own_dom, p));
+	return ::std::unique_ptr< ::ECLEntry_t>(
+	    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (const ::xercesc::DOMDocument& doc,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties& p)
+::std::unique_ptr< ::ECLEntry_t> entry(const ::xercesc::DOMDocument&   doc,
+                                       ::xml_schema::flags             f,
+                                       const ::xml_schema::properties& p)
 {
-  if (f & ::xml_schema::flags::keep_dom)
-  {
-    ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-      static_cast< ::xercesc::DOMDocument* > (doc.cloneNode (true)));
+	if(f & ::xml_schema::flags::keep_dom)
+	{
+		::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+		    static_cast< ::xercesc::DOMDocument*>(doc.cloneNode(true)));
 
-    return ::std::unique_ptr< ::ECLEntry_t > (
-      ::entry (
-        std::move (d), f | ::xml_schema::flags::own_dom, p));
-  }
+		return ::std::unique_ptr< ::ECLEntry_t>(
+		    ::entry(std::move(d), f | ::xml_schema::flags::own_dom, p));
+	}
 
-  const ::xercesc::DOMElement& e (*doc.getDocumentElement ());
-  const ::xsd::cxx::xml::qualified_name< char > n (
-    ::xsd::cxx::xml::dom::name< char > (e));
+	const ::xercesc::DOMElement&                e(*doc.getDocumentElement());
+	const ::xsd::cxx::xml::qualified_name<char> n(::xsd::cxx::xml::dom::name<char>(e));
 
-  if (n.name () == "entry" &&
-      n.namespace_ () == "")
-  {
-    ::std::unique_ptr< ::ECLEntry_t > r (
-      ::xsd::cxx::tree::traits< ::ECLEntry_t, char >::create (
-        e, f, 0));
-    return r;
-  }
+	if(n.name() == "entry" && n.namespace_() == "")
+	{
+		::std::unique_ptr< ::ECLEntry_t> r(
+		    ::xsd::cxx::tree::traits< ::ECLEntry_t, char>::create(e, f, 0));
+		return r;
+	}
 
-  throw ::xsd::cxx::tree::unexpected_element < char > (
-    n.name (),
-    n.namespace_ (),
-    "entry",
-    "");
+	throw ::xsd::cxx::tree::unexpected_element<char>(
+	    n.name(), n.namespace_(), "entry", "");
 }
 
-::std::unique_ptr< ::ECLEntry_t >
-entry (::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d,
-       ::xml_schema::flags f,
-       const ::xml_schema::properties&)
+::std::unique_ptr< ::ECLEntry_t> entry(
+    ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d,
+    ::xml_schema::flags                                    f,
+    const ::xml_schema::properties&)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > c (
-    ((f & ::xml_schema::flags::keep_dom) &&
-     !(f & ::xml_schema::flags::own_dom))
-    ? static_cast< ::xercesc::DOMDocument* > (d->cloneNode (true))
-    : 0);
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> c(
+	    ((f & ::xml_schema::flags::keep_dom) && !(f & ::xml_schema::flags::own_dom))
+	        ? static_cast< ::xercesc::DOMDocument*>(d->cloneNode(true))
+	        : 0);
 
-  ::xercesc::DOMDocument& doc (c.get () ? *c : *d);
-  const ::xercesc::DOMElement& e (*doc.getDocumentElement ());
+	::xercesc::DOMDocument&      doc(c.get() ? *c : *d);
+	const ::xercesc::DOMElement& e(*doc.getDocumentElement());
 
-  const ::xsd::cxx::xml::qualified_name< char > n (
-    ::xsd::cxx::xml::dom::name< char > (e));
+	const ::xsd::cxx::xml::qualified_name<char> n(::xsd::cxx::xml::dom::name<char>(e));
 
-  if (f & ::xml_schema::flags::keep_dom)
-    doc.setUserData (::xml_schema::dom::tree_node_key,
-                     (c.get () ? &c : &d),
-                     0);
+	if(f & ::xml_schema::flags::keep_dom)
+		doc.setUserData(::xml_schema::dom::tree_node_key, (c.get() ? &c : &d), 0);
 
-  if (n.name () == "entry" &&
-      n.namespace_ () == "")
-  {
-    ::std::unique_ptr< ::ECLEntry_t > r (
-      ::xsd::cxx::tree::traits< ::ECLEntry_t, char >::create (
-        e, f, 0));
-    return r;
-  }
+	if(n.name() == "entry" && n.namespace_() == "")
+	{
+		::std::unique_ptr< ::ECLEntry_t> r(
+		    ::xsd::cxx::tree::traits< ::ECLEntry_t, char>::create(e, f, 0));
+		return r;
+	}
 
-  throw ::xsd::cxx::tree::unexpected_element < char > (
-    n.name (),
-    n.namespace_ (),
-    "entry",
-    "");
+	throw ::xsd::cxx::tree::unexpected_element<char>(
+	    n.name(), n.namespace_(), "entry", "");
 }
 
 #include <ostream>
 #include <xsd/cxx/tree/error-handler.hxx>
 #include <xsd/cxx/xml/dom/serialization-source.hxx>
 
-void
-entry (::std::ostream& o,
-       const ::ECLEntry_t& s,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::std::ostream&                        o,
+           const ::ECLEntry_t&                    s,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0);
 
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
 
-  ::xsd::cxx::tree::error_handler< char > h;
+	::xsd::cxx::tree::error_handler<char> h;
 
-  ::xsd::cxx::xml::dom::ostream_format_target t (o);
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    h.throw_if_failed< ::xsd::cxx::tree::serialization< char > > ();
-  }
+	::xsd::cxx::xml::dom::ostream_format_target t(o);
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		h.throw_if_failed< ::xsd::cxx::tree::serialization<char> >();
+	}
 }
 
-void
-entry (::std::ostream& o,
-       const ::ECLEntry_t& s,
-       ::xml_schema::error_handler& h,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::std::ostream&                        o,
+           const ::ECLEntry_t&                    s,
+           ::xml_schema::error_handler&           h,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xsd::cxx::xml::auto_initializer i (
-    (f & ::xml_schema::flags::dont_initialize) == 0);
+	::xsd::cxx::xml::auto_initializer i((f & ::xml_schema::flags::dont_initialize) == 0);
 
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
-  ::xsd::cxx::xml::dom::ostream_format_target t (o);
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    throw ::xsd::cxx::tree::serialization< char > ();
-  }
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
+	::xsd::cxx::xml::dom::ostream_format_target            t(o);
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		throw ::xsd::cxx::tree::serialization<char>();
+	}
 }
 
-void
-entry (::std::ostream& o,
-       const ::ECLEntry_t& s,
-       ::xercesc::DOMErrorHandler& h,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::std::ostream&                        o,
+           const ::ECLEntry_t&                    s,
+           ::xercesc::DOMErrorHandler&            h,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
-  ::xsd::cxx::xml::dom::ostream_format_target t (o);
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    throw ::xsd::cxx::tree::serialization< char > ();
-  }
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
+	::xsd::cxx::xml::dom::ostream_format_target            t(o);
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		throw ::xsd::cxx::tree::serialization<char>();
+	}
 }
 
-void
-entry (::xercesc::XMLFormatTarget& t,
-       const ::ECLEntry_t& s,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::xercesc::XMLFormatTarget&            t,
+           const ::ECLEntry_t&                    s,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
 
-  ::xsd::cxx::tree::error_handler< char > h;
+	::xsd::cxx::tree::error_handler<char> h;
 
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    h.throw_if_failed< ::xsd::cxx::tree::serialization< char > > ();
-  }
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		h.throw_if_failed< ::xsd::cxx::tree::serialization<char> >();
+	}
 }
 
-void
-entry (::xercesc::XMLFormatTarget& t,
-       const ::ECLEntry_t& s,
-       ::xml_schema::error_handler& h,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::xercesc::XMLFormatTarget&            t,
+           const ::ECLEntry_t&                    s,
+           ::xml_schema::error_handler&           h,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    throw ::xsd::cxx::tree::serialization< char > ();
-  }
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		throw ::xsd::cxx::tree::serialization<char>();
+	}
 }
 
-void
-entry (::xercesc::XMLFormatTarget& t,
-       const ::ECLEntry_t& s,
-       ::xercesc::DOMErrorHandler& h,
-       const ::xml_schema::namespace_infomap& m,
-       const ::std::string& e,
-       ::xml_schema::flags f)
+void entry(::xercesc::XMLFormatTarget&            t,
+           const ::ECLEntry_t&                    s,
+           ::xercesc::DOMErrorHandler&            h,
+           const ::xml_schema::namespace_infomap& m,
+           const ::std::string&                   e,
+           ::xml_schema::flags                    f)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::entry (s, m, f));
-  if (!::xsd::cxx::xml::dom::serialize (t, *d, e, h, f))
-  {
-    throw ::xsd::cxx::tree::serialization< char > ();
-  }
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(::entry(s, m, f));
+	if(!::xsd::cxx::xml::dom::serialize(t, *d, e, h, f))
+	{
+		throw ::xsd::cxx::tree::serialization<char>();
+	}
 }
 
-void
-entry (::xercesc::DOMDocument& d,
-       const ::ECLEntry_t& s,
-       ::xml_schema::flags)
+void entry(::xercesc::DOMDocument& d, const ::ECLEntry_t& s, ::xml_schema::flags)
 {
-  ::xercesc::DOMElement& e (*d.getDocumentElement ());
-  const ::xsd::cxx::xml::qualified_name< char > n (
-    ::xsd::cxx::xml::dom::name< char > (e));
+	::xercesc::DOMElement&                      e(*d.getDocumentElement());
+	const ::xsd::cxx::xml::qualified_name<char> n(::xsd::cxx::xml::dom::name<char>(e));
 
-  if (n.name () == "entry" &&
-      n.namespace_ () == "")
-  {
-    e << s;
-  }
-  else
-  {
-    throw ::xsd::cxx::tree::unexpected_element < char > (
-      n.name (),
-      n.namespace_ (),
-      "entry",
-      "");
-  }
+	if(n.name() == "entry" && n.namespace_() == "")
+	{
+		e << s;
+	}
+	else
+	{
+		throw ::xsd::cxx::tree::unexpected_element<char>(
+		    n.name(), n.namespace_(), "entry", "");
+	}
 }
 
-::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument >
-entry (const ::ECLEntry_t& s,
-       const ::xml_schema::namespace_infomap& m,
-       ::xml_schema::flags f)
+::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> entry(
+    const ::ECLEntry_t&                    s,
+    const ::xml_schema::namespace_infomap& m,
+    ::xml_schema::flags                    f)
 {
-  ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument > d (
-    ::xsd::cxx::xml::dom::serialize< char > (
-      "entry",
-      "",
-      m, f));
+	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d(
+	    ::xsd::cxx::xml::dom::serialize<char>("entry", "", m, f));
 
-  ::entry (*d, s, f);
-  return d;
+	::entry(*d, s, f);
+	return d;
 }
 
-void
-operator<< (::xercesc::DOMElement& e, const Tag_t& i)
+void operator<<(::xercesc::DOMElement& e, const Tag_t& i)
 {
-  e << static_cast< const ::xml_schema::type& > (i);
+	e << static_cast<const ::xml_schema::type&>(i);
 
-  // name
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "name",
-        e));
+	// name
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("name", e));
 
-    a << i.name ();
-  }
+		a << i.name();
+	}
 }
 
-void
-operator<< (::xercesc::DOMElement& e, const Attachment_t& i)
+void operator<<(::xercesc::DOMElement& e, const Attachment_t& i)
 {
-  e << static_cast< const ::xml_schema::base64_binary& > (i);
+	e << static_cast<const ::xml_schema::base64_binary&>(i);
 
-  // type
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "type",
-        e));
+	// type
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("type", e));
 
-    a << i.type ();
-  }
+		a << i.type();
+	}
 
-  // filename
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "filename",
-        e));
+	// filename
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("filename", e));
 
-    a << i.filename ();
-  }
+		a << i.filename();
+	}
 }
 
-void
-operator<< (::xercesc::DOMElement& e, const Field_t& i)
+void operator<<(::xercesc::DOMElement& e, const Field_t& i)
 {
-  e << static_cast< const ::xml_schema::string& > (i);
+	e << static_cast<const ::xml_schema::string&>(i);
 
-  // name
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "name",
-        e));
+	// name
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("name", e));
 
-    a << i.name ();
-  }
+		a << i.name();
+	}
 }
 
-void
-operator<< (::xercesc::DOMElement& e, const Form_t& i)
+void operator<<(::xercesc::DOMElement& e, const Form_t& i)
 {
-  e << static_cast< const ::xml_schema::type& > (i);
+	e << static_cast<const ::xml_schema::type&>(i);
 
-  // field
-  //
-  for (Form_t::field_const_iterator
-       b (i.field ().begin ()), n (i.field ().end ());
-       b != n; ++b)
-  {
-    ::xercesc::DOMElement& s (
-      ::xsd::cxx::xml::dom::create_element (
-        "field",
-        e));
+	// field
+	//
+	for(Form_t::field_const_iterator b(i.field().begin()), n(i.field().end()); b != n;
+	    ++b)
+	{
+		::xercesc::DOMElement& s(::xsd::cxx::xml::dom::create_element("field", e));
 
-    s << *b;
-  }
+		s << *b;
+	}
 
-  // name
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "name",
-        e));
+	// name
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("name", e));
 
-    a << i.name ();
-  }
+		a << i.name();
+	}
 }
 
-void
-operator<< (::xercesc::DOMElement& e, const ECLEntry_t& i)
+void operator<<(::xercesc::DOMElement& e, const ECLEntry_t& i)
 {
-  e << static_cast< const ::xml_schema::type& > (i);
+	e << static_cast<const ::xml_schema::type&>(i);
 
-  // tag
-  //
-  for (ECLEntry_t::tag_const_iterator
-       b (i.tag ().begin ()), n (i.tag ().end ());
-       b != n; ++b)
-  {
-    ::xercesc::DOMElement& s (
-      ::xsd::cxx::xml::dom::create_element (
-        "tag",
-        e));
+	// tag
+	//
+	for(ECLEntry_t::tag_const_iterator b(i.tag().begin()), n(i.tag().end()); b != n; ++b)
+	{
+		::xercesc::DOMElement& s(::xsd::cxx::xml::dom::create_element("tag", e));
 
-    s << *b;
-  }
+		s << *b;
+	}
 
-  // attachment
-  //
-  for (ECLEntry_t::attachment_const_iterator
-       b (i.attachment ().begin ()), n (i.attachment ().end ());
-       b != n; ++b)
-  {
-    ::xercesc::DOMElement& s (
-      ::xsd::cxx::xml::dom::create_element (
-        "attachment",
-        e));
+	// attachment
+	//
+	for(ECLEntry_t::attachment_const_iterator b(i.attachment().begin()),
+	    n(i.attachment().end());
+	    b != n;
+	    ++b)
+	{
+		::xercesc::DOMElement& s(::xsd::cxx::xml::dom::create_element("attachment", e));
 
-    s << *b;
-  }
+		s << *b;
+	}
 
-  // form
-  //
-  if (i.form ())
-  {
-    ::xercesc::DOMElement& s (
-      ::xsd::cxx::xml::dom::create_element (
-        "form",
-        e));
+	// form
+	//
+	if(i.form())
+	{
+		::xercesc::DOMElement& s(::xsd::cxx::xml::dom::create_element("form", e));
 
-    s << *i.form ();
-  }
+		s << *i.form();
+	}
 
-  // author
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "author",
-        e));
+	// author
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("author", e));
 
-    a << i.author ();
-  }
+		a << i.author();
+	}
 
-  // category
-  //
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "category",
-        e));
+	// category
+	//
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("category", e));
 
-    a << i.category ();
-  }
+		a << i.category();
+	}
 
-  // subject
-  //
-  if (i.subject ())
-  {
-    ::xercesc::DOMAttr& a (
-      ::xsd::cxx::xml::dom::create_attribute (
-        "subject",
-        e));
+	// subject
+	//
+	if(i.subject())
+	{
+		::xercesc::DOMAttr& a(::xsd::cxx::xml::dom::create_attribute("subject", e));
 
-    a << *i.subject ();
-  }
+		a << *i.subject();
+	}
 }
 
 #include <xsd/cxx/post.hxx>
@@ -1632,4 +1207,3 @@ operator<< (::xercesc::DOMElement& e, const ECLEntry_t& i)
 //
 //
 // End epilogue.
-

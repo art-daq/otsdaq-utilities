@@ -123,11 +123,22 @@ void VisualSupervisorV2::transitionConfiguring(toolbox::Event::Reference /*e*/)
 			__SUP_COUT__ << "Configuration table group name: " << theGroup.first
 			             << " key: " << theGroup.second << __E__;
 
-			
 			//disable version tracking to accept untracked versions to be selected by the FSM transition source
-			theConfigurationManager_->loadTableGroup(theGroup.first, theGroup.second, true /*doActivate*/,
-				0,0,0,0,0,0,false,0,0,ConfigurationManager::LoadGroupType::ALL_TYPES,
-				true /*ignoreVersionTracking*/);
+			theConfigurationManager_->loadTableGroup(
+			    theGroup.first,
+			    theGroup.second,
+			    true /*doActivate*/,
+			    0,
+			    0,
+			    0,
+			    0,
+			    0,
+			    0,
+			    false,
+			    0,
+			    0,
+			    ConfigurationManager::LoadGroupType::ALL_TYPES,
+			    true /*ignoreVersionTracking*/);
 		}
 	}  // end start like CoreSupervisorBase::transitionConfiguring
 
@@ -271,12 +282,17 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		{
 			__SUP_COUT__ << "ERROR! Something went wrong trying to get raw data."
 			             << __E__;
-			try	{ throw; } //one more try to printout extra info
-			catch(const std::exception &e)
+			try
+			{
+				throw;
+			}  //one more try to printout extra info
+			catch(const std::exception& e)
 			{
 				__SUP_COUT_ERR__ << "Exception message: " << e.what();
 			}
-			catch(...){}
+			catch(...)
+			{
+			}
 			__SUP_COUT_INFO__ << "ERROR! Something went wrong trying to get raw data."
 			                  << __E__;
 		}
@@ -408,9 +424,8 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		std::string  rootpath = std::string(ROOT_BROWSER_PATH) + "/";
 		std::string  path     = CgiDataUtilities::postData(cgiIn, "Path");
 		boost::regex re("%2F");
-		path =
-		    boost::regex_replace(path, re, "/");  // Dario: should be transparent for
-		                                          // Ryan's purposes but required by Extjs
+		path = boost::regex_replace(path, re, "/");  // Dario: should be transparent for
+		    // Ryan's purposes but required by Extjs
 
 		////STDLINE(std::string("rootpath                 : ")+rootpath,"") ;
 		////STDLINE(std::string("path                     : ")+    path,"") ;
@@ -551,9 +566,8 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		    path, re2, " ");  // Dario: should be transparent for Ryan's purposes but
 		                      // required by Extjs
 		boost::regex re3("%3A");
-		path =
-		    boost::regex_replace(path, re3, "");  // Dario: should be transparent for
-		                                          // Ryan's purposes but required by Extjs
+		path = boost::regex_replace(path, re3, "");  // Dario: should be transparent for
+		    // Ryan's purposes but required by Extjs
 		ss.str("");
 		ss << "path    : " << path;
 		STDLINE(ss.str(), ACCyan);

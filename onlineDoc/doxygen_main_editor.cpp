@@ -29,26 +29,34 @@
 #include <iomanip>
 #include <iostream>
 
-
 // use this for normal printouts
 #define __PRINTF__ printf
 
-#define __SHORTFILE__ 		(__builtin_strstr(&__FILE__[0], "/srcs/") ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 : __FILE__)
-#define __COUT_HDR_L__ 		"[" << std::dec        << __LINE__ << " |\t"
-#define __COUT_HDR_FL__ 	__SHORTFILE__ << " "   << __COUT_HDR_L__
+#define __SHORTFILE__                                   \
+	(__builtin_strstr(&__FILE__[0], "/srcs/")           \
+	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
+	     : __FILE__)
+#define __COUT_HDR_L__ "[" << std::dec << __LINE__ << " |\t"
+#define __COUT_HDR_FL__ __SHORTFILE__ << " " << __COUT_HDR_L__
 
-#define __COUT_TYPE__(X) 	std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ":"
-#define __COUT_ERR__ 		__COUT_TYPE__(LogError) << __COUT_HDR_FL__
-#define __COUT_WARN__ 		__COUT_TYPE__(LogWarning) << __COUT_HDR_FL__
-#define __COUT_INFO__ 		__COUT_TYPE__(LogInfo) << __COUT_HDR_FL__
-#define __COUT__ 			__COUT_TYPE__(LogDebug) << __COUT_HDR_FL__
+#define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ":"
+#define __COUT_ERR__ __COUT_TYPE__(LogError) << __COUT_HDR_FL__
+#define __COUT_WARN__ __COUT_TYPE__(LogWarning) << __COUT_HDR_FL__
+#define __COUT_INFO__ __COUT_TYPE__(LogInfo) << __COUT_HDR_FL__
+#define __COUT__ __COUT_TYPE__(LogDebug) << __COUT_HDR_FL__
 
-#define __SS__            	std::stringstream ss; ss << "|" << __MF_DECOR__ << ": " << __COUT_HDR_FL__
-#define __SS_THROW__        { __COUT_ERR__ << "\n" << ss.str(); throw std::runtime_error(ss.str()); } //put in {}'s to prevent surprises, e.g. if ... else __SS_THROW__;
-#define __E__ 				std::endl
+#define __SS__            \
+	std::stringstream ss; \
+	ss << "|" << __MF_DECOR__ << ": " << __COUT_HDR_FL__
+#define __SS_THROW__                        \
+	{                                       \
+		__COUT_ERR__ << "\n" << ss.str();   \
+		throw std::runtime_error(ss.str()); \
+	}  //put in {}'s to prevent surprises, e.g. if ... else __SS_THROW__;
+#define __E__ std::endl
 #define Q(X) #X
 #define QUOTE(X) Q(X)
-#define __COUTV__(X) 		__COUT__ << QUOTE(X) << " = " << X << __E__
+#define __COUTV__(X) __COUT__ << QUOTE(X) << " = " << X << __E__
 
 // and use this to suppress
 // #define __PRINTF__ if(0) printf

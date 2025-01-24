@@ -39,15 +39,15 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void requestWrapper(xgi::Input* in, xgi::Output* out);
 	// end MacroMaker only functions
 
-	static void 				RemoteControlWorkLoop			(MacroMakerSupervisor* supervisorPtr);
+	static void RemoteControlWorkLoop(MacroMakerSupervisor* supervisorPtr);
 
 	void handleRequest(const std::string                Command,
 	                   HttpXmlDocument&                 xmldoc,
 	                   cgicc::Cgicc&                    cgi,
 	                   const WebUsers::RequestUserInfo& userInfo);
 
-	xoap::MessageReference 		frontEndCommunicationRequest	(xoap::MessageReference message);
-	xoap::MessageReference 		supervisorSequenceCheck			(xoap::MessageReference message);
+	xoap::MessageReference frontEndCommunicationRequest(xoap::MessageReference message);
+	xoap::MessageReference supervisorSequenceCheck(xoap::MessageReference message);
 
 	void getFElist(HttpXmlDocument& xmldoc);
 	void getFEMacroList(HttpXmlDocument& xmldoc, const std::string& username);
@@ -74,22 +74,22 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                            std::string        time,
 	                            std::string        interfaces,
 	                            const std::string& username);
-	void appendCommandToHistory(std::string feClass,
-								std::string feUID,
-								std::string macroType,
-								std::string macroName,
-								std::string inputArgs,
-								std::string outputArgs,
-								bool saveOutputs,
-								const std::string& username);
+	void appendCommandToHistory(std::string        feClass,
+	                            std::string        feUID,
+	                            std::string        macroType,
+	                            std::string        macroName,
+	                            std::string        inputArgs,
+	                            std::string        outputArgs,
+	                            bool               saveOutputs,
+	                            const std::string& username);
 	void loadFEMacroSequences(HttpXmlDocument& xmldoc, const std::string& username);
 	void saveFEMacroSequence(cgicc::Cgicc& cgi, const std::string& username);
-	void getFEMacroSequence(HttpXmlDocument& xmldoc,
-						  cgicc::Cgicc& cgi, 
-						  const std::string& username);
-	void runFEMacroSequence(HttpXmlDocument& xmldoc,
-							cgicc::Cgicc& cgi,
-							const std::string& username);
+	void getFEMacroSequence(HttpXmlDocument&   xmldoc,
+	                        cgicc::Cgicc&      cgi,
+	                        const std::string& username);
+	void runFEMacroSequence(HttpXmlDocument&   xmldoc,
+	                        cgicc::Cgicc&      cgi,
+	                        const std::string& username);
 	void deleteFEMacroSequence(cgicc::Cgicc& cgi, const std::string& username);
 	void loadHistory(HttpXmlDocument& xmldoc, const std::string& username);
 	void loadFEHistory(HttpXmlDocument& xmldoc, const std::string& username);
@@ -110,10 +110,16 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void runFEMacro(HttpXmlDocument&                 xmldoc,
 	                cgicc::Cgicc&                    cgi,
 	                const WebUsers::RequestUserInfo& userInfo);
-	void runFEMacro(HttpXmlDocument&                 xmldoc,
-					std::string feClassSelected, std::string feUIDSelected, const std::string& macroType,
-					const std::string& macroName, const std::string& inputArgs, const std::string outputArgs, 
-					bool        saveOutputs, const std::string& username, const std::string& userGroupPermissions);
+	void runFEMacro(HttpXmlDocument&   xmldoc,
+	                std::string        feClassSelected,
+	                std::string        feUIDSelected,
+	                const std::string& macroType,
+	                const std::string& macroName,
+	                const std::string& inputArgs,
+	                const std::string  outputArgs,
+	                bool               saveOutputs,
+	                const std::string& username,
+	                const std::string& userGroupPermissions);
 
 	std::string generateHexArray(const std::string& sourceHexString, int& numOfBytes);
 	bool        isArgumentVariable(const std::string& argumentString);
@@ -131,11 +137,11 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                                                          FEPluginTypetoFEsMap_;
 	std::map<std::string /*FE UID*/, std::string /*FE Type*/> FEtoPluginTypeMap_;
 
-	std::string 				securityCode_;
-	bool        				defaultSequence_;
+	std::string securityCode_;
+	bool        defaultSequence_;
 
-	std::map<std::string /* username */, 
-		std::vector<std::string> /* last command */> 	lastFeCommandToHistory_; //prevent repeats to history
+	std::map<std::string /* username */, std::vector<std::string> /* last command */>
+	    lastFeCommandToHistory_;  //prevent repeats to history
 
 };  // end MacroMakerSupervisor declaration
 
