@@ -713,28 +713,39 @@ Debug.errorPop = function(err,severity)
 			el.onmousedown = function(){console.log("debug down"); event.stopPropagation();}
 			el.onmouseup = function(){console.log("debug up"); event.stopPropagation();}
 			
-			/////////////
-			function localDebugKeyDownListener(e)
-			{
-				//Debug.log("Debug keydown c=" + keyCode + " " + c + " shift=" + e.shiftKey + 
-				//		" ctrl=" + e.ctrlKey + " command=" + _commandKeyDown);
+			// /////////////
+			// function localDebugKeyDownListener(e)
+			// {
+			// 	//Debug.log("Debug keydown c=" + keyCode + " " + c + " shift=" + e.shiftKey + 
+			// 	//		" ctrl=" + e.ctrlKey + " command=" + _commandKeyDown);
 				
-				if(!e.shiftKey && e.keyCode == 27) //ESCAPE key, close popup
-				{
-					e.preventDefault();
-					e.stopPropagation();
-					Debug.closeErrorPop();										
-				}
-				else if(e.shiftKey && e.keyCode == 27) //SHIFT+ESCAPE key, bring back popup
-				{
-					e.preventDefault();
-					e.stopPropagation();
-					Debug.bringBackErrorPop();										
-				}
-			} //end localDebugKeyDownListener()
+			// 	if(!e.shiftKey && e.keyCode == 27) //ESCAPE key, close popup
+			// 	{
+			// 		e.preventDefault();
+			// 		e.stopPropagation();
+
+			// 		//try to unmaximze parent window if error pop is already closed
+			// 		var el = document.getElementById(Debug._errBoxId);
+			// 		if(!el || el.style.display == "none")
+			// 		{
+			// 			Debug.log("Attempting to unmaximize window...");
+			// 			if(DesktopContent && DesktopContent.unmaximizeWindow)
+			// 				DesktopContent.unmaximizeWindow();
+			// 		}
+			// 		Debug.closeErrorPop();										
+			// 	}
+			// 	else if(e.shiftKey && e.keyCode == 27) //SHIFT+ESCAPE key, bring back popup
+			// 	{
+			// 		e.preventDefault();
+			// 		e.stopPropagation();
+			// 		Debug.bringBackErrorPop();										
+			// 	}
+			// } //end localDebugKeyDownListener()
 			
-			document.body.removeEventListener("keydown",localDebugKeyDownListener);
-			document.body.addEventListener("keydown",localDebugKeyDownListener);							
+			document.body.removeEventListener("keydown",Debug.KeyDownListener);
+			document.body.addEventListener("keydown",Debug.KeyDownListener);			
+			// document.body.removeEventListener("keydown",localDebugKeyDownListener);
+			// document.body.addEventListener("keydown",localDebugKeyDownListener);							
 			
 			
 			//add style for error to page HEAD tag			
@@ -965,6 +976,45 @@ Debug.errorPop = function(err,severity)
 } //end errorPop()
 
 Debug._errBoxLastContent = "";
+//=====================================================================================
+//	document.body keydown listener
+Debug.KeyDownListener = function(e) 
+{
+	Debug.log("Debug.KeyDownListener()");
+	//Debug.log("Debug keydown c=" + keyCode + " " + c + " shift=" + e.shiftKey + 
+	//		" ctrl=" + e.ctrlKey + " command=" + _commandKeyDown);
+	
+	if(!e.shiftKey && e.keyCode == 27) //ESCAPE key, close popup
+	{
+		e.preventDefault();
+		e.stopPropagation();
+
+		//try to unmaximze parent window if error pop is already closed
+		var el = document.getElementById(Debug._errBoxId);
+		if(!el || el.style.display == "none")
+		{
+			Debug.log("Attempting to unmaximize window...");
+			if(typeof Desktop != "undefined" && //avoid exception
+				Desktop && Desktop.desktop && Desktop.desktop.getForeWindow())
+			{
+				//attempt to handle at desktop level!
+				if(Desktop.desktop.getForeWindow().isMaximized())
+					Desktop.desktop.toggleFullScreen();
+			}
+			else //attempt to handle at Desktop Window level
+			if(DesktopContent && DesktopContent.unmaximizeWindow)
+				DesktopContent.unmaximizeWindow();
+		}
+		Debug.closeErrorPop();										
+	}
+	else if(e.shiftKey && e.keyCode == 27) //SHIFT+ESCAPE key, bring back popup
+	{
+		e.preventDefault();
+		e.stopPropagation();
+		Debug.bringBackErrorPop();										
+	}
+} //end KeyDownListener()
+
 //=====================================================================================
 //Close the error popup on the window
 Debug.closeErrorPop = function() 
