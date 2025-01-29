@@ -1542,6 +1542,15 @@ Desktop.createDesktop = function(security) {
 			//console.log("makeForeWindow",event.data.windowId);
 			Desktop.desktop.setForeWindow(this.getWindowById(event.data.windowId|0));			
 			break;
+		case "unmaximizeWindow":
+			console.log("unmaximizeWindow",event.data.windowId);
+			Desktop.desktop.setForeWindow(this.getWindowById(event.data.windowId|0));
+			if(!_getForeWindow()) return;
+
+			if(_getForeWindow().isMaximized())
+				Desktop.desktop.toggleFullScreen();
+
+			break;
 		case "openNewWindow":
 			Debug.log("openNewWindow");
 

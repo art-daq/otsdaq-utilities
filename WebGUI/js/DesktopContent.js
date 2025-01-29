@@ -16,6 +16,8 @@
 //	 2. for proper functionality certain handlers are used:
 //   		cannot override handlers for window: onfocus, onscroll, onblur, onmousemove
 //			(try applying handlers to your body instead, or if you must override, try to call the DesktopContent handlers from your handlers)
+//			cannot override handler for body keydown.
+//			(try applying handlers to your window instead, or if you must override, try to call the DesktopContent handlers from your handlers)
 //
 //	 3. When all functionality is available init() be called in your page, if defined.
 //
@@ -159,6 +161,7 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.getUsername()
 //	DesktopContent.openNewWindow(name,subname,windowPath,unique,completeHandler)
 //	DesktopContent.mouseMoveSubscriber(newHandler) 
+//	DesktopContent.unmaximizeWindow() 
 //	DesktopContent.openNewBrowserTab(name,subname,windowPath,unique,completeHandler)
 //	DesktopContent.addDesktopIcon(iconName)
 //	DesktopContent.getParameter(index, name)
@@ -181,6 +184,7 @@ if (typeof Globals == 'undefined')
 
 DesktopContent._theWindowId = -1;
 DesktopContent._theWindowTitle = -1;
+DesktopContent._userDisplayName = "No-Login";
 
 DesktopContent._isFocused = false;
 DesktopContent._theWindow;
@@ -407,8 +411,7 @@ DesktopContent.init = function(onloadFunction)
 			event.stopImmediatePropagation();
 
 			if(DesktopContent._pageInitCalled || !event.data.gatewayURN) return;
-			DesktopContent._pageInitCalled = true;
-			
+						
 			Debug.log("Received info response from parent page");
 			DesktopContent._localUrnLid = event.data.localURN;
 			DesktopContent._serverUrnLid = event.data.gatewayURN;
@@ -493,7 +496,8 @@ DesktopContent.init = function(onloadFunction)
 			Debug.log("First message from Gateway Desktop received!");
 
 			DesktopContent._theWindowId		= event.data.windowId;	
-			DesktopContent._theWindowTitle	= event.data.windowTitle;					
+			DesktopContent._theWindowTitle	= event.data.windowTitle;	
+			DesktopContent._userDisplayName = event.data.userDisplayName;	
 			DesktopContent._serverUrnLid 	= event.data.gatewayURN;
 			DesktopContent._serverOrigin 	= event.data.gatewayOrigin;	
 
@@ -557,29 +561,8 @@ DesktopContent.init = function(onloadFunction)
 			Debug.log("Local XDAQ Supervisor Origin = " + DesktopContent._localOrigin);
 			Debug.log("Local Gateway Supervisor URN-LID #" + DesktopContent._serverUrnLid);
 			Debug.log("Local Gateway Supervisor Origin = " + DesktopContent._serverOrigin);
-
-			if(DesktopContent._pageInitCalled) return;
-			DesktopContent._pageInitCalled = true;
-			try
-			{
-				
-				if(onloadFunction)
-				{
-					Debug.log("Calling page body onload!");
-					onloadFunction(); //call page's init!
-				}
-				else if(init)
-				{
-					Debug.log("Calling page init!");
-					init(); //call page's init!
-				}
-				else
-					Debug.log("Ignoring missing init()");
-			}
-			catch(e)
-			{
-				Debug.log("Ignoring error in onload init():",e);
-			}
+			
+			localOnloadHandler();
 
 			//			DesktopContent._theWindow.parent.window.postMessage(
 			//					{
@@ -709,7 +692,7 @@ DesktopContent.init = function(onloadFunction)
 	{
 		window.clearTimeout(onloadWatchdogTimer);
 
-		if(!document.body) //the document is not ready?!
+		if(!document.body || document.readyState != "complete") //the document is not ready?!
 		{
 			//call self in a bit to try again
 			onloadWatchdogTimer = window.setTimeout(
@@ -723,6 +706,9 @@ DesktopContent.init = function(onloadFunction)
 			return;
 		} 
 		DesktopContent._pageInitCalled = true;
+
+		document.body.removeEventListener("keydown",Debug.KeyDownListener);
+		document.body.addEventListener("keydown",Debug.KeyDownListener);		
 
 		try
 		{					
@@ -889,17 +875,37 @@ DesktopContent.handleFocus = function(e)
 //	DesktopContent._zMailbox.innerHTML = parseInt(DesktopContent._zMailbox.innerHTML) + 1;
 	return true;
 }
+//=====================================================================================
 DesktopContent.handleBlur = function(e) 
 {	
 	//Debug.log("Blur DesktopContent._isFocused " + DesktopContent._isFocused);
 	DesktopContent._isFocused = false;
 }
+//=====================================================================================
 DesktopContent.handleScroll = function(e) 
 {
     
     //console.log("Scroll DesktopContent.handleScroll", DesktopContent._isFocused, DesktopContent._theWindowId);
 	window.focus();	
 }
+
+//=====================================================================================
+DesktopContent.unmaximizeWindow = function(mouseEvent,onlyDesktopFunction) 
+{	
+	Debug.log("DesktopContent.unmaximizeWindow()");	
+			
+	if(!DesktopContent._theWindow) return; //only happens if not part of desktop
+	
+	DesktopContent._theDesktopWindow.postMessage(
+						{
+		"windowId":			DesktopContent._theWindowId,
+		"request":  		"unmaximizeWindow"
+						},"*");		
+		
+		
+} //end DesktopContent.mouseMove()
+
+//=====================================================================================
 DesktopContent.mouseMove = function(mouseEvent,onlyDesktopFunction) 
 {	
 	//console.log("desktop move",DesktopContent._mouseMoveSubscribers.length);
@@ -953,20 +959,17 @@ DesktopContent.mouseMoveSubscriber = function(newHandler)
 	DesktopContent._mouseMoveSubscribers.push(newHandler);
 } //end DesktopContent.mouseMoveSubscriber()
 	
-//document.body does not exist yet (always?)!
-// if(document.body)
-// {
-// 	var onloadFunction = document.body.onload;
-// 	document.body.onload = function()
-// 	{		
-// 		Debug.log("Calling Desktop Content init on body load!",onloadFunction);
-// 		DesktopContent.init();
-// 		if(onloadFunction) onloadFunction();
-// 	}
-// }
-// else
-// 	DesktopContent.init();
-DesktopContent.init();
+
+//=====================================================================================
+//=====================================================================================
+//=====================================================================================
+
+		//document.body does not exist yet (always?)! Handled in DesktopContent.init()
+		DesktopContent.init();		
+
+//=====================================================================================
+//=====================================================================================
+//=====================================================================================
 
 
 
@@ -2472,17 +2475,20 @@ DesktopContent.getInvertedColor = function(hexOrRGB) {
 //=====================================================================================
 //getUsername ~~
 DesktopContent.getUsername = function() { 
-				
-	DesktopContent.XMLHttpRequest(
-		"Request?RequestType=GetUserDisplayName",
-		"",
-		function(req)
-		{
-			console.log(req);
 		
-		});
-	var dispName = DesktopContent._theWindow.parent.document.getElementById("DesktopDashboard-user-displayName").innerHTML
-	return dispName.substr(dispName.indexOf(",")+2);	
+	Debug.log("DesktopContent._userDisplayName: " + DesktopContent._userDisplayName);
+	return DesktopContent._userDisplayName;
+	//KEEP two historical solutions (oldest violates CORS, other requires async request handling):
+	// DesktopContent.XMLHttpRequest(
+	// 	"Request?RequestType=GetUserDisplayName",
+	// 	"",
+	// 	function(req)
+	// 	{
+	// 		console.log(req);
+		
+	// 	});
+	// var dispName = DesktopContent._theWindow.parent.document.getElementById("DesktopDashboard-user-displayName").innerHTML
+	// return dispName.substr(dispName.indexOf(",")+2);	
 } //end getUsername()
 
 

@@ -135,6 +135,7 @@ else {
 					"windowTitle": 		(_name + (_subname==""?"":" - ") + _subname),
 					"gatewayURN":  		urnLid_,
 					"gatewayOrigin":  	serverOrigin_,
+					"userDisplayName":	Desktop.desktop.login.getUserDisplayName(),
 					"cookieCode":  		Desktop.desktop.login.getCookieCode(),
 					"dashboardColor": 	Desktop.desktop.dashboard.getDefaultDashboardColor(),
 					"desktopColor": 	document.body.style.backgroundColor,
