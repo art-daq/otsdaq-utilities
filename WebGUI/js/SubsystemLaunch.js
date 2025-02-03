@@ -1130,7 +1130,7 @@ SubsystemLaunch.create = function() {
 
 					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusTime &&
 							SubsystemLaunch.subsystems[s].lastStatusTime != "0")
-						el.innerText = SubsystemLaunch.subsystems[s][fieldIds[i]] + " ( " +
+						el.innerText = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]) + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
 					else if(fieldIds[i] == "status")
 						localDisplayState(el, 
