@@ -1676,6 +1676,56 @@ Desktop.createDesktop = function(security) {
 						parseInt(event.data.cookieCodeTime)); 
 			}	     
 			break;
+		case "updateSequence":		
+			Debug.log("Received updated sequence from Content WindowID =", event.data.windowId);
+
+			var newSequence = event.data.sequence;
+			//verify that new sequence is alphanumeric only (to avoid parameter injection)
+        	for(var i=0;i<newSequence.length;++i)
+				if(!((newSequence[i] >= '0' && newSequence[i] <= '9') || 
+				(newSequence[i] >= 'A' && newSequence[i] <= 'Z') || 
+				(newSequence[i] >= 'a' && newSequence[i] <= 'z')))
+				{
+					Debug.err("Invalid updated sequence received from desktop window with WindowID =", event.data.windowId,"Notify admins!");
+					return;
+				}
+			
+			var newSearch = window.parent.window.location.search;
+			Debug.logv({newSearch});
+			var ii = newSearch.indexOf("code=");
+			if(ii < 0)
+			{
+				Debug.err("Cannot find code= paramaeter! Notify admins.");
+				return;
+			}
+			newSearch = newSearch.substr(0,ii+("code=").length) + 
+				newSequence;
+			Debug.logv({newSearch});
+
+			//save as integer fraction of 1000 into URL
+        	var newURL = window.parent.window.location.pathname +
+					newSearch +
+					"#"+
+					((Desktop.desktop.dashboard.getDashboardWidth()*1000/
+					Desktop.desktop.dashboard.getDashboardDefaultWidth())|0); 
+			
+			//update browser url so refresh will give same desktop experience
+        	if(!Desktop.isWizardMode()) 
+        		window.parent.window.history.replaceState('ots', 'ots', newURL);    
+        	else
+        		window.parent.window.history.replaceState('ots wiz', 'ots wiz', newURL); 
+        	
+			Debug.log("Tell all open windows about new sequence", newSequence);
+
+        	var reqObject = {"request":		"updateWindowSequence",
+							"sequence":		newSequence};
+        	for(var i=0;i<Desktop.desktop.getNumberOfWindows();++i)
+			{
+        		reqObject["windowId"] = Desktop.desktop.getWindowByIndex(i).getWindowId();        					
+        		Desktop.desktop.getWindowByIndex(i).getFrame().contentWindow.postMessage(
+        				reqObject,"*");
+			}
+			break;	
 		case "needToLogin":
 			Debug.log("needToLogin");
 			

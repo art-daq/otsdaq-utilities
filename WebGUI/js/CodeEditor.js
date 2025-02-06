@@ -465,6 +465,8 @@ CodeEditor.create = function(standAlone) {
 			return; 
 		}
 
+		var tmpSequence = DesktopContent._sequence;
+
 		DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +
 			"codeEditor" + 
 			"&option=getAllowedExtensions" 
@@ -509,6 +511,14 @@ CodeEditor.create = function(standAlone) {
 						Debug.log("Does the Code Editor Supervisor exist? You must connect the web editor to a valid Code Editor Supervisor application (please check your Configuration Tree and then restart ots).",Debug.HIGH_PRIORITY);
 						return;
 					}
+				}
+
+				if(tmpSequence != DesktopContent._sequence && _READ_ONLY)
+				{
+					Debug.info("Security sequence was changed, retrying for write access...");
+					_READ_ONLY = false;
+					init();
+					return;
 				}
 				
 				_ALLOWED_FILE_EXTENSIONS = DesktopContent.getXMLValue(req,"AllowedExtensions");
@@ -615,7 +625,7 @@ CodeEditor.create = function(standAlone) {
 			2 /*callHandlerOnErr*/,
 			0 /*doNotShowLoadingOverlay*/, 0 /*targetGatewaySupervisor*/, 
 			0 /*ignoreSystemBlock*/,
-			true /*doNotOfferSequenceChange*/ //so read-only switch can happen
+			_requestPreamble != "readOnly" /*doNotOfferSequenceChange*/ //so read-only switch can happen
 		); //end get allowed file extensions
 		
 	} //end init()

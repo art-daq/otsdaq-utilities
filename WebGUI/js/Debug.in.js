@@ -78,7 +78,8 @@ Debug.OS_TYPE = Debug.OS_TYPE_OTHER;
 			Debug.OS_TYPE = Debug.OS_TYPE_MAC;
 }
 console.log("OS type = ", Debug.OS_TYPE == Debug.OS_TYPE_LINUX?"Linux":
-	(Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS?"Windows":(Debug.OS_TYPE == Debug.OS_TYPE_MAC?"MacOS":"Other")), " <== ", tmp);
+	(Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS?"Windows":(Debug.OS_TYPE == Debug.OS_TYPE_MAC?"MacOS":"Other")), " <== ", tmp,
+	"... Showing Levels < ", Debug.level);
 
 
 if (Debug.mode) //IF DEBUG MODE IS ON!
