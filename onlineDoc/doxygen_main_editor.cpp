@@ -39,7 +39,7 @@
 #define __COUT_HDR_L__ "[" << std::dec << __LINE__ << " |\t"
 #define __COUT_HDR_FL__ __SHORTFILE__ << " " << __COUT_HDR_L__
 
-#define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ":"
+#define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":"
 #define __COUT_ERR__ __COUT_TYPE__(LogError) << __COUT_HDR_FL__
 #define __COUT_WARN__ __COUT_TYPE__(LogWarning) << __COUT_HDR_FL__
 #define __COUT_INFO__ __COUT_TYPE__(LogInfo) << __COUT_HDR_FL__
