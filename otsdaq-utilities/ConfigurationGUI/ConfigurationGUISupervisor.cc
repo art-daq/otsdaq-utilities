@@ -2013,6 +2013,7 @@ try
 			    tableInfoIt->second.tablePtr_->getView().getVersion().toString());
 			xmlOut.addTextElementToData(
 			    "ActiveTableComment",
+				tableInfoIt->second.tablePtr_->getView().getAuthor() + ": " +
 			    tableInfoIt->second.tablePtr_->getView().getComment());
 		}
 
@@ -2229,6 +2230,7 @@ try
 		                                .toString());
 		xmlOut.addTextElementToData(
 		    "NewActiveTableComment",
+			allTableInfo.at(activePair.first).tablePtr_->getView().getAuthor() + ": " +
 		    allTableInfo.at(activePair.first).tablePtr_->getView().getComment());
 	}
 } //end handleFillModifiedTablesXML()
@@ -4056,7 +4058,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				parentEl =
 				    xmlOut.addTextElementToParent("node", t.getValueAsString(), parentEl);
 				if(t.isUIDNode())
-					xmlOut.addTextElementToParent("comment", t.getComment(), parentEl);
+					xmlOut.addTextElementToParent("comment", 
+						t.getAuthor() + ": " + t.getComment(), parentEl);
 
 				if(diffTree.has_value())
 				{
