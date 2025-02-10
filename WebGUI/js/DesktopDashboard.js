@@ -499,6 +499,7 @@ else
 		//create PUBLIC members functions ----------------------
 		//------------------------------------------------------------------
         this.getDashboardHeight = function() { return _defaultDashboardHeight;}
+        this.getDashboardDefaultWidth = function() { return _defaultWindowDashboardWidth;}
         this.getDashboardWidth = function() { return _displayWindowDashboard?_windowDashboardWidth:0;}
         
         

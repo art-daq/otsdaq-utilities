@@ -403,6 +403,11 @@ DesktopContent.init = function(onloadFunction)
 			Debug.log("Received cookie response from parent page");
 			DesktopContent._cookieCodeMailbox = event.data.cookieCode;		
 		}	
+		else if(event.data.request == "updateWindowSequence")
+		{		
+			Debug.log("Received updated sequence from parent page");
+			DesktopContent._sequence = event.data.sequence;		
+		}	
 		else if(event.data.request == "giveRequestLIDInfo")
 		{			
 			Debug.log("Received info response from parent page; localUrnLid", DesktopContent._localUrnLid);
@@ -610,6 +615,10 @@ DesktopContent.init = function(onloadFunction)
 				//call user login notify handler
 				if(DesktopContent._loginNotifyHandler)
 					DesktopContent._loginNotifyHandler();
+				break;
+			case "updateWindowSequence":
+				Debug.log("Received updated sequence from parent desktop");
+				DesktopContent._sequence = event.data.sequence;		
 				break;
 			case "startNeedingMouseXY":
 				DesktopContent._desktopNeedsMouseXY = true;
@@ -1331,6 +1340,15 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 									DesktopContent.XMLHttpRequest(requestURL, data, returnHandler, 
 										reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay,
 										targetGatewaySupervisor, ignoreSystemBlock);
+
+									Debug.log("Saving new access code to parent...");
+									
+									DesktopContent._theDesktopWindow.postMessage(
+										{					
+										"windowId":		DesktopContent._theWindowId,
+										"request":		"updateSequence",
+										"sequence":		DesktopContent._sequence,
+										}, "*");
 									return;
 								}
 								

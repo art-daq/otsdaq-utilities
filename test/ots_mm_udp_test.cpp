@@ -7,7 +7,7 @@ try
 	if(argc < 3)
 	{
 		fprintf(stderr,
-		        "usage: ots_mm_udp_interface <mm IP> <mm Port> <Front-end UID> <FEMacro "
+		        "usage: ots_mm_udp_test <mm IP> <mm Port> <Front-end UID> <FEMacro "
 		        "Name> <Macro Input args...> \n");
 		fprintf(stderr,
 		        "\t If <Front-end UID> not specified, then the list of existing FE UIDs "
