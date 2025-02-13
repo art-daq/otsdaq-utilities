@@ -8040,7 +8040,9 @@
 					//edit table comment
 					el = document.getElementById("treeNode-TableComment-" + idString);
 					_editingCellElOldValue = el.textContent;
-					var initVal = _editingCellElOldValue.substr(2).trim();
+					var i = _editingCellElOldValue.indexOf(": ");
+					if(i < 0) i = -2;
+					var initVal = _editingCellElOldValue.substr(i+2).trim(); //skip past "//author" + ": ", and remove whitespace
 					treeEditingNodeInitValue_ = initVal;
 
 					//add input into element
@@ -8048,8 +8050,9 @@
 					str += "<input type='text' placeholder='Enter a comment...' onkeydown='keyHandler(event)' style='margin:-4px -2px -4px -1px;width:" +
 						(el.offsetWidth > 150 ? el.offsetWidth : 150) + "px; height:" + (el.offsetHeight > 20 ? el.offsetHeight : 20) + "px' value='";
 					str += encodeHTML(initVal);
-					str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
-						"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting); event.stopPropagation();' " +
+					str += "' onmousedown='_mouseIsSelecting = true; Debug.log(\"input onmouseup\",_mouseIsSelecting);' " +
+						"onmouseup='_mouseIsSelecting = false; Debug.log(\"input onmouseup\",_mouseIsSelecting); event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 						">";
 
 					str += _OK_CANCEL_DIALOG_STR;
