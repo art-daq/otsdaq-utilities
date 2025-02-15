@@ -1120,15 +1120,18 @@
                 												if(targetChildren[m].nodeName == "node")
                 												{
                 													if(targetCount++) targetCSVStr += ",";
+
+																	var targetChildrenChildren = targetChildren[m].getElementsByTagName("node");
+
                 													//found target record
                 													//	second record is link
                 													//		first two nodes are uid and table
                 													targetCSVStr += 
-                															targetChildren[m].children[1].getElementsByTagName(
+																			targetChildrenChildren[1].getElementsByTagName(
                 																	"LinkTableName")[0].getAttribute("value") +
 																					"/" + 
-																					targetChildren[m].children[1].getElementsByTagName(
-																							"UID")[0].getAttribute("value");                                                            	
+																			targetChildrenChildren[1].getElementsByTagName(
+																					"UID")[0].getAttribute("value");                                                            	
                 												}
                 											} //end target loop
 
@@ -1166,7 +1169,8 @@
                 } //end try
                 catch(e)
                 {
-                	Debug.log("Invalid iteration plan loaded: " + e);
+                	Debug.err("Invalid or corrupt iteration plan '" + plan + 
+						"' loaded (please notify admins): " + e);
                 	_commands = []; //clear
                 }
 				
