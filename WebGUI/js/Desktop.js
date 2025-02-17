@@ -205,6 +205,8 @@ Desktop.createDesktop = function(security) {
 		_desktopElement.style.height = (window.innerHeight-_desktopElement.offsetTop) + "px";
 		_desktopElement.style.width = (window.innerWidth-_desktopElement.offsetLeft) + "px";
         if(!_dashboard) return; //initial calls dashboard might not be defined
+		Debug.log("_handleDesktopResize()");
+
         _dashboard.redrawDashboard();
         if(_login) _login.redrawLogin();
         if(_icons) _icons.redrawIcons();
