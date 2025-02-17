@@ -16,6 +16,8 @@
 //	 2. for proper functionality certain handlers are used:
 //   		cannot override handlers for window: onfocus, onscroll, onblur, onmousemove
 //			(try applying handlers to your body instead, or if you must override, try to call the DesktopContent handlers from your handlers)
+//			cannot override handler for body keydown.
+//			(try applying handlers to your window instead, or if you must override, try to call the DesktopContent handlers from your handlers)
 //
 //	 3. When all functionality is available init() be called in your page, if defined.
 //
@@ -33,7 +35,7 @@
 //	This code also handles server requests and response handlers for the content code:
 //		-DesktopContent.XMLHttpRequest(requestURL, data, returnHandler <optional>, 
 //			reqParam <optional>, progressHandler <optional>, callHandlerOnErr <optional>, 
-//			doNotShowLoadingOverlay <optional>, targetSupervisor <optional>, ignoreSystemBlock <optional>,
+//			doNotShowLoadingOverlay <optional>, targetGatewaySupervisor <optional>, ignoreSystemBlock <optional>,
 //			doNotOfferSequenceChange <optional>)
 //
 //			... here is an example request:
@@ -98,7 +100,7 @@
 //			dialogWidth [optional], cancelFunc [optional], yesButtonText [optional],
 //			noAutoComplete [optional], defaultUserInputValue [optional], 
 //			cancelButtonText [optional], wantMultilineInput [optional])
-//		DesktopContent.tooltip(uid,tip)
+//		DesktopContent.tooltip(uid,tip,alwaysShow)
 //		DesktopContent.setWindowTooltip(tip)
 //		DesktopContent.getWindowWidth()
 //		DesktopContent.getWindowHeight()
@@ -128,7 +130,7 @@ if (typeof Globals == 'undefined')
 
 
 //"public" function list: 
-//	DesktopContent.XMLHttpRequest(requestURL, data, returnHandler, reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay, targetSupervisor, ignoreSystemBlock)
+//	DesktopContent.XMLHttpRequest(requestURL, data, returnHandler, reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay, targetGatewaySupervisor, ignoreSystemBlock)
 //	DesktopContent.getXMLValue(req, name)
 //	DesktopContent.getXMLNode(req, name)
 //	DesktopContent.getXMLDataNode(req)
@@ -159,6 +161,7 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.getUsername()
 //	DesktopContent.openNewWindow(name,subname,windowPath,unique,completeHandler)
 //	DesktopContent.mouseMoveSubscriber(newHandler) 
+//	DesktopContent.unmaximizeWindow() 
 //	DesktopContent.openNewBrowserTab(name,subname,windowPath,unique,completeHandler)
 //	DesktopContent.addDesktopIcon(iconName)
 //	DesktopContent.getParameter(index, name)
@@ -180,6 +183,8 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.tooltipConditionString(str);
 
 DesktopContent._theWindowId = -1;
+DesktopContent._theWindowTitle = -1;
+DesktopContent._userDisplayName = "No-Login";
 
 DesktopContent._isFocused = false;
 DesktopContent._theWindow;
@@ -198,10 +203,14 @@ DesktopContent._updateMouseOverMailboxTimer = 0;
 DesktopContent._windowMouseX = -1;
 DesktopContent._windowMouseY = -1;
 
-DesktopContent._serverOrigin = "";
+DesktopContent._localUrnLid = 0;
 DesktopContent._localOrigin = "";
 DesktopContent._serverUrnLid = 0;
-DesktopContent._localUrnLid = 0;
+DesktopContent._serverOrigin = "";
+DesktopContent._remoteServerUrnLid = 0;
+DesktopContent._remoteServerOrigin = "";
+DesktopContent._topServerUrnLid = 0;  //this refers to the primary top-level Gateway Supervisor (in primary/top & secondary/remote subsystem topologies)
+DesktopContent._topServerOrigin = ""; //this refers to the primary top-level Gateway Supervisor (in primary/top & secondary/remote subsystem topologies)
 
 DesktopContent._cookieCodeMailbox = 0;
 DesktopContent._updateTimeMailbox = 0;
@@ -226,6 +235,7 @@ DesktopContent._mouseMoveSubscribers = [];
 DesktopContent._loginNotifyHandler = undefined; //User code should define this function if action desired when re-login occurs
 
 DesktopContent._pageInitCalled = false;
+DesktopContent._windowMessagingInactive = undefined;
 
 DesktopContent._sequence = 0;
 
@@ -313,6 +323,18 @@ DesktopContent.init = function(onloadFunction)
 	Debug.log("Local Application URN-LID #" + DesktopContent._localUrnLid);
 	Debug.log("Local Application Origin = " + DesktopContent._localOrigin);
 
+	DesktopContent._remoteServerUrnLid = DesktopContent.getParameter(0,"remoteServerUrnLid");
+	if(typeof DesktopContent._remoteServerUrnLid == 'undefined')
+		DesktopContent._remoteServerUrnLid = 0;
+	DesktopContent._remoteServerOrigin = DesktopContent.getParameter(0,"remoteServerOrigin");
+	
+	if(DesktopContent._remoteServerUrnLid)
+	{
+		Debug.log("Remote Gateway Application URN-LID #" + DesktopContent._remoteServerUrnLid);
+		Debug.log("Remote Gateway Application Origin = " + DesktopContent._remoteServerOrigin);
+	}
+
+
 	//get Wizard sequence (if in Wizard mode)
 	try
 	{
@@ -345,19 +367,22 @@ DesktopContent.init = function(onloadFunction)
 		}
 		
 		if(event.data.request == "getRequestLIDInfo")
-		{			
-			
-			Debug.log("Received info request from child page");
+		{						
+			Debug.log("Received info request from child page; localUrnLid", DesktopContent._localUrnLid);
 			event.source.postMessage(
 				{			
 					
-				"windowId":		"unknown",	
-				"request":		"giveRequestLIDInfo",
-				"cookieCode":	DesktopContent._cookieCodeMailbox,
-				"localURN": 	DesktopContent._localUrnLid,
-				"gatewayURN" :	DesktopContent._serverUrnLid,
-				"gatewayOrigin":DesktopContent._serverOrigin
+				"windowId":			"unknown",	
+				"request":			"giveRequestLIDInfo",
+				"cookieCode":		DesktopContent._cookieCodeMailbox,
+				"localURN": 		DesktopContent._localUrnLid,
+				"gatewayURN" :		DesktopContent._serverUrnLid,
+				"gatewayOrigin":	DesktopContent._serverOrigin,
+				"topGatewayURN" :	DesktopContent._topServerUrnLid,
+				"topGatewayOrigin":	DesktopContent._topServerOrigin
 				}, "*");
+			event.stopPropagation();
+			event.stopImmediatePropagation();
 			return;
 		}
 		else if(event.data.request == "getParentCookieCode")
@@ -378,18 +403,39 @@ DesktopContent.init = function(onloadFunction)
 			Debug.log("Received cookie response from parent page");
 			DesktopContent._cookieCodeMailbox = event.data.cookieCode;		
 		}	
+		else if(event.data.request == "updateWindowSequence")
+		{		
+			Debug.log("Received updated sequence from parent page");
+			DesktopContent._sequence = event.data.sequence;		
+		}	
 		else if(event.data.request == "giveRequestLIDInfo")
 		{			
+			Debug.log("Received info response from parent page; localUrnLid", DesktopContent._localUrnLid);
+
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+
 			if(DesktopContent._pageInitCalled || !event.data.gatewayURN) return;
-			DesktopContent._pageInitCalled = true;
-			
+						
 			Debug.log("Received info response from parent page");
 			DesktopContent._localUrnLid = event.data.localURN;
 			DesktopContent._serverUrnLid = event.data.gatewayURN;
 			DesktopContent._serverOrigin = event.data.gatewayOrigin;
+			DesktopContent._topServerUrnLid = event.data.topGatewayURN;
+			DesktopContent._topServerOrigin = event.data.topGatewayOrigin;
 			DesktopContent._cookieCodeMailbox = event.data.cookieCode;
 			
 			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
+			Debug.log("The Desktop Window Title = " + DesktopContent._theWindowTitle);
+			Debug.log("Local Application URN-LID #" + DesktopContent._localUrnLid);
+
+			if(DesktopContent._remoteServerUrnLid) //overwrite with remote gateway info!
+			{
+				Debug.log("Gateway Supervisor overriding with Remote Supervisor info!");
+				DesktopContent._serverUrnLid = DesktopContent._remoteServerUrnLid;
+				DesktopContent._serverOrigin = DesktopContent._remoteServerOrigin;
+			}
+
 			Debug.log("Gateway Supervisor Application URN-LID #" + DesktopContent._serverUrnLid);
 			Debug.log("Gateway Supervisor Application Origin = " + DesktopContent._serverOrigin);
 
@@ -413,7 +459,7 @@ DesktopContent.init = function(onloadFunction)
 								{
 							"windowId":			"unknown",
 							"request":  		"getParentCookieCode"
-								},"*");
+								},"*");						
 					}
 					else
 						Debug.log("No need to update deltaTime=" + deltaTime);
@@ -427,38 +473,6 @@ DesktopContent.init = function(onloadFunction)
 			}
 			else if(!DesktopContent._sequence)
 				Debug.log("No cookie code and no sequence!");
-			
-			//========
-			function localOnloadHandler()
-			{
-				if(!document.body) //the document is not ready?!
-				{
-					//call self in a bit to try again
-					window.setTimeout(
-						localOnloadHandler,300 /*ms*/);
-					return;
-				}
-
-				try
-				{					
-					if(onloadFunction)
-					{
-						Debug.log("Calling page body onload!");
-						onloadFunction(); //call page's init!
-					}
-					else if(init)
-					{
-						Debug.log("Calling page init!");
-						init(); //call page's init!
-					}
-					else
-						Debug.log("Ignoring missing init()");
-				}
-				catch(e)
-				{
-					Debug.log("Ignoring error in onload init():",e);
-				}
-			} //end localOnloadHandler()
 
 			localOnloadHandler();
 			
@@ -486,7 +500,9 @@ DesktopContent.init = function(onloadFunction)
 			
 			Debug.log("First message from Gateway Desktop received!");
 
-			DesktopContent._theWindowId		= event.data.windowId;					
+			DesktopContent._theWindowId		= event.data.windowId;	
+			DesktopContent._theWindowTitle	= event.data.windowTitle;	
+			DesktopContent._userDisplayName = event.data.userDisplayName;	
 			DesktopContent._serverUrnLid 	= event.data.gatewayURN;
 			DesktopContent._serverOrigin 	= event.data.gatewayOrigin;	
 
@@ -530,32 +546,28 @@ DesktopContent.init = function(onloadFunction)
 			else if(!DesktopContent._sequence)
 				Debug.log("No cookie code and no sequence!");
 
-			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
-			Debug.log("Gateway Supervisor Application URN-LID #" + DesktopContent._serverUrnLid);
-			Debug.log("Gateway Supervisor Application Origin = " + DesktopContent._serverOrigin);
+			if(DesktopContent._remoteServerUrnLid) //overwrite with remote gateway info!
+			{
+				Debug.log("Gateway Supervisor overriding with Remote Supervisor info!");
+				DesktopContent._serverUrnLid = DesktopContent._remoteServerUrnLid;
+				DesktopContent._serverOrigin = DesktopContent._remoteServerOrigin;
+				DesktopContent._topServerUrnLid = event.data.gatewayURN;
+				DesktopContent._topServerOrigin = event.data.gatewayOrigin;
+				if(DesktopContent._topServerUrnLid)
+				{
+					Debug.log("Primary/Top Gateway Supervisor URN-LID #" + DesktopContent._topServerUrnLid);
+					Debug.log("Primary/Top Gateway Supervisor Origin = " + DesktopContent._topServerOrigin);
+				}
+			}
 
-			if(DesktopContent._pageInitCalled) return;
-			DesktopContent._pageInitCalled = true;
-			try
-			{
-				
-				if(onloadFunction)
-				{
-					Debug.log("Calling page body onload!");
-					onloadFunction(); //call page's init!
-				}
-				else if(init)
-				{
-					Debug.log("Calling page init!");
-					init(); //call page's init!
-				}
-				else
-					Debug.log("Ignoring missing init()");
-			}
-			catch(e)
-			{
-				Debug.log("Ignoring error in onload init():",e);
-			}
+			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
+			Debug.log("The Desktop Window Title = " + DesktopContent._theWindowTitle);
+			Debug.log("Local XDAQ Supervisor URN-LID #" + DesktopContent._localUrnLid);
+			Debug.log("Local XDAQ Supervisor Origin = " + DesktopContent._localOrigin);
+			Debug.log("Local Gateway Supervisor URN-LID #" + DesktopContent._serverUrnLid);
+			Debug.log("Local Gateway Supervisor Origin = " + DesktopContent._serverOrigin);
+			
+			localOnloadHandler();
 
 			//			DesktopContent._theWindow.parent.window.postMessage(
 			//					{
@@ -582,7 +594,7 @@ DesktopContent.init = function(onloadFunction)
 			}
 			
 			if(DesktopContent._theWindowId != event.data.windowId)
-			{
+			{				
 				Debug.med("Impossible desktop message violation! Notify admins. May happen if users click around during window refresh?");
 				return;				
 			}
@@ -604,6 +616,10 @@ DesktopContent.init = function(onloadFunction)
 				if(DesktopContent._loginNotifyHandler)
 					DesktopContent._loginNotifyHandler();
 				break;
+			case "updateWindowSequence":
+				Debug.log("Received updated sequence from parent desktop");
+				DesktopContent._sequence = event.data.sequence;		
+				break;
 			case "startNeedingMouseXY":
 				DesktopContent._desktopNeedsMouseXY = true;
 				//console.log("_desktopNeedsMouseXY", DesktopContent._desktopNeedsMouseXY);
@@ -611,6 +627,20 @@ DesktopContent.init = function(onloadFunction)
 			case "stopNeedingMouseXY":
 				DesktopContent._desktopNeedsMouseXY = false;
 				//console.log("_desktopNeedsMouseXY", DesktopContent._desktopNeedsMouseXY);
+				break;
+			case "doWindowTooltip":
+				Debug.log("Received doWindowTooltip from parent desktop");
+				var tooltipEl = document.getElementById("otsDesktopWindowTooltipElement");
+				if(!tooltipEl) //a la Desktop.js:902
+				{
+					DesktopContent.tooltip("ALWAYS", "There is no tooltip for the '<b>" + 
+							DesktopContent.getDesktopWindowTitle() +
+							"</b>' window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
+				}
+				else
+				{
+					DesktopContent.tooltip("ALWAYS", decodeURIComponent(tooltipEl.innerText));
+				}
 				break;
 			default:
 				Debug.log("Illegal response received from Desktop! Notify admins", Debug.HIGH_PRIORITY);
@@ -629,6 +659,86 @@ DesktopContent.init = function(onloadFunction)
 				"request":		"getRequestLIDInfo"
 				}, "*");
 	}
+
+	//call self in a bit to try init (in case window messaging not active)
+	var onloadWatchdogTimer = window.setTimeout(localOnloadWatchdog, 300 /*ms*/);
+
+	return;
+
+	//========
+	function localOnloadWatchdog()
+	{
+		Debug.log("localOnloadWatchdog()",DesktopContent._serverUrnLid, document.readyState);
+
+		window.clearTimeout(onloadWatchdogTimer);
+
+		if(!document.body || document.readyState != "complete") //the document is not ready?!
+		{
+			//only allow watchdog test if document is loaded
+			onloadWatchdogTimer = window.setTimeout(
+				localOnloadWatchdog,300 /*ms*/);
+
+			Debug.log("localOnloadWatchdog() body not loaded",DesktopContent._serverUrnLid);
+			return;
+		}
+
+		Debug.log("localOnloadWatchdog() body loaded 1", DesktopContent._serverUrnLid);
+		onloadWatchdogTimer = window.setTimeout(function()
+		{
+			Debug.log("localOnloadWatchdog() body loaded 2", DesktopContent._serverUrnLid);
+			if(!DesktopContent._pageInitCalled)
+			{
+				Debug.log("Perhaps window messaging not active?",DesktopContent._serverUrnLid);
+				DesktopContent._windowMessagingInactive = true;
+			}
+			localOnloadHandler();
+		}, 300 /*ms*/);
+
+	} //end localOnloadWatchdog()
+
+	//========
+	function localOnloadHandler()
+	{
+		window.clearTimeout(onloadWatchdogTimer);
+
+		if(!document.body || document.readyState != "complete") //the document is not ready?!
+		{
+			//call self in a bit to try again
+			onloadWatchdogTimer = window.setTimeout(
+				localOnloadHandler,300 /*ms*/);
+			return;
+		}
+
+		if(DesktopContent._pageInitCalled)
+		{
+			Debug.log("Page init already called.");
+			return;
+		} 
+		DesktopContent._pageInitCalled = true;
+
+		document.body.removeEventListener("keydown",Debug.KeyDownListener);
+		document.body.addEventListener("keydown",Debug.KeyDownListener);		
+
+		try
+		{					
+			if(onloadFunction)
+			{
+				Debug.log("Calling page body onload!");
+				onloadFunction(); //call page's init!
+			}
+			else if(init)
+			{
+				Debug.log("Calling page init!");
+				init(); //call page's init!
+			}
+			else
+				Debug.log("Ignoring missing init()");
+		}
+		catch(e)
+		{
+			Debug.log("Ignoring error in onload init():",e);
+		}
+	} //end localOnloadHandler()
 	
 } //end DesktopContent.init()
 
@@ -639,7 +749,6 @@ DesktopContent.init = function(onloadFunction)
 //	Note: in normal mode the first two params are only separated by = (no &'s) for historical reasons
 DesktopContent.getParameter = function(index,name) 
 {	
-	// Debug.log(window.location)
 	var params = (window.location.search.substr(1)).split('&');
 	var spliti, vs;
 	//if name given, make it the priority
@@ -653,6 +762,8 @@ DesktopContent.getParameter = function(index,name)
 			if(decodeURIComponent(vs[0]) == name)
 				return decodeURIComponent(vs[1]);
 		}
+
+		Debug.log("name",name," not found in window.location.search:",window.location.search);
 		return; //return undefined .. name not found
 	}
 
@@ -719,7 +830,7 @@ DesktopContent.getDesktopWindowParameter = function(index, name)
 	var win = DesktopContent._theWindow;
 	if(!win)	//for parameter directly from desktop code
 		win = window;
-	else 
+	else if(!win.location || !win.location.search)
 		win = win.parent.window;
 									 
 	//fix/standardize search string
@@ -773,17 +884,37 @@ DesktopContent.handleFocus = function(e)
 //	DesktopContent._zMailbox.innerHTML = parseInt(DesktopContent._zMailbox.innerHTML) + 1;
 	return true;
 }
+//=====================================================================================
 DesktopContent.handleBlur = function(e) 
 {	
 	//Debug.log("Blur DesktopContent._isFocused " + DesktopContent._isFocused);
 	DesktopContent._isFocused = false;
 }
+//=====================================================================================
 DesktopContent.handleScroll = function(e) 
 {
     
     //console.log("Scroll DesktopContent.handleScroll", DesktopContent._isFocused, DesktopContent._theWindowId);
 	window.focus();	
 }
+
+//=====================================================================================
+DesktopContent.unmaximizeWindow = function(mouseEvent,onlyDesktopFunction) 
+{	
+	Debug.log("DesktopContent.unmaximizeWindow()");	
+			
+	if(!DesktopContent._theWindow) return; //only happens if not part of desktop
+	
+	DesktopContent._theDesktopWindow.postMessage(
+						{
+		"windowId":			DesktopContent._theWindowId,
+		"request":  		"unmaximizeWindow"
+						},"*");		
+		
+		
+} //end DesktopContent.mouseMove()
+
+//=====================================================================================
 DesktopContent.mouseMove = function(mouseEvent,onlyDesktopFunction) 
 {	
 	//console.log("desktop move",DesktopContent._mouseMoveSubscribers.length);
@@ -837,20 +968,17 @@ DesktopContent.mouseMoveSubscriber = function(newHandler)
 	DesktopContent._mouseMoveSubscribers.push(newHandler);
 } //end DesktopContent.mouseMoveSubscriber()
 	
-//document.body does not exist yet (always?)!
-// if(document.body)
-// {
-// 	var onloadFunction = document.body.onload;
-// 	document.body.onload = function()
-// 	{		
-// 		Debug.log("Calling Desktop Content init on body load!",onloadFunction);
-// 		DesktopContent.init();
-// 		if(onloadFunction) onloadFunction();
-// 	}
-// }
-// else
-// 	DesktopContent.init();
-DesktopContent.init();
+
+//=====================================================================================
+//=====================================================================================
+//=====================================================================================
+
+		//document.body does not exist yet (always?)! Handled in DesktopContent.init()
+		DesktopContent.init();		
+
+//=====================================================================================
+//=====================================================================================
+//=====================================================================================
 
 
 
@@ -1065,9 +1193,30 @@ DesktopContent.hideLoading = function()
 //	Use ignoreSystemBlock if request is expected to meet a down server (like restarting xdaq)
 //	Use doNotOfferSequenceChange for requests that might fail based on permissions (like code editor switch to read only).
 //
+//  Here is an example for handling the error in handler if callHandlerOnErr is set true:
+//			function (req, reqParam, errStr) {
+//						
+//				var str = "";
+//			
+//				if(!errStr) 
+//					errStr = "";
+//				var err = DesktopContent.getXMLValue(req,"Error");
+//				if(err && err != "")
+//					errStr += "\n" + err;				
+//				if(errStr != "")
+//				{
+//					str += "Received error... " + getDateString(new Date);
+//					str += "<br>";
+//					Debug.log("Error while running FE Macro: " + errStr,
+//							Debug.HIGH_PRIORITY);
+//					el.innerHTML = str;
+//					return;
+//				}
+//				...
+//			}
 DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler, 
 		reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay,
-		targetSupervisor, ignoreSystemBlock, doNotOfferSequenceChange) 
+		targetGatewaySupervisor, ignoreSystemBlock, doNotOfferSequenceChange) 
 {
 
 	// Sequence is used as an alternative approach to cookieCode (e.g. ots Config Wizard).
@@ -1170,6 +1319,8 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 					else
 						requestType = "";
 					errStr = "Request " + requestType + " failed due to insufficient account permissions."; 
+					if(callHandlerOnErr && callHandlerOnErr < 2)
+						Debug.err(errStr);
 					
 					if(!doNotOfferSequenceChange && DesktopContent._sequence)
 					{
@@ -1188,7 +1339,16 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 									Debug.log("Retrying request with new access code...");
 									DesktopContent.XMLHttpRequest(requestURL, data, returnHandler, 
 										reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay,
-										targetSupervisor, ignoreSystemBlock);
+										targetGatewaySupervisor, ignoreSystemBlock);
+
+									Debug.log("Saving new access code to parent...");
+									
+									DesktopContent._theDesktopWindow.postMessage(
+										{					
+										"windowId":		DesktopContent._theWindowId,
+										"request":		"updateSequence",
+										"sequence":		DesktopContent._sequence,
+										}, "*");
 									return;
 								}
 								
@@ -1205,17 +1365,17 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 								/*noAutoComplete*/ true);
 						
 						return;						
-					}
-					//return;
+					}					
 				}
 				else if(req.responseText == Globals.REQ_USER_LOCKOUT_RESPONSE) 
 				{					
-					errStr = "Request failed because another user has locked ots. Put your mouse over the lock icon at the top of the dashboard to see who.";
-					//return;
+					errStr = "Request failed because another user has locked ots. Put your mouse over the lock icon at the top of the dashboard to see who.";					
+					Debug.err(errStr);
 				}				
 				else if(req.responseText == Globals.REQ_NO_LOGIN_RESPONSE) 
 				{
 					errStr = "Login has expired.";
+					Debug.err(errStr);
 
 					if(ignoreSystemBlock || !DesktopContent._blockSystemCheckMailbox) //make sure system is alive
 					{
@@ -1226,20 +1386,20 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 								"windowId":			DesktopContent._theWindowId,
 								"request":  		"needToLogin"
 									},"*");
-						//return;
+					
 					}
 				}
 				else if(req.responseText == Globals.REQ_LOCK_REQUIRED_RESPONSE) 
 				{
 					errStr = "Request failed because the request requires the user to lockout the system. Please take over the lock in the Settings area to proceed.";
+					Debug.err(errStr);
 				}
 				else if(!sequence)
 				{    
-
 					if(!req.responseXML) //invalid XML received 
 					{
 						errStr = "Request response is invalid XML!";
-						//return;
+						Debug.err(errStr);
 					}
 					else
 					{
@@ -1251,6 +1411,8 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 
 							if(ignoreSystemBlock || !DesktopContent._blockSystemCheckMailbox)  //make sure system is alive
 							{
+								console.log(errStr); //make sure there is some record of this need-to-login!
+								
 								DesktopContent._needToLoginMailbox = true; //force to login screen on server failure 
 								if(DesktopContent._theDesktopWindow)
 									DesktopContent._theDesktopWindow.postMessage(
@@ -1402,7 +1564,7 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 	var urn = DesktopContent._localUrnLid;
 	var origin = DesktopContent._localOrigin;
 	
-	if(!urn || targetSupervisor) //desktop supervisor, instead of local application
+	if(!urn || targetGatewaySupervisor) //desktop supervisor, instead of local application
 	{
 		urn = DesktopContent._serverUrnLid;
 		origin = DesktopContent._serverOrigin;
@@ -1535,7 +1697,8 @@ DesktopContent.tooltipConditionString = function(str) {
 			"<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
 					"</div>").replace(/<TAB>/g,
 							"<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
-									"</div>");
+									"</div>").replace(/\n/g,
+										"<br>");
 } //end tooltipConditionString()
 
 //=====================================================================================
@@ -1826,10 +1989,11 @@ DesktopContent.tooltipSetAlwaysShow = function(srcFunc,srcFile,id,neverShow,temp
 //
 //	Can change background color and text color with strings bgColor and textColor (e.g. "rgb(255,0,0)" or "red")
 //		Default is yellow bg with black text if nothing passed.
+DesktopContent.popUpVerificationTimeout = 0;
 DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bgColor, 
 		textColor, borderColor, getUserInput, dialogWidth, cancelFunc, 
 		yesButtonText, noAutoComplete, defaultUserInputValue, 
-		cancelButtonText, wantMultilineInput) {	
+		cancelButtonText, wantMultilineInput, justDisplayAndTimeoutPopup) {	
 
 	//	Debug.log("X: " + DesktopContent._mouseOverXmailbox.innerHTML + 
 	//			" Y: " + DesktopContent._mouseOverYmailbox.innerHTML + 
@@ -1839,14 +2003,36 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 
 	//remove pop up if already exist
 	if(DesktopContent._verifyPopUp) 
+	{
 		DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+		DesktopContent._verifyPopUp = 0;
+	}
 
 	//replace REPLACE with replaceVal
 	if(replaceVal != undefined)
 		prompt = prompt.replace(/REPLACE/g, replaceVal); 
 
 
+	//if only timeout and close, setup timeout
+	if(justDisplayAndTimeoutPopup)
+	{
+		if(DesktopContent.popUpVerificationTimeout) 
+			window.clearTimeout(DesktopContent.popUpVerificationTimeout)
+		DesktopContent.popUpVerificationTimeout = window.setTimeout(
+			function()
+			{
+				Debug.log("Timeout close of DesktopContent.popUpVerification");
+				if(DesktopContent._verifyPopUp) 
+				{
+					DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
+					DesktopContent._verifyPopUp = 0;
+				}
+			},1000); //in 1 sec;
+	}
+
+
 	//create popup and add to body
+
 
 
 	//setup style first
@@ -1866,7 +2052,8 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	//pop up text style 
 	css += "#" + DesktopContent._verifyPopUpId + "-text " +
 			"{" +
-			"color: " + textColor + ";width: " + dialogWidth + "px; padding-bottom: 10px;" +
+			"color: " + textColor + ";width: " + dialogWidth + "px; " +
+			(!justDisplayAndTimeoutPopup?"padding-bottom: 10px;":"") +
 			"}\n\n";
 	//..and anything in the text div
 	css += "#" + DesktopContent._verifyPopUpId + " *" +
@@ -1918,7 +2105,11 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	}
 							
 	var str = "<div id='" + DesktopContent._verifyPopUpId + "-text'>" + 
-			prompt + "<br>" + userInputStr + "</div>" +
+			prompt + (!justDisplayAndTimeoutPopup?("<br>" + userInputStr):"") + 
+			"</div>";
+			
+	if(!justDisplayAndTimeoutPopup)
+		str +=
 			"<input class='DesktopContent_popUpUserInputButton' type='submit' value='" + 
 			(yesButtonText?yesButtonText:"Yes") + 
 			"' " +
@@ -1930,19 +2121,20 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 			"value='" + (cancelButtonText?cancelButtonText:"Cancel") + "'>";
 	el.innerHTML = str;
 
-	//onmouseup for "Yes" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
-	//onmouseup for "Cancel" button
-	el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
-			function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
-
+	if(!justDisplayAndTimeoutPopup)
+	{
+		//onmouseup for "Yes" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(continueFunc);};
+		//onmouseup for "Cancel" button
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[1].onmouseup = 
+				function(event){event.stopPropagation(); DesktopContent.clearPopUpVerification(cancelFunc);};
+	}
 	
 	Debug.log(prompt);
 	DesktopContent._verifyPopUp = el;
 	el.style.left = "-1000px"; //set off page so actual dimensions can be determined, and then div relocated
 	body.appendChild(el);
-
 
 	if(getUserInput) //place cursor
 	{
@@ -1987,11 +2179,12 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 		}
 		
 	}	
-	else //focus on button, since no text
+	else if(!justDisplayAndTimeoutPopup) //focus on button, since no text
 		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].focus(); 
 	
 	//add key handler to body too for enter & esc
-	el.onkeydown = 
+	if(!justDisplayAndTimeoutPopup)
+		el.onkeydown = 
 			function(event) 
 			{
 		if(event.key == "Enter") // ENTER
@@ -2221,8 +2414,8 @@ DesktopContent.getColorAsRGBA = function(colorStr)
 
 //=====================================================================================
 //get window and mouse info ~~
-DesktopContent.getWindowWidth = function() { return window.innerWidth-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
-DesktopContent.getWindowHeight = function() { return window.innerHeight-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
+DesktopContent.getWindowWidth = function() { return document.documentElement.clientWidth - 1; } //clientWidth excludes the scroll bards... window.innerWidth-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
+DesktopContent.getWindowHeight = function() { return document.documentElement.clientHeight - 1; } //clientHeight excludes the scroll bards... window.innerHeight-1; } //-1 to avoid weird rounding effects by browser that cause scroll bars
 DesktopContent.getBodyWidth = function() { return document.body.offsetWidth; }
 DesktopContent.getBodyHeight = function() { return document.body.offsetHeight; }
 DesktopContent.getWindowScrollLeft = function() { return document.documentElement.scrollLeft || document.body.scrollLeft || 0; }
@@ -2254,7 +2447,17 @@ DesktopContent.getDefaultWindowColor = function() {
 
 //=====================================================================================
 //get color scheme ~~
-DesktopContent.getDefaultDashboardColor = function() { return DesktopContent.parseColor(DesktopContent._dashboardColorPostbox); }//DesktopContent.parseColor(DesktopContent._dashboardColorPostbox.innerHTML); }
+DesktopContent.getDefaultDashboardColor = function() { 
+	if(!DesktopContent._dashboardColorPostbox)
+	{
+		//likely in wizard mode
+		Debug.log("Color post boxes not setup! So giving default.",Debug.MED_PRIORITY);
+		return "rgb(0,40,85)";
+	}
+	Debug.log("Returning dashboard color");
+	return DesktopContent.parseColor(DesktopContent._dashboardColorPostbox); 
+	//DesktopContent.parseColor(DesktopContent._dashboardColorPostbox.innerHTML); }
+} //end getDefaultDashboardColor()
 DesktopContent.getDefaultDesktopColor = function() { 
 	if(!DesktopContent._desktopColor)
 	{
@@ -2265,21 +2468,45 @@ DesktopContent.getDefaultDesktopColor = function() {
 	Debug.log("Returning desktop color");
 	return DesktopContent._desktopColor;
 } //end getDefaultDesktopColor()
+DesktopContent.getInvertedColor = function(hexOrRGB) { 
+	var rgb = [];
+	if(hexOrRGB.indexOf("#") == 0)
+	{
+		rgb = [
+			parseInt(hex.substring(1, 3), 16),
+			parseInt(hex.substring(3, 5), 16),
+			parseInt(hex.substring(5, 7), 16),
+		];
+	}
+	else if(hexOrRGB.indexOf("rgb(") == 0)
+	{
+		rgb = hexOrRGB.split("(")[1].split(")")[0].split(",");
+	}
+	else
+		throw("Illegal hexOrRGB value to DesktopContent.getInvertedColor");
+
+	return "rgb(" + ((255-parseInt(rgb[0]))%256) +
+		"," + ((255-parseInt(rgb[1]))%256) +
+		"," + ((255-parseInt(rgb[2]))%256) + ")";
+} //end getDefaultDesktopColor()
 
 //=====================================================================================
 //getUsername ~~
 DesktopContent.getUsername = function() { 
-				
-	DesktopContent.XMLHttpRequest(
-		"Request?RequestType=GetUserDisplayName",
-		"",
-		function(req)
-		{
-			console.log(req);
 		
-		});
-	var dispName = ""; //DesktopContent._theWindow.parent.document.getElementById("DesktopDashboard-user-displayName").innerHTML
-	return dispName.substr(dispName.indexOf(",")+2);	
+	Debug.log("DesktopContent._userDisplayName: " + DesktopContent._userDisplayName);
+	return DesktopContent._userDisplayName;
+	//KEEP two historical solutions (oldest violates CORS, other requires async request handling):
+	// DesktopContent.XMLHttpRequest(
+	// 	"Request?RequestType=GetUserDisplayName",
+	// 	"",
+	// 	function(req)
+	// 	{
+	// 		console.log(req);
+		
+	// 	});
+	// var dispName = DesktopContent._theWindow.parent.document.getElementById("DesktopDashboard-user-displayName").innerHTML
+	// return dispName.substr(dispName.indexOf(",")+2);	
 } //end getUsername()
 
 
@@ -2293,6 +2520,40 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 	Debug.log("name= " + name);
 	Debug.log("subname= " + subname);
 	Debug.log("unique= " + unique);
+
+	//if window path is relative to local gateway, then be explict for cases that top level gateway differs
+	if(windowPath[0] == '/' && 
+		DesktopContent._topServerUrnLid && 
+		DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
+	{
+		Debug.log("Adding local server detail to relative url in window path",windowPath);
+		windowPath = DesktopContent._serverOrigin + windowPath;
+		Debug.log("Modified window path url",windowPath);
+	}
+
+	//propagate remote gateway info (if not already defined)!
+	if(DesktopContent._remoteServerUrnLid && 
+		windowPath.indexOf("remoteServerUrnLid") < 0)
+	{
+		Debug.log("Adding Remote Gateway info to window path",windowPath);
+
+		//determine if need & or ?
+		var qi = windowPath.indexOf('?');			
+		if(qi > 0)
+		{
+			if(qi != windowPath.length - 1) //then need &
+				windowPath += '&';
+			//else ? is last character, so no need for &
+		}
+		else 
+			windowPath += '?';
+
+		windowPath += "remoteServerOrigin=" +
+			encodeURIComponent(DesktopContent._remoteServerOrigin) +
+			"&remoteServerUrnLid=" + DesktopContent._remoteServerUrnLid;
+		
+		Debug.log("Modified window path url",windowPath);
+	} 
 	
 	//launch request to desktop
 	DesktopContent._theDesktopWindow.postMessage(
@@ -2307,96 +2568,7 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 	
 	if(completeHandler)
 		completeHandler(); //call parameter handler
-	return; 
 	
-//	//extract params from DesktopContent._openWindowMailbox
-//	//get parameters
-//	var paramsStr = DesktopContent._openWindowMailbox.innerHTML;
-//	
-//
-//	var tryAgainCount = 0;
-//
-//	
-//	if(paramsStr != "") //then wait
-//	{
-//		Debug.log("Window creation is busy, trying again soon!");
-//		
-//		++tryAgainCount;
-//
-//		if(tryAgainCount > 50)
-//		{
-//			Debug.log("It looks like the window failed to open. Perhaps the Desktop is disconnected from the server; " +
-//					"please reconnect and try again.", Debug.WARN_PRIORITY);
-//			return;
-//		}
-//
-//		setTimeout(function(){ DesktopContent.openNewWindow(windowPath); }, 100);
-//		return;
-//	}
-//
-//	//free to attempt to open window!
-//	var str = "requestingWindowId=" + DesktopContent._myDesktopFrame.id.split('-')[1];
-//	str += "&windowName=" + name;
-//	str += "&windowSubname=" + subname;
-//	str += "&windowUnique=" + unique;
-//	str += "&windowPath=" + windowPath;
-//	DesktopContent._openWindowMailbox.innerHTML = str;
-//
-//	Debug.log("Waiting for complete...");
-//	
-//	tryAgainCount = 0;
-//	var timeoutHandler = function() { 
-//		Debug.log("Checking for complete...");
-//		
-//		++tryAgainCount;
-//		
-//		if(tryAgainCount > 50)
-//		{
-//			Debug.log("It looks like the window failed to open. Perhaps the Desktop is disconnected from the server; " +
-//					"please reconnect and try again.", Debug.WARN_PRIORITY);
-//			return;
-//		}
-//		
-//		//extract params from DesktopContent._openWindowMailbox
-//		//get parameters
-//		var paramsStr = DesktopContent._openWindowMailbox.innerHTML;
-//		var spliti = paramsStr.indexOf('&amp;');
-//		params = [paramsStr.substr(0,spliti),paramsStr.substr(spliti+5)];
-//		var varPair;
-//		var requestingWindowId = "", done = "";
-//		for(var i=0;i<params.length;++i)
-//		{
-//			spliti = params[i].indexOf('=');
-//			varPair = [params[i].substr(0,spliti),params[i].substr(spliti+1)];	    		
-//			if(varPair[0] 		== "requestingWindowId")
-//				requestingWindowId 	= varPair[1];
-//			else if(varPair[0] 	== "done")
-//				done 				= varPair[1];	 
-//		}
-//
-//		if(paramsStr = "" || (requestingWindowId != "" && done != ""))
-//		{
-//			//assume done!
-//			Debug.log("requestingWindowId=" + requestingWindowId);
-//			Debug.log("done=" + done);
-//			if(requestingWindowId != DesktopContent._myDesktopFrame.id.split('-')[1])
-//				Debug.log("There was a mismatch in window id!",Debug.MED_PRIORITY);
-//
-//			//clear mailbox 
-//			DesktopContent._openWindowMailbox.innerHTML = "";
-//
-//			if(completeHandler)
-//				completeHandler(); //call parameter handler
-//			return;
-//		}
-//		else //try again
-//			setTimeout(timeoutHandler, 100); //try again
-//
-//	};	//end setTimeout handler
-//	
-//	setTimeout(timeoutHandler,
-//			100); //end setTimeout
-
 } // end openNewWindow
 
 //=====================================================================================
@@ -2407,8 +2579,7 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 // Note: to open a window just using the Desktop icon name, leave subname and unique undefined
 //	window path can optionially be used to send the window additional parameters, or left undefined.
 DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique) 
-{		
-	
+{			
 	if(windowPath !== undefined)
 	{
 		//remove leading ? because Desktop.js handling expects no leading ?
@@ -2419,20 +2590,24 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 		// check from = that there is nothing but numbers	
 		try
 		{
-			var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-			var isAllNumbers = true;
-			for(i;i<windowPath.length;++i)
+			var i = windowPath.indexOf("urn:xdaq-application:lid=");
+			if(i >= 0)
 			{
-				//Debug.log(windowPath[i]);
-	
-				if(windowPath[i] < "0" || windowPath[i] > "9")
+				i += ("urn:xdaq-application:lid=").length;
+				var isAllNumbers = true;
+				for(i;i<windowPath.length;++i)
 				{
-					isAllNumbers = false;
-					break;
-				}				
+					//Debug.log(windowPath[i]);
+		
+					if(windowPath[i] < "0" || windowPath[i] > "9")
+					{
+						isAllNumbers = false;
+						break;
+					}				
+				}
+				if(isAllNumbers)
+					windowPath += "/";		
 			}
-			if(isAllNumbers)
-				windowPath += "/";		
 		}
 		catch(e)
 		{
@@ -2440,15 +2615,54 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 					"The window path seems to be invalid:[" + DesktopContent.getExceptionLineNumber(e) + "]: " + e, Debug.HIGH_PRIORITY);
 			return;
 		}
-	}
-	Debug.log("DesktopWindow= " + windowPath);
 
+		//if window path is relative to local gateway, then be explict for cases that top level gateway differs
+		if(windowPath[0] == '/' && 
+			DesktopContent._topServerUrnLid && 
+			DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
+		{
+			Debug.log("Adding local server detail to relative url in window path",windowPath);
+			windowPath = DesktopContent._serverOrigin + windowPath;
+			Debug.log("Modified window path url",windowPath);
+		}
+
+		//propagate remote gateway info (if not already defined)!
+		if(DesktopContent._remoteServerUrnLid && 
+				windowPath.indexOf("remoteServerUrnLid") < 0)
+		{
+			Debug.log("Adding Remote Gateway info to window path",windowPath);
+
+			//determine if need & or ?
+			var qi = windowPath.indexOf('?');			
+			if(qi > 0)
+			{
+				if(qi != windowPath.length - 1) //then need &
+					windowPath += '&';
+				//else ? is last character, so no need for &
+			}
+			else 
+				windowPath += '?';
+
+			windowPath += "remoteServerOrigin=" +
+				encodeURIComponent(DesktopContent._remoteServerOrigin) +
+				"&remoteServerUrnLid=" + DesktopContent._remoteServerUrnLid;
+			
+			Debug.log("Modified window path url",windowPath);
+		} 
+	} //end windowPath defined handling
+
+	Debug.log("DesktopWindow= " + windowPath);
 	Debug.log("name= " + name);
 	Debug.log("subname= " + subname);
 	Debug.log("unique= " + unique);
 
 	//var search = DesktopContent._theWindow.parent.parent.window.location.search;
-	url = DesktopContent._serverOrigin +
+
+	if(DesktopContent._topServerUrnLid)
+		url = DesktopContent._topServerOrigin +
+			"/urn:xdaq-application:lid="+DesktopContent._topServerUrnLid+"/";//DesktopContent._theWindow.parent.parent.window.location.pathname;
+	else	
+		url = DesktopContent._serverOrigin +
 			"/urn:xdaq-application:lid="+DesktopContent._serverUrnLid+"/";//DesktopContent._theWindow.parent.parent.window.location.pathname;
 	
 	
@@ -2465,150 +2679,10 @@ DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
 	else
 		url += "?" + str;
 		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-//	if(search == "") 
-//	{
-//		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-//		var isAllNumbers = true;
-//		for(i;i<url.length;++i)
-//		{
-//			Debug.log(url[i]);
-//			
-//			if(url[i] < "0" || url[i] > "9")
-//			{
-//				isAllNumbers = false;
-//				break;
-//			}				
-//		}
-//		if(isAllNumbers)
-//			url += "/";
-//		url += "?" + str;
-//	}
-//	else
-//	{		
-//		//remove, possibly recursive, former new windows through url
-//		var i = search.indexOf("requestingWindowId");		
-//		if(i >= 0)
-//			search = search.substr(0,i);
-//		
-//		//replace sequence with updated sequence
-//		if(search.substr(0,6) == "?code=") 
-//		{
-//			i = search.substr('&');
-//			search = "?code=" + DesktopContent._sequence + 
-//					(i>0?search.substr(i):"");
-//		}
-//		
-//		//only add & if there are other parameters
-//		if(search.length && search[search.length-1] != '?'
-//				&& search[search.length-1] != '&')
-//			search += '&';
-//		url += search + str;
-//	}
-	
 	Debug.log("DesktopContent.openNewBrowserTab= " + url);
 	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
 	window.open(url,'_blank');	
 
-	
-	return;
-	
-	
-	if(windowPath !== undefined)
-	{
-		//remove leading ? because Desktop.js handling expects no leading ?
-		if(windowPath[0] == '?')
-			windowPath = windowPath.substr(1);
-			
-		//for windowPath, need to check lid=## is terminated with /
-		// check from = that there is nothing but numbers	
-		try
-		{
-			var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-			var isAllNumbers = true;
-			for(i;i<windowPath.length;++i)
-			{
-				//Debug.log(windowPath[i]);
-	
-				if(windowPath[i] < "0" || windowPath[i] > "9")
-				{
-					isAllNumbers = false;
-					break;
-				}				
-			}
-			if(isAllNumbers)
-				windowPath += "/";		
-		}
-		catch(e)
-		{
-			Debug.log("An error occurred while trying to open the window. " +
-					"The window path seems to be invalid:[" + DesktopContent.getExceptionLineNumber(e) + "]: " + e, Debug.HIGH_PRIORITY);
-			return;
-		}
-	}
-	Debug.log("DesktopWindow= " + windowPath);
-
-	Debug.log("name= " + name);
-	Debug.log("subname= " + subname);
-	Debug.log("unique= " + unique);
-
-	var search = DesktopContent._theWindow.parent.parent.window.location.search;
-	url = DesktopContent._theWindow.parent.parent.window.location.pathname;
-		
-	var str = "requestingWindowId=" + DesktopContent._theWindowId;//DesktopContent._myDesktopFrame.id.split('-')[1];
-	str += "&windowName=" + name;
-	str += "&windowSubname=" + subname;
-	str += "&windowUnique=" + unique;
-	str += "&windowPath=" + windowPath;
-		
-	//if there is no search, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
-	
-	if(search == "") 
-	{
-		var i = url.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-		var isAllNumbers = true;
-		for(i;i<url.length;++i)
-		{
-			Debug.log(url[i]);
-			
-			if(url[i] < "0" || url[i] > "9")
-			{
-				isAllNumbers = false;
-				break;
-			}				
-		}
-		if(isAllNumbers)
-			url += "/";
-		url += "?" + str;
-	}
-	else
-	{		
-		//remove, possibly recursive, former new windows through url
-		var i = search.indexOf("requestingWindowId");		
-		if(i >= 0)
-			search = search.substr(0,i);
-		
-		//replace sequence with updated sequence
-		if(search.substr(0,6) == "?code=") 
-		{
-			i = search.substr('&');
-			search = "?code=" + DesktopContent._sequence + 
-					(i>0?search.substr(i):"");
-		}
-		
-		//only add & if there are other parameters
-		if(search.length && search[search.length-1] != '?'
-				&& search[search.length-1] != '&')
-			search += '&';
-		url += search + str;
-	}
-	
-	Debug.log("DesktopContent.openNewBrowserTab= " + url);
-	//DesktopContent.openNewBrowserTab= /urn:xdaq-application:lid=200/?requestingWindowId=1002&windowName=ARTDAQ Config&windowSubname=&windowUnique=false&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=281
-	window.open(url,'_blank');	
 } // end openNewBrowserTab()
 
 //=====================================================================================
@@ -2679,13 +2753,6 @@ DesktopContent.addDesktopIcon = function(caption, altText,
 		}
 		catch(err) {} //ignore error, this is a place holder for users to define a handler for updating displays when the active groups changed (e.g used by ConfigurationGUI)
 
-//		if(!DesktopContent._blockSystemCheckMailbox &&
-//				DesktopContent._blockSystemCheckMailbox.innerHTML == "")
-//		{
-//			//inform Desktop.js to refresh icons (handled by _checkMailboxes())
-//			DesktopContent._blockSystemCheckMailbox.innerHTML = "RefreshIcons";
-//		}
-
 		//inform Desktop.js to refresh icons (handled by _checkMailboxes())
 		DesktopContent._theDesktopWindow.postMessage(
 				{
@@ -2696,7 +2763,7 @@ DesktopContent.addDesktopIcon = function(caption, altText,
 			}, //end request handler
 			0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
 			false /*doNotShowLoadingOverlay*/,
-			true /*targetSupervisor*/);  //end XMLHttpRequest() call
+			true /*targetGatewaySupervisor*/);  //end XMLHttpRequest() call
 
 } //end addDesktopIcon()
 
@@ -2717,9 +2784,13 @@ DesktopContent.systemBlackout = function(doBlackout)
 //	returns the text in header of the current desktop window
 DesktopContent.getDesktopWindowTitle = function() 
 {
-	return DesktopContent._theWindow.parent.document.getElementById(
+	if(!DesktopContent._theWindowTitle || 
+		DesktopContent._theWindowTitle == -1)
+		return DesktopContent._theWindow.parent.document.getElementById(
 			"DesktopWindowHeader-" + 
 			DesktopContent._theWindow.name.split('-')[1]).innerHTML;
+	else
+		return DesktopContent._theWindowTitle;
 } //end getDesktopWindowTitle()
 
 DesktopContent.getExceptionLineNumber = function(e) 
@@ -2733,6 +2804,16 @@ DesktopContent.getExceptionLineNumber = function(e)
 
 //=====================================================================================
 //	provide html tag name and attribute/value map object
+//		To escape quotes in usage, use \" for example and use encodeURIComponent(str) to avoid special characters:
+//
+// 		str += DesktopContent.htmlOpen("span",{
+// 			"class" : "macroInfo",
+// 			"style" : "cursor:pointer",
+// 			"onclick" : ("DesktopContent.tooltip(\"" + 
+// 				encodeURIComponent(macroName) + "\", \"" + 
+// 				encodeURIComponent(tooltip) + "\");"),
+// 			"title" : "Click to open the tooltip for FE Macro &apos;" + encodeURIComponent(macroName) + "&apos;"
+// 		},"" /*innerHTML*/,true /*doCloseTag*/);					
 DesktopContent.htmlOpen = function(tag, attObj, innerHTML, doCloseTag)
 {
 	var str = "";
@@ -2748,8 +2829,13 @@ DesktopContent.htmlOpen = function(tag, attObj, innerHTML, doCloseTag)
 		else if(attKeys[i] == "checked") str += (attObj[attKeys[i]]|0)?" checked ":""; //no value
 		else if(attKeys[i] == "") continue; //skip empty key
 		else
+		{
+			var tmpStr = attObj[attKeys[i]];
+			if(typeof(tmpStr) == "string")
+				tmpStr = tmpStr.replaceAll("'","\\'");
 			str += " " + attKeys[i] + "='" +
-			attObj[attKeys[i]] + "' ";
+				tmpStr + "' ";
+		}
 	}
 	str += ">";
 	if(innerHTML) 

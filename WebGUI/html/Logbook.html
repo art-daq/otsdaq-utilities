@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-		<title>Logbook</title>
+		<title>Logbook</title>		
 
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
 		<style type="text/css">			
@@ -16,7 +16,9 @@
 			}
 			
 			a {
-				color: blue;
+				color: rgb(180,207,237);	
+				font-weight: 800;
+				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 			
 			hr {				
@@ -31,6 +33,7 @@
 				padding: 5px;
 				border: 1px solid black;
 		    	cursor: pointer;
+				height: 23px;
 			}
 			
 			div {
@@ -65,7 +68,8 @@
 
 			.areaContentDiv {
 			    border-radius: 5px;
-				overflow: hidden;
+				/* overflow-x: auto;
+				overflow-y: hidden; */
 			}
 			
 			.areaContent {
@@ -123,8 +127,15 @@
 				margin-left: 10px;
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
+
+			#categoryHeaderLabel {
+				white-space: nowrap;
+				overflow-x: auto;
+				font-size: 22px;
+			}
+
 			
-			#currentExperimentHeader {
+			#currentCategoryHeader {
 				font-weight: 800;
 		    	font-size: 22px;
 				color: rgb(255,183,74);
@@ -133,7 +144,7 @@
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 			
-			#experimentList {
+			#categoryList {
 				overflow-y: scroll;		
 				text-align: right;
 				padding: 5px;
@@ -143,14 +154,14 @@
 				margin: 10px 0 5px 0;
 			}
 			
-			#clearActiveExperimentDiv a {
+			#clearActiveCategoryDiv a {
 				color: rgb(180,207,237);
 				font-weight: 800;
 				
 			}
 
 			
-			#experimentList a {
+			#categoryList a {
 				font-family: arial;
 				color: rgb(180,207,237);				
 			}
@@ -166,11 +177,11 @@
 				margin: 60px 50px 0 0;
 			}				
 			
-			#experimentTextBox {
+			#categoryTextBox {
 				width: 200px;
 			}
 			
-			#experimentClearIcon {
+			#categoryClearIcon {
 				margin: 6px 0 -6px -30px;
 			}
 
@@ -179,7 +190,7 @@
 				font-weight: 800;
 			}
 			
-			#logbookHeader a {
+			#logbookHeader a, #currentCategoryHeader a {
 				color: rgb(180, 207, 237);
 				font-weight: 800;
 			}
@@ -278,17 +289,15 @@
 			
 				font-size: 24px;
 				font-weight: 800;
-				/*margin: -30px 0 0 0;*/
-			/*background-color: black;*/
+				
+				cursor: pointer;
+				/*background-color: black;*/
 			}
 			
 			.Logbook-entryTime {
 				float: right;
 				height: 15px;
-				padding: 2px 10px 0 0;
-				
-			/*margin: -30px 0 0 0;*/
-
+				padding: 2px 10px 0 0;				
 			}
 			
 			.Logbook-entryCreator {
@@ -296,8 +305,6 @@
 				float: right;
 				height: 15px;
 				padding: 2px 10px 0 0;
-			
-			/*margin: -30px 0 0 0;*/
 			}
 
 			.Logbook-entryBody {
@@ -357,13 +364,23 @@
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/CalendarPopup.js"></script>
 		
+		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
+		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
+		
 		<script>		
 			
 			//functions:			
 				//init()	
-				//setActiveExperiment(experiment)
-				//handleExperimentChangeRequest(req)
-				//handleGetExperimentListRequest(req)
+				
+				//setActiveCategory(category)
+				//setResponseCategory(category)
+				//toggleCategoryFilter()
+				//initCategoryFilter(preselects)
+				//handleCategoryFilterChange(el)
+
+				//handleCategoryChangeRequest(req)
+				//handleGetCategoryListRequest(req)
+				
 				//redrawLogbook()
 				//redrawExpandButtons()
 				//toggleArea(i)
@@ -378,16 +395,19 @@
 				//uploadComplete(evt)
 				//uploadFailed(evt)
 				//uploadCanceled(evt)
-				//handleExperimentInputKeyDown(e)
+				//handleCategoryInputKeyDown(e)
 				//handleSearchKeyUp()
 				//handleTimeoutSearchKeyUp()
-				//createExperiment()
-				//removeExperiment()
-				//displayExperiments()
-				//applyExperimentsSearch(needle)
-				//activeExperimentSetRequest(experiment)
-				//clearExperimentInput()
+				
+				//createCategory()
+				//removeCategory()
+				//displayCategories()
+				//applyCategoriesSearch(needle)
+				//activeCategorySetRequest(category)
+				//clearCategoryInput()
+
 				//refreshLogbook(date,duration)
+				//toggleAutoRefresh()
 				//handleRefreshLogbook(req)
 				//displayLogbookEntry(divEl,entry)
 				//adminRemoveRestoreEntry(entryId, hide)
@@ -404,16 +424,18 @@
 
 			var _MARGIN = 20;
 			var _HIDDEN_HEIGHT = 33;
+			var _CATEGORY_FILTER_HEIGHT = 338;
 			var _AREA_HEIGHTS = [270,390,500];
-			var _MAX_EXPERIMENT_NAME_LENGTH = 25;
+			var _MAX_CATEGORY_NAME_LENGTH = 300;
 			var _DEFAULT_ENTRY_INPUT_TEXT = "Enter the text for your logbook post here.";
 			var _DEFAULT_ENTRY_INPUT_SUBJECT = "Enter subject here.";
 			
 			var _isAreaExpanded = [false, false, true];
 			
-			var _ExperimentSearchTimer = 0;
-			var _activeExperiment = "";
-			var _experimentsShowArray, _experimentsArray;
+			var _CategorySearchTimer = 0;
+			var _activeCategory = "";
+			var _categoryFilter = ""; //* for all, if "" go with active category
+			var _categorysShowArray, _categorysArray;
 						
 			//preload loader spinner gif
 			var _loaderImage = new Image();			
@@ -425,25 +447,42 @@
 			
 			//refreshing logbook
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
-			var _refreshDuration = 1;	//init to 1 day
+			var _refreshDuration = 14;	//init to 2-weeks
 			var _mostRecentDayIndex = -1;
 			var _logbookUpdateTimer = 0;
 			var _REFRESH_INTERVAL = 10000; //10 seconds
+
+			var _TIMEZONE_OFFSET_HOURS = (new Date().getTimezoneOffset())/60;
 				
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 			
+			//=====================================================================================
 			//init called once body has loaded
-			function init() {	
-				
+			function init() 
+			{	
+				Debug.log("init()");
+
+				if(DesktopContent._windowMessagingInactive) //assume in standalone mode
+				{
+					Debug.log("Standalone mode detected -- Enabling navigation prompt");
+					// Enable navigation prompt 
+					//	(to prevent accidental/back/forward/nav leaving the page) "Leave page?" on chrome
+					window.onbeforeunload = function() {
+						return true;
+					};	
+
+					window.parent.document.title = "ots ECL";					
+				}
+
 				//init area elements
 				for(var i=0;i<_AREAS.length;++i)
 					_areaEls[i] = document.getElementById(_AREAS[i] + 'Area');
 				
 				_adminStatusEl = document.getElementById('adminStatusDiv');
 				
-				//get active experiment from url
-				setActiveExperiment(DesktopContent.getParameter(1));
+				//get active category from url
+				setActiveCategory(DesktopContent.getParameter(1));
 
 				window.onresize = redrawLogbook;
 				newPostText.value = _DEFAULT_ENTRY_INPUT_TEXT; //init text input
@@ -458,50 +497,282 @@
 						"/WebPath/images/windowContentImages/logbook-expand.png";
 				}
 
-				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
-						"RequestType=GetExperimentList", handleGetExperimentListRequest);					
-			}	
+				//check for category preselects:
+				var preselects = DesktopContent.getDesktopWindowParameter(0,"categories");
+				var preselectsArr = [];
+				if(preselects)
+				{
+					preselectsArr = preselects.split(',');
+					Debug.log("preselectsArr",preselectsArr);
+				}
 
-			//setActiveExperiment ~
-			function setActiveExperiment(experiment) {					
-			    Debug.log("Logbook setActiveExperiment to " + experiment);
-				_activeExperiment = experiment;
-				if(!_activeExperiment || _activeExperiment == "")
-				{	_activeExperiment = ""; currentExperimentHeader.innerHTML = "No Active Experiment Set"; 	}
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
+						"", handleGetCategoryListRequest, preselectsArr);					
+			} //end init()		
+
+			//=====================================================================================
+			//setActiveCategory ~
+			function setActiveCategory(category) 
+			{					
+			    Debug.log("Logbook setActiveCategory to " + category);
+
+				_activeCategory = category;
+				var str = "";
+				
+				str += "<center>";
+				str += "<div id='categoryHeaderLabel'>";
+				if(!_activeCategory || _activeCategory == "")
+				{	_activeCategory = ""; str += "No Active Category Set"; 	}
 				else
-					currentExperimentHeader.innerHTML = "<font color='white'>Active Experiment is</font> " + _activeExperiment;
-			}			
+					str += "<font color='white'>Active Category is</font> " + _activeCategory;				
+				str += "</div>";
+
+				str += "<div style='margin: 3px 8px -21px 0;'>" +
+					"<a href='#' onclick='toggleCategoryFilter()'>" + 
+						"hide/show Categories" + 
+					"</a></div>";
+													
+				var el = document.getElementById("categoryFilterMultiselect");
+				var display = el && (categoryFilterMultiselect.style.display != "none");				
+				//if displayed, toggle height to revert to hidden
+				if(display) 
+					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
+
+				str += "<div id='categoryFilterMultiselect' style='display:none" +					
+					"; height:300px; margin-bottom:0px; margin-top:30px;'></div>";
+
+				str += "<a id='toggleAllNoneCategory' style='display:none" + 
+						"; font-size:14px; padding:10px; margin-top:-15px;' " +
+						"href='#' onclick='toggleAllNoneCategorySelect()'>" + 
+							"select all/none" + 
+						"</a>";
+
+				str += "&nbsp;&nbsp;&nbsp; "+
+						"<a id='openSelectedCategoriesTabLink' style='display:none" + 
+						"; font-size:14px; padding:10px; margin-top:-15px;' " +
+						"href='#' target='_blank'>" + 
+							"open selected in new tab" + 
+						"</a>";
+				str += "</center>";
+
+				currentCategoryHeader.innerHTML = str;
+			} //end setActiveCategory()
+
+			//=====================================================================================
+			//setResponseCategory ~
+			function setResponseCategory(category) 
+			{					
+			    Debug.log("Logbook setResponseCategory to " + category);
+
+				if(category.length && category[0] == '!') //improve inverted wording
+					category = "all wo/" + category.substr(1);
+
+
+				var str = "";
+				str += "<font color='white'>Showing Log Entries for </font> " + category;
+				categoryHeaderLabel.innerHTML = str;
+
+				window.parent.document.title = "ots ECL - " + category;
+			} //end setResponseCategory()
 			
+			//=====================================================================================
+			//toggleCategoryFilter ~
+			function toggleCategoryFilter(toggleCategoryFilter) 
+			{					
+			    Debug.log("Logbook toggleCategoryFilter()");
+
+				if(categoryFilterMultiselect.innerHTML == "")
+				{
+					Debug.log("init category multiselect");
+					initCategoryFilter();
+				}
+
+				//toggle dislpay
+				var display = categoryFilterMultiselect.style.display == "none";
+				if(display)
+				{
+					Debug.log("Show");
+					categoryFilterMultiselect.style.display = "block";
+					toggleAllNoneCategory.style.display = "inline-block";
+					openSelectedCategoriesTabLink.style.display = "inline-block";
+					_AREA_HEIGHTS[0] += _CATEGORY_FILTER_HEIGHT;
+					_areaEls[0].style.height = _AREA_HEIGHTS[0] + "px";
+				}
+				else
+				{
+					Debug.log("Hide");
+					categoryFilterMultiselect.style.display = "none";
+					toggleAllNoneCategory.style.display = "none";
+					openSelectedCategoriesTabLink.style.display = "none";
+					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
+					_areaEls[0].style.height = _AREA_HEIGHTS[0] + "px";
+				}
+
+				redrawExpandButtons();
+			} //end toggleCategoryFilter()
+
+			//=====================================================================================
+			//initCategoryFilter ~
+			function initCategoryFilter(preselects) 
+			{					
+				_categoryFilter = ""; //clear
+			    Debug.log("Logbook initCategoryFilter()", 
+					_categorysArray.length, preselects);
+
+				//////////// make search box (copied from MultiSelectBoxTest.html)
+				{	
+					var noMultiSelect = false; // true or false (false for multiselect functionality) 
+					var maintainPreviousSelections = true; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
+					
+					var vals = [];
+					for(var i=0;i<_categorysArray.length;++i)
+						vals[i] = _categorysArray[i].getAttribute('value');
+
+					var keys = undefined;
+					var types = undefined;
+										
+					//write to a particular div
+					var el = categoryFilterMultiselect;  
+					MultiSelectBox.createSelectBox(el,
+							"categoryFilterMultiselect",
+							"Category Selection Filter",
+							vals,keys,types,handleCategoryFilterChange,noMultiSelect);
+					
+					if(!preselects)
+	            	{
+						MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
+						return;
+					}	
+					//else set pre-selections as selected	  
+					
+					MultiSelectBox.initMySelectBoxes(true); //init to clear
+
+					var invertedSelection = false;
+					if(preselects.length && preselects[0].length && preselects[0][0] == '!')
+					{
+						invertedSelection = true;
+						preselects[0] = preselects[0].substr(1);
+					}
+
+
+					for(var j=0;j<preselects.length;++j)
+						for(var i=0;i<vals.length;++i)
+							if((preselects[j] == '*' || //all select
+									(!invertedSelection && preselects[j].trim() == vals[i])) || //normal select
+								(invertedSelection && 
+									preselects[j].trim() != vals[i])) //inverted select
+								MultiSelectBox.setSelectionElementByIndex(el,i,true);	
+					MultiSelectBox.initMySelectBoxes(false); //setup selections	
+					
+					handleCategoryFilterChange(el);
+				}
+				//////////// end make search box				
+
+			} //end initCategoryFilter()
+
+			//=====================================================================================
+			//handleCategoryFilterChange ~
+			function handleCategoryFilterChange(el)
+			{
+				Debug.log("handleCategoryFilterChange()");
+
+				var i = MultiSelectBox.getSelectedIndex(el); 
+				var selArr = MultiSelectBox.getSelectionArray(el);
+				if(selArr[i])
+					Debug.log("Chosen element index:",i,            		
+						" value:",el.textContent,
+						" key:",el.getAttribute("key-value"),
+						" type:",el.getAttribute("type-value"));
+				
+				var selStr = "", invSelStr = "";
+				var isAll = true;
+				var countWithout = 0; //see if only 1 to 3 without
+				for(var s in selArr)
+					if(selArr[s])
+						selStr += (selStr.length?", ":"") + 
+							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
+					else 
+					{
+						isAll = false;
+						++countWithout;
+						invSelStr += (invSelStr.length?", ":"") + 
+							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
+					}
+
+				Debug.logv({selStr});	
+				
+				_categoryFilter = isAll?"*":selStr;
+
+				if((selArr.length > 10 && countWithout < 4) || 
+					(selArr.length > 4 && countWithout == 1))
+				{	//then change to wo/ inverted selection
+					_categoryFilter = "!" //(indicator) 
+						+ invSelStr;
+				}
+					
+								
+				var newTabUrl = DesktopContent._localOrigin + "/urn:xdaq-application:lid=" + DesktopContent._localUrnLid + "/";
+
+				newTabUrl += "?categories=" + encodeURIComponent(_categoryFilter);
+				Debug.logv({newTabUrl});	
+					
+				openSelectedCategoriesTabLink.href = newTabUrl;
+			} //end handleCategoryFilterChange()
+			
+			//=====================================================================================
+			//toggleAllNoneCategorySelect ~
+			function toggleAllNoneCategorySelect()
+			{
+				Debug.log("toggleAllNoneCategorySelect()");
+
+				var selArr = MultiSelectBox.getSelectionArray(categoryFilterMultiselect);
+
+				if(!selArr.length) return;
+
+				var setVal = !selArr[0];
+				for(var i=0;i<selArr.length;++i)
+					MultiSelectBox.setSelectionElementByIndex(categoryFilterMultiselect,i,setVal);	
+			
+				MultiSelectBox.initMySelectBoxes(false); //setup selections	
+				handleCategoryFilterChange(categoryFilterMultiselect);
+			} //end toggleAllNoneCategorySelect()
+
+			//=====================================================================================
 			//redrawLogbook ~
-			function redrawLogbook() {	
+			function redrawLogbook() 
+			{	
 			    Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
 			    
-			    var w = window.innerWidth;
+			    var w = DesktopContent.getWindowWidth();
 			    if(w < 600) w=600; //prevent super squeeze
-			    var h = window.innerHeight;
 			    			    
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					//only show admin area if have privileges
-					if(!i && !_isAdmin) { 
+					if(i == 0 && !_isAdmin) 
+					{ 
 						_areaEls[i].style.display = "none"; 
 						_isAreaExpanded[i] = true; 
-						_AREA_HEIGHTS[i] = 0; 
+
+						var el = document.getElementById("categoryFilterMultiselect");
+						var display = el && (categoryFilterMultiselect.style.display != "none");	
+						_AREA_HEIGHTS[i] = display?_CATEGORY_FILTER_HEIGHT:0; 
 						continue; 
 					}
 					_areaEls[i].style.display = "block"; 
 
-					 _areaEls[i].style.left = _MARGIN + "px";
-					 _areaEls[i].style.width = (w - _MARGIN*2) + "px";
+					_areaEls[i].style.left = _MARGIN + "px";
+					_areaEls[i].style.width = (w - _MARGIN*2) + "px";
 				}
 			    
 			    redrawExpandButtons();
-			}
+			} //end redrawLogbook()
 			
-			//redrawLogbook ~
-			function redrawExpandButtons() {	
-				
-				var yoff = 20;
+			//=====================================================================================
+			//redrawExpandButtons ~
+			function redrawExpandButtons() 
+			{					
+				var yoff = 32;
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					document.getElementById("expandBtnImg"+i+"-hide").style.display = 
@@ -518,16 +789,20 @@
 						_areaEls[i].style.height = (_isAreaExpanded[i]?_AREA_HEIGHTS[i]:_HIDDEN_HEIGHT) + "px";
 					yoff += (_isAreaExpanded[i]?_AREA_HEIGHTS[i]:_HIDDEN_HEIGHT);
 				}
-			}
+			} //end redrawExpandButtons()
 			
-			//redrawLogbook ~
-			function toggleArea(i) {	
+			//=====================================================================================
+			//toggleArea ~
+			function toggleArea(i) 
+			{	
 				_isAreaExpanded[i] = !_isAreaExpanded[i];
 			    redrawExpandButtons();
-			}
+			} //end toggleArea()
 			
+			//=====================================================================================
 			//fileSelected ~
-			function fileSelected() {
+			function fileSelected() 
+			{
 				var el = document.getElementById('fileToUpload');
 				var totFileSize = 0;
 				var fileNameConcat = "";
@@ -562,12 +837,14 @@
 				document.getElementById('fileSize').innerHTML = '<b>Size:</b>&nbsp;&nbsp;&nbsp; ' + fileSize;
 				document.getElementById('fileType').innerHTML = '<b>Type:</b>&nbsp;&nbsp; ' + 
 					fileTypeConcat.substr(0,20) + (fileTypeConcat.length > 20?"...":"");
-			}
+			} //end fileSelected()
             
-			//previewPost ~~
+			//=====================================================================================
+			//handlePreviewPost ~~
 			//	preview user post before submitting to logbook
 			//	hide input, show preview with scroll
-			function handlePreviewPost(evt) {
+			function handlePreviewPost(evt) 
+			{
 				var req = evt.target;
 				Debug.log("Logbook handlePreviewPost " + req.responseText);
 				
@@ -593,36 +870,42 @@
 
 				displayLogbookEntry(document.getElementById('logbookPreviewPostDiv'),req.responseXML);
 
-			}
+			} //end handlePreviewPost()
 
+			//=====================================================================================
 			//cancelPost ~~
-			function cancelPost(previewNum) {
+			function cancelPost(previewNum) 
+			{
 				Debug.log("Logbook cancelPost " );
 				document.getElementById('postPreviewDiv').innerHTML = "";
 				document.getElementById('postFormDiv').style.display = "block";
-				DesktopContent.XMLHttpRequest("Request", 
-						"RequestType=ApproveEntry&Approve=0&PreviewNumber="+previewNum);	
+				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry", 
+						"Approve=0&PreviewNumber="+previewNum);	
 				document.getElementById('PreviewStatus').innerHTML = "Post cancelled.";
-			}
+			} //end cancelPost()
 
+			//=====================================================================================
 			//postToLogbook ~~
-			function postToLogbook(previewNum) {
+			function postToLogbook(previewNum) 
+			{
 				Debug.log("Logbook postToLogbook " );
 				document.getElementById('postPreviewDiv').innerHTML = "";
 				document.getElementById('postFormDiv').style.display = "block";
 				newPostText.value = _DEFAULT_ENTRY_INPUT_TEXT;
 				newPostSubject.value = _DEFAULT_ENTRY_INPUT_SUBJECT;
-				DesktopContent.XMLHttpRequest("Request", 
-						"RequestType=ApproveEntry&Approve=1&PreviewNumber="+previewNum);	
+				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry", 
+						"Approve=1&PreviewNumber="+previewNum);	
 				document.getElementById('PreviewStatus').innerHTML = "Entry posted.";	
 				clearFileInput();
 				refreshLogbook();				
-			}
+			} //end postToLogbook()
             
+			//=====================================================================================
 			//convertForServer ~
 			//	replace server reserved characters with %<hex> equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
-			function convertForServer(entry) {
+			function convertForServer(entry) 
+			{
 			    return entry
 		         .replace(/&/g, "%26")
 		         .replace(/</g, "%3C")
@@ -631,12 +914,14 @@
 		         .replace(/'/g, "%27")
 				 .replace(/\n/g,"%0A%0D")
 				 .replace(/  /g, "%20%20");				
-			}
+			} //end convertForServer()
 			
+			//=====================================================================================
 			//convertForClient ~
 			//	replace server reserved characters with html equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
-			function convertForClient(entry) {
+			function convertForClient(entry) 
+			{
 				//replace special HTML chars-----------
 			    return entry
 			         .replace(/%26/g, "&amp;")  			//&
@@ -644,14 +929,19 @@
 			         .replace(/%3E/g, "&gt;")				//>
 			         .replace(/%22/g, "&quot;")				//"
 			         .replace(/%27/g, "&#039;")				//'
+					 .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")//tab
 			         .replace(/%0A%0D/g, "<br>")			//newline
+					 .replace(/&#010;/g, "<br>")			//newline					 
+					 .replace(/\n/g, 	 "<br>")			//newline
 			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
-			}
-			
+			} //end convertForClient()
+		
+			//=====================================================================================
 			//uploadToServer ~~
 			//	upload logbook entry to server.
 			//	Used to upload as temporary previewable post
-			function uploadToServer(reqCmd, handler) {
+			function uploadToServer(reqCmd, handler)
+			{
 				if(newPostText.value == _DEFAULT_ENTRY_INPUT_TEXT ||
 						newPostSubject.value == _DEFAULT_ENTRY_INPUT_SUBJECT ||
 						newPostText.value == "") 
@@ -681,11 +971,12 @@
                 fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
                 fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
                 xhr.send(fd);
-			}
+			} //end uploadToServer()
 
-
+			//=====================================================================================
 			//uploadProgress ~~
-			function uploadProgress(evt) {
+			function uploadProgress(evt) 
+			{
 				if (evt.lengthComputable) {
 					var percentComplete = Math.round(evt.loaded * 100 / evt.total);
 					document.getElementById('PreviewStatus').innerHTML = percentComplete.toString() + '%';
@@ -695,29 +986,37 @@
 					document.getElementById('PreviewStatus').innerHTML = 'unable to compute';
 					Debug.log("Logbook uploadProgress 'unable to compute'");
 				}
-			}
+			} //end uploadProgress()
 
+			//=====================================================================================
 			//uploadComplete ~
 			// This event is raised when the server send back a response
-			function uploadComplete(evt) {
-				Debug.log("Logbook uploadComplete " +  evt.target.responseText);
-			}
+			function uploadComplete(evt) 
+			{
+				Debug.info("Logbook uploadComplete " +  evt.target.responseText);
+			} //end uploadComplete()
 
+			//=====================================================================================
 			//uploadFailed ~
-			function uploadFailed(evt) {
-				Debug.log("There was an error attempting to upload the file.");
-			}
+			function uploadFailed(evt) 
+			{
+				Debug.err("There was an error attempting to upload the file.");
+			} //end uploadFailed()
 
+			//=====================================================================================
 			//uploadCanceled ~
-			function uploadCanceled(evt) {
+			function uploadCanceled(evt) 
+			{
 				Debug.log("The upload has been canceled by the user or the browser dropped the connection.");
-			}  			
+			} //end uploadCanceled()		
 
-			//handleExperimentInputKeyDown ~~ 
+			//=====================================================================================
+			//handleCategoryInputKeyDown ~~ 
 			//	allow alphanumeric character only
 			//	if allowSpace is set, then spaces also allowed
-			function handleExperimentInputKeyDown(e, allowSpace) {	
-				//Debug.log("Logbook handleExperimentInputKeyDown " + e.keyCode);
+			function handleCategoryInputKeyDown(e, allowSpace) 
+			{	
+				//Debug.log("Logbook handleCategoryInputKeyDown " + e.keyCode);
 				if(e.key == "Tab") return true;		//if tab focus on next box
 				else if((!e.shiftKey && (e.keyCode >= 48 && e.keyCode <= 57)) || //accept numbers but not shifted numbers
 					(e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
@@ -730,152 +1029,214 @@
 					return true;
 				
 				return false; //to stop tab and enter (and unaccepted chars) from propagating to window
-			}
+			} //end handleCategoryInputKeyDown()
 
+			//=====================================================================================
 			//handleSearchKeyUp ~~ 
 			//	show loader image and set timer for search
-			function handleSearchKeyUp() {				
+			function handleSearchKeyUp()
+			{				
 
-				var el = document.getElementById("experimentTextBox");	
-				if(el.value.length > _MAX_EXPERIMENT_NAME_LENGTH)
+				var el = document.getElementById("categoryTextBox");	
+				if(el.value.length > _MAX_CATEGORY_NAME_LENGTH)
 				{
-					el.value = el.value.substr(0,_MAX_EXPERIMENT_NAME_LENGTH);
-					_adminStatusEl.innerHTML = "Max experiment name length is " + _MAX_EXPERIMENT_NAME_LENGTH + ".";
+					el.value = el.value.substr(0,_MAX_CATEGORY_NAME_LENGTH);
+					_adminStatusEl.innerHTML = "Max category name length is " + _MAX_CATEGORY_NAME_LENGTH + ".";
 				}
 				
-				el = document.getElementById("experimentList");
+				el = document.getElementById("categoryList");
 				if(el && el.innerHTML.indexOf("loaderGif") == -1)
 					el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
 					
-				if(_ExperimentSearchTimer) clearTimeout(_ExperimentSearchTimer);
-				_ExperimentSearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
-			}
+				if(_CategorySearchTimer) clearTimeout(_CategorySearchTimer);
+				_CategorySearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
+			} //end handleSearchKeyUp()
 
+			//=====================================================================================
 			//handleTimeoutSearchKeyUp ~~ 
-			function handleTimeoutSearchKeyUp() {			
-				var el = document.getElementById("experimentTextBox");				
+			function handleTimeoutSearchKeyUp() 
+			{			
+				var el = document.getElementById("categoryTextBox");				
 				Debug.log("Logbook handleTimeoutSearchKeyUp " + el.value);
-				applyExperimentsSearch(el.value);
-				displayExperiments();
-			}
+				applyCategoriesSearch(el.value);
+				displayCategories();
+			} //end handleTimeoutSearchKeyUp()
 			
-			//createExperiment ~~ 
-			function createExperiment() {	
-				var el = document.getElementById("experimentTextBox");				
-				Debug.log("Logbook createExperiment " + el.value);
+			//=====================================================================================
+			//createCategory ~~ 
+			function createCategory() 
+			{	
+				var el = document.getElementById("categoryTextBox");				
+				Debug.log("Logbook createCategory " + el.value);
 				
-				DesktopContent.XMLHttpRequest("Request", 
-						"RequestType=CreateExperiment&Experiment="+el.value, handleExperimentChangeRequest);	
-			}
+				DesktopContent.XMLHttpRequest("Request?RequestType=CreateCategory", 
+						"Category="+el.value, handleCategoryChangeRequest);	
+			} //end createCategory()
 			
-			//removeExperiment ~~ 
-			function removeExperiment() {	
-				var el = document.getElementById("experimentTextBox");				
-				Debug.log("Logbook removeExperiment " + el.value);
+			//=====================================================================================
+			//removeCategory ~~ 
+			function removeCategory() 
+			{	
+				var el = document.getElementById("categoryTextBox");				
+				Debug.log("Logbook removeCategory " + el.value);
 
-				DesktopContent.XMLHttpRequest("Request", 
-						"RequestType=RemoveExperiment&Experiment="+el.value, handleExperimentChangeRequest);				
-			}
+				DesktopContent.XMLHttpRequest("Request?RequestType=RemoveCategory", 
+						"Category="+el.value, handleCategoryChangeRequest);				
+			} //end removeCategory()
 
-			//handleExperimentChangeRequest ~~ 
-			function handleExperimentChangeRequest(req) {							
+			//=====================================================================================
+			//handleCategoryChangeRequest ~~ 
+			function handleCategoryChangeRequest(req) 
+			{							
 				_adminStatusEl.innerHTML = DesktopContent.getXMLValue(req,"logbook_admin_status");				
 
-				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
-						"RequestType=GetExperimentList", handleGetExperimentListRequest);
-			}
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
+						"", handleGetCategoryListRequest);
+			} //end handleCategoryChangeRequest()
 
-			//handleGetExperimentListRequest ~~ 
-			function handleGetExperimentListRequest(req) {
+			//=====================================================================================
+			//handleGetCategoryListRequest ~~ 
+			function handleGetCategoryListRequest(req, preselectsArr) 
+			{
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
+
+				_categorysArray = req.responseXML.getElementsByTagName("category");
 
 				if(_isAdmin) 
 				{				
-					//reset active experiment, in case request was a setActiveExperiment request
-					setActiveExperiment(DesktopContent.getXMLValue(req,"active_experiment")); 
+					//reset active category, in case request was a setActiveCategory request
+					setActiveCategory(DesktopContent.getXMLValue(req,"active_category")); 
 					
-					_experimentsArray = req.responseXML.getElementsByTagName("experiment");
-					_experimentsShowArray = new Array(); //init all elements to show
-					for(var i=0;i<_experimentsArray.length;++i) _experimentsShowArray[i] = 1;
+					_categorysShowArray = new Array(); //init all elements to show
+					for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1;
 					
-					displayExperiments();
-				}				
+					displayCategories();
+				}		
+				
+				initCategoryFilter(preselectsArr);
+
+				if(DesktopContent._windowMessagingInactive) //assume in standalone mode and no user credential for log entry, so just provide link
+				{
+					var str = ""; //create alternate text for posting entry
+
+					var ecl_url = DesktopContent.getXMLValue(req,"ecl_url"); 
+					if(ecl_url && ecl_url != "")
+					{
+						str += "Click <a target='_blank' href='" + ecl_url + 
+							"/E/create_entry'>here</a> to create a new Logbook entry.";
+						postFormDiv.innerHTML = str;
+						_AREA_HEIGHTS[1] = 72; // shrink new post area
+					}
+				}
 
 				redrawLogbook(); //setup window divs based on admin	
 				refreshLogbook(); //refresh logbook, by default start with today for one day
 								//NOTE: call refresh logbook here so that _isAdmin is gauranteed to be set
-			}
+			} //end handleGetCategoryListRequest()
 
-			//applyExperimentsSearch ~~
-			//	filter _experimentsArray based on needle
-			function applyExperimentsSearch(needle) {
-				for(var i=0;i<_experimentsArray.length;++i) _experimentsShowArray[i] = 1; //reset show array
+			//=====================================================================================
+			//applyCategoriesSearch ~~
+			//	filter _categorysArray based on needle
+			function applyCategoriesSearch(needle) 
+			{
+				for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1; //reset show array
 				if(needle == "") return;
-				Debug.log("Logbook applyExperimentsSearch needle " + needle);	
+				Debug.log("Logbook applyCategoriesSearch needle " + needle);	
 
-				for(var i=0;i<_experimentsArray.length;++i)
-					if(_experimentsArray[i].getAttribute('value').indexOf(needle) == -1)
-						_experimentsShowArray[i] = 0;		//no needle, so hide		
-			}
+				for(var i=0;i<_categorysArray.length;++i)
+					if(_categorysArray[i].getAttribute('value').indexOf(needle) == -1)
+						_categorysShowArray[i] = 0;		//no needle, so hide		
+			} //end applyCategoriesSearch()
 			
-			//displayExperiments ~~ 
+			//=====================================================================================
+			//displayCategories ~~ 
 			//	diplay in reverse so newest at top
-			function displayExperiments() {
-				Debug.log("Logbook displayExperiments _experimentsArray.length " + _experimentsArray.length);	
-				var el = document.getElementById("experimentList");
+			function displayCategories() 
+			{
+				Debug.log("Logbook displayCategories _categorysArray.length " + _categorysArray.length);	
+				var el = document.getElementById("categoryList");
 				
 				var str = "";
 				var atLeastOne = false;
-				for(var i=_experimentsArray.length-1;i >= 0;--i)
-					if(!_experimentsShowArray[i]) continue;
+				for(var i=_categorysArray.length-1;i >= 0;--i)
+					if(!_categorysShowArray[i]) continue;
 					else {
-						str += "<a href='Javascript:activeExperimentSetRequest(\""+ 
-							_experimentsArray[i].getAttribute('value') + "\")' title='Left-click to make " + 
-							_experimentsArray[i].getAttribute('value') +
-							" the active experiment'>" + 
-							_experimentsArray[i].getAttribute('value') + "</a><br>";
+						str += "<a href='Javascript:activeCategorySetRequest(\""+ 
+							_categorysArray[i].getAttribute('value') + "\")' title='Left-click to make " + 
+							_categorysArray[i].getAttribute('value') +
+							" the active category'>" + 
+							_categorysArray[i].getAttribute('value') + "</a><br>";
 						atLeastOne = true;
 					}
 				
 				if(atLeastOne)
 					el.innerHTML = str;
 				else
-					el.innerHTML = "No matching experiment found.";
-			}
+					el.innerHTML = "No matching category found.";
+			} //end displayCategories()
 			
-			//activeExperimentSetRequest ~~ 
-			function activeExperimentSetRequest(experiment) {
-				Debug.log("Logbook activeExperimentSetRequest experiment " + experiment);
-				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
-						"RequestType=SetActiveExperiment&Experiment="+experiment, handleExperimentChangeRequest);
+			//=====================================================================================
+			//activeCategorySetRequest ~~ 
+			function activeCategorySetRequest(category) 
+			{
+				Debug.log("Logbook activeCategorySetRequest category " + category);
+				DesktopContent.XMLHttpRequest("Request?RequestType=SetActiveCategory", 		//update category list 
+						"Category="+category, handleCategoryChangeRequest);
 
-				var el = document.getElementById("experimentTextBox");	
-				el.value = experiment;
+				var el = document.getElementById("categoryTextBox");	
+				el.value = category;
 				el.focus();
-			}
+			} //end activeCategorySetRequest()
 			
-			//clearExperimentInput ~~ 
-			function clearExperimentInput() {
-				var el = document.getElementById("experimentTextBox");	
+			//=====================================================================================
+			//clearCategoryInput ~~ 
+			function clearCategoryInput() 
+			{
+				var el = document.getElementById("categoryTextBox");	
 				el.value = "";
 				el.focus();
-				applyExperimentsSearch(el.value);
-				displayExperiments();
-			}
+				applyCategoriesSearch(el.value);
+				displayCategories();
+			} //end clearCategoryInput()
 
+			//=====================================================================================
+			//toggleAutoRefresh ~~ 
+			var _autoRefreshTimer = 0;
+			function toggleAutoRefresh() 
+			{
+				Debug.log("Logbook toggleAutoRefresh()");
+				if(_autoRefreshTimer) window.clearTimeout(_autoRefreshTimer);
+				_autoRefreshTimer = 0;
 
+				if(autoRefreshLink.innerText.indexOf("off") > 0)
+				{ //then turn on					
+					autoRefreshLink.innerText = "Auto-refresh is on";
+
+					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
+					refreshLogbook(); //and refresh now!
+				}
+				else //turn off
+				{
+					autoRefreshLink.innerText = "Auto-refresh is off";
+				}
+
+			} //end toggleAutoRefresh()
+			
+			//=====================================================================================
 			//refreshLogbook ~~ 
 			//	generates request for logbook based on dayIndex and duration 
 			//		dayIndex = 0 for today, 1 for yesterday, etc
 			//		duration is number of days in past to request
 			//		if either is undefined, last request value is used
 			//	request is looking for time_t seconds
-			function refreshLogbook(dayIndex,duration) {
+			var _delayLogbookRequestTimer = 0;
+			function refreshLogbook(dayIndex,duration) 
+			{		
 				Debug.log("Logbook refreshLogbook " + dayIndex + " - " + duration);
-				if(_activeExperiment == "")	{ 
-					Debug.log("Logbook refreshLogbook active experiment not set"); 
+				if(_activeCategory == "")	{ 
+					Debug.log("Logbook refreshLogbook active category not set"); 
 					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + 
-						"Currently there is no active experiment selected. Contact an admin if you think this is an error." + "</div>";
+						"Currently there is no active category selected. Contact an admin if you think this is an error." + "</div>";
 					return; 
 				}
 				
@@ -887,40 +1248,43 @@
 				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60;
 				if(_mostRecentDayIndex < 0) //most recent day request 
 					reqDate = 0; //to indicate get most recent day
-				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
-						"RequestType=RefreshLogbook&Date="+reqDate+"&Duration="+_refreshDuration, 
-						handleRefreshLogbook);				
-				
+
+				Debug.logv({_categoryFilter});	
+
 				//always show date
-				reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60; //in seconds
-				var dateObj = new Date(reqDate*1000); //js date object expects ms
-				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
-					displayDate + ")</a>";	
+				refreshDateDisplay();
+
+				Debug.log("Logbook refreshLogbook start timer");
+				if(_delayLogbookRequestTimer) window.clearTimeout(_delayLogbookRequestTimer);
+				_delayLogbookRequestTimer = window.setTimeout(function()
+					{
+						if(_delayLogbookRequestTimer) window.clearTimeout(_delayLogbookRequestTimer);
+						_delayLogbookRequestTimer = 0;
+
+						DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list 
+								"Date=" + reqDate +
+								"&Duration=" + _refreshDuration + 
+								"&CategoryFilter=" + encodeURIComponent(_categoryFilter),  //* for all, if "" go with active category
+								handleRefreshLogbook);	
+					
+					}, 500 /* ms */ ); //end delay handler
 				
-				//decorate selection properly
-				var aArr = document.getElementById("logbookHeader").getElementsByTagName("a");
-				//all of the links in the logbook header (0=today, 1=yesterday,.. 6=max days) max days before might be 6 or 7
-				for(var i=0;i<aArr.length;++i) 
-					if(i < 1 && (reqDate == 0 || _refreshDayIndex == _mostRecentDayIndex))
-						aArr[i].setAttribute("class", "logbookSelection");
-					else if(i == 1 && !(reqDate == 0 || _refreshDayIndex == _mostRecentDayIndex))
-						aArr[i].setAttribute("class", "logbookSelection");
-					else if(i > 1 && i < 8 && aArr[i].innerHTML == _refreshDuration) //durations
-						aArr[i].setAttribute("class", "logbookSelection");
-					else
-						aArr[i].setAttribute("class", "logbookNotSelected");
-					//Debug.log("Logbook " + i + ":" + aArr[i].innerHTML);
-			}
+			} //end refreshLogbook()
 			
+			//=====================================================================================
 			//handleRefreshLogbook ~~ 
 			//	receives entries from oldest to newest, but display
 			//	from newest to oldest
-			function handleRefreshLogbook(req) {
-				Debug.log("Logbook handleRefreshLogbook ");
-		        Debug.log("Request Response Text " + req.responseText + " ---\nXML " + req.responseXML,Debug.LOW_PRIORITY);
+			function handleRefreshLogbook(req) 
+			{
+				Debug.log("Logbook handleRefreshLogbook", req.responseText.length);
 
+				if(_autoRefreshTimer)  //reset interval, in case of long response times
+				{
+					window.clearTimeout(_autoRefreshTimer);
+					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
+				}
+		        
 		        var logbookStatus;
 				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed 
 					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + logbookStatus + "</div>";
@@ -932,23 +1296,35 @@
 						_refreshDayIndex = parseInt(mostRecentDayStr);
 					_mostRecentDayIndex = parseInt(mostRecentDayStr);
 					var mostRecentDayEl = document.getElementById("logbookHeader").getElementsByTagName("a")[0];
-					//if(_mostRecentDayIndex == 0)
-					//	mostRecentDayEl.innerHTML = "Today";
-					//else if(_mostRecentDayIndex == 1)
-					//	mostRecentDayEl.innerHTML = "Yesterday";
-					//else
-					//	mostRecentDayEl.innerHTML = "Most Recent Day";
+					if(_mostRecentDayIndex == 0)
+						mostRecentDayEl.innerHTML = "Today";
+					else if(_mostRecentDayIndex == 1)
+						mostRecentDayEl.innerHTML = "Yesterday";
+					else
+						mostRecentDayEl.innerHTML = "Most Recent Day";
+
+					refreshDateDisplay();
 					
 					//extract logbook display
 					var entries = req.responseXML.getElementsByTagName("logbook_entry");
-					setActiveExperiment(DesktopContent.getXMLValue(req,"active_experiment"));
+					// setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
+					setResponseCategory(DesktopContent.getXMLValue(req,"response_category"),1 /* isResponse */);
 
 					var logbookEl = document.getElementById("logbookDiv");
 					logbookEl.innerHTML = "";
 					
 					//display from newest to oldest
 					for(var i=entries.length-1;i>=0;--i)
-						displayLogbookEntry(logbookEl,entries[i]);					
+						displayLogbookEntry(logbookEl,entries[i]);		
+					
+						
+					//add helper to move starting date back
+					var tmp = document.createElement("div");
+					tmp.setAttribute("id", "clearDiv");
+					logbookEl.appendChild(tmp); 
+					var tmp = document.createElement("div");
+					tmp.innerText = "Note: If you are expecting more entries for the selected critieria, try moving the selected date back in time.";
+					logbookEl.appendChild(tmp); 
 				}
 		        
 				 //schedule next update
@@ -956,9 +1332,81 @@
 			    	clearTimeout(_logbookUpdateTimer);
 		        //_logbookUpdateTimer = window.setTimeout(refreshLogbook,_REFRESH_INTERVAL);  //NOTE: if want refresh every period, uncomment.
 		        																				//currently user must use manual refresh
-			}
 
-			//getLogbookEntryField ~~ 
+
+				redrawLogbook(); //in case of new scroll bars
+			} //end handleRefreshLogbook()
+
+			//=====================================================================================
+			//replaceBrWithSpace ~~ 
+			// Replace all <br> tags with a space
+			function replaceBrWithSpace(el) 
+			{
+				el.isBrReplaced = "true";
+				el.querySelectorAll('br').forEach(br => {
+					const space = document.createTextNode(' ');
+					space.isBr = "true"; // Mark it for restoration
+					br.replaceWith(space);
+				});
+
+				var condensedWidth = currentCategoryHeader.offsetWidth;
+				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " + 
+					(condensedWidth-130) + "px;" +
+					"padding-top: 2px; padding-bottom: 10px; color: rgb(216 189 139);");
+			} //end replaceBrWithSpace()
+
+			//=====================================================================================
+			//restoreBr ~~ 
+			// Restore <br> tags
+			function restoreBr(el) 
+			{
+				el.isBrReplaced = undefined;
+				el.childNodes.forEach(node => {
+					if (node.nodeType === Node.TEXT_NODE && node.data.trim() === '' && node.isBr === "true") {
+						const br = document.createElement('br');
+						node.replaceWith(br);
+					}
+				});
+				var condensedWidth = currentCategoryHeader.offsetWidth;
+				el.setAttribute("style", "overflow-x: auto; width: " + 
+					(condensedWidth-130) + "px;" +
+					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
+			} //end restoreBr()
+
+			//=====================================================================================
+			//refreshDateDisplay ~~ 
+			function refreshDateDisplay() 
+			{
+				Debug.log("refreshDateDisplay()",_refreshDayIndex);
+				var reqTime = (new Date()).getTime() - _refreshDayIndex*24*60*60*1000; //in ms
+				var dateObj = new Date(reqTime);
+				
+				// (((((new Date()).getTime() + _TIMEZONE_OFFSET_HOURS*60*60*1000)/
+				// 					(1000*60*60*24)) | 0) - 
+				// 				_refreshDayIndex)*24*60*60; //in seconds
+				// var dateObj = new Date(reqDate*1000); //js date object expects ms
+				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
+				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
+					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
+					displayDate + ")</a>";	
+				
+				//decorate selection properly
+				var aArr = document.getElementById("logbookHeader").getElementsByTagName("a");
+				//all of the links in the logbook header (0=today, 1=yesterday,.. 6=max days) max days before might be 6 or 7
+				for(var i=0;i<aArr.length;++i) 
+					if(i < 1 && (reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
+						aArr[i].setAttribute("class", "logbookSelection");
+					else if(i == 1 && !(reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
+						aArr[i].setAttribute("class", "logbookSelection");
+					else if(i > 1 && i < 15 && aArr[i].innerText == _refreshDuration) //durations
+						aArr[i].setAttribute("class", "logbookSelection");
+					else
+						aArr[i].setAttribute("class", "logbookNotSelected");
+				//Debug.log("Logbook " + i + ":" + aArr[i].innerHTML);
+			} //end refreshDateDisplay()
+
+			//=====================================================================================
+			//displayLogbookEntry ~~ 
 			//	fields are 
 			//		"logbook_entry_subject"
 			//		"logbook_entry_text" 
@@ -966,13 +1414,14 @@
 			//		"logbook_entry_creator"
 			//		"logbook_entry_file" (can be many) (file name is from "preview_index")
 			//  get field with entry.getElementsByTagName(field)[0].getAttribute("value");
-			//	gets images using _activeExperiment in path
+			//	gets images using _activeCategory in path
 			//		"logbook_entry_hidden"
 			//		"logbook_entry_hider"
 			//		"logbook_entry_hidden_time"
 			//	Note: if _isAdmin, then give option to remove/restore entry based on "logbook_entry_hidden"
 			//		"logbook_entry_hidden" by "logbook_entry_hider" on "logbook_entry_hidden_time"
-			function displayLogbookEntry(divEl, entry) { 				
+			function displayLogbookEntry(divEl, entry) 
+			{ 				
 				//<omni>
 				//	<header>subject --- time, creator </header>
 				//	<body>text</body>
@@ -1019,13 +1468,16 @@
 				    divEl.appendChild(omni);			    //add entry to div element  
 				    return;			    	
 			    }
-                          
+                         
+				var entryText = convertForClient(
+					entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+							
                 if(creator == "SYSTEM LOG") //System Logbook Entry
                 {
                     var sysLogDiv = document.createElement("div");
 				    sysLogDiv.setAttribute("class", "Logbook-sysLogDiv");
 				    sysLogDiv.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString() + " -- " +
-                          convertForClient(entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+						entryText;
 				    omni.appendChild(sysLogDiv);
 				    divEl.appendChild(omni);			    //add entry to div element  
 				    return;	              
@@ -1047,7 +1499,19 @@
 			    //subject
 			    tmp = document.createElement("div");
 			    tmp.setAttribute("class", "Logbook-entrySubject");
+			    tmp.setAttribute("title", "Click to expand/collapse log entry.");
 			    tmp.innerHTML = entry.getElementsByTagName("logbook_entry_subject")[0].getAttribute("value");
+				tmp.onclick = function()
+				{
+					//navigate to entry 'body' element
+					var el = this.parentElement.parentElement.children[1];	
+					Debug.log("Toggle expand/collaps entry", el.textContent);
+
+					if(el.isBrReplaced)
+						restoreBr(el);
+					else
+						replaceBrWithSpace(el);
+				}
 			    header.appendChild(tmp);
 			    //time
 			    tmp = document.createElement("div");
@@ -1060,7 +1524,11 @@
 			    tmp.innerHTML = "by " + creator;
 			    header.appendChild(tmp);
 			    //body text
-			    body.innerHTML = convertForClient(entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
+			    body.innerHTML = entryText;
+
+				//condition for condensed-view single line by removing <br>
+				replaceBrWithSpace(body); //to toggle call restoreBr(el)
+
 			    //uploads
 			    var uploadsArr = entry.getElementsByTagName("logbook_entry_file");
 			    if(uploadsArr.length)
@@ -1091,7 +1559,7 @@
 				    if(entry.getElementsByTagName("preview_index")[0]) //is a preview 
 				    	pathPreface += "previews/" + entryId + "/upload_";
 				    else //regular logbook read
-				    	pathPreface += "logbooks/log_" + _activeExperiment + "/uploads/upload_" + entryId + "_";
+				    	pathPreface += "logbooks/log_" + _activeCategory + "/uploads/upload_" + entryId + "_";
 				    
 				    var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
 					var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogImage&src=";
@@ -1143,43 +1611,54 @@
 			    }
 			    
 			    divEl.appendChild(omni);			    //add entry to div element  
-			}
+			} //end displayLogbookEntry()
 
+			//=====================================================================================
 			//adminRemoveRestoreEntry ~~ 
 			//	admin remove and restore based on entryId and hide
 			//	if hide, remove entry specified by entryId from view (not deleted from disk)
 			//	if not hide, restore entry
-			function adminRemoveRestoreEntry(entryId, hide) {
+			function adminRemoveRestoreEntry(entryId, hide) 
+			{
 
 				Debug.log("Logbook adminRemoveRestoreEntry " + entryId + " - " + hide);
-				DesktopContent.XMLHttpRequest("Request", 
-						"RequestType=AdminRemoveRestoreEntry&EntryId=" + entryId + "&Hide=" + (hide?1:0),handleRemoveRestoreEntry);				
-			}
+				DesktopContent.XMLHttpRequest("Request?RequestType=AdminRemoveRestoreEntry", 
+						"EntryId=" + entryId + "&Hide=" + (hide?1:0),handleRemoveRestoreEntry);				
+			} //end adminRemoveRestoreEntry()
 			
+			//=====================================================================================
 			//handleRemoveRestoreEntry ~~
 			//	refresh current logbook view after remove/restore by admin
-			function handleRemoveRestoreEntry(req) {
+			function handleRemoveRestoreEntry(req) 
+			{
 				refreshLogbook();
-			}
+			} //end handleRemoveRestoreEntry()
 			
+			//=====================================================================================
 			//showCalendar ~~ 
 			//	generates request for logbook based on dayIndex and duration 
-			function showCalendar(e) {
+			function showCalendar(e) 
+			{
 				Debug.log("Logbook calendar xy " + e.pageX + " - " + e.pageY);
 
-				calendarPopup(e.pageX, e.pageY, calendarHandler);
-			}
+				//_refreshDayIndex is days into past, 0 for today
+				calendarPopup(e.pageX, e.pageY, calendarHandler, (new Date()).getTime() - _refreshDayIndex * (1000*60*60*24));
+			} //end showCalendar()
 			
+			//=====================================================================================
 			//calendarHandler ~~
 			//	parameter is days since Jan 1, 1970
-			function calendarHandler(userDate) {
-				
+			function calendarHandler(userDate) 
+			{				
 				var dateObj = new Date(userDate*1000*60*60*24);
 				Debug.log("Logbook calendarHandler userDate " + userDate + " = " + 
 						dateObj.toDateString());
 				
 				//update display with user date
-				var refreshDayIndex = ((((new Date()).getTime())/(1000*60*60*24)) | 0) - userDate + 1;
+				var refreshDayIndex = ((((new Date()).getTime()  + _TIMEZONE_OFFSET_HOURS*1000*60*60 )
+					/ (1000*60*60*24)) | 0) 
+					- userDate;
+				Debug.logv({refreshDayIndex});
 				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
 								
 				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
@@ -1188,26 +1667,21 @@
 					
 				//refresh logbook with user date
 				refreshLogbook(refreshDayIndex);
-			}
+			} //end calendarHandler()
 			
+			//=====================================================================================
 			//advanceByDays ~~
 			//	refresh logbook with new day offset and display next to calendar
-			//	input i is negative back in time
-			function advanceByDays(i) {			
-				refreshLogbook(_refreshDayIndex - i); //positive is back in time
-				
-				Debug.log("Logbook advanceByDays " + _refreshDayIndex + " - " + _refreshDuration);
-				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex + 1)*24*60*60; //in seconds
-				var dateObj = new Date(reqDate*1000); //js date object expects ms
-				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-				
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
-					displayDate + ")</a>";				
-			}
+			//	increasing i is subtracted from _refreshDayIndex to go back in time
+			function advanceByDays(i) 
+			{			
+				refreshLogbook(_refreshDayIndex - i); //positive is back in time						
+			} //end advanceByDays()
 
+			//=====================================================================================
 			//clearFileInput ~~
-			function clearFileInput() {
+			function clearFileInput() 
+			{
 				//delete file input element and create same empty
 				var el = document.getElementById('fileToUpload');
 		    	var fileParent = el.parentNode; //fileInputHolder div			    	
@@ -1217,22 +1691,23 @@
 		    	document.getElementById('fileName').innerHTML = "";
 		    	document.getElementById('fileSize').innerHTML = "";
 		    	document.getElementById('fileType').innerHTML = "";
-			}
+			} //end clearFileInput()
 			
+			//=====================================================================================
 			//generateReport ~~
 			//	opens up separate window to generate reports
-			function generateReport() {
-
-				if(!_activeExperiment || _activeExperiment == "")
+			function generateReport() 
+			{
+				if(!_activeCategory || _activeCategory == "")
 				{
-					alert("Error! There must be an active experiment selected.");
+					alert("Error! There must be an active category selected.");
 					return;
 				}
 					
 				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
-				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeExperiment=";				
-				window.open(requestURL + _activeExperiment,	'_blank');	//open in new window
-			}
+				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeCategory=";				
+				window.open(requestURL + _activeCategory,	'_blank');	//open in new window
+			} //end generateReport()
 
 		</script>
 		
@@ -1241,11 +1716,11 @@
 	
 	<body onload='//init() called by DesktopContent.js'>	
 
-	<center><div class='areaContent' id='currentExperimentHeader'></div></center>
+	<center><div class='areaContent' id='currentCategoryHeader'></div></center>
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='adminArea'>
-		<!-- area where admins control active experiment and create new experiments -->
+		<!-- area where admins control active category and create new categorys -->
 		
 		<table width='100%'>
 			<td width='25px'>
@@ -1269,36 +1744,36 @@
 		<table class='areaContent' width='100%'>
 		<td>
 			<div style='float:left;'>
-				<b>Experiment:</b><br>
-				<input type='text' id='experimentTextBox' spellcheck='false'
+				<b>Category:</b><br>
+				<input type='text' id='categoryTextBox' spellcheck='false'
 					value='' 
-					onkeydown='return handleExperimentInputKeyDown(event)'
+					onkeydown='return handleCategoryInputKeyDown(event)'
 					onkeyup='handleSearchKeyUp()'
 						>
-				<a href='Javascript:clearExperimentInput()' title='Clear Experiment text input'><img
-					id='experimentClearIcon'
+				<a href='Javascript:clearCategoryInput()' title='Clear Category text input'><img
+					id='categoryClearIcon'
 					src='/WebPath/images/windowContentImages/logbook-clear.png'></a>
 				<div style='margin:-5px 0 10px 0;font-size:11px'>(alpha-numeric, dashes, and underscores)</div>
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
-						"Are you sure you want to <u><i>Create</i></u> the new experiment, <i><b>REPLACE</b></i>?<br><br>",
-						createExperiment, document.getElementById("experimentTextBox").value);' 
-					value='Create Experiment' title='Create a new experiment, or re-add to list'><br><br>
+						"Are you sure you want to <u><i>Create</i></u> the new category, <i><b>REPLACE</b></i>?<br><br>",
+						createCategory, document.getElementById("categoryTextBox").value);' 
+					value='Create Category' title='Create a new category, or re-add to list'><br><br>
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
-					"Are you sure you want to <u><i>Remove</i></u> the experiment, <i><b>REPLACE</b></i>?<br><br>",
-					removeExperiment, document.getElementById("experimentTextBox").value,"#ffddd1");'  
-					value='Remove Experiment'  title='Remove an experiment from list' style='color:red'>
+					"Are you sure you want to <u><i>Remove</i></u> the category, <i><b>REPLACE</b></i>?<br><br>",
+					removeCategory, document.getElementById("categoryTextBox").value,"#ffddd1");'  
+					value='Remove Category'  title='Remove an category from list' style='color:red'>
 				<div id='adminStatusDiv'>Status updates are displayed here.</div> 
 			</div>
 			<div style='float:left;margin-left:20px;text-align:right;'>
-				<b>Click to Set Active Experiment:</b>
-				<div id='experimentList'>
-				<font color='grey'>No experiments in list</font>
+				<b>Click to Set Active Category:</b>
+				<div id='categoryList'>
+				<font color='grey'>No categorys in list</font>
 				</div>
-				<div id='clearActiveExperimentDiv'>
-					<a href='Javascript:activeExperimentSetRequest("")' 
-						title='Click to set no active experiment'>Clear Active Experiment</a>
+				<div id='clearActiveCategoryDiv'>
+					<a href='Javascript:activeCategorySetRequest("")' 
+						title='Click to set no active category'>Clear Active Category</a>
 				</div> 
 			</div>
 		</td>
@@ -1340,7 +1815,7 @@
 				<input type="text" id="newPostSubject" spellcheck="false" size='50'
 					onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
 	                onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
-					onkeydown="return handleExperimentInputKeyDown(event,true)"> <!-- keep subject alpha-numeric -->
+					onkeydown="return handleCategoryInputKeyDown(event,true)"> <!-- keep subject alpha-numeric -->
 				<br>
                 <textarea id='newPostText' rows="8" cols="50"
                     onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
@@ -1379,7 +1854,7 @@
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='logbookArea'>
-		<!-- area where logbook for active experiment is shown -->	
+		<!-- area where logbook for active category is shown -->	
 		<table width='100%'>
 			<td width='25px'>
 			<div class='expandBtn'>
@@ -1413,15 +1888,20 @@
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,1);'>1</a> | 
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,2);'>2</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,7);'>7</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,14);'>14</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,30);'>30</a> |
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,60);'>60</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,365);'>365</a>
 				days before.
 				<br><br>
 				<a href='Javascript:;' onmouseup='advanceByDays(-1);'>Previous Day</a> |
 				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>			
 			</div>				
-			<div id='generateReport' onmouseup='generateReport();' title='Advanced Logbook Reporting'
+			<!--<div id='generateReport' onmouseup='generateReport();' title='Advanced Logbook Reporting'
 				><img style='margin:-15px 0 0 0' height='48px'
-				src='/WebPath/images/windowContentImages/logbook-report.png'></div>
+				src='/WebPath/images/windowContentImages/logbook-report.png'></div> -->
+			<div id='generateReport' style='float:left'
+			><a id='autoRefreshLink' href="#" onclick="toggleAutoRefresh();" title='Click to toggle auto-refresh enable/disable.'>Auto-refresh is off</a></div>
 			<div id='generateReport' style='float:right' onmouseup='refreshLogbook();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>

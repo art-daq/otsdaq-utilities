@@ -44,8 +44,8 @@
 //	createSelectBox(el,name,title,vals,keys,types,
 //		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 //		mouseUpHandler,
-//		requireCtrlMultiClick,titles)
-//	initMySelectBoxes(clearPreviousSelections)
+//		requireCtrlMultiClick,titles,mouseMoveHandler)
+//	initMySelectBoxes(clearPreviousSelections, targetId)
 //		  
 //	hasClass(ele,cls)
 //	addClass(ele,cls)
@@ -67,8 +67,11 @@
 var selected = [];
 var MultiSelectBox = MultiSelectBox || {}; //define MultiSelectBox namespace
 
-if(window.console && console && console.log)
+if(0 && window.console && console && console.log)
 	MultiSelectBox.dbg = console.log.bind(window.console);
+else
+	MultiSelectBox.dbg = function(){;} //do nothing
+
 //var is_chrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
 
 function $(id) {return document.getElementById(id);}
@@ -289,17 +292,23 @@ MultiSelectBox.myOptionSelect = function(option, index, isSingleSelect, event)
 // These parameters are optional and can be omitted or set to 0: 
 //		keys, types, handler, noMultiSelect, mouseOverHandler, 
 //		iconURLs, mouseDownHandler, mouseUpHandler,
-//		requireCtrlMultiClick
+//		requireCtrlMultiClick, titles, mouseMoveHandler
 // Note: handler is the string name of the function
 MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 		mouseUpHandler,
-		requireCtrlMultiClick,titles)
+		requireCtrlMultiClick,titles,
+		mouseMoveHandler)
 {
 	if(!el) 
 	{ MultiSelectBox.dbg("Invalid Element given to MultiSelectBox: " + el);
 		throw new Error("Invalid Element given to MultiSelectBox: " + el); return; } 
 	
+	console.log("el.style.width", el.style.width);
+	console.log("el.offsetWidth", el.offsetWidth);
+	if(! el.offsetWidth)
+		el.style.width = "400px";
+
 	el.innerHTML = ""; //delete current contents
 
 	name = "selbox-" + name;
@@ -338,8 +347,15 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 			name + "' style='float:left;" + 
 			"width: " + (msW) + "px;" + 
 			"height: " + (msH) + "px;" + 
-			"' name='" + name + "' " +
-			">";
+			"' name='" + name + "' ";
+			
+	str += "onmousemove='";
+	if(mouseMoveHandler && (typeof mouseMoveHandler) == "string") //if mouseMoveHandler supplied as string
+		str += mouseMoveHandler + "(this,event);"; //user selection mouseMoveHandler
+	else if(mouseMoveHandler) //assume it is a function
+		str += mouseMoveHandler.name + "(this,event);"; //user selection mouseMoveHandler
+	str += "' ";
+	str += ">";
 
 	for (var i = 0; i < keys.length;++i)//cactus length
 	{
@@ -385,8 +401,10 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 				str += "<img style='width:32px; height:32px; margin: 0px 5px -8px 0;' " +
 					"src='" + 
 					iconURLs[i] + "' />";
-			else //alt text
-				str += iconURLs[i].substr(1) + " - ";
+			else //alt text (like an icon)
+				str += "<div style='width:32px; height:32px; margin: 0px 5px -12px 0; overflow: hidden; background-color: rgba(255, 255, 255, .2);" +
+					" font-size: 10px; white-space: normal; display: inline-block; text-align: center; padding-top: 4px;' " +
+					">" + iconURLs[i].substr(1) + "</div>";   
 		}
 		
 		str += vals[i];
@@ -434,7 +452,7 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 } //end createSelectBox()
 
 //for initializing the highlights if selects are made "manually" (without clicking)
-MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections)
+MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections, targetId)
 {
 	var divs=document.getElementsByClassName('mySelect');
 	for (var el=0; el<divs.length; el++)
@@ -442,6 +460,10 @@ MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections)
 		var select = divs[el];
 		
 		var id = select.getAttribute("id");
+		
+		if(targetId && targetId != "" && targetId != id &&
+			("selbox-" + targetId) != id) continue; //skip non-targets
+
 		var options = select.childNodes;
 		MultiSelectBox.lastOptSelect_[id] = -1;
 		if (!MultiSelectBox.mySelects_[id] ||
@@ -505,47 +527,10 @@ MultiSelectBox.showSearch = function(boxid)
 		var selRect = $(boxid).getBoundingClientRect();
 
 		searchBox.style.position="absolute";
-		searchBox.style.top=(offsety)+"px";
-		searchBox.style.left=(offsetx)+"px";
+		searchBox.style.top=(offsety+margin)+"px";
+		searchBox.style.left=(offsetx+margin)+"px";
 		searchBox.style.width=(selRect.width-margin*2-30)+"px";//(selRect.width-margin*2-14)+"px";
-		
-	// 	//finding the search input's offset parent is not so straight forward
-	// 	//	since it is initially hidden.
-	// 	//	Use the offset parent of the content table
-	// 	//		sibling[0] := div (of content)
-	// 	//			withing div, child[0] := header, child[1] := table (of content) 
 
-	// 	var selRect = $(boxid).getBoundingClientRect();
-	// 	//table is position:relative.. so go into a child and get offset parent
-	// 	var searchOffsetParent = $(boxid).offsetParent; //get table parent
-	// 		//searchBox.parentElement.children[0].children[1].children[0].offsetParent;
-	// 	//check if there is no offset parent (the body is the offset parent)
-	// 	//	it seems to be the case that body returns a crazy bounding client rect (left = 8 and top = 13?) .. don't understand why
-	// 	var searchOffsetParentIsBody = searchOffsetParent == document.body;
-
-	// 	var offsetRect = 
-	// 	{"left": searchOffsetParentIsBody?0:
-	// 			searchOffsetParent.getBoundingClientRect().left,	//offsetLeft is different
-	// 			"top": searchOffsetParentIsBody?0:
-	// 					searchOffsetParent.getBoundingClientRect().top
-	// 	};
-	// 	//previous attempts to place search input (all fail to solve all cases): 
-	// 	//MultiSelectBox.omnis_[id].getBoundingClientRect();
-	// 	//select.offsetParent.getBoundingClientRect();
-
-	// 	// var offsetx = selRect.left - offsetRect.left,
-	// 	// 		offsety = selRect.top - offsetRect.top;
-
-	// 	var offsetx = offsetRect.left,
-	// 		offsety = offsetRect.top;
-
-	// 	var margin = 5;
-
-	// 	searchBox.style.position="absolute";
-	// 	searchBox.style.top=(offsety)+"px";
-	// 	searchBox.style.left=(offsetx)+"px";
-	// 	searchBox.style.width=(selRect.width-margin*2-30)+"px";
-	// 	//searchBox.style.display = "block"; //for debugging position
 	} //end localPlaceSearchBox()
 	
 	if(!MultiSelectBox.selInitBoxHeight_[boxid])	//init if not yet defined
@@ -652,35 +637,7 @@ MultiSelectBox.performSearchSelect = function(id,el,altstr)
 } //end performSearchSelect()
 
 MultiSelectBox.makeSearchBar = function(id)
-{
-	//remove old existing search bars
-	
-	// var el;
-	// while(el = document.getElementById(id + "search"))
-	// 	el.parentNode.removeChild(el);					
-	
-	// var searchBox=document.createElement("input");
-	// var onchange='MultiSelectBox.searchSelect("' + id + '",this)';
-	
-	// searchBox.setAttribute( "class","hidden");
-	// searchBox.setAttribute( 'type','text');
-	// searchBox.setAttribute( 'id',id + "search");
-	// searchBox.setAttribute( "onpaste"   , onchange);
-	// searchBox.setAttribute( "oncut"     , onchange);
-	// searchBox.setAttribute( "onkeydown" , onchange);
-	// searchBox.setAttribute( "onkeyup"   , onchange);
-	// searchBox.setAttribute( "onkeypress", onchange);
-	// searchBox.setAttribute( "onselect"  , onchange);
-	
-
-	// var searchErrBox=document.createElement("div");
-	
-	// searchErrBox.setAttribute( "class","hidden");
-	// searchErrBox.setAttribute( 'id',id + "searchErr");
-	// searchErrBox.style.color="red";
-	// searchErrBox.style.overflow="hidden";
-	// searchErrBox.style.height="23px";
-	
+{	
 	var interval;
 	function addSearchBox()
 	{
@@ -689,18 +646,6 @@ MultiSelectBox.makeSearchBar = function(id)
 		{
 			if(!MultiSelectBox.mySelects_[id])
 				MultiSelectBox.mySelects_[id] = []; //initialize to empty the selected items
-			
-			
-			
-			//err box no longer displayed...
-			//			searchErrBox.style.position="absolute"; //place above title
-			//			searchErrBox.style.top=(offsety - 37)+"px";
-			//			searchErrBox.style.left=(offsetx + 0)+"px";
-			
-			
-			// MultiSelectBox.omnis_[id].appendChild(searchBox);			
-			// MultiSelectBox.omnis_[id].appendChild(searchErrBox);
-			
 			
 			clearInterval(interval);
 		}

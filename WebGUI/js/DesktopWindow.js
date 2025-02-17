@@ -121,7 +121,7 @@ else {
 			
 			Debug.log("Server desktop sending first message to window: ",_id,e);
 			
-			//remove the "Loading" once iframe loades
+			//remove the "Loading" once iframe loads
 			if(_winfrmHolder.childNodes.length > 1) 
 				_winfrmHolder.removeChild(
 						document.getElementById("DesktopWindowFrameLoadingDiv-"+_id));
@@ -132,8 +132,10 @@ else {
 			
 			var initObject = {
 					"windowId":			_id,
+					"windowTitle": 		(_name + (_subname==""?"":" - ") + _subname),
 					"gatewayURN":  		urnLid_,
 					"gatewayOrigin":  	serverOrigin_,
+					"userDisplayName":	Desktop.desktop.login.getUserDisplayName(),
 					"cookieCode":  		Desktop.desktop.login.getCookieCode(),
 					"dashboardColor": 	Desktop.desktop.dashboard.getDefaultDashboardColor(),
 					"desktopColor": 	document.body.style.backgroundColor,
@@ -208,7 +210,7 @@ else {
 			//apply minimum size requirements and maximized state
 			_w = _isMaximized?Desktop.desktop.getDesktopContentWidth():(w < _defaultWindowMinWidth?_defaultWindowMinWidth:w);
 			_h = _isMaximized?Desktop.desktop.getDesktopContentHeight():(h < _defaultWindowMinHeight?_defaultWindowMinHeight:h);
-			_x = _isMaximized?Desktop.desktop.getDesktopContentX():x;
+			_x = _isMaximized?Desktop.desktop.getDesktopContentX()+4:x;
 			_y = _isMaximized?Desktop.desktop.getDesktopContentY():y;
 			
 			//keep window within desktop content bounds
@@ -319,22 +321,19 @@ else {
 		//maximize() ~~~
 		//	maximize window toggle fulls screen mode
 		this.maximize = function() 
-		{
-			 
+		{			 
 			if(_isMinimized) this.unminimize(); //untoggle minimize flag
 			_isMaximized = true;
 			
 			this.windiv.style.display = "inline"; //make sure is visible
 			this.setWindowSizeAndPosition(_x+10,_y,_w,_h);
-			window.parent.document.title= _name;
-			console.log(document.title, _name, "Maximize()");
-			
+			window.parent.document.title = _name;
+			// console.log(document.title, _name, "Maximize()");			
 		} //end maximize()
 
 		//==============================================================================
 		this.unmaximize = function()
 		{
-
 			_isMaximized = false;
 			
 			this.windiv.style.display = "inline"; //make sure is visible

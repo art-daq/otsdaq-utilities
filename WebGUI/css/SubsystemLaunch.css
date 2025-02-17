@@ -1,0 +1,305 @@
+
+
+		body {	
+			padding: 0;
+			margin: 0;
+			background-color:rgb(147 138 138); /*rgb(78 58 58);*/
+		}
+
+		/* make links have a hand cursor */
+		a {
+			cursor: pointer;
+		}
+
+		.hover_link:hover {
+			text-decoration: underline;
+			cursor: pointer;
+		}
+		
+		h3 {
+			font-family: "Comfortaa";
+		}
+
+		#DesktopContent-verifyPopUp * {
+			font-family: "Comfortaa";
+		}				
+
+
+		#runDiv, #systemStatusDiv, #subsystemDiv {
+			float: left;
+			display: none;
+			text-align: center;
+			padding: 20px;
+		}		
+		#runDiv, #systemStatusDiv {
+			padding-bottom: 0px;
+		}
+
+		#systemStatusState, .subsystem_status {
+			font-family: 'Inconsolata', monospace;
+			padding: 0 30px;
+			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+			color:					black;
+			/* font-weight:			bold; */
+			text-shadow: 			0px 1px 0px rgba(255,255,255,.3), 
+									0px -1px 0px rgba(0,0,0,.7);			
+		}
+
+		.progressBar {
+			background-color: 		rgb(0,205,30);	
+			/* margin: 				-17px -10px 0 -10px; */
+			position:				absolute;
+			
+		}
+
+		/* ===================== run div section ================= */
+		#runDiv {
+			height: 60px;
+			margin-bottom: 0px;
+			color: white; /* rgb(136, 102, 102); */
+			font-size: 20px;
+			font-family: "Comfortaa", arial;
+		}
+		
+		#runDivContainer {
+			display: inline-block;	
+		}
+		
+		/* #runDiv div, #subsystemDiv div, #refreshLink a {
+			color: rgb(136, 102, 102);
+			font-size: 20px;
+			font-family: "Comfortaa", arial;
+		} */
+
+		
+
+		#startButtonDiv {
+			width: 100px;	
+		} 
+		
+		.greenBigButton {
+			background-color: rgb(48, 191, 48);
+			box-shadow: inset rgba(254,255,255,0.6) 0 0.3em .3em,
+					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+					rgb(76, 141, 76) 0 .1em 3px,
+					0px 10px 0px rgb(23, 107, 23);
+			border-radius: 300px/200px;							
+			text-align:center;
+			font-size: 30px;
+			font-family: arial;
+			color: white;
+			text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
+		}
+
+		.redBigButton {
+			background-color: red;
+			box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em,
+					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+					rgb(141, 76, 76) 0 .1em 3px,
+					0px 10px 0px rgb(107, 23, 23);
+			border-radius: 300px/200px;
+			text-align:center;
+		    font-size: 30px;
+		    font-family: arial;
+		    color: white;
+		    text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
+		}
+		
+		#startButtonDiv:active {
+			margin-top:	10px;
+			margin-bottom: -10px;
+			box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em,
+					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+					rgb(100,100,100) 0 .1em 3px;
+		}
+		
+		#startButtonLink  {
+			/* position: absolute; */
+			border: 0;
+			-webkit-user-select: 	auto; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
+			-moz-user-select: 		none;
+			user-select:			none;
+			outline: none;  /* to stop firefox selection*/	
+		}	
+		/* ===================== end run div section  */
+
+		/* ===================== System status div section ================= */
+		#systemStatusDiv {
+			padding-top: 0;
+		}
+		
+		#systemStatusDiv table {
+			width: 100%;
+			border-radius: 10px;
+			border: 1px solid gray;
+			background-color: rgb(245, 245, 245);		
+			font-family: 'Comfortaa';	
+		}
+		#systemStatusDiv th {
+			border-radius: 6px;
+			background-color: rgb(136, 102, 102); /*darkcyan;*/
+			color: white;			
+			height: 42px;
+		}
+		#systemStatusDiv td {
+			border-radius: 6px;
+			background-color: lightgrey;			
+		}
+
+		.subtext {
+			color: gray;
+		}
+
+		#systemStatusTimeInState {
+			width: 200px; /* prevent minor size changes from number char variations */
+		}
+		/* ===================== end System status div section  */
+				
+
+		/* ===================== Subsystem status div section ================= */
+
+		#subsystemDiv table {
+			width: 100%;
+			border-radius: 10px;
+			border: 1px solid gray;
+			background-color: rgb(245, 245, 245);		
+			font-family: 'Comfortaa';	
+		}
+		#subsystemDiv th {
+			border-radius: 6px;
+			padding-left: 10px;
+			padding-right: 10px;
+			background-color: rgb(136, 102, 102); /*darkcyan;*/
+			color: white;			
+			height: 42px;
+		}
+		#subsystemDiv td {
+			padding-left: 10px;
+			padding-right: 10px;
+			border-radius: 6px;
+			background-color: lightgrey;	
+			white-space: nowrap;		
+		}
+		#subsystemDiv .tableSingleRowMode tr:nth-child(even) td {
+			background-color: 		rgb(227, 215, 209);
+		}
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-2) td,
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-1) td {
+			background-color: 		rgb(227, 215, 209);
+		}
+		.subsystem_fsmIncluded {
+			background-color: white !important;
+		}
+		#subsystemDiv select {
+			text-align: center;
+			min-width: 280px;
+			width: calc(100% - 40px);
+			cursor: pointer;
+		}
+
+		.subsystem_detail {
+			font-size: 14px;
+			text-align: left;
+			font-family: 'Inconsolata', monospace;
+		}
+
+		.compressed_detail {
+			overflow-x: clip;
+    		max-width: 1100px;
+		}
+
+		.subsystem_console {
+			font-family: 'Inconsolata', monospace;
+		}
+
+		.subsystem_configAlias_select_info {
+			float: right;
+			background-color: darkblue;
+			border-radius: 9px;
+			color: white;
+			padding: 0px 5px 1px 5px;
+			font-family: 'Inconsolata';
+			cursor: pointer;
+			margin-left: -20px;
+			margin-top: 3px;
+		}
+
+		#subsystemDiv .power_button {
+			/*  design the outer circle */
+			width: 22px;
+			height: 20px;
+			border-radius: 50%;
+			border: 1px solid #ddd;
+			box-shadow: 0 0 5px 0px #888;
+		  
+			/*  required to position children elements */
+			position: relative;
+		  
+			/*  required to center elements*/
+			display: grid;
+			place-items: center;
+
+			float: right;
+			margin: -20px 0 -10px -60px;
+		  }
+		  
+		  #subsystemDiv  .power_button::before {
+			/*  pseudo-elements don't display if content property is not declared */
+			content: "";
+		  
+			/*  design the inner-ring */
+			width: 50%;
+			height: 50%;
+			border: 2px solid #00008b;
+			border-radius: 50%;
+			position: absolute;
+		  }
+		  
+		  #subsystemDiv  .power_light {
+			/*  design the vertical light */
+			height: 40%;
+			width: 4px;
+			background: #00008b;
+			border-radius: 10px;
+		  
+			/*  position the light correctly */
+			position: absolute;
+			top: 2px;
+		  
+			/*  required to give white-space to inner-ring */
+			box-shadow: 0 0 0 1px lightgray;
+		  }
+		  
+		  #subsystemDiv  .power_button:hover {
+			cursor: pointer;
+			background-color: rgb(249, 178, 178);
+		  }
+		  #subsystemDiv  .power_button:hover .power_light {
+			box-shadow: 0 0 0 1px rgb(249, 178, 178);
+		  }
+		  
+		  #subsystemDiv  .power_button:active {
+			box-shadow: 0 0 10px 0px #888 inset;
+		  }		  
+		  #subsystemDiv  .power_button:active .power_light {
+			background: lightgreen;
+		  }		  
+		  #subsystemDiv  .power_button:active::before {
+			border-color: lightgreen;
+		  }
+		  
+
+		/* ===================== end Subsystem status div section  */
+		
+		
+		
+		
+		
+		
+		
+		
+		

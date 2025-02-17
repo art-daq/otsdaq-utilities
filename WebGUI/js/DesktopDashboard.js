@@ -134,8 +134,10 @@ else
         // w undefined will leave width unchanged
         var _setDashboardWidth = function(w) 
         { 
-        	console.log("_setDashboardWidth",w);       
-        	console.log("_setDashboardWidth _windowDashboardWidth",_windowDashboardWidth);  	
+			Debug.logv({w});
+			Debug.logv({_windowDashboardWidth});
+        	// console.log("_setDashboardWidth",w);       
+        	// console.log("_setDashboardWidth _windowDashboardWidth",_windowDashboardWidth);  	
         	if(w !== undefined)
         	{
         		_windowDashboardWidth = w|0;         	
@@ -230,13 +232,20 @@ else
 		//==============================================================================
 		//tile the desktop windows in various ways
         var _windowOrganizeMode = -1;
+		var _windowOrganizeModeVert = 0;
         var _windowOrganizeModeTimeout = 0;
 		var _windowDashboardOrganize = function() 
 		{
 		
 			//reset mode after 10 seconds
 			clearTimeout(_windowOrganizeModeTimeout);
-			_windowOrganizeModeTimeout = setTimeout(function() {_windowOrganizeMode = -1; Debug.log("Reseting _windowOrganizeMode.");},10000);
+			_windowOrganizeModeTimeout = setTimeout(
+				function() 
+				{
+					_windowOrganizeMode = -1; 
+					_windowOrganizeModeVert = 0;
+					Debug.log("Resetting _windowOrganizeMode.");
+				},10000);
 
 			
 			var win;
@@ -248,8 +257,20 @@ else
 			var numOfWindows = Desktop.desktop.getNumberOfWindows();
 			
 			//cycle through different modes where the various windows get a bigger spot
-			if(++_windowOrganizeMode < 0 || _windowOrganizeMode > numOfWindows)
+			if(++_windowOrganizeMode < 0 ||
+				(_windowOrganizeMode > numOfWindows && _windowOrganizeModeVert == 1))
+			{
 				_windowOrganizeMode = 0; //wrap-around
+				_windowOrganizeModeVert = 0;
+				Debug.log("Favoring horizontal mode");
+			}
+			else if(_windowOrganizeMode > numOfWindows && _windowOrganizeModeVert == 0)
+			{
+				//switch mode to vertical mode (before full wrap around)
+				_windowOrganizeMode = 0; //vert wrap-around
+				_windowOrganizeModeVert = 1;
+				Debug.log("Favoring vertical mode");
+			}
 			
 			//for all modes, except 0, add a spot
 			// and allow that window to use the first two spots
@@ -262,7 +283,8 @@ else
 				var ww = Math.floor(dw/numOfWindows);
 				var wh = dh;
 				
-				while(ww*2 < wh) 
+				while((ww*2 < wh && _windowOrganizeModeVert == 0) || 
+					(ww*4 < wh && _windowOrganizeModeVert == 1))
 				{				
 					//Debug.log("Desktop Dashboard Organize " + ww + " , " + wh,Debug.LOW_PRIORITY);
 					ww = Math.floor(dw/Math.ceil(numOfWindows/++rows)); wh = Math.floor(dh/rows);				
@@ -281,9 +303,14 @@ else
 
 				//first the bigger one
 				var ic = 0; //counter for new row
+				var numOfWindowsPlaced = 0;
+				var doubleSizeWindowIndex = (Desktop.desktop.getNumberOfWindows()-1) - (_windowOrganizeMode-1);
+				if(doubleSizeWindowIndex >= Desktop.desktop.getNumberOfWindows())
+					doubleSizeWindowIndex = 0;
+				Debug.logv({doubleSizeWindowIndex});
 				if(_windowOrganizeMode && numOfWindows > 1)
 				{
-					var i = _windowOrganizeMode-1; //target window index
+					var i = doubleSizeWindowIndex;//_windowOrganizeMode-1; //target window index
 					
 					win = Desktop.desktop.getWindowByIndex(i);
 							//document.getElementById('DesktopDashboard-windowDashboard-winIndex'+i).innerHTML);
@@ -293,6 +320,7 @@ else
 					
 					//make double wide
 					win.setWindowSizeAndPosition(xx,yy,ww*2,wh);	
+					++numOfWindowsPlaced;
 					Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww*2,wh];					
 
 					xx += ww*2;
@@ -304,9 +332,10 @@ else
 				}
 				
 				//now the other windows
+				
 				for(var i=0;i<Desktop.desktop.getNumberOfWindows();++i) 
 				{							
-					if(_windowOrganizeMode && numOfWindows > 1 && i == _windowOrganizeMode-1) 
+					if(_windowOrganizeMode && numOfWindows > 1 && i == doubleSizeWindowIndex) //_windowOrganizeMode-1) 
 						continue; //skip the window already placed
 										
 					win = Desktop.desktop.getWindowByIndex(i);
@@ -316,7 +345,7 @@ else
 					if(win.isMaximized()) win.unmaximize();
 
 					//if last window fill remaining space rows*cols > numOfWindows
-					if(i == Desktop.desktop.getNumberOfWindows()-1) 
+					if(numOfWindowsPlaced == Desktop.desktop.getNumberOfWindows()-1) 
 					{
 						win.setWindowSizeAndPosition(xx,yy,ww*(1 + (rows*cols - numOfWindows)),wh);
 						Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww*(1 + (rows*cols - numOfWindows)),wh];	
@@ -326,6 +355,7 @@ else
 						win.setWindowSizeAndPosition(xx,yy,ww,wh);
 						Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww,wh];	
 					}
+					++numOfWindowsPlaced;
 										
 					xx += ww;
 					if((++ic)%cols==0){xx = dx; yy += wh;} //start new row			
@@ -337,7 +367,7 @@ else
 			}
 			
 			Debug.log("Desktop Dashboard Organize Mode: ",
-				_windowOrganizeMode,
+				_windowOrganizeMode,_windowOrganizeModeVert,
 				Desktop.desktop.lastTileWinPositions);
 		} //end _windowDashboardOrganize()
 		
@@ -348,9 +378,26 @@ else
 				for(var i=0;i<Desktop.desktop.getNumberOfWindows();++i) 
 				{
 					win = Desktop.desktop.getWindowByIndex(i);
-					win.minimize();	if(!win.isMinimized()) win.minimize(); //minimize twice, in case was mazimized
+					win.minimize();	if(!win.isMinimized()) win.minimize(); //minimize twice, in case was maximized
 				     
 				}
+
+				Debug.log("Hiding System Messages temporarily");
+
+				//hide all System Messages temporarily
+				var els = document.getElementsByClassName("Desktop-systemMessageBox");
+				for(var i=0;i<els.length;++i) 
+					els[i].style.display = "none";
+
+				//schedule re-appear of System Messages
+				window.setTimeout(
+					function()
+					{
+						Debug.log("Unhiding System Messages!");
+						var els = document.getElementsByClassName("Desktop-systemMessageBox");
+						for(var i=0;i<els.length;++i) 
+							els[i].style.display = "block";
+					},5000);
 		} //end _windowDashboardMinimizeAll()
 
 		//==============================================================================
@@ -452,6 +499,7 @@ else
 		//create PUBLIC members functions ----------------------
 		//------------------------------------------------------------------
         this.getDashboardHeight = function() { return _defaultDashboardHeight;}
+        this.getDashboardDefaultWidth = function() { return _defaultWindowDashboardWidth;}
         this.getDashboardWidth = function() { return _displayWindowDashboard?_windowDashboardWidth:0;}
         
         
@@ -602,6 +650,7 @@ else
         } //end setDefaultDashboardColor()
 
         var _oldUserNameWithLock = "";
+		var _oldOtherSubsystemsWithLock = "";
         //=====================================================================================
         this.doSetUserWithLock = function() 
 		{ 
@@ -618,23 +667,42 @@ else
 
 		} //end doSetUserWithLock()
       	//=====================================================================================
-        this.displayUserLock = function(usernameWithLock, el) 
+        this.displayUserLock = function(req, el) 
         {      
         	if(!el)
         		el = document.getElementById("DesktopDashboard-userWithLock");
         	
+
+			var usernameWithLock = Desktop.getXMLValue(req,"username_with_lock"); //get user with lock
+
+			var remoteNamesArr = req.responseXML.getElementsByTagName("RemoteGateway_name"); 
+			var remoteLocksArr = req.responseXML.getElementsByTagName("RemoteGateway_usernameWithLock"); 
+			var titleStr = "";
+			if(remoteNamesArr.length)
+			{
+				titleStr += "\n";
+				titleStr += "Here are the users-with-lock for all active Remote Gateways:";
+				for(var i=0;i<remoteNamesArr.length && i<remoteLocksArr.length;++i)
+				{
+					titleStr += "\n";
+					titleStr += "  " + (i+1) + ". " + remoteNamesArr[i].getAttribute('value') + " -- ";
+					var remoteUserWithLock = remoteLocksArr[i].getAttribute('value');
+					if(remoteUserWithLock == "")
+						titleStr += "unlocked";
+					else
+						titleStr += "user: " + remoteUserWithLock;
+				}
+			}
+
         	var user = Desktop.desktop.login.getUsername();
         	var data = "";
         	data += "lock=" + ((!usernameWithLock || usernameWithLock == "")?"1":"0") + "&";
         	data += "username=" + user;
 
         	var jsReq = "Desktop.desktop.dashboard.doSetUserWithLock();";  			
-       			// "Desktop.XMLHttpRequest(\"" +
-				// 	"Request?RequestType=setUserWithLock&accounts=1\"," +
-				// 	"\"" + data + "\",Desktop.desktop.dashboard.handleSetUserWithLock)";
-
        		
        		if(_oldUserNameWithLock == usernameWithLock && 
+				_oldOtherSubsystemsWithLock == titleStr && 
        				el.style.display == "block")
        			return; //no need to re-write element
 
@@ -645,12 +713,15 @@ else
        		{		
        			//nobody has lock      			
        			str += "<a href='javascript:" + jsReq + "'" +
-       					"title='Click to lockout the system and take the ots Lock'>";
+       					"title='Unlocked! Click to lockout the system and take the ots Lock" +
+						(titleStr?("\n"+titleStr):"") +
+						"'>";
        			str += "<img " +
        					"src='/WebPath/images/dashboardImages/icon-Settings-Unlock.png'>";
        			str += "</a>";
        			el.innerHTML = str; 
-       			_oldUserNameWithLock = "";    
+       			_oldUserNameWithLock = "";
+				_oldOtherSubsystemsWithLock = titleStr;    
        			el.style.display = "block";   			
        			return; 
        		}  	
@@ -658,11 +729,15 @@ else
        		if(usernameWithLock != user) //not user so cant unlock
        			str = "<img src='/WebPath/images/dashboardImages/icon-Settings-LockDisabled.png' " +
        					"title='User " + 
-       					usernameWithLock + " has the ots Lock'>"; 
+       					usernameWithLock + " has the ots Lock" + 
+						(titleStr?("\n"+titleStr):"") +
+						"'>"; 
        		else //this is user so can unlock
        		{
 				str += "<a href='javascript:" + jsReq + "' " +
-						"title='Click to unlock the system and release the ots Lock'>";
+						"title='You have the Lock. Click to unlock the system and release the ots Lock" +
+						(titleStr?("\n"+titleStr):"") +
+						"'>";
 				str += "<img " +	
 						"src='/WebPath/images/dashboardImages/icon-Settings-Lock.png'>";
 				str += "</a>";
@@ -671,7 +746,8 @@ else
    			el.innerHTML = str; 
    			el.style.display = "block";
    			
-       		_oldUserNameWithLock = usernameWithLock; 
+       		_oldUserNameWithLock = usernameWithLock;
+			_oldOtherSubsystemsWithLock = titleStr; 
         } //end displayUserLock()
 
       	//=====================================================================================
@@ -682,8 +758,7 @@ else
 			var serverAlert = Desktop.getXMLValue(req,"server_alert");
 			if(serverAlert) Debug.log("Message from Server: " + serverAlert, Debug.HIGH_PRIORITY);
 
-        	Desktop.desktop.dashboard.displayUserLock(
-        			Desktop.getXMLValue(req,"username_with_lock"));        	
+        	Desktop.desktop.dashboard.displayUserLock(req);        	
 
         	Desktop.desktop.resetDesktop(); //soft reset attempt
         } //end handleSetUserWithLock()
@@ -831,7 +906,7 @@ else
                 
         tmpBtn = document.createElement("div");
 		tmpBtn.setAttribute("class", "DesktopDashboard-button-right");
-    tmpBtn.innerHTML = "<a  href='" + 
+    	tmpBtn.innerHTML = "<a  href='" + 
         	"#'" +
         	" 'title='Click to open ots documentation in a new tab' ><img src='/WebPath/images/dashboardImages/icon-Help.png'></a>";
 		tmpBtn.onmouseup = Desktop.handleDashboardHelp;

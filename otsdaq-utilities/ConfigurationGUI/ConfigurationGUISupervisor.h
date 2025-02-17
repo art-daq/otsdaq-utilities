@@ -225,9 +225,9 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string&      modifiedTables);
 	void  					handleLoadArtdaqNodeLayoutXML			(HttpXmlDocument&       xmlOut,
-																	ConfigurationManagerRW* cfgMgr,
+																	ConfigurationManager*   cfgMgr,
 																	const std::string&      contextGroupName = "",
-																	const TableGroupKey&    contextGroupKey  = TableGroupKey());
+																	const TableGroupKey&    contextGroupKey  = TableGroupKey()) const;
 	void  					handleSaveArtdaqNodeLayoutXML			(HttpXmlDocument&       xmlOut,
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string&      layoutString,
@@ -260,7 +260,6 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	};
 
 	ConfigurationManagerRW* refreshUserSession						(std::string username,
-																	uint64_t    activeSessionIndex,
 																	bool        refresh);
 
 	std::map<std::string, ConfigurationManagerRW*> userConfigurationManagers_;

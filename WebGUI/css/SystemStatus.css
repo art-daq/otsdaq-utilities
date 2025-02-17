@@ -61,9 +61,17 @@ h1, h2, h3 {
 }
 
 .collapsible {
+    cursor: pointer;
+}
+
+.contextButton {
+    cursor: pointer;
+    width: 100%;
+}
+
+.filterHeader {
     background-color: 		#777;
     color: 					white;
-    cursor: 				pointer;
     padding: 				18px;
     width: 					100%;
     border: 				none;
@@ -73,7 +81,7 @@ h1, h2, h3 {
     font-size: 				18px;
     font-family: 			'Inconsolata', monospace;
     font-weight:			bold;
- }
+}
 
 .collapsible:hover {
     background-color: 		#555;
@@ -83,6 +91,11 @@ h1, h2, h3 {
 .collapsible:hover .helptext {
     visibility: 			visible;
     font-size: 				14px;
+}
+
+.collapsibleRow {
+    /* Use Filters to collapse instead of a link -- color: rgb(6, 6, 235); */
+    /* font-weight: bold; */
 }
 
 /* Tooltip text */
@@ -126,7 +139,6 @@ h1, h2, h3 {
     background-color: 		yellow;
     cursor: 				pointer;
 }
-
 
 /*================ APP STATUS ===============*/
 #appStatusDiv {
@@ -176,14 +188,3 @@ h1, h2, h3 {
 	text-shadow: 			0px 1px 0px rgba(255,255,255,.3), 
 							0px -1px 0px rgba(0,0,0,.7);
 }
-
-
-
-
-
-
-
-
-
-
-

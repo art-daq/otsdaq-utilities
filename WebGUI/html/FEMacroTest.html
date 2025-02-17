@@ -31,7 +31,6 @@
 		    text-align: 		center;
 		    padding: 			10px;
 		}
-		
 
 		#clearDiv {
 			clear: 				both;
@@ -84,7 +83,7 @@
 
 		.smallPopup {
 			width:					300px;
-			height:					120px;
+			min-height: 			120px; 
 			background-color: 		#002540;
 			z-index:				9;
 			position: 				fixed;
@@ -107,15 +106,18 @@
 			resize: horizontal;
 		}
 
-		.record .component {
+		.record, .component {
 			text-align: left;
 			padding: 2px;
-			font-weight: bold;
-			cursor: pointer;
+			/* font-weight: bold; */
 			/* white-space: initial; */
 			text-overflow: clip;
 		}
 
+		.record {
+			cursor: pointer;
+		}
+		
 		.component {
 			height: fit-content;
 			display: grid;
@@ -137,11 +139,25 @@
 		}
 
 		.component.light {
-			background-color: lavender;
+			background-color: rgb(199, 209, 245);
 		}
 
 		.component.dark {
 			background-color: lightgrey;
+		}
+
+		.sequence-btn, .sequence-btn span {
+			width: 15x;   
+			height: 15px; 
+			padding: 0px;
+			margin-bottom: 30px;
+			margin-top: 10px;
+			margin-right:8px;
+			font-size: 25px;
+			color: rgb(55, 55, 55);
+			border: 0px;
+			background-color: #f9f9f900;
+			cursor: pointer;
 		}
 
 		.macroInfo {
@@ -167,6 +183,13 @@
 			display: grid;
 			grid-template-columns: 1fr;
 			float: right;
+		}
+
+		#history-status 
+		{
+			float: left;
+    		margin: -20px -100px -100px -10px;
+			width: 650px;
 		}
 		
 	</style>
@@ -251,12 +274,24 @@
 		var focusedMacroCell = [-1,-1]; //when enter is pressed which macro to run
 
 		var firstTime = true;
-
 		var liveViewActive = false;
-
 		var intervalTime;
-
 		var currentLiveViewTimeout = null;
+
+		var sequenceDelayInput;
+		var delayBetweenMacros = 0;
+		var isSequenceRunning = false;
+		var pauseSequenceFlag = false;
+		var stopSequenceFlag = false;
+
+		var currentIndex = 0;
+		var currentHistoryRecord = null;
+
+		var lastRunMacro = { row: null, col: null };
+
+		var flagKeyword = "";
+		var flagIfPresent = true; 
+		var isFlagActive = false;
 		
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
@@ -280,6 +315,25 @@
 			{
 				firstTime = false;
 			}
+			var windowTooltip = "Welcome to the FE Macros web app!\n\n" + 
+				"This app provides an interface for devices configured in the context. " +
+				"It allows for common functions such as resets and reading and writing to memory. " +
+				"\n\n" +
+				"Choose a Front-End (FE) type (i.e. this should match your FE plugin class name) to access functionalities. " +
+				"Alternatively, you can handpick a subset of devices for more granular control by selecting <b>FE Target UID</b> or <b>toggle Multi-select</b>. " +
+				"Once you've chosen your FE type and target(s), select the FE Macro name, and hit <b>Run</b> to execute. " +
+				"The FE Macro will only run one time and on the devices specified. " + 
+				"For more information about a FE Macro click on the tooltip icon below the FE Macro name. " + 
+				"\n\n" +
+				"The output is displayed in the middle panel. " +
+				"\n\n" +
+				"The panel on the right tracks your history. You can run previous FE Macros by clicking on them. " +
+				"Optionally, the <b>Live View</b> button can repeatedly run the last FE Macro for a given amount of time. " + 
+				"\n\n" +
+				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a sequence of previously ran FE Macros. " 
+
+			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
+			DesktopContent.setWindowTooltip(windowTooltip);
 			
 			Debug.closeErrorPop(); //close any debug pop-ups to start a blank slate 
 			Debug.log("feMacroTest init ");
@@ -335,6 +389,7 @@
 						for(var i=0;i<feMacros.length;++i)
 						{
 							macroVar = feMacros[i].getAttribute("value");
+							Debug.log("Help [macroVar]", feMacros[i].getAttribute("value"));
 							Debug.log(macroVar);
 							macroVar = macroVar.split(";");
 
@@ -365,6 +420,7 @@
 									Debug.log("Need to create FE to FE Macro map entry.");							
 									feToMacrosMap_[feUID] = {};
 								}
+								Debug.log("Help [macroVar[c+2]", macroVar[c+2]);
 								feToMacrosMap_[feUID][macroName] = 
 								{
 										"requiredPermissions": 	macroVar[c+1],
@@ -514,10 +570,11 @@
 				
 					}); //end getFEMacroList handler
 		} //end init()
-	
+
 		//=====================================================================================
 		//runMacro ~~
 		var verticalOutputDivSize_ = [600,1000];
+		var verticalOutputScrollPosition_ = [0,0];
 		var row, col;
 		function runMacro(r, c)
 		{
@@ -528,11 +585,15 @@
 			if(el)
 			{
 				Debug.log("Found output div at size ",el.offsetWidth,el.offsetHeight);
-				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight];
+				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight-1];
+				Debug.log("Found output div at scroll position ",el.scrollLeft,el.scrollTop);
+				verticalOutputScrollPosition_ = [el.scrollLeft,el.scrollTop];
+
 				el = document.getElementById("macroModule-output");
 				el.style.width = (verticalOutputDivSize_[0] + 30) + "px";
 			}
 
+			lastRunMacro = { row: r, col: c };
 
 			Debug.log("runMacro(" + r + "," + c + ")");
 			
@@ -634,20 +695,10 @@
 					, postData, 
 					handleMacroResponse,
 					0 /*reqParam*/, 0 /*progressHandler*/, 
-					true /*callHandlerOnErr*/
+					true /*callHandlerOnErr*/,
+					true /*doNotShowLoadingOverlay*/
 					);
 			}
-
-			if (currentLiveViewTimeout !== null)
-			{
-        		clearTimeout(currentLiveViewTimeout);
-       			currentLiveViewTimeout = null;
-   			}
-
-			if (liveViewActive)
-			{
-        		currentLiveViewTimeout = setTimeout(function() { runMacro(r, c); }, intervalTime); 
-    		}
 			
 			var command = {
 				"feClass": feClassSelected,
@@ -669,10 +720,14 @@
 				appendHistoryRecord(JSON.stringify(command));
 		} //end runMacro()
 		
+		//=====================================================================================
+		//handleMacroResponse ~~
 		function handleMacroResponse(req, reqParam, errStr) 
 		{
 			var el;
 			var scrollTop = DesktopContent.getWindowScrollTop();
+			Debug.log("handleMacroResponse()",scrollTop);
+			
 			if(verticalOrientation_)
 				el = document.getElementById("macroModule-output");			
 			else
@@ -707,7 +762,8 @@
 								"id"		: "verticalLayoutOutputDiv",
 								"style"		: "overflow:auto; width:" + 
 									verticalOutputDivSize_[0] + "px; height:" + 
-									verticalOutputDivSize_[1] + "px; resize: both;",									
+									verticalOutputDivSize_[1] + "px; resize: both;" +
+									"border-bottom: 1px solid lightgray;",	//without bottom-border, too hard to tell why output is cutoff at times								
 							},
 							"" /*innerHTML*/,
 							false /*doCloseTag*/);
@@ -838,6 +894,8 @@
 							.replace(/ERROR/g,"<label class='badValue'>ERROR</label>")									
 							.replace(/MISSING/g,"<label class='badValue'>MISSING</label>")
 							.replace(/BAD/g,"<label class='badValue'>BAD</label>")
+							.replace(/  /g,"&nbsp;&nbsp;")
+							.replace(/&nbsp; /g,"&nbsp;&nbsp;")
 							;
 						
 						str += name + " = " + 
@@ -847,13 +905,196 @@
 				str += "<br>";
 			}
 			if(verticalOrientation_)
+			{
 				str += "</div>"; //close scrolling div
+
+				var el2 = document.getElementById("history-status");
+				if(el2)
+				{
+					var str2 = "Last ran... " + getDateString(new Date);
+					el2.innerHTML = str2;
+				}
+			}
 			el.innerHTML = str;
 
-			Debug.log("Returning scroll position", 
+			Debug.log("Returning page scroll position", 
 				DesktopContent.getWindowScrollTop(),"to",scrollTop);
-			DesktopContent.setWindowScrollTop(scrollTop);				
-		}
+			DesktopContent.setWindowScrollTop(scrollTop);	
+
+			var el = document.getElementById("verticalLayoutOutputDiv");
+			if(el)
+			{
+				Debug.log("Returning vertical output el scroll position", 
+					verticalOutputScrollPosition_[0],verticalOutputScrollPosition_[1]);
+				el.scrollLeft = verticalOutputScrollPosition_[0];
+				el.scrollTop = verticalOutputScrollPosition_[1];
+			}	
+			//====================== 
+			function localHandleFlagTriggered(message)
+			{
+				Debug.log("localHandleFlagTriggered()",flagIfPresent,flagKeyword);
+
+				//now stop live view or sequence play
+
+				document.getElementById('matchMessage').innerText = message;
+				document.getElementById('popupKeywordMatch').style.display = 'block';
+
+				if (liveViewActive)
+				{
+					Debug.log("Interrupting live view with trigger!");
+					liveViewActive = false;
+					if (currentLiveViewTimeout)
+					{
+						clearTimeout(currentLiveViewTimeout);
+						currentLiveViewTimeout = null;
+					}
+					var liveViewBtn = document.getElementById('liveViewBtn');
+					liveViewBtn.textContent = 'Live View';
+					liveViewBtn.style.backgroundColor = '';
+					liveViewBtn.style.color = '';
+				}
+				var flagTriggerButton = document.getElementById('flagTriggerButton');
+				if (flagTriggerButton)
+				{
+					flagTriggerButton.style.border = "1px solid black";
+				}
+				PopupMacroFlagAlert(); //clear flag/display... isFlagActive = false;
+
+				if (isSequenceRunning)
+				{
+					Debug.log("Interrupting sequence with flag/trigger!");
+					onClickPauseSequence();
+				}
+
+			} //end localHandleFlagTriggered()
+
+			//handle flag/trigger actions
+			if (isFlagActive)
+			{
+				console.log("Entering flagging section, isFlagActive:", isFlagActive);  // Log #1
+				var comparisonOperator = document.getElementById('comparisonOperator').value;
+				console.log("Comparison Operator:", comparisonOperator);  // Log #2
+				var triggeredNumber = null;
+
+				if (comparisonOperator === 'none')
+				{
+					//skip intro to get RESPONSE, like 'Last ran... Mon Feb 3 14:20:03 2025 CST<br>FEMacro: "DTC Write"<br>\nOn 1 front-end target(s).\n\n\nFEMacro: "DTC Write"\nFE Target #1 UID: DTC7 (mu2edaq14.fnal.gov:ots::FESupervisor/LID-280)\n....RESPONSE'
+					var outputContainsKeyword = el.innerText.substr(el.innerText.indexOf(")\n")).includes(flagKeyword);
+					var shouldFlag = (flagIfPresent && outputContainsKeyword) || (!flagIfPresent && !outputContainsKeyword);
+
+					if (shouldFlag)
+					{
+						var message = flagIfPresent ?
+							"ALERT: String '" + flagKeyword + "' found!\n\nThe macro has been halted." :
+							"ALERT: String '" + flagKeyword + "' not found!\n\nThe macro has been halted.";
+						localHandleFlagTriggered(message);
+					}
+				} 
+				else 
+				{
+					console.log("HTML Content:", el.innerHTML);
+					// Extract label and comparison value from flagKeyword
+					var keywordParts = flagKeyword.split('<');
+					console.log("Flag Keyword:", flagKeyword);  // Log #2
+					if (keywordParts.length === 2)
+					{
+						var searchText = keywordParts[0].trim().replace(/\|$/, '');
+						var numberToCompare = parseFloat(keywordParts[1].replace('>', '').trim());
+
+						// Update regex pattern to match full label text
+						var regexPattern = '([^|]+)\\s*\\|\\s*(\\d+(\\.\\d+)?)\\s*[VC]';
+						console.log("Running regex, pattern:", regexPattern);  // Log #3
+						var regex = new RegExp(regexPattern, 'g');
+						var conditionMet = false;
+
+						var match;
+						while ((match = regex.exec(el.innerHTML)) !== null)
+						{
+							console.log("Match found:", match);  // Log #3
+							console.log("Matched String:", match[0]);
+							var labelFound = match[1].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().replace(/\s+/g, ' ');
+							var foundNumber = parseFloat(match[2]); // match[2] is the captured group (numeric value)
+							console.log("Label Found:", labelFound, "Search Text:", searchText, "Found Number:", foundNumber, "Number To Compare:", numberToCompare);
+
+							if (labelFound === searchText)
+							{
+								switch (comparisonOperator)
+								{
+									case "gt":
+										console.log("Checking condition for operator gt");
+										if (foundNumber > numberToCompare)
+										{
+											conditionMet = true;
+											triggeredNumber = foundNumber;
+										}
+										break;
+									case "gte":
+										if (foundNumber >= numberToCompare)
+										{
+											conditionMet = true;
+											triggeredNumber = foundNumber;
+										}
+										break;
+									case "lt":
+										if (foundNumber < numberToCompare)
+										{
+											conditionMet = true;
+											triggeredNumber = foundNumber;
+										}
+										break;
+									case "lte":
+										if (foundNumber <= numberToCompare)
+										{
+											conditionMet = true;
+											triggeredNumber = foundNumber;
+										}
+										break;
+								}
+							}
+
+							if (conditionMet)
+							{
+								break;
+								console.log("Condition met, triggering flag");
+							}
+						}
+
+						if (conditionMet)
+						{
+							var message;
+							var operatorSymbol = getOperatorSymbol(comparisonOperator);
+							console.log("Operator Symbol for", comparisonOperator, ":", operatorSymbol);  // Log #10
+							if (flagIfPresent)
+								message = "ALERT: Condition met for: " + searchText + " " + operatorSymbol + " " + numberToCompare + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
+							else
+								message = "ALERT: Condition not met for: " + searchText + " " + operatorSymbol + " " + numberToCompare + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
+
+							localHandleFlagTriggered(message);							
+						}
+					}
+				}
+			} //end handle flag/trigger actions
+			
+			//prepare for next live view command
+			if (liveViewActive)
+			{
+				if (currentLiveViewTimeout !== null)
+					clearTimeout(currentLiveViewTimeout);
+
+				currentLiveViewTimeout = setTimeout(
+					function() 
+					{
+						if (currentHistoryRecord !== null) 
+						{
+							onClickHistoryRecord(currentHistoryRecord);
+						} 
+						else if (lastRunMacroDetails.row !== null && lastRunMacroDetails.col !== null) 
+						{
+							runMacro(lastRunMacroDetails.row, lastRunMacroDetails.col);
+						}
+					}, intervalTime);
+			}
+		} //end handleMacroResponse()
 
 		//=====================================================================================
 		//getDateString ~~
@@ -933,15 +1174,27 @@
 						"td",
 						{
 							"id": "macroModule-history",
-							"class":"macroModule",
+							"class": "macroModule",
 							"rowspan": maxRow,
-							"width":"400px",
+							"width": "400px",
 						},
-						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
-							"<h3>Command history</h3>" +
-							"<button id='liveViewBtn' onClick='toggleLiveView()'>Live View</button>",
-						true);
-					
+						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;' >" + 
+							"<h3>Command history</h3>" + 
+							"<div>" +
+								"<button id='liveViewBtn' onClick='toggleLiveView()' style='margin-right: 5px; border-radius: 5px; padding: 3px 15px; border: 1px solid gray;'>Live View</button>" + 
+								"<button id='flagTriggerButton' onClick='PopupMacroFlagAlert()' style='background-color: light gray; border: 1px solid gray; cursor: pointer; font-size: 15px; padding: 3px 10px; border-radius: 5px;'>&#9668; Flag Results</button>" +
+							"</div>" +
+						"</div>" + 
+						"<div id='history-status'></div>" +
+						"<div style='display: flex; justify-content: flex-end; align-items: center;'>" +
+							"<div style='display: flex; flex-direction: column; align-items: flex-end;'>" +
+								"<div style='margin-bottom: 5px;'>Delay: <span id='delayValue'>2 seconds</span></div>" +
+								"<div>Alert For: <span id='keywordValue'>[None]</span></div>" +
+							"</div>" +
+						"</div>",
+						true
+					);
+
 					// add sequence builder
 					str += DesktopContent.htmlOpen(
 						"td",
@@ -951,7 +1204,15 @@
 							"rowspan": maxRow,
 							"width":"500px",
 						},
-						"<h3>Sequence Mode</h3>",
+						"<div style='display: flex; flex-direction: column; align-items: flex-start; width: 100%;'>" +
+						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
+							"<h3>Sequence Mode</h3>" +
+							"<span id='currentMacroDisplay'>No Macro Running</span>" +
+						"</div>" +
+						"<div style='display: flex; justify-content: flex-end; width: 100%;'>" +
+							"<span id='currentDelayDisplay'>Delay: 0s</span>" +
+						"</div>" +
+					"</div>",
 						true);
 				}
 
@@ -1652,6 +1913,8 @@
 			console.log("feMacroNameSelected",feMacroNameSelected);
 
 			var macroNameObject = macroModules_[r][c].feMacroNameObject;
+
+			Debug.log("Help [macroNameObject]", macroNameObject);
 			
 			if(!feMacroNameSelected || feMacroNameSelected == "")
 			{
@@ -1677,8 +1940,6 @@
 			var inputsArr 	= macroObj.inputs;
 			var outputsArr 	= macroObj.outputs;
 			var tooltip 	= macroObj.tooltip;
-			if(tooltip != "")
-				DesktopContent.tooltip(macroName,tooltip);
 
 			//var supervisor 	= macroObj.supervisor;
 			//var lid 		= macroObj.lid;
@@ -1691,7 +1952,15 @@
 			str += "<b>&quot;" + macroName + "()&quot;</b> RequiredPermissions=" + requiredPermissions;
 			if (tooltip != "")
 			{
-				str += "<span class='macroInfo' title='" + tooltip + "'></span>";
+				Debug.log("Help [macro tooltip]", tooltip)
+				str += DesktopContent.htmlOpen("span",{
+						"class" : "macroInfo",
+						"style" : "cursor:pointer",
+						"onclick" : ("DesktopContent.tooltip(\"" + 
+							macroName + "\", \"" + 
+							DesktopContent.tooltipConditionString(tooltip) + "\", \"always\");"),
+						"title" : "Click to open the tooltip for FE Macro &apos;" + macroName + "&apos;"
+					},"" /*innerHTML*/,true /*doCloseTag*/);					
 			}
 					
 			str += "<br>" +
@@ -1825,13 +2094,14 @@
 				runMacro(focusedMacroCell[0],focusedMacroCell[1]);
 			}
 		} //end handleKeyInput()
+
 		//=====================================================================================				
 		//loadHistory ~~
 		var numRecords = 0;
 		var lastMacro = "";
-
 		function loadHistory()
 		{
+			Debug.log("loadHistory()");
 			var historyModule = document.getElementById("macroModule-history");
 			// append the header of the module
 			var str = DesktopContent.htmlOpen(
@@ -1878,13 +2148,15 @@
 				{	
 					appendHistoryRecord(commandList[i]);
 				}
-			});
+			});			
 			
-			
-		}
+		} //end loadHistory()
 
+		//=====================================================================================
+		//appendHistoryRecord ~~
 		function appendHistoryRecord(record) 
 		{
+			Debug.log("appendHistoryRecord()");
 			var historyContent = document.getElementById("historyContent");
 			var command = JSON.parse(record);
 			var counter = document.getElementById(numRecords + "-counter");
@@ -1896,6 +2168,7 @@
 				counter.innerText += "x";
 				return;
 			}
+			
 			lastMacro = record;
 			// check the i to alternate the colors
 			var className = "record ";
@@ -1939,11 +2212,16 @@
 					},
 					"<span><i id='" + numRecords + "-counter'></i> " + recordText + "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + (recordName === "" ? "No arguments": recordName) + "</span>",
 					true) + historyContent.innerHTML;
-		}
+		} //end appendHistoryRecord()
 
+		//=====================================================================================
+		//onClickHistoryRecord ~~
 		// call the function when we click on the history
 		function onClickHistoryRecord(recordObj)
 		{
+			Debug.log("onClickHistoryRecord()");
+
+			currentHistoryRecord = recordObj;
 
 			// in bulding sequence mode add the macro to the sequence
 			if (sequenceBuilding_)
@@ -1951,6 +2229,25 @@
 				appendMacroToSequence(JSON.stringify(recordObj));
 				return;
 			}
+
+			var el = document.getElementById("verticalLayoutOutputDiv");
+			if (el)
+			{
+				Debug.log("Found output div at size ",el.offsetWidth,el.offsetHeight);
+				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight-1];
+				Debug.log("Found output div at scroll position ",el.scrollLeft,el.scrollTop);
+				verticalOutputScrollPosition_ = [el.scrollLeft,el.scrollTop];
+
+				el = document.getElementById("macroModule-output");
+				el.style.width = (verticalOutputDivSize_[0] + 30) + "px";
+			}
+
+
+			var str = "";
+			str += "Launched... " + getDateString(new Date) + 
+					".. waiting for response...";
+			var el = document.getElementById("history-status");
+			el.innerHTML = str;
 			
 			var postData = "inputArgs=" + recordObj["inputArgs"] + "&outputArgs=" + recordObj["outputArgs"];
 			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +					
@@ -1963,33 +2260,31 @@
 					, postData, 
 					handleMacroResponse,
 					0 /*reqParam*/, 0 /*progressHandler*/, 
-					true /*callHandlerOnErr*/
+					true /*callHandlerOnErr*/,
+					true /*doNotShowLoadingOverlay*/
 					);
 			
-			if (currentLiveViewTimeout !== null) 
-			{
-        		clearTimeout(currentLiveViewTimeout);
-       		 	currentLiveViewTimeout = null;
-   			}
 
 			// show the command in the interface
 			appendHistoryRecord(JSON.stringify(recordObj));
+		} //end onClickHistoryRecord()
 
-			if (liveViewActive) {
-				currentLiveViewTimeout = setTimeout(function() { onClickHistoryRecord(recordObj); }, intervalTime); 
-    		}
-		}
-
+		//=====================================================================================
+		//showPopupClearHistoryConfirm ~~
 		// ask confirm before clearing the history
 		function showPopupClearHistoryConfirm()
 		{
+			Debug.log("showPopupClearHistoryConfirm()");
 			var popupClearAllConfirm = document.getElementById("popupClearHistoryConfirm");
 			popupClearAllConfirm.style.display = "block";
-		}
+		} //end showPopupClearHistoryConfirm()
 
+		//=====================================================================================
+		//hideSmallPopup ~~
 		// hide the popup
 		function hideSmallPopup(el)
 		{
+			Debug.log("hideSmallPopup()");
 			var sequenceNameInput = document.getElementById("sequenceName");
 			sequenceNameInput.value = "";
 
@@ -1999,31 +2294,54 @@
 			var wholeDiv = el.parentNode.parentNode.parentNode;
 			wholeDiv.style.display = "none";
 
-		}
+		} //end hideSmallPopup()
 
+		//=====================================================================================
+		//hideSmallPopupLiveView ~~
 		// hide the popup for live view
 		function hideSmallPopupLiveView(el)
 		{
+			Debug.log("hideSmallPopupLiveView()");
 			var wholeDiv = el.parentNode.parentNode.parentNode;
 			wholeDiv.style.display = "none";
 			liveViewActive = false;
 			document.getElementById('intervalTime').value = '2';
+			document.getElementById('noDelayCheckbox').checked = false;
+		} //end hideSmallPopupLiveView()
 
-		}
+		//=====================================================================================
+		//hideSmallPopupFlag ~~
+		// hide the popup for keyword flag
+		function hideSmallPopupFlag()
+		{
+			Debug.log("hideSmallPopupFlag()");
+			var flagKeywordInput = document.getElementById("flagKeyword");
+   			flagKeywordInput.value = "";
+			var popupFlagAlert = document.getElementById('popupFlagAlert');
+			if (popupFlagAlert)
+			{
+				popupFlagAlert.style.display = 'none';
+			}
+		} //end hideSmallPopupFlag()
 
+		//=====================================================================================
+		//clearHistory ~~
 		// clear the history
 		function clearHistory(el)
 		{
+			Debug.log("clearHistory()");
 			DesktopContent.XMLHttpRequest("Request?RequestType=clearFEHistory","", null);
 			var contentEl = document.getElementById('historyContent');
 			contentEl.innerHTML = "";
 			hideSmallPopup(el);
-		}
-		//=====================================================================================				
+		} //end clearHistory()
+
+		//=====================================================================================
+		//toggleLiveView ~~		
 		// live view
 		function toggleLiveView()
 		{
-
+			document.getElementById('delayValue').textContent = '2 seconds';
 			liveViewActive = !liveViewActive;
 
 			if (liveViewActive) 
@@ -2052,17 +2370,32 @@
 				liveViewBtn.style.color = '';			
 			}
 
-		}
+		} //end toggleLiveView()
 	
-		function setIntervalAndStart() 
+		//=====================================================================================
+		//setIntervalAndStart ~~
+		function setIntervalAndStart()
 		{
-			var intervalTimeInput = document.getElementById('intervalTime').value*1000;
-			intervalTime = parseInt(intervalTimeInput);
+			var intervalTimeInput = document.getElementById('intervalTime').value;
+			var noDelayCheckbox = document.getElementById('noDelayCheckbox');
 
-			if (isNaN(intervalTime) || intervalTime <= 0)
+			if (noDelayCheckbox.checked)
 			{
-				alert("Please enter a valid number greater than 0");
-				return;
+				intervalTime = 0;
+				document.getElementById('delayValue').textContent = 'None';
+			}
+			else
+			{
+				intervalTime = parseInt(intervalTimeInput, 10) * 1000;
+				if (isNaN(intervalTime) || intervalTime < 0)
+				{
+					alert("Please enter a valid number greater than or equal to 0");
+					return;
+				}
+				else
+				{
+					document.getElementById('delayValue').textContent = (intervalTime / 1000) + ' seconds'; 
+				}
 			}
 
 			document.getElementById('popupSetInterval').style.display = 'none';
@@ -2071,14 +2404,17 @@
 			liveViewBtn.textContent = 'Stop Live View';
 			liveViewBtn.style.backgroundColor = 'red';
 			liveViewBtn.style.color = 'white';
-			
+			document.getElementById('noDelayCheckbox').checked = false;
 
+			// Enable live view only if it's not already active
 			if (!liveViewActive)
 			{
 				liveViewActive = true;
 			}
-		}
+		} //end setIntervalAndStart()
 
+		//=====================================================================================
+		//handleEnterPress ~~
 		function handleEnterPress(event) 
 		{
         	if (event.key === "Enter" || event.keyCode === 13)
@@ -2089,40 +2425,98 @@
 
            		return false;
         	}
-        return true;
-    	}    
+       		return true;
+    	} //end handleEnterPress()  
 
-		//=====================================================================================	
-		//loadSequence
+		//=====================================================================================
+		//PopupMacroFlagAlert ~~
+		function PopupMacroFlagAlert()
+		{
+			Debug.log("PopupMacroFlagAlert()");
+			var flagTriggerButton = document.getElementById('flagTriggerButton');
+
+			if (isFlagActive)
+			{
+				flagKeyword = "";
+				flagIfPresent = true;
+				flagTriggerButton.style.border = "1px solid black";
+				isFlagActive = false; 
+				document.getElementById('keywordValue').textContent = '[None]'; 
+			}
+			else
+			{
+				document.getElementById('popupFlagAlert').style.display = 'block';
+			}
+		} //end PopupMacroFlagAlert()
+
+		//=====================================================================================
+		//setFlagKeyword ~~
+		function setFlagKeyword(isPresent)
+		{
+			flagKeyword = document.getElementById('flagKeyword').value;
+			flagIfPresent = isPresent;
+
+			Debug.log("setFlagKeyword()", flagKeyword, flagIfPresent);
+
+			document.getElementById('keywordValue').textContent = flagKeyword || '[None]';
+
+			var flagTriggerButton = document.getElementById('flagTriggerButton');
+			if (flagKeyword)
+			{
+				flagTriggerButton.style.border = "3px solid green"; 
+				isFlagActive = true;
+			}
+			else
+			{
+				flagTriggerButton.style.border = "1px solid black"; 
+				isFlagActive = false;
+			}
+
+			document.getElementById('popupFlagAlert').style.display = 'none';
+		} //end setFlagKeyword()
+
+
+
+
+		//=====================================================================================
+		//=====================================================================================
 
 		var sequenceBuilding_ = false;
 		var selectedSequence_ = {};
 		var tempSequence_ = {}
 
-		// UTILS
+		// UTILS for Sequence Building
 
+		//=====================================================================================
+		//statusActionButtons ~~
 		function statusActionButtons(status)
 		{
 			var runBtn = document.getElementById("runSequenceBtn");
+			var pauseBtn = document.getElementById("pauseSequenceBtn");
+			var stopBtn = document.getElementById("stopSequenceBtn");
 			var editBtn = document.getElementById("editSequenceBtn");
 			var deleteBtn = document.getElementById("deleteSequenceBtn");
 			var newBtn = document.getElementById("newSequenceBtn");
 			runBtn.disabled = status;
 			editBtn.disabled = status;
 			deleteBtn.disabled = status;
-			newBtn.disabled = !status;
-		}
+			// newBtn.disabled = !status; // leave new button always enabled
+		} //end statusActionButtons()
 
+		//=====================================================================================
+		//statusEditButtons ~~
 		function statusEditButtons(status)
 		{
-			var testBtn = document.getElementById("testSequenceBtn");
+			//var testBtn = document.getElementById("testSequenceBtn");
 			var saveBtn = document.getElementById("saveSequenceBtn");
 			var resetBtn = document.getElementById("resetSequenceBtn");
 			resetBtn.disabled = status;
-			testBtn.disabled = status;
+			//testBtn.disabled = status;
 			saveBtn.disabled = status;
-		}
+		} //end statusEditButtons()
 
+		//=====================================================================================
+		//showSequence ~~
 		function showSequence(target, seq)
 		{
 			console.log(target, seq);
@@ -2174,30 +2568,37 @@
 				if (target === "sequence-builder") 
 				{
 					// append control sequence buttons
-					var sequence = document.getElementById("sequenceComponent-" + index);
+					var FEsequence = document.getElementById("sequenceComponent-" + index);
 					var sequenceAction = document.createElement("div");
+					sequenceAction.style.display = "inline-block"
 					sequenceAction.setAttribute("class", "vbox");
+					
 					// up button
 					var upBtn = document.createElement("button");
-					upBtn.innerText = "Up";
+					upBtn.className = "sequence-btn";
+					upBtn.innerHTML = "<span>▲</span>";  
 					upBtn.setAttribute("onClick", "moveUpSequence(" + index + ")");
+					// remove button
+					const removeBtn = document.createElement("button");
+					removeBtn.className = "sequence-btn";
+					removeBtn.innerHTML = "<span>✖</span>";
+					removeBtn.setAttribute("onClick", "removeFromSequence(" + index + ")");
 					// down button
 					var downBtn = document.createElement("button");
-					downBtn.innerText = "Down";
+					downBtn.className = "sequence-btn";
+					downBtn.innerHTML = "<span>▼</v>";  
 					downBtn.setAttribute("onClick", "moveDownSequence(" + index + ")");
-					// up button
-					const removeBtn = document.createElement("button");
-					removeBtn.innerText = "X";
-					removeBtn.setAttribute("onClick", "removeFromSequence(" + index + ")");
 
-					sequenceAction.appendChild(upBtn);
 					sequenceAction.appendChild(downBtn);
 					sequenceAction.appendChild(removeBtn);
-					sequence.appendChild(sequenceAction);
+					sequenceAction.appendChild(upBtn);
+					FEsequence.appendChild(sequenceAction);
 				}
 			}
-		}
+		} //end showSequence()
 
+		//=====================================================================================
+		//showPopupSaveSequence ~~
 		function showPopupSaveSequence()
 		{
 			var popup = document.getElementById("popupSaveSequence");
@@ -2206,16 +2607,39 @@
 			popup.style.gridTemplateColumns = "1fr";
 			sequenceNameInput.value = "";
 			sequenceNameInput.focus();
-		}
+		} //end showPopupSaveSequence()
 
+		//=====================================================================================
+		//hidePopupSaveSequence ~~
 		function hidePopupSaveSequence()
 		{
 			var popup = document.getElementById("popupSaveSequence");
 			popup.style.display = "none";
-		}
+		} //end hidePopupSaveSequence()
 
-		// END UTILS
+		//=====================================================================================
+		//popupSetSequenceDelay ~~
+		function popupSetSequenceDelay()
+		{
+			var popup = document.getElementById("popupSetSequenceDelay");
+			var delayInput = document.getElementById("sequenceDelayInput");
 
+			if (popup)
+			{
+				popup.style.display = "grid";
+				popup.style.gridTemplateColumns = "1fr";
+				delayInput.value = delayBetweenMacros / 1000;
+				delayInput.focus();
+				delayInput.select();
+			}
+		} //end popupSetSequenceDelay()
+
+		// END UTILS for Sequence Building
+		//=====================================================================================
+		//=====================================================================================
+
+		//=====================================================================================
+		//toggleSequenceMode ~~
 		function toggleSequenceMode()
 		{
 			sequenceMode_ = !sequenceMode_;
@@ -2228,8 +2652,10 @@
 			{
 				sequenceModule.style.display = "none";
 			}
-		}	
+		} //end toggleSequenceMode()
 
+		//=====================================================================================
+		//loadSequnces ~~
 		function loadSequnces()
 		{
 			var sequenceModule = document.getElementById("macroModule-sequence");
@@ -2265,10 +2691,37 @@
 				"button",
 				{
 					"id": "runSequenceBtn",
-					"onClick": "runSequence()",
+					"onClick": "onClickRunSequence()",
+					"style": "border: none; background: none; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 25px solid green; cursor: pointer;",
 					"disabled": "true",
 				},
-				"Run",
+				"", 
+				true);
+			var pauseButton = DesktopContent.htmlOpen(
+				"button",
+				{
+					"id": "pauseSequenceBtn",
+					"onClick": "onClickPauseSequence()",
+					"style": "border: none; background: none; cursor: pointer; width: 6px; height: 24px; margin-top: 3px; border-right: 9px solid rgb(13, 13, 148); border-left: 9px solid rgb(13, 13, 148);",
+				},
+				"", 
+				true);
+				var stopButton = DesktopContent.htmlOpen(
+				"button",
+				{
+					"id": "stopSequenceBtn",
+					"onClick": "onClickStopSequence()",
+					"style": "width: 24px; height: 24px; margin-top: 3px; background-color: rgb(218, 5, 5); border: none; cursor: pointer;",
+				},
+				"", 
+				true);
+			var delayButton = DesktopContent.htmlOpen(
+				"button",
+				{
+					"id": "delaySequenceBtn",
+					"onClick": "popupSetSequenceDelay()",
+				},
+				"Delay",
 				true);
 			var editButton = DesktopContent.htmlOpen(
 				"button",
@@ -2307,15 +2760,15 @@
 				},
 				"Save",
 				true);
-			var testButton = DesktopContent.htmlOpen(
-				"button",
-				{
-					"id": "testSequenceBtn",
-					"disabled": true,
-					"onClick": "testSequence()",
-				},
-				"Test",
-				true);
+			// var testButton = DesktopContent.htmlOpen(
+			// 	"button",
+			// 	{
+			// 		"id": "testSequenceBtn",
+			// 		"disabled": true,
+			// 		"onClick": "testSequence()",
+			// 	},
+			// 	"Test",
+			// 	true);
 			var resetButton = DesktopContent.htmlOpen(
 				"button",
 				{
@@ -2340,7 +2793,7 @@
 					"id": "sequence-buttons",
 					"style": "margin-top:10px; display: flex; gap: 20px"
 				},
-				runButton + editButton + deleteButton + newButton,
+				runButton + pauseButton + stopButton + delayButton + editButton + deleteButton + newButton,
 				true);
 
 			// area to build the sequence
@@ -2358,19 +2811,20 @@
 					"id": "sequence-builder-buttons",
 					"style": "margin-top:10px; display: none; gap: 20px"
 				},
-				testButton + saveButton + resetButton + closeButton,
+				saveButton + resetButton + closeButton,
 				true);
 			
 			
 			sequenceModule.innerHTML += str;
 			// load saved sequences
-			DesktopContent.XMLHttpRequest("Request?RequestType=loadMacroSequences",
+			DesktopContent.XMLHttpRequest("Request?RequestType=loadFEMacroSequences",
 				"",
-				function(req) {
+				function(req)
+				{
 					// request hendler
-					Debug.log("loadMacroSequences() was called.");
+					Debug.log("loadFEMacroSequences() was called.");
 
-					var sequenceString = DesktopContent.getXMLValue(req, "sequences");
+					var sequenceString = DesktopContent.getXMLValue(req, "FEsequences");
 					if (!sequenceString) 
 					{
 						Debug.log("Sequence is empty!");
@@ -2391,34 +2845,49 @@
 					}
 				}
 			);
-		}
+		} //end loadSequnces()
 
 		// ACTIONS
 
 		// TODO
-		function runSequence()
-		{
-			// call the API
-			var selector = document.getElementById("select-sequence");
+		//function runSequence()
+		//	{
+				// call the API
+				//var selector = document.getElementById("select-sequence");
 
-			DesktopContent.XMLHttpRequest("Request?RequestType=runSequence" +
-				"&name=" + selector.value,
-				"",
-				function() {
-					// request hendler
-					Debug.log("runFEMacroSequence() was called.");
-					// TODO: show the results
-				}
-			);
-			console.log("run", selectedSequence_);
-		}
+				//DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacroSequence" +
+				//	"&name=" + selector.value,
+				//	"",
+				//	function() {
+						// request hendler
+				//		Debug.log("runFEMacroSequence() was called.");
+						// TODO: show the results
 
+				//	}
+				//);
+			//	console.log("run", selectedSequence_);
+		//	}
+
+		// call the function when we click on the history
+
+		//=====================================================================================
+		//newSequence ~~
 		function newSequence() 
 		{
+			console.log("newSequence called");
 			// disable action buttons
 			statusActionButtons(false);
 			// clean selected sequence
 			selectSequence();
+			
+			// change selection to new unnamed sequence
+			var sequenceSelector = document.getElementById("select-sequence");
+			var unnamedOption = document.createElement("option");
+			unnamedOption.text = "Unnamed";
+			unnamedOption.value = "Unnamed";
+			sequenceSelector.add(unnamedOption);
+			sequenceSelector.value = "Unnamed";
+
 			// allow editing
 			sequenceBuilding_ = true;
 			// empty builder
@@ -2427,41 +2896,57 @@
 			// show edit buttons
 			var builderActions = document.getElementById("sequence-builder-buttons");			
 			builderActions.style.display = "flex";
-		}
+		} //end newSequence()
 
+		//=====================================================================================
+		//deleteSequence ~~
 		function deleteSequence()
 		{
-			// call the API
 			var selector = document.getElementById("select-sequence");
 
-			DesktopContent.XMLHttpRequest("Request?RequestType=deleteSequence" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=deleteFEMacroSequence" +
 				"&name=" + selector.value,
 				"",
 				function() {
-					// request hendler
-					Debug.log("deleteSequences() was called.");
+					Debug.log("deleteFEMacroSequence() was called.");
 					
-					// remove the option
-					for (var index = 0; selector.options.length; index++)
+					// Find and remove the selected option
+					for (var index = 0; index < selector.options.length; index++)
 					{
 						if (selector.options[index].value === selector.value)
 						{
 							selector.remove(index);
+
+							// Select and load the next sequence if available
+							if (selector.options.length > 0)
+							{
+								// Adjust index if it's now out of bounds
+								if (index === selector.options.length) 
+								{
+									index--;
+								}
+								selector.selectedIndex = index;
+
+								// Load the newly selected sequence
+								selectSequence(selector.options[selector.selectedIndex].value);
+							} 
+							else 
+							{
+								// No more sequences, reset the UI
+								selectedSequence_ = {};
+								showSequence("show-sequence", selectedSequence_);
+								statusActionButtons(true);
+							}
+
 							break;
 						}
 					}
-
-					// clean the list
-					selectedSequence_ = {};
-					showSequence("show-sequence", selectedSequence_);
-					// deactive buttons
-					statusActionButtons(true);
 				}
 			);
-			console.log("delete", selectedSequence_);
-		}
+		} //end deleteSequence()
 
-		
+		//=====================================================================================
+		//editSequence ~~
 		function editSequence()
 		{
 			// disable action buttons
@@ -2474,8 +2959,32 @@
 			var builderActions = document.getElementById("sequence-builder-buttons");			
 			builderActions.style.display = "flex";
 			document.getElementById("sequenceName").value = document.getElementById("select-sequence").value;
-		}
+		} //end editSequence()
 
+		//=====================================================================================
+		//delaySequence ~~
+		function delaySequence()
+		{
+   			var delayInput = document.getElementById('sequenceDelayInput').value * 1000; 
+    		delayBetweenMacros = parseInt(delayInput);
+
+			if (isNaN(delayBetweenMacros) || delayBetweenMacros < 0)
+			{
+				alert("Please enter a valid number greater than 0");
+				return;
+			}
+
+			var delayDisplay = document.getElementById('currentDelayDisplay');
+			if (delayDisplay)
+			{
+				delayDisplay.textContent = "Delay: " + (delayBetweenMacros / 1000) + "s";  // Convert milliseconds to seconds
+			}
+
+    		document.getElementById('popupSetSequenceDelay').style.display = 'none';
+		} //end delaySequence()
+
+		//=====================================================================================
+		//selectSequence ~~
 		function selectSequence(elem = "undefined")
 		{
 			var container = document.getElementById("show-sequence");
@@ -2487,24 +2996,30 @@
 				selectedSequence_ = {};
 				showSequence("show-sequence", selectedSequence_)
 				statusActionButtons(true);
+				currentIndex = 0;
+				updateCurrentMacroDisplay("No Macro Running", 0, 0);
 				return;
 			}
 
 			// call the API
-			DesktopContent.XMLHttpRequest("Request?RequestType=getSequence" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=getFEMacroSequence" +
 				"&name=" + elem,
 				"",
-				function(req) {
+				function(req) 
+				{
 					// request hendler
-					Debug.log("loadMacroSequences() was called.");
-					var sequenceString = DesktopContent.getXMLValue(req, "sequence");
+					Debug.log("loadFEMacroSequences() was called.");
+					var sequenceString = DesktopContent.getXMLValue(req, "FEsequence");
 					if (!sequenceString) 
 					{
 						Debug.log("Sequence is empty!");
 						return;
 					}
+					console.log(sequenceString);
 					selectedSequence_ = JSON.parse(decodeURI(sequenceString));
 
+					updateCurrentMacroDisplay("No Macro Running", 0, 0);
+					currentIndex = 0;
 					// close the building if it is open
 					closeSequence();
 					// fill the list
@@ -2513,13 +3028,16 @@
 					statusActionButtons(false);
 				}
 			);
-		}
+		} //end selectSequence()
 			
+		//=====================================================================================
+		//saveSequence ~~
 		function saveSequence()
 		{
 			var sequenceSelector = document.getElementById("select-sequence");
 			var sequenceName = document.getElementById("sequenceName");
 			var errorMessage = document.getElementById("sequenceName-error");
+			var isNewSequence = sequenceSelector.value === "Unnamed";
 
 			// check if name is empty
 			if (sequenceName.value === "")
@@ -2528,6 +3046,7 @@
 				return;
 			}
 
+    		// Check for invalid characters
 			var invalidCharacters = /[<>:"/\\|?*]/;
 			if (invalidCharacters.test(sequenceName.value))
 			{
@@ -2546,34 +3065,271 @@
 			}
 
 			// prepare the payload of the API call
-			var postData = "sequence=" + encodeURI(JSON.stringify(tempSequence_)) + 
+			var postData = "FEsequence=" + encodeURI(JSON.stringify(tempSequence_)) + 
 						   "&sequenceName=" + sequenceName.value;
+			
+
+			console.log(JSON.stringify(tempSequence_));
+			console.log("Sequence Name:", sequenceName.value);
 
 			// API call
-			DesktopContent.XMLHttpRequest("Request?RequestType=saveSequence",				
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence",
 				postData, 
-				function () {
-					// update the select
-					var option = document.createElement("option");
-					option.text = sequenceName.value;
-					option.value = sequenceName.value;
-					sequenceSelector.add(option);
+				function () 
+				{
+					// Update the dropdown based on whether it's a new sequence or not
+					if (isNewSequence)
+					{
+						// Check if the "Unnamed" option exists and update it
+						var unnamedOption = sequenceSelector.querySelector("option[value='Unnamed']");
+						if (unnamedOption)
+						{
+							unnamedOption.text = sequenceName.value;
+							unnamedOption.value = sequenceName.value;
+						}
+					}
+					else
+					{
+						// Check if an option with this name already exists
+						var existingOption = Array.from(sequenceSelector.options).find(option => option.value === sequenceName.value);
+						if (!existingOption)
+						{
+							// Add a new option for the saved sequence
+							var option = document.createElement("option");
+							option.text = sequenceName.value;
+							option.value = sequenceName.value;
+							sequenceSelector.add(option);
+						}
+					}
+
+					sequenceSelector.value = sequenceName.value;
 					selectSequence(sequenceName.value);
+
 				},
 				0 /*reqParam*/, 
 				0 /*progressHandler*/, 
 				true /*callHandlerOnErr*/
-				
-			);
-			var sequenceNameInput = document.getElementById("sequenceName");
-			sequenceNameInput.value = "";
+   			);
 
 			var errorMessage = document.getElementById("sequenceName-error");
 			errorMessage.innerText = "";
 			hidePopupSaveSequence()
 			closeSequence();
-		}
+		} //end saveSequence()
 
+		//=====================================================================================
+		//onClickRunSequence ~~
+		function onClickRunSequence()
+		{
+			Debug.log("onClickRunSequence()");
+			var toggleButton = document.getElementById("runSequenceBtn");
+			
+			var el = document.getElementById("verticalLayoutOutputDiv");			
+			if(el)
+			{
+				Debug.log("Found output div at size ",el.offsetWidth,el.offsetHeight);
+				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight-1];
+				Debug.log("Found output div at scroll position ",el.scrollLeft,el.scrollTop);
+				verticalOutputScrollPosition_ = [el.scrollLeft,el.scrollTop];
+
+				el = document.getElementById("macroModule-output");
+				el.style.width = (verticalOutputDivSize_[0] + 30) + "px";
+			}
+
+			if (!selectedSequence_ || Object.keys(selectedSequence_).length === 0)
+			{
+				console.log("No sequence selected");
+				updateCurrentMacroDisplay("");
+				return;
+			}
+
+			if (stopSequenceFlag)
+			{
+				currentIndex = 0; // Start from the beginning if stopped
+				stopSequenceFlag = false; // Reset the stop flag
+				pauseSequenceFlag = false; 
+			}
+			else if (!isSequenceRunning && pauseSequenceFlag)
+			{
+				// Logic for resuming from a paused state
+				pauseSequenceFlag = false;
+			}			
+			else if (!isSequenceRunning)
+			{
+				// Starting a new sequence
+				currentIndex = 0;
+			}
+
+			isSequenceRunning = true;
+			updateRunButtonState();
+
+			var keys = Object.keys(selectedSequence_);
+			var totalMacros = keys.length; 
+
+			//====================== 
+			function executeMacro()
+			{
+				Debug.log("executeMacro()",isSequenceRunning,currentIndex+1,"of",totalMacros);
+				if (stopSequenceFlag)
+				{
+					Debug.log("Sequence has been stopped.");
+					updateCurrentMacroDisplay("Stopped", currentIndex, totalMacros);
+					return;
+				}
+
+				if (pauseSequenceFlag)
+				{
+					Debug.log("Sequence has been paused.");
+					updateCurrentMacroDisplay("Halted", currentIndex, totalMacros);
+					isSequenceRunning = false; 
+					return;
+				}
+
+				if (currentIndex >= keys.length)
+				{
+					Debug.log("Done with sequence macro count", totalMacros);
+					currentIndex = 0; 
+					updateCurrentMacroDisplay("Done", currentIndex, totalMacros);
+					isSequenceRunning = false;
+					updateRunButtonState();
+					
+					if (liveViewActive)
+					{
+						if (currentLiveViewTimeout !== null)
+						{
+							clearTimeout(currentLiveViewTimeout);
+						}
+						// Set up the sequence to restart after the live view interval
+						currentLiveViewTimeout = setTimeout(function()
+						{
+							onClickRunSequence();
+						}, intervalTime);
+					}
+
+					return;
+				}
+				
+				var commandString = selectedSequence_[keys[currentIndex]];
+				var command = JSON.parse(commandString);
+
+				updateCurrentMacroDisplay(command["macroName"], currentIndex + 1, totalMacros);
+
+				var postData = "inputArgs=" + command["inputArgs"] + "&outputArgs=" + command["outputArgs"];
+
+				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
+					"&feClassSelected=" + command["feClass"] +
+					"&feUIDSelected=" + command["feUID"] +
+					"&macroType=" + command["macroType"] +
+					"&macroName=" + command["macroName"] + 
+					"&saveOutputs=" + parseInt(command["saveOutputs"]),
+					postData, 
+					function(req, reqParam, errStr)
+					{
+						Debug.log("Sequence mode handleMacroResponse...",currentIndex+1,"of",totalMacros);
+						handleMacroResponse(req, reqParam, errStr);
+
+						++currentIndex; //if pause, increment on resume
+
+						//handleMacroResponse might force pause!						
+
+						Debug.logv({pauseSequenceFlag});
+						if (!pauseSequenceFlag)	
+							setTimeout(executeMacro, delayBetweenMacros); // Delay before executing next macro
+						else
+						{
+							Debug.log("Flag triggered pause (do not delay)!");
+							executeMacro(); //just to run same code
+						}
+
+					}, //end Sequence Mode exec command handler					
+					0 /*reqParam*/, 0 /*progressHandler*/, 
+					true /*callHandlerOnErr*/,
+					true /*doNotShowLoadingOverlay*/
+				);
+
+				appendHistoryRecord(JSON.stringify(command));
+
+			} //end executeMacro()
+
+			executeMacro(); // Start executing macros with delay
+		} //end onClickRunSequence()
+
+		//=====================================================================================
+		//onClickPauseSequence ~~
+		function onClickPauseSequence() 
+		{
+			Debug.log("onClickPauseSequence()");
+			pauseSequenceFlag = true; 
+			isSequenceRunning = false;
+   			statusActionButtons(false); 
+		} //end onClickPauseSequence()
+
+		//=====================================================================================
+		//onClickStopSequence ~~
+		function onClickStopSequence()
+		{
+			Debug.log("onClickStopSequence()");
+			stopSequenceFlag = true;
+			pauseSequenceFlag = false;
+			isSequenceRunning = false;
+			currentIndex = 0; 
+			statusActionButtons(false);
+			updateCurrentMacroDisplay("Halted", currentIndex, 0); 
+		} //end onClickStopSequence()
+
+		//=====================================================================================
+		//updateRunButtonState ~~
+		function updateRunButtonState() 
+		{
+			var runButton = document.getElementById("runSequenceBtn");
+			if (runButton) 
+			{
+				runButton.disabled = isSequenceRunning;
+			}
+		} //end updateRunButtonState()
+
+		//=====================================================================================
+		//updateCurrentMacroDisplay ~~
+		function updateCurrentMacroDisplay(macroName, currentIndex, totalMacros)
+		{
+			var displayElement = document.getElementById("currentMacroDisplay");
+
+			if (displayElement) 
+			{
+				var displayText;
+
+				if (macroName === "Done")
+				{
+					displayText = "Done";
+				} 
+				else if (macroName === "No Macro Running")
+				{
+            		displayText = "No Macro Running";
+				}
+				else if (stopSequenceFlag)
+				{
+					displayText = "Halted";
+				} 
+				else if (macroName === "Halted")
+				{
+					var haltedMacroIndex = Math.max(0, currentIndex - 1);
+					var haltedMacroString = selectedSequence_[haltedMacroIndex];
+					var haltedMacro = haltedMacroString ? JSON.parse(haltedMacroString) : null;
+					var haltedMacroName = haltedMacro ? haltedMacro.macroName : "Unknown";
+
+					displayText = "Paused: " + (haltedMacroIndex + 1) + "/" + totalMacros + " " + haltedMacroName;
+				}
+				else
+				{
+					displayText = currentIndex + "/" + totalMacros + " " + macroName;
+				}
+
+				displayElement.textContent = displayText;
+			}
+		} //end updateCurrentMacroDisplay()
+
+		//=====================================================================================
+		//resetSequence ~~
 		function resetSequence()
 		{
 			// reset the container
@@ -2583,9 +3339,11 @@
 			// disable edit buttons
 			statusEditButtons(false);
 			
-			console.log("reset", tempSequence_);
-		}
+			Debug.log("reset", tempSequence_);
+		} //end resetSequence()
 
+		//=====================================================================================
+		//closeSequence ~~
 		function closeSequence()
 		{
 			// reset the container
@@ -2598,18 +3356,14 @@
 			builderActions.style.display = "none";
 			// stop building 
 			sequenceBuilding_ = false;
-			console.log("close", tempSequence_);
-		}
-		
-		// TODO
-		function testSequence()
-		{
-			console.log("test", tempSequence_);
-		}
+			Debug.log("close", tempSequence_);
+		} //end closeSequence()
 		
 		// END ACTIONS
 
 		// SEQUENCE CONTROL
+		//=====================================================================================
+		//appendMacroToSequence ~~
 		function appendMacroToSequence(macro)
 		{			
 			var index = Object.keys(tempSequence_).length;
@@ -2617,9 +3371,11 @@
 			statusEditButtons(false);
 			tempSequence_[index] = macro;
 			showSequence("sequence-builder", tempSequence_);
-			console.log("add", tempSequence_);
-		}
+			Debug.log("add", tempSequence_);
+		} //end appendMacroToSequence()
 
+		//=====================================================================================
+		//moveUpSequence ~~
 		function moveUpSequence(index)
 		{
 			if (index === 0)
@@ -2628,10 +3384,12 @@
 			tempSequence_[index] = tempSequence_[index-1];
 			tempSequence_[index-1] = tempValue;
 			showSequence("sequence-builder", tempSequence_);
-			console.log("up", tempSequence_);
+			Debug.log("up", tempSequence_);
 			return;
-		}
+		} //end moveUpSequence()
 		
+		//=====================================================================================
+		//removeFromSequence ~~
 		function removeFromSequence(index)
 		{
 			delete tempSequence_[index]
@@ -2647,10 +3405,12 @@
 				i++;
 			}
 			showSequence("sequence-builder", tempSequence_);
-			console.log("remove", tempSequence_);
-			return
-		}
+			Debug.log("remove", tempSequence_);
+			return;
+		} //end removeFromSequence()
 
+		//=====================================================================================
+		//moveDownSequence ~~
 		function moveDownSequence(index)
 		{
 			if (index === (Object.keys(tempSequence_).length-1))
@@ -2659,21 +3419,62 @@
 			tempSequence_[index] = tempSequence_[index+1];
 			tempSequence_[index+1] = tempValue;
 			showSequence("sequence-builder", tempSequence_);
-			console.log("down", tempSequence_);
-			return
-		}
+			Debug.log("down", tempSequence_);
+			return;
+		} //end moveDownSequence()
 		
-		function handleEnterPressSequence(event) 
+		//=====================================================================================
+		//handleEnterPressDelaySequence ~~
+		function handleEnterPressDelaySequence(event)
 		{
-        if (event.key === "Enter" || event.keyCode === 13) {
-            event.preventDefault();
-            
-            saveSequence();
+			if (event.key === "Enter" || event.keyCode === 13)
+			{
+				event.preventDefault();
 
-            return false;
-        }
-        return true;
-    	}    
+				var activeElement = document.activeElement;
+
+				if (activeElement && activeElement.id === "sequenceDelayInput")
+				{
+					delaySequence();
+					return false; 
+				}
+				return false;
+			}
+			return true;
+		} //end handleEnterPressDelaySequence()
+
+		//=====================================================================================
+		//handleEnterPressSaveSequence ~~
+		function handleEnterPressSaveSequence(event)
+		{
+			if (event.key === "Enter" || event.keyCode === 13) 
+			{
+				event.preventDefault();
+
+				var activeElement = document.activeElement;
+
+				if (activeElement && activeElement.id === "sequenceName")
+				{
+					saveSequence();
+					return false; 
+				}
+				return false; 
+			}
+			return true;
+		} //end handleEnterPressSaveSequence()
+
+		//=====================================================================================
+		//getOperatorSymbol ~~
+		function getOperatorSymbol(operator) {
+			switch (operator) {
+				case "gt": return ">";
+				case "gte": return ">=";
+				case "lt": return "<";
+				case "lte": return "<=";
+				default: return "";
+			}
+		} //end getOperatorSymbol()
+
 
 		// END SEQUENCE CONTROL
 		//=====================================================================================		
@@ -2703,23 +3504,70 @@
 		</div>
 	</div>
 
-	<div id="popupSetInterval" class="smallPopup">
-			<center>
-		<h4>Please enter the interval time (sec):</h4>
-		<input type="number" id="intervalTime" value="2" onkeypress="return handleEnterPress(event)">
+	<div id="popupSetSequenceDelay" class="smallPopup">
+		<center>
+		<h4>Set Delay Between Macros (sec):</h4>
+		<input type="number" id="sequenceDelayInput" min="0" maxlength="30" onkeypress="return handleEnterPressDelaySequence(event)"></input>
 		<div class="buttongroup" style="margin-top: 20px;">
+				<button onclick="delaySequence()">Confirm</button>
+				<button onclick="hideSmallPopup(this)">Cancel</button>
+			</center>
+		</div>
+	</div>
+	
+	<div id="popupSetInterval" class="smallPopup">
+		<center>
+			<h4>Please enter the interval time (sec):</h4>
+			<input type="number" id="intervalTime" value="2" onkeypress="return handleEnterPress(event)">
+			<div>
+				<input type="checkbox" id="noDelayCheckbox" style="margin-top: 20px;">
+				<label for="noDelayCheckbox">No Delay</label>
+			</div>
+			<div class="buttongroup" style="margin-top: 20px;">
 				<button onclick="setIntervalAndStart()">Set Interval</button>
 				<button onclick="hideSmallPopupLiveView(this)">Cancel</button>
-		</div>
-	</center>
+			</div>
+		</center>
 	</div>
+	
+	<div id="popupFlagAlert" class="smallPopup" style="display: none;">
+		<center>
+			<h4>Please enter a keyword to flag:</h4>
+			<div style="display: flex; align-items: center; justify-content: center;">
+				<select id="comparisonOperator" style="margin-top: 5px; height: 30px; margin-right: 10px;">
+					<option value="none">None</option>
+					<option value="gt">&gt;</option>
+					<option value="gte">&gt;=</option>
+					<option value="lt">&lt;</option>
+					<option value="lte">&lt;=</option>
+				</select>
+				<input type="text" id="flagKeyword" value="" style="margin-top: 5px;"/>
+			</div>
+			<div class="buttongroup" style="margin-top: 20px;">
+				<button onclick="setFlagKeyword(true)">Flag if Present</button>
+				<button onclick="setFlagKeyword(false)" style="margin-left: 10px;">Flag if Absent</button>
+				<div style="margin-top: 10px;">
+					<button onclick="hideSmallPopupFlag(this)">Cancel</button>
+				</div>
+			</div>
+		</center>
+	</div>	
+
+	<div id="popupKeywordMatch" class="smallPopup" style="display: none;">
+		<center>
+			<h4 id="matchMessage">Keyword matched!</h4>
+			<div class="buttongroup" style="margin-top: 20px;">
+				<button onclick="hideSmallPopup(this)">Close</button>
+			</div>
+		</center>
+	</div>	
 
 	<div id="popupSaveSequence" class="smallPopup">
 		<center>
 	    <h4>Type a name for the sequence</h4>
-		<input type="text" id="sequenceName" maxlength="30" onkeypress="return handleEnterPressSequence(event)"></input>
-		<span id="sequenceName-error" style="color: red; display: block;"></span>
-	    <div class="buttongroup" style="margin-top: 20px;">
+		<input type="text" id="sequenceName" maxlength="30" onkeypress="return handleEnterPressSaveSequence(event)"></input>
+		<span id="sequenceName-error" style="color: red; display: block; margin-top: 10px;"></span>
+	    <div class="buttongroup" style="margin-top: 10px;">
 			<button onclick="saveSequence()">Confirm</button>
 			<button onclick="hideSmallPopup(this)">Cancel</button>
 		</center>
@@ -2731,4 +3579,3 @@
 </body>
 	
 </html>
-

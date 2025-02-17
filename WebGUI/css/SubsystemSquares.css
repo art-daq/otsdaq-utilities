@@ -1,0 +1,75 @@
+
+
+		body {	
+			padding:0;
+			margin:0;
+			background-color:white;
+			font-family: "Comfortaa";
+			overflow: hidden;
+		}
+
+		/* make links have a hand cursor */
+		a {
+			cursor: pointer;
+		}
+
+		.hover_link:hover {
+			text-decoration: underline;
+			cursor: pointer;
+		}
+		
+		h3 {
+			font-family: "Comfortaa";
+		}
+
+		#DesktopContent-verifyPopUp * {
+			font-family: "Comfortaa";
+		}				
+
+
+		/* ===================== Subsystem status div section ================= */
+
+		#subsystemDiv {
+			margin: 5px; /* must match _MARGIN/2 in js */
+		}
+
+		.subsystem_square {
+			background-color:rgb(6 176 6); /* green; */
+			margin: 5px; /* must match _MARGIN/2 in js */
+			float: left;
+			border-radius: 5px;
+			cursor: pointer;
+			overflow-x: auto;
+			overflow-y: hidden;				
+		}
+		
+		.subsystem_name, .subsystem_console {
+			float: left;
+			margin-left: 5px;
+		}
+		.subsystem_name {
+			font-weight: bold;
+			margin-top: 5px;
+			font-size: 20px;
+		}
+		.subsystem_console {
+			white-space: nowrap;
+			font-size: 14px;
+		}
+		.subsystem_status {
+			position: relative;			
+			margin-left: 5px;
+    		font-size: 20px;
+			white-space: nowrap;
+		}
+
+		/* ===================== end Subsystem status div section  */
+		
+		
+		
+		
+		
+		
+		
+		
+		

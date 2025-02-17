@@ -210,6 +210,9 @@
 		cursor: 				pointer;
 	}
 		
+	#Desktop .DesktopIcons-folderDiv {
+		z-index: 				99900;
+	}
 	/* for mouse over highlighting */
 	#Desktop .DesktopIcons-folderDiv .myOption:hover {
 		background-color: 		rgb(213, 227, 245);

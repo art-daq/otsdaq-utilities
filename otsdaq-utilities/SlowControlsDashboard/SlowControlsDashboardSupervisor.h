@@ -1,6 +1,7 @@
 #ifndef _ots_SlowControlsDashboardSupervisor_h_
 #define _ots_SlowControlsDashboardSupervisor_h_
 
+#include <chrono>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 // #include "otsdaq-utilities/SlowControlsInterfacePlugins/EpicsInterface.h"
@@ -26,6 +27,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void destroy(void);
 	void checkSubscriptions(SlowControlsDashboardSupervisor* cs);
 	void checkSlowControlsAlarms(SlowControlsDashboardSupervisor* cs);
+	void handleNewAlarms();
 
 	virtual void request(const std::string&               requestType,
 	                     cgicc::Cgicc&                    cgiIn,
@@ -43,10 +45,12 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	                                                            // settings)
 
 	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string UID);
+	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetChannelSettings(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetChannelArchiverData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetLastAlarmsData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetAlarmsLogData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void GetAlarmsCheck(HttpXmlDocument& xmlOut);
 	void GetUserPermissions(cgicc::Cgicc&                    cgiIn,
 	                        HttpXmlDocument&                 xmlOut,
 	                        const WebUsers::RequestUserInfo& userInfo);
@@ -78,13 +82,18 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void listFiles(std::string baseDir, bool recursive, std::vector<std::string>* pages);
 
   private:
+	std::string PollChannels_(std::set<std::string>& channels, bool resubscibe = true);
 	std::map<int, std::set<std::string>> channelDependencyLookupMap_;
 	std::map<int, long int>              uidPollTimeMap_;
 	int                                  UID_;
 	int                                  alarmNotifyRefreshRate_;
 	std::mutex                           alarmCheckThreadErrorMutex_;
 	std::string                          alarmCheckThreadError_;
-	int									 readOnly_;
+	int                                  readOnly_;
+
+	// cached data to expose to the web user
+	std::vector<std::vector<std::string>>              alarms_;
+	std::chrono::time_point<std::chrono::system_clock> alarms_timestamp_;
 
   public:
 	SlowControlsVInterface* interface_;

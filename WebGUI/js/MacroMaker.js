@@ -139,7 +139,7 @@
 				}, //end handler
 				0, 0, true,//reqParam, progressHandler, callHandlerOnErr, 
 				false,//doNotShowLoadingOverlay,
-				true //targetSupervisor
+				true //targetGatewaySupervisor
 		); //end getAppId request
 		
 	} //end init()

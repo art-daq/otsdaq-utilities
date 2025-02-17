@@ -33,7 +33,7 @@
 			}
 			
 			
-			#userLink, #clearConsoleLink, #downloadIconDiv, #pauseControlsLink {
+			#userLink, #clearConsoleLink, #downloadIconDiv, #pauseControlsLink, #navLatestControlsLink {
 				float: right;
 				margin: 2px 2px 2px 20px;
 			}
@@ -49,6 +49,12 @@
 			}			
 			a:hover {
 				text-decoration: 	underline;
+			}	
+			#consoleHistory a {
+				color: 				inherit;
+			}	
+			#consoleHistory a:hover {
+				font-size: 			14px;
 			}
 						
 			.userTitle {
@@ -103,6 +109,7 @@
 				border-radius: 3px;	
 
 				font-family: 'Inconsolata', monospace;	
+				font-size: 14px;
 			}
 			
 			#consoleHistory {
@@ -138,6 +145,10 @@
 			
 			#consoleHistory::-webkit-scrollbar-corner {
 			    display: none;
+			}
+
+			#consoleHistory .lineNumberEntry {
+				font-size: 8px;
 			}
 
 			/* ***************** USER AREA ******************************************/
@@ -216,6 +227,9 @@
 			
 			.countsTable {
 				font-size: 			12px;
+			}
+			.countsTable a {
+				white-space: 		nowrap;
 			}
 			
 			#advancedContainer {
@@ -380,16 +394,21 @@
 				//initSideBar()
 				//updateFilterBoxes()
 				//updateSideBarCounts()
+				//toggleSideBarLabelFilter(fieldType, el)
 				//toggleSideBar()
 				//handleUserScroll(e)
 				//handleUserInputScroll(e)
 				//handleMouseMoveScroll(mouseEvent) 
 				//clearFilterControls(field)
 				//togglePauseControls()
+				//navToLatest()
 				//clearConsoleMessages()
 				//downloadMessages()
+				//requestOlderMessages()
+				//toggleMessageAnchor()
+				//scrollMessageAnchorIntoView()
 				
-				//showAdvancedControls()
+				//toggleAdvancedControls()
 				//handleAdvancedGetTraceLevels(req)
 				//closeAdvancedControls()
 				//handleAdvancedFilterInput()
@@ -407,6 +426,11 @@
 				//advancedGetSnapshot()
 				//advancedReset()
 				//handleAdvancedGetTriggerStatus(req)
+
+				//handleAdvancedGetCustomCountsAndActions(req)
+				//getAdvamcedUpdates()
+				//advancedAddCustomCountAndAction()
+				//advancedModifyCustomCountAndAction()
 			
 				//createEditableBitMask(val64,label,inExistingEl,labeli)				
 				//handleBitMouseOver(e,label,b,labeli) 
@@ -430,7 +454,7 @@
 			var _displayName;
 			
 			var _consoleHistoryFields = ["chat_entry","chat_author","chat_time"];
-			var _CONSOLE_HISTORY_MAX_LENGTH = 1000000;
+			var _CONSOLE_HISTORY_MAX_LENGTH = 2000000;
 						
 			var _chatUsersTitle = "<div class='userTitle'>Chatting:</div>";
 			var _activeUsersTitle = "<div class='userTitle'>Logged In:</div>";
@@ -439,11 +463,12 @@
 			var _displaySidePane = false;
 			var _scrollWithNewChats = true; //true if following new chats, false if user has scrolled up into history
 			var _userMouseInput = false; //use flag to determine if scrolling is due to user mouse input
-									
+			var _messageAnchorClassname = ""; //used for keeping same message in view when filtering and unfiltering
 			
 			
 			var _lastUpdateCount = 0; //0 is for initial request
 			var _lastUpdateIndex = -1; //-1 is for initial request
+			var _firstUpdateCount = -1; //-1 is for initial request
 			var _consoleMessageFields = [
 									"Level",
 									"Label",
@@ -453,31 +478,35 @@
 									"Time",
 									"File",
 									"Line",
-									"SequenceID",
-									//"Count" //not needed
+									// "SequenceID", //not useful, increments for each source
+									"Custom",
+									"Hostname",
+									"Count" //global incrementing counter across all sources
 								  ];
 			var _MESSAGE_FIELD_LEVEL = _consoleMessageFields.indexOf("Level"),
 					_MESSAGE_FIELD_LABEL = _consoleMessageFields.indexOf("Label"), 
-					//_MESSAGE_FIELD_SOURCE = 2,
 					_MESSAGE_FIELD_MSG = _consoleMessageFields.indexOf("Msg"), 
 					_MESSAGE_FIELD_TIME = _consoleMessageFields.indexOf("Time"), 
 					_MESSAGE_FIELD_FILE = _consoleMessageFields.indexOf("File"), 
-					_MESSAGE_FIELD_ID = _consoleMessageFields.indexOf("SequenceID"), 
+					_MESSAGE_FIELD_COUNT = _consoleMessageFields.indexOf("Count"), 
+					_MESSAGE_FIELD_CUSTOM = _consoleMessageFields.indexOf("Custom"), 
+					_MESSAGE_FIELD_HOSTNAME = _consoleMessageFields.indexOf("Hostname"), 
 					_MESSAGE_FIELD_LINE = _consoleMessageFields.indexOf("Line");
 
 			var _consoleMessageArray; 			
 			var _compactViewCheckbox, _noWrapCheckbox, _hideLineNumbersCheckbox;
 			var _compactStyleEl = 0, _noWrapStyleEl = 0, _hideLineStyleEl = 0,
-					_filterStyleEl = {};
+					_levelStyleEl = 0, _filterStyleEl = {};
 			
 			var _chosenColorScheme = -1; //(start decremented by 1 from choice)
-			var _colorSchemes = [ //background, foreground	
-								 ["#000000","#66ff33"],
-								 ["#cccccc","#333333"],								 
-								 ["transparent",DesktopContent.getDefaultDesktopColor()]
+			var _colorSchemes = [ //background, foreground, highlight	
+								 ["#000000","#66ff33", "#a20000"],
+								 ["#cccccc","#333333", "yellow"],								 
+								 ["transparent", DesktopContent.getDefaultDesktopColor(), DesktopContent.getInvertedColor(DesktopContent.getDefaultDesktopColor())]
 								];
 			
-			var _FIELDS_TO_OBSERVE = ["Level", "Label"];
+			var _FIELDS_TO_OBSERVE = ["Level", "Label", "Custom", "Hostname"];
+			var _FIELDS_TO_OBSERVE_CUSTOM = _FIELDS_TO_OBSERVE.indexOf("Custom");
 			var _observed = {}; 
 			for(var f in _FIELDS_TO_OBSERVE) //accumulate field values and their counts
 			{
@@ -512,17 +541,22 @@
 			var _advancedPreset_INFO = 2;
 			var _advancedPreset_WARN = 3;
 			var _advancedPreset_ERROR = 4;
-			var _advancedPreset_NONE = 5;
-			var _advancedPreset_ALL = 6;
+			var _advancedPreset_TRACE = 5;
+			var _advancedPreset_NONE = 6;
+			var _advancedPreset_ALL = 7;
 			var _advancedMaskPreset = _advancedPreset_MASK;
 			
 			
-			var _traceBIT_STANDARDS = {0: "Error", 1: "Warning", 2: "Info", 3: "Debug"};
-			var _advancedPage_SLOW = 0;
-			var _advancedPage_FAST = 1;
-			var _advancedPage_TRIGGER = 2;
-			var _advancedPage_HOST = 3;
-			var _advancedPage_SNAPSHOT = 4;
+			var _traceBIT_STANDARDS = {0: "Fatal", 1: "Alert", 2: "Critical", 3: "Error",
+				4: "Warning", 5: "Notice", 6: "Info", 7: "Debug", 8: "Trace"};
+
+			var _PAGE_OPTIONS = ["Slow/Cout Mask","Fast/Memory Mask","Trigger Mask","Host Select","Trigger &amp; Snapshot","Custom Counts &amp; Actions"];
+			var _advancedPage_SLOW = _PAGE_OPTIONS.indexOf("Slow/Cout Mask"),
+				_advancedPage_FAST = _PAGE_OPTIONS.indexOf("Fast/Memory Mask"),
+				_advancedPage_TRIGGER = _PAGE_OPTIONS.indexOf("Trigger Mask"),
+				_advancedPage_HOST = _PAGE_OPTIONS.indexOf("Host Select"),
+				_advancedPage_SNAPSHOT = _PAGE_OPTIONS.indexOf("Trigger &amp; Snapshot"),
+				_advancedPage_CUSTOM_COUNTS = _PAGE_OPTIONS.indexOf("Custom Counts &amp; Actions");
 			var _advancedPage = _advancedPage_SLOW; //default to slow view
 			var _advancedLabelSelectSave = []; //remember selections as leaving page
 			var _advancedPopup = undefined;
@@ -536,10 +570,16 @@
 
 			var _advancedFilterDelaySetTimer = 0;
 			var _advancedFilterINIT_VAL = "Wildcard(*) filter here.";
+
+			var _advancedRefreshSetTimer = 0;
 			
 
 			var _codeEditorAppId; //Code Editor Supervisor LID
 			
+
+			var _CONSOLE_START_MESSAGE = "--- Console messages will be displayed below this line. " + 
+					"<a onclick='requestOlderMessages()'>Click here</a> to request older messages. As new messages are received, older messages will scroll up. ---";
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 			
@@ -592,7 +632,7 @@
 							
 				
 			    //init console history
-				_consoleEl.innerHTML = "--- Console messages will be displayed here. Old messages will scroll up as new messages are received. ---";
+				_consoleEl.innerHTML = _CONSOLE_START_MESSAGE;
 				
 				window.onresize = function(e) {redrawConsoleWindow(); /*ignore event and pass undefined to keep same side bar status*/};
 				_historyEl.onmousewheel = handleUserInputScroll;
@@ -643,7 +683,7 @@
 						}, //end handler
 						0, 0, true,//reqParam, progressHandler, callHandlerOnErr, 
 						false,//doNotShowLoadingOverlay,
-						true //targetSupervisor
+						true //targetGatewaySupervisor
 				); //end getAppId request
 				
 			} //end init()
@@ -818,7 +858,7 @@
 			    var w = window.innerWidth;
 			    var h = window.innerHeight;
 			    
-			    if(w < 540) w = 540;
+			    if(w < 570) w = 570;
 			    if(h < 300) h = 300;
 			    
 			    Debug.log("Chat redrawChat to " + w + " - " + h);
@@ -895,6 +935,8 @@
 			         .replace(/%26/g, "&amp;")  			//&
 			         .replace(/%3C/g, "&lt;") 				//<
 			         .replace(/%3E/g, "&gt;")				//>
+			         .replace(/</g, "&lt;") 				//< (double check depending on how data was inserted by user)
+			         .replace(/>/g, "&gt;")					//> (double check depending on how data was inserted by user)
 			         .replace(/%22/g, "&quot;")				//"
 			         .replace(/%27/g, "&#039;")				//'
 			         .replace(/%0A%0D/g, "<br>")			//newline
@@ -929,7 +971,8 @@
 										0, //reqParam
 										0, //progressHandler
 										true /*callHandlerOnErr*/,
-										true /*doNotShowLoadingOverlay*/);
+										//show loading box the first time
+										(_lastUpdateCount > 0) /*doNotShowLoadingOverlay*/);
 			} //end getConsoleUpdates()		
 			
 			//=====================================================================================
@@ -947,8 +990,14 @@
 			//handleRefreshConsole ~
 			// 	handle server response, even on error
 			var _localRefreshTimeout = _REFRESH_INTERVAL;
-			function handleRefreshConsole(req) 
+			function handleRefreshConsole(req, param) 
 			{
+				Debug.logv({_scrollWithNewChats});
+
+				if(param && param == "prepend")
+				{
+					Debug.log("Prepending older messages!");				
+				}
 				
 				if(!req) 
 				{
@@ -966,9 +1015,11 @@
 				}
 
 			    var tmp = DesktopContent.getXMLValue(req,"last_update_index");
-			    if(tmp) _lastUpdateIndex = tmp;
+			    if(tmp) { _lastUpdateIndex = tmp; /*Debug.logv({_lastUpdateIndex});*/ }
 			    tmp = DesktopContent.getXMLValue(req,"last_update_count");
-			    if(tmp) _lastUpdateCount = tmp;
+			    if(tmp) {_lastUpdateCount = tmp; /*Debug.logv({_lastUpdateCount});*/ }
+			    tmp = DesktopContent.getXMLValue(req,"earliest_update_count");
+			    if(tmp && ((tmp|0) < _firstUpdateCount || _firstUpdateCount == -1)) {_firstUpdateCount = tmp|0; /*Debug.logv({_firstUpdateCount});*/ }
 			    
 			    //Debug.log("Chat _lastUpdateIndex now is " + _lastUpdateIndex);	
 			    
@@ -994,20 +1045,25 @@
 						}
 					}
 					
-					updateConsoleHistory();	
+					if(_consoleMessageArray.length)
+						Debug.log("Received",_consoleMessageArray.length,"messages");
+					updateConsoleHistory(param);	
 					updateSideBarCounts(); //must be called after console history update
 					
 					_localRefreshTimeout = 100; //ms, refresh more often if we just got data
 			    }
-			    else
+			    else //set timeout in ms, refresh more often if we just got data
 			    {
 			    	if(_localRefreshTimeout != _REFRESH_INTERVAL)
-			    		_localRefreshTimeout *= 2;
+			    		_localRefreshTimeout *= 4;
 			    	if(_localRefreshTimeout > _REFRESH_INTERVAL)
 			    		_localRefreshTimeout = _REFRESH_INTERVAL;
 			    }
 			    
 			    document.getElementById("consoleConnectionStatus").style.display = "none"; //hide DISCONNECTED
+				
+				if(_consoleUpdateTimer) //only allow one timer for updates at a time
+			    	clearTimeout(_consoleUpdateTimer);
 			    _consoleUpdateTimer = window.setTimeout(getConsoleUpdates,_localRefreshTimeout); //schedule next update	
 			    //console.log("_localRefreshTimeout",_localRefreshTimeout);
 			} //end handleRefreshConsole()
@@ -1023,8 +1079,8 @@
 						"href='Javascript:toggleFilterControls();' " + 
 						"title='Toggle Filter Controls' >Hide Filters</a>";
 				str += "<a id='advancedControlsLink' class='consoleLink' " +
-						"onclick='showAdvancedControls();' " + 
-						"title='Show advanced controls' >Advanced</a>";
+						"onclick='toggleAdvancedControls();' " + 
+						"title='Toggle advanced controls' >Advanced</a>";
 
 				str += "<div id='filterContainer'>";
 				for(var f in _FIELDS_TO_OBSERVE) //create filter divs for each field's multiselect box
@@ -1056,32 +1112,125 @@
 			{
 				var el = document.getElementById('consoleCounts');
 
+				//for each field, show values as Bold and Underlined if selected for filter
+				
 				var str = "";
 				var fieldStr, countStr;
 				for(var f in _FIELDS_TO_OBSERVE) //show accumulated field values and their counts
 				{
-					str += "<br><u>" + _FIELDS_TO_OBSERVE[f] +
-							" counts:</u><br>";
+					if(f == _FIELDS_TO_OBSERVE_CUSTOM) //add special link to advanced managing of custom counts
+						str += "<br><u>" + 
+								"<a onclick='_advancedPage=" + _advancedPage_CUSTOM_COUNTS +
+								"; toggleAdvancedControls();' " +
+								" title='Click to manage custom counts and actions'>" +
+								_FIELDS_TO_OBSERVE[f] +
+								" counts:</a></u><br>";
+					else
+						str += "<br><u>" + _FIELDS_TO_OBSERVE[f] +
+								" counts:</u><br>";
+							
+					var sel = document.getElementById(_FIELDS_TO_OBSERVE[f] + 'sFilterSelect');
+					var selects = MultiSelectBox.mySelects_["selbox-" + _FIELDS_TO_OBSERVE[f] + "sFilter"];
+
 					fieldStr = ""; countStr = "";
-					for(var i in _observed[_FIELDS_TO_OBSERVE[f]])		
+					
+					var labelKeys = Object.keys(_observed[_FIELDS_TO_OBSERVE[f]]);
+					var labelKey; //modify for Custom field
+					var anySelected = (MultiSelectBox.getSelectedCount(sel) > 0);
+					for(var i=0; i < labelKeys.length; ++i)
 					{
-						fieldStr += i + " <br>";
-						countStr += _observed[_FIELDS_TO_OBSERVE[f]][i] + "<br>";
-						//						str += "<tr><td>";
-						//						str += i + ": ";
-						//						str += "</td><td>";
-						//						str += _observed[_FIELDS_TO_OBSERVE[f]][i];
-						//						str += "</td></tr>";
+						if(labelKeys[i].length == 0 || labelKeys[i][0] != '_')
+							labelKey = labelKeys[i]; //for Level, Label
+						else //is Custom
+						{
+							if(labelKeys[i].length == 1)
+								labelKey = "< Untriggered >";
+							else //decode the custom class name for display
+							{
+								labelKey = labelKeys[i].substr(1).replaceAll("_-_","%");
+								labelKey = decodeURIComponent(labelKey);
+							}
+						}
+
+						eli = MultiSelectBox.getSelectionElementByIndex(sel,i);
+						var selForFilter = false;
+						if(selects && selects.length > i && selects[i] && 
+								eli.innerText == labelKey)// labelKeys[i])
+							selForFilter = true;
+
+						if(selForFilter) //bold and underline
+							fieldStr += "<a style='text-decoration:underline; font-weight:bold;'";
+						else if(anySelected) //fade if unselected
+							fieldStr += "<a style='font-weight:normal; color:rgb(99 148 197);'";
+						else
+							fieldStr += "<a style='font-weight:normal;'";
+
+						fieldStr += " onclick='toggleSideBarLabelFilter(\"" + 
+								_FIELDS_TO_OBSERVE[f] + "\",this);'>" + 
+								labelKey + 
+								//labelKeys[i] + 
+								"</a> <br>";
+						countStr += _observed[ _FIELDS_TO_OBSERVE[f] ][ labelKeys[i] ] + "<br>";
 					}
+
+					// for(var i in _observed[ _FIELDS_TO_OBSERVE[f] ])		
+					// {
+					// 	fieldStr += "<a style='text-decoration:none;' onclick='toggleSideBarLabelFilter(\"" + 
+					// 			_FIELDS_TO_OBSERVE[f] + "\",this);'>" + 
+					// 			i + "</a> <br>";
+					// 	countStr += _observed[_FIELDS_TO_OBSERVE[f]][i] + "<br>";
+					// }
 
 					str += "<table class='countsTable' >";
 					str += "<tr><td style='width:50px;overflow-x:auto'>" + countStr + 
-							"</td><td style='overflow-x:auto'>" + 
-							fieldStr + "</td></tr>";
+							"</td><td style='overflow-x:auto'>" + 							
+							fieldStr + 
+							"</td></tr>";
 					str += "</table>"			
 				}			
 				el.innerHTML = str;
 			} //end updateSideBarCounts()
+			
+			//=====================================================================================
+			//toggleSideBarLabelFilter ~
+			// input el is side bar count field 
+			function toggleSideBarLabelFilter(fieldType, el) 
+			{
+				var value = el.innerText;
+				Debug.log("toggleSideBarLabelFilter()", fieldType, value);
+
+				var sel = document.getElementById(fieldType + 'sFilterSelect');
+	            
+				var selects = MultiSelectBox.mySelects_["selbox-" + fieldType + "sFilter"];
+				
+				//if all not selected, then select 
+				//if some selected, then toggle select
+
+				var eli;
+				for(var s in selects)
+				{
+					eli = MultiSelectBox.getSelectionElementByIndex(sel,s);
+					// selects[s] = 0;
+					Debug.log("Value ", s, eli.innerText, selects[s]);
+					if(value == eli.innerText)
+					{
+						selects[s] = selects[s]?0:1;
+						Debug.log("Value ", s, eli.innerText, selects[s]);
+					}
+				}
+
+				// selects[value] = selects[value]?0:1;
+				MultiSelectBox.initMySelectBoxes();	  //repaint
+
+				//update filter
+				if(eli)
+					filterSelectionHandler(eli);
+
+				updateSideBarCounts();
+
+				scrollMessageAnchorIntoView();									
+
+			} //end toggleSideBarLabelFilter()
 			
 			//=====================================================================================
 			//updateFilterBoxes ~
@@ -1089,10 +1238,10 @@
 			{
 				Debug.log("Draw filter controls");
 				
-				//do nothing if not currently shown
-				if(!_displaySidePane || !_showFilterControls) return;
+				// //do nothing if not currently shown
+				// if(!_displaySidePane || !_showFilterControls) return;
 			
-				Debug.log("Draw filter controls true");
+				// Debug.log("Draw filter controls true");
 
 				//setup filter box for each field observed
 				var el;
@@ -1104,7 +1253,20 @@
 					el = document.getElementById(_FIELDS_TO_OBSERVE[f] + 'sFilterSelect');
 					keys = [];
 					for(var label in _observed[_FIELDS_TO_OBSERVE[f]])
+					{
+						//modify label for Custom field
+						if(label.length > 0 && label[0] == '_') //is Custom
+						{
+							if(label.length == 1)
+							label = "< Untriggered >";
+							else //decode the custom class name for display
+							{
+								label = label.substr(1).replaceAll("_-_","%");
+								label = decodeURIComponent(label);
+							}
+						}
 						keys.push(label);
+					}
 
 					el.style.display = "block";
 					el.style.width = (_usersEl.offsetWidth - 2 - 17) + "px"; //-17 for scrollbar
@@ -1158,7 +1320,8 @@
 				for(i=0;i<selects.length;++i)
 					if(!selects[i])
 					{
-						Debug.log("Hiding " + tmpKeys[i]);
+						Debug.log("Hiding class", tmpKeys[i]);
+						
 						tmpKeys[i] = tmpKeys[i].replace(".","\\.");
 						css += "." + tmpKeys[i] + "_" + 
 								field + "Entry " +
@@ -1205,7 +1368,8 @@
 			//=====================================================================================
 			//updateConsoleHistory ~
 			// 	add console history from _consoleMessageArray
-			function updateConsoleHistory() 
+			//	param can be "prepend" to prepend older messages to the top of the history
+			function updateConsoleHistory(param) 
 			{				
 				if(!_consoleMessageArray || //if _consoleMessageArray incomplete, do nothing (should never happpen?)
 						_consoleMessageArray.length != _consoleMessageFields.length) return;
@@ -1227,29 +1391,57 @@
 				{		 			
 					tmp.Label = _consoleMessageArray[_MESSAGE_FIELD_LABEL][i].getAttribute('value');
 					tmp.Level = _consoleMessageArray[_MESSAGE_FIELD_LEVEL][i].getAttribute('value');
-					tmp.ID = _consoleMessageArray[_MESSAGE_FIELD_ID][i].getAttribute('value');
+					tmp.Custom = _consoleMessageArray[_MESSAGE_FIELD_CUSTOM][i].getAttribute('value');
+					tmp.Hostname = _consoleMessageArray[_MESSAGE_FIELD_HOSTNAME][i].getAttribute('value');
+					tmp.Count = _consoleMessageArray[_MESSAGE_FIELD_COUNT][i].getAttribute('value');
 					
 					firstMsg = _consoleMessageArray[_MESSAGE_FIELD_FILE][i].getAttribute('value') +
-							"[" + _consoleMessageArray[_MESSAGE_FIELD_LINE][i].getAttribute('value') + "]\t";
+							":" + _consoleMessageArray[_MESSAGE_FIELD_LINE][i].getAttribute('value');// + "\t";
 					
 					secondMsg = _consoleMessageArray[_MESSAGE_FIELD_MSG][i].getAttribute('value');
 										 
 					firstMsg = convertForClient(firstMsg);
 					secondMsg = convertForClient(secondMsg);
+
+					//Note: A valid class name should start with an underscore (_), a hyphen (-) or a letter (a-z)/(A-Z) which is followed by any numbers, hyphens, underscores, letters.
+					//so for custom filter span, must clean and place leading underscore for leading numbers
+					// It escapes all characters except: A–Z a–z 0–9 - _ . ! ~ * ' ( )
+					tmp.Custom = encodeURIComponent(tmp.Custom). //so add addtional escaping
+									replace(/[.!~*'()]/g,
+        								(c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+									);
+					//replace all % with _
+					tmp.Custom = "_" + tmp.Custom.replaceAll("%","_-_");
+					//Note: decodeURIComponent() decodes all escape sequences, including those that are not created by encodeURIComponent, like -.!~*'().
 					
 					//important to only have one /div> per entry for truncate
 					str += "<div class='consoleEntry consoleEntryId-" +
-						tmp.ID + "' style='color:" + 
-						getColorForLevel(tmp.Level) + "'>" +
+						tmp.Count + "' onmouseup='toggleMessageAnchor(this);' " + //" style='color:" + 
+						//getColorForLevel(tmp.Level) +  //CHANGED to css based
+						"'>" +
 						"<span class='" + tmp.Label + "_LabelEntry'>" + 
-						"<span class='" + tmp.Level + "_LevelEntry'>" + //open label level span (for filtering)
+						"<span class='" + tmp.Level + "_LevelEntry'>" + 
+						"<span class='" + tmp.Custom + "_CustomEntry'>" + //open label level custom span (for filtering)
 						"<span class='elaboratedEntry'><b>" +
 						tmp.Level + " " +
 						"(" + formatTime(_consoleMessageArray[_MESSAGE_FIELD_TIME][i].getAttribute('value')) + ") ";					 
 					str += tmp.Label + ":</b> " +
 							"</span><span class='lineNumberEntry'>" +
-						firstMsg + "</span>" + secondMsg + 
-						"</span></span>" + //close label level span (for filtering)
+						DesktopContent.htmlOpen("a", //start macro module table
+								{
+									"title":"Open file in a new browser tab: \n" + firstMsg,
+									"style":"color:inherit;",
+									"onclick":"DesktopContent.openNewBrowserTab(" +
+									"\"Code Editor\",undefined /*subname undefined for LID lookup*/," + 
+									"\"?" +
+									"startFilePrimary=" +
+									firstMsg + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
+								}, 
+								firstMsg,
+								true /*doCloseTag*/) + "\t" +
+						// firstMsg + 
+						"</span>" + secondMsg + 
+						"</span></span></span>" + //close label level span (for filtering)
 						"</div>"; //important to only have one /div> per entry for truncate
 						
 					//aggragate stats for each observed field
@@ -1284,7 +1476,11 @@
 					// Debug.logv({startIndex});
 				}
 							
-				str = _consoleEl.innerHTML + str;	
+				if(param == "prepend")
+					str = _CONSOLE_START_MESSAGE + str + _consoleEl.innerHTML.substr(_CONSOLE_START_MESSAGE.length);	
+				else //normal append
+					str = _consoleEl.innerHTML + str;
+
 				var lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;	
 				if(lendiff > 0) //truncate chat history at entry div start
 					_consoleEl.innerHTML = str.substr(str.indexOf("/div>",lendiff) + 5);
@@ -1305,19 +1501,36 @@
 			
 			//=====================================================================================
 			//clearConsoleMessages ~
+			//	clear console messages and counts
 			function clearConsoleMessages() 
 			{
 				_consoleEl.innerHTML = "";
+
+				for(var f in _FIELDS_TO_OBSERVE) //for each field type			
+				{					
+					var labelKeys = Object.keys(_observed[_FIELDS_TO_OBSERVE[f]]);
+					for(var i=0; i < labelKeys.length; ++i) //for each label within field type
+					{
+						_observed[ _FIELDS_TO_OBSERVE[f] ][ labelKeys[i] ] = 0; //reset count
+					}
+				}
+
+				updateSideBarCounts();
+
 			} //end clearConsoleMessages()			
 		
 			//=====================================================================================
 			//formatTime ~
+			var monthArr_ = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 			function formatTime(t) 
 			{
 				var date = new Date(t * 1000);
 				var mm = date.getMinutes() < 10?"0"+date.getMinutes():date.getMinutes();
-				var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();				
-				return date.getHours() + ":" + mm + ":" + ss;
+				var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();		
+				var m = monthArr_[date.getMonth()]; //+ 1).format("02d");;
+				var d = ('0' + date.getDate()).slice(-2); //zero pad day of month
+				var y = date.getFullYear() - 2000;
+				return d + m + y + "." + date.getHours() + ":" + mm + ":" + ss;
 			} //end formatTime()
 			
 			//=====================================================================================
@@ -1343,7 +1556,7 @@
 					if(lvl == "Warning")
 						return "rgb(214, 128, 46)";
 					if(lvl == "Info")
-						return "rgb(50, 110, 255)";
+						return "rgb(50, 0, 255)";
 					
 					return "auto";	
 				case 2: //transparent blue
@@ -1352,7 +1565,7 @@
 					if(lvl == "Warning")
 						return "rgb(214, 128, 46)";
 					if(lvl == "Info")
-						return "rgb(50, 110, 255)";
+						return "rgb(29 137 0)";//"rgb(50, 110, 255)";
 					
 					return "auto";	
 				}	
@@ -1422,7 +1635,44 @@
 				if(_chosenColorScheme < 0) _chosenColorScheme = 0; //mod allows negative.. prevent
 
 			    _historyContainerEl.style.backgroundColor = _colorSchemes[_chosenColorScheme][0];
-			    _historyContainerEl.style.color = _colorSchemes[_chosenColorScheme][1];				
+			    _historyContainerEl.style.color = _colorSchemes[_chosenColorScheme][1];	
+				
+				//change existing anchor highlight color
+				var els = document.getElementsByClassName(_messageAnchorClassname);
+				if (els.length) els[0].style.background = _colorSchemes[_chosenColorScheme][2];
+							
+				
+				//handle css mod for Level coloring
+
+				//remove _noWrapStyleEl
+				if(_levelStyleEl && _levelStyleEl.parentNode)
+				{
+					_levelStyleEl.parentNode.removeChild(_levelStyleEl);
+					_levelStyleEl = 0;
+				}
+
+				//for each custom level color
+				var lvls = ["Error", "Warning", "Info"];
+				var css = "";
+				for(var l in lvls)
+				{
+					//if compact, add hide style for class 'elaboratedEntry'
+					css += "." + lvls[l] + "_LevelEntry " +
+							"{" +					
+							"color: " + getColorForLevel(lvls[l]) + ";" +
+							"}\n\n";
+				}
+				//add style element to HEAD tag
+				_levelStyleEl = document.createElement('style');
+
+				if (_levelStyleEl.styleSheet) {
+					_levelStyleEl.styleSheet.cssText = css;
+				} else {
+					_levelStyleEl.appendChild(document.createTextNode(css));
+				}
+
+				document.getElementsByTagName('head')[0].appendChild(_levelStyleEl);				
+
 			} //end setupColorScheme()
 			
 			//=====================================================================================
@@ -1460,6 +1710,15 @@
 			} //end togglePauseControls()
 
 			//=====================================================================================
+			//navToLatest ~
+			function navToLatest() 
+			{			
+				Debug.log("navToLatest()");
+				_historyEl.scrollTop = _historyEl.scrollHeight;
+				_scrollWithNewChats = true;
+			} //end navToLatest()
+
+			//=====================================================================================
 			//handleUserScroll ~
 			//	identify when user wants to keep up with live chats
 			function handleUserScroll(e) 
@@ -1470,6 +1729,7 @@
 					DesktopContent.handleScroll(e);
 					_userMouseInput = false; //clear
 					Debug.logv({_scrollWithNewChats});
+					//Debug.log("scroll pos", _historyEl.scrollTop, _historyEl.scrollHeight, _historyEl.offsetHeight);
 				}
 			} //end handleUserScroll()
 			
@@ -1478,6 +1738,7 @@
 			//	identify when user used mouse and wants to keep up with live chats
 			function handleUserInputScroll(mouseEvent) 
 			{
+				//Debug.log("scroll pos", _historyEl.scrollTop, _historyEl.scrollHeight, _historyEl.offsetHeight);
 				_userMouseInput = true;
 				
 				DesktopContent.handleScroll(mouseEvent);
@@ -1495,7 +1756,7 @@
 			//=====================================================================================
 			function downloadMessages() 
 			{				
-				console.log("downloading messages...");
+				Debug.log("downloading messages...");
 				
 				//create CSV data string from html table
 				var dataStr = "data:text/txt;charset=utf-8,";
@@ -1519,7 +1780,72 @@
 			} //end downloadMessages()
 
 			//=====================================================================================
-			function showAdvancedControls() 
+			function requestOlderMessages() 
+			{				
+				Debug.log("requesting older messages...",_firstUpdateCount);
+				
+				if(_firstUpdateCount == 0 || _firstUpdateCount == -1)
+				{					
+					Debug.warn("You currently have all existing messages.");
+					return;
+				}
+
+			    if(_consoleUpdateTimer) //only allow one timer for updates at a time
+			    	clearTimeout(_consoleUpdateTimer);	
+
+				DesktopContent.XMLHttpRequest("Request?RequestType=PrependHistoricMessages", 
+										"earlyCount="+_firstUpdateCount,
+										handleRefreshConsole,
+										"prepend", //reqParam
+										0, //progressHandler
+										true /*callHandlerOnErr*/,
+										false /*doNotShowLoadingOverlay*/);
+			} //end requestOlderMessages()
+
+			//=====================================================================================
+			function toggleMessageAnchor(el) 
+			{				
+				Debug.log("toggleMessageAnchor...",el.className);
+
+				_scrollWithNewChats = false;
+
+				//clear existing anchor color
+				var els = document.getElementsByClassName(_messageAnchorClassname);
+				if (els.length) els[0].style.background = "transparent"; //return to default
+
+				if(_messageAnchorClassname == el.className) //then just toggle off
+				{
+					_messageAnchorClassname = "";
+					return;
+				}
+				//else new anchor
+				
+				_messageAnchorClassname = el.className;
+				el.style.background = _colorSchemes[_chosenColorScheme][2];
+			} //end toggleMessageAnchor()
+			//=====================================================================================
+			function scrollMessageAnchorIntoView() 
+			{				
+				if(!_messageAnchorClassname || _messageAnchorClassname == "")
+				{
+					if(_scrollWithNewChats)
+						_historyEl.scrollTop = _historyEl.scrollHeight;
+					 return;
+				}
+				_scrollWithNewChats = false; //force to follow anchor
+
+				Debug.log("scrollMessageAnchorIntoView...",_messageAnchorClassname);
+				// Select the element by class name
+				var els = document.getElementsByClassName(_messageAnchorClassname);
+
+				// Scroll to the element
+				if (els.length)
+					els[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+				
+			} //end scrollMessageAnchorIntoView()
+
+			//=====================================================================================
+			function toggleAdvancedControls() 
 			{	
 				if(0) //while debugging
 				{
@@ -1527,7 +1853,13 @@
 					clearTimeout(_consoleUpdateTimer);
 					_consoleUpdateTimer = 0;
 				}
-				Debug.log("showAdvancedControls()");
+				Debug.log("toggleAdvancedControls()");
+
+				if(_advancedContainerEl.style.display == "block") //then close
+				{
+					closeAdvancedControls(); 
+					return;
+				}
 				
 				_advancedContainerEl.style.display = "block";
 				
@@ -1538,7 +1870,7 @@
 
 				DesktopContent.tooltip("Advanced Controls",
 						"Welcome to the Advanced Contols panel. Here, you can view and edit the TRACE settings for each individual TRACE label and host in " +
-						"your system. <a target='_blank' href='https://cdcvs.fnal.gov/redmine/projects/trace'>TRACE</a> is the tool that <i>ots</i> uses to printout, save, and manage messages with consideration for level/severity." +
+						"your system. <a target='_blank' href='https://github.com/art-daq/trace/wiki'>TRACE</a> is the tool that <i>ots</i> uses to printout, save, and manage messages with consideration for level/severity." +
 						"\n\n" +
 						"Messages generated by lines of source code are grouped by TRACE <b>labels</b> or <b>names</b>, and have a <b>severity</b> or <b>level</b> associated with them. " +
 						"TRACE then provides a mechanism for enabling and disabling messages from a particular label and severity using a 64-bit mask." +
@@ -1553,7 +1885,7 @@
 						" button. All TRACE labels and their hosts that you have selected, by checking their associated checkbox, will have the specified bitmask" +
 						" applied. You can also use left- and right-click to draw a custom mask directly to a label by clicking the bitmask in the label table." +						
 						""); 
-			} //end showAdvancedControls()
+			} //end toggleAdvancedControls()
 
 			//=====================================================================================
 			function handleAdvancedGetTraceLevels(req) 
@@ -1630,7 +1962,7 @@
 					if(!_traceLevels[fieldTraceArr[0]]) 
 						_traceLevels[fieldTraceArr[0]] = {};
 					
-					for(var j=1;j<fieldTraceArr.length;j+=4)
+					for(var j=1;j<fieldTraceArr.length;j+=2)
 					{
 						var maskVals = fieldTraceArr[j+1].split(':');
 						if(maskVals[0] != 'M' || 
@@ -1639,6 +1971,11 @@
 						{
 							Debug.err("Corrupt TRACE levels received during get operation! Notify admins.");
 							return;
+						}
+
+						if(fieldTraceArr[j+0].indexOf("Core") == 0)
+						{
+							Debug.log("Found?",fieldTraceArr[j+0]);
 						}
 						
 						_traceLevels[fieldTraceArr[0]][fieldTraceArr[j+0]] = {
@@ -1673,9 +2010,7 @@
 						
 			//=====================================================================================
 			//drawAdvancedControls ~
-			//	page is select index 
-			var _PAGE_OPTIONS = ["Slow/Cout Mask","Fast/Memory Mask","Trigger Mask","Host Select","Trigger &amp; Snapshot"];
-							
+			//	page is select index 							
 			function drawAdvancedControls(page) 
 			{					
 				Debug.log("drawAdvancedControls() page=",page);
@@ -1735,10 +2070,180 @@
 					localCreateHostSelectPage();
 				else if(_advancedPage == _advancedPage_SNAPSHOT)					
 					localCreateSnapshotPage();
-				else
+				else if(_advancedPage == _advancedPage_SLOW || 
+						_advancedPage == _advancedPage_FAST || 
+						_advancedPage == _advancedPage_TRIGGER)
 					localCreateMaskPage();
+				else if(_advancedPage == _advancedPage_CUSTOM_COUNTS)					
+					localCreateCustomCountsPage();
+				else	
+					Debug.err("Unknown advanced page mode " +
+						_advancedPage + "! Notify admins.");
 
 				return;
+				
+
+				//=======================
+				function localCreateCustomCountsPage()
+				{
+					Debug.log("localCreateCustomCountsPage()",_advancedPage);
+										
+					//Page shows prioritized list of custom counts and their associated actions
+					//	- shows server-side count for each
+					//	- shows buttom for inc/dec priority, or * for typing priority position
+					//	- shows dropdown for changing action
+					//
+					//At top of page, + for adding new custom trigger needle (to end of list)
+
+					//Allow delete or change action of all selected
+					
+
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
+							" style='margin-left:-9px'>";
+					
+					str += " View: ";
+					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
+					
+					for(var i=0;i<_PAGE_OPTIONS.length;++i)
+						str += "<option " + 
+						(((!i && !page) || (page == i))?"selected":"") +
+						">" + _PAGE_OPTIONS[i] + "</option>";
+
+					str += "</select>";
+
+					str += DesktopContent.htmlClearDiv();
+
+
+					//New Custom Count controls ---------------------
+					str += DesktopContent.htmlOpen("button",
+							{
+									"style" : 	"margin: 4px 10px 3px -2px;", 
+									"title" : 	"Click to add a new custom count &amp; action search string to the specified priority (1 is highest) position in the list.",
+									"onclick":	"advancedAddCustomCountAndAction();",
+							},"Add",true);
+
+					str += "New Custom Search String: ";
+					str += DesktopContent.htmlOpen("input",
+							{
+									"id" 	: 	"ac_customCountEntry",
+									"style" : 	"margin: 5px 6px 3px -2px;",	
+									// "onchange":	"_traceHostSelect.mode = this.selectedIndex;"
+							});
+					str += "</input>";
+
+					str += "at priority: "; 
+					str += DesktopContent.htmlOpen("input",
+							{
+									"id" 	: 	"ac_customPriorityEntry",
+									"value" :   "1",
+									"style" : 	"margin: 4px 10px 3px -2px; width: 50px;", 
+									// "onchange":	"_traceHostSelect.mode = this.selectedIndex;"
+							});
+					str += "</input>";
+					
+					var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+					str += "with action: "; 
+					str += DesktopContent.htmlOpen("select",
+							{
+									"class" : 	"ac_menuLink",
+									"id"	:	"ac_customActionSelect",
+									"style" : 	"margin: 5px 6px 3px -2px;",									
+									// "onchange":	"advancedPresetSelect(this.selectedIndex);"
+							});						
+					for(var i=0;i<options.length;++i)
+						str += "<option " + 
+							((i==0)?"selected":"") +
+							">" + options[i] + "</option>";
+					str += "</select>"; //end set type select
+
+					str += DesktopContent.htmlClearDiv();
+
+
+					//Modify Custom Count controls ---------------------
+
+					str += DesktopContent.htmlOpen("button",
+							{
+									"style" : 	"margin: 4px 10px 3px -2px; float:left;", 
+									"title" : 	"Click to add a new custom count &amp; action search string to the specified priority (1 is highest) position in the list.",
+									"onclick":	"advancedModifyCustomCountAndAction();",
+							},"Set",true);
+
+					var options = ["Priority", "Action", "Search String", "Deletion"];
+					str += DesktopContent.htmlOpen("select",
+							{
+									"class" : 	"ac_menuLink",
+									"id"	:	"ac_modifyCustomButtonDoSelect",
+									"style" : 	"margin: 5px 6px 3px -2px; float:left;",									
+									"onchange":	"advancedPresetSelect(this.value);"
+							});						
+					for(var i=0;i<options.length;++i)
+						str += "<option " + 
+							((i==0)?"selected":"") +
+							">" + options[i] + "</option>";
+					str += "</select>"; //end set type select
+					
+					str += DesktopContent.htmlOpen("div",
+							{
+									"id"	:	"ac_modifyCustomButtonDoSelectDiv",
+									"style" : 	"margin: 3px 6px 3px -2px; float:left;",	
+							});
+					str += DesktopContent.htmlOpen("input",
+							{
+									"id"	: 	"ac_modifyCustomPriorityEntry",
+									"value"	: 	"1",
+									"style" : 	"width: 50px;", 
+									// "onchange":	"_traceHostSelect.mode = this.selectedIndex;"
+							});
+					str += "</input>";
+					str += "</div>";
+										
+					str += DesktopContent.htmlOpen("div",
+							{
+									"id"	: 	"ac_selectedCaption",
+									"style" : 	"margin: 8px 0 0 -2px;" +
+										"white-space: nowrap; float: left;", //+
+										//"width: calc(100% - 163px); overflow: hidden;", 
+									"title" : 	"Click a label to include, and right-click to exclued from the selected labels.",
+							},"for no checkboxes selected.",true);
+
+					str += DesktopContent.htmlClearDiv();
+
+					str += "<div style='margin:11px 0 0 0;'>Priority (1 is highest) Custom Counts &amp; Actions: </div>";
+					str += "</div>"; //end advancedControlsMenu tag
+					
+					str += "<div id='advancedControlsTable'>"; //scroll headers horizontally
+					str += "<div id='advancedControlsTableHeader'>"; //scroll rows vertically
+
+					str += "</div>"; //end advancedControlsTable tag
+
+					str += DesktopContent.htmlClearDiv();
+					str += "<div id='advancedControlsTableRows' oncontextmenu='_advancedContextMenuBlock=true;'>"; //scroll rows vertically
+					str += "</div>"; //end advancedControlsTable tag
+
+					str += "</div>";
+
+					_advancedEl.innerHTML = str;
+
+					//now add columns a la... applyAdvancedControlsFilter();
+
+					// var COL_NAMES = ["Select","Needle","Count","Action"];
+
+					
+					// var isFirst = true;
+					str = "";
+					str += "<table>";
+					str += "<tr class='ac_row'><td width='100%'>Loading...</td></tr>";
+					str += "</table>";
+
+					var el = document.getElementById("advancedControlsTableRows");
+					el.innerHTML = str;
+															
+					DesktopContent.XMLHttpRequest(
+							"Request?RequestType=GetCustomCountsAndActions",
+							"",
+							handleAdvancedGetCustomCountsAndActions); //end get trace levels request
+						
+				} //end localCreateCustomCountsPage()
 
 				//=======================
 				function localCreateHostSelectPage()
@@ -2106,6 +2611,7 @@
 					str += "<option>Info Preset</option>";
 					str += "<option>Warning Preset</option>";
 					str += "<option>Error Preset</option>";
+					str += "<option>Trace Preset</option>";
 					str += "<option>None Preset</option>";
 					str += "<option>All Preset</option>";
 					str += "</select>"; //end set type select
@@ -2117,7 +2623,7 @@
 										"white-space: nowrap; float: left;" +
 										"width: calc(100% - 163px); overflow: hidden;", 
 									"title" : 	"Click a label to include, and right-click to exclued from the selected labels.",
-							},"No checkboxes selected.",true);
+							},"for no checkboxes selected.",true);
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2306,7 +2812,7 @@
 									var val64 = _traceLevels[hostPresence[0]][label].T;
 								else
 								{
-									Debug.err("Unknown page mode " +
+									Debug.err("Unknown advanced page mode " +
 											_advancedPage + "! Notify admins.");
 									return;
 								}
@@ -2553,7 +3059,9 @@
 				var count = 0;
 				var name;
 				for(var r=0;r<rows.length;++r)
-					if(rows[r].children[0].children[0].checked) 
+					if(rows[r].children.length && 
+						rows[r].children[0].children.length && 
+						rows[r].children[0].children[0].checked) 
 					{
 						++count;
 						name = rows[r].children[1].innerText;
@@ -2571,13 +3079,13 @@
 				
 				var str = "";
 				if(count == 0)
-					str = "No checkboxes selected.";
+					str = "for no checkboxes selected.";
 				else if(count == 1)
-					str = "for " + name + ".";
+					str = "for &apos;" + name + ".&apos;";
 				else if(count == Object.keys(_traceLabelPresence).length)
-					str = "for ALL labels!";
+					str = "for ALL selected!";
 				else 
-					str = "for " + count + " labels.";
+					str = "for " + count + " selected.";
 				document.getElementById("ac_selectedCaption").innerHTML = str; 
 			} //end advancedUpdateSelectedCheckboxesText()
 			
@@ -2633,6 +3141,62 @@
 			function advancedPresetSelect(preset)
 			{
 				Debug.log("advancedPresetSelect",preset);
+
+				if(_advancedPage == _advancedPage_CUSTOM_COUNTS)	
+				{
+					//change the input field based on the ButtonDo
+					var el = document.getElementById("ac_modifyCustomButtonDoSelectDiv");
+					var str = "";
+					if(preset == "Priority")
+					{
+						str += DesktopContent.htmlOpen("input",
+								{
+										"id" 	: 	"ac_modifyCustomPriorityEntry",
+										"value"	: 	"1",
+										"style" : 	"width: 50px;", 
+										// "onchange":	"_traceHostSelect.mode = this.selectedIndex;"
+								});
+						str += "</input>";
+					}
+					else if(preset == "Action")		
+					{			
+						var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+						str += DesktopContent.htmlOpen("select",
+								{
+										"class" : 	"ac_menuLink",
+										"id"	:	"ac_modifyCustomActionSelect",
+										"style" : 	"margin-top: 2px;",									
+										// "onchange":	"advancedPresetSelect(this.selectedIndex);"
+								});						
+						for(var i=0;i<options.length;++i)
+							str += "<option " + 
+								((i==0)?"selected":"") +
+								">" + options[i] + "</option>";
+						str += "</select>"; //end set type select
+					}
+					else if(preset == "Search String")					
+					{
+						str += DesktopContent.htmlOpen("input",
+								{
+										"id" 	: 	"ac_modifyCustomCountEntry",
+										// "style" : 	"margin: 5px 6px 3px -2px;",	
+										// "onchange":	"_traceHostSelect.mode = this.selectedIndex;"
+								});
+						str += "</input>";
+					}
+					else if(preset == "Deletion")					
+						str += "";
+					else
+					{
+						Debug.err("Impossible! Illegal button action '" + preset + 
+							"' selected. Notify admins.");
+						return;
+					}
+
+					el.innerHTML = str;
+					return;
+				} //end Custom Count page handling
+
 				_advancedMaskPreset = preset|0;
 				document.getElementById("ac_maskPresetSelect").selectedIndex = _advancedMaskPreset;
 				
@@ -2648,13 +3212,15 @@
 				//setup _advancedEditBitMask based on preset
 				var val64 = [_advancedEditBitMask[0] /*msb*/,_advancedEditBitMask[1] /*lsb*/];
 				if(_advancedMaskPreset == _advancedPreset_DEBUG)
-					val64 = [0,0xF];
+					val64 = [0,0xFF];
 				else if(_advancedMaskPreset == _advancedPreset_INFO)
-					val64 = [0,0x7];
+					val64 = [0,0x7F];
 				else if(_advancedMaskPreset == _advancedPreset_WARN)
-					val64 = [0,0x3];
+					val64 = [0,0x1F];
 				else if(_advancedMaskPreset == _advancedPreset_ERROR)
-					val64 = [0,0x1];
+					val64 = [0,0xF];
+				else if(_advancedMaskPreset == _advancedPreset_TRACE)
+					val64 = [0,0x1FF];
 				else if(_advancedMaskPreset == _advancedPreset_NONE)
 					val64 = [0,0];
 				else if(_advancedMaskPreset == _advancedPreset_ALL)
@@ -2844,10 +3410,320 @@
 			//=====================================================================================
 			function handleAdvancedGetTriggerStatus(req)
 			{
-				Debug.log("handleAdvancedGetTriggerStatus");
+				Debug.log("handleAdvancedGetTriggerStatus TODO");
 
 			} //end handleAdvancedGetTriggerStatus()
 			
+			//=====================================================================================
+			// if param == "onlyCounts" then only update counts
+			var ac_cc_COL_NAMES = ["Select","Needle","Count","Action","Priority"];
+			var ac_cc_COL_NAMES_Select = ac_cc_COL_NAMES.indexOf("Select"),
+				ac_cc_COL_NAMES_Priority = ac_cc_COL_NAMES.indexOf("Priority"), 
+				ac_cc_COL_NAMES_Needle = ac_cc_COL_NAMES.indexOf("Needle"), 
+				ac_cc_COL_NAMES_Count = ac_cc_COL_NAMES.indexOf("Count"), 
+				ac_cc_COL_NAMES_Action = ac_cc_COL_NAMES.indexOf("Action"); 
+			var ac_cc_COL_DISPLAY_NAMES = [										 
+					DesktopContent.htmlOpen("input",
+							{
+									"type"	: 	"checkbox",
+									"class" : 	"ac_checkboxSelect",
+									"onclick" : "advancedToggleAllCheckboxes(this.checked);", 
+									"title" : 	"Toggle selecting/deselecting all custom needles in the list to delete or change action.",
+							},"",true),
+							"Search String","Server-side Count","Action",
+							"Priority"];
+			function handleAdvancedGetCustomCountsAndActions(req, param, errStr)
+			{					
+				if(_advancedRefreshSetTimer) //only allow one timer for advanced updates at a time
+			    	clearTimeout(_advancedRefreshSetTimer);
+
+				if(!errStr) 
+					errStr = "";
+				var err = DesktopContent.getXMLValue(req,"Error");
+				if(err && err != "")
+					errStr += "\n" + err;				
+				if(errStr != "")
+				{
+					Debug.err("Error: " + errStr);
+
+					//return advanced update timer on error
+					_advancedRefreshSetTimer = window.setTimeout(getAdvamcedUpdates, _REFRESH_INTERVAL*2); //schedule next update	
+					return;
+				} //end error handling
+
+				var customCountList = req.responseXML.getElementsByTagName("customCount");
+
+
+				var onlyUpdateCounts = param == "onlyCounts";
+				Debug.log("handleAdvancedGetCustomCountsAndActions()",onlyUpdateCounts);
+
+				var checkedRows = {};
+				if(!onlyUpdateCounts) //get existing checked rows so they can be kept
+				{
+					var rows = document.getElementsByClassName("ac_row");
+
+					for(var r=0;r<rows.length;++r)
+					{
+						if(!rows[r].children[ac_cc_COL_NAMES_Select].children.length) break; //may not be initialized at first
+						var checked = rows[r].children[ac_cc_COL_NAMES_Select
+							].children[0].checked;
+						if(checked)
+						{
+							Debug.log("Keeping checked",
+								rows[r].children[ac_cc_COL_NAMES_Count
+									].children[0].id);
+							checkedRows[rows[r].children[ac_cc_COL_NAMES_Count
+								].children[0].id] = 1; //mark as checked
+						}						
+					}
+				} //end check of checked rows
+
+				var isFirst = true;	
+				var str = "";
+				str += "<table>";
+				for(var a=0; a < customCountList.length; ++a)
+				{
+					var needle = DesktopContent.getXMLValue(customCountList[a],"needle");
+					var count = DesktopContent.getXMLValue(customCountList[a],"count");
+					var action = DesktopContent.getXMLValue(customCountList[a],"action");
+					
+					//Note: A valid class name should start with an underscore (_), a hyphen (-) or a letter (a-z)/(A-Z) which is followed by any numbers, hyphens, underscores, letters.
+					//so for custom filter span, must clean and place leading underscore for leading numbers
+					// It escapes all characters except: A–Z a–z 0–9 - _ . ! ~ * ' ( )
+					var safeNeedle = encodeURIComponent(needle). //so add addtional escaping
+									replace(/[.!~*'()]/g,
+        								(c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+									);
+					//replace all % with _
+					safeNeedle = "_" + safeNeedle.replaceAll("%","_-_");
+
+					Debug.log("custom",a,needle,count,action,safeNeedle);
+
+					if(onlyUpdateCounts) //update count table cell only
+					{
+						var el = document.getElementById("count" + safeNeedle);
+						if(el) el.innerHTML = count + " occurrences";
+						isFirst = false;
+						continue;
+					}
+
+					//create one row per custom count
+					str += "<tr class='ac_row'>";
+					for(var i=0;i<ac_cc_COL_NAMES.length;++i)
+					{
+						str += "<td" + (isFirst?(" id='ac_first" + 
+							ac_cc_COL_NAMES[i] + "'"):"") + ">";
+
+						if(i == ac_cc_COL_NAMES_Needle)
+						{								
+							str += "<div style='margin-right:50px;'>";
+							str += needle;
+							str += "</div>";
+						}
+						else if(i == ac_cc_COL_NAMES_Priority)
+						{								
+							str += "<div style='width:50px; text-align: center;'>";
+							str += a;
+							str += "</div>";
+						}
+						else if(i == ac_cc_COL_NAMES_Select)
+						{
+							str += "<input type='checkbox' class='ac_checkboxSelect' onclick='advancedUpdateSelectedCheckboxesText();' ";
+							if(checkedRows["count" + safeNeedle]) //keep checked rows
+								str += "checked";
+							str += " />";
+						}
+						else if(i == ac_cc_COL_NAMES_Count) //label count
+						{								
+							str += "<div style='margin-right:50px;' id='count" + safeNeedle + "'>";
+							str += count + " occurrences";
+							str += "</div>";
+						}
+						else if(i == ac_cc_COL_NAMES_Action) //Action
+						{								
+							str += "<div style='margin-right:50px;'>";
+							//reverse tranlation for full explanation of action to user
+							if(action == "Pause") action = "Pause FSM + System Message";
+							else if(action == "Stop") action = "Stop FSM + System Message";
+							else if(action == "Halt") action = "Halt FSM + System Message";
+							str += action;
+							str += "</div>";
+						}
+						else
+						{
+							Debug.err("Impossible custom search string Column error! Notify admins.");
+							return;
+						}
+						str += "</td>";
+					}
+					str += "</tr>";			
+					isFirst = false;
+				} //end customCountList loop
+
+				var el = document.getElementById("advancedControlsTableRows");
+				if(!onlyUpdateCounts) //update count table cell only
+				{
+					if(isFirst)
+						str += "<tr class='ac_row'><td width='100%'>No custom counts found.</td></tr>";
+						
+					str += "</table>";
+					el.innerHTML = str;
+				}
+
+				//fix header width
+				var hel = document.getElementById("advancedControlsTableHeader");
+				if(isFirst)
+					hel.style.width = "fit-content";
+				else
+					hel.style.width = el.offsetWidth  + "px";
+
+				str = "";
+				//now get width of columns and apply to header table
+				for(var i=0;i<ac_cc_COL_NAMES.length;++i)
+				{
+					var el = document.getElementById("ac_first" + ac_cc_COL_NAMES[i]);
+					var w = (el)?((el.offsetWidth-10 /*4 padding + 1 border left/right */) +
+							"px"):"fit-content";
+
+					Debug.log("First row-col width ",ac_cc_COL_NAMES[i],w);
+					//match width of column to fake like same table
+
+					str += "<div style='width:" + w + "'>";
+
+					str += ac_cc_COL_DISPLAY_NAMES[i];
+					str += "</div>";
+				} //end column headers loop
+
+				hel.innerHTML = str;		
+
+				advancedUpdateSelectedCheckboxesText(); //update checkbox situation
+
+				_advancedRefreshSetTimer = window.setTimeout(getAdvamcedUpdates, _REFRESH_INTERVAL*2); //schedule next update	
+			} //end handleAdvancedGetCustomCountsAndActions()
+
+			//=====================================================================================
+			//getAdvamcedUpdates ~
+			// 	get advanced pane updates from server
+			function getAdvamcedUpdates()
+			{						
+			    if(_advancedRefreshSetTimer) //only allow one timer for advanced updates at a time
+			    	clearTimeout(_advancedRefreshSetTimer);	
+
+				if(_advancedPage == _advancedPage_CUSTOM_COUNTS)					
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=GetCustomCountsAndActions",
+						"",
+						handleAdvancedGetCustomCountsAndActions,  //end get custom counts request
+						"onlyCounts",0,0,1); //reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay,
+				else	
+					Debug.log("Unknown advanced timer page mode, perhaps page was changed in the middle of timer setting.");
+				
+			} //end getAdvamcedUpdates()	
+
+			//=====================================================================================
+			//advancedAddCustomCountAndAction ~
+			function advancedAddCustomCountAndAction()
+			{						
+			    if(_advancedRefreshSetTimer) //only allow one timer for advanced updates at a time
+			    	clearTimeout(_advancedRefreshSetTimer);	
+
+				var needle = document.getElementById("ac_customCountEntry").value.trim();
+				var priority = document.getElementById("ac_customPriorityEntry").value.trim();
+				var action = document.getElementById("ac_customActionSelect").value;
+
+				Debug.log("Adding Custom Count & Action",needle,priority,action);
+
+				//translate action for server
+				if(action == "Pause FSM + System Message") action = "Pause";
+				else if(action == "Stop FSM + System Message") action = "Stop";
+				else if(action == "Halt FSM + System Message") action = "Halt";
+				
+				DesktopContent.XMLHttpRequest(
+						"Request?RequestType=AddCustomCountsAndAction",
+						"needle=" + encodeURIComponent(needle) + 
+						"&priority=" + (priority|0) +
+						"&action=" + encodeURIComponent(action),
+						handleAdvancedGetCustomCountsAndActions,  //end add custom count request
+						undefined, 0, 1); //reqParam, progressHandler, callHandlerOnErr
+						
+			} //end advancedAddCustomCountAndAction()	
+
+			//=====================================================================================
+			//advancedModifyCustomCountAndAction ~
+			function advancedModifyCustomCountAndAction()
+			{						
+			    if(_advancedRefreshSetTimer) //only allow one timer for advanced updates at a time
+			    	clearTimeout(_advancedRefreshSetTimer);	
+
+				var buttonDo = document.getElementById("ac_modifyCustomButtonDoSelect").value;				
+				Debug.log("Modifying Custom Count & Action",buttonDo);
+				
+				var rows = document.getElementsByClassName("ac_row");
+			
+				var currentNeedleCSV = "";
+				for(var r=0;r<rows.length;++r)
+				{
+					var checked = rows[r].children[ac_cc_COL_NAMES_Select
+						].children[0].checked;
+					if(!checked) continue;
+
+					var currentNeedle = rows[r].children[ac_cc_COL_NAMES_Needle
+						].children[0].innerText;
+					if(currentNeedleCSV.length) 
+					{
+						//can not set multiple to a single search string
+						if(buttonDo == "Search String")
+						{
+							Debug.err("Error! It is illegal to set multiple Custom Counts to a single Search String - each Search String must be unique. Please select only one Custom Count to modify its Search String.");
+							return;
+						}
+						currentNeedleCSV += ",";
+					}
+
+					currentNeedleCSV += encodeURIComponent(currentNeedle);
+				}
+				Debug.logv({currentNeedleCSV});
+				if(currentNeedleCSV.length == 0)
+				{
+					Debug.err("Error! No Custom Counts were selected to be modified. Please select one or more Custom Counts to modify by checking the boxes in the left-most column.");
+					return;
+				}
+
+				var postParam = "currentNeedle=" + currentNeedleCSV;
+				postParam += "&buttonDo=" + encodeURIComponent(buttonDo); 
+				// if(buttonDo == "Deletion")
+				// 	postParam += "&delete=1"; 
+				//else
+				if(buttonDo == "Priority")
+				{
+					var priority = document.getElementById("ac_modifyCustomPriorityEntry").value.trim();
+					postParam += "&priority=" +  (priority|0);
+				}
+				else if(buttonDo == "Action")
+				{
+					var action = document.getElementById("ac_modifyCustomActionSelect").value.trim();
+
+					//translate action for server
+					if(action == "Pause FSM + System Message") action = "Pause";
+					else if(action == "Stop FSM + System Message") action = "Stop";
+					else if(action == "Halt FSM + System Message") action = "Halt";
+					
+					postParam += "&action=" + encodeURIComponent(action);
+				}
+				else if(buttonDo == "Search String")
+				{
+					var needle = document.getElementById("ac_modifyCustomCountEntry").value.trim();
+					postParam += "&needle=" + encodeURIComponent(needle);
+				}
+
+				DesktopContent.XMLHttpRequest(
+						"Request?RequestType=ModifyCustomCountsAndAction",
+						postParam,
+						handleAdvancedGetCustomCountsAndActions,  //end add custom count request
+						undefined, 0, 1); //reqParam, progressHandler, callHandlerOnErr
+						
+			} //end advancedModifyCustomCountAndAction()	
+
 			//=====================================================================================
 			function createEditableBitMask(val64,label,
 					inExistingEl,labeli)
@@ -3343,8 +4219,12 @@
 		<div id='pauseControlsLink'>
 			<a onclick='togglePauseControls();' title='Pause and Resume getting new messages.' class='consoleLink' id='pauseControlsLinkText'>Pause</a>		 
 		</div>
+				
+		<div id='navLatestControlsLink'>
+			<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>		 
+		</div>
 		
-						
+		
 		<div id='consoleHistoryContainer'>
 			<div id='consoleHistory' class='consoleEntry' <!--to match nowrap --> >
 			<table height='100%'><td height='100%' valign='bottom'>

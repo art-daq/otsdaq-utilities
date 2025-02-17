@@ -23,7 +23,6 @@ using namespace ots;
 #undef __MF_SUBJECT__
 #define __MF_SUBJECT__ "CfgGUI"
 
-
 #define TABLE_INFO_PATH std::string(__ENV__("TABLE_INFO_PATH")) + "/"
 #define TABLE_INFO_EXT std::string("Info.xml")
 
@@ -88,6 +87,8 @@ void ConfigurationGUISupervisor::init(void)
 //==============================================================================
 void ConfigurationGUISupervisor::destroy(void)
 {
+	__SUP_COUT__ << "Destructing..." << __E__;
+
 	// called by destructor
 	for(std::map<std::string, ConfigurationManagerRW*>::iterator it =
 	        userConfigurationManagers_.begin();
@@ -99,8 +100,9 @@ void ConfigurationGUISupervisor::destroy(void)
 	}
 	userConfigurationManagers_.clear();
 
-	if(ConfigurationInterface::getInstance(true) != 0)
-		delete ConfigurationInterface::getInstance(true);
+	if(ConfigurationInterface::getInstance() != nullptr)
+		delete ConfigurationInterface::getInstance();
+
 }  // end destroy()
 
 //==============================================================================
@@ -135,6 +137,9 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
 	    "*");  // all
+	//to enable read-only access to the Configuration Tree:
+	CorePropertySupervisorBase::setSupervisorProperty(
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes, "get*");
 }  // end setSupervisorPropertyDefaults()
 
 //==============================================================================
@@ -142,12 +147,12 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 //		override to force supervisor property values (and ignore user settings)
 void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 {
-	CorePropertySupervisorBase::setSupervisorProperty(
+	CorePropertySupervisorBase::addSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "getActiveTableGroups");  // none
+	    "getActiveTableGroups");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes,
-	    "*");  // all
+	    "!get*");  // all except read-only requests
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================
@@ -158,6 +163,8 @@ void ConfigurationGUISupervisor::request(const std::string&               reques
 try
 {
 	// Commands
+
+	__COUTTV__(requestType);
 
 	//	gatewayLaunchOTS -- and other StartOTS commands
 
@@ -194,12 +201,13 @@ try
 	//	deleteTreeNodeRecords
 	//	renameTreeNodeRecords
 	//	copyTreeNodeRecords
+	//	getTableStructureStatusAsJSON
 	//		---- end associated with JavaScript Table API
 	//
 	//		---- associated with JavaScript artdaq API
 	//	getArtdaqNodes
 	//	saveArtdaqNodes
-	//  loadArtdaqNodeLayout
+	//  getArtdaqNodeLayout
 	//  saveArtdaqNodeLayout
 	//		---- end associated with JavaScript artdaq API
 	//
@@ -224,8 +232,8 @@ try
 	std::string refresh = CgiDataUtilities::getData(cgiIn, "refresh");  // from GET
 	
 	// refresh to reload from info files and db (maintains temporary views!)
-	ConfigurationManagerRW* cfgMgr = refreshUserSession(
-	    userInfo.username_, userInfo.activeUserSessionIndex_, (refresh == "1"));
+	ConfigurationManagerRW* cfgMgr =
+	    refreshUserSession(userInfo.username_, (refresh == "1"));
 
 	if(requestType == "saveTableInfo")
 	{
@@ -272,7 +280,7 @@ try
 	{
 		// NOTE: similar to Supervisor version but does not keep active sessions
 		__SUP_COUT_WARN__ << requestType << " command received! " << __E__;
-		__MOUT_WARN__ << requestType << " command received! " << __E__;
+		__COUT_WARN__ << requestType << " command received! " << __E__;
 
 		// now launch
 		__SUP_COUT_INFO__ << "Launching " << requestType << "... " << __E__;
@@ -317,12 +325,17 @@ try
 				__SUP_SS__ << "The Configuration Manager could not be initialized to "
 				              "extract contexts."
 				           << __E__;
-				try	{ throw; } //one more try to printout extra info
+				try
+				{
+					throw;
+				}  //one more try to printout extra info
 				catch(const std::exception &e)
 				{
 					ss << "Exception message: " << e.what();
 				}
-				catch(...){}
+				catch(...)
+				{
+				}
 
 				__SUP_COUT_ERR__ << "\n" << ss.str();
 				return;
@@ -363,9 +376,13 @@ try
 				__SUP_COUT_ERR__ << "Unable to open command file: " << fn << __E__;
 		}
 	}
-	else if(requestType == "versionTracking")
+	else if(requestType == "versionTracking" || requestType == "getVersionTracking")
 	{
-		std::string type = CgiDataUtilities::getData(cgiIn, "Type");  // from GET
+		std::string type;
+		if(requestType == "getVersionTracking")
+			type = "Get";
+		else
+			type = CgiDataUtilities::getData(cgiIn, "Type");  // from GET
 		__SUP_COUT__ << "type: " << type << __E__;
 
 		if(type == "Get")
@@ -435,12 +452,17 @@ try
 			catch(...)
 			{
 				__SUP_SS__ << ("Error loading active groups!\n\n") << __E__;
-				try	{ throw; } //one more try to printout extra info
+				try
+				{
+					throw;
+				}  //one more try to printout extra info
 				catch(const std::exception &e)
 				{
 					ss << "Exception message: " << e.what();
 				}
-				catch(...){}
+				catch(...)
+				{
+				}
 				__SUP_COUT_ERR__ << "\n" << ss.str();
 				xmlOut.addTextElementToData("Error", ss.str());
 			}
@@ -450,20 +472,19 @@ try
 	}
 	else if(requestType == "setGroupAliasInActiveBackbone")
 	{
-		std::string groupAliasCSV 	= CgiDataUtilities::getData(cgiIn, "groupAlias"); 	// from GET
-		std::string groupNameCSV  	= CgiDataUtilities::getData(cgiIn, "groupName");  	// from GET
-		std::string groupKeyCSV  	= CgiDataUtilities::getData(cgiIn, "groupKey");  	// from GET
+		std::string groupAliasCSV =
+		    CgiDataUtilities::getData(cgiIn, "groupAlias");  // from GET
+		std::string groupNameCSV =
+		    CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
+		std::string groupKeyCSV =
+		    CgiDataUtilities::getData(cgiIn, "groupKey");  // from GET
 
 		__SUP_COUTV__(groupAliasCSV); 
 		__SUP_COUTV__(groupNameCSV); 
 		__SUP_COUTV__(groupKeyCSV);
 
-		handleSetGroupAliasInBackboneXML(xmlOut,
-		                                 cfgMgr,
-		                                 groupAliasCSV,
-		                                 groupNameCSV,
-		                                 groupKeyCSV,
-		                                 userInfo.username_);
+		handleSetGroupAliasInBackboneXML(
+		    xmlOut, cfgMgr, groupAliasCSV, groupNameCSV, groupKeyCSV, userInfo.username_);
 	}
 	else if(requestType == "setTableAliasInActiveBackbone")
 	{
@@ -488,8 +509,7 @@ try
 	{
 		std::string versionAlias =
 		    CgiDataUtilities::getData(cgiIn, "versionAlias");  // from GET
-		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from
-		                                                                        // GET
+		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
 		std::string groupKey = CgiDataUtilities::getData(cgiIn, "groupKey");  // from GET
 
 		__SUP_COUT__ << "versionAlias: " << versionAlias << __E__;
@@ -552,8 +572,7 @@ try
 	}
 	else if(requestType == "getSpecificTableGroup")
 	{
-		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from
-		                                                                        // GET
+		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
 		std::string groupKey = CgiDataUtilities::getData(cgiIn, "groupKey");  // from GET
 
 		__SUP_COUT__ << "groupName: " << groupName << __E__;
@@ -564,8 +583,7 @@ try
 	}
 	else if(requestType == "saveNewTableGroup")
 	{
-		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from
-		                                                                        // GET
+		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
 		bool ignoreWarnings =
 		    CgiDataUtilities::getDataAsInt(cgiIn, "ignoreWarnings");  // from GET
 		bool allowDuplicates =
@@ -600,6 +618,7 @@ try
 		std::string versionStr = CgiDataUtilities::getData(cgiIn, "version");  // from GET
 		int dataOffset = CgiDataUtilities::getDataAsInt(cgiIn, "dataOffset");  // from GET
 		int chunkSize  = CgiDataUtilities::getDataAsInt(cgiIn, "chunkSize");   // from GET
+		//chunkSize is currently ignored, could use to get a few rows at a time
 
 		std::string allowIllegalColumns =
 		    CgiDataUtilities::getData(cgiIn, "allowIllegalColumns");  // from GET
@@ -619,7 +638,13 @@ try
 		{
 			if(versionStr == "" &&  // take latest version if no version specified
 			   allTableInfo.at(tableName).versions_.size())
-				version = *(allTableInfo.at(tableName).versions_.rbegin());
+			{
+				// Start from the last element
+				auto it = allTableInfo.at(tableName).versions_.rbegin();
+				if(it->isScratchVersion())  //do not allow SCRATCH_VERSION as default selection
+					++it;                   // Move to the second-to-last element
+				version = *it;
+			}
 			else if(versionStr.find(ConfigurationManager::ALIAS_VERSION_PREAMBLE) == 0)
 			{
 				// convert alias to version
@@ -768,13 +793,13 @@ try
 		std::string diffGroup     = CgiDataUtilities::getData(cgiIn, "diffGroup");
 		std::string diffGroupKey  = CgiDataUtilities::getData(cgiIn, "diffGroupKey");
 
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "tableGroup: " << tableGroup << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "tableGroupKey: " << tableGroupKey << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "startPath: " << startPath << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "depth: " << depth << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "hideStatusFalse: " << hideStatusFalse << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "modifiedTables: " << modifiedTables << __E__;
-		__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "filterList: " << filterList << __E__;
+		__SUP_COUTT__ << "tableGroup: " << tableGroup << __E__;
+		__SUP_COUTT__ << "tableGroupKey: " << tableGroupKey << __E__;
+		__SUP_COUTT__ << "startPath: " << startPath << __E__;
+		__SUP_COUTT__ << "depth: " << depth << __E__;
+		__SUP_COUTT__ << "hideStatusFalse: " << hideStatusFalse << __E__;
+		__SUP_COUTT__ << "modifiedTables: " << modifiedTables << __E__;
+		__SUP_COUTT__ << "filterList: " << filterList << __E__;
 
 		handleFillTreeViewXML(xmlOut,
 		                      cfgMgr,
@@ -786,8 +811,7 @@ try
 		                      modifiedTables,
 		                      filterList,
 							  diffGroup,
-		                      TableGroupKey(diffGroupKey)
-							  );
+		                      TableGroupKey(diffGroupKey));
 	}
 	else if(requestType == "getTreeNodeCommonFields")
 	{
@@ -996,6 +1020,44 @@ try
 		                                 recordList,
 		                                 numberOfCopies);
 	}
+	else if(requestType == "getTableStructureStatusAsJSON")
+	{
+		std::string tableGroup     = CgiDataUtilities::getData(cgiIn, "tableGroup");
+		std::string tableGroupKey  = CgiDataUtilities::getData(cgiIn, "tableGroupKey");
+		std::string tableName      = CgiDataUtilities::getData(cgiIn, "tableName");
+		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
+
+		__SUP_COUT__ << "tableGroup: " << tableGroup << __E__;
+		__SUP_COUT__ << "tableGroupKey: " << tableGroupKey << __E__;
+		__SUP_COUT__ << "tableName: " << tableName << __E__;
+		__SUP_COUT__ << "modifiedTables: " << modifiedTables << __E__;
+
+		//	setup active tables based on active groups and modified tables
+		setupActiveTablesXML(xmlOut,
+		                     cfgMgr,
+		                     tableGroup,
+		                     TableGroupKey(tableGroupKey),
+		                     modifiedTables,
+		                     false /* refreshAll */);
+
+		try
+		{
+			xmlOut.addTextElementToData(
+			    "StructureStatusAsJSON",
+			    cfgMgr->getTableByName(tableName)->getStructureStatusAsJSON(cfgMgr));
+		}
+		catch(const std::runtime_error& e)
+		{
+			__SUP_SS__ << "The table plugin feature getStructureStatusAsJSON(), does not "
+			              "seem to be supported for the table '"
+			           << tableName
+			           << ".' Make sure you have the expected table plugin in your path, "
+			              "or contact system admins."
+			           << __E__;
+			ss << "Here is the error: " << e.what() << __E__;
+			__SUP_SS_THROW__;
+		}
+	}
 	else if(requestType == "getArtdaqNodes")
 	{
 		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
@@ -1018,7 +1080,7 @@ try
 		handleSaveArtdaqNodeRecordsXML(
 		    nodeString, subsystemString, xmlOut, cfgMgr, modifiedTables);
 	}
-	else if(requestType == "loadArtdaqNodeLayout")
+	else if(requestType == "getArtdaqNodeLayout")
 	{
 		std::string contextGroupName =
 		    CgiDataUtilities::getData(cgiIn, "contextGroupName");
@@ -1243,72 +1305,100 @@ try
 	}
 	else if(requestType == "getLastTableGroups")
 	{
-		std::string                                          timeString;
-		std::pair<std::string /*group name*/, TableGroupKey> theGroup;
+		// std::string                                          timeString;
+		std::map<std::string /* group type */,
+		         std::tuple<std::string /*group name*/,
+		                    TableGroupKey,
+		                    std::string /* time string*/>>
+		    theGroups;
 
-		theGroup = theRemoteWebUsers_.getLastTableGroup("Configured", timeString);
-		xmlOut.addTextElementToData("LastConfiguredGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastConfiguredGroupKey", theGroup.second.toString());
-		xmlOut.addTextElementToData("LastConfiguredGroupTime", timeString);
-		theGroup = theRemoteWebUsers_.getLastTableGroup("Started", timeString);
-		xmlOut.addTextElementToData("LastStartedGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastStartedGroupKey", theGroup.second.toString());
-		xmlOut.addTextElementToData("LastStartedGroupTime", timeString);
-		theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedConfig", timeString);
-		xmlOut.addTextElementToData("LastActivatedConfigGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastActivatedConfigGroupKey",
-		                            theGroup.second.toString());
-		xmlOut.addTextElementToData("LastActivatedConfigGroupTime", timeString);
-		theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedContext", timeString);
-		xmlOut.addTextElementToData("LastActivatedContextGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastActivatedContextGroupKey",
-		                            theGroup.second.toString());
-		xmlOut.addTextElementToData("LastActivatedContextGroupTime", timeString);
-		theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedBackbone", timeString);
-		xmlOut.addTextElementToData("LastActivatedBackboneGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastActivatedBackboneGroupKey",
-		                            theGroup.second.toString());
-		xmlOut.addTextElementToData("LastActivatedBackboneGroupTime", timeString);
-		theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedIterator", timeString);
-		xmlOut.addTextElementToData("LastActivatedIteratorGroupName", theGroup.first);
-		xmlOut.addTextElementToData("LastActivatedIteratorGroupKey",
-		                            theGroup.second.toString());
-		xmlOut.addTextElementToData("LastActivatedIteratorGroupTime", timeString);
+		theRemoteWebUsers_.getLastTableGroups(theGroups);
+
+		for(const auto& theGroup : theGroups)
+		{
+			xmlOut.addTextElementToData("Last" + theGroup.first + "GroupName",
+			                            std::get<0>(theGroup.second));
+			xmlOut.addTextElementToData("Last" + theGroup.first + "GroupKey",
+			                            std::get<1>(theGroup.second).toString());
+			xmlOut.addTextElementToData("Last" + theGroup.first + "GroupTime",
+			                            std::get<2>(theGroup.second));
+		}
+
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("Configured", timeString);
+		// xmlOut.addTextElementToData("LastConfiguredGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastConfiguredGroupKey", theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastConfiguredGroupTime", timeString);
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("Started", timeString);
+		// xmlOut.addTextElementToData("LastStartedGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastStartedGroupKey", theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastStartedGroupTime", timeString);
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedConfig", timeString);
+		// xmlOut.addTextElementToData("LastActivatedConfigGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastActivatedConfigGroupKey",
+		//                             theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastActivatedConfigGroupTime", timeString);
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedContext", timeString);
+		// xmlOut.addTextElementToData("LastActivatedContextGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastActivatedContextGroupKey",
+		//                             theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastActivatedContextGroupTime", timeString);
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedBackbone", timeString);
+		// xmlOut.addTextElementToData("LastActivatedBackboneGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastActivatedBackboneGroupKey",
+		//                             theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastActivatedBackboneGroupTime", timeString);
+		// theGroup = theRemoteWebUsers_.getLastTableGroup("ActivatedIterator", timeString);
+		// xmlOut.addTextElementToData("LastActivatedIteratorGroupName", theGroup.first);
+		// xmlOut.addTextElementToData("LastActivatedIteratorGroupKey",
+		//                             theGroup.second.toString());
+		// xmlOut.addTextElementToData("LastActivatedIteratorGroupTime", timeString);
 
 		//check other subsystems active groups
 		handleOtherSubsystemActiveGroups(xmlOut, cfgMgr, false /* getFullList */);
 	}
 	else if(requestType == "getSubsytemTableGroups")
 	{
-		std::string subsystem = CgiDataUtilities::getData(cgiIn, "subsystem");  // from GET
+		std::string subsystem =
+		    CgiDataUtilities::getData(cgiIn, "subsystem");  // from GET
 		__SUP_COUTV__(subsystem);
-		handleOtherSubsystemActiveGroups(xmlOut, cfgMgr, true /* getFullList */, subsystem);
+		handleOtherSubsystemActiveGroups(
+		    xmlOut, cfgMgr, true /* getFullList */, subsystem);
 	}
 	else if(requestType == "diffWithActiveGroup")
 	{
-		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
+		std::string groupName =
+		    CgiDataUtilities::getData(cgiIn, "groupName");                    // from GET
 		std::string groupKey = CgiDataUtilities::getData(cgiIn, "groupKey");  // from GET
 		__SUP_COUTV__(groupName);
 		__SUP_COUTV__(groupKey);
 
-		handleGroupDiff(xmlOut, cfgMgr, groupName, TableGroupKey(groupKey)); //diff with active group
+		handleGroupDiff(
+		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey));  //diff with active group
 	}
 	else if(requestType == "diffWithGroupKey")
 	{
-		std::string groupName = CgiDataUtilities::getData(cgiIn, "groupName");  // from GET
+		std::string groupName =
+		    CgiDataUtilities::getData(cgiIn, "groupName");                    // from GET
 		std::string groupKey = CgiDataUtilities::getData(cgiIn, "groupKey");  // from GET
 		std::string diffKey = CgiDataUtilities::getData(cgiIn, "diffKey");  // from GET
-		std::string diffGroupName = CgiDataUtilities::getData(cgiIn, "diffGroupName");  // from GET
+		std::string diffGroupName =
+		    CgiDataUtilities::getData(cgiIn, "diffGroupName");  // from GET
 		__SUP_COUTV__(groupName);
 		__SUP_COUTV__(groupKey);
 		__SUP_COUTV__(diffKey);
 		__SUP_COUTV__(diffGroupName);
 
-		handleGroupDiff(xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), TableGroupKey(diffKey), diffGroupName);
+		handleGroupDiff(xmlOut,
+		                cfgMgr,
+		                groupName,
+		                TableGroupKey(groupKey),
+		                TableGroupKey(diffKey),
+		                diffGroupName);
 	}
 	else if(requestType == "diffTableVersions")
 	{
-		std::string tableName = CgiDataUtilities::getData(cgiIn, "tableName");  // from GET
+		std::string tableName =
+		    CgiDataUtilities::getData(cgiIn, "tableName");        // from GET
 		std::string vA = CgiDataUtilities::getData(cgiIn, "vA");  // from GET
 		std::string vB = CgiDataUtilities::getData(cgiIn, "vB");  // from GET
 		__SUP_COUTV__(tableName);
@@ -1329,8 +1419,8 @@ try
 				    versionAliases = cfgMgr->getVersionAliases();
 
 				std::string versionAlias;
-				versionAlias = vA.substr(
-				    ConfigurationManager::ALIAS_VERSION_PREAMBLE.size());
+				versionAlias =
+				    vA.substr(ConfigurationManager::ALIAS_VERSION_PREAMBLE.size());
 
 				if(versionAliases.find(tableName) != versionAliases.end() &&
 				   versionAliases[tableName].find(versionAlias) !=
@@ -1340,10 +1430,9 @@ try
 					__SUP_COUT__ << "version alias translated to: " << versionA << __E__;
 				}
 				else
-					__SUP_COUT_WARN__
-					    << "version alias '"
-					    << versionAlias
-					    << "'was not found in active version aliases!" << __E__;
+					__SUP_COUT_WARN__ << "version alias '" << versionAlias
+					                  << "'was not found in active version aliases!"
+					                  << __E__;
 			}
 			else  // else take specified version
 				versionA = atoi(vA.c_str());
@@ -1356,8 +1445,8 @@ try
 				    versionAliases = cfgMgr->getVersionAliases();
 
 				std::string versionAlias;
-				versionAlias = vB.substr(
-				    ConfigurationManager::ALIAS_VERSION_PREAMBLE.size());
+				versionAlias =
+				    vB.substr(ConfigurationManager::ALIAS_VERSION_PREAMBLE.size());
 
 				if(versionAliases.find(tableName) != versionAliases.end() &&
 				   versionAliases[tableName].find(versionAlias) !=
@@ -1367,10 +1456,9 @@ try
 					__SUP_COUT__ << "version alias translated to: " << versionB << __E__;
 				}
 				else
-					__SUP_COUT_WARN__
-					    << "version alias '"
-					    << versionAlias
-					    << "'was not found in active version aliases!" << __E__;
+					__SUP_COUT_WARN__ << "version alias '" << versionAlias
+					                  << "'was not found in active version aliases!"
+					                  << __E__;
 			}
 			else  // else take specified version
 				versionB = atoi(vB.c_str());
@@ -1389,7 +1477,8 @@ try
 	else if(requestType == "savePlanCommandSequence")
 	{
 		std::string planName = CgiDataUtilities::getData(cgiIn, "planName");   // from GET
-		std::string commands = CgiDataUtilities::postData(cgiIn, "commands");  // from POST
+		std::string commands =
+		    CgiDataUtilities::postData(cgiIn, "commands");  // from POST
 		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
 		std::string groupName      = CgiDataUtilities::getData(cgiIn, "groupName");
 		std::string groupKey       = CgiDataUtilities::getData(cgiIn, "groupKey");
@@ -1458,10 +1547,11 @@ try
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
 
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 	// always add active table groups to xml response
-	ConfigurationSupervisorBase::getConfigurationStatusXML(xmlOut, cfgMgr);
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	ConfigurationSupervisorBase::getConfigurationStatusXML(
+	    xmlOut, cfgMgr, userInfo.username_);
+	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 
 }  // end ::request()
 catch(const std::runtime_error& e)
@@ -1487,12 +1577,17 @@ catch(...)
 {
 	__SS__ << "An unknown fatal error occurred while handling the request '"
 	       << requestType << ".'" << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__COUT_ERR__ << "\n" << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
 
@@ -1507,7 +1602,6 @@ catch(...)
 	{
 		__COUT_ERR__ << "Error getting version tracking status!" << __E__;
 	}
-
 
 } // end ::request() catch
 
@@ -1540,8 +1634,7 @@ try
 
 	// check that there is a context and table group to consider
 	//	if there is not, then pull from failed list
-	if(consideredGroups[ConfigurationManager::GROUP_TYPE_NAME_CONTEXT]
-	       .second.isInvalid())
+	if(consideredGroups[ConfigurationManager::GROUP_TYPE_NAME_CONTEXT].second.isInvalid())
 	{
 		__SUP_COUT__ << "Finding a context group to consider..." << __E__;
 		if(cfgMgr->getFailedTableGroups().find(
@@ -1784,14 +1877,14 @@ void ConfigurationGUISupervisor::setupActiveTablesXML(
     std::string*                                              accumulatedErrors)
 try
 {
-
 	xmlOut.addTextElementToData("tableGroup", groupName);
 	xmlOut.addTextElementToData("tableGroupKey", groupKey.toString());
 
 	bool usingActiveGroups = (groupName == "" || groupKey.isInvalid());
 
 	// reload all tables so that partially loaded tables are not allowed
-	if(usingActiveGroups || refreshAll)
+	if(  //usingActiveGroups ||
+	    refreshAll)
 	{
 		__SUP_COUT__ << "Refreshing all table info, ignoring warnings..." << __E__;
 		std::string accumulatedWarnings = "";
@@ -1801,7 +1894,6 @@ try
 			false /* getGroupKeys */,
 			false /* getGroupInfo */,
 			true /* initializeActiveGroups */);
-		
 	}
 
 	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
@@ -1920,6 +2012,7 @@ try
 			    tableInfoIt->second.tablePtr_->getView().getVersion().toString());
 			xmlOut.addTextElementToData(
 			    "ActiveTableComment",
+				tableInfoIt->second.tablePtr_->getView().getAuthor() + ": " +
 			    tableInfoIt->second.tablePtr_->getView().getComment());
 		}
 
@@ -1936,12 +2029,17 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << ("Error setting up active tables!\n\n") << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
 	throw;  // throw to get info from special errors at a parent level
@@ -2024,8 +2122,7 @@ void ConfigurationGUISupervisor::handleFillCreateTreeNodeRecordsXML(
 						temporaryVersion = table->createTemporaryView(temporaryVersion);
 						cfgMgr->saveNewTable(targetNode.getTableName(),
 						                     temporaryVersion,
-						                     true);  // proper bookkeeping for temporary
-						                             // version with the new version
+						                     true);  // proper bookkeeping for temporary version with the new version
 
 						__SUP_COUT__ << "Created temporary version " << temporaryVersion
 						             << __E__;
@@ -2047,8 +2144,7 @@ void ConfigurationGUISupervisor::handleFillCreateTreeNodeRecordsXML(
 
 				// add row
 				unsigned int row = table->getViewP()->addRow(
-				    author, true /*incrementUniqueData*/);  // increment all unique data
-				                                            // fields to void conflict
+				    author, true /*incrementUniqueData*/);  // increment all unique data fields to void conflict
 
 				// if TableViewColumnInfo::COL_NAME_STATUS exists, set it to true
 				try
@@ -2097,16 +2193,21 @@ void ConfigurationGUISupervisor::handleFillCreateTreeNodeRecordsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error creating new record(s)!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
-}
+} //end handleFillCreateTreeNodeRecordsXML()
 
 //==============================================================================
 // handleFillModifiedTablesXML
@@ -2128,9 +2229,10 @@ try
 		                                .toString());
 		xmlOut.addTextElementToData(
 		    "NewActiveTableComment",
+			allTableInfo.at(activePair.first).tablePtr_->getView().getAuthor() + ": " +
 		    allTableInfo.at(activePair.first).tablePtr_->getView().getComment());
 	}
-}
+} //end handleFillModifiedTablesXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << ("Error!\n\n" + std::string(e.what())) << __E__;
@@ -2140,15 +2242,20 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << ("Error!\n\n") << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
-}
+} //end handleFillModifiedTablesXML() catch
 
 //==============================================================================
 // handleFillDeleteTreeNodeRecordsXML
@@ -2224,8 +2331,7 @@ void ConfigurationGUISupervisor::handleFillDeleteTreeNodeRecordsXML(
 						temporaryVersion = table->createTemporaryView(temporaryVersion);
 						cfgMgr->saveNewTable(targetNode.getTableName(),
 						                     temporaryVersion,
-						                     true);  // proper bookkeeping for temporary
-						                             // version with the new version
+						                     true);  // proper bookkeeping for temporary version with the new version
 
 						__SUP_COUT__ << "Created temporary version " << temporaryVersion
 						             << __E__;
@@ -2261,12 +2367,17 @@ void ConfigurationGUISupervisor::handleFillDeleteTreeNodeRecordsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error removing record(s)!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -2350,8 +2461,7 @@ void ConfigurationGUISupervisor::handleFillRenameTreeNodeRecordsXML(
 				temporaryVersion = table->createTemporaryView(temporaryVersion);
 				cfgMgr->saveNewTable(targetNode.getTableName(),
 				                     temporaryVersion,
-				                     true);  // proper bookkeeping for temporary
-				                             // version with the new version
+				                     true);  // proper bookkeeping for temporary version with the new version
 
 				__SUP_COUT__ << "Created temporary version " << temporaryVersion << __E__;
 			}
@@ -2386,12 +2496,17 @@ void ConfigurationGUISupervisor::handleFillRenameTreeNodeRecordsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error renaming record(s)!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -2467,8 +2582,7 @@ void ConfigurationGUISupervisor::handleFillCopyTreeNodeRecordsXML(
 				temporaryVersion = table->createTemporaryView(temporaryVersion);
 				cfgMgr->saveNewTable(targetNode.getTableName(),
 				                     temporaryVersion,
-				                     true);  // proper bookkeeping for temporary
-				                             // version with the new version
+				                     true);  // proper bookkeeping for temporary version with the new version
 
 				__SUP_COUT__ << "Created temporary version " << temporaryVersion << __E__;
 			}
@@ -2492,8 +2606,8 @@ void ConfigurationGUISupervisor::handleFillCopyTreeNodeRecordsXML(
 				    1 /*srcRowsToCopy*/,
 				    -1 /*destOffsetRow*/,
 				    true /*generateUniqueDataColumns*/,
-				    recordUID /*baseNameAutoUID*/);  // make the name similar
-		}                                            // end record loop
+				    recordUID /*baseNameAutoUID*/);  // make the name similar end record loop
+		}                                            
 
 		table->getViewP()->init();  // verify new table (throws runtime_errors)
 
@@ -2508,12 +2622,17 @@ void ConfigurationGUISupervisor::handleFillCopyTreeNodeRecordsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error copying record(s)!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -2710,16 +2829,21 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error setting field values!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
-}
+} //end handleFillSetTreeNodeFieldValuesXML()
 
 //==============================================================================
 // handleFillGetTreeNodeFieldValuesXML
@@ -2747,7 +2871,8 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(
+	    xmlOut, cfgMgr, groupName, groupKey, modifiedTables, false /* refreshAll */);
 
 	// for each field
 	//	return field/value pair in xml
@@ -2782,7 +2907,8 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
 				// for each field, get value
 				for(const auto& fieldPath : fieldPaths)
 				{
-					__SUP_COUT__ << "fieldPath " << fieldPath << __E__;
+					// __SUP_COUT__ << "fieldPath " << fieldPath << __E__;
+					// __SUP_COUT__ << "fullPath " << (startPath + "/" + recordUID + "/" + fieldPath) << __E__;
 
 					ConfigurationTree node =
 					    cfgMgr->getNode(startPath + "/" + recordUID + "/" + fieldPath);
@@ -2791,8 +2917,7 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
 
 					xmlOut.addTextElementToParent(
 					    "FieldValue",
-					    cfgMgr->getNode(startPath + "/" + recordUID + "/" + fieldPath)
-					        .getValueAsString(true /*returnLinkTableValue*/),
+					    node.getValueAsString(true /*returnLinkTableValue*/),
 					    parentEl);
 				}
 			}
@@ -2808,16 +2933,21 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error getting field values!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
-}
+} //end handleFillGetTreeNodeFieldValuesXML()
 
 //==============================================================================
 // handleFillTreeNodeCommonFieldsXML
@@ -2850,7 +2980,8 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(
+	    xmlOut, cfgMgr, groupName, groupKey, modifiedTables, false /* refreshAll */);
 
 	try
 	{
@@ -2976,16 +3107,21 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error getting common fields!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
-}
+} //end handleFillTreeNodeCommonFieldsXML()
 
 //==============================================================================
 // handleFillUniqueFieldValuesForRecordsXML
@@ -3026,7 +3162,8 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
     const std::string&      fieldList)
 {
 	//	setup active tables based on input group and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, groupName, groupKey, modifiedTables);
+	setupActiveTablesXML(
+	    xmlOut, cfgMgr, groupName, groupKey, modifiedTables, false /* refreshAll */);
 
 	try
 	{
@@ -3148,12 +3285,17 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 	catch(...)
 	{
 		__SUP_SS__ << ("Error getting common fields!\n\n") << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -3179,7 +3321,8 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 // could separate field/value pairs by : for OR) 		e.g.
 //"LinkToFETypeTable=NIMPlus,TemplateUDP;FEInterfacePluginName=NIMPlusPlugin"
 //
-void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        xmlOut,
+void ConfigurationGUISupervisor::handleFillTreeViewXML(
+    HttpXmlDocument&        xmlOut,
                                                        ConfigurationManagerRW* cfgMgr,
                                                        const std::string&      groupName,
                                                        const TableGroupKey&    groupKey,
@@ -3191,7 +3334,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 													   const std::string&      diffGroupName /* = "" */,
 													   const TableGroupKey&    diffGroupKey /* = TableGroupKey() */)
 {
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "get Tree View: " << groupName << "(" << groupKey << ")" << __E__;
+	__SUP_COUTT__ << "get Tree View: " << groupName << "(" << groupKey << ")" << __E__;
 	
 	// return xml
 	//	<groupName="groupName"/>
@@ -3215,7 +3358,6 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 	// return the startPath as root "tree" element
 	//	and then display all children if depth > 0
 
-
 	//------------------
 	//First, if doing diff, load tables into cache and copy.
 	//	Loading will leave tables active in the user cfgMgr.. 
@@ -3237,7 +3379,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		//  This is more efficient than loading diff tables from db every tree access.
 
 		for(auto& activeTable : cfgMgr->getActiveVersions())	
-			__SUP_COUT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second << __E__;
+			__SUP_COUT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second
+			             << __E__;
 		
 		cfgMgr->loadTableGroup(diffGroupName,
 		                       diffGroupKey,
@@ -3253,67 +3396,77 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		);
 
 		for(auto& activeTable : cfgMgr->getActiveVersions())	
-			__SUP_COUT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second << __E__;
+			__SUP_COUT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second
+			             << __E__;
 		
-		__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Group tables loaded." << __E__;
-		diffCfgMgr->copyTableGroupFromCache(*cfgMgr,
-											diffMemberMap,
-											diffGroupName,
-											diffGroupKey);
-		__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Group tables copied to local diff config manager." << __E__;
+		__SUP_COUTT__ << "Diff Group tables loaded." << __E__;
+		diffCfgMgr->copyTableGroupFromCache(
+		    *cfgMgr, diffMemberMap, diffGroupName, diffGroupKey);
+		__SUP_COUTT__ << "Diff Group tables copied to local diff config manager."
+		              << __E__;
 		
 		//now activate diff table for tree traversal (without calling init())
 		for(auto& memberPair : diffMemberMap)		
-			diffCfgMgr->getTableByName(memberPair.first)->setActiveView(memberPair.second);
+			diffCfgMgr->getTableByName(memberPair.first)
+			    ->setActiveView(memberPair.second);
 
 		for(const auto& lastGroupLoaded : cfgMgr->getLastTableGroups()) 
-			__SUP_COUT__ << "cfgMgr Last loaded " << lastGroupLoaded.first << 
-				": " << lastGroupLoaded.second.first.first << "(" << lastGroupLoaded.second.first.second << ")";			
+			__SUP_COUT__ << "cfgMgr Last loaded " << lastGroupLoaded.first << ": "
+			             << lastGroupLoaded.second.first.first << "("
+			             << lastGroupLoaded.second.first.second << ")";
 					
 		for(const auto& lastGroupLoaded : diffCfgMgr->getLastTableGroups()) 
-			__SUP_COUT__ << "diffCfgMgr Last loaded " << lastGroupLoaded.first <<
-				": " << lastGroupLoaded.second.first.first << "(" << lastGroupLoaded.second.first.second << ")";		
+			__SUP_COUT__ << "diffCfgMgr Last loaded " << lastGroupLoaded.first << ": "
+			             << lastGroupLoaded.second.first.first << "("
+			             << lastGroupLoaded.second.first.second << ")";
 
 		//for complete tree traversal, if config type, then load context tables in diff, if context type, then load config tables in diff
 		if(diffCfgMgr->getLastTableGroups().size() == 1)
 		{
-			__SUP_COUT__ << "Type already loaded to diff = " << 
-				diffCfgMgr->getLastTableGroups().begin()->first << __E__;
+			__SUP_COUT__ << "Type already loaded to diff = "
+			             << diffCfgMgr->getLastTableGroups().begin()->first << __E__;
 			try
 			{
 				auto groupTypeToLoad = ConfigurationManager::GROUP_TYPE_NAME_CONTEXT;
-				if(diffCfgMgr->getLastTableGroups().begin()->first == ConfigurationManager::GROUP_TYPE_NAME_CONTEXT)
+				if(diffCfgMgr->getLastTableGroups().begin()->first ==
+				   ConfigurationManager::GROUP_TYPE_NAME_CONTEXT)
 					groupTypeToLoad = ConfigurationManager::GROUP_TYPE_NAME_CONFIGURATION;
-				else if(diffCfgMgr->getLastTableGroups().begin()->first == ConfigurationManager::GROUP_TYPE_NAME_CONFIGURATION)
+				else if(diffCfgMgr->getLastTableGroups().begin()->first ==
+				        ConfigurationManager::GROUP_TYPE_NAME_CONFIGURATION)
 					groupTypeToLoad = ConfigurationManager::GROUP_TYPE_NAME_CONTEXT;
 
-				__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Loading " << groupTypeToLoad <<
-					cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.first << "(" <<
-					cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.second << ")" << __E__;
+				__SUP_COUTT__
+				    << "Loading " << groupTypeToLoad
+				    << cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.first << "("
+				    << cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.second
+				    << ")" << __E__;
 
-				diffCfgMgr->copyTableGroupFromCache(*cfgMgr,
+				diffCfgMgr->copyTableGroupFromCache(
+				    *cfgMgr,
 											cfgMgr->getLastTableGroups().at(groupTypeToLoad).second,
 											cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.first,
 											cfgMgr->getLastTableGroups().at(groupTypeToLoad).first.second);
 				
 				//now activate diff table for tree traversal (without calling init())
-				for(auto& memberPair : cfgMgr->getLastTableGroups().at(groupTypeToLoad).second)		
-					diffCfgMgr->getTableByName(memberPair.first)->setActiveView(memberPair.second);
+				for(auto& memberPair :
+				    cfgMgr->getLastTableGroups().at(groupTypeToLoad).second)
+					diffCfgMgr->getTableByName(memberPair.first)
+					    ->setActiveView(memberPair.second);
 			}
-			catch(...) {} //ignore extra group loading errors
+			catch(...)
+			{
+			}  //ignore extra group loading errors
 		}		
 								
-
-		
-
 		for(auto& activeTable : cfgMgr->getActiveVersions())	
-			__SUP_COUT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second << __E__;
+			__SUP_COUTT__ << "cfgMgr " << activeTable.first << "-v" << activeTable.second
+			              << __E__;
 		for(auto& activeTable : diffCfgMgr->getActiveVersions())	
-			__SUP_COUT__ << "diffCfgMgr " << activeTable.first << "-v" << activeTable.second << __E__;
+			__SUP_COUTT__ << "diffCfgMgr " << activeTable.first << "-v"
+			              << activeTable.second << __E__;
 
-		__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Group tables are setup: " << diffAccumulateErrors << __E__;
+		__SUP_COUTT__ << "Diff Group tables are setup: " << diffAccumulateErrors << __E__;
 	} // end do diff load
-
 
 	//------------------
 	//Setup active tables based on input group and modified tables
@@ -3326,15 +3479,88 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 						groupName,
 						groupKey,
 						modifiedTables,
-						(startPath == "/"),  // refreshAll, if at root node, reload
-											// all tables so that partially loaded
-											// tables are not allowed
+	                     (startPath == "/"),  // refreshAll, if at root node, reload all tables so that partially loaded tables are not allowed
 						(startPath == "/"),  // get group info
 						&memberMap,          // get group member map
 						true,                // output active tables (default)
 						&accumulatedErrors   // accumulate errors
 	);
 	
+	if(memberMap.size() >
+	       ConfigurationManager::contextMemberNames_.size() + 1 /* for optional table */
+	   && startPath == "/")
+	{
+		__COUTT__ << "Checking for orphaned tables..." << __E__;
+
+		//check Tree for orphaned tables
+		std::set<std::string /* table name that is linked to */> linkingTables;
+		for(const auto& tableInfo : cfgMgr->getAllTableInfo())
+		{
+			//for each existing active table, check table for links to tables
+
+			__COUT_TYPE__(TLVL_DEBUG + 30)
+			    << __COUT_HDR__ << "Table " << tableInfo.first << __E__;
+			if(!tableInfo.second.tablePtr_->isActive())
+				continue;  //skip if no active view for table
+			else
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << "Table active " << tableInfo.first << __E__;
+
+			const TableView& view = tableInfo.second.tablePtr_->getView();
+
+			bool addedThisTable = false;
+			for(unsigned int col = 0; col < view.getNumberOfColumns(); ++col)
+			{
+				if(!view.getColumnInfo(col).isChildLink())
+					continue;
+
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << "Table " << tableInfo.first
+				    << " col: " << view.getColumnInfo(col).getName() << __E__;
+
+				for(unsigned int r = 0; r < view.getNumberOfRows(); ++r)
+				{
+					if(view.getDataView()[r][col] == "" ||
+					   view.getDataView()[r][col] ==
+					       TableViewColumnInfo::DATATYPE_STRING_DEFAULT)
+						continue;
+
+					if(!addedThisTable)  //add this table to since it seems to have a link!
+					{
+						linkingTables.emplace(tableInfo.first);
+						addedThisTable = true;
+					}
+					linkingTables.emplace(
+					    view.getDataView()[r][col]);  //add linked table name to set
+				}
+			}
+		}
+		__COUTTV__(StringMacros::setToString(linkingTables));
+
+		std::string missingTables = "";
+		for(const auto& member : memberMap)
+		{
+			//if not in linking tables set, then note
+			if(linkingTables.find(member.first) != linkingTables.end())
+				continue;  //linked-to table, so no warning
+
+			if(missingTables.size())
+				missingTables += ", ";
+			missingTables += member.first;
+		}
+
+		if(missingTables.size())
+		{
+			__COUTV__(missingTables);
+			std::stringstream ss;
+			ss << "The following member tables of table group '" << groupName << "("
+			   << groupKey
+			   << ")' were identified as possibly orphaned (i.e. no active tables link "
+			      "to these tables, and these tables have no links to other tables):\n\n"
+			   << missingTables << "." << __E__;
+			xmlOut.addTextElementToData("NoTreeLinkWarning", ss.str());
+		}
+	}  //end orphaned table check
 
 	if(accumulatedErrors != "")
 	{
@@ -3347,9 +3573,11 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		             << StringMacros::mapToString(cfgMgr->getActiveVersions()) << __E__;
 	}
 	else
-		__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Active tables are setup. No issues found." << __E__;
-
-	
+	{
+		__SUP_COUTT__ << "Active tables are setup. No issues found." << __E__;
+		__SUP_COUTT__ << "Active table versions: "
+		              << StringMacros::mapToString(cfgMgr->getActiveVersions()) << __E__;
+	}
 
 	try
 	{
@@ -3374,7 +3602,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 
 			if(doDiff)
 			{
-				diffRootMap = diffCfgMgr->getChildrenMap(&diffMemberMap, &diffAccumulateErrors);
+				diffRootMap =
+				    diffCfgMgr->getChildrenMap(&diffMemberMap, &diffAccumulateErrors);
 				__SUP_COUTV__(diffRootMap.size());
 				for(auto& diffChild : diffRootMap)
 					__SUP_COUTV__(diffChild.first);
@@ -3410,18 +3639,19 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 			{
 				try
 				{
-					ConfigurationTree diffStartNode =
-						diffCfgMgr->getNode(startPath, true /*doNotThrowOnBrokenUIDLinks*/);
+					ConfigurationTree diffStartNode = diffCfgMgr->getNode(
+					    startPath, true /*doNotThrowOnBrokenUIDLinks*/);
 				
 					if(diffStartNode.isLinkNode() && diffStartNode.isDisconnected())
-						__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Group disconnected node." << __E__;
+						__SUP_COUTT__ << "Diff Group disconnected node." << __E__;
 					else
-						diffRootMap = diffCfgMgr->getNode(startPath).getChildrenMap(filterMap);
+						diffRootMap =
+						    diffCfgMgr->getNode(startPath).getChildrenMap(filterMap);
 				}
 				catch(const std::runtime_error& e)
 				{
 					//if diff node does not exist, user was already notified at parent diff, so ignore error.
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Group node does not exist." << __E__;
+					__SUP_COUTT__ << "Diff Group node does not exist." << __E__;
 				}
 			}
 		}
@@ -3434,7 +3664,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 		}
 		else //doDiff
 		{
-			__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Tree recursive handling." << __E__;
+			__SUP_COUTT__ << "Diff Tree recursive handling." << __E__;
 
 			//convert vector rootMap to set for searching
 			std::set<std::string /* treeNodeName */> rootMapToSearch;
@@ -3449,50 +3679,70 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 			std::stringstream diffRootSs;
 			for(const auto& diffMember : diffRootMap)//diffMemberMap)
 			{
-				diffRootSs << ", " << diffMember.first << ":" << diffMember.second.getNodeType();
-				if(rootMapToSearch.find(diffMember.first) == rootMapToSearch.end()) //memberMap.find(diffMember.first) == memberMap.end())
+				diffRootSs << ", " << diffMember.first << ":"
+				           << diffMember.second.getNodeType();
+				if(rootMapToSearch.find(diffMember.first) ==
+				   rootMapToSearch
+				       .end())  //memberMap.find(diffMember.first) == memberMap.end())
 				{
 					std::stringstream missingSs;
 					missingSs << diffMember.first << //" <<< Not in " << 
 					// 	groupName << "(" << groupKey << "), present in " <<
-						" <<< Only in " << 
-						diffGroupName << "(" << diffGroupKey << ") >>>";
-					xmlOut.addTextElementToParent("diffNodeMissing", missingSs.str(), parentEl);					
+					    " <<< Only in " << diffGroupName << "(" << diffGroupKey
+					          << ") >>>";
+					xmlOut.addTextElementToParent(
+					    "diffNodeMissing", missingSs.str(), parentEl);
 				}
 
 				if(diffMember.second.getNodeType() == "UIDLinkNode")
 				{	
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "diff active " << StringMacros::mapToString(diffCfgMgr->getActiveVersions()) << __E__;
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "root active " << StringMacros::mapToString(cfgMgr->getActiveVersions()) << __E__;
+					__SUP_COUTT__
+					    << "diff active "
+					    << StringMacros::mapToString(diffCfgMgr->getActiveVersions())
+					    << __E__;
+					__SUP_COUTT__
+					    << "root active "
+					    << StringMacros::mapToString(cfgMgr->getActiveVersions())
+					    << __E__;
 				
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "diff map " << diffRootSs.str() << __E__;
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "root map " << rootSs.str() << __E__;	
+					__SUP_COUTT__ << "diff map " << diffRootSs.str() << __E__;
+					__SUP_COUTT__ << "root map " << rootSs.str() << __E__;
 
-					__SUP_COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t" << diffMember.second.getValueName() << ": " << diffMember.second.getValueAsString() << __E__;
+					__SUP_COUTT__ << "\t\t" << diffMember.second.getValueName() << ": "
+					              << diffMember.second.getValueAsString() << __E__;
 
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << diffMember.second.nodeDump();
+					__SUP_COUTT__ << diffMember.second.nodeDump();
 				}
 			}
 			
-			__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "diff map " << diffRootSs.str() << __E__;
-			__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "root map " << rootSs.str() << __E__;
+			__SUP_COUTT__ << "diff map " << diffRootSs.str() << __E__;
+			__SUP_COUTT__ << "root map " << rootSs.str() << __E__;
 		
 			//recurse
 			for(auto& treePair : rootMap)
 			{
 				if(diffRootMap.find(treePair.first) == diffRootMap.end())
 				{
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Tree recursive handling... " << treePair.first << __E__;
+					__SUP_COUTT__ << "Diff Tree recursive handling... " << treePair.first
+					              << __E__;
 					ConfigurationTree rootNode(diffCfgMgr, nullptr /* table */);
 					recursiveTreeToXML(
-						treePair.second, depth - 1, xmlOut, parentEl, hideStatusFalse, 
+					    treePair.second,
+					    depth - 1,
+					    xmlOut,
+					    parentEl,
+					    hideStatusFalse,
 						rootNode /* root node diffTree to indicate record not found in diff group */);		
 				}
 				else
 				{
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Diff Tree recursive handling... " << treePair.first << __E__;
-					recursiveTreeToXML(
-						treePair.second, depth - 1, xmlOut, parentEl, hideStatusFalse, 
+					__SUP_COUTT__ << "Diff Tree recursive handling... " << treePair.first
+					              << __E__;
+					recursiveTreeToXML(treePair.second,
+					                   depth - 1,
+					                   xmlOut,
+					                   parentEl,
+					                   hideStatusFalse,
 						diffRootMap.at(treePair.first));
 				}
 			}
@@ -3507,12 +3757,17 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 	catch(...)
 	{
 		__SUP_SS__ << "Error detected generating XML tree!" << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
@@ -3524,18 +3779,20 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(HttpXmlDocument&        x
 //	depth of 0 means output only this node's value
 //	depth of 1 means include this node's children's values, etc..
 //	depth of -1(unsigned int) effectively means output full tree
-void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
+void ConfigurationGUISupervisor::recursiveTreeToXML(
+    const ConfigurationTree&                                       t,
                                                     unsigned int             depth,
                                                     HttpXmlDocument&         xmlOut,
                                                     xercesc::DOMElement*     parentEl,
                                                     bool 					 hideStatusFalse,
 													std::optional<std::reference_wrapper<const ConfigurationTree>> diffTree)
 {
-	__COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << t.getValueAsString() << __E__;
+	__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << t.getValueAsString() << __E__;
 
 	if(t.isValueNode())
 	{
-		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t" << t.getValueName() << ": " << t.getValueAsString() << __E__;
+		__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t" << t.getValueName() << ": "
+		                               << t.getValueAsString() << __E__;
 
 		parentEl = xmlOut.addTextElementToParent("node", t.getValueName(), parentEl);
 		if(diffTree.has_value() && 
@@ -3543,19 +3800,28 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 			t.getValueName() != TableViewColumnInfo::COL_NAME_AUTHOR && 
 			t.getValueName() != TableViewColumnInfo::COL_NAME_CREATION)
 		{	
-			__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t diff type "
+			                               << diffTree->get().getNodeType() << __E__;
 				
 			if(diffTree->get().isValueNode())
 			{
-				__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t" << diffTree->get().getValueAsString() << " ? " << t.getValueAsString() << __E__;
-				__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t" << diffTree->get().getTableName() << "-v" << diffTree->get().getTableVersion() << " ? " << t.getTableName() << "-v" << t.getTableVersion() << __E__;
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << "\t" << diffTree->get().getValueAsString() << " ? "
+				    << t.getValueAsString() << __E__;
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << "\t" << diffTree->get().getTableName() << "-v"
+				    << diffTree->get().getTableVersion() << " ? " << t.getTableName()
+				    << "-v" << t.getTableVersion() << __E__;
 
 				if(t.getValueAsString() != diffTree->get().getValueAsString())
 				{
 					std::stringstream missingSs; //assume only one group loaded for diff
-					auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(diffTree->get().getTableName());
-					missingSs << "<<< '" << diffTree->get().getValueAsString() << "' in " << 
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+					auto              diffGroupPair =
+					    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+					        diffTree->get().getTableName());
+					missingSs << "<<< '" << diffTree->get().getValueAsString() << "' in "
+					          << diffGroupPair.first << "(" << diffGroupPair.second
+					          << ") >>>";
 					xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);
 				}
 			}
@@ -3563,13 +3829,16 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 			{				
 				std::stringstream missingSs; //assume only one group loaded for diff
 				//lookup group name in diffManager based on current node's table (best proxy info for missing diff node at this point)
-				auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getTableName());
-				missingSs << "<<< Path not found in " << 
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+				auto diffGroupPair =
+				    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+				        t.getTableName());
+				missingSs << "<<< Path not found in " << diffGroupPair.first << "("
+				          << diffGroupPair.second << ") >>>";
 				xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);
 			}
 
-			__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t" << t.getValueName() << ": " << t.getValueAsString() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t" << t.getValueName()
+			                               << ": " << t.getValueAsString() << __E__;
 
 		} //end diff tree handling
 
@@ -3581,7 +3850,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 		if(t.getValueType() == TableViewColumnInfo::TYPE_FIXED_CHOICE_DATA ||
 		   t.getValueType() == TableViewColumnInfo::TYPE_BITMAP_DATA)
 		{
-			__COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << t.getValueType() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << t.getValueType() << __E__;
 
 			std::vector<std::string> choices = t.getFixedChoices();
 			for(const auto& choice : choices)
@@ -3590,11 +3859,13 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 	}
 	else
 	{
-		__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t" << t.getValueAsString() << __E__;
+		__COUT_TYPE__(TLVL_DEBUG + 30)
+		    << __COUT_HDR__ << "\t" << t.getValueAsString() << __E__;
 
 		if(t.isLinkNode())
 		{
-			__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t" << t.getValueName() << ": " << t.getValueAsString() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t" << t.getValueName()
+			                               << ": " << t.getValueAsString() << __E__;
 
 			// Note: The order of xml fields is required by JavaScript, so do NOT change
 			// order.
@@ -3602,59 +3873,86 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 
 			if(diffTree.has_value())
 			{
-				__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
+				__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t diff type "
+				                               << diffTree->get().getNodeType() << __E__;
 				
-				if(diffTree->get().isRootNode()) //then diff group does not have this uid!
+				if(diffTree->get()
+				       .isRootNode())  //then diff group does not have this uid!
 				{			
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs; //assume only one group loaded for diff					
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for missing diff node at this point)
-					auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getParentTableName());
-					missingSs << "<<< Path not found in " << 
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+					auto diffGroupPair =
+					    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+					        t.getParentTableName());
+					missingSs << "<<< Path not found in " << diffGroupPair.first << "("
+					          << diffGroupPair.second << ") >>>";
 					xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);							
 				}
 				else if(t.isDisconnected() != diffTree->get().isDisconnected())
 				{
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t diff isDisconnected " << diffTree->get().isDisconnected() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "\t\t diff isDisconnected "
+					    << diffTree->get().isDisconnected() << __E__;
 				
 					std::stringstream missingSs; //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
-					auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getParentTableName());					
-					missingSs << "<<< Link is " << (diffTree->get().isDisconnected()?"DISCONNECTED":"connected") << " in " <<
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+					auto diffGroupPair =
+					    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+					        t.getParentTableName());
+					missingSs << "<<< Link is "
+					          << (diffTree->get().isDisconnected() ? "DISCONNECTED"
+					                                               : "connected")
+					          << " in " << diffGroupPair.first << "("
+					          << diffGroupPair.second << ") >>>";
 					xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);	
 				}
-				else if(!t.isDisconnected() && t.isUIDLinkNode() != diffTree->get().isUIDLinkNode())
+				else if(!t.isDisconnected() &&
+				        t.isUIDLinkNode() != diffTree->get().isUIDLinkNode())
 				{
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs; //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
-					auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getParentTableName());					
-					missingSs << "<<< Link is " << (diffTree->get().isUIDLinkNode()?"a UID Link":"a Group Link") << " in " <<
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+					auto diffGroupPair =
+					    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+					        t.getParentTableName());
+					missingSs << "<<< Link is "
+					          << (diffTree->get().isUIDLinkNode() ? "a UID Link"
+					                                              : "a Group Link")
+					          << " in " << diffGroupPair.first << "("
+					          << diffGroupPair.second << ") >>>";
 					xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);	
 				}
-				else if(!t.isDisconnected() && t.isUIDLinkNode() && t.getValueAsString() != diffTree->get().getValueAsString()) //both are UID link
+				else if(!t.isDisconnected() && t.isUIDLinkNode() &&
+				        t.getValueAsString() !=
+				            diffTree->get().getValueAsString())  //both are UID link
 				{
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs; //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
-					auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getParentTableName());					
-					missingSs << "<<< Link to '" << diffTree->get().getValueAsString() << "' in " <<
-						diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
+					auto diffGroupPair =
+					    diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(
+					        t.getParentTableName());
+					missingSs << "<<< Link to '" << diffTree->get().getValueAsString()
+					          << "' in " << diffGroupPair.first << "("
+					          << diffGroupPair.second << ") >>>";
 					xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);	
 				}
 				else if(!t.isDisconnected() && !t.isUIDLinkNode()) //both are Group links
 				{
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs; //assume only one group loaded for diff
 
 					auto tchildren = t.getChildrenMap();
 					auto dtchildren = diffTree->get().getChildrenMap();				
 					missingSs << "<<< Group link";
 					if(tchildren.size() != dtchildren.size())
-						missingSs << " has " << tchildren.size() << " vs " << dtchildren.size() << " children..";
+						missingSs << " has " << tchildren.size() << " vs "
+						          << dtchildren.size() << " children..";
 					for(auto& tchild : tchildren)
 						if(dtchildren.find(tchild.first) == dtchildren.end())
 							missingSs << " '" << tchild.first << "' missing..";
@@ -3665,19 +3963,25 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 					//only add nodeDiff if ss has been appended
 					if(missingSs.str().length() > std::string("<<< Group link").length())
 					{						
-						auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(diffTree->get().getTableName());	
-						missingSs << " in " <<
-							diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
-						xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);	
+						auto diffGroupPair =
+						    diffTree->get()
+						        .getConfigurationManager()
+						        ->getGroupOfLoadedTable(diffTree->get().getTableName());
+						missingSs << " in " << diffGroupPair.first << "("
+						          << diffGroupPair.second << ") >>>";
+						xmlOut.addTextElementToParent(
+						    "nodeDiff", missingSs.str(), parentEl);
 					}
 				}
 				else				
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 			} //end diff tree handling
 
 			if(t.isDisconnected())
 			{
-				__COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << t.getValueName() << __E__;
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << t.getValueName() << __E__;
 
 				// xmlOut.addTextElementToParent("value", t.getValueAsString(), parentEl);
 				// xmlOut.addTextElementToParent("DisconnectedLink", t.getValueAsString(),
@@ -3702,7 +4006,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 				//{
 
 				std::vector<std::string> choices = t.getFixedChoices();
-				__COUT__ << "choices.size() " << choices.size() << __E__;
+				__COUT_TYPE__(TLVL_DEBUG + 30)
+				    << __COUT_HDR__ << "choices.size() " << choices.size() << __E__;
 
 				for(const auto& choice : choices)
 					xmlOut.addTextElementToParent("fixedChoice", choice, choicesParentEl);
@@ -3734,35 +4039,49 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 					xmlOut.addTextElementToParent("fixedChoice", choice, choicesParentEl);
 			}
 		}
-		else  // uid node
+		else  // uid node (or root node)
 		{
-			__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t" << t.getValueAsString() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30)
+			    << __COUT_HDR__ << "\t\t" << t.getValueAsString() << __E__;
 			bool returnNode = true;  // default to shown
 
-			if(hideStatusFalse)  // only show if status evaluates to true
+			if(t.isUIDNode() && hideStatusFalse)  // only show if status evaluates to true
 				returnNode = t.isEnabled();
 
 			if(returnNode)
 			{
 				parentEl =
 				    xmlOut.addTextElementToParent("node", t.getValueAsString(), parentEl);
+				if(t.isUIDNode())
+					xmlOut.addTextElementToParent("comment", 
+						t.getAuthor() + ": " + t.getComment(), parentEl);
 				
 				if(diffTree.has_value())
 				{
-					__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
+					__COUT_TYPE__(TLVL_DEBUG + 30)
+					    << __COUT_HDR__ << "\t\t diff type "
+					    << diffTree->get().getNodeType() << __E__;
 				
-					if(diffTree->get().isRootNode()) //then diff group does not have this uid!
+					if(diffTree->get()
+					       .isRootNode())  //then diff group does not have this uid!
 					{			
-						__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
-						std::stringstream missingSs; //assume only one group loaded for diff
+						__COUT_TYPE__(TLVL_DEBUG + 30)
+						    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+						std::stringstream
+						    missingSs;  //assume only one group loaded for diff
 						//lookup group name in diffManager based on current node's table (best proxy info for diff node at this point)
-						auto diffGroupPair = diffTree->get().getConfigurationManager()->getGroupOfLoadedTable(t.getTableName());	
-						missingSs << "<<< Not in " << 
-							diffGroupPair.first << "(" << diffGroupPair.second << ") >>>";
-						xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);							
+						auto diffGroupPair =
+						    diffTree->get()
+						        .getConfigurationManager()
+						        ->getGroupOfLoadedTable(t.getTableName());
+						missingSs << "<<< Not in " << diffGroupPair.first << "("
+						          << diffGroupPair.second << ") >>>";
+						xmlOut.addTextElementToParent(
+						    "nodeDiff", missingSs.str(), parentEl);
 					}
 					else
-						__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+						__COUT_TYPE__(TLVL_DEBUG + 30)
+						    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
 				} //end diff tree handling
 			}
 			else //hiding node
@@ -3773,11 +4092,16 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(const ConfigurationTree& t,
 		// child.toXml(depth-1)
 		if(depth >= 1)
 		{
-			__COUT_TYPE__(TLVL_DEBUG+20) << __COUT_HDR__ << "\t\t\t" << t.getValueAsString() << __E__;
+			__COUT_TYPE__(TLVL_DEBUG + 30)
+			    << __COUT_HDR__ << "\t\t\t" << t.getValueAsString() << __E__;
 			auto C = t.getChildren();
 			for(auto& c : C)
 				recursiveTreeToXML( //TODO -- implement diffTree for depth > 1 requests
-				    c.second, depth - 1, xmlOut, parentEl, hideStatusFalse);
+				    c.second,
+				    depth - 1,
+				    xmlOut,
+				    parentEl,
+				    hideStatusFalse);
 		}
 	}
 }  // end recursiveTreeToXML()
@@ -3885,7 +4209,7 @@ try
 		__SUP_SS__ << "Unrecognized linkIdType '" << linkIdType << ".'" << __E__;
 		__SS_THROW__;
 	}
-}
+} //end handleGetLinkToChoicesXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << "Error detected saving tree node!\n\n " << e.what() << __E__;
@@ -3895,15 +4219,20 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error detected saving tree node!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str() << __E__;
 	xmlOut.addTextElementToData("Error", ss.str());
-}
+} //end handleGetLinkToChoicesXML() catch
 
 //==============================================================================
 // handleMergeGroupsXML
@@ -4131,9 +4460,8 @@ try
 					    i == 1 /* applyRecordConversionMaps */,
 					    table->getTableName() ==
 					        ConfigurationManager::
-					            XDAQ_APPLICATION_TABLE_NAME /* generateUniqueDataColumns
-					                                         */
-					    ,
+					            XDAQ_APPLICATION_TABLE_NAME 
+								/* generateUniqueDataColumns */,
 					    &mergeReport);  // dont make destination version the first time
 
 					if(i == 1)
@@ -4222,7 +4550,8 @@ try
 		// make merge report directories in case they don't exist
 		mkdir((mergeReportBasePath + mergeReportPath).c_str(), 0755);
 
-		mergeReportPath += "merge_" + std::to_string(time(0)) + "_" + std::to_string(clock()) + ".txt";
+		mergeReportPath +=
+		    "merge_" + std::to_string(time(0)) + "_" + std::to_string(clock()) + ".txt";
 		__SUP_COUTV__(mergeReportPath);
 
 		FILE* fp = fopen((mergeReportBasePath + mergeReportPath).c_str(), "w");
@@ -4237,7 +4566,7 @@ try
 			xmlOut.addTextElementToData("MergeReportFile", "FILE FAILURE");
 	}  // end output merge report
 
-}  // end handleMergeGroupsXML
+}  // end handleMergeGroupsXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << "Error merging context group pair " << groupANameContext << " ("
@@ -4256,15 +4585,20 @@ catch(...)
 	           << groupBKeyContext << ") and table group pair " << groupANameConfig
 	           << " (" << groupAKeyConfig << ") & " << groupBNameConfig << " ("
 	           << groupBKeyConfig << ") with approach '" << mergeApproach << ".' \n\n";
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str() << __E__;
 	xmlOut.addTextElementToData("Error", ss.str());
-}
+}  // end handleMergeGroupsXML() catch
 
 //==============================================================================
 // handleSavePlanCommandSequenceXML
@@ -4306,8 +4640,6 @@ try
 			commandTableToEditMap.emplace(std::pair<std::string, TableEditStruct>(
 			    commandPair.second, TableEditStruct(commandPair.second, cfgMgr)));
 	 
-	
-
 	// try to catch any errors while editing..
 	//	if errors delete temporary plan view (if created here)
 	try
@@ -4373,13 +4705,13 @@ try
 					//	find linked UID in table (mapped by type)
 					cmdType = planTable.tableView_->getDataView()[row][cmdTypeCol];
 					auto cmdTypeTableIt = IterateTable::commandToTableMap_.find(cmdType);
-					if(cmdTypeTableIt !=
-					   IterateTable::commandToTableMap_
-					       .end() && cmdTypeTableIt->second != "")  // skip if invalid command type or if no command parameter table
+					if(cmdTypeTableIt != IterateTable::commandToTableMap_.end() &&
+					   cmdTypeTableIt->second !=
+					       "")  // skip if invalid command type or if no command parameter table
 					{
-						TableEditStruct& cmdTypeTableEdit = commandTableToEditMap.at(cmdTypeTableIt->second);
-						cmdRow =
-						    cmdTypeTableEdit.tableView_->findRow(
+						TableEditStruct& cmdTypeTableEdit =
+						    commandTableToEditMap.at(cmdTypeTableIt->second);
+						cmdRow = cmdTypeTableEdit.tableView_->findRow(
 						        cmdTypeTableEdit.tableView_->getColUID(),
 						        planTable.tableView_
 						            ->getDataView()[row][commandUidLink.second]);
@@ -4391,8 +4723,8 @@ try
 						{
 							cmdCol = cmdTypeTableEdit.tableView_->findCol(
 							        IterateTable::commandTargetCols_.TargetsLinkGroupID_);
-							targetGroupName = cmdTypeTableEdit
-							        .tableView_->getDataView()[cmdRow][cmdCol];
+							targetGroupName = cmdTypeTableEdit.tableView_
+							                      ->getDataView()[cmdRow][cmdCol];
 
 							for(unsigned int trow = 0;
 							    trow < targetTable.tableView_->getNumberOfRows();
@@ -4400,8 +4732,8 @@ try
 							{
 								// remove command from target group..
 								if(targetTable.tableView_->isEntryInGroup(
-								       trow, cmdTypeTableEdit
-								           .tableView_->getColumnInfo(cmdCol)
+								       trow,
+								       cmdTypeTableEdit.tableView_->getColumnInfo(cmdCol)
 								           .getChildLinkIndex(),
 								       targetGroupName))
 								{
@@ -4423,8 +4755,7 @@ try
 
 						// now no more targets, delete row
 
-						cmdTypeTableEdit.tableView_->deleteRow(
-						    cmdRow);
+						cmdTypeTableEdit.tableView_->deleteRow(cmdRow);
 
 						cmdTypeTableEdit.modified_ = true;
 					}
@@ -4450,13 +4781,13 @@ try
 			int                i;
 			while(getline(f, commandSubString, ';'))
 			{
-				__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "commandSubString " << commandSubString << __E__;
+				__SUP_COUTT__ << "commandSubString " << commandSubString << __E__;
 				std::istringstream g(commandSubString);
 
 				i = 0;
 				while(getline(g, paramSubString, ','))
 				{
-					__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "paramSubString " << paramSubString << __E__;
+					__SUP_COUTT__ << "paramSubString " << paramSubString << __E__;
 					if(i == 0)  // type
 					{
 						if(paramSubString != "type")
@@ -4469,14 +4800,14 @@ try
 
 						getline(g, paramValue, ',');
 						++i;
-						__SUP_COUT_TYPE__(TLVL_DEBUG+13) << __COUT_HDR__ << "paramValue " << paramValue << __E__;
+						__SUP_COUTT__ << "paramValue " << paramValue << __E__;
 						commands.back().type_ = paramValue;
 					}
 					else  // params
 					{
 						getline(g, paramValue, ',');
 						++i;
-						__SUP_COUT_TYPE__(TLVL_DEBUG+13) << __COUT_HDR__ << "paramValue " << paramValue << __E__;
+						__SUP_COUTT__ << "paramValue " << paramValue << __E__;
 
 						commands.back().params_.emplace(
 						    std::pair<std::string /*param name*/,
@@ -4522,14 +4853,13 @@ try
 
 			// create command specifics
 			auto cmdTypeTableIt = IterateTable::commandToTableMap_.find(command.type_);
-					if(cmdTypeTableIt !=
-					   IterateTable::commandToTableMap_
-					       .end() && cmdTypeTableIt->second != "")  // skip if invalid command type or if no command parameter table
+			if(cmdTypeTableIt != IterateTable::commandToTableMap_.end() &&
+			   cmdTypeTableIt->second !=
+			       "")  // skip if invalid command type or if no command parameter table
 			{
-				TableEditStruct& cmdTypeTableEdit = commandTableToEditMap.at(cmdTypeTableIt->second);
-				__SUP_COUT__ << "table "
-				             << cmdTypeTableEdit.tableName_
-				             << __E__;
+				TableEditStruct& cmdTypeTableEdit =
+				    commandTableToEditMap.at(cmdTypeTableIt->second);
+				__SUP_COUT__ << "table " << cmdTypeTableEdit.tableName_ << __E__;
 
 				// at this point have table, tempVersion, and createdFlag
 
@@ -4595,16 +4925,17 @@ try
 						continue;
 					}
 
-					cmdCol = cmdTypeTableEdit.tableView_->findCol(
-					        param.first);
+					cmdCol = cmdTypeTableEdit.tableView_->findCol(param.first);
 
 					__SUP_COUT__ << "param col " << cmdCol << __E__;
 
-					cmdTypeTableEdit.tableView_->setURIEncodedValue(param.second, cmdRow, cmdCol);
+					cmdTypeTableEdit.tableView_->setURIEncodedValue(
+					    param.second, cmdRow, cmdCol);
 				}  // end parameter loop
 
-				cmdUID = cmdTypeTableEdit.tableView_->getDataView()
-				        [cmdRow][cmdTypeTableEdit.tableView_->getColUID()];
+				cmdUID =
+				    cmdTypeTableEdit.tableView_
+				        ->getDataView()[cmdRow][cmdTypeTableEdit.tableView_->getColUID()];
 
 				if(command.targets_.size())
 				{
@@ -4646,9 +4977,8 @@ try
 				}  // end target handling
 
 				// add link at plan level to created UID
-				planTable.tableView_->setValueAsString(cmdTypeTableEdit.tableName_,
-				    row,
-				    commandUidLink.first);
+				planTable.tableView_->setValueAsString(
+				    cmdTypeTableEdit.tableName_, row, commandUidLink.first);
 				planTable.tableView_->setValueAsString(
 				    cmdUID, row, commandUidLink.second);
 
@@ -4661,7 +4991,6 @@ try
 
 		// commands are created in the temporary tables
 		//	validate with init
-
 
 		planTable.tableView_->print();
 		planTable.tableView_->init();  // verify new table (throws runtime_errors)
@@ -4784,7 +5113,7 @@ try
 	}
 
 	handleFillModifiedTablesXML(xmlOut, cfgMgr);
-}
+} // end handleSavePlanCommandSequenceXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << "Error detected saving Iteration Plan!\n\n " << e.what() << __E__;
@@ -4794,15 +5123,20 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error detected saving Iteration Plan!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str() << __E__;
 	xmlOut.addTextElementToData("Error", ss.str());
-}  // end handleSavePlanCommandSequenceXML
+}  // end handleSavePlanCommandSequenceXML() catch
 
 //==============================================================================
 // handleSaveTreeNodeEditXML
@@ -4825,7 +5159,8 @@ void ConfigurationGUISupervisor::handleSaveTreeNodeEditXML(HttpXmlDocument&     
                                                            const std::string& author)
 try
 {
-	__SUP_COUT__ << "table " << tableName << "(" << version << ")" << __E__;
+	__SUP_COUT__ << "Editing table " << tableName << "(" << version << ") uid=" << uid
+	             << " type=" << type << __E__;
 
 	// get the current table/version
 	// check if the value is new
@@ -4848,6 +5183,7 @@ try
 	}
 
 	__SUP_COUT__ << "Active version is " << table->getViewVersion() << __E__;
+	__SUP_COUTTV__(table->getView().getComment());
 
 	if(version != table->getViewVersion())
 	{
@@ -4860,6 +5196,8 @@ try
 	unsigned int col = -1;
 	if(type == "uid" || type == "delete-uid" || type == "tree-copy")
 		col = table->getView().getColUID();
+	else if(type == "node-comment")
+		col = table->getView().findCol(TableViewColumnInfo::COL_NAME_COMMENT);
 	else if(type == "link-UID" || type == "link-GroupID" || type == "value" ||
 	        type == "value-groupid" || type == "value-bool" || type == "value-bitmap")
 		col = table->getView().findCol(colName);
@@ -4901,6 +5239,8 @@ try
 
 	TableView* cfgView = table->getTemporaryView(temporaryVersion);
 	cfgView->init();  // prepare maps
+
+	__SUP_COUTTV__(table->getView().getComment());
 
 	// edit/verify new table (throws runtime_errors)
 	try
@@ -4947,8 +5287,12 @@ try
 			             << __E__;
 
 			// add row
-			unsigned int row = cfgView->addRow(
-			    author, true /*incrementUniqueData*/, newRowUID /*baseNameAutoID*/);
+			unsigned int row = cfgView->addRow(author,
+			                                   true /*incrementUniqueData*/,
+			                                   newRowUID /*baseNameAutoID*/,
+			                                   -1 /* rowToAdd */,
+			                                   linkIndex,
+			                                   groupId);
 
 			// set UID value
 			cfgView->setURIEncodedValue(newRowUID, row, cfgView->getColUID());
@@ -5007,9 +5351,7 @@ try
 			}
 
 			std::map<std::string /*modified table*/, TableVersion /* modified version */>
-			    modifiedTablesMap =
-			        cfgMgr
-			            ->getActiveVersions();  // handling copied from
+			    modifiedTablesMap = cfgMgr->getActiveVersions();  // handling copied from
 			                                    // ConfigurationGUISupervisor::handleFillModifiedTablesXML()
 			ConfigurationSupervisorBase::recursiveCopyTreeUIDNode(xmlOut,
 			                                                      cfgMgr,
@@ -5021,7 +5363,7 @@ try
 			                                                      uid);
 		}
 		else if(type == "uid" || type == "value" || type == "value-groupid" ||
-		        type == "value-bool" || type == "value-bitmap")
+		        type == "value-bool" || type == "value-bitmap" || type == "node-comment")
 		{
 			unsigned int row = cfgView->findRow(cfgView->getColUID(), uid);
 			if(!cfgView->setURIEncodedValue(newValue, row, col, author))
@@ -5443,7 +5785,7 @@ try
 	    table,
 	    temporaryVersion,
 	    true /*ignoreDuplicates*/);  // save temporary version properly
-}
+} //end handleSaveTreeNodeEditXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << "Error saving tree node! " << e.what() << __E__;
@@ -5453,15 +5795,20 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Unknown Error saving tree node! " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << "\n" << ss.str() << __E__;
 	xmlOut.addTextElementToData("Error", ss.str());
-}
+} //end handleSaveTreeNodeEditXML() catch
 
 //==============================================================================
 // handleGetTableXML
@@ -5520,9 +5867,8 @@ try
 	if(allowIllegalColumns)
 		xmlOut.addTextElementToData("allowIllegalColumns", "1");
 
-	const std::map<std::string, TableInfo>&
-	    allTableInfo = 
-	    	cfgMgr->getAllTableInfo(allowIllegalColumns /* if allowIllegalColumns, then also refresh */,
+	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo(
+	    allowIllegalColumns /* if allowIllegalColumns, then also refresh */,
 	                            allowIllegalColumns ? &accumulatedErrors : 0,
 	                            tableName);  // filter errors by tableName
 
@@ -5565,7 +5911,7 @@ try
 			versionAliases = cfgMgr->getVersionAliases();
 			for(const auto& aliases : versionAliases)
 				for(const auto& alias : aliases.second)
-					__SUP_COUT__ << "ALIAS: " << aliases.first << " " << alias.first
+					__SUP_COUTT__ << "ALIAS: " << aliases.first << " " << alias.first
 					             << " ==> " << alias.second << __E__;
 		}
 		catch(const std::runtime_error& e)
@@ -5674,12 +6020,17 @@ try
 			           << "you can also try to Copy the failing view to the new column "
 			              "names using "
 			           << "'Copy and Move' functionality.)" << __E__;
-			try	{ throw; } //one more try to printout extra info
+			try
+			{
+				throw;
+			}  //one more try to printout extra info
 			catch(const std::exception &e)
 			{
 				ss << "Exception message: " << e.what();
 			}
-			catch(...){}
+			catch(...)
+			{
+			}
 
 			__SUP_COUT_ERR__ << "\n" << ss.str();
 			version      = TableVersion();
@@ -5819,15 +6170,20 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error getting table view!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << ss.str();
 	xmlOut.addTextElementToData("Error",  ss.str());
-}
+} // end handleGetTableXML() catch
 
 //==============================================================================
 //	refreshUserSession
@@ -5837,15 +6193,15 @@ catch(...)
 //		This configurationManager will have at least empty instances of all base
 // configurations (no null pointers) 
 ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
-    std::string username, uint64_t activeSessionIndex, bool refresh)
+    std::string username, bool refresh)
 {
-	activeSessionIndex =
+	uint64_t sessionIndex =
 	    0;  // make session by username for now! (may never want to change back)
 
 	std::stringstream ssMapKey;
-	ssMapKey << username << ":" << activeSessionIndex;
+	ssMapKey << username << ":" << sessionIndex;
 	std::string mapKey = ssMapKey.str();
-	__SUP_COUT_TYPE__(TLVL_DEBUG+15) << __COUT_HDR__ << "Using Config Session " << mapKey
+	__SUP_COUTT__ << "Using Config Session " << mapKey
 					<< " ... Total Session Count: " << userConfigurationManagers_.size()
 					<< __E__;
 
@@ -5854,7 +6210,8 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	// create new table mgr if not one for active session index
 	if(userConfigurationManagers_.find(mapKey) == userConfigurationManagers_.end())
 	{
-		__SUP_COUT_INFO__ << "Creating new Configuration Manager. time=" << time(0) << __E__;
+		__SUP_COUT__ << "Creating new Configuration Manager. time=" << time(0) << " "
+		             << clock() << __E__;
 		userConfigurationManagers_[mapKey] = new ConfigurationManagerRW(username);
 
 		// update table info for each new configuration manager
@@ -5870,16 +6227,16 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	}
 	else if(userLastUseTime_.find(mapKey) == userLastUseTime_.end())
 	{
-		__SUP_SS__ << "Fatal error managing userLastUseTime_! Check the logs for Configuration Interface failure." << __E__;
+		__SUP_SS__ << "Fatal error managing userLastUseTime_! Check the logs for "
+		              "Configuration Interface failure."
+		           << __E__;
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		__SS_THROW__;
 	}
 	else if(refresh || (now - userLastUseTime_[mapKey]) >
-	                       CONFIGURATION_MANAGER_REFRESH_THRESHOLD)  // check if should
-	                                                                 // refresh all table
-	                                                                 // info
+	                       CONFIGURATION_MANAGER_REFRESH_THRESHOLD)  // check if should refresh all table info
 	{
-		__SUP_COUT_INFO__ << "Refreshing all table info." << __E__;
+		__SUP_COUT__ << "Refreshing all table info." << __E__;
 		userConfigurationManagers_[mapKey]->getAllTableInfo(
 			true /* refresh */,
 			0 /* accumulatedWarnings */,
@@ -5888,8 +6245,9 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 			false /* getGroupInfo */,
 			true /* initializeActiveGroups */);
 	}
-	__SUP_COUT_TYPE__(TLVL_DEBUG+11) << __COUT_HDR__ << "Configuration Manager ready. time=" << time(0) << " " << clock() <<
-		" runTimeSeconds=" << userConfigurationManagers_[mapKey]->runTimeSeconds() <<  __E__;
+	__SUP_COUTT__ << "Configuration Manager ready. time=" << time(0) << " " << clock()
+	              << " runTimeSeconds()="
+	              << userConfigurationManagers_[mapKey]->runTimeSeconds() << __E__;
 
 	// update active sessionIndex last use time
 	userLastUseTime_[mapKey] = now;
@@ -5912,9 +6270,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 			}
 			userLastUseTime_.erase(it);  // erase by iterator
 
-			it = userLastUseTime_.begin();  // fail safe.. reset it, to avoid trying to
-			                                // understand what happens with the next
-			                                // iterator
+			it = userLastUseTime_.begin();  // fail safe.. reset it, to avoid trying to understand what happens with the next iterator
 		}
 
 	return userConfigurationManagers_[mapKey];
@@ -6014,7 +6370,6 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 
 	// each column is represented by 4 fields or 6
 	//	- type, name, dataType, defaultValue, minValue, maxValue
-
 
 	std::istringstream       columnChoicesISS(columnChoicesCSV);
 	std::string              columnChoicesString;
@@ -6249,9 +6604,12 @@ try
 		unsigned int kcol = configView->findCol("GroupKey");
 
 		// only make a new version if we are changing compared to active backbone
-		std::vector<std::string> groupAliases = StringMacros::getVectorFromString(groupAliasCSV);
-		std::vector<std::string> groupNames = StringMacros::getVectorFromString(groupNameCSV);
-		std::vector<std::string> groupKeys = StringMacros::getVectorFromString(groupKeyCSV);
+		std::vector<std::string> groupAliases =
+		    StringMacros::getVectorFromString(groupAliasCSV);
+		std::vector<std::string> groupNames =
+		    StringMacros::getVectorFromString(groupNameCSV);
+		std::vector<std::string> groupKeys =
+		    StringMacros::getVectorFromString(groupKeyCSV);
 		__SUP_COUTV__(StringMacros::vectorToString(groupAliases));
 		__SUP_COUTV__(StringMacros::vectorToString(groupNames));
 		__SUP_COUTV__(StringMacros::vectorToString(groupKeys));
@@ -6262,8 +6620,9 @@ try
 			if(groupAlias == "" || groupNames[i] == "" || groupKeys[i] == "") 
 			{
 				//skip empty aliases
-				__SUP_COUT_WARN__ << "Empty alias parameter found [" << i << "] = {" << 
-					groupAlias << ", " << groupNames[i] << "(" << groupKeys[i] << ")}" << __E__; 
+				__SUP_COUT_WARN__ << "Empty alias parameter found [" << i << "] = {"
+				                  << groupAlias << ", " << groupNames[i] << "("
+				                  << groupKeys[i] << ")}" << __E__;
 				++i; 
 				continue;
 			} 
@@ -6315,7 +6674,9 @@ try
 			if(localIsDifferent)  // set author/time of new record if different
 			{
 				configView->setValue(
-					author, row, configView->findCol(TableViewColumnInfo::COL_NAME_AUTHOR));
+				    author,
+				    row,
+				    configView->findCol(TableViewColumnInfo::COL_NAME_AUTHOR));
 				configView->setValue(
 					time(0),
 					row,
@@ -6366,7 +6727,7 @@ try
 	}
 
 	__SUP_COUT__ << "\t\t newAssignedVersion: " << newAssignedVersion << __E__;
-}
+}  //end handleSetGroupAliasInBackboneXML()
 catch(std::runtime_error& e)
 {
 	__SUP_SS__ << "Error saving new Group Alias view!\n\n " << e.what() << __E__;
@@ -6376,12 +6737,17 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error saving new Group Alias view!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
 } //end handleSetGroupAliasInBackboneXML() catch
@@ -6558,12 +6924,17 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error saving new Version Alias view!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
 }  // end handleSetVersionAliasInBackboneXML() catch
@@ -6754,12 +7125,17 @@ catch(std::runtime_error& e)
 catch(...)
 {
 	__SUP_SS__ << "Error saving new Version Alias view!\n\n " << __E__;
-	try	{ throw; } //one more try to printout extra info
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
 	catch(const std::exception &e)
 	{
 		ss << "Exception message: " << e.what();
 	}
-	catch(...){}
+	catch(...)
+	{
+	}
 	__SUP_COUT_ERR__ << ss.str();
 	xmlOut.addTextElementToData("Error", ss.str());
 }  // end handleAliasGroupMembersInBackboneXML() catch
@@ -6803,13 +7179,14 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(groupAliasesTableName).getChildren();
 
-
 	const int numOfThreads = ConfigurationManager::PROCESSOR_COUNT/2;
-	__SUP_COUT__ << " PROCESSOR_COUNT " << ConfigurationManager::PROCESSOR_COUNT << " ==> " << numOfThreads << " threads for alias group loads." << __E__;
+	__SUP_COUT__ << " PROCESSOR_COUNT " << ConfigurationManager::PROCESSOR_COUNT
+	             << " ==> " << numOfThreads << " threads for alias group loads." << __E__;
 
 	if(numOfThreads < 2) // no multi-threading			
 	{
-		std::string groupName, groupKey, groupComment, groupAuthor, groupCreateTime, groupType;
+		std::string groupName, groupKey, groupComment, groupAuthor, groupCreateTime,
+		    groupType;
 		for(auto& aliasNodePair : aliasNodePairs)
 		{
 			groupName = aliasNodePair.second.getNode("GroupName").getValueAsString();
@@ -6824,7 +7201,8 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 					.getValueAsString());
 
 			// get group comment
-			groupComment = ConfigurationManager::UNKNOWN_INFO;  // clear just in case failure
+			groupComment =
+			    ConfigurationManager::UNKNOWN_INFO;  // clear just in case failure
 			groupType    = ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN;
 			try
 			{
@@ -6842,8 +7220,9 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 			}
 			catch(...)
 			{
-				__SUP_COUT_WARN__ << "Failed to load group '" << groupName << "(" << groupKey
-								<< ")' to extract group comment and type." << __E__;
+				__SUP_COUT_WARN__ << "Failed to load group '" << groupName << "("
+				                  << groupKey << ")' to extract group comment and type."
+				                  << __E__;
 			}
 			xmlOut.addTextElementToData("GroupComment", groupComment);
 			xmlOut.addTextElementToData("GroupType", groupType);
@@ -6853,7 +7232,6 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 	{
 		int threadsLaunched = 0;
 		int foundThreadIndex = 0;
-		std::mutex threadMutex; // to protect accumulatedWarnings
 		std::vector<std::shared_ptr<std::atomic<bool>>> threadDone;
 		for(int i=0;i<numOfThreads;++i)
 			threadDone.push_back(std::make_shared<std::atomic<bool>>(true));
@@ -6883,23 +7261,28 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 						}
 					if(foundThreadIndex == -1)
 					{
-						__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Waiting for available thread..." << __E__;
+						__SUP_COUTT__ << "Waiting for available thread..." << __E__;
 						usleep(10000);
 					}
 				} //end thread search loop
 				threadsLaunched = numOfThreads - 1;
 			}					
-			__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Starting load group thread... " << groupName << "(" << groupKey << ")" << __E__;
+			__SUP_COUTT__ << "Starting load group thread... " << groupName << "("
+			              << groupKey << ")" << __E__;
 			*(threadDone[foundThreadIndex]) = false;
 
-
-			std::thread([](
-				ConfigurationManagerRW* 				theCfgMgr, 
+			std::thread(
+			    [](ConfigurationManagerRW*            theCfgMgr,
 				std::string 							theGroupName, 
 				ots::TableGroupKey						theGroupKey,
 				std::shared_ptr<ots::GroupInfo>        	theGroupInfo,
 				std::shared_ptr<std::atomic<bool>> 		theThreadDone) { 
-			ConfigurationManagerRW::loadTableGroupThread(theCfgMgr, theGroupName, theGroupKey, theGroupInfo, theThreadDone); },
+				    ConfigurationManagerRW::loadTableGroupThread(theCfgMgr,
+				                                                 theGroupName,
+				                                                 theGroupKey,
+				                                                 theGroupInfo,
+				                                                 theThreadDone);
+			    },
 				cfgMgr,
 				groupName,
 				TableGroupKey(groupKey),
@@ -6909,7 +7292,6 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 						
 			++threadsLaunched;
 			++foundThreadIndex;					
-			
 			
 		} //end alias group thread loop
 
@@ -6925,31 +7307,35 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 				}
 			if(foundThreadIndex != -1)
 			{
-				__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Waiting for thread to finish... " << foundThreadIndex << __E__;
+				__SUP_COUTT__ << "Waiting for thread to finish... " << foundThreadIndex
+				              << __E__;
 				usleep(10000);
 			}
 		} while(foundThreadIndex != -1); //end thread done search loop
-
 
 		//threads done now, so copy group info
 		size_t i = 0;
 		for(auto& aliasNodePair : aliasNodePairs)
 		{
-
 			groupName = aliasNodePair.second.getNode("GroupName").getValueAsString();
 			groupKey  = aliasNodePair.second.getNode("GroupKey").getValueAsString();
 			xmlOut.addTextElementToData("GroupAlias", aliasNodePair.first);
 			xmlOut.addTextElementToData("GroupName", groupName);
 			xmlOut.addTextElementToData("GroupKey", groupKey);
-			xmlOut.addTextElementToData("AliasComment",
+			xmlOut.addTextElementToData(
+			    "AliasComment",
 				aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
 					.getValueAsString());
 
-			xmlOut.addTextElementToData("GroupComment", 		sharedGroupInfoPtrs[i]->latestKeyGroupComment_);
-			xmlOut.addTextElementToData("GroupAuthor", 			sharedGroupInfoPtrs[i]->latestKeyGroupAuthor_);
-			xmlOut.addTextElementToData("GroupCreationTime", 	sharedGroupInfoPtrs[i]->latestKeyGroupCreationTime_);
-			xmlOut.addTextElementToData("GroupType", 			sharedGroupInfoPtrs[i]->latestKeyGroupTypeString_);
-			// xmlOut.addTextElementToData("GroupType", 			sharedGroupInfoPtrs[i]->latestKeyMemberMap_);
+			xmlOut.addTextElementToData("GroupComment",
+			                            sharedGroupInfoPtrs[i]->latestKeyGroupComment_);
+			xmlOut.addTextElementToData("GroupAuthor",
+			                            sharedGroupInfoPtrs[i]->latestKeyGroupAuthor_);
+			xmlOut.addTextElementToData(
+			    "GroupCreationTime", sharedGroupInfoPtrs[i]->latestKeyGroupCreationTime_);
+			xmlOut.addTextElementToData(
+			    "GroupType", sharedGroupInfoPtrs[i]->latestKeyGroupTypeString_);
+			// xmlOut.addTextElementToData("GroupMemberMap",	sharedGroupInfoPtrs[i]->latestKeyMemberMap_);
 			++i;
 		} //end copy group info loop
 
@@ -7061,12 +7447,17 @@ void ConfigurationGUISupervisor::handleGetTableGroupTypeXML(
 	catch(...)
 	{
 		__SUP_SS__ << "Table group has invalid type! " << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 		__SUP_COUT__ << "\n" << ss.str();
 		groupTypeString = ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN;
 		xmlOut.addTextElementToData("TableGroupType", groupTypeString);
@@ -7093,18 +7484,19 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
                                                       ConfigurationManagerRW* cfgMgr,
                                                       bool returnMembers)
 {
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 	// use xmlOut.dataSs_ since there is no need for escape the string and it can be a huge data block to escape and recursively print
 	// xercesc::DOMElement* parentEl;
 
 	// get all group info from cache (if no cache, get from interface)
 
-	if(!cfgMgr->getAllGroupInfo()
-	        .size() || 
+	if(!cfgMgr->getAllGroupInfo().size() ||
 		cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ == "" ||
-		cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ == ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)  
+	   cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ ==
+	       ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)
 	{
-		__SUP_COUT__ << "Group Info cache appears empty. Attempting to regenerate." << __E__;
+		__SUP_COUT__ << "Group Info cache appears empty. Attempting to regenerate."
+		             << __E__;
 		cfgMgr->getAllTableInfo(true /*refresh*/,
 			0 /* accumulatedWarnings */,
 			"" /* errorFilterName */,
@@ -7115,8 +7507,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 
 	const std::map<std::string, GroupInfo>& allGroupInfo = cfgMgr->getAllGroupInfo();
 
-
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 
 	TableGroupKey groupKey;
 	std::string   groupName;
@@ -7138,11 +7529,17 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		xmlOut.dataSs_ << "<TableGroupKey value='" << groupKey << "'/>" << __E__;	
 
 		// trusting the cache!
-		xmlOut.dataSs_ << "<TableGroupType value='" << groupInfo.second.latestKeyGroupTypeString_ << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupComment value='" << StringMacros::escapeString(groupInfo.second.latestKeyGroupComment_, true /* allowWhiteSpace */) << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupAuthor value='" << groupInfo.second.latestKeyGroupAuthor_ << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupCreationTime value='" << groupInfo.second.latestKeyGroupCreationTime_ << "'/>" << __E__;
-
+		xmlOut.dataSs_ << "<TableGroupType value='"
+		               << groupInfo.second.latestKeyGroupTypeString_ << "'/>" << __E__;
+		xmlOut.dataSs_ << "<TableGroupComment value='"
+		               << StringMacros::escapeString(
+		                      groupInfo.second.latestKeyGroupComment_,
+		                      true /* allowWhiteSpace */)
+		               << "'/>" << __E__;
+		xmlOut.dataSs_ << "<TableGroupAuthor value='"
+		               << groupInfo.second.latestKeyGroupAuthor_ << "'/>" << __E__;
+		xmlOut.dataSs_ << "<TableGroupCreationTime value='"
+		               << groupInfo.second.latestKeyGroupCreationTime_ << "'/>" << __E__;
 
 		// xmlOut.addTextElementToData("TableGroupName", groupName);
 		// xmlOut.addTextElementToData("TableGroupKey", groupKey.toString());
@@ -7164,8 +7561,10 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 			
 			for(auto& memberPair : groupInfo.second.latestKeyMemberMap_)
 			{
-				xmlOut.dataSs_ << "\t<MemberName value='" << memberPair.first << "'/>" << __E__;
-				xmlOut.dataSs_ << "\t<MemberVersion value='" << memberPair.second << "'/>" << __E__;
+				xmlOut.dataSs_ << "\t<MemberName value='" << memberPair.first << "'/>"
+				               << __E__;
+				xmlOut.dataSs_ << "\t<MemberVersion value='" << memberPair.second << "'/>"
+				               << __E__;
 		
 				// xmlOut.addTextElementToParent("MemberName", memberPair.first, parentEl);
 				// xmlOut.addTextElementToParent(
@@ -7186,7 +7585,6 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 			// xmlOut.addTextElementToData("TableGroupName", groupName);
 			// xmlOut.addTextElementToData("TableGroupKey", keyInSet.toString());
 		
-
 			// TODO -- make loadingHistoricalInfo an input parameter
 			bool loadingHistoricalInfo = false;
 			if(loadingHistoricalInfo)
@@ -7209,15 +7607,21 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				catch(...)
 				{
 					groupTypeString = ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN;
-					__SUP_COUT_WARN__
-						<< "Failed to load group '" << groupName << "(" << keyInSet
+					__SUP_COUT_WARN__ << "Failed to load group '" << groupName << "("
+					                  << keyInSet
 						<< ")' to extract group comment and type." << __E__;
 				}
 
-				xmlOut.dataSs_ << "<TableGroupType value='" << groupTypeString << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupComment value='" << StringMacros::escapeString(groupComment, true /* allowWhiteSpace */)  << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupAuthor value='" << groupAuthor << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupCreationTime value='" << groupCreationTime << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupType value='" << groupTypeString << "'/>"
+				               << __E__;
+				xmlOut.dataSs_ << "<TableGroupComment value='"
+				               << StringMacros::escapeString(groupComment,
+				                                             true /* allowWhiteSpace */)
+				               << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupAuthor value='" << groupAuthor << "'/>"
+				               << __E__;
+				xmlOut.dataSs_ << "<TableGroupCreationTime value='" << groupCreationTime
+				               << "'/>" << __E__;
 				// xmlOut.addTextElementToData("TableGroupType", groupTypeString);
 				// xmlOut.addTextElementToData("TableGroupComment", groupComment);
 				// xmlOut.addTextElementToData("TableGroupAuthor", groupAuthor);
@@ -7226,10 +7630,18 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 			else
 			{
 				// just use guess that historical groups are of same type
-				xmlOut.dataSs_ << "<TableGroupType value='" << groupInfo.second.latestKeyGroupTypeString_ << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupComment value='" << "" << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupAuthor value='" << "" << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupCreationTime value='" << "" << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupType value='"
+				               << groupInfo.second.latestKeyGroupTypeString_ << "'/>"
+				               << __E__;
+				xmlOut.dataSs_ << "<TableGroupComment value='"
+				               << ""
+				               << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupAuthor value='"
+				               << ""
+				               << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupCreationTime value='"
+				               << ""
+				               << "'/>" << __E__;
 				// // assume latest in cache reflects others (for speed)
 				// xmlOut.addTextElementToData("TableGroupType",
 				//                             groupInfo.second.latestKeyGroupTypeString_);
@@ -7241,20 +7653,17 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				//                             groupInfo.second.latestKeyGroupCreationTime_);
 			}
 
-
 			if(returnMembers)
 			{
 				//need to add empty group members, event for historical groups, for easier Javascript extraction
 				xmlOut.dataSs_ << "<TableGroupMembers/>" << __E__; 
 				// xmlOut.addTextElementToData("TableGroupMembers", "");
-
-				
 			}
 
 		}  // end other key loop
-		__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << groupName << " runtime=" << cfgMgr->runTimeSeconds() << __E__;
+		__SUP_COUTT__ << groupName << " runtime=" << cfgMgr->runTimeSeconds() << __E__;
 	}      // end primary group loop
-	__SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 }  // end handleTableGroupsXML()
 
 //==============================================================================
@@ -7272,10 +7681,10 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
                                                  ConfigurationManagerRW* cfgMgr)
 {
-	if(cfgMgr->getAllGroupInfo().size() == 0 || 
-		cfgMgr->getActiveVersions().size() == 0)  
+	if(cfgMgr->getAllGroupInfo().size() == 0 || cfgMgr->getActiveVersions().size() == 0)
 	{
-		__SUP_COUT__ << "Table Info cache appears empty. Attempting to regenerate." << __E__;
+		__SUP_COUT__ << "Table Info cache appears empty. Attempting to regenerate."
+		             << __E__;
 		cfgMgr->getAllTableInfo(true /*refresh*/,
 			0 /* accumulatedWarnings */,
 			"" /* errorFilterName */,
@@ -7372,7 +7781,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	__COUT__ << "Retrieving artdaq nodes..." << __E__;
 
 	//	setup active tables based on active groups and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables);
+	setupActiveTablesXML(
+	    xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables, false /* refreshAll */);
 
 	std::map<std::string /*type*/,
 	         std::map<std::string /*record*/, std::vector<std::string /*property*/>>>
@@ -7506,7 +7916,8 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 	__SUP_COUT__ << "Saving artdaq nodes..." << __E__;
 
 	//	setup active tables based on active groups and modified tables
-	setupActiveTablesXML(xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables);
+	setupActiveTablesXML(
+	    xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables, false /* refreshAll */);
 
 	// start node object extraction from nodeString
 	std::map<std::string /*type*/,
@@ -7616,9 +8027,10 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 //
 void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
     HttpXmlDocument&        xmlOut,
-    ConfigurationManagerRW* cfgMgr,
+    ConfigurationManager*
+        cfgMgr,  //force read-only config manager to avoid requiring user-lock (i.e., not ConfigurationManagerRW)
     const std::string&      contextGroupName /* = "" */,
-    const TableGroupKey&    contextGroupKey /* = INVALID */)
+    const TableGroupKey& contextGroupKey /* = INVALID */) const
 {
 	bool usingActiveGroups = (contextGroupName == "" || contextGroupKey.isInvalid());
 
@@ -7764,208 +8176,73 @@ void ConfigurationGUISupervisor::handleOtherSubsystemActiveGroups(
 	std::string targetSubsystem /* = "" */)
 try
 {
-
 	try
 	{
-		ConfigurationTree node = cfgMgr->getNode(ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE);
+		ConfigurationTree node =
+		    cfgMgr->getNode(ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE);
 		auto children = node.getChildren();
 
 		for(auto subsystem : children)
 		{
 			__SUP_COUTV__(subsystem.first);
-			__SUP_COUTV__(StringMacros::vectorToString(subsystem.second.getChildrenNames()));
+			__SUP_COUTV__(
+			    StringMacros::vectorToString(subsystem.second.getChildrenNames()));
 
-			std::string userPath = subsystem.second.getNode("SubsystemUserDataPath").getValue();
+			std::string userPath =
+			    subsystem.second.getNode("SubsystemUserDataPath").getValue();
 			__SUP_COUTV__(userPath);
 		}
 	}
 	catch(const std::runtime_error& e)
 	{
-		__SUP_COUT__ << "Ignoring errors in handling other subsystem active groups (assuming the subsystem information map is not setup in " <<
-			ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE << ") -- here is the error: \n" << e.what() << __E__;
+		__SUP_COUT__ << "Ignoring errors in handling other subsystem active groups "
+		                "(assuming the subsystem information map is not setup in "
+		             << ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE
+		             << ") -- here is the error: \n"
+		             << e.what() << __E__;
 		return; //ignore errors if subsystems not defined
 	}
 
 	//else subsystems are defined, so do not ignore errors!
 
-	ConfigurationTree node = cfgMgr->getNode(ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE);
+	ConfigurationTree node =
+	    cfgMgr->getNode(ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE);
 	auto children = node.getChildren();
 	for(auto subsystem : children)
 	{		
-		if(targetSubsystem != "" && targetSubsystem != subsystem.first) continue; //skip non-target subsystem
+		if(targetSubsystem != "" && targetSubsystem != subsystem.first)
+			continue;  //skip non-target subsystem
 
-		std::string userPath = subsystem.second.getNode("SubsystemUserDataPath").getValue();
-		auto splitPath = StringMacros::getVectorFromString(userPath,{':'});
-		__SUP_COUTV__(StringMacros::vectorToString(splitPath));
-
-		if(!splitPath.size() || splitPath.size() > 2) 
-		{					
-			__SUP_SS__ << "Illegal user data path specified for subsystem '" <<  subsystem.first
-				<< "': " << userPath << __E__;
-			__SS_ONLY_THROW__;				
-		}		
-		std::string userDataPath = splitPath[splitPath.size()-1];
-
-		//since we are running exec, cleanse the filename path for alphanumeric,_,-,/ only
-		for(unsigned int i=0; i < userDataPath.length(); ++i)
-			if(!((userDataPath[i] >= 'a' && userDataPath[i] <= 'z') ||
-				(userDataPath[i] >= 'A' && userDataPath[i] <= 'Z') ||
-				(userDataPath[i] >= '0' && userDataPath[i] <= '9') ||
-				userDataPath[i] == '-' ||
-				userDataPath[i] == '_' ||
-				userDataPath[i] == '/'))
-			{				
-				__SUP_SS__ << "Illegal user data path specified (no special characters allowed) for subsystem '" <<  subsystem.first
-						<< "': " << userPath << __E__;
-				__SS_ONLY_THROW__;									
-			} // end filename cleanse	
-		
-
-		xercesc::DOMElement* parent = xmlOut.addTextElementToData("SubsystemName", subsystem.first);
+		xercesc::DOMElement* parent =
+		    xmlOut.addTextElementToData("SubsystemName", subsystem.first);
 
 		if(!getFullList)
 			continue;
 
-		//enforce filename ends correctly
-		std::string filename = userDataPath + "/ServiceData/ActiveTableGroups.cfg";		
-
-		std::string cmdResult;
+		std::string filename, userDataPath;
 		std::string username, hostname;
-		bool scpWithUsername = false;
-		if(splitPath.size() == 2) //then need to scp the file
+
+		std::map<std::string /*groupType*/,
+		         std::pair<std::string /*groupName*/, TableGroupKey>>
+		    retMap = cfgMgr->getOtherSubsystemActiveTableGroups(
+		        subsystem.first, &userDataPath, &hostname, &username);
+
+		for(const auto& retPair : retMap)
 		{
-			//since we are running exec, cleanse the username@host path for alphanumeric,_,-,/ only
-			std::vector<std::string> userHostSplit = StringMacros::getVectorFromString(splitPath[0],{'@'});
-			__SUP_COUTV__(userHostSplit.size());			
-			if(userHostSplit.size() == 1)
-				hostname = userHostSplit[0];
-			else if(userHostSplit.size() == 2)
-			{
-				username = userHostSplit[0];
-				hostname = userHostSplit[1];
-			}
-			else
-			{					
-				__SUP_SS__ << "Illegal remote username/host specified for subsystem '" <<  subsystem.first
-					<< "': " << userPath << __E__;
-				__SS_ONLY_THROW__;					
+			xmlOut.addTextElementToParent("CurrentlyActive" + retPair.first + "GroupName",
+			                              retPair.second.first,
+			                              parent);
+			xmlOut.addTextElementToParent("CurrentlyActive" + retPair.first + "GroupKey",
+			                              retPair.second.second.toString(),
+			                              parent);
 			}		
 
-			for(unsigned int i=0;userHostSplit.size() == 2 && i<username.length(); ++i)
-				if(!((username[i] >= 'a' && username[i] <= 'z') ||
-					(username[i] >= 'A' && username[i] <= 'Z') ||
-					(username[i] >= '0' && username[i] <= '9') ||
-					username[i] == '-' ||
-					username[i] == '_'))
-				{					
-					__SUP_SS__ << "Illegal remote username specified for subsystem '" <<  subsystem.first
-						<< "': " << userPath << __E__;
-					__SS_ONLY_THROW__;					
-				}		
-			unsigned int ii = 0; //track last . to prevent weird . usage
-			for(unsigned int i=0;i<hostname.length(); ++i)
-				if(!((hostname[i] >= 'a' && hostname[i] <= 'z') ||
-					(hostname[i] >= 'A' && hostname[i] <= 'Z') ||
-					(hostname[i] >= '0' && hostname[i] <= '9') ||
-					hostname[i] == '-' ||
-					hostname[i] == '_'))
-				{					
-					if(hostname[i] == '.' && i > ii + 1)
-					{
-						//its ok to have this . so track position
-						ii = i;
-					}
-					else //else not ok to have .. or other characters
-					{
-						__SUP_SS__ << "Illegal remote hostname '" << hostname << "' specified for subsystem '" <<  subsystem.first
-							<< "': " << userPath << __E__;
-						__SS_ONLY_THROW__;					
-					}
-				}		
-
-			std::string tmpSubsystemFilename = ConfigurationManager::ACTIVE_GROUPS_FILENAME + "." + subsystem.first;
-			__SUP_COUTV__(tmpSubsystemFilename);
-			if(userHostSplit.size() == 2) //has username
-			{
-				scpWithUsername = true;
-				cmdResult = StringMacros::exec(("rm "  + tmpSubsystemFilename + " 2>/dev/null; scp " + username + "@" + hostname + 
-					":" + filename + 
-					" " + tmpSubsystemFilename + " 2>&1; cat " + tmpSubsystemFilename + " 2>&1").c_str());
-			}
-			else
-				cmdResult = StringMacros::exec(("rm "  + tmpSubsystemFilename + " 2>/dev/null; scp " + hostname + ":" + filename + 
-					" " + tmpSubsystemFilename + " 2>&1; cat " + tmpSubsystemFilename + " 2>&1").c_str());
-		}
-		else if(splitPath.size() == 1) //then can just directly access the file
-		{
-			cmdResult = StringMacros::exec(("cat " + filename + " 2>&1").c_str());
-		}
-		else
-		{
-			__SUP_SS__ << "Illegal user data path specified for subsystem '" << subsystem.first
-				<< "': " << userPath << __E__;
-			__SS_ONLY_THROW__;
-		}
-
-		__SUP_COUTV__(cmdResult);
-		if(cmdResult.find("Permission denied") != std::string::npos)
-		{
-			__SUP_SS__ << "Permission denied accessing user data path specified for subsystem '" << subsystem.first
-				<< "': " << userPath << __E__;
-			__SS_ONLY_THROW__;
-		}
-
-		auto subsystemActiveGroupMap = StringMacros::getVectorFromString(cmdResult,{'\n'} /* delimieter*/, {' ','\t'} /* whitespace*/);
-		__SUP_COUTV__(StringMacros::vectorToString(subsystemActiveGroupMap));
-		__SUP_COUTV__(subsystemActiveGroupMap.size());
-
-		std::string //groupComment, groupAuthor, groupCreationTime, 
-			groupType;
-		for(unsigned int i = 0; i + 1 < subsystemActiveGroupMap.size(); i += 2)
-		{
-			if(subsystemActiveGroupMap[i] == "" || subsystemActiveGroupMap[i+1] == "-1") continue;
-
-			__SUP_COUT__ << "Loading type of subsystem '" << subsystem.first
-				<< "' group " << subsystemActiveGroupMap[i] << "(" << subsystemActiveGroupMap[i+1] << ")" << __E__;
-
-			try
-			{
-				cfgMgr->loadTableGroup(
-					subsystemActiveGroupMap[i]/*groupName*/,
-					TableGroupKey(subsystemActiveGroupMap[i+1]),
-					false /*doActivate*/,
-					0 /*groupMembers*/,
-					0 /*progressBar*/,
-					0 /*accumulateErrors*/,
-					0, // &groupComment,
-					0, //&groupAuthor,
-					0, //&groupCreationTime,
-					true /*doNotLoadMember*/,
-					&groupType);
-			}
-			catch(const std::runtime_error& e)
-			{
-				__SUP_COUT__ <<  "Ignoring error loading subsystem '" << subsystem.first
-				<< "' group " << subsystemActiveGroupMap[i] << "(" << subsystemActiveGroupMap[i+1] << "): " << __E__ << e.what() << __E__;
-				groupType = ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN;
-			}			
-			
-			xmlOut.addTextElementToParent("CurrentlyActive" + groupType + "GroupName", subsystemActiveGroupMap[i], parent);
-			xmlOut.addTextElementToParent("CurrentlyActive" + groupType + "GroupKey", subsystemActiveGroupMap[i+1], parent);
-			// xmlOut.addTextElementToParent("CurrentlyActive" + groupType + "GroupComment", groupComment, parent);
-			// xmlOut.addTextElementToParent("CurrentlyActive" + groupType + "GroupAuthor", groupAuthor, parent);
-			// xmlOut.addTextElementToParent("CurrentlyActive" + groupType + "GroupCreationTime", groupCreationTime, parent);
-		}
-
-
-		std::vector<std::string> filenameTypes = {
-			"Configured",
+		std::vector<std::string> filenameTypes = {"Configured",
 			"Started",
 			"ActivatedConfig",
 			"ActivatedContext",
 			"ActivatedBackbone",
-			"ActivatedIterator"	
-		};
+		                                          "ActivatedIterator"};
 
 		std::vector<std::string> filenames = {
 			FSM_LAST_CONFIGURED_GROUP_ALIAS_FILE,
@@ -7973,53 +8250,74 @@ try
 			ConfigurationManager::LAST_ACTIVATED_CONFIG_GROUP_FILE,
 			ConfigurationManager::LAST_ACTIVATED_CONTEXT_GROUP_FILE,
 			ConfigurationManager::LAST_ACTIVATED_BACKBONE_GROUP_FILE,
-			ConfigurationManager::LAST_ACTIVATED_ITERATOR_GROUP_FILE
-		};
+		    ConfigurationManager::LAST_ACTIVATED_ITERATOR_GROUP_FILE};
 
+		std::string userPath =
+		    subsystem.second.getNode("SubsystemUserDataPath").getValue();
+		auto        splitPath = StringMacros::getVectorFromString(userPath, {':'});
+		std::string cmdResult;
 		for(unsigned int i = 0; i < filenames.size(); ++i)
 		{
 			filename = userDataPath + "/ServiceData/RunControlData/" + filenames[i];	
 			__SUP_COUTV__(filename);
 
-			std::string tmpSubsystemFilename = ConfigurationManager::LAST_TABLE_GROUP_SAVE_PATH + "/" + filenames[i] + "." + subsystem.first;
+			std::string tmpSubsystemFilename =
+			    ConfigurationManager::LAST_TABLE_GROUP_SAVE_PATH + "/" + filenames[i] +
+			    "." + subsystem.first;
 			__SUP_COUTV__(tmpSubsystemFilename);
 			
 			if(splitPath.size() == 2) //must scp
 			{
-				if(scpWithUsername) //has username
-					cmdResult = StringMacros::exec(("rm "  + tmpSubsystemFilename + " 2>/dev/null; scp " + username + "@" + hostname + 
-						":" + filename + 
-						" " + tmpSubsystemFilename + " 2>&1; cat " + tmpSubsystemFilename + " 2>&1").c_str());
+				if(username.size())  //has username
+					cmdResult = StringMacros::exec(
+					    ("rm " + tmpSubsystemFilename + " 2>/dev/null; scp " + username +
+					     "@" + hostname + ":" + filename + " " + tmpSubsystemFilename +
+					     " 2>&1; cat " + tmpSubsystemFilename + " 2>&1")
+					        .c_str());
 				else
-					cmdResult = StringMacros::exec(("rm "  + tmpSubsystemFilename + " 2>/dev/null; scp " + hostname + ":" + filename + 
-						" " + tmpSubsystemFilename + " 2>&1; cat " + tmpSubsystemFilename + " 2>&1").c_str());
+					cmdResult = StringMacros::exec(
+					    ("rm " + tmpSubsystemFilename + " 2>/dev/null; scp " + hostname +
+					     ":" + filename + " " + tmpSubsystemFilename + " 2>&1; cat " +
+					     tmpSubsystemFilename + " 2>&1")
+					        .c_str());
 			}
 			else if(splitPath.size() == 1) //then can just directly access the file
 			{
-				cmdResult = StringMacros::exec(("rm "  + tmpSubsystemFilename + " 2>/dev/null; cp " + filename + 
-						" " + tmpSubsystemFilename + " 2>&1; cat " + tmpSubsystemFilename + " 2>&1").c_str());
+				cmdResult = StringMacros::exec(("rm " + tmpSubsystemFilename +
+				                                " 2>/dev/null; cp " + filename + " " +
+				                                tmpSubsystemFilename + " 2>&1; cat " +
+				                                tmpSubsystemFilename + " 2>&1")
+				                                   .c_str());
 			}
 
 			__SUP_COUTV__(cmdResult);
 			std::string                                          timeString;
-			std::pair<std::string /*group name*/, TableGroupKey> theGroup = ConfigurationManager::loadGroupNameAndKey(filenames[i] + "." + subsystem.first, timeString);
+			std::pair<std::string /*group name*/, TableGroupKey> theGroup =
+			    ConfigurationManager::loadGroupNameAndKey(
+			        filenames[i] + "." + subsystem.first, timeString);
 
 			// fill return parameters
-			xmlOut.addTextElementToParent("Last" + filenameTypes[i] + "GroupName", theGroup.first, parent);
-			xmlOut.addTextElementToParent("Last" + filenameTypes[i] + "GroupKey", theGroup.second.toString(), parent);
-			xmlOut.addTextElementToParent("Last" + filenameTypes[i] + "GroupTime", timeString, parent);
+			xmlOut.addTextElementToParent(
+			    "Last" + filenameTypes[i] + "GroupName", theGroup.first, parent);
+			xmlOut.addTextElementToParent("Last" + filenameTypes[i] + "GroupKey",
+			                              theGroup.second.toString(),
+			                              parent);
+			xmlOut.addTextElementToParent(
+			    "Last" + filenameTypes[i] + "GroupTime", timeString, parent);
 		} // end active/recent filename handling
 		
-
 	} //end subsystem loop
-
-} 
+} // end getSubsytemTableGroups()
 catch(const std::runtime_error& e)
 {
-	__SUP_SS__ << "An error occurred handling subsystem active groups (Please check the subsystem user data path information map setup in the Context group table " <<
-		ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE << ") -- here is the error: \n" << e.what() << __E__;
+	__SUP_SS__
+	    << "An error occurred handling subsystem active groups (Please check the "
+	       "subsystem user data path information map setup in the Context group table "
+	    << ConfigurationManager::CONTEXT_SUBSYSTEM_OPTIONAL_TABLE
+	    << ") -- here is the error: \n"
+	    << e.what() << __E__;
 	__SUP_SS_THROW__;
-} // end getSubsytemTableGroups()
+}  // end getSubsytemTableGroups() catch
 
 //==============================================================================
 // handleGroupDiff
@@ -8038,7 +8336,8 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 	std::string diffGroupName;
 
 	if(diffKey.isInvalid())
-		__SUP_COUT__ << "Differencing group " << groupName << "(" << groupKey << ") with the active group." << __E__;
+		__SUP_COUT__ << "Differencing group " << groupName << "(" << groupKey
+		             << ") with the active group." << __E__;
 	else
 	{
 		if(diffGroupNameInput == "")
@@ -8046,11 +8345,13 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 		else
 			diffGroupName = diffGroupNameInput;
 
-		__SUP_COUT__ << "Differencing group " << groupName << "(" << groupKey << ") with group " <<
-			diffGroupName << "(" << diffKey << ")" << __E__;
+		__SUP_COUT__ << "Differencing group " << groupName << "(" << groupKey
+		             << ") with group " << diffGroupName << "(" << diffKey << ")"
+		             << __E__;
 	}
 
-
+	try
+	{
 	std::map<std::string /*name*/, TableVersion /*version*/> memberMap, diffMemberMap;
 	std::string groupType, accumulateErrors;
 	std::stringstream diffReport;
@@ -8067,22 +8368,43 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 		0 /*groupAuthor*/, 
 		0 /*groupCreationTime*/, 
 		false /*doNotLoadMember*/,
-		(diffKey.isInvalid()?0:&groupType));
+		    (diffKey.isInvalid()
+		         ? &groupType
+		         : 0));  //for specified diff group (not active), do not need groupType
 
 	__SUP_COUTV__(StringMacros::mapToString(memberMap));
 
-	std::map<std::string /* groupType */, std::pair<std::string, TableGroupKey>> activeGroups;
+		std::map<std::string /* groupType */, std::pair<std::string, TableGroupKey>>
+		    activeGroups;
 	if(diffKey.isInvalid())
 	{
 		activeGroups = cfgMgr->getActiveTableGroups();
 
-		__SUP_COUT__ << "active " << groupType << " group is " << activeGroups.at(groupType).first << "(" << activeGroups.at(groupType).second << ")" << __E__;
+			__SUP_COUTV__(StringMacros::mapToString(activeGroups));
+			__SUP_COUTV__(groupType);
 
-		diffReport << "This difference report is between " << groupType << " group <b>'" << groupName << "(" << groupKey << ")'</b>" <<
-			" and active group <b>'" << activeGroups.at(groupType).first << "(" << activeGroups.at(groupType).second << ")'</b>." << __E__;
+			if(activeGroups.find(groupType) == activeGroups.end() ||
+			   activeGroups.at(groupType).first == "" ||
+			   activeGroups.at(groupType).second.isInvalid())
+			{
+				__SUP_SS__ << "Could not find an active group of type '" << groupType
+				           << ".' Please check the expected active configuration groups "
+				              "for errors (going to 'System View' of the Config App may "
+				              "reveal errors)."
+				           << __E__;
+				__SUP_SS_THROW__;
+			}
 		
-		cfgMgr->loadTableGroup(
-			activeGroups.at(groupType).first,
+			__SUP_COUT__ << "active " << groupType << " group is "
+			             << activeGroups.at(groupType).first << "("
+			             << activeGroups.at(groupType).second << ")" << __E__;
+
+			diffReport << "This difference report is between " << groupType
+			           << " group <b>'" << groupName << "(" << groupKey << ")'</b>"
+			           << " and active group <b>'" << activeGroups.at(groupType).first
+			           << "(" << activeGroups.at(groupType).second << ")'</b>." << __E__;
+
+			cfgMgr->loadTableGroup(activeGroups.at(groupType).first,
 			activeGroups.at(groupType).second,
 			false /*doActivate*/,
 			&diffMemberMap /*groupMembers*/,
@@ -8093,18 +8415,21 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 			0 /*groupCreationTime*/, 
 			false /*doNotLoadMember*/);
 
-		diffReport << "\n\n" <<
-				"'" << groupName << "(" << groupKey << ")' has <b>" << memberMap.size() << " member tables</b>, and " << 
-				"'" << activeGroups.at(groupType).first << "(" << activeGroups.at(groupType).second << ")' has <b>" << diffMemberMap.size() << " member tables</b>." << __E__;
-
+			diffReport << "\n\n"
+			           << "'" << groupName << "(" << groupKey << ")' has <b>"
+			           << memberMap.size() << " member tables</b>, and "
+			           << "'" << activeGroups.at(groupType).first << "("
+			           << activeGroups.at(groupType).second << ")' has <b>"
+			           << diffMemberMap.size() << " member tables</b>." << __E__;
 	}
-	else
+		else  //specified diff group (not active), so do not need groupType
 	{
-		diffReport << "This difference report is between " << groupType << " group <b>'" << groupName << "(" << groupKey << ")'</b>" <<
-			" and group <b>'" << diffGroupName << "(" << diffKey << ")'</b>." << __E__;
+			diffReport << "This difference report is between group <b>'" << groupName
+			           << "(" << groupKey << ")'</b>"
+			           << " and group <b>'" << diffGroupName << "(" << diffKey
+			           << ")'</b>." << __E__;
 		
-		cfgMgr->loadTableGroup(
-			diffGroupName,
+			cfgMgr->loadTableGroup(diffGroupName,
 			diffKey,
 			false /*doActivate*/,
 			&diffMemberMap /*groupMembers*/,
@@ -8115,12 +8440,14 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 			0 /*groupCreationTime*/, 
 			false /*doNotLoadMember*/);
 
-		diffReport << "\n\n" <<
-			"'" << groupName << "(" << groupKey << ")' has <b>" << memberMap.size() << " member tables</b>, and " << 
-			"'" << diffGroupName << "(" << diffKey << ")' has <b>" << diffMemberMap.size() << " member tables</b>." << __E__;
-
+			diffReport << "\n\n"
+			           << "'" << groupName << "(" << groupKey << ")' has <b>"
+			           << memberMap.size() << " member tables</b>, and "
+			           << "'" << diffGroupName << "(" << diffKey << ")' has <b>"
+			           << diffMemberMap.size() << " member tables</b>." << __E__;
 	}
 
+		__SUP_COUTV__(StringMacros::mapToString(diffMemberMap));
 	
 	diffReport << "<INDENT><ol>";
 
@@ -8130,60 +8457,72 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 	{
 		if(diffMemberMap.find(member.first) == diffMemberMap.end())
 		{
-			diffReport << "\n\n<li>" <<
-				"Table <b>" << member.first << "-v" << member.second << "</b> not found in active group." <<
-				"</li>" << __E__;
+				diffReport << "\n\n<li>"
+				           << "Table <b>" << member.first << "-v" << member.second
+				           << "</b> not found in active group."
+				           << "</li>" << __E__;
 			noDifference = false;
 			++tableDifferences;
 			continue;
 		}
 
-		__SUP_COUT__ <<  "Comparing " << 
-			member.first << "-v" << member.second << " ... " << 
-			member.first << "-v" << diffMemberMap.at(member.first) << __E__;
+			__SUP_COUTT__ << "Comparing " << member.first << "-v" << member.second
+			              << " ... " << member.first << "-v"
+			              << diffMemberMap.at(member.first) << __E__;
 		
-		if(member.second == diffMemberMap.at(member.first)) continue;
+			if(member.second == diffMemberMap.at(member.first))
+				continue;
 
-		diffReport << "\n\n<li>" <<
-			"Table <b>" << member.first << " v" << member.second << "</b> in "
-				<< groupName << "(" << groupKey << ")' ...vs... " << " <b>v" << diffMemberMap.at(member.first) << "</b> in " 
+			diffReport << "\n\n<li>"
+			           << "Table <b>" << member.first << " v" << member.second
+			           << "</b> in " << groupName << "(" << groupKey << ")' ...vs... "
+			           << " <b>v" << diffMemberMap.at(member.first) << "</b> in "
 				<< diffGroupName << "(" << diffKey << ")':" << __E__;
 		 
 		TableBase* table = cfgMgr->getTableByName(member.first);
 		
 		diffReport << "<ul>";
-		std::map<std::string /* uid */, std::vector<std::string /* colName */>> modifiedRecords; //useful for tree diff view display
-		if(!table->diffTwoVersions(member.second,diffMemberMap.at(member.first),&diffReport,&modifiedRecords))
+			std::map<std::string /* uid */, std::vector<std::string /* colName */>>
+			    modifiedRecords;  //useful for tree diff view display
+			if(!table->diffTwoVersions(member.second,
+			                           diffMemberMap.at(member.first),
+			                           &diffReport,
+			                           &modifiedRecords))
 		{
 			//difference found!
 			noDifference = false;
 			++tableDifferences;
-			auto parentEl = xmlOut.addTextElementToData("TableWithDiff", member.first);
+				auto parentEl =
+				    xmlOut.addTextElementToData("TableWithDiff", member.first);
 			for(auto& modifiedRecord : modifiedRecords)
 			{
-				auto recordParentEl = xmlOut.addTextElementToParent("RecordWithDiff", modifiedRecord.first, parentEl);
+					auto recordParentEl = xmlOut.addTextElementToParent(
+					    "RecordWithDiff", modifiedRecord.first, parentEl);
 				for(auto& modifiedColumn : modifiedRecord.second)
-					xmlOut.addTextElementToParent("ColNameWithDiff", modifiedColumn, recordParentEl);
+						xmlOut.addTextElementToParent(
+						    "ColNameWithDiff", modifiedColumn, recordParentEl);
 			}
 		}		
 		diffReport << "</ul></li>";
 
 	} //end member table comparison loop
 
-	for(auto& activeMember : diffMemberMap)
+		for(auto& diffMember : diffMemberMap)
 	{
-		if(memberMap.find(activeMember.first) == memberMap.end())
+			if(memberMap.find(diffMember.first) == memberMap.end())
 		{
-
 			if(diffKey.isInvalid())
-				diffReport << "\n\n<li>" <<
-					"Active Group Table <b>" << activeMember.first << "-v" << activeMember.second << "</b> not found in '" << groupName << "(" << groupKey << ")'." << 
-					"</li>" << __E__;
+					diffReport << "\n\n<li>"
+					           << "Active Group Table <b>" << diffMember.first << "-v"
+					           << diffMember.second << "</b> not found in '" << groupName
+					           << "(" << groupKey << ")'."
+					           << "</li>" << __E__;
 			else
-				diffReport << "\n\n<li>" <<
-					diffGroupName << "(" << diffKey << ") Table <b>" << activeMember.first << "-v" << activeMember.second << "</b> not found in '" << groupName << "(" << groupKey << ")'." << 
-					"</li>" << __E__;
-			
+					diffReport << "\n\n<li>" << diffGroupName << "(" << diffKey
+					           << ") Table <b>" << diffMember.first << "-v"
+					           << diffMember.second << "</b> not found in '" << groupName
+					           << "(" << groupKey << ")'."
+					           << "</li>" << __E__;
 
 			noDifference = false;
 			++tableDifferences;
@@ -8192,47 +8531,61 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 	}
 	diffReport << "\n</ol></INDENT>";
 
-
 	if(diffKey.isInvalid())
 	{
 		if(noDifference)
-			diffReport << "\n\nNo difference found between " <<
-				"<b>'" << groupName << "(" << groupKey << ")'</b> and active group " << 
-				"<b>'" << activeGroups.at(groupType).first << "(" << activeGroups.at(groupType).second << ")'</b>." << __E__;
+				diffReport << "\n\nNo difference found between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and active group "
+				           << "<b>'" << activeGroups.at(groupType).first << "("
+				           << activeGroups.at(groupType).second << ")'</b>." << __E__;
 		else
-			diffReport << "\n\n<b>" << tableDifferences << "</b> member table differences identified between " <<
-				"<b>'" << groupName << "(" << groupKey << ")'</b> and active group " << 
-				"<b>'" << activeGroups.at(groupType).first << "(" << activeGroups.at(groupType).second << ")'</b>." << __E__;
+				diffReport << "\n\n<b>" << tableDifferences
+				           << "</b> member table differences identified between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and active group "
+				           << "<b>'" << activeGroups.at(groupType).first << "("
+				           << activeGroups.at(groupType).second << ")'</b>." << __E__;
 	}
 	else
 	{
 		if(noDifference)
-			diffReport << "\n\nNo difference found between " <<
-				"<b>'" << groupName << "(" << groupKey << ")'</b> and group " << 
-				"<b>'" << diffGroupName << "(" << diffKey << ")'</b>." << __E__;
+				diffReport << "\n\nNo difference found between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and group "
+				           << "<b>'" << diffGroupName << "(" << diffKey << ")'</b>."
+				           << __E__;
 		else
-			diffReport << "\n\n<b>" << tableDifferences << "</b> member table differences identified between " <<
-				"<b>'" << groupName << "(" << groupKey << ")'</b> and group " << 
-				"<b>'" << diffGroupName << "(" << diffKey << ")'</b>." << __E__;
+				diffReport << "\n\n<b>" << tableDifferences
+				           << "</b> member table differences identified between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and group "
+				           << "<b>'" << diffGroupName << "(" << diffKey << ")'</b>."
+				           << __E__;
 	}
-
-
 
 	xmlOut.addTextElementToData("NoDifference", noDifference?"1":"0");
 	xmlOut.addTextElementToData("DiffReport", diffReport.str());
+	}
+	catch(const std::runtime_error& e)
+	{
+		__SUP_COUT_ERR__ << "Caught error while differencing group " << groupName << "("
+		                 << groupKey << ") with group " << diffGroupName << "(" << diffKey
+		                 << ")" << __E__ << e.what() << __E__;
+		throw;  //rethrow
+	}
 } // end handleGroupDiff()
 
 //==============================================================================
 // handleTableDiff
-void ConfigurationGUISupervisor::handleTableDiff(
-    HttpXmlDocument& xmlOut,
+void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
 	const std::string&      tableName,
 	const TableVersion&     vA,
 	const TableVersion&     vB)
 {
-	
-	__SUP_COUT__ << "Differencing tableName " << tableName << " v" << vA << " with v" << vB << __E__;
+	__SUP_COUT__ << "Differencing tableName " << tableName << " v" << vA << " with v"
+	             << vB << __E__;
 
 	//first make sure tables are loaded
 	TableBase* table = cfgMgr->getTableByName(tableName);
@@ -8262,12 +8615,17 @@ void ConfigurationGUISupervisor::handleTableDiff(
 	catch(...)  // default to mock-up for fail-safe in GUI editor
 	{
 		__SUP_SS__ << "Failed to get table " << tableName << " version: " << vA << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", "Error getting view! " + ss.str());
@@ -8297,12 +8655,17 @@ void ConfigurationGUISupervisor::handleTableDiff(
 	catch(...)  // default to mock-up for fail-safe in GUI editor
 	{
 		__SUP_SS__ << "Failed to get table " << tableName << " version: " << vB << __E__;
-		try	{ throw; } //one more try to printout extra info
+		try
+		{
+			throw;
+		}  //one more try to printout extra info
 		catch(const std::exception &e)
 		{
 			ss << "Exception message: " << e.what();
 		}
-		catch(...){}
+		catch(...)
+		{
+		}
 
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", "Error getting view! " + ss.str());
@@ -8311,12 +8674,13 @@ void ConfigurationGUISupervisor::handleTableDiff(
 	bool noDifference = true;
 	std::stringstream diffReport;
 
-	diffReport << "This difference report is between table " << tableName << 
-		" v" << vA << " and v" << vB << "</b>." << __E__;
+	diffReport << "This difference report is between table " << tableName << " v" << vA
+	           << " and v" << vB << "</b>." << __E__;
 		
 	diffReport << "<INDENT>";
 	diffReport << "<ul>";
-	std::map<std::string /* uid */, std::vector<std::string /* colName */>> modifiedRecords; //useful for tree diff view display
+	std::map<std::string /* uid */, std::vector<std::string /* colName */>>
+	    modifiedRecords;  //useful for tree diff view display
 	if(!table->diffTwoVersions(vA, vB,&diffReport))		
 		noDifference = false; //difference found!
 	diffReport << "</ul></INDENT>";
@@ -8351,12 +8715,6 @@ void ConfigurationGUISupervisor::testXDAQContext()
 		__SUP_COUT_WARN__ << "The test activation of the context group failed. Ignoring."
 		                  << __E__;
 	}
-
-
-
-
-
-
 
 	return;
 
@@ -8398,7 +8756,7 @@ void ConfigurationGUISupervisor::testXDAQContext()
 	// 			__SUP_COUT__ << "\t\t" << v << __E__;
 	// 		}
 	// 	}
-	// __SUP_COUT_TYPE__(TLVL_DEBUG+12) << __COUT_HDR__ << "Group Info end runtime=" << cfgMgr->runTimeSeconds() << __E__;
+	// __SUP_COUTT__ << "Group Info end runtime=" << cfgMgr->runTimeSeconds() << __E__;
 	// testXDAQContext just a test bed for navigating the new config tree
 	// cfgMgr->testXDAQContext();
 

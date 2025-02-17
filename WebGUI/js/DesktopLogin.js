@@ -45,7 +45,7 @@ else {
 		var _DEFAULT_REMEMBER_ME_DURATION_DAYS = 30;
 		var _DEFAULT_PASSWORD_MIN_LEN = 4;
 		var _DEFAULT_PASSWORD_MAX_LEN = 50;
-		var _DEFAULT_USER_MIN_LEN = 4;
+		var _DEFAULT_USER_MIN_LEN = 3;
 		var _DEFAULT_USER_MAX_LEN = 50;
 		
 		var _cookieCodeStr = "otsCookieCode";

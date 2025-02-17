@@ -293,7 +293,7 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 						retObj[types[i]][nodeName] = 
 							{
 								"status": 		statuses[j].getAttribute('value') | 0, //integer 0 or 1
-								"hostname": 	hostnames[j].getAttribute('value'),
+								"hostname": 	decodeURIComponent(hostnames[j].getAttribute('value')),
 								"subsystemId": 	subsystemIds[j].getAttribute('value') | 0, //integer
 							};
 							

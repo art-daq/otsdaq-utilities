@@ -60,6 +60,7 @@ else {
         var _numOfIcons = 0;
         
         var _deepClickTimer = 0;
+		var _iconInFolderWasClicked = false;
         
         var _folders = [{},[]]; // a folder is a an Object of subfolders and an array of icons
         					//	It has an array of icon objects (in case icon names are not unique,
@@ -154,8 +155,11 @@ else {
 		    	var err;
 		    	if((err = Desktop.getXMLValue(req,"Error")) && err != "")
 		    	{
-		    		Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
-		    		return;		    		
+					if(err.indexOf("Remote Gateway desktop icons") > 0) //demote to log
+						Debug.log("Warning: " + err);
+		    		else					
+						Debug.err("Error: " + err, Debug.HIGH_PRIORITY);
+		    		//try to power through error //return;		    		
 		    	}
 		    	
 		    	iconArray = Desktop.getXMLValue(req,"iconList"); 
@@ -168,7 +172,8 @@ else {
 			}
       		else //it is the wizard
       		{ 
-      			iconArray = req.responseText.split(","); 
+				if(req && req.responseText)
+      				iconArray = req.responseText.split(","); 
       		}
 		    
 			Debug.log("icon Array split: " + iconArray);
@@ -218,8 +223,8 @@ else {
       	//	adds an icon subtext wording underneath and image icon (if picfn defined, else alt text icon)
       	this.addIcon = function(subtext, altText, linkurl, uniqueWin, picfn, folderPath) 
       	{
-      	      		
-      		//Debug.log("this.addIcon");
+      	    if(altText == 'X') 		
+      			Debug.log("this.addIcon");
       		      		
       		//same as in DesktopContent.openNewBrowserTab
       		//for linkurl, need to check lid=## is terminated with /
@@ -247,8 +252,6 @@ else {
       					"The window path seems to be invalid: " + e, Debug.HIGH_PRIORITY);
       			return;
       		}
-
-      		this.iconNameToPathMap[subtext] = [linkurl,uniqueWin];
       		
       		var iconContainer = document.createElement("div");			
 			iconContainer.setAttribute("class", "DesktopIcons-iconContainer");
@@ -262,6 +265,16 @@ else {
 			//	and show the top level folder icon (if new to _folders object)
 			//else
 			//	just show icon
+
+			while(folderPath.length && folderPath[0] == '/') //remove leading '/'s
+				folderPath = folderPath.substr(1);
+			while(folderPath.length && folderPath[folderPath.length-1] == '/') //remove trailing '/'s
+				folderPath = folderPath.substr(0,folderPath.length-1);
+
+			if(folderPath.length)
+				this.iconNameToPathMap[folderPath + "/" + subtext] = [linkurl,uniqueWin];
+			else
+				this.iconNameToPathMap[subtext] = [linkurl,uniqueWin];
 			
 			var folderSplit = folderPath.split('/'); //root folder is first non empty index			
 			var rootFolderIndex;
@@ -269,7 +282,15 @@ else {
 			var folders = this.folders;
 			for(var i=0;i<folderSplit.length;++i)
 			{
-				if(folderSplit[i] == "") continue;
+				if(folderSplit[i] == "")
+				{
+					if(folderSplit.length == 1) continue; //skip eempty folder path field
+
+					Debug.warn("Empty folder names are not allowed. Icon '" + subtext + 
+						"' has an illegal folder path:", folderPath);
+					folderPtr = undefined; 
+					break;					
+				} 
 				
 				if(folderPtr === undefined)
 					folderPtr = folders; //init to root folder first time
@@ -295,7 +316,7 @@ else {
 				
 				//push new icon object
 				folderPtr[1].push([subtext, altText, linkurl, uniqueWin, picfn]); 
-				console.log(folders);
+				// console.log(folders);
 
 				//check if this is first icon encountered in this root folder
 				//	if so, need to display on desktop
@@ -339,9 +360,14 @@ else {
       		}
       		else
       		{
-				link.addEventListener("click", function(e) {
-					Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
-				}, false);
+				if(altText == 'X' && linkurl == "/") //click unloaded icons to refresh icons
+					link.addEventListener("click", function(e) {
+						Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
+					}, false);
+				else
+					link.addEventListener("click", function(e) {
+						Desktop.desktop.addWindow(subtext,"",linkurl,uniqueWin);
+					}, false);
       		}
 			
       		div = document.createElement("div");
@@ -508,6 +534,8 @@ else {
       		
       		this.closeFolder(); //close any open folders
 
+			_iconInFolderWasClicked = false; //reset for new folder
+
       		var div = document.createElement("div");
       		div.setAttribute("class", "DesktopIcons-folderDiv");
       		div.style.padding = "0 5px 5px 12px";
@@ -529,7 +557,7 @@ else {
       		_openFolderElement = div;
       		
       		this.openSubFolder(folderName);
-      	}
+      	} //end this.openFolder()
 
       	//=====================================================================================
       	//this.openSubFolder ~~
@@ -577,7 +605,7 @@ else {
       		}
       		
       		Debug.log("_openFolderPath = " + _openFolderPath);
-      		console.log(_openFolderPtr);
+      		// console.log(_openFolderPtr);
       	
       		if(!_openFolderPtr) {Debug.log("Should never happen??!"); return;}//throw("What");
       		//if(!_openFolderPtr) this.resetWithPermissions = function(_permissions);
@@ -670,11 +698,15 @@ else {
 					str,
 					vals,keys,types,
 					"Desktop.desktop.icons.clickFolderContents",
-					noMultiSelect,0,imgURLs,
+					noMultiSelect,
+					0, //"Desktop.desktop.icons.mouseOverFolderContents"
+					imgURLs,
 					"Desktop.desktop.icons.mouseDownFolderContents",
-					"Desktop.desktop.icons.mouseUpFolderContents");
+					"Desktop.desktop.icons.mouseUpFolderContents",
+					0,0, //requireCtrlMultiClick,titles,
+					"Desktop.desktop.icons.mouseMoveFolderContents");
       		MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
-      	}
+      	} //end this.openSubFolder()
 
       	//=====================================================================================
       	//this.closeFolder ~~
@@ -692,53 +724,80 @@ else {
       		_openFolderElement = 0;
       		_openFolderPath = ""; //clear
       		_openFolderPtr = undefined; //clear
-      	}
+      	} //end this.closeFolder()
+      	//=====================================================================================
+      	//this.isFolderOpen ~~
+      	this.isFolderOpen = function() { return _openFolderElement; }
+      	//=====================================================================================
+      	//this.wasFolderIconClicked ~~
+      	this.wasFolderIconClicked = function() { return _iconInFolderWasClicked; }
 
       	//=====================================================================================
       	//this.clickFolderContents ~~
-      	this.clickFolderContents = function(el) {
-      		
+      	this.clickFolderContents = function(el) 
+		{  
             var i = MultiSelectBox.getSelectedIndex(el); 
             var selArr = MultiSelectBox.getSelectionArray(el);
             var val = el.textContent;
             var type = el.getAttribute("type-value");
             var key = el.getAttribute("key-value")|0;
 
+			Debug.log("Clicked Folder Content item",val);
 
             MultiSelectBox.dbg("Chosen element index:",i,            		
             		" value:",val,
 					" key:",key,
 					" type:",type);
-
-
 										
             if(type == "icon")
             {
             	var target = _openFolderPtr[1][key];
-            	//Icon object array (0-subtext, 1-altText, 2-linkurl, 3-uniqueWin, 4-picfn)            	           	
-            	Desktop.desktop.addWindow(target[0],"",target[2],target[3]);
+            	//Icon object array (0-subtext, 1-altText, 2-linkurl, 3-uniqueWin, 4-picfn)     
+				
+				//add folder path - to name
+				var folderPath = _openFolderPath.length > 1?(_openFolderPath + "/"):"";
+            	Desktop.desktop.addWindow(folderPath + target[0],"",target[2],target[3]);
+
             	//this.closeFolder(); 
+				_iconInFolderWasClicked = true; //set flag to facilitate closing folder
             }
             else
             	this.openSubFolder(val);
-      	}
+      	} //end this.clickFolderContents()
+
+      	//=====================================================================================
+      	//this.mouseMoveFolderContents ~~
+      	this.mouseMoveFolderContents = function(el,event) 
+		{
+      		event.stopPropagation();
+			//clear timer to keep folder popup open a bit longer
+			if(Desktop._openFolderTimer) 
+			{
+				window.clearTimeout(Desktop._openFolderTimer);
+				Desktop._openFolderTimer = 0;
+				Debug.log("Canceling close folder timer due to user movement.");
+			}
+			return false;
+      	} //end this.mouseMoveFolderContents()
 
       	//=====================================================================================
       	//this.mouseUpFolderContents ~~
       	//	this functionality should mirror addIcon()
-      	this.mouseUpFolderContents = function(el,event) {
+      	this.mouseUpFolderContents = function(el,event) 
+		{
       		if(this.deepClickTimer)
       		{
       			window.clearTimeout(this.deepClickTimer);
       			this.deepClickTimer = 0;
       		}
-      	}
+      	} //end this.mouseUpFolderContents()
 
       	//=====================================================================================
       	//this.mouseDownFolderContents ~~
       	//	this functionality should mirror local function
       	//	deepClickHandler() in addIcon()
-      	this.mouseDownFolderContents = function(el,event) {
+      	this.mouseDownFolderContents = function(el,event) 
+		{
             var i = MultiSelectBox.getSelectedIndex(el); 
             var selArr = MultiSelectBox.getSelectionArray(el);
             var val = el.textContent;
@@ -792,7 +851,7 @@ else {
 
             },500); //end timeout handler
 
-      	}
+      	} //end this.mouseDownFolderContents()
 		
 		//------------------------------------------------------------------
 		//handle class construction ----------------------

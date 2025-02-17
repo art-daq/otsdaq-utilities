@@ -26,12 +26,13 @@
 		
 		//	Smart Launch template:
 		//	
-		//		Checkboxes on left to select configuration systems to enable
-		//		Giant button on right to launch
+		//		Checkboxes on left to select configuration subsystems to enable
+		//		Giant RED button on right to (re)launch ots
+		//		GREEN button on right to start ots run
 		//	
 		//		The user can copy this template into their own repository and 
 		//			and make custom groupings of contexts. For example,
-		//			the Tracker might consist of 5 contents, and could then
+		//			the 'Tracker' might consist of 5 contexts, and could then
 		//			be reduced to a single checkbox.
 		//		Use SmartLaunch.subsystems and SmartLaunch.systemToContextMap to define custom context groups.
 		//
@@ -43,7 +44,9 @@
 		//			- load active sessions
 		//			- detect in GUI that system is back alive
 		//
-		//
+		//	In short, subsystems comprise your configuration, and subsystem names map to
+		//		one or many context records that can be on/off as a group (activating/deactivating their segment of the full configuration).
+
 	
 
 
@@ -55,6 +58,7 @@
 //	var _NAME_NIMPLUS 	= "NIM+ Trigger/Coincidence Module";
 	
 	SmartLaunch.doShowContexts = true; //true to also include contexts
+	SmartLaunch.getConfigAliases = true; //if true, will show dropdown box of config aliases for user to select
 	
 	SmartLaunch.subsystems = [];
 //					   _NAME_STRIPS,
@@ -63,6 +67,19 @@
 //					   ]; 
 	
 	SmartLaunch.systemToContextMap = {};
+//	SmartLaunch.systemToContextMap[_NAME_STRIPS] = [
+//										 "StripTelescopeContext"
+//										 ];
+//	SmartLaunch.systemToContextMap[_NAME_MWPC] = [
+//									   "WireChamberContext",
+//									   "ARTDAQBoardReader0", 
+//									   "ARTDAQEventBuilder0",
+//									   "ARTDAQEventBuilder1",
+//									   "ARTDAQAggregator0"
+//									   ];
+//	SmartLaunch.systemToContextMap[_NAME_NIMPLUS] = [
+//										  "NimPlusContext"
+//										  ];
 
 	//=====================================================================================
 	//init ~~
@@ -70,7 +87,7 @@
 	function init() 
 	{		
 		SmartLaunch.create();
-	}
+	} //end init()
 	
 	</script>
 </head>

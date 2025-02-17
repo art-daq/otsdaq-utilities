@@ -280,7 +280,7 @@
 					}, //end handler
 					0, 0, 0,//reqParam, progressHandler, callHandlerOnErr, 
 					false,//doNotShowLoadingOverlay,
-					true //targetSupervisor
+					true //targetGatewaySupervisor
 			); //end getAppId request
 
 			if(_checkActiveGroupsTimer)
@@ -296,7 +296,7 @@
 				console.log("artdaqObj",artdaqObj);
 				
 				//get active configuration group
-				DesktopContent.XMLHttpRequest("Request?RequestType=loadArtdaqNodeLayout",
+				DesktopContent.XMLHttpRequest("Request?RequestType=getArtdaqNodeLayout",
 						"", //end post data, 
 						function(req) 
 						{
@@ -501,8 +501,8 @@
 					if(doneHandler) doneHandler();
 					
 					
-						} //end loadArtdaqNodeLayout handler
-				); //end loadArtdaqNodeLayout call
+						} //end getArtdaqNodeLayout handler
+				); //end getArtdaqNodeLayout call
 				
 					}, //end getArtdaqApps handler
 					_modifiedTables); //end getArtdaqApps call
@@ -626,7 +626,7 @@
 				console.log("nodeVectorIndexArr",nodeVectorIndexArr); 
 				console.log("nodeVectorIndexReverseMap",nodeVectorIndexReverseMap); 
 	
-				if(nodeCount> 1 && 
+				if(nodeCount > 1 && 
 						nodeNameTemplate.indexOf('*') < 0)
 				{
 					Debug.log("Illegal Node Name for multi-node for node '" +
@@ -698,7 +698,7 @@
 				console.log("hostnameVectorIndexArr",hostnameVectorIndexArr); 
 				console.log("hostnameVectorIndexReverseMap",hostnameVectorIndexReverseMap); 
 
-				if(hostnameCount> 1 && 
+				if(hostnameCount > 1 && 
 						hostname.indexOf('*') < 0)
 				{
 					Debug.log("Illegal Hostname for node '" +
@@ -707,7 +707,7 @@
 							Debug.HIGH_PRIORITY);
 					return false;
 				}
-				if(hostnameCount> 1 && 
+				if(hostnameCount > 1 && 
 						hostnameCount != nodeCount)
 				{
 					Debug.log("Illegal array of hostnames for node '" +
@@ -1639,6 +1639,7 @@
 								_nodes[i].nodeNameFixedWidth)
 								+ 
 								"]"); 
+						nodeName = decodeURIComponent(nodeName);
 					}
 					if(hostname.indexOf('*') >= 0)
 					{
@@ -1650,6 +1651,7 @@
 								_nodes[i].hostnameVectorIndexString,
 								_nodes[i].hostnameFixedWidth) + 
 								"]"); 
+						hostname = decodeURIComponent(hostname);
 					}
 					
 					if(count > 4) count = 4; //cap at 4

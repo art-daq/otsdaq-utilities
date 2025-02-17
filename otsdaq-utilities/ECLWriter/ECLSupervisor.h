@@ -31,6 +31,8 @@
 #include <string>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include "otsdaq-utilities/ECLWriter/ECLConnection.h"
+
 // clang-format off
 namespace ots
 {
@@ -42,23 +44,48 @@ class ECLSupervisor : public CoreSupervisorBase
   public:
 	XDAQ_INSTANTIATOR();
 
-											ECLSupervisor			(xdaq::ApplicationStub* s);
-	virtual 								~ECLSupervisor			(void);
-	void 									init					(void);
-	void 									destroy					(void);
+											ECLSupervisor					(xdaq::ApplicationStub* s);
+	virtual 								~ECLSupervisor					(void);
+	void 									init							(void);
+	void 									destroy							(void);
 
-	xoap::MessageReference 					MakeSystemLogEntry		(xoap::MessageReference msg);
+
+	virtual void							defaultPage						(xgi::Input* in, xgi::Output* out) override;
+	static std::string						getIconHeaderString				(void);
+	virtual void							request							(const std::string&               requestType,
+	            							       							 cgicc::Cgicc&                    cgiIn,
+	            							       							 HttpXmlDocument&                 xmlOut,
+	            							       							 const WebUsers::RequestUserInfo& userInfo) override;
+	// virtual void							nonXmlRequest					(const std::string&               requestType,
+	//             							             					 cgicc::Cgicc&                    cgiIn,
+	//             							             					 std::ostream&                    out,
+	//             							             					 const WebUsers::RequestUserInfo& userInfo) override;
+
+	virtual void							setSupervisorPropertyDefaults	(void) override;  // override to control supervisor specific defaults
+	virtual void							forceSupervisorPropertyValues	(void) override;  // override to force supervisor property values (and ignore user settings)
+
+	xoap::MessageReference 					MakeSystemLogEntry				(xoap::MessageReference msg);
 
   private:
+
+	void        							getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void 									webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
+	void 									refreshLogbook					(time_t              date,
+	     								              						 size_t		         duration,
+	     								              						 HttpXmlDocument*    xmldoc     = 0,
+	     								              						 std::ostringstream* out        = 0,
+	     								              						 std::string  		 categoryFilter = "");
 
 	std::string                           	ECLUser_;
 	std::string                           	ECLHost_;
 	std::string                           	ECLPwd_;
 	std::string                           	ECLCategory_;
-	std::string                           	ExperimentName_;
+	std::string                           	CategoryName_;
+	int64_t									timezoneHourOffset_ = 0;
 
-	const std::string						EscapeECLString			(const std::string& input = "");
+	std::unique_ptr<ECLConnection>			eclConn_;
 
+	const std::string						EscapeECLString					(const std::string& input = "");
 };
 }
 // clang-format on

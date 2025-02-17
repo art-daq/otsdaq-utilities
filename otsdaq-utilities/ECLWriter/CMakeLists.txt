@@ -1,7 +1,8 @@
 # Look for the header file.
-find_path(XSD_INCLUDE_DIR NAMES xsd/cxx/config.hxx)
+find_path(XSD_INCLUDE_DIR NAMES xsd/cxx/config.hxx HINTS $ENV{XDAQ_ROOT}) # Spack environment view?
 mark_as_advanced(XSD_INCLUDE_DIR)
 
+message("otsdaq_utilities considering ECLWriter...")
 
 if(XSD_INCLUDE_DIR)
   foreach(_XSD_version_header version.hxx)
@@ -15,6 +16,7 @@ if(XSD_INCLUDE_DIR)
   endforeach()
 endif()
 
+message("otsdaq_utilities looking for XSD for ECLWriter...")
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(XSD
                                   REQUIRED_VARS XSD_INCLUDE_DIR
@@ -24,10 +26,13 @@ if(XSD_FOUND)
   set(XSD_INCLUDE_DIRS ${XSD_INCLUDE_DIR})
 #endif(XSD_FOUND)
 
-
+message("otsdaq_utilities looking for CURL for ECLWriter...")
 find_package(CURL)
 
 if(CURL_FOUND)
+  
+  message("otsdaq_utilities Found CURL, so building ECLWriter")
+
   include_directories(${CURL_INCLUDE_DIRS})
 #endif(CURL_FOUND)
 cet_make_library( LIBRARY_NAME ECLWriterCore 

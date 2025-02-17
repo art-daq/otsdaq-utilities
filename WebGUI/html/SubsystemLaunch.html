@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html lang="en"> 
+<head>
+	<title>Subsystem Launch</title>
+
+	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+	<link href='/WebPath/css/fonts.css?family=Comfortaa:400' rel='stylesheet' type='text/css'>
+		
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/pretty-checkbox.min.css">
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/MaterialDesign-Webfont-master/css/materialdesignicons.min.css">
+	
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/SubsystemLaunch.css">
+	
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
+	
+	<script type="text/JavaScript" src="/WebPath/js/SubsystemLaunch.js"></script>
+	
+	<script>		
+	
+	
+		
+		//	Subsystem Launch template:
+		//	
+		//		Start Run button at top
+		//		Checkboxes on left to select remote subsystems to enable/include
+		//			- For each subsystem, there is...
+		//				* a dropdown for "FSM Mode": 'Follow FSM,' 'Do not Halt' (artdaq),  or 'Only Configure' (DCS/DQM)
+		//				* a button for "Transition Alone" (that pops up for which transition action to do)
+		//				* a dropdown for "Configuration Alias"
+		//		
+
+	
+
+
+	SubsystemLaunch.MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
+	SubsystemLaunch.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
+	
+	SubsystemLaunch.subsystems = {};
+	
+	//=====================================================================================
+	//init ~~
+	//	init called once body has loaded
+	function init() 
+	{		
+		SubsystemLaunch.create();
+	} //end init()
+	
+	</script>
+</head>
+	
+
+<body onload='//init() called by DesktopContent.js'>		
+	
+</body>
+	
+</html>

@@ -205,6 +205,8 @@ Desktop.createDesktop = function(security) {
 		_desktopElement.style.height = (window.innerHeight-_desktopElement.offsetTop) + "px";
 		_desktopElement.style.width = (window.innerWidth-_desktopElement.offsetLeft) + "px";
         if(!_dashboard) return; //initial calls dashboard might not be defined
+		Debug.log("_handleDesktopResize()");
+
         _dashboard.redrawDashboard();
         if(_login) _login.redrawLogin();
         if(_icons) _icons.redrawIcons();
@@ -285,16 +287,16 @@ Desktop.createDesktop = function(security) {
 		
 		if(_firstCheckOfMailboxes)
 		{
-			console.log("First check of mailboxes!");
+			Debug.log("First check of mailboxes!");
 			if(Desktop.desktop.icons.iconNameToPathMap === undefined)
 			{
-				console.log("Icons have not been setup yet... need to try again!");
+				Debug.log("Icons have not been setup yet... need to try again!");
 				window.clearTimeout(Desktop.desktop.checkMailboxTimer);
 				Desktop.desktop.checkMailboxTimer = window.setTimeout(_checkMailboxes,
 								100);
 				return;
 			}
-			console.log("Checking for any shortcut work from get parameters...");
+			Debug.log("Checking for any shortcut work from get parameters...");
 			_firstCheckOfMailboxes = false;
 			Desktop.desktop.actOnParameterAction();    //this should be the second running and will always work (first time is at end of Desktop instance creation.. and may fail for opening icon by name)
 						
@@ -521,7 +523,7 @@ Desktop.createDesktop = function(security) {
 	    		Debug.log("System blackout (likely rebooting)...");
 	    		_sysMsgCounter = 0; // reset since not going to handler
 	    	}
-	    	else
+	    	else // if(0) //uncomment when debugging and removing requests!!
 	    		Desktop.XMLHttpRequest("Request?RequestType=getSystemMessages","",_handleSystemMessages);
 	    }
 	} //end _checkMailboxes()
@@ -538,30 +540,21 @@ Desktop.createDesktop = function(security) {
 
 		if(!req) return; //request failed			
 		
-		var userLock; //tmp hold user with lock
-		userLock = Desktop.getXMLValue(req,"username_with_lock"); //get user with lock
-		Desktop.desktop.dashboard.displayUserLock(userLock);
+		Desktop.desktop.dashboard.displayUserLock(req);
 		
 		var tmp = Desktop.getXMLValue(req,"systemMessages");
 	    if(!tmp) return; //did not find return string	    
 		
-	    //disallow repeats (due to broadcast messages hanging around)
-    	//if(_lastSystemMessage == tmp) return;    	
-	    //_lastSystemMessage = tmp;	    
+	    //disallow repeats by skipping (due to broadcast messages hanging around, user messages are always 2nd) 
 	    var tmpi;
 	    if((tmpi = tmp.indexOf(_lastSystemMessage)) >= 0)
 	    {
-	    	Debug.log("Desktop pretmp " + tmp);
-	    	Debug.log("Desktop _lastSystemMessage " + _lastSystemMessage);
-	    	Debug.log("Desktop tmp " + tmp.substr(tmpi+_lastSystemMessage.length+1));
+	    	// Debug.log("Skipping repeat System Message...");
 	    	tmp = tmp.substr(tmpi+_lastSystemMessage.length+1);
 	    }
-	   
-			//Debug.log("Desktop tmp " + tmp.substr(tmpi+_lastSystemMessage.length+1));
-	    
-    	
+	       	
 	    var msgArr = tmp.split("|");	    
-    	Debug.log("Desktop msgArr.length " + msgArr.length);
+    	// Debug.log("Desktop msgArr.length " + msgArr.length);
 	    
 	    if(msgArr.length < 2) return; //no new messages left
 	    
@@ -579,7 +572,7 @@ Desktop.createDesktop = function(security) {
 	    
 	    var str = "";
 	    
-	    for(var i=0;i<msgArr.length;i+=2)
+	    for(var i=0; i+1 < msgArr.length; i+=2)
 	    {
 		    str += "<div style='font-size:12px'>System Message Received at " + Desktop.formatTime(msgArr[i]) + "</div>";
 		    str += "<div>" + 
@@ -591,19 +584,27 @@ Desktop.createDesktop = function(security) {
 		    _lastSystemMessage = msgArr[i] + "|" + msgArr[i+1];
 	    }
 	    
+		str += "<div style='float:left; font-size:12px; margin-top:6px;'>Repeats are suppressed for 30 seconds.</div>";
+
 	    //dismiss link
 	    str += "<div style='float:right; margin-left:30px'>";
 	    str += "<a href='Javascript:Desktop.closeSystemMessage(" + _sysMsgId + ");' " +
 	    		"title='Click here to dismiss system message'>Dismiss</a></div>";
-	    	    
+
+				
+	    //play sound alert (play() is a promise, which can reject, after processing)
+		//do not load over and over: _sysMsgSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created		
+		_sysMsgSound.play().catch(e => {
+			Debug.log("System Message Sound Play() error",e);
+			str += "<br><br><div style='font-size:12px'>(Could not play alert sound because the uesr must interact with the page first)</div>";
+			sysMsgEl.innerHTML = str;
+		});
+
 	    sysMsgEl.innerHTML = str;
 	    
 	    if(sysMsgEl.clientHeight > 300)
 	    	sysMsgEl.style.height = 300 + "px";
 
-	    //play sound alert
-	    //_sysMsgSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created
-	    //_sysMsgSound.play(); //Muted for now
 	} //end _handleSystemMessages()
 	
 	//------------------------------------------------------------------
@@ -645,6 +646,16 @@ Desktop.createDesktop = function(security) {
 	this.addWindow = function(name,subname,url,unique,extraStep) 
 	{		
 		Debug.log(name + " - " + subname + " - " + url + " - " + unique);
+
+		if(name.indexOf(" loading...") > 0)
+		{
+			Debug.log("Assuming user is trying to reload icons!");
+			
+			//reset icons, if permissions undefined, keep permissions from before
+			Desktop.desktop.icons.resetWithPermissions(
+				undefined /*undefined permissions*/, true /*keepSamePermissions*/);
+			return;
+		}
 		
 		if(unique == 2) //open as stand-alone new tab page
 		{
@@ -677,17 +688,18 @@ Desktop.createDesktop = function(security) {
 			return;
 		}
 
-		if(name == "Security Settings") 
+		if(name == "/User Settings/Security Settings") 
 		{
 		    window_width  = 730;
 		    window_height = 410;
 		}
-		else if(name == "Edit User Data") 
+		else if(name == "/User Settings/Edit User Data") 
 		{
 		    window_width  = 730;
 		    window_height = 730;
 		}
-		else {
+		else 
+		{
 		    window_width  = _defaultWidth;
 		    window_height = _defaultHeight;
 		}
@@ -857,7 +869,7 @@ Desktop.createDesktop = function(security) {
 
 	    this.setForeWindow(win);
 	    this.refreshWindow();
-            console.log("Finished refreshWindow() " + id);
+		Debug.log("Finished refreshWindow() " + id);
 	} //end refreshWindowById()
 
 	//==============================================================================
@@ -869,8 +881,8 @@ Desktop.createDesktop = function(security) {
 		this.setForeWindow(win);
 		var tempwin = Desktop.desktop.getForeWindow();
 
-		console.log(tempwin);
-		console.log(tempwin.windiv);	    
+		Debug.log(tempwin);
+		Debug.log(tempwin.windiv);	    
 
 		var tooltipEl;
 		
@@ -896,12 +908,31 @@ Desktop.createDesktop = function(security) {
 				tooltipEl = 0;
 			}
 		}
+		if(!tooltipEl)
+		{
+			try //try frameset cross-origin approach (if window is in cross-origin frame)
+			{
+				var reqObject = {
+					"windowId":			id,
+					"request": 			"doWindowTooltip"
+				};
+				Debug.log("Sending doWindowTooltip from Desktop");
+				win.getFrame().contentWindow.postMessage(
+					reqObject,"*");
+				return; //assume handled by window!
+			}
+			catch(e)
+			{
+				Debug.log("Ignoring error: " + e);
+				tooltipEl = 0;
+			}
+		}
 					
 
 		if(!tooltipEl)
 		{
-			DesktopContent.tooltip("ALWAYS", "There is no tooltip for the " + tempwin.getWindowName() +
-					" window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
+			DesktopContent.tooltip("ALWAYS", "There is no tooltip for the '<b>" + tempwin.getWindowName() +
+					"</b>' window. Try visiting <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for further assistance.");
 		}
 		else
 		{
@@ -929,7 +960,7 @@ Desktop.createDesktop = function(security) {
         var isMin = window.isMinimized();
         
 	    _closeWindow(window);
-	    console.log(window, id, z, name, width, height);
+	    // console.log(window, id, z, name, width, height);
 	    
 	    var newWindow = this.addWindow(name,subname,url);
 	    newWindow.setWindowSizeAndPosition(x,y,width,height);
@@ -977,16 +1008,49 @@ Desktop.createDesktop = function(security) {
 	//	Handle window selection using dashboard
 	this.clickedWindowDashboard = function(id) 
 	{
+		if(0)
+		{
+			var win = this.getWindowById(id);
+			if(win == -1) return -1;
+			if(_getForeWindow() != win) 
+			{ //if not currently foreground window, set as only
+				if(_getForeWindow().isMaximized()) this.toggleFullScreen(); //if old foreground is full screen, toggle
+				this.setForeWindow(win);
+				if(_getForeWindow().isMinimized()) this.toggleMinimize(); //if new foreground is minimized, toggle
+				return;
+			}
+			//else minimize
+			this.toggleMinimize();
+			return;
+		}
+
+		//old functionality above acted more like Windows (removing Maximize if clicking)
+		//new functionality below acts like full screen tab system, to just select which window to show maximized
+
+
         var win = this.getWindowById(id);
 		if(win == -1) return -1;
-        if(_getForeWindow() != win) { //if not currently foreground window, set as only
-            if(_getForeWindow().isMaximized()) this.toggleFullScreen(); //if old foreground is full screen, toggle
+        if(_getForeWindow() != win)
+		{ //if not currently foreground window, set as only
+			var inMaxMode = false;
+            if(_getForeWindow().isMaximized()) 
+			{ 
+				this.toggleFullScreen(); //if old foreground is full screen, toggle
+				inMaxMode = true;
+			}
+
             this.setForeWindow(win);
-            if(_getForeWindow().isMinimized()) this.toggleMinimize(); //if new foreground is minimized, toggle
+            
+			if(_getForeWindow().isMinimized()) this.toggleMinimize(); //if new foreground is minimized, toggle
+			if(inMaxMode) this.toggleFullScreen();
+			
             return;
         }
-        //else minimize
-        this.toggleMinimize();
+        //else minimize if not maximized
+
+		if(!_getForeWindow().isMaximized()) 
+        	this.toggleMinimize();
+
     } //end clickedWindowDashboard()
 
 	//==============================================================================
@@ -1136,6 +1200,16 @@ Desktop.createDesktop = function(security) {
 		if(Desktop.desktop.login.getCookieCode(true))
 			Desktop.XMLHttpRequest("Request?RequestType=getSystemMessages","",
 				_handleSystemMessages);
+
+		
+		Desktop.turtle = document.getElementById('turtle');
+		if(Desktop.turtle)
+		{
+			Desktop.turtle.motion = false;
+			Desktop.turtle.x = 0; 
+			Desktop.turtle.y = 0;
+			Desktop.turtleRedraw();	
+		}
 		
 	} //end resetDesktop()
 
@@ -1276,7 +1350,6 @@ Desktop.createDesktop = function(security) {
 				if(pathUniquePair ===
 						undefined)
 				{
-
 					if(_firstCheckOfMailboxes)
 					{
 						Debug.log("Perhaps icons have not been setup yet, try again at mailbox check.");
@@ -1284,7 +1357,7 @@ Desktop.createDesktop = function(security) {
 					}
 					
 					Debug.log("An error occurred opening the window named '" + 
-							windowName + "' - it was not found in the Desktop icons. " +
+							windowName + "' - it was not found in the Desktop icons. Does it exist? " +
 							"Do you have permissions to access this window? Notify admins if the problem persists.",
 							Debug.HIGH_PRIORITY);
 
@@ -1471,8 +1544,17 @@ Desktop.createDesktop = function(security) {
 			//console.log("makeForeWindow",event.data.windowId);
 			Desktop.desktop.setForeWindow(this.getWindowById(event.data.windowId|0));			
 			break;
+		case "unmaximizeWindow":
+			console.log("unmaximizeWindow",event.data.windowId);
+			Desktop.desktop.setForeWindow(this.getWindowById(event.data.windowId|0));
+			if(!_getForeWindow()) return;
+
+			if(_getForeWindow().isMaximized())
+				Desktop.desktop.toggleFullScreen();
+
+			break;
 		case "openNewWindow":
-			console.log("openNewWindow");
+			Debug.log("openNewWindow");
 
 	    	var requestingWindowId = 	event.data.windowId|0;
 	    	var windowPath = 			event.data.windowPath;
@@ -1484,13 +1566,14 @@ Desktop.createDesktop = function(security) {
 	    	{
 	    		//have work to do!
 	    		// Note: similar to L1000 in actOnParameterAction() 
-	    		console.log("requestingWindowId=" + requestingWindowId);
-	    		console.log("windowPath=" + windowPath);
-		    	while(windowPath.length && windowPath[0] == '?') windowPath = windowPath.substr(1); //remove leading ?'s
-		    	console.log("modified windowPath=" + windowPath);
-		    	console.log("windowName=" + windowName);
-		    	console.log("windowSubname=" + windowSubname);
-		    	console.log("windowUnique=" + windowUnique);
+	    		Debug.log("requestingWindowId=" + requestingWindowId);
+	    		Debug.log("windowPath=" + windowPath);
+		    	while(windowPath && windowPath.length && windowPath[0] == '?') 
+					windowPath = windowPath.substr(1); //remove leading ?'s
+		    	Debug.log("modified windowPath=" + windowPath);
+		    	Debug.log("windowName=" + windowName);
+		    	Debug.log("windowSubname=" + windowSubname);
+		    	Debug.log("windowUnique=" + windowUnique);
 
 		    	var newWin;
 		    	
@@ -1499,11 +1582,11 @@ Desktop.createDesktop = function(security) {
 		    	if((windowSubname === undefined || windowSubname == "undefined") &&
 		    			(windowUnique === undefined || windowUnique == "undefined")) //the string undefined is what comes through
 		    	{
-		    		console.log("Opening desktop window... " + windowName);
+		    		Debug.log("Opening desktop window... " + windowName);
 
 		    		var pathUniquePair = Desktop.desktop.icons.iconNameToPathMap[windowName];
-		    		console.log("Desktop.desktop.icons.iconNameToPathMap",
-		    				Desktop.desktop.icons.iconNameToPathMap);
+		    		// console.log("Desktop.desktop.icons.iconNameToPathMap",
+		    		// 		Desktop.desktop.icons.iconNameToPathMap);
 
 		    		if(pathUniquePair ===
 		    				undefined)
@@ -1523,7 +1606,7 @@ Desktop.createDesktop = function(security) {
 
 					var pathStr = pathUniquePair[0];
 					
-					if(windowPath != "undefined") //add parameters if defined
+					if(windowPath && windowPath != "undefined") //add parameters if defined
 					{
 						Debug.log("Adding parameter path " + windowPath);
 						if(pathStr.indexOf('?') >= 0) //then assume already parameters
@@ -1560,7 +1643,7 @@ Desktop.createDesktop = function(security) {
 	    
 			break;
 		case "refreshIcons":
-			console.log("refreshIcons");
+			Debug.log("refreshIcons");
 			
 			//reset icons, if permissions undefined, keep permissions from before
 			Desktop.desktop.icons.resetWithPermissions(
@@ -1568,25 +1651,25 @@ Desktop.createDesktop = function(security) {
 			
 			break;
 		case "startSystemBlackout":
-			console.log("startSystemBlackout");
+			Debug.log("startSystemBlackout");
 			//windows can request a blackout, to avoid logging out (attempt to stop all other tabs by using browser cookie)
 			Desktop.desktop.login.blackout(true); 
 			break;
 		case "stopSystemBlackout":
-			console.log("stopSystemBlackout");
+			Debug.log("stopSystemBlackout");
 			Desktop.desktop.login.blackout(false);
 			break;
 		case "getCookieCode":
 			responseObject = {
 				"cookieCode":	Desktop.desktop.login.getCookieCode()
 			};
-			//console.log("getCookieCode");
+			//Debug.log("getCookieCode");
 			break;
 		case "updateCookieCode":			
 			//do ms compare to decide if desktop cookie code should be updated with some throttling
 			var delta = parseInt(event.data.cookieCodeTime) - parseInt(Desktop.desktop.login.getCookieTime());
 
-			// console.log("updateCookieCode",delta);
+			// Debug.log("updateCookieCode",delta);
 			if(delta > 5*1000 /*ms*/) //update based on content value
 			{
 				// Debug.log("Updating desktop cookie code from content window");
@@ -1595,8 +1678,58 @@ Desktop.createDesktop = function(security) {
 						parseInt(event.data.cookieCodeTime)); 
 			}	     
 			break;
+		case "updateSequence":		
+			Debug.log("Received updated sequence from Content WindowID =", event.data.windowId);
+
+			var newSequence = event.data.sequence;
+			//verify that new sequence is alphanumeric only (to avoid parameter injection)
+        	for(var i=0;i<newSequence.length;++i)
+				if(!((newSequence[i] >= '0' && newSequence[i] <= '9') || 
+				(newSequence[i] >= 'A' && newSequence[i] <= 'Z') || 
+				(newSequence[i] >= 'a' && newSequence[i] <= 'z')))
+				{
+					Debug.err("Invalid updated sequence received from desktop window with WindowID =", event.data.windowId,"Notify admins!");
+					return;
+				}
+			
+			var newSearch = window.parent.window.location.search;
+			Debug.logv({newSearch});
+			var ii = newSearch.indexOf("code=");
+			if(ii < 0)
+			{
+				Debug.err("Cannot find code= paramaeter! Notify admins.");
+				return;
+			}
+			newSearch = newSearch.substr(0,ii+("code=").length) + 
+				newSequence;
+			Debug.logv({newSearch});
+
+			//save as integer fraction of 1000 into URL
+        	var newURL = window.parent.window.location.pathname +
+					newSearch +
+					"#"+
+					((Desktop.desktop.dashboard.getDashboardWidth()*1000/
+					Desktop.desktop.dashboard.getDashboardDefaultWidth())|0); 
+			
+			//update browser url so refresh will give same desktop experience
+        	if(!Desktop.isWizardMode()) 
+        		window.parent.window.history.replaceState('ots', 'ots', newURL);    
+        	else
+        		window.parent.window.history.replaceState('ots wiz', 'ots wiz', newURL); 
+        	
+			Debug.log("Tell all open windows about new sequence", newSequence);
+
+        	var reqObject = {"request":		"updateWindowSequence",
+							"sequence":		newSequence};
+        	for(var i=0;i<Desktop.desktop.getNumberOfWindows();++i)
+			{
+        		reqObject["windowId"] = Desktop.desktop.getWindowByIndex(i).getWindowId();        					
+        		Desktop.desktop.getWindowByIndex(i).getFrame().contentWindow.postMessage(
+        				reqObject,"*");
+			}
+			break;	
 		case "needToLogin":
-			console.log("needToLogin");
+			Debug.log("needToLogin");
 			
 			if(!document.getElementById("Desktop-loginDiv") &&
 					!Desktop.desktop.login.isBlackout())
@@ -1910,8 +2043,40 @@ Desktop.mouseMoveSubscriber = function(newHandler)
 //	handle resizing and moving events for desktop
 //	Returning true is important for allowing selection of text of Debug popup windows
 //		(Does it break anything to return true?)
+Desktop._openFolderTimer = 0;
 Desktop.handleBodyMouseMove = function(mouseEvent)
 {
+	//if not moving for 3 seconds, close any open folders
+	if(Desktop._openFolderTimer &&
+		!Desktop.desktop.icons.wasFolderIconClicked()) 
+	{
+		window.clearTimeout(Desktop._openFolderTimer);
+		Desktop._openFolderTimer = 0;
+	}
+	
+	if(!Desktop._openFolderTimer && 
+		Desktop.desktop.icons.isFolderOpen())
+	{
+		if(Desktop.desktop.icons.wasFolderIconClicked())
+		{
+			Desktop._openFolderTimer = window.setTimeout(
+				function()
+				{
+			Debug.log("Closing folder...");
+			Desktop.desktop.icons.closeFolder();
+				},500);
+		}
+		else
+		{
+			Desktop._openFolderTimer = window.setTimeout(
+				function()
+				{
+			Debug.log("Closing folder...");
+			Desktop.desktop.icons.closeFolder();
+				},3000);
+		}
+	}
+			
 	
 	//call each subscriber
 	for(var i=0; i<Desktop._mouseMoveSubscribers.length; ++i)
@@ -2141,13 +2306,13 @@ Desktop.handleWindowManipulation = function(delta)
 
 	} //end tiled prep loop
 
-	if(delta[0] || delta[1])
-		Debug.log("keepTile",keepTile,Desktop.winManipMode,
-			"followTiledRight",followTiledRight.length,(followTiledRight.length?followTiledRight[0].getWindowName():""),
-			"followTiledTop",followTiledTop.length,(followTiledTop.length?followTiledTop[0].getWindowName():""),
-			"followTiledLeft",followTiledLeft.length,(followTiledLeft.length?followTiledLeft[0].getWindowName():""),
-			"followTiledBottom",followTiledBottom.length,(followTiledBottom.length?followTiledBottom[0].getWindowName():""),
-			delta);
+	// if(delta[0] || delta[1]) //for debugging tile behavior
+	// 	Debug.log("keepTile",keepTile,Desktop.winManipMode,
+	// 		"followTiledRight",followTiledRight.length,(followTiledRight.length?followTiledRight[0].getWindowName():""),
+	// 		"followTiledTop",followTiledTop.length,(followTiledTop.length?followTiledTop[0].getWindowName():""),
+	// 		"followTiledLeft",followTiledLeft.length,(followTiledLeft.length?followTiledLeft[0].getWindowName():""),
+	// 		"followTiledBottom",followTiledBottom.length,(followTiledBottom.length?followTiledBottom[0].getWindowName():""),
+	// 		delta);
 
 	if(!keepTile)
 		Desktop.desktop.lastTileWinPositions = {}; //clear to avoid future checks
@@ -2231,8 +2396,9 @@ Desktop.handleWindowManipulation = function(delta)
 			break;
 		default:
 	}
-	if(delta[0] || delta[1])
-		Debug.log(deltaResidual,delta);
+
+	// if(delta[0] || delta[1]) //for debugging tile behavior
+	// 	Debug.log(deltaResidual,delta);
 
 	var winChangeStack = [];
 	if(delta[1])
@@ -2600,6 +2766,12 @@ Desktop.handleFullScreenWindowRefresh = function(mouseEvent)
 		//			Debug.log("ID: " + id + " z=" + z);
 		//			
 		//    	}
+
+			
+		//reset icons, if permissions undefined, keep permissions from before
+		Desktop.desktop.icons.resetWithPermissions(
+			undefined /*undefined permissions*/, true /*keepSamePermissions*/);
+			
     	return false;
 } //end handleFullScreenWindowRefresh()
 
@@ -2753,13 +2925,110 @@ Desktop.logout = function ()
 
 //==============================================================================
 //formatTime ~~
+var monthArr_ = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 Desktop.formatTime = function(t) 
 {
 	var date = new Date(t * 1000);
 	var mm = date.getMinutes() < 10?"0"+date.getMinutes():date.getMinutes();
-	var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();				
-	return date.getHours() + ":" + mm + ":" + ss;
+	var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();		
+	var m = monthArr_[date.getMonth()]; //+ 1).format("02d");;
+	var d = ('0' + date.getDate()).slice(-2); //zero pad day of month
+	var y = date.getFullYear() - 2000;
+	return d + m + y + "." + date.getHours() + ":" + mm + ":" + ss;
 } //end formatTime()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtle;
+
+////////////////////////////////////
+Desktop.turtleRedraw = function()
+{
+	Debug.log("turtleRedraw()");
+	Desktop.turtle.initx = Desktop.desktop.getDesktopContentX() + Desktop.desktop.getDesktopContentWidth() 
+		- Desktop.turtle.offsetWidth;
+	Desktop.turtle.inity = Desktop.desktop.getDesktopContentY() + Desktop.desktop.getDesktopContentHeight() 
+		- Desktop.turtle.offsetHeight + 50;
+	if(Desktop.turtle.x == 0)
+	{
+		Desktop.turtle.style.left = Desktop.turtle.initx + "px";		
+		Desktop.turtle.style.top = Desktop.turtle.inity + "px";
+	}
+
+} //end turtleRedraw()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtleClick = function()
+{	
+	Debug.log("turtleClick()");
+	Desktop.turtle.motion  = !Desktop.turtle.motion;
+	
+	if(Desktop.turtle.motion)
+	{
+		if(Desktop.turtle.childNodes[1].style.display == "none")
+		{
+			if(!Desktop.isWizardMode()) //only allow in 'normal' mode
+				Desktop.turtle.childNodes[1].style.display = "block"; //show for first time!
+			else
+				Desktop.turtle.style.display = "none"; //totally disable (to stop clicking)
+			Desktop.turtle.motion = false;
+			return;
+		}
+
+		Desktop.turtle.speed = 5;
+		Desktop.turtle.velx = Math.random()*2-1;
+		Desktop.turtle.vely = Math.random()*2-1;
+		var mag = Desktop.turtle.velx*Desktop.turtle.velx + Desktop.turtle.vely*Desktop.turtle.vely;
+		if(mag == 0)
+			Desktop.turtle.velx = -1;
+		else
+		{
+			mag = Math.sqrt(mag);
+			Desktop.turtle.velx /= mag;
+			Desktop.turtle.vely /= mag;
+		}
+		setTimeout(Desktop.turtleMove,50);
+	}
+	else
+	{
+		//change turtle colors
+		Desktop.XMLHttpRequest("XGI_Turtle","",Desktop.httpTurtleResponse);
+	}
+} //end turtleClick()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.turtleMove = function()
+{
+	Desktop.turtle.x = Desktop.turtle.x + Desktop.turtle.velx*Desktop.turtle.speed;
+	Desktop.turtle.y = Desktop.turtle.y + Desktop.turtle.vely*Desktop.turtle.speed;
+	
+	if(Desktop.turtle.initx + Desktop.turtle.x + Desktop.turtle.offsetWidth < 0) //test x extreme wrap-arounds
+		Desktop.turtle.x = document.body.clientWidth-1-Desktop.turtle.initx;
+	else if(Desktop.turtle.initx + Desktop.turtle.x > document.body.clientWidth)
+		Desktop.turtle.x = 1-Desktop.turtle.initx-Desktop.turtle.offsetWidth;
+	
+	if(Desktop.turtle.inity + Desktop.turtle.y + Desktop.turtle.offsetHeight < 0) //test y extreme wrap-arounds
+		Desktop.turtle.y = document.body.clientHeight-1-Desktop.turtle.inity;
+	else if(Desktop.turtle.inity + Desktop.turtle.y > document.body.clientHeight)
+		Desktop.turtle.y = 1-Desktop.turtle.inity-Desktop.turtle.offsetHeight;
+			
+	Desktop.turtle.style.left = Desktop.turtle.initx + Desktop.turtle.x + "px";
+	Desktop.turtle.style.top = Desktop.turtle.inity + Desktop.turtle.y + "px";
+	
+	if(Desktop.turtle.motion)
+		setTimeout(Desktop.turtleMove,50);
+} //end turtleMove()
+
+//==============================================================================
+////////////////////////////////////
+Desktop.httpTurtleResponse = function(req)
+{
+	Debug.log("httpTurtleResponse()");
+	if(req && req.responseText && req.responseText != "")
+		Desktop.turtle.childNodes[1].src = req.responseText;		
+} //end httpTurtleResponse()
 
 //==============================================================================
 //closeSystemMessage ~~
@@ -2785,8 +3054,6 @@ Desktop.isWizardMode = function()
 //openNewBrowserTab ~~
 Desktop.openNewBrowserTab = function(name,subname,windowPath,unique) 
 { 
-	
-
 	//for windowPath, need to check lid=## is terminated with /
 	// check from = that there is nothing but numbers
 	{
@@ -2872,7 +3139,7 @@ Desktop.desktopTooltip = function()
 			"\n\t- <b>Desktop Dashboard (top pane):</b> " +
 			"<INDENT>" +
 			"Along the top and left margins of the Desktop, you will find the Desktop " +
-			"Dashboard - this section is an introduction to the top pane of the Dashboard. " +
+			"Dashboard; the text below provides an introduction to the top portion of the Dashboard. " +
 			"The top pane of the Dashboard " +
 			"is made of buttons and icons going from left to right:" +
 
@@ -2895,7 +3162,8 @@ Desktop.desktopTooltip = function()
 			"\n\t- <b>Tile Desktop Windows:</b> " +
 			"<INDENT>" +
 			"The next button you will encounter in the top pane reads 'Tile.' " +
-			"This button will automatically tile all open Desktop Windows to fit in your browser window." +
+			"This button will automatically tile all open Desktop Windows to fit in your browser window. " +
+			"If you click the button multiple times, you will get a few different layout options." +
 			"</INDENT>" +
 
 			"\n\t- <b>Show Desktop:</b> " +
@@ -2910,12 +3178,19 @@ Desktop.desktopTooltip = function()
 			"The next button you will encounter in the top pane reads 'Full Screen.' " +
 			"This button will maximize to full screen the Desktop Window that was last used (i.e. the window that has the focus)." +
 			"</INDENT>" +
+			
+			"\n\t- <b>Refresh:</b> " +
+			"<INDENT>" +
+			"The next button you will encounter in the top pane looks like a circular refresh arrow icon. " +
+			"This button will reconnect to the server, refresh every open Desktop Window, and reload the Desktop Icons." +
+			"</INDENT>" +
+
 			"</INDENT>" +
 
 			"\n\t- <b>Desktop Dashboard (left pane):</b> " +
 			"<INDENT>" +
 			"Along the top and left margins of the Desktop, you will find the Desktop " +
-			"Dashboard - this section is an introduction to the left pane of the Dashboard. " +
+			"Dashboard; the text below provides an introduction to the left portion of the Dashboard. " +
 			"The left pane of the Dashboard " +
 			"is a listing of all open Desktop Windows. If you click one of the buttons in the list, " +
 			"the associated window " +
@@ -2925,7 +3200,7 @@ Desktop.desktopTooltip = function()
 
 
 
-			"\n\nRemember, if you would like to take a look at the available online documentation, " +
+			"\n\nNote, if you would like to take a look at the available online documentation, " +
 			"click the question mark at the top-right of the Desktop."
 	);	
 } //end desktopTooltip()

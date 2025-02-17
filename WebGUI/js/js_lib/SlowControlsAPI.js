@@ -112,14 +112,14 @@ SlowControlsAPI.setWidgetPvInfo = function (widget, pvName, pvValue, pvTime, pvS
             }
             else
             {
-                widgetValueElement.style.border = "1px solid darkslategray";
+                widgetValueElement.style.border = "4px solid darkslategray";
                 widgetValueElement.style.backgroundColor = 'darkslategray';
             }
        }
         else
         {
+            widgetValueElement.style.border = "4px solid " + bkgColor;
             widgetValueElement.style.backgroundColor = bkgColor;
-            widgetValueElement.style.border = bkgColor;
         }
     }
     else
@@ -166,3 +166,37 @@ SlowControlsAPI.pvListReqHandler = function (req)
         SlowControlsAPI._datalist.appendChild(option);
     }
 } //end pvListReqHandler()
+
+
+//=====================================================================================
+//	expecting id as 'widget-#' ..and this function extracts the 
+//	widget UID as integer #
+SlowControlsAPI.setupPvParams = function (id, widget)
+{
+    console.log("setting up widget!");
+
+    var pvListCSV = "";
+
+    for(var pv in widget.pvList)
+    {
+        pvListCSV += pv + ",";
+    }
+
+    DesktopContent.XMLHttpRequest("Request?RequestType=getPVSettings",
+                //post data 
+                "pvList=" + pvListCSV + 
+                "&id=" + id,
+                SlowControlsAPI.settingsReqHandler /*handler*/,
+                widget /*parameter*/);
+
+} //end setupPvParams()
+
+
+//=====================================================================================
+SlowControlsAPI.settingsReqHandler = function (req, widget)
+{
+    widget.pvSettings = JSON.parse(DesktopContent.getXMLValue(req, "JSON"));				
+
+    console.log(req);
+    console.log("pvSettings: ", widget.pvSettings);
+} //end settingsReqHandler()

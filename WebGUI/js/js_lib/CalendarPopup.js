@@ -25,6 +25,11 @@
 //			- override defaults at top of code for personalization
 // ===================================================================
 
+var CalendarPopup = CalendarPopup || {}; //define CalendarPopup namespace
+if(1 && window.console && console && console.log)
+	CalendarPopup.dbg = console.log.bind(window.console);
+else
+	CalendarPopup.dbg = function(){;} //do nothing
 
 //defaults
 //	can be overridden in user code
@@ -62,11 +67,15 @@ var calendarPopup_HANDLER;
 
 /////////////////////////////////////////
 
+//==============================================================================
 //calendarPopup ~
 //	x is integer from left edge of window
 //  y is integer from top edge of window
-function calendarPopup(x, y, calendarHandler) {
-	
+// initDate := int time ==> e.g., parseInt((new Date("Jan 1, 2013")).getTime());
+function calendarPopup(x, y, calendarHandler, initDate) 
+{
+	CalendarPopup.dbg("calendarPopup()");
+
 	calendarPopup_HANDLER = calendarHandler;
 	
 	//remove calendar if already exists
@@ -88,16 +97,17 @@ function calendarPopup(x, y, calendarHandler) {
 	
     document.body.appendChild(el);
         
-    calendarPopupAddHeader();
-    calendarPopupAddMonthNav();
-    calendarPopupAddDates();
+    calendarPopupAddHeader(initDate);
+    calendarPopupAddMonthNav(initDate);
+    calendarPopupAddDates(initDate);
     calendarPopupAddFooter();
-}
+} //end calendarPopup()
 
+//==============================================================================
 //calendarPopupAddHeader
 //	add drop down and month display
-function calendarPopupAddHeader() {
-
+function calendarPopupAddHeader(initDate) 
+{
 	var calEl = document.getElementById(calendarPopup_CALID);
     el = document.createElement("div");
 	el.setAttribute("id", calendarPopup_CALID + "-header");
@@ -125,7 +135,11 @@ function calendarPopupAddHeader() {
 
 	el = document.createElement("option");
 	el.style.color = "black";
-	el.text = "Month";
+
+	var thisDate = initDate?(new Date(initDate)):(new Date());
+	// el.text = "Month";
+	var thisMonth = thisDate.toDateString().split(" ")[1]; //init to this month
+    
 	subCalEl.add(el,null); //insert at end of list
     
     var mDate = parseInt((new Date("Jan 1, 2013")).getTime()); //init to jan, arbitrary year
@@ -134,6 +148,8 @@ function calendarPopupAddHeader() {
         el = document.createElement("option");
     	el.style.color = "black";
     	el.text = (new Date(mDate)).toDateString().split(" ")[1];
+		if(el.text == thisMonth)
+			el.selected = true;
     	subCalEl.add(el,null); //insert at end of list
     }
 
@@ -141,7 +157,7 @@ function calendarPopupAddHeader() {
     el = document.createElement("select");
 	el.setAttribute("id", calendarPopup_CALID + "-yearSelect");
 	el.style.color = "black";
-	el.setAttribute("title", "Select a month from the dropdown");
+	el.setAttribute("title", "Select a year from the dropdown");
 	el.style.margin = "5px";	
 	el.style.cssFloat = "left";
 	el.style.width = 70 + "px";
@@ -151,7 +167,7 @@ function calendarPopupAddHeader() {
 
     el = document.createElement("option");
             
-    var yDate = parseInt((new Date()).getFullYear()); //init to this year
+    var yDate = parseInt(thisDate.getFullYear()); //init to this year
     
     var yMin = parseInt(calendarPopup_MIN_YEAR)?parseInt(calendarPopup_MIN_YEAR):yDate;
     var yMax = parseInt(calendarPopup_MAX_YEAR)?parseInt(calendarPopup_MAX_YEAR):yDate;
@@ -178,19 +194,22 @@ function calendarPopupAddHeader() {
 	
 	el.onmouseup = cancelCalendar;	
 	calEl.appendChild(el);	
-}
+} //end calendarPopupAddHeader()
 
+//==============================================================================
 //cancelCalendar
 //	close calendar do not call handler
-function cancelCalendar() {
+function cancelCalendar()
+{
     var el = document.getElementById(calendarPopup_CALID);
     if(el)
     	el.parentNode.removeChild(el);
-}
+} //end cancelCalendar()
 
+//==============================================================================
 //calendarPopupAddMonthNav
-function calendarPopupAddMonthNav() {
-
+function calendarPopupAddMonthNav(initDate) 
+{
 	var calEl = document.getElementById(calendarPopup_CALID);
 
     el = document.createElement("div");
@@ -223,7 +242,9 @@ function calendarPopupAddMonthNav() {
 	el.setAttribute("id", calendarPopup_CALID + "-monthYearDisplay");
 	el.style.cssFloat = "left";
 	el.style.width = (calendarPopup_W - navW*2 - 20) + "px";
-	var todayArr = (new Date()).toDateString().split(" ");
+
+	var thisDate = initDate?(new Date(initDate)):(new Date());
+	var todayArr = thisDate.toDateString().split(" ");
 	el.innerHTML = todayArr[1] + " " + todayArr[3];  //init to current month
 	el.style.fontWeight = "800";
 	el.style.textAlign = "center";
@@ -250,19 +271,20 @@ function calendarPopupAddMonthNav() {
     el = document.createElement("div");
 	el.setAttribute("id", calendarPopup_CALID + "-currMonth");
 	el.style.display = "none";
-	el.innerHTML = (new Date()).getMonth();  //init to current month
+	el.innerHTML = thisDate.getMonth();  //init to current month
 	calEl.appendChild(el);	
     el = document.createElement("div");
 	el.setAttribute("id", calendarPopup_CALID + "-currYear");
 	el.style.display = "none";
-	el.innerHTML = (new Date()).getFullYear();  //init to current month
+	el.innerHTML = thisDate.getFullYear();  //init to current month
 	calEl.appendChild(el);	
 	
-}
+} //end calendarPopupAddMonthNav()
 
-
+//==============================================================================
 //previousMonth
-function previousMonth() {	
+function previousMonth() 
+{	
 	var el = document.getElementById(calendarPopup_CALID + "-currMonth");
 	var newMo = parseInt(el.innerHTML)-1;  //subtract 1 from month (0-11)
 	var yel = document.getElementById(calendarPopup_CALID + "-currYear");
@@ -276,10 +298,12 @@ function previousMonth() {
 	var dayArr = (new Date(yel.innerHTML,newMo,1)).toDateString().split(" ");	
 	el.innerHTML = dayArr[1] + " " + dayArr[3]; //display updated month	
 	redrawDates();
-}
+} //end previousMonth()
 
+//==============================================================================
 //nextMonth
-function nextMonth() {
+function nextMonth() 
+{
 	var el = document.getElementById(calendarPopup_CALID + "-currMonth");	
 	var newMo = parseInt(el.innerHTML)+1;  //add 1 from month (0-11)
 	var yel = document.getElementById(calendarPopup_CALID + "-currYear");
@@ -293,10 +317,12 @@ function nextMonth() {
 	var dayArr = (new Date(yel.innerHTML,newMo,1)).toDateString().split(" ");		
 	el.innerHTML = dayArr[1] + " " + dayArr[3]; //display updated month	
 	redrawDates();	
-}
+} //end nextMonth()
 
+//==============================================================================
 //calendarPopupAddDates
-function calendarPopupAddDates() {
+function calendarPopupAddDates(initDate) 
+{
 	var calEl = document.getElementById(calendarPopup_CALID);
 	
     el = document.createElement("div");
@@ -340,17 +366,20 @@ function calendarPopupAddDates() {
 		calEl.appendChild(el);
 	}
 		
-	redrawDates(); 
-}
+	redrawDates(initDate); 
+} //end calendarPopupAddDates()
 
+//==============================================================================
 //calendarPopupAddFooter
-function calendarPopupAddFooter() {
-
+function calendarPopupAddFooter() 
+{
 	var calEl = document.getElementById(calendarPopup_CALID);
-}
+} //end calendarPopupAddFooter()
 
+//==============================================================================
 //redrawDates
-function redrawDates() {
+function redrawDates(initDate) 
+{
 	var calEl = document.getElementById(calendarPopup_CALID + "-dates");
 	calEl.innerHTML = ""; //clear old dates
 	
@@ -370,9 +399,10 @@ function redrawDates() {
 	var x = 0, y = 0;
 	var firstMargin = parseInt((calendarPopup_W - w*7)/2); //acount for fractional acccumulation of error
 
-	var todayDate = (new Date()).getDate(); //to color today
-	var todayMonth = (new Date()).getMonth(); //to color today
-	var todayYear = (new Date()).getFullYear(); //to color today
+	var thisDate = initDate?(new Date(initDate)):(new Date());
+	var todayDate = thisDate.getDate(); //to color today
+	var todayMonth = thisDate.getMonth(); //to color today
+	var todayYear = thisDate.getFullYear(); //to color today
 	for(var i=0;i<7*6;++i, day = new Date(day.getTime() + 1000*60*60*24)) //draw dates, day by day
 	{
 	    el = document.createElement("div");
@@ -411,12 +441,13 @@ function redrawDates() {
 	}
 
 	head.appendChild(style);
-}
+} //end redrawDates()
 
-
+//==============================================================================
 //handleSelection
 //	handle selection change from month or year drop down
-function handleSelection() {
+function handleSelection() 
+{
 	var el = document.getElementById(calendarPopup_CALID + "-monthSelect");
 	var newMo = el.value;
 	el = document.getElementById(calendarPopup_CALID + "-monthYearDisplay");	//display updated month	
@@ -433,12 +464,14 @@ function handleSelection() {
 	el.innerHTML = newMo;
 	
 	redrawDates(); 
-}
+} //end handleSelection()
 
-function selectDate() {
+//==============================================================================
+function selectDate() 
+{
 	calendarPopup_HANDLER(parseInt(this.id.split("-")[2])+1); //pass days since Jan 1, 1970
 	cancelCalendar();
-}
+} //end selectDate()
 
 
 

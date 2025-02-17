@@ -12,10 +12,11 @@ cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 find_package(cetmodules 3.16.00 REQUIRED)
 
-project(otsdaq_utilities VERSION 2.06.11)
+project(otsdaq_utilities VERSION 2.10.00)
 
 include(CetCMakeEnv)
 cet_cmake_env()
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL Clang AND
      CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
@@ -33,12 +34,12 @@ cet_set_compiler_flags(
  VIGILANT
  WERROR
  NO_UNDEFINED
- EXTRA_FLAGS -pedantic -D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES=1 ${DT_FLAG}
+ EXTRA_FLAGS -Werror -pedantic -D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES=1 ${DT_FLAG}
  )
  
 # Debug streamer.
-string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
-if(BTYPE_UC STREQUAL DEBUG)
+string(TOUPPER "x${CMAKE_BUILD_TYPE}" BTYPE_UC )
+if(BTYPE_UC STREQUAL XDEBUG)
   add_definitions(-DDEBUGME)
 	if(DEFINED ENV{USE_ASAN})
 		if($ENV{USE_ASAN} GREATER 0)
@@ -72,9 +73,8 @@ endif()
 find_package(otsdaq 2.06.06 REQUIRED EXPORT)
 
  # XDAQ Extra setup
- include_directories($ENV{XDAQ_INC}/linux $ENV{XDAQ_INC})
-link_directories($ENV{XDAQ_LIB})
-link_directories($ENV{ARTDAQ_DATABASE_LIB})
+ include_directories($ENV{XDAQ_ROOT}/include/linux $ENV{XDAQ_ROOT}/include)
+link_directories($ENV{XDAQ_ROOT}/lib)
  set(XDAQ_BASIC_LIB_LIST 
    xcept
    xoap
@@ -132,11 +132,17 @@ message("otsdaq_utilities WebGUI Debug Mode = ${OTS_DEBUG_MODE}")
 # WebGUI
 #FILE(REMOVE [ ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js ])
 #FILE(REMOVE [ ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js ])
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js.in ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js.in ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js @ONLY)
-FILE(COPY WebGUI DESTINATION . PATTERN "*.in" EXCLUDE)
-INSTALL(DIRECTORY WebGUI DESTINATION . FILE_PERMISSIONS USE_SOURCE_PERMISSIONS PATTERN "*.in" EXCLUDE)
+# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.in.js ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js @ONLY)
+if( $ENV{OTS_DEBUG_MODE} MATCHES "2" )
+	message("otsdaq_utilities WebGUI skipping Debug.js handling in shared srcs/")
+else()
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.in.js ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js @ONLY)
+endif()
+
+FILE(COPY WebGUI DESTINATION . PATTERN "*.in.js" EXCLUDE)
+INSTALL(DIRECTORY WebGUI DESTINATION . FILE_PERMISSIONS USE_SOURCE_PERMISSIONS PATTERN "*.in.js" EXCLUDE)
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js DESTINATION WebGUI/js)
+
 
 message("otsdaq_utilities WebGUI created Debug.js at ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js}")
 message("otsdaq_utilities WebGUI created Debug.js at ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js}")
@@ -144,5 +150,8 @@ message("otsdaq_utilities WebGUI created Debug.js at ${CMAKE_CURRENT_SOURCE_DIR}
 # tools
 FILE(COPY tools DESTINATION .)
 INSTALL(DIRECTORY tools DESTINATION . FILE_PERMISSIONS USE_SOURCE_PERMISSIONS)
+
+# test programs
+add_subdirectory(test)
 
 cet_cmake_config()

@@ -1,0 +1,3 @@
+[submodule "WebGUI/html/widgets/libraries/tabulator-master"]
+	path = WebGUI/html/widgets/libraries/tabulator-master
+	url = https://github.com/olifolkerd/tabulator.git

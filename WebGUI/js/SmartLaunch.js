@@ -3,8 +3,9 @@
 
 	//	Description of Smart Launch Functionality/Behavior:
 	//	
-	//		Checkboxes on left to select detector systems to include
-	//		Giant button on right to launch
+	//		Checkboxes on left to select configuration subsystems to enable
+	//		Giant RED button on right to (re)launch ots
+	//		GREEN button on right to start ots run
 	//
 	//		Launch means:
 	//			- enable associated contexts
@@ -19,8 +20,8 @@
 //		global variables: SmartLaunch.subsystems and SmartLaunch.systemToContextMap. 
 //	This is demonstrated in otsdaq_demo/UserWebGUI/html/SmartLaunch.html
 //		
-//	In short, subsystems make up your configuration, and subsystems consist
-//		of one or many context records.
+//	In short, subsystems comprise your configuration, and subsystem names map to
+//		one or many context records that can be on/off as a group (activating/deactivating their segment of the full configuration).
 
 
 //Smart Launch desktop icon from:
@@ -40,6 +41,12 @@ SmartLaunch.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
 	
 SmartLaunch.launcher; //this is THE SmartLaunch variable
 SmartLaunch.doShowContexts = false; //default value for showing contexts or not
+SmartLaunch.getConfigAliases = false; //if true, will show dropdown box of config aliases for user to select
+SmartLaunch.configurationAlias = "defaultSystemAlias"; //for backwards compatibility, keep default
+
+//	var _NAME_STRIPS 	= "Strip Telescope";
+//	var _NAME_MWPC 		= "Wire Chambers";
+//	var _NAME_NIMPLUS 	= "NIM+ Trigger/Coincidence Module";
 SmartLaunch.subsystems = [];
 //					   _NAME_STRIPS,
 //					   _NAME_MWPC,
@@ -108,6 +115,7 @@ SmartLaunch.create = function() {
 
 	var _systemStatusArray = [];
 	var _contextRecords = [];
+	var _configAliasesObj = {};
 
 	
 
@@ -125,16 +133,11 @@ SmartLaunch.create = function() {
 	var _runFSMTimer = 0;
 
 	var _running = false;
-	var _runStatusDiv;
+	var _runStatusDiv, _runConfigAliasDiv;
 	
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
 	// end variable declaration
-	SmartLaunch.launcher = this; 
-	Debug.log("SmartLaunch.launcher constructed");
-
-	init();
-	Debug.log("SmartLaunch.launcher initialized");
 	
 
 	//=====================================================================================
@@ -149,12 +152,37 @@ SmartLaunch.create = function() {
 		DesktopContent.tooltip("Smart Launch", windowTooltip);
 		DesktopContent.setWindowTooltip(windowTooltip);
 
-		//get all existing contexts
-		ConfigurationAPI.getSubsetRecords(
+
+
+		_fsmName = DesktopContent.getParameter(0,"fsm_name");
+		if(_fsmName && _fsmName != "")
+			Debug.log("_fsmName=" + _fsmName);
+		else
+			_fsmName = "";
+
+		_fsmWindowName = DesktopContent.getDesktopWindowTitle();
+		if(_fsmWindowName && _fsmWindowName != "")
+			Debug.log("_fsmWindowName=" + _fsmWindowName);
+		else
+			_fsmWindowName = "";	
+
+		var configAliasParameter = DesktopContent.getParameter(0,"defaultConfigAlias");
+		if(configAliasParameter && configAliasParameter != "")
+			SmartLaunch.configurationAlias = configAliasParameter;
+		Debug.log("SmartLaunch.getConfigAliases",SmartLaunch.getConfigAliases);
+		Debug.log("SmartLaunch.configurationAlias",SmartLaunch.configurationAlias);
+
+
+		//get all needed info sequentially
+		if(SmartLaunch.getConfigAliases)
+			SmartLaunch.helperGetConfigurationAliases(localGetConfiguAliasesHandler);
+		else //get all existing contexts only
+			ConfigurationAPI.getSubsetRecords(
 				_subsetBasePath,
 				"",//filterList,
 				localGetContextRecordsHandler
-		);
+			);
+
 
 		//get run state always
 		window.clearTimeout(_getStateTimer);
@@ -162,6 +190,22 @@ SmartLaunch.create = function() {
 		
 		return;
 		
+
+		//////////////////////////////
+		function localGetConfiguAliasesHandler(aliasObj)
+		{
+			_configAliasesObj = aliasObj;
+			Debug.logv({_configAliasesObj});
+
+			//get all existing contexts
+			ConfigurationAPI.getSubsetRecords(
+				_subsetBasePath,
+				"",//filterList,
+				localGetContextRecordsHandler
+			);
+
+		} //end localGetContextRecordsHandler()
+
 		//////////////////////////////
 		function localGetContextRecordsHandler(records)
 		{
@@ -180,7 +224,7 @@ SmartLaunch.create = function() {
 
 			//redrawWindow();
 			readEnabledSubsystems();
-		}
+		} //end localGetContextRecordsHandler()
 				
 
 	} //end init()
@@ -208,6 +252,8 @@ SmartLaunch.create = function() {
 		//			</a>
 		//			
 		//			<div id='runStatusDiv' style='top:10px;/*default to 10px for case when someone else has lock*/'></div>
+		//
+		//			<div id='runConfigAliasDiv'><select></select></div>
 		//		
 		//		</div>
 		
@@ -272,8 +318,13 @@ SmartLaunch.create = function() {
 			sl.setAttribute("id","runStatusDiv");
 			sl.style.top = "10px"; //default to 10px for case when someone else has lock
 			cel.appendChild(sl);
+
+			//run config alias select
+			sl = document.createElement("div");
+			sl.setAttribute("id","runConfigAliasDiv");
+			cel.appendChild(sl);
 			
-		}		
+		} //end content div		
 		
 		
 		
@@ -378,7 +429,9 @@ SmartLaunch.create = function() {
 		var sdiv = document.getElementById("subsystemDiv");
 		var ldiv = document.getElementById("launchDiv");
 		var rdiv = document.getElementById("runDiv");
+		var runStatusDiv, runConfigAliasDiv;
 		_runStatusDiv = runStatusDiv = document.getElementById("runStatusDiv");
+		_runConfigAliasDiv = runConfigAliasDiv = document.getElementById("runConfigAliasDiv");
 
 		var chkH = _CHECKBOX_H;
 		var chkW = (w/3)|0; 
@@ -556,9 +609,9 @@ SmartLaunch.create = function() {
 
 		//draw run button
 		{			
-
+			var rTop = (rdivY+((rdivSz-rdivSz*rratio)/2));
 			rdiv.style.left = (rdivX + (w - rdivX - _MARGIN*2 - rdivSz)/2) + "px";
-			rdiv.style.top = (rdivY+((rdivSz-rdivSz*rratio)/2)) + "px";
+			rdiv.style.top = rTop + "px";
 			//rdiv.style.height = (rdivSz*200/300) + "px";
 			rdiv.style.width = rdivSz + "px";
 			rdiv.style.paddingTop = (rdivSz*rratio/2 - 36/2) + "px"; //ratio of size minus font size
@@ -576,7 +629,33 @@ SmartLaunch.create = function() {
 			runStatusDiv.style.top = (h/2 - 50) + "px";
 			runStatusDiv.style.width = (rdivSz + _MARGIN) + "px";
 			runStatusDiv.style.fontSize = rdivSz/15 + "px";
-		}
+
+			//draw config alias select box
+			if(SmartLaunch.getConfigAliases)
+			{
+				runConfigAliasDiv.style.left = (rdivX + _MARGIN + (w - rdivX - _MARGIN*4 - rdivSz)/2) + "px";
+				runConfigAliasDiv.style.top = (rTop + _MARGIN/2 + rdivSz*200/300) + "px";
+				runConfigAliasDiv.style.width = (rdivSz + _MARGIN) + "px";
+				runConfigAliasDiv.style.fontSize = rdivSz/15 + "px";
+
+				var str = "";
+				str += "Configuration Alias: <select id='runConfigAliasSelect' style='font-family: \"Comfortaa\", arial; padding: 2px; font-size: 16px;'>";
+				
+				for(alias in _configAliasesObj.aliasMap)
+				{
+					str += "<option value='" + alias + "' ";
+
+					//otherwise, as priority, choose last alias (the first init)
+					if(_configAliasesObj.lastUsedAlias == alias)
+						str += "selected";
+					
+					str += ">" + alias + "</option>";
+				} //end alias map loop
+				runConfigAliasDiv.innerHTML = str;
+				runConfigAliasDiv.style.display = "block";
+			} //end draw config alias select box
+		} //end draw run buton
+
 		
 	} //end redrawWindow()
 	
@@ -595,7 +674,7 @@ SmartLaunch.create = function() {
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/, 
-				true /*targetSupervisor*/, 
+				true /*targetGatewaySupervisor*/, 
 				true /*ignoreSystemBlock*/);
 
 		//===========
@@ -912,7 +991,7 @@ SmartLaunch.create = function() {
 					}, //end gatewayLaunchOTS req handler
 					0, //handler param
 					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-					true /*targetSupervisor*/, true /*ignoreSystemBlock*/);
+					true /*targetGatewaySupervisor*/, true /*ignoreSystemBlock*/);
 		} // end localDelayedLaunch()
 		
 	} //end gatewayLaunchOts()
@@ -961,7 +1040,7 @@ SmartLaunch.create = function() {
 			++timeoutCount;			
 			if(timeoutCount > 60) //if it has been one minute, too long
 			{
-				Debug.log("Timeout reached! Giving up on " + operativeWord + " the run.", Debug.HIGH_PRIORITY);
+				Debug.log("Timeout reached! Giving up on " + operativeWord + " the run. Check the App Status web app for more details.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
@@ -978,7 +1057,7 @@ SmartLaunch.create = function() {
 			if(lastState == _state)
 			{
 				Debug.log("State machine is not progressing! Stuck in '" + 
-						_state + ".' Giving up on " + operativeWord + " the run.", Debug.HIGH_PRIORITY);
+						_state + ".' Giving up on " + operativeWord + " the run. Check the App Status web app for more details.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
@@ -995,7 +1074,7 @@ SmartLaunch.create = function() {
 				if(timeoutCount > 1)
 				{
 					//if localRun activity caused failure, give up
-					Debug.log("Fault encountered! Giving up on " + operativeWord + " the run.", Debug.HIGH_PRIORITY);
+					Debug.log("Fault encountered! Giving up on " + operativeWord + " the run. Check the App Status web app for more details.", Debug.HIGH_PRIORITY);
 					return;
 				}
 				_transitionName = "Halt";
@@ -1003,8 +1082,19 @@ SmartLaunch.create = function() {
 			else if(_state == "Halted")
 			{
 				_transitionName = "Configure";
-				//FIXME -- could get system alias from somewhere (e.g. first alias in list, or icon parameter)
-				transitionPostData = "ConfigurationAlias=" + "defaultSystemAlias";	
+
+				if(SmartLaunch.getConfigAliases)
+				{
+					var el = document.getElementById("runConfigAliasSelect");
+					if(el)
+						SmartLaunch.configurationAlias = el.value;
+				}
+
+				Debug.log(_transitionName,"SmartLaunch.getConfigAliases",SmartLaunch.getConfigAliases);
+				Debug.log(_transitionName,"SmartLaunch.configurationAlias",SmartLaunch.configurationAlias);
+
+				//Note: User level could get system alias from somewhere (e.g. dropdown box, first alias in list, or icon parameter)
+				transitionPostData = "ConfigurationAlias=" + SmartLaunch.configurationAlias;					
 			}			
 			else if(_state == "Configured")
 			{
@@ -1039,7 +1129,7 @@ SmartLaunch.create = function() {
 			else
 			{
 				Debug.log("Unknown action for current state '" + _state + "'..." + 
-						"Giving up on " + operativeWord + " the run.", Debug.HIGH_PRIORITY);
+						"Giving up on " + operativeWord + " the run. Check the App Status web app for more details.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
@@ -1067,7 +1157,7 @@ SmartLaunch.create = function() {
 					if(err)
 						Debug.log(err,Debug.HIGH_PRIORITY);
 					Debug.log("Server indicated failure to attempt state transition. " + 
-							"Giving up on " + operativeWord + " the run.",Debug.HIGH_PRIORITY);
+							"Giving up on " + operativeWord + " the run. Check the App Status web app for more details.",Debug.HIGH_PRIORITY);
 					return;
 				}
 
@@ -1077,7 +1167,7 @@ SmartLaunch.create = function() {
 					},	 // end handler				
 					0, //handler param				
 					0,0,true, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-					true /*targetSupervisor*/);
+					true /*targetGatewaySupervisor*/);
 
 		}
 
@@ -1175,12 +1265,90 @@ SmartLaunch.create = function() {
 		
 	} //end handleCheckbox()
 
+	//=====================================================================================
+	//getFsmName() ~~
+	this.getFsmName = function() { Debug.logv({_fsmName}); return _fsmName; }
 
+
+	
+	//////////////////////////////////////////////////
+	//////////////////////////////////////////////////
+	// end 'member' function declaration
+
+	SmartLaunch.launcher = this; 
+	Debug.log("SmartLaunch.launcher constructed");
+
+	init();
+	Debug.log("SmartLaunch.launcher initialized");
 } //end create() SmartLaunch instance
 
 
 
+//=====================================================================================     
+SmartLaunch.helperGetConfigurationAliases = function(returnHandler)
+{
+	Debug.log("SmartLaunch.helperGetConfigurationAliases()");
 
+	DesktopContent.XMLHttpRequest("Request?RequestType=getAliasList" +
+		"&fsmName=" + SmartLaunch.launcher.getFsmName(), "", 
+		function(req) 
+		{
+			Debug.log("getAliasList handler()");
+
+			//get all system aliases and put in drop-down
+			var aliasArr = req.responseXML.getElementsByTagName("config_alias"); 
+			var aliasGroupArr = req.responseXML.getElementsByTagName("config_key");
+			var aliasGroupCommentArr = req.responseXML.getElementsByTagName("config_comment");
+			var aliasCommentArr = req.responseXML.getElementsByTagName("config_alias_comment");                    
+			var aliasAuthorArr = req.responseXML.getElementsByTagName("config_author");
+			var aliasCreateTimeArr = req.responseXML.getElementsByTagName("config_create_time");
+			
+			var userLastConfigAlias = 
+					DesktopContent.getXMLValue(req,"UserLastConfigAlias");
+					
+			//take last configured alias, if user has not selected anything yet
+			if(!userLastConfigAlias) userLastConfigAlias = "";
+			
+			var aliasTranslationMap = {};
+			var aliasTranslationMetaDataMap = {};
+			var alias;
+			for(var i=0;i<aliasArr.length;++i) 
+			{                            
+				alias = aliasArr[i].getAttribute('value');
+
+				//require meta information for a 'good' alias
+				if(!aliasCommentArr[i] || !aliasCreateTimeArr[i]) 
+				{
+					Debug.err("Configuration alias '" + alias + "' has an illegal group translation or is missing meta data information. Please delete the alias or fix the translation in your active Backbone group.");
+					continue;
+				}
+
+				aliasTranslationMap[alias] = aliasGroupArr[i].getAttribute('value');
+				
+				if(aliasCommentArr[i])
+					aliasTranslationMetaDataMap[alias] = [
+						aliasCommentArr[i].getAttribute('value'),
+						aliasAuthorArr[i].getAttribute('value'),
+						aliasCreateTimeArr[i].getAttribute('value'),
+						aliasGroupCommentArr[i].getAttribute('value')
+						];
+					
+			} //end primary alias structure creation loop
+			
+			if(returnHandler)
+				returnHandler({
+						"aliasMap" : aliasTranslationMap,
+						"aliasMetaDataMap" : aliasTranslationMetaDataMap,
+						"lastUsedAlias" : userLastConfigAlias 
+					});
+
+		}, //end request handler
+		0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
+		true /*doNoShowLoadingOverlay*/,
+		true /*targetGatewaySupervisor*/);
+
+
+} //end SmartLaunch.helperGetConfigurationAliases()
 
 
 

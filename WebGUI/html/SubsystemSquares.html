@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html lang="en"> 
+<head>
+	<title>Subsystem Launch</title>
+
+	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+	<link href='/WebPath/css/fonts.css?family=Comfortaa:400' rel='stylesheet' type='text/css'>
+		
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/pretty-checkbox.min.css">
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/MaterialDesign-Webfont-master/css/materialdesignicons.min.css">
+	
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/SubsystemSquares.css">
+	
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
+	
+	<script type="text/JavaScript" src="/WebPath/js/SubsystemSquares.js"></script>
+	
+	<script>		
+	
+	
+		
+		//	Subsystem Squares template:
+		//	
+		//		One square for primary gateway and each secondary subsystem
+		//		For each square, passive view of status and click to go to Landing Page
+		//			Gateway Landing Page is Subsystem Launch
+		//		
+
+	
+
+
+	SubsystemSquares.MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
+	SubsystemSquares.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
+	
+	SubsystemSquares.subsystems = {};
+	
+	//=====================================================================================
+	//init ~~
+	//	init called once body has loaded
+	function init() 
+	{		
+		SubsystemSquares.create();
+	} //end init()
+	
+	</script>
+</head>
+	
+
+<body onload='//init() called by DesktopContent.js'>		
+	
+</body>
+	
+</html>

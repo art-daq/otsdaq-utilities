@@ -5,6 +5,7 @@ SOURCE MacroMakerSupervisor.cc version.cc
 		 PRIVATE
 		 artdaq::DAQdata
 		 otsdaq::CodeEditor
+		 otsdaq::NetworkUtilities
 )
 
 install_headers()

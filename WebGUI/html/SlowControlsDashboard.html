@@ -495,7 +495,6 @@
 				}
 
 				console.log("Interface isReadOnly=" + isReadOnly_);
-				redrawWindow();
 			} //end isUserAdminHandler()
 
 
@@ -610,7 +609,7 @@
 
 				editBlock_.isHidden = false;
 				targetTabBodyId_ = undefined;
-				//toggleEditMode();
+				redrawWindow();
 			} //end loadPhoebusPageReqHandler()
 
 			//=====================================================================================
@@ -2751,117 +2750,135 @@
 				mouseoutEditBlock();
 				//mouseoverEditBlock();
 
-				var covers = document.getElementsByClassName("widgetCover");
-			    var resize_covers = document.getElementsByClassName("resizeWidgetCover");
-				var editButton = document.getElementById("menuli2");
-
 				if(editBlock_.isHidden && !isReadOnly_)
 				{
-					Debug.log("Edit Mode On");
-					document.getElementById("menuli3").innerHTML = "";
-
-					editBlock_.isHidden = false;
-					editBlock_.el.style.display = "block";
-					editButton.innerHTML = "Go Live!";
-
-					//Make sure pv list is up-to-date
-					DesktopContent.XMLHttpRequest(
-						"Request?RequestType=getList",
-						"", 
-						pvListReqHandler /*returnHandler*/, 
-						0 /*reqParam*/, 
-						0 /*progressHandler*/, 
-						0 /*callHandlerOnErr*/, 
-						false /*doNoShowLoadingOverlay*/);
-
-					UID_ = 0;
-
-					window.clearTimeout(timerVariable_);
-					window.clearTimeout(lastAlarmsTimerVariable_);
-					window.clearTimeout(alarmsLogTimerVariable_);
-
-					//editButton.classList.add("navigationMenu--Edit");
-					mainBlock_.el.classList.add("editMode");
-
-					for(widgetId in page_.widgets)
-					{
-						if(page_.widgets[widgetId].el.contentWindow) page_.widgets[widgetId].el.contentWindow.drawWidget(page_.widgets[widgetId]);
-						drawWidget(widgetId);
-					}
-
-					for(var i = 0;i<covers.length;++i)
-						if (page_.widgets[i].type != WIDGET_TYPE_TAB
-						  && page_.widgets[i].type != WIDGET_TYPE_NAVTAB)
-							covers[i].style.display = "block";
-
-					for(var i = 0;i<resize_covers.length;++i)
-						resize_covers[i].style.display = "block";//	resize_covers[i].style["z-index"] = "8";
-
-					toggleGrid(true);
-					if (editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox") != null)
-						editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox").checked = true
+					editModeOn();
 				}
 				else
 				{
-					Debug.log("Edit Mode Off");
-					document.getElementById("menuli3").innerHTML = "<br/>Go Back to previous page";
-
-					editBlock_.isHidden = true;
-					editBlock_.el.style.display = "none";
-					editButton.innerHTML = "Switch to Edit Mode";
-
-					UID_ = 0;
-
-					if (page_.widgets != undefined && !isEmpty(page_.widgets))
-					{
-						var pvListSize = 0;
-						var allLastAlarmsSize = 0;
-						var allAlarmsLogSize = 0;
-
-						for (var widget in page_.widgets)
-						{						
-							if (!isEmpty(page_.widgets[widget].pvList))
-								pvListSize ++;
-							else
-								if (page_.widgets[widget].type == 1)
-								{
-									if (page_.widgets[widget].attributes["getLastAlarms"] == "true")
-										allLastAlarmsSize++;
-									if (page_.widgets[widget].attributes["getAlarmsLog"] == "true")
-										allAlarmsLogSize++;
-								}
-						}
-
-						if (pvListSize > 0)
-						{
-							generateUID();
-							pollServer();
-							//timerVariable_ = window.setTimeout(pollServer, refreshRate_);
-						}
-
-						if (allLastAlarmsSize > 0)
-							getLastAlarms();
-							//lastAlarmsTimerVariable_ = window.setTimeout(pollLastAlarms, refreshRate_);
-						if (allAlarmsLogSize > 0)
-							getAlarmsLog();
-							//alarmsLogTimerVariable_ = window.setTimeout(pollAlarmsLog, refreshRate_);
-					}
-
-					mainBlock_.el.classList.remove("editMode");
-					//editButton.classList.remove("navigationMenu--Edit");
-
-					for(var i = 0;i<covers.length;++i)
-						covers[i].style.display = "none";
-
-					for(var i = 0;i<resize_covers.length;++i)
-						resize_covers[i].style.display = "none";
-
-					setEditModeWidgetTarget();
-					toggleGrid(false);
-					if (editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox") != null)
-						editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox").checked = false;
+					editModeOff();
 				}
 			} //end toggleEditMode()
+
+
+			//================================================================================
+			function editModeOn()
+			{
+				var covers = document.getElementsByClassName("widgetCover");
+				var resize_covers = document.getElementsByClassName("resizeWidgetCover");
+				var editButton = document.getElementById("menuli2");
+
+				Debug.log("Edit Mode On");
+				document.getElementById("menuli3").innerHTML = "";
+
+				editBlock_.isHidden = false;
+				editBlock_.el.style.display = "block";
+				editButton.innerHTML = "Go Live!";
+
+				//Make sure pv list is up-to-date
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=getList",
+					"", 
+					pvListReqHandler /*returnHandler*/, 
+					0 /*reqParam*/, 
+					0 /*progressHandler*/, 
+					0 /*callHandlerOnErr*/, 
+					false /*doNoShowLoadingOverlay*/);
+
+				UID_ = 0;
+
+				window.clearTimeout(timerVariable_);
+				window.clearTimeout(lastAlarmsTimerVariable_);
+				window.clearTimeout(alarmsLogTimerVariable_);
+
+				//editButton.classList.add("navigationMenu--Edit");
+				mainBlock_.el.classList.add("editMode");
+
+				for(widgetId in page_.widgets)
+				{
+					if(page_.widgets[widgetId].el.contentWindow) page_.widgets[widgetId].el.contentWindow.drawWidget(page_.widgets[widgetId]);
+					drawWidget(widgetId);
+				}
+
+				for(var i = 0;i<covers.length;++i)
+					if (page_.widgets[i].type != WIDGET_TYPE_TAB
+						&& page_.widgets[i].type != WIDGET_TYPE_NAVTAB)
+						covers[i].style.display = "block";
+
+				for(var i = 0;i<resize_covers.length;++i)
+					resize_covers[i].style.display = "block";//	resize_covers[i].style["z-index"] = "8";
+
+				toggleGrid(true);
+				if (editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox") != null)
+					editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox").checked = true
+			} //end editModeOn()
+
+
+			//================================================================================
+			function editModeOff()
+			{
+				var covers = document.getElementsByClassName("widgetCover");
+				var resize_covers = document.getElementsByClassName("resizeWidgetCover");
+				var editButton = document.getElementById("menuli2");
+
+				Debug.log("Edit Mode Off");
+				document.getElementById("menuli3").innerHTML = "<br/>Go Back to previous page";
+
+				editBlock_.isHidden = true;
+				editBlock_.el.style.display = "none";
+				editButton.innerHTML = "Switch to Edit Mode";
+
+				UID_ = 0;
+
+				if (page_.widgets != undefined && !isEmpty(page_.widgets))
+				{
+					var pvListSize = 0;
+					var allLastAlarmsSize = 0;
+					var allAlarmsLogSize = 0;
+
+					for (var widget in page_.widgets)
+					{						
+						if (!isEmpty(page_.widgets[widget].pvList))
+							pvListSize ++;
+						else
+							if (page_.widgets[widget].type == 1)
+							{
+								if (page_.widgets[widget].attributes["getLastAlarms"] == "true")
+									allLastAlarmsSize++;
+								if (page_.widgets[widget].attributes["getAlarmsLog"] == "true")
+									allAlarmsLogSize++;
+							}
+					}
+
+					if (pvListSize > 0)
+					{
+						generateUID();
+						pollServer();
+						//timerVariable_ = window.setTimeout(pollServer, refreshRate_);
+					}
+
+					if (allLastAlarmsSize > 0)
+						getLastAlarms();
+						//lastAlarmsTimerVariable_ = window.setTimeout(pollLastAlarms, refreshRate_);
+					if (allAlarmsLogSize > 0)
+						getAlarmsLog();
+						//alarmsLogTimerVariable_ = window.setTimeout(pollAlarmsLog, refreshRate_);
+				}
+
+				mainBlock_.el.classList.remove("editMode");
+				//editButton.classList.remove("navigationMenu--Edit");
+
+				for(var i = 0;i<covers.length;++i)
+					covers[i].style.display = "none";
+
+				for(var i = 0;i<resize_covers.length;++i)
+					resize_covers[i].style.display = "none";
+
+				setEditModeWidgetTarget();
+				toggleGrid(false);
+				if (editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox") != null)
+					editBlock_.el.firstChild.contentWindow.document.getElementById("gridCheckbox").checked = false;
+			} //end editModeOn()
 
 
 			//=====================================================================================
@@ -5186,9 +5203,7 @@
 				if(isReadOnly_)
 				{
 					navBar.style.display = "none";
-					if(!editBlock_.isHidden)
-						toggleEditMode();
-
+					editModeOff();
 					console.log(navBar);
 				}
 				else

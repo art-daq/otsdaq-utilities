@@ -29,7 +29,7 @@
 		}
 
 
-		#subsystemDiv, #launchDiv, #runDiv, #runStatusDiv {
+		#subsystemDiv, #launchDiv, #runDiv, #runStatusDiv, #runConfigAliasDiv {
 			position: absolute;
 			display: none;
 		}		
@@ -118,6 +118,14 @@
 			font-family: "Comfortaa";
 		}
 		
+		#runConfigAliasDiv {
+			text-align:left;
+		
+			padding: 20px 0px 20px 20px;
+			color: rgb(136, 102, 102);	
+
+			font-family: "Comfortaa";
+		}
 		
 		
 		

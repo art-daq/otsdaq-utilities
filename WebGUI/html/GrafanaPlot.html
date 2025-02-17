@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Grafana Test</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+
+        <style type="text/css">
+            /*mainFrame*/
+            .mainFrame {
+                height: 100%;
+                width: 100%;
+                border: none;
+                min-height: 200px;
+            }
+        </style>
+
+        <script>
+
+            //functions:
+			//	init()
+			//	openPage()
+			//
+			/////////////////////////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////////////////////////
+
+			//=====================================================================================
+			//init called once body has loaded
+			function init()
+			{
+				Debug.log("init() was called");
+
+				var grafanaUrl = DesktopContent.getParameter(0, "grafana_url"); // for &readOnlyMode=1
+				if (grafanaUrl !== undefined) //set read mode if parameter
+				{
+					openPage(grafanaUrl);
+				}
+			} //end init()
+
+            //=====================================================================================
+			function openPage(url)
+			{
+				var frame = document.getElementById('mainFrame');
+				frame.src = url;
+			}// end openPage()
+
+        </script>
+    </head>
+<body onload='//init() called by DesktopContent.js'>	
+    <div>
+        <iframe id="mainFrame" class="mainFrame" src=""></iframe>
+    </div>
+</body>
+
+</html>
