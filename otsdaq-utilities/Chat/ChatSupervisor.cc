@@ -44,8 +44,8 @@ void ChatSupervisor::defaultPage(xgi::Input* /* cgiIn */, xgi::Output* out)
 }  //end defaultPage()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void ChatSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -54,9 +54,9 @@ void ChatSupervisor::forceSupervisorPropertyValues()
 }  /// end forceSupervisorPropertyValues()
 
 //==============================================================================
-//	request
-//		Handles Web Interface requests to chat supervisor.
-//		Does not refresh cookie for automatic update checks.
+///	request
+///		Handles Web Interface requests to chat supervisor.
+///		Does not refresh cookie for automatic update checks.
 void ChatSupervisor::request(const std::string& requestType,
                              cgicc::Cgicc&      cgiIn,
                              HttpXmlDocument&   xmlOut,
@@ -114,9 +114,9 @@ void ChatSupervisor::request(const std::string& requestType,
 }  // end request()
 
 //==============================================================================
-// ChatSupervisor::escapeChat()
-//	replace html/xhtml reserved characters with equivalent.
-//	reserved: ", ', &, <, >
+/// ChatSupervisor::escapeChat()
+///	replace html/xhtml reserved characters with equivalent.
+///	reserved: ", ', &, <, >
 void ChatSupervisor::escapeChat(std::string& /*chat*/)
 {
 	//	char reserved[] = {'"','\'','&','<','>'};
@@ -127,19 +127,19 @@ void ChatSupervisor::escapeChat(std::string& /*chat*/)
 }  // end escapeChat()
 
 //==============================================================================
-// ChatSupervisor::insertActiveUsers()
+/// ChatSupervisor::insertActiveUsers()
 void ChatSupervisor::insertActiveUsers(HttpXmlDocument* xmlOut)
 {
 	xmlOut->addTextElementToData("active_users", theRemoteWebUsers_.getActiveUserList());
 }  // end insertActiveUsers()
 
 //==============================================================================
-// ChatSupervisor::insertChatRefresh()
-//	check if user is new to list (may cause update)
-//		each new user causes update to last index
-//	if lastUpdateIndex is current, return nothing
-//	else return full chat user list and new chats
-//	(note: lastUpdateIndex==0 first time and returns user list. and all history chats)
+/// ChatSupervisor::insertChatRefresh()
+///	check if user is new to list (may cause update)
+///		each new user causes update to last index
+///	if lastUpdateIndex is current, return nothing
+///	else return full chat user list and new chats
+///	(note: lastUpdateIndex==0 first time and returns user list. and all history chats)
 void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
                                        uint64_t           lastUpdateIndex,
                                        const std::string& user)
@@ -181,8 +181,8 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 }  // end insertChatRefresh()
 
 //==============================================================================
-// ChatSupervisor::newUser()
-//	create new user if needed, and increment update
+/// ChatSupervisor::newUser()
+///	create new user if needed, and increment update
 void ChatSupervisor::newUser(const std::string& user)
 {
 	for(uint64_t i = 0; i < ChatUsers_.size(); ++i)
@@ -201,8 +201,8 @@ void ChatSupervisor::newUser(const std::string& user)
 }  // end newUser()
 
 //==============================================================================
-// ChatSupervisor::newChat()
-//	create new chat, and increment update
+/// ChatSupervisor::newChat()
+///	create new chat, and increment update
 void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
 {
 	ChatHistoryEntry_.push_back(chat);
@@ -212,22 +212,22 @@ void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
 }
 
 //==============================================================================
-// ChatSupervisor::isChatNew()
-//	return true if chatIndex is older than lastUpdateIndex
+/// ChatSupervisor::isChatNew()
+///	return true if chatIndex is older than lastUpdateIndex
 bool ChatSupervisor::isChatOld(uint64_t chatIndex, uint64_t last)
 {
 	return (last - chatIndex < (uint64_t(1) << 62));
 }
 
 //==============================================================================
-// ChatSupervisor::isLastUpdateIndexStale()
+/// ChatSupervisor::isLastUpdateIndexStale()
 bool ChatSupervisor::isLastUpdateIndexStale(uint64_t last)
 {
 	return ChatLastUpdateIndex != last;
 }
 
 //==============================================================================
-// ChatSupervisor::incrementAndGetLastUpdate()
+/// ChatSupervisor::incrementAndGetLastUpdate()
 uint64_t ChatSupervisor::incrementAndGetLastUpdate()
 {
 	if(!++ChatLastUpdateIndex)
@@ -236,8 +236,8 @@ uint64_t ChatSupervisor::incrementAndGetLastUpdate()
 }
 
 //==============================================================================
-// ChatSupervisor::cleanupExpiredChats()
-//	remove expired entries from Chat history and user list
+/// ChatSupervisor::cleanupExpiredChats()
+///	remove expired entries from Chat history and user list
 void ChatSupervisor::cleanupExpiredChats()
 {
 	for(uint64_t i = 0; i < ChatHistoryEntry_.size(); ++i)
@@ -263,7 +263,7 @@ void ChatSupervisor::cleanupExpiredChats()
 }
 
 //==============================================================================
-// ChatSupervisor::removeChatHistoryEntry()
+/// ChatSupervisor::removeChatHistoryEntry()
 void ChatSupervisor::removeChatHistoryEntry(uint64_t i)
 {
 	ChatHistoryEntry_.erase(ChatHistoryEntry_.begin() + i);
@@ -273,7 +273,7 @@ void ChatSupervisor::removeChatHistoryEntry(uint64_t i)
 }
 
 //==============================================================================
-// ChatSupervisor::removeChatHistoryEntry()
+/// ChatSupervisor::removeChatHistoryEntry()
 void ChatSupervisor::removeChatUserEntry(uint64_t i)
 {
 	newChat(ChatUsers_[i] + " left the chat.",

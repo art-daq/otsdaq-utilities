@@ -14,9 +14,9 @@ namespace ots
 // clang-format off
 
 ////// class define
-// ConsoleSupervisor
-//	This class handles the presentation of Message Facility printouts to the web desktop
-// 	Console.
+/// ConsoleSupervisor
+///	This class handles the presentation of Message Facility printouts to the web desktop
+/// 	Console.
 class ConsoleSupervisor : public CoreSupervisorBase
 {
   public:
@@ -46,10 +46,10 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	             				       								const WebUsers::RequestUserInfo& userInfo) override;
 	virtual std::string 		getStatusProgressDetail				(void) override;
 
-	virtual void 				forceSupervisorPropertyValues		(void) override;  // override to force
-	                    		                                        // supervisor property
-	                    		                                        // values (and ignore user
-	                    		                                        // settings)
+	virtual void 				forceSupervisorPropertyValues		(void) override;  ///< override to force
+	                    		                                        ///< supervisor property
+	                    		                                        ///< values (and ignore user
+	                    		                                        ///< settings)
 
 	void 						doTriggeredAction					(const CustomTriggeredAction_t& triggeredAction);
 
@@ -69,9 +69,9 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	void						saveCustomCountList					(void);
 
   public:
-	// UDP Message Format:
-	// UDPMFMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
-	// FILE and LINE are only printed for s67+
+	/// UDP Message Format:
+	/// UDPMFMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
+	/// FILE and LINE are only printed for s67+
 	struct ConsoleMessageStruct
 	{
 		ConsoleMessageStruct(const std::string& msg, const size_t count,
@@ -194,7 +194,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			//Note: to avoid recursive triggers, Label=Console can not trigger			
 			for(auto& triggeredAction : priorityCustomTriggerList)
 			{
-				if(getLabel() == "Console") break; //Note: to avoid recursive triggers, Label=Console can not trigger			
+				if(getLabel() == "Console") break; ///<Note: to avoid recursive triggers, Label=Console can not trigger			
 
 				size_t pos = 0;
 				bool foundAll = false;
@@ -204,16 +204,16 @@ class ConsoleSupervisor : public CoreSupervisorBase
 						foundAll = false;
 						//FOR DEBUGGING std::cout << "Not a full match on '" << needleSubstring << ".' Message: " << 
 						// 	getSourceIDAsNumber() << ":" << getMsg().substr(0,100) << __E__;
-						break; //not a full match
+						break; ///<not a full match
 					}
 					else
-						foundAll = true; //still possible
+						foundAll = true; ///<still possible
 					
-				if(foundAll) //trigger fired so copy triggeredAction and tag with message sequence ID
+				if(foundAll) ///<trigger fired so copy triggeredAction and tag with message sequence ID
 				{
 					//FOR DEBUGGING std::cout << "Full match of custom trigger! Message: " << 
 					// 	getSourceIDAsNumber() << ":" << getMsg().substr(0,100) << __E__;
-					triggeredAction.occurrences++; //increment occurrences
+					triggeredAction.occurrences++; ///<increment occurrences
 					customTriggerMatch = triggeredAction;
 					customTriggerMatch.triggeredMessageCountIndex = getCount();
 					break;
@@ -273,8 +273,8 @@ class ConsoleSupervisor : public CoreSupervisorBase
 		{  // must be in order of appearance in buffer
 			TIMESTAMP,
 			//count is incrementing number across all sources created at ConsoleSupervisor
-			SEQID,  // sequence ID is incrementing number independent from each source
-			LEVEL,  // aka SEVERITY
+			SEQID,  ///< sequence ID is incrementing number independent from each source
+			LEVEL,  ///< aka SEVERITY
 			LABEL,
 			SOURCEID,
 			HOSTNAME,
@@ -288,7 +288,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 		static const std::map<FieldType, std::string /* fieldNames */> fieldNames;
 
 	  private:
-		size_t countStamp; //count is incrementing number across all sources created at ConsoleSupervisor
+		size_t countStamp; ///<count is incrementing number across all sources created at ConsoleSupervisor
 		CustomTriggeredAction_t customTriggerMatch;
 
 		static const std::string LABEL_TRACE, LABEL_TRACE_PLUS;
@@ -299,19 +299,19 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	
 	std::deque<ConsoleMessageStruct> messages_;
 	std::mutex                       messageMutex_;
-	size_t messageCount_;  //"unique" incrementing ID for messages
+	size_t messageCount_;  ///<"unique" incrementing ID for messages
 	size_t maxMessageCount_, maxClientMessageRequest_;
 
 	std::map<std::string /*TRACE hostname*/, std::string /*xdaq context hostname*/>
 	    									traceMapToXDAQHostname_;
 
-	// members for the refresh handler, ConsoleSupervisor::insertMessageRefresh
+	/// members for the refresh handler, ConsoleSupervisor::insertMessageRefresh
 	xercesc::DOMElement* 					refreshParent_;
 
 	std::vector<CustomTriggeredAction_t>  		priorityCustomTriggerList_;
 	std::queue<CustomTriggeredAction_t>	 		customTriggerActionQueue_;	
 
-	//for system status:
+	///for system status:
 	size_t 			errorCount_ = 0, warnCount_ = 0, infoCount_ = 0;
 	std::string 	lastErrorMessage_, lastWarnMessage_, lastInfoMessage_, firstErrorMessage_, firstWarnMessage_, firstInfoMessage_;
 	time_t			lastErrorMessageTime_ = 0, lastWarnMessageTime_ = 0, lastInfoMessageTime_ = 0, firstErrorMessageTime_ = 0, firstWarnMessageTime_ = 0, firstInfoMessageTime_ = 0;

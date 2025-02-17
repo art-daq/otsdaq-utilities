@@ -37,9 +37,9 @@ xdaq::Application* ConfigurationGUISupervisor::instantiate(xdaq::ApplicationStub
 }
 
 //==============================================================================
-// new user gets a table mgr assigned
-// user can fill any of the tables (fill from version or init empty), which becomes the
-// active view for that table
+/// new user gets a table mgr assigned
+/// user can fill any of the tables (fill from version or init empty), which becomes the
+/// active view for that table
 ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* stub)
     : CoreSupervisorBase(stub)
 {
@@ -126,8 +126,8 @@ void ConfigurationGUISupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 }  // end defaultPage()
 
 //==============================================================================
-// When overriding, setup default property values here
-// called by CoreSupervisorBase constructor
+/// When overriding, setup default property values here
+/// called by CoreSupervisorBase constructor
 void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -143,8 +143,8 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 }  // end setSupervisorPropertyDefaults()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::addSupervisorProperty(
@@ -1606,13 +1606,13 @@ catch(...)
 }  // end ::request() catch
 
 //==============================================================================
-// handleGetAffectedGroupsXML
-//	checks which of the active groups are affected
-//		by the tables changing in the modified tables list.
-//
-//	returns for each group affected:
-//		the group name/key affected
-//			and modified member map
+/// handleGetAffectedGroupsXML
+///	checks which of the active groups are affected
+///		by the tables changing in the modified tables list.
+///
+///	returns for each group affected:
+///		the group name/key affected
+///			and modified member map
 void ConfigurationGUISupervisor::handleGetAffectedGroupsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -1857,13 +1857,13 @@ catch(...)
 }
 
 //==============================================================================
-// setupActiveTables
-//	setup active tables based on input group and modified tables
-//
-//	if groupName == "" || groupKey is invalid
-//		then do for active groups
-//	if valid, then replace appropriate active group with specified group
-//	Also replace active versions of modified tables with the specified version
+/// setupActiveTables
+///	setup active tables based on input group and modified tables
+///
+///	if groupName == "" || groupKey is invalid
+///		then do for active groups
+///	if valid, then replace appropriate active group with specified group
+///	Also replace active versions of modified tables with the specified version
 void ConfigurationGUISupervisor::setupActiveTablesXML(
     HttpXmlDocument&                                          xmlOut,
     ConfigurationManagerRW*                                   cfgMgr,
@@ -2047,20 +2047,20 @@ catch(...)
 }  // end setupActiveTablesXML() throw
 
 //==============================================================================
-// handleFillCreateTreeNodeRecordsXML
-//	Creates the records in the appropriate table
-//		and creates a temporary version.
-//	the modified-<modified tables> list is returned in xml
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV list of records to create
-//
+/// handleFillCreateTreeNodeRecordsXML
+///	Creates the records in the appropriate table
+///		and creates a temporary version.
+///	the modified-<modified tables> list is returned in xml
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV list of records to create
+///
 void ConfigurationGUISupervisor::handleFillCreateTreeNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2211,8 +2211,8 @@ void ConfigurationGUISupervisor::handleFillCreateTreeNodeRecordsXML(
 } //end handleFillCreateTreeNodeRecordsXML()
 
 //==============================================================================
-// handleFillModifiedTablesXML
-//	fills <modified tables> as used by ConfigurationAPI
+/// handleFillModifiedTablesXML
+///	fills <modified tables> as used by ConfigurationAPI
 void ConfigurationGUISupervisor::handleFillModifiedTablesXML(
     HttpXmlDocument& xmlOut, ConfigurationManagerRW* cfgMgr)
 try
@@ -2259,20 +2259,20 @@ catch(...)
 } //end handleFillModifiedTablesXML() catch
 
 //==============================================================================
-// handleFillDeleteTreeNodeRecordsXML
-//	Deletes the records in the appropriate table
-//		and creates a temporary version.
-//	the modified-<modified tables> list is returned in xml
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV list of records to create
-//
+/// handleFillDeleteTreeNodeRecordsXML
+///	Deletes the records in the appropriate table
+///		and creates a temporary version.
+///	the modified-<modified tables> list is returned in xml
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV list of records to create
+///
 void ConfigurationGUISupervisor::handleFillDeleteTreeNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2385,21 +2385,21 @@ void ConfigurationGUISupervisor::handleFillDeleteTreeNodeRecordsXML(
 }  // end handleFillDeleteTreeNodeRecordsXML()
 
 //==============================================================================
-// handleFillRenameTreeNodeRecordsXML
-//	Rename the records in the appropriate table
-//		and creates a temporary version.
-//	the modified-<modified tables> list is returned in xml
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV list of records to rename
-//	newRecordList := CSV list of new record names
-//
+/// handleFillRenameTreeNodeRecordsXML
+///	Rename the records in the appropriate table
+///		and creates a temporary version.
+///	the modified-<modified tables> list is returned in xml
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV list of records to rename
+///	newRecordList := CSV list of new record names
+///
 void ConfigurationGUISupervisor::handleFillRenameTreeNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2514,22 +2514,22 @@ void ConfigurationGUISupervisor::handleFillRenameTreeNodeRecordsXML(
 }  // end handleFillRenameTreeNodeRecordsXML()
 
 //==============================================================================
-// handleFillCopyTreeNodeRecordsXML
-//	Copies the records in the appropriate table
-//		and creates a temporary version.
-//	Makes incremental unique names for each copy.
-//	The modified-<modified tables> list is returned in xml
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV list of records to create
-//	numberOfCopies := integer for number of copies for each record in recordList
-//
+/// handleFillCopyTreeNodeRecordsXML
+///	Copies the records in the appropriate table
+///		and creates a temporary version.
+///	Makes incremental unique names for each copy.
+///	The modified-<modified tables> list is returned in xml
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV list of records to create
+///	numberOfCopies := integer for number of copies for each record in recordList
+///
 void ConfigurationGUISupervisor::handleFillCopyTreeNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2640,22 +2640,22 @@ void ConfigurationGUISupervisor::handleFillCopyTreeNodeRecordsXML(
 }  // end handleFillCopyTreeNodeRecordsXML()
 
 //==============================================================================
-// handleFillSetTreeNodeFieldValuesXML
-//	writes for each record, the field/value pairs to the appropriate table
-//		and creates a temporary version.
-//	the modified-<modified tables> list is returned in xml
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV list of records for which to write values for fields
-//	fieldList := CSV of relative-to-record-path to fields to write to each record
-//	valueList := CSV of values corresponding to fields
-//
+/// handleFillSetTreeNodeFieldValuesXML
+///	writes for each record, the field/value pairs to the appropriate table
+///		and creates a temporary version.
+///	the modified-<modified tables> list is returned in xml
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV list of records for which to write values for fields
+///	fieldList := CSV of relative-to-record-path to fields to write to each record
+///	valueList := CSV of values corresponding to fields
+///
 void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2850,20 +2850,20 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 } //end handleFillSetTreeNodeFieldValuesXML()
 
 //==============================================================================
-// handleFillGetTreeNodeFieldValuesXML
-//	returns for each record, xml list of field/value pairs
-//		field := relative-path
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordStr := CSV list of records for which to lookup values for fields
-//	fieldList := CSV of relative-to-record-path to filter common fields
-//
+/// handleFillGetTreeNodeFieldValuesXML
+///	returns for each record, xml list of field/value pairs
+///		field := relative-path
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordStr := CSV list of records for which to lookup values for fields
+///	fieldList := CSV of relative-to-record-path to filter common fields
+///
 void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -2954,24 +2954,24 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
 } //end handleFillGetTreeNodeFieldValuesXML()
 
 //==============================================================================
-// handleFillTreeNodeCommonFieldsXML
-//	returns xml list of common fields among records
-//		field := relative-path
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	depth from starting node path
-//	modifiedTables := CSV of table/version pairs
-//	recordList := CSV of records to search for fields
-//	fieldList := CSV of relative-to-record-path to filter common fields
-//		(accept or reject [use ! as first character to reject])
-//		[use leading*  to ignore relative path - note that only leading and trailing
-// wildcards work]
-//
+/// handleFillTreeNodeCommonFieldsXML
+///	returns xml list of common fields among records
+///		field := relative-path
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	depth from starting node path
+///	modifiedTables := CSV of table/version pairs
+///	recordList := CSV of records to search for fields
+///	fieldList := CSV of relative-to-record-path to filter common fields
+///		(accept or reject [use ! as first character to reject])
+///		[use leading*  to ignore relative path - note that only leading and trailing
+/// wildcards work]
+///
 void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -3128,33 +3128,33 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
 } //end handleFillTreeNodeCommonFieldsXML()
 
 //==============================================================================
-// handleFillUniqueFieldValuesForRecordsXML
-//	returns xml list of unique values for each fields among records
-//		field := relative-path
-//
-//	return xml
-//		<xml>
-//			<field val=relative-path>
-//				<unique_val val=uval0>
-//				<unique_val val=uval1>
-//				.. next unique value
-//			</field>
-//			... next field
-//		</xml>
-//
-// if groupName == "" || groupKey is invalid
-//	 then do for active groups
-//
-// parameters
-//		tableGroupName (full name with key)
-//		starting node path
-//		modifiedTables := CSV of table/version pairs
-//		recordList := CSV of records to search for unique values
-//		fieldList := CSV of fields relative-to-record-path for which to get list of unique
-// values 			fieldList = AUTO is a special keyword
-//				if AUTO, then server picks filter fields (usually 3, with preference
-//				for GroupID, On/Off, and FixedChoice fields.
-//
+/// handleFillUniqueFieldValuesForRecordsXML
+///	returns xml list of unique values for each fields among records
+///		field := relative-path
+///
+///	return xml
+///		<xml>
+///			<field val=relative-path>
+///				<unique_val val=uval0>
+///				<unique_val val=uval1>
+///				.. next unique value
+///			</field>
+///			... next field
+///		</xml>
+///
+/// if groupName == "" || groupKey is invalid
+///	 then do for active groups
+///
+/// parameters
+///		tableGroupName (full name with key)
+///		starting node path
+///		modifiedTables := CSV of table/version pairs
+///		recordList := CSV of records to search for unique values
+///		fieldList := CSV of fields relative-to-record-path for which to get list of unique
+/// values 			fieldList = AUTO is a special keyword
+///				if AUTO, then server picks filter fields (usually 3, with preference
+///				for GroupID, On/Off, and FixedChoice fields.
+///
 void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -3306,25 +3306,25 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 }  // end handleFillUniqueFieldValuesForRecordsXML()
 
 //==============================================================================
-// handleFillTreeViewXML
-//	returns xml tree from path for given depth
-//
-// if groupName == "" || groupKey is invalid
-//	 then return tree for active groups
-//
-// parameters
-//	tableGroupName (full name with key)
-//	starting node path
-//	depth from starting node path
-//	modifiedTables := CSV of table/version pairs
-//	filterList := relative-to-record-path=value(,value,...);path=value... filtering
-//		records with relative path not meeting all filter criteria
-//		- can accept multiple values per field (values separated by commas) (i.e. OR)
-//		- fields/value pairs separated by ; for AND
-//			- Note: limitation here is there is no OR among fields/value pairs (in future,
-// could separate field/value pairs by : for OR) 		e.g.
-//"LinkToFETypeTable=NIMPlus,TemplateUDP;FEInterfacePluginName=NIMPlusPlugin"
-//
+/// handleFillTreeViewXML
+///	returns xml tree from path for given depth
+///
+/// if groupName == "" || groupKey is invalid
+///	 then return tree for active groups
+///
+/// parameters
+///	tableGroupName (full name with key)
+///	starting node path
+///	depth from starting node path
+///	modifiedTables := CSV of table/version pairs
+///	filterList := relative-to-record-path=value(,value,...);path=value... filtering
+///		records with relative path not meeting all filter criteria
+///		- can accept multiple values per field (values separated by commas) (i.e. OR)
+///		- fields/value pairs separated by ; for AND
+///			- Note: limitation here is there is no OR among fields/value pairs (in future,
+/// could separate field/value pairs by : for OR) 		e.g.
+///"LinkToFETypeTable=NIMPlus,TemplateUDP;FEInterfacePluginName=NIMPlusPlugin"
+///
 void ConfigurationGUISupervisor::handleFillTreeViewXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -3779,11 +3779,11 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 }  // end handleFillTreeViewXML()
 
 //==============================================================================
-// recursiveTreeToXML
-//	output tree to XML from this node for desired depth
-//	depth of 0 means output only this node's value
-//	depth of 1 means include this node's children's values, etc..
-//	depth of -1(unsigned int) effectively means output full tree
+/// recursiveTreeToXML
+///	output tree to XML from this node for desired depth
+///	depth of 0 means output only this node's value
+///	depth of 1 means include this node's children's values, etc..
+///	depth of -1(unsigned int) effectively means output full tree
 void ConfigurationGUISupervisor::recursiveTreeToXML(
     const ConfigurationTree&                                       t,
     unsigned int                                                   depth,
@@ -4112,12 +4112,12 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 }  // end recursiveTreeToXML()
 
 //==============================================================================
-// handleGetLinkToChoicesXML
-//	return all possible choices for link
-//		linkIdType = "UID" or "GroupID"
-//
-//	as xml:
-//	<linkToChoice = xxx>
+/// handleGetLinkToChoicesXML
+///	return all possible choices for link
+///		linkIdType = "UID" or "GroupID"
+///
+///	as xml:
+///	<linkToChoice = xxx>
 void ConfigurationGUISupervisor::handleGetLinkToChoicesXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -4240,7 +4240,7 @@ catch(...)
 } //end handleGetLinkToChoicesXML() catch
 
 //==============================================================================
-// handleMergeGroupsXML
+/// handleMergeGroupsXML
 void ConfigurationGUISupervisor::handleMergeGroupsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -4606,7 +4606,7 @@ catch(...)
 }  // end handleMergeGroupsXML() catch
 
 //==============================================================================
-// handleSavePlanCommandSequenceXML
+/// handleSavePlanCommandSequenceXML
 void ConfigurationGUISupervisor::handleSavePlanCommandSequenceXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -5144,15 +5144,15 @@ catch(...)
 }  // end handleSavePlanCommandSequenceXML() catch
 
 //==============================================================================
-// handleSaveTreeNodeEditXML
-//	Changes the value specified by UID/Column
-//	 in the specified version of the table.
-//
-//	Error, if the specified version is not the active one.
-//	If the version is not temporary make a new temporary version
-//
-//	return this information on success
-//	<resultingTargetTableVersion = xxx>
+/// handleSaveTreeNodeEditXML
+///	Changes the value specified by UID/Column
+///	 in the specified version of the table.
+///
+///	Error, if the specified version is not the active one.
+///	If the version is not temporary make a new temporary version
+///
+///	return this information on success
+///	<resultingTargetTableVersion = xxx>
 void ConfigurationGUISupervisor::handleSaveTreeNodeEditXML(HttpXmlDocument&        xmlOut,
                                                            ConfigurationManagerRW* cfgMgr,
                                                            const std::string& tableName,
@@ -5816,46 +5816,46 @@ catch(...)
 } //end handleSaveTreeNodeEditXML() catch
 
 //==============================================================================
-// handleGetTableXML
-//
-//	if INVALID or version does not exists, default to mock-up
-//
-// give the detail of specific table specified
-//	by tableName and version
-//
-// if no version selected, default to latest version
-// if no versions exists, default to mock-up
-//
-// return existing versions
-// return column headers
-// return number of rows
-// from dataOffset
-// first CHUNK_SIZE rows
-//
-// return this information
-//<table name=xxx version=xxx rowCount=xxx chunkReq=xxx chunkSz=xxx>
-//	<existing version=xxx>
-//	<existing version=xxx>
-//	....
-//	<colhdr name=xxx>
-//	<colhdr name=xxx>
-//	....
-//	<rowdata>
-//		<cell value=xxx>
-//		<cell value=xxx>
-//		....
-//	</rowdata>
-//	<rowdata>
-//		....
-//	</rowdata>
-//	....
-//</table>
-//
-//
-// Note: options.. if allowIllegalColumns then attempts to load data to current mockup
-// column names
-//	if not allowIllegalColumns, then it is still ok if the source has more or less
-// columns: 	the client is notified through "TableWarnings" field in this case.
+/// handleGetTableXML
+///
+///	if INVALID or version does not exists, default to mock-up
+///
+/// give the detail of specific table specified
+///	by tableName and version
+///
+/// if no version selected, default to latest version
+/// if no versions exists, default to mock-up
+///
+/// return existing versions
+/// return column headers
+/// return number of rows
+/// from dataOffset
+/// first CHUNK_SIZE rows
+///
+/// return this information
+///<table name=xxx version=xxx rowCount=xxx chunkReq=xxx chunkSz=xxx>
+///	<existing version=xxx>
+///	<existing version=xxx>
+///	....
+///	<colhdr name=xxx>
+///	<colhdr name=xxx>
+///	....
+///	<rowdata>
+///		<cell value=xxx>
+///		<cell value=xxx>
+///		....
+///	</rowdata>
+///	<rowdata>
+///		....
+///	</rowdata>
+///	....
+///</table>
+///
+///
+/// Note: options.. if allowIllegalColumns then attempts to load data to current mockup
+/// column names
+///	if not allowIllegalColumns, then it is still ok if the source has more or less
+/// columns: 	the client is notified through "TableWarnings" field in this case.
 void ConfigurationGUISupervisor::handleGetTableXML(HttpXmlDocument&        xmlOut,
                                                    ConfigurationManagerRW* cfgMgr,
                                                    const std::string&      tableName,
@@ -6191,12 +6191,12 @@ catch(...)
 } // end handleGetTableXML() catch
 
 //==============================================================================
-//	refreshUserSession
-//		Finds/creates the active user session based on username &  actionSessionIndex
-//
-//		Returns a configurationMangager instance dedictated to the user.
-//		This configurationManager will have at least empty instances of all base
-// configurations (no null pointers)
+///	refreshUserSession
+///		Finds/creates the active user session based on username &  actionSessionIndex
+///
+///		Returns a configurationMangager instance dedictated to the user.
+///		This configurationManager will have at least empty instances of all base
+/// configurations (no null pointers)
 ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
     std::string username, bool refresh)
 {
@@ -6282,10 +6282,10 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 }  //end refreshUserSession()
 
 //==============================================================================
-//	handleDeleteTableInfoXML
-//
-//		return nothing except Error in xmlOut
-//
+///	handleDeleteTableInfoXML
+///
+///		return nothing except Error in xmlOut
+///
 void ConfigurationGUISupervisor::handleDeleteTableInfoXML(HttpXmlDocument&        xmlOut,
                                                           ConfigurationManagerRW* cfgMgr,
                                                           std::string& tableName)
@@ -6313,12 +6313,12 @@ void ConfigurationGUISupervisor::handleDeleteTableInfoXML(HttpXmlDocument&      
 }  // end handleDeleteTableInfoXML()
 
 //==============================================================================
-//	handleSaveTableInfoXML
-//
-//		write new info file for tableName based CSV column info
-//			data="type,name,dataType;type,name,dataType;..."
-//		return resulting handleGetTableXML mock-up view
-//
+///	handleSaveTableInfoXML
+///
+///		write new info file for tableName based CSV column info
+///			data="type,name,dataType;type,name,dataType;..."
+///		return resulting handleGetTableXML mock-up view
+///
 void ConfigurationGUISupervisor::handleSaveTableInfoXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -6547,13 +6547,13 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 }  // end handleSaveTableInfoXML()
 
 //==============================================================================
-//	handleSetGroupAliasInBackboneXML
-//		open current backbone
-//		modify GroupAliases
-//		save as new version of groupAliases
-//		return new version of groupAliases
-//
-// Note: very similar to ConfigurationGUISupervisor::handleSetVersionAliasInBackboneXML
+///	handleSetGroupAliasInBackboneXML
+///		open current backbone
+///		modify GroupAliases
+///		save as new version of groupAliases
+///		return new version of groupAliases
+///
+/// Note: very similar to ConfigurationGUISupervisor::handleSetVersionAliasInBackboneXML
 void ConfigurationGUISupervisor::handleSetGroupAliasInBackboneXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -6758,13 +6758,13 @@ catch(...)
 }  //end handleSetGroupAliasInBackboneXML() catch
 
 //==============================================================================
-//	handleSetTableAliasInBackboneXML
-//		open current backbone
-//		modify VersionAliases
-//		save as new version of VersionAliases
-//		return new version of VersionAliases
-//
-// Note: very similar to ConfigurationGUISupervisor::handleSetGroupAliasInBackboneXML
+///	handleSetTableAliasInBackboneXML
+///		open current backbone
+///		modify VersionAliases
+///		save as new version of VersionAliases
+///		return new version of VersionAliases
+///
+/// Note: very similar to ConfigurationGUISupervisor::handleSetGroupAliasInBackboneXML
 void ConfigurationGUISupervisor::handleSetTableAliasInBackboneXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -6945,11 +6945,11 @@ catch(...)
 }  // end handleSetVersionAliasInBackboneXML() catch
 
 //==============================================================================
-//	handleAliasGroupMembersInBackboneXML
-//		open current backbone
-//		modify VersionAliases
-//		save as new version of VersionAliases
-//		return new version of VersionAliases
+///	handleAliasGroupMembersInBackboneXML
+///		open current backbone
+///		modify VersionAliases
+///		save as new version of VersionAliases
+///		return new version of VersionAliases
 void ConfigurationGUISupervisor::handleAliasGroupMembersInBackboneXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -7146,16 +7146,16 @@ catch(...)
 }  // end handleAliasGroupMembersInBackboneXML() catch
 
 //==============================================================================
-//	handleGroupAliasesXML
-//
-//		return aliases and backbone groupAlias table version
-//
-//		return this information:
-//		<backbone groupTableName=xxx version=xxx>
-//		<group alias=xxx name=xxx key=xxx comment=xxx>
-//		<group alias=xxx name=xxx key=xxx comment=xxx>
-//		...
-//
+///	handleGroupAliasesXML
+///
+///		return aliases and backbone groupAlias table version
+///
+///		return this information:
+///		<backbone groupTableName=xxx version=xxx>
+///		<group alias=xxx name=xxx key=xxx comment=xxx>
+///		<group alias=xxx name=xxx key=xxx comment=xxx>
+///		...
+///
 void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        xmlOut,
                                                        ConfigurationManagerRW* cfgMgr)
 {
@@ -7348,16 +7348,16 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 }  // end handleGroupAliasesXML
 
 //==============================================================================
-//	handleTableVersionAliasesXML
-//
-//		return version aliases and backbone versionAliases table version
-//
-//		return this information:
-//		<backbone aliasTableName=xxx version=xxx>
-//		<version alias=xxx name=xxx version=xxx comment=xxx>
-//		<version alias=xxx name=xxx version=xxx comment=xxx>
-//		...
-//
+///	handleTableVersionAliasesXML
+///
+///		return version aliases and backbone versionAliases table version
+///
+///		return this information:
+///		<backbone aliasTableName=xxx version=xxx>
+///		<version alias=xxx name=xxx version=xxx comment=xxx>
+///		<version alias=xxx name=xxx version=xxx comment=xxx>
+///		...
+///
 void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&        xmlOut,
                                                          ConfigurationManagerRW* cfgMgr)
 {
@@ -7400,11 +7400,11 @@ void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&       
 }  // end handleVersionAliasesXML()
 
 //==============================================================================
-//	handleGetTableGroupTypeXML
-//
-//		return this information based on member table list
-//		<TableGroupType value=xxx>
-//
+///	handleGetTableGroupTypeXML
+///
+///		return this information based on member table list
+///		<TableGroupType value=xxx>
+///
 void ConfigurationGUISupervisor::handleGetTableGroupTypeXML(
     HttpXmlDocument& xmlOut, ConfigurationManagerRW* cfgMgr, const std::string& tableList)
 {
@@ -7470,21 +7470,21 @@ void ConfigurationGUISupervisor::handleGetTableGroupTypeXML(
 }  //end handleGetTableGroupTypeXML()
 
 //==============================================================================
-//	handleTableGroupsXML
-//
-//		if returnMembers then
-//			return type, comment and members
-//		else just name and key
-//
-//		return this information
-//		<group name=xxx key=xxx>
-//			<table name=xxx version=xxx />
-//			<table name=xxx version=xxx />
-//			...
-//		</group>
-//		<group name=xxx key=xxx>...</group>
-//		...
-//
+///	handleTableGroupsXML
+///
+///		if returnMembers then
+///			return type, comment and members
+///		else just name and key
+///
+///		return this information
+///		<group name=xxx key=xxx>
+///			<table name=xxx version=xxx />
+///			<table name=xxx version=xxx />
+///			...
+///		</group>
+///		<group name=xxx key=xxx>...</group>
+///		...
+///
 void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xmlOut,
                                                       ConfigurationManagerRW* cfgMgr,
                                                       bool returnMembers)
@@ -7672,17 +7672,17 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 }  // end handleTableGroupsXML()
 
 //==============================================================================
-//	handleTablesXML
-//
-//		return this information
-//		<table name=xxx>
-//			<version key=xxx />
-//			<version key=xxx />
-//			...
-//		</table>
-//		<table name=xxx>...</table>
-//		...
-//
+///	handleTablesXML
+///
+///		return this information
+///		<table name=xxx>
+///			<version key=xxx />
+///			<version key=xxx />
+///			...
+///		</table>
+///		<table name=xxx>...</table>
+///		...
+///
 void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
                                                  ConfigurationManagerRW* cfgMgr)
 {
@@ -7772,12 +7772,12 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 }  // end handleTablesXML()
 
 //==============================================================================
-// handleGetArtdaqNodeRecordsXML
-//	get artdaq nodes for active groups
-//
-// parameters
-//	modifiedTables := CSV of table/version pairs
-//
+/// handleGetArtdaqNodeRecordsXML
+///	get artdaq nodes for active groups
+///
+/// parameters
+///	modifiedTables := CSV of table/version pairs
+///
 void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -7905,12 +7905,12 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 }  // end handleGetArtdaqNodeRecordsXML()
 
 //==============================================================================
-// handleSaveArtdaqNodeRecordsXML
-//	save artdaq nodes into active groups
-//
-// parameters
-//	modifiedTables := CSV of table/version pairs
-//
+/// handleSaveArtdaqNodeRecordsXML
+///	save artdaq nodes into active groups
+///
+/// parameters
+///	modifiedTables := CSV of table/version pairs
+///
 void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
     const std::string&      nodeString,
     const std::string&      subsystemString,
@@ -8024,12 +8024,12 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 }  // end handleSaveArtdaqNodeRecordsXML()
 
 //==============================================================================
-// handleLoadArtdaqNodeLayoutXML
-//	load artdaq configuration GUI layout for group/key
-//
-// parameters
-//	contextGroupName (full name with key)
-//
+/// handleLoadArtdaqNodeLayoutXML
+///	load artdaq configuration GUI layout for group/key
+///
+/// parameters
+///	contextGroupName (full name with key)
+///
 void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
     HttpXmlDocument& xmlOut,
     ConfigurationManager*
@@ -8105,12 +8105,12 @@ void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
 }  // end handleLoadArtdaqNodeLayoutXML()
 
 //==============================================================================
-// handleSaveArtdaqNodeLayoutXML
-//	save artdaq configuration GUI layout for group/key
-//
-// parameters
-//	tableGroupName (full name with key)
-//
+/// handleSaveArtdaqNodeLayoutXML
+///	save artdaq configuration GUI layout for group/key
+///
+/// parameters
+///	tableGroupName (full name with key)
+///
 void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
     HttpXmlDocument& /*xmlOut*/,
     ConfigurationManagerRW* cfgMgr,
@@ -8173,7 +8173,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
 }  // end handleSaveArtdaqNodeLayoutXML()
 
 //==============================================================================
-// handleOtherSubsystemActiveGroups
+/// handleOtherSubsystemActiveGroups
 void ConfigurationGUISupervisor::handleOtherSubsystemActiveGroups(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -8325,7 +8325,7 @@ catch(const std::runtime_error& e)
 }  // end getSubsytemTableGroups() catch
 
 //==============================================================================
-// handleGroupDiff
+/// handleGroupDiff
 void ConfigurationGUISupervisor::handleGroupDiff(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -8582,7 +8582,7 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 }  // end handleGroupDiff()
 
 //==============================================================================
-// handleTableDiff
+/// handleTableDiff
 void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
                                                  ConfigurationManagerRW* cfgMgr,
                                                  const std::string&      tableName,
@@ -8695,8 +8695,8 @@ void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
 }  // end handleTableDiff()
 
 //==============================================================================
-//	testXDAQContext
-//		test activation of context group
+///	testXDAQContext
+///		test activation of context group
 void ConfigurationGUISupervisor::testXDAQContext()
 {
 	// ConfigurationManagerRW cfgMgrInst("ExampleUser");

@@ -61,7 +61,7 @@ void SlowControlsDashboardSupervisor::destroy(void)
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::init(void)
-// called by constructor
+/// called by constructor
 {
 	UID_ = 0;
 
@@ -160,7 +160,7 @@ void SlowControlsDashboardSupervisor::handleNewAlarms()
 }  //end handleNewAlarms()
 
 //==============================================================================
-// Manage channel subscriptions to Interface
+/// Manage channel subscriptions to Interface
 void SlowControlsDashboardSupervisor::checkSlowControlsAlarms(
     SlowControlsDashboardSupervisor* cs)
 {
@@ -245,7 +245,7 @@ void SlowControlsDashboardSupervisor::checkSlowControlsAlarms(
 }  // end checkSlowControlsAlarms()
 
 //==============================================================================
-// Manage channel subscriptions to Interface
+/// Manage channel subscriptions to Interface
 void SlowControlsDashboardSupervisor::checkSubscriptions(
     SlowControlsDashboardSupervisor* cs)
 {
@@ -316,9 +316,9 @@ void SlowControlsDashboardSupervisor::checkSubscriptions(
 }
 
 //==============================================================================
-// setSupervisorPropertyDefaults
-//		override to set defaults for supervisor property values (before user settings
-// override)
+/// setSupervisorPropertyDefaults
+///		override to set defaults for supervisor property values (before user settings
+/// override)
 void SlowControlsDashboardSupervisor::setSupervisorPropertyDefaults()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -327,8 +327,8 @@ void SlowControlsDashboardSupervisor::setSupervisorPropertyDefaults()
 }  // end setSupervisorPropertyDefaults()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(

@@ -58,8 +58,8 @@ XDAQ_INSTANTIATOR_IMPL(LogbookSupervisor)
 #define __MF_SUBJECT__ "Logbook"
 
 //==============================================================================
-// sendmail ~~
-//	Helper function to send emails to the subscriber list of the active category
+/// sendmail ~~
+///	Helper function to send emails to the subscriber list of the active category
 int sendmail(const char* to, const char* from, const char* subject, const char* message)
 {
 	int   retval   = -1;
@@ -180,9 +180,9 @@ void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 }  //end defaultPage()
 
 //==============================================================================
-// setSupervisorPropertyDefaults
-//		override to set defaults for supervisor property values (before user settings
-// override)
+/// setSupervisorPropertyDefaults
+///		override to set defaults for supervisor property values (before user settings
+/// override)
 void LogbookSupervisor::setSupervisorPropertyDefaults()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -194,8 +194,8 @@ void LogbookSupervisor::setSupervisorPropertyDefaults()
 }  //end setSupervisorPropertyDefaults()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void LogbookSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -210,9 +210,9 @@ void LogbookSupervisor::forceSupervisorPropertyValues()
 }  //end forceSupervisorPropertyValues()
 
 //==============================================================================
-//	request
-//		Handles Web Interface requests to Logbook supervisor.
-//		Does not refresh cookie for automatic update checks.
+///	request
+///		Handles Web Interface requests to Logbook supervisor.
+///		Does not refresh cookie for automatic update checks.
 void LogbookSupervisor::request(const std::string&               requestType,
                                 cgicc::Cgicc&                    cgiIn,
                                 HttpXmlDocument&                 xmlOut,
@@ -239,49 +239,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	//	__COUT__ << "requestType " << requestType << " files: " << cgiIn.getFiles().size()
 	//<< std::endl;
 	//
-	//
-	//	HttpXmlDocument xmlOut;
-	//	uint64_t activeSessionIndex;
-	//	std::string user;
-	//	uint8_t userPermissions;
-	//
-	//	//**** start LOGIN GATEWAY CODE ***//
-	//	{
-	//		bool automaticCommand = requestType == "RefreshLogbook"; //automatic commands
-	// should not refresh cookie code.. only user initiated commands should! 		bool
-	// checkLock = true; 		bool getUser = (requestType == "CreateCategory") ||
-	//(requestType == "RemoveCategory") ||
-	//				(requestType == "PreviewEntry") || (requestType ==
-	//"AdminRemoveRestoreEntry"); 		bool requireLock = false;
-	//
-	//		if(!theRemoteWebUsers_.xmlRequestToGateway(
-	//				cgiIn,
-	//				out,
-	//				&xmlOut,
-	//				allSupervisorInfo_,
-	//				&userPermissions,  		//acquire user's access level (optionally null
-	// pointer) 				!automaticCommand,			//true/false refresh cookie
-	// code 				1, //set access level requirement to pass gateway
-	//				checkLock,					//true/false enable check that system is
-	// unlocked  or  this user has the lock 				requireLock,
-	// //true/false  requires this user has the lock to  proceed
-	// 0,//&userWithLock,
-	////acquire username with lock (optionally null  pointer)
-	//				(getUser?&user:0)				//acquire username of this user
-	//(optionally
-	// null  pointer) 				,0//,&displayName			//acquire user's Display
-	// Name
-	//				,&activeSessionIndex		//acquire user's session index associated
-	// with  the  cookieCode
-	//				))
-	//		{	//failure
-	//			__COUT__ << "Failed Login Gateway: " <<
-	//					out->str() << std::endl; //print out return string on failure
-	//			return;
-	//		}
-	//	}
-	//	//**** end LOGIN GATEWAY CODE ***//
-
+	
 	// to report to logbook admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,tempStr);
 
@@ -423,9 +381,9 @@ void LogbookSupervisor::request(const std::string&               requestType,
 }  //end request()
 
 //==============================================================================
-//	request
-//		Handles Web Interface requests to Logbook supervisor.
-//		Does not refresh cookie for automatic update checks.
+///	request
+///		Handles Web Interface requests to Logbook supervisor.
+///		Does not refresh cookie for automatic update checks.
 void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
                                       cgicc::Cgicc&      cgiIn,
                                       std::ostream&      out,
@@ -461,9 +419,9 @@ void LogbookSupervisor::nonXmlRequest(const std::string& requestType,
 }  //end request()
 
 //==============================================================================
-// xoap::MakeSystemLogEntry
-//	make a system logbook entry into active category's logbook from Supervisor only
-//	TODO: (how to enforce?)
+/// xoap::MakeSystemLogEntry
+///	make a system logbook entry into active category's logbook from Supervisor only
+///	TODO: (how to enforce?)
 xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
 	SOAPParameters parameters("EntryText");
@@ -548,15 +506,15 @@ XOAP_CLEANUP:
 	                                               retParameters);
 }  //end MakeSystemLogEntry()
 
-//
+///
 ////==============================================================================
 ////LogImage
 ////	Since xdaq's headers are wrong for images, browsers get confused if not wrapped in
 /// an  html page. /	This function wraps an uploaded logbook entry image at src for
 /// display
 /// to  user.
-// void LogbookSupervisor::LogImage(xgi::Input * in, xgi::Output * out )
-// throw (xgi::exception::Exception)
+/// void LogbookSupervisor::LogImage(xgi::Input * in, xgi::Output * out )
+/// throw (xgi::exception::Exception)
 //{
 //	cgicc::Cgicc cgiIn(in);
 //	std::string src = CgiDataUtilities::getData(cgiIn,"src");
@@ -573,8 +531,8 @@ XOAP_CLEANUP:
 ////	NOTE: to create pdf with command line:
 ////			paps LogbookData/category_list.xml > test.ps
 ////			ps2pdfwr test.ps test.pdf
-// void LogbookSupervisor::LogReport(xgi::Input * in, xgi::Output * out )
-// throw (xgi::exception::Exception)
+/// void LogbookSupervisor::LogReport(xgi::Input * in, xgi::Output * out )
+/// throw (xgi::exception::Exception)
 //{
 //	cgicc::Cgicc cgiIn(in);
 //	std::string activeCategory = CgiDataUtilities::getData(cgiIn,"activeCategory");
@@ -587,8 +545,8 @@ XOAP_CLEANUP:
 //}
 
 //==============================================================================
-// getActiveCategory
-// 		load active category from txt file, must be first line in file
+/// getActiveCategory
+/// 		load active category from txt file, must be first line in file
 std::string LogbookSupervisor::getActiveCategory()
 {
 	FILE* fp = fopen(std::string((std::string)ACTIVE_CATEGORY_PATH).c_str(), "r");
@@ -615,8 +573,8 @@ std::string LogbookSupervisor::getActiveCategory()
 }  //end getActiveCategory()
 
 //==============================================================================
-// setActiveCategory
-//		"" means no category is active
+/// setActiveCategory
+///		"" means no category is active
 void LogbookSupervisor::setActiveCategory(std::string category)
 {
 	FILE* fp = fopen(std::string((std::string)ACTIVE_CATEGORY_PATH).c_str(), "w");
@@ -648,8 +606,8 @@ void LogbookSupervisor::setActiveCategory(std::string category)
 }  //end setActiveCategory()
 
 //==============================================================================
-// validateCategoryName
-//		remove all chars that are not alphanumeric, dashes, or underscores
+/// validateCategoryName
+///		remove all chars that are not alphanumeric, dashes, or underscores
 bool LogbookSupervisor::validateCategoryName(std::string& exp)
 {
 	if(exp.length() < CATEGORY_NAME_MIN_LENTH || exp.length() > CATEGORY_NAME_MAX_LENTH)
@@ -666,9 +624,9 @@ bool LogbookSupervisor::validateCategoryName(std::string& exp)
 }  //end validateCategoryName()
 
 //==============================================================================
-// getCategories
-//		if xmlOut, then output categories to xml
-//		if out, then output to stream
+/// getCategories
+///		if xmlOut, then output categories to xml
+///		if out, then output to stream
 void LogbookSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* out)
 {
 	// check that category listing doesn't already exist
@@ -699,7 +657,7 @@ void LogbookSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstrea
 }  //end getCategories()
 
 //==============================================================================
-// createCategory
+/// createCategory
 void LogbookSupervisor::createCategory(std::string      category,
                                        std::string      creator,
                                        HttpXmlDocument* xmlOut)
@@ -813,9 +771,9 @@ void LogbookSupervisor::createCategory(std::string      category,
 }  //end createCategory()
 
 //==============================================================================
-// webUserSetActiveCategory
-//		if category exists, set as active
-//		to clear active category set to ""
+/// webUserSetActiveCategory
+///		if category exists, set as active
+///		to clear active category set to ""
 void LogbookSupervisor::webUserSetActiveCategory(std::string      category,
                                                  HttpXmlDocument* xmlOut)
 {
@@ -860,9 +818,9 @@ void LogbookSupervisor::webUserSetActiveCategory(std::string      category,
 }  //end webUserSetActiveCategory()
 
 //==============================================================================
-// removeCategory
-//		remove category from listing only (do NOT remove logbook data directory)
-//		record remover in log file REMOVE_CATEGORY_LOG_PATH
+/// removeCategory
+///		remove category from listing only (do NOT remove logbook data directory)
+///		record remover in log file REMOVE_CATEGORY_LOG_PATH
 void LogbookSupervisor::removeCategory(std::string      category,
                                        std::string      remover,
                                        HttpXmlDocument* xmlOut)
@@ -931,11 +889,11 @@ void LogbookSupervisor::removeCategory(std::string      category,
 }  //end removeCategory()
 
 //==============================================================================
-//	refreshLogbook
-//		returns all the logbook data for active category from starting date and back in
-// time for 			duration total number of days.
-//		e.g. date = today, and duration = 1 returns logbook for today from active
-// category 		The entries are returns from oldest to newest
+///	refreshLogbook
+///		returns all the logbook data for active category from starting date and back in
+/// time for 			duration total number of days.
+///		e.g. date = today, and duration = 1 returns logbook for today from active
+/// category 		The entries are returns from oldest to newest
 void LogbookSupervisor::refreshLogbook(time_t              date,
                                        uint32_t            duration,
                                        HttpXmlDocument*    xmlOut,
@@ -1074,9 +1032,9 @@ void LogbookSupervisor::refreshLogbook(time_t              date,
 }  //end refreshLogbook()
 
 //==============================================================================
-//	cleanUpPreviews
-//      cleanup logbook preview directory
-//      all names have time_t creation time + "_" + incremented index
+///	cleanUpPreviews
+///      cleanup logbook preview directory
+///      all names have time_t creation time + "_" + incremented index
 void LogbookSupervisor::cleanUpPreviews()
 {
 	std::string previewPath =
@@ -1129,8 +1087,8 @@ void LogbookSupervisor::cleanUpPreviews()
 }  //end cleanUpPreviews()
 
 //==============================================================================
-//	savePostPreview
-//      save post to preview directory named with time and incremented index
+///	savePostPreview
+///      save post to preview directory named with time and incremented index
 void LogbookSupervisor::savePostPreview(std::string&                        subject,
                                         std::string&                        text,
                                         const std::vector<cgicc::FormFile>& files,
@@ -1247,11 +1205,11 @@ void LogbookSupervisor::savePostPreview(std::string&                        subj
 }  //end savePostPreview()
 
 //==============================================================================
-//	movePreviewEntry
-//      if approve
-//          move entry to current active logbook
-//      if not approve
-//          delete directory
+///	movePreviewEntry
+///      if approve
+///          move entry to current active logbook
+///      if not approve
+///          delete directory
 void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
                                          bool        approve,
                                          HttpXmlDocument* /*xmlOut*/)
@@ -1341,8 +1299,8 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 }  //end movePreviewEntry()
 
 //==============================================================================
-//	validateUploadFileType
-//      returns "" if file type is invalide, else returns file extension to use
+///	validateUploadFileType
+///      returns "" if file type is invalide, else returns file extension to use
 std::string LogbookSupervisor::validateUploadFileType(const std::string fileType)
 {
 	for(unsigned int i = 0; i < allowedFileUploadTypes_.size(); ++i)
@@ -1353,23 +1311,23 @@ std::string LogbookSupervisor::validateUploadFileType(const std::string fileType
 }  //end validateUploadFileType()
 
 //==============================================================================
-//	escapeLogbookEntry
-//      replace html/xhtml reserved characters with equivalent.
-//      reserved: ", ', &, <, >, \n, double-space
+///	escapeLogbookEntry
+///      replace html/xhtml reserved characters with equivalent.
+///      reserved: ", ', &, <, >, \n, double-space
 void LogbookSupervisor::escapeLogbookEntry(std::string& /*entry*/)
 {
 	// NOTE: should already be taken care of by web gui javascript! do we care to check?
 }  //end escapeLogbookEntry()
 
 //==============================================================================
-//	hideLogbookEntry
-//		NOTE: does not actually delete entry, just marks as hidden
-//      removes/restores logbook entry. Requires admin priveleges
-//		Locates the entry within the active category and if hide
-//			appends xml fields:
-//				XML_LOGBOOK_ENTRY_HIDDEN
-//				XML_LOGBOOK_ENTRY_HIDER
-//				XML_LOGBOOK_ENTRY_HIDDEN_TIME
+///	hideLogbookEntry
+///		NOTE: does not actually delete entry, just marks as hidden
+///      removes/restores logbook entry. Requires admin priveleges
+///		Locates the entry within the active category and if hide
+///			appends xml fields:
+///				XML_LOGBOOK_ENTRY_HIDDEN
+///				XML_LOGBOOK_ENTRY_HIDER
+///				XML_LOGBOOK_ENTRY_HIDDEN_TIME
 void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
                                          bool               hide,
                                          const std::string& hider)

@@ -56,13 +56,13 @@ class ECLSupervisor : public CoreSupervisorBase
 	            							       							 cgicc::Cgicc&                    cgiIn,
 	            							       							 HttpXmlDocument&                 xmlOut,
 	            							       							 const WebUsers::RequestUserInfo& userInfo) override;
-	// virtual void							nonXmlRequest					(const std::string&               requestType,
-	//             							             					 cgicc::Cgicc&                    cgiIn,
-	//             							             					 std::ostream&                    out,
-	//             							             					 const WebUsers::RequestUserInfo& userInfo) override;
-
-	virtual void							setSupervisorPropertyDefaults	(void) override;  // override to control supervisor specific defaults
-	virtual void							forceSupervisorPropertyValues	(void) override;  // override to force supervisor property values (and ignore user settings)
+	/// virtual void							nonXmlRequest					(const std::string&               requestType,
+	///             							             					 cgicc::Cgicc&                    cgiIn,
+	///             							             					 std::ostream&                    out,
+	///             							             					 const WebUsers::RequestUserInfo& userInfo) override;
+	///
+	virtual void							setSupervisorPropertyDefaults	(void) override;  ///< override to control supervisor specific defaults
+	virtual void							forceSupervisorPropertyValues	(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
 	xoap::MessageReference 					MakeSystemLogEntry				(xoap::MessageReference msg);
 

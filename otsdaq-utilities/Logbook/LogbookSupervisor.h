@@ -6,9 +6,9 @@
 // clang-format off
 namespace ots
 {
-// LogbookSupervisor
-//	This class handles the write and read requests for web users interfacing to the web
-// desktop Logbook
+/// LogbookSupervisor
+///	This class handles the write and read requests for web users interfacing to the web
+/// desktop Logbook
 class LogbookSupervisor : public CoreSupervisorBase
 {
   public:
@@ -29,10 +29,10 @@ class LogbookSupervisor : public CoreSupervisorBase
 	             						             					 std::ostream&                    out,
 	             						             					 const WebUsers::RequestUserInfo& userInfo) override;
 
-	virtual void 						setSupervisorPropertyDefaults	(void) override;  // override to control supervisor specific defaults
-	virtual void 						forceSupervisorPropertyValues	(void) override;  // override to force supervisor property values (and ignore user settings)
+	virtual void 						setSupervisorPropertyDefaults	(void) override;  ///< override to control supervisor specific defaults
+	virtual void 						forceSupervisorPropertyValues	(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
-	// External Supervisor XOAP handlers
+	/// External Supervisor XOAP handlers
 	xoap::MessageReference 				MakeSystemLogEntry				(xoap::MessageReference msg);
 
   private:
@@ -71,7 +71,7 @@ class LogbookSupervisor : public CoreSupervisorBase
 	{
 		CATEGORY_NAME_MIN_LENTH       = 3,
 		CATEGORY_NAME_MAX_LENTH       = 300,
-		LOGBOOK_PREVIEW_EXPIRATION_TIME = 60 * 20,  // 20 minutes
+		LOGBOOK_PREVIEW_EXPIRATION_TIME = 60 * 20,  ///< 20 minutes
 	};
 	std::vector<std::string> allowedFileUploadTypes_, matchingFileUploadTypes_;
 
