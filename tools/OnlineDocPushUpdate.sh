@@ -8,17 +8,20 @@
 #		export OTS_WEB_USER="name"
 #		export OTS_WEB_HOST="host"
 #
-#	For example:  ./srcs/otsdaq-utilities/tools/OnlineDocPushUpdate.sh 1 1 1
+#	For example:  ./srcs/otsdaq-utilities/tools/OnlineDocPushUpdate.sh 1 1 1 #<do NOT do mrb z> <only transfer main page> <transfer to dev area>
 #
 # Note: people keep commenting out CMakeLists requirements when doxygen causes issues,
 #	so remember to have 'add_subdirectory(doc)'  in repo/CMakeLists.txt 
 #	and ...				'include(artdaq_doxygen) \n create_doxygen_documentation()' in repo/doc/CMakeLists.txt
 #   NOW -- export OTS_DOXY=DOIT  #to enable doxygen doc creation
 #
+# 
+# Note: with option do MRB Z, this script calls ./doxygen_main_editor
+#		to avoid requiring a successful compile:
+# 	g++ ./srcs/otsdaq-utilities/onlineDoc/doxygen_main_editor.cpp -o doxygen_main_editor
 #
 # If an area is not formatted for doxygen style documentation, can apply temporarily/permanently:
 # 	
-#	./otsdaq-utilities/tools/convert_header_comments_to_doxygen.sh <path>
 # 	g++ ./srcs/otsdaq-utilities/tools/convert_comments_to_doxygen.cpp -o convert_comments_to_doxygen
 #	./convert_comments_to_doxygen <path>
 #
@@ -145,6 +148,7 @@ for p in ${REPO_DIR[@]}; do
 			#cp $p/doc/html/main.html $p/doc/html/main.html.bk
 			cp $p/doc/html/index.html $p/doc/html/index.html.bk
 		fi
+		# cp $p/doc/html/index.html $p/doc/html/index.html.bk #for debugging
 
 		echo
 		echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t =================="
@@ -154,6 +158,14 @@ for p in ${REPO_DIR[@]}; do
 		
 		#doxygen_main_editor $p/doc/html/main.html $SCRIPT_DIR/../../../srcs/otsdaq_utilities/onlineDoc/inject_$(basename $p).html $SCRIPT_DIR/../../../srcs/otsdaq_utilities/onlineDoc/inject_otsdaq_head.html
 		# doxygen_main_editor $p/doc/html/index.html $SCRIPT_DIR/../../../srcs/otsdaq_utilities/onlineDoc/inject_$(basename $p).html $SCRIPT_DIR/../../../srcs/otsdaq_utilities/onlineDoc/inject_otsdaq_head.html
+		INJECT_SOURCE="otsdaq_utilities"
+		if [ $(basename $p) == "otsdaq" ]; then 
+			INJECT_SOURCE="otsdaq"
+		fi
+		
+		echo -e "./doxygen_main_editor $p/doc/html/index.html $OTS_SOURCE/otsdaq-utilities/onlineDoc/inject_${INJECT_SOURCE}.html $OTS_SOURCE/otsdaq-utilities/onlineDoc/inject_otsdaq_head.html"
+		# continue #for debugging
+		./doxygen_main_editor $p/doc/html/index.html $OTS_SOURCE/otsdaq-utilities/onlineDoc/inject_${INJECT_SOURCE}.html $OTS_SOURCE/otsdaq-utilities/onlineDoc/inject_otsdaq_head.html
 
 		if [ $ONLY_MAIN == 1 ]; then
 			echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t scp -r $p/doc/html/index.html ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o/otsdaq.fnal.gov/htdocs${SCP_LOC}/$(basename $p)/"			
@@ -173,7 +185,7 @@ for p in ${REPO_DIR[@]}; do
 		scp -r $p/doc/html ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o/otsdaq.fnal.gov/htdocs${SCP_LOC}/$(basename $p)
 		echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t Done with .... scp -r $p/doc/html ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o/otsdaq.fnal.gov/htdocs${SCP_LOC}/$(basename $p)"
 
-		exit #for debugging
+		# exit #for debugging
 	fi
     fi	   
 done
@@ -188,6 +200,9 @@ echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t scp -r ${SCRIPT_DIR}/../onlineDoc/
 scp -r ${SCRIPT_DIR}/../onlineDoc/otsdaq_doc_library.js ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o//otsdaq.fnal.gov/htdocs${SCP_LOC}/
 echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t scp -r ${SCRIPT_DIR}/../onlineDoc/contentData ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o//otsdaq.fnal.gov/htdocs${SCP_LOC}/"
 scp -r ${SCRIPT_DIR}/../onlineDoc/contentData ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o//otsdaq.fnal.gov/htdocs${SCP_LOC}/
+echo -e "OnlineDocPushUpdate.sh:${LINENO}  \t scp -r $OTS_SOURCE/otsdaq-utilities/onlineDoc/index.html ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o//otsdaq.fnal.gov/htdocs${SCP_LOC}/"
+scp -r $OTS_SOURCE/otsdaq-utilities/onlineDoc/index.html ${OTS_WEB_USER}@${OTS_WEB_HOST}:/pubhosting/sites/o//otsdaq.fnal.gov/htdocs${SCP_LOC}/
+
 
 
 

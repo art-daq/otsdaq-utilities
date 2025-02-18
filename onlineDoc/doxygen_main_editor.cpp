@@ -7,13 +7,15 @@
 /// Planned to be used in conjunction with OnlineDocPushUpdate.sh
 ///
 /// compile with:
-/// g++ doxygen_main_editor.cpp -o hw.o
+/// g++ doxygen_main_editor.cpp -o doxygen_main_editor
+///	 or 
+/// g++ ./srcs/otsdaq-utilities/onlineDoc/doxygen_main_editor.cpp -o doxygen_main_editor 
 ///
 /// if developing, consider appending -D_GLIBCXX_DEBUG to get more
 /// descriptive error messages
 ///
 /// run with:
-///./doxygen_main_editor.o <full main.html path> <full inject main html file path>
+///./doxygen_main_editor <full main.html path> <full inject main html file path>
 ///
 ///
 #include <arpa/inet.h>
