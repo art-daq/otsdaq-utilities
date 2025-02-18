@@ -8,8 +8,8 @@ namespace ots
 {
 // clang-format off
 
-// ConfigurationGUISupervisor
-//	This class handles the user requests to read and write the Configuration Tree.
+/// ConfigurationGUISupervisor
+///	This class handles the user requests to read and write the Configuration Tree.
 class ConfigurationGUISupervisor : public CoreSupervisorBase
 {
   public:
@@ -25,7 +25,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	virtual void 			request									(const std::string& requestType,cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, const WebUsers::RequestUserInfo& userInfo) override;
 
 	virtual void 			setSupervisorPropertyDefaults			(void) override;
-	virtual void 			forceSupervisorPropertyValues			(void) override;  // override to force supervisor property values (and ignore user settings)
+	virtual void 			forceSupervisorPropertyValues			(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
   private:	
 	void					handleSaveTableInfoXML					(HttpXmlDocument&       xmldoc,
@@ -255,8 +255,8 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	enum
 	{
-		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 1,  // 1 hour, in seconds
-		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 15,      // 15 minutes, in seconds
+		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 1,  ///< 1 hour, in seconds
+		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 15,      ///< 15 minutes, in seconds
 	};
 
 	ConfigurationManagerRW* refreshUserSession						(std::string username,

@@ -36,19 +36,19 @@ std::string encodeURIComponent(const std::string& sourceStr)
 	return retStr;
 }  // end encodeURIComponent()
 
-// IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
-//  consider adding this to a setup script and using environment variables for your
-//  passwords! 			#setup environment for eLOG ECL writing 			# NOTE! do not
-//  put username/pw in saved/committed text files 			export ECL_USER_NAME="emdaq"
-//  export ECL_CATEGORY="general" 			export
-//  ECL_URL="https://hostname:8443/ECL/project" 			if [ "x$ECL_PASSWORD"
-//  == "x" ]; then #when ECL password is not setup, prompt user 					stty
-//  -echo printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
-//  read eclpass 					stty echo export ECL_PASSWORD=$eclpass 			fi
-
-// Note: add quotes for any input parameter with spaces
-
-// use option -h or --help for help
+/// IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
+///  consider adding this to a setup script and using environment variables for your
+///  passwords! 			#setup environment for eLOG ECL writing 			# NOTE! do not
+///  put username/pw in saved/committed text files 			export ECL_USER_NAME="emdaq"
+///  export ECL_CATEGORY="general" 			export
+///  ECL_URL="https://hostname:8443/ECL/project" 			if [ "x$ECL_PASSWORD"
+///  == "x" ]; then #when ECL password is not setup, prompt user 					stty
+///  -echo printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
+///  read eclpass 					stty echo export ECL_PASSWORD=$eclpass 			fi
+///
+/// Note: add quotes for any input parameter with spaces
+///
+/// use option -h or --help for help
 int main(int argc, char* argv[])
 {
 	std::ostringstream descstr;

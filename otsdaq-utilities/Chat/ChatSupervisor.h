@@ -6,9 +6,9 @@
 // clang-format off
 namespace ots
 {
-// ChatSupervisor
-//	This class handles the otsdaq user chat functionality available in the web desktop
-// environment.
+/// ChatSupervisor
+///	This class handles the otsdaq user chat functionality available in the web desktop
+/// environment.
 class ChatSupervisor : public CoreSupervisorBase
 {
   public:
@@ -27,17 +27,17 @@ class ChatSupervisor : public CoreSupervisorBase
 	             				       							 HttpXmlDocument&                 xmlOut,
 	             				       							 const WebUsers::RequestUserInfo& userInfo) override;
 
-	virtual void 				forceSupervisorPropertyValues	(void) override;  	// override to force
-	                                                         	  					// supervisor property
-	                                                         	  					// values (and ignore user
-	                                                         	  					// settings)
+	virtual void 				forceSupervisorPropertyValues	(void) override;  	///< override to force
+	                                                         	  					///< supervisor property
+	                                                         	  					///< values (and ignore user
+	                                                         	  					///< settings)
 
   private:
-	//"Chat History" database associations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Maintain list of most recent chats and active display names
-	// keep for set period (e.g. 10 sec)
-	// each new chat is a string/displayName pair and is given a running index (0 is
-	// skipped)
+	///"Chat History" database associations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	/// Maintain list of most recent chats and active display names
+	/// keep for set period (e.g. 10 sec)
+	/// each new chat is a string/displayName pair and is given a running index (0 is
+	/// skipped)
 	std::vector<std::string> ChatHistoryEntry_, ChatHistoryAuthor_;
 	std::vector<time_t>      ChatHistoryTime_;
 	std::vector<uint64_t>    ChatHistoryIndex_;
@@ -49,8 +49,8 @@ class ChatSupervisor : public CoreSupervisorBase
 
 	enum
 	{
-		CHAT_HISTORY_EXPIRATION_TIME = 30*60,   // 30 minutes
-		CHAT_HISTORY_MAX_ENTRIES     = 100,  // 100 entries is vector max size
+		CHAT_HISTORY_EXPIRATION_TIME = 30*60,   ///< 30 minutes
+		CHAT_HISTORY_MAX_ENTRIES     = 100,  ///< 100 entries is vector max size
 	};
 
 	uint64_t incrementAndGetLastUpdate();

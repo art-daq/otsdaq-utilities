@@ -4,7 +4,7 @@
 #define MAXBUFLEN 5000
 
 //==============================================================================
-// get sockaddr, IPv4 or IPv6:
+/// get sockaddr, IPv4 or IPv6:
 void* get_in_addr(struct sockaddr* sa)
 {
 	if(sa->sa_family == AF_INET)
@@ -62,8 +62,8 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 }  //end makeSocket()
 
 //==============================================================================
-// receive ~~
-//	returns numberOfBytes on success, -1 on failure
+/// receive ~~
+///	returns numberOfBytes on success, -1 on failure
 fd_set             fileDescriptor_;
 struct timeval     timeout_;
 struct sockaddr_in fromAddress_;
@@ -165,8 +165,8 @@ int                receive(int          sockfd,
 
 //==============================================================================
 ots_mm_udp_interface::ots_mm_udp_interface(const char* mm_ip, int mm_port) : mm_sock_(-1)
-// , mm_p_(nullptr)
-// , mm_servinfo_(nullptr)
+/// , mm_p_(nullptr)
+/// , mm_servinfo_(nullptr)
 {
 	__COUT__ << "Constructor" << __E__;
 
@@ -186,8 +186,8 @@ ots_mm_udp_interface::~ots_mm_udp_interface()
 }  //end destructor()
 
 //=========================================================================
-//extract value for field from xml looking forwards from after
-// occurence = 0 is first occurence
+///extract value for field from xml looking forwards from after
+/// occurence = 0 is first occurence
 std::string extractXmlField(const std::string& xml,
                             const std::string& field,
                             uint32_t           occurrence,
@@ -210,8 +210,8 @@ std::string extractXmlField(const std::string& xml,
 }  //end extractXmlField()
 
 //=========================================================================
-//extract value for field from xml looking backwards from before
-// occurence = 0 is first occurence
+///extract value for field from xml looking backwards from before
+/// occurence = 0 is first occurence
 std::string rextractXmlField(const std::string& xml,
                              const std::string& field,
                              uint32_t           occurrence,
@@ -230,17 +230,17 @@ std::string rextractXmlField(const std::string& xml,
 }  //end rextractXmlField()
 
 //==============================================================================
-// getVectorFromString
-//	extracts the list of elements from string that uses a delimiter
-//		ignoring whitespace
-//	optionally returns the list of delimiters encountered, which may be useful
-//		for extracting which operator was used.
-//
-//
-//	Note: lists are returned as vectors
-//	Note: the size() of delimiters will be one less than the size() of the returned values
-//		unless there is a leading delimiter, in which case vectors will have the same
-// size.
+/// getVectorFromString
+///	extracts the list of elements from string that uses a delimiter
+///		ignoring whitespace
+///	optionally returns the list of delimiters encountered, which may be useful
+///		for extracting which operator was used.
+///
+///
+///	Note: lists are returned as vectors
+///	Note: the size() of delimiters will be one less than the size() of the returned values
+///		unless there is a leading delimiter, in which case vectors will have the same
+/// size.
 void getVectorFromString(const std::string&        inputString,
                          std::vector<std::string>& listToReturn,
                          const std::set<char>&     delimiter,
@@ -352,17 +352,17 @@ void getVectorFromString(const std::string&        inputString,
 }  // end getVectorFromString()
 
 //==============================================================================
-// getVectorFromString
-//	extracts the list of elements from string that uses a delimiter
-//		ignoring whitespace
-//	optionally returns the list of delimiters encountered, which may be useful
-//		for extracting which operator was used.
-//
-//
-//	Note: lists are returned as vectors
-//	Note: the size() of delimiters will be one less than the size() of the returned values
-//		unless there is a leading delimiter, in which case vectors will have the same
-// size.
+/// getVectorFromString
+///	extracts the list of elements from string that uses a delimiter
+///		ignoring whitespace
+///	optionally returns the list of delimiters encountered, which may be useful
+///		for extracting which operator was used.
+///
+///
+///	Note: lists are returned as vectors
+///	Note: the size() of delimiters will be one less than the size() of the returned values
+///		unless there is a leading delimiter, in which case vectors will have the same
+/// size.
 std::vector<std::string> getVectorFromString(const std::string&    inputString,
                                              const std::set<char>& delimiter,
                                              const std::set<char>& whitespace,
@@ -398,8 +398,8 @@ std::string vectorToString(const std::vector<std::string>& setToReturn,
 }  // end vectorToString()
 
 //==============================================================================
-// decodeURIComponent
-//	converts all %## to the ascii character
+/// decodeURIComponent
+///	converts all %## to the ascii character
 std::string ots_mm_udp_interface::decodeURIComponent(const std::string& data)
 {
 	std::string  decodeURIString(data.size(), 0);  // init to same size
@@ -465,7 +465,7 @@ std::string ots_mm_udp_interface::decodeHTMLEntities(const std::string& sourceSt
 }  // end decodeHTMLEntities()
 
 //==============================================================================
-//returns CSV list of Front-end interface UIDs
+///returns CSV list of Front-end interface UIDs
 const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 {
 	__COUT__ << "getFrontendMacroInfo()" << __E__;
@@ -522,7 +522,7 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 }  //end getFrontendMacroInfo()
 
 //==============================================================================
-//returns CSV list of Front-end interface UIDs
+///returns CSV list of Front-end interface UIDs
 std::string ots_mm_udp_interface::getFrontendList()
 {
 	__COUT__ << "getFrontendList()" << __E__;
@@ -865,7 +865,7 @@ std::string ots_mm_udp_interface::getCommandInputName(const std::string& targetF
 }  //end getCommandInputName()
 
 //==============================================================================
-//Note: if std::map does not complicate interface too much for ROOT/pyton, could make this const std::string& and leverage cache solution
+///Note: if std::map does not complicate interface too much for ROOT/pyton, could make this const std::string& and leverage cache solution
 std::string ots_mm_udp_interface::getCommandOutputName(const std::string& targetFE,
                                                        const std::string& command,
                                                        int                outputIndex)
@@ -970,8 +970,8 @@ std::string ots_mm_udp_interface::getCommandOutputName(const std::string& target
 }  //end getCommandOutputName()
 
 //==============================================================================
-//	inputs should be ;-separated and URI encoded (to avoid commas and semicolons)
-//	outputs will be ;-separated and URI encoded
+///	inputs should be ;-separated and URI encoded (to avoid commas and semicolons)
+///	outputs will be ;-separated and URI encoded
 std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
                                              const std::string& command,
                                              const std::string& inputs)
