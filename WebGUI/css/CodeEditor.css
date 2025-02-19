@@ -1,6 +1,6 @@
 
 
-		body {	
+		body {
 			background-color: 		rgb(141, 177, 197);
 			font-family: 			'Comfortaa', serif;
 			overflow: 				hidden; /* override ots.css */
@@ -10,19 +10,19 @@
 		a {
 			cursor: 				pointer;
 		}
-		
+
 		* {
 			font-family: 			"Comfortaa";
 		}
-		
-		select	{			
+
+		select	{
 			padding: 0px;
 		}
-		
-		option { 
+
+		option {
 			padding: 0px;
 		}
-		
+
 		.controlsPane {
 			background-color: 		blue;
 			position: 				relative;
@@ -32,24 +32,24 @@
 			position: 				absolute;
 		}
 		.editorPane {
-			overflow: 				hidden;				
+			overflow: 				hidden;
 		}
-				 
-		
+
+
 		.controlsButton {
 
 			-webkit-user-select: 	none;
 			-moz-user-select: 		none;
 			user-select:			none;
-			
-			overflow: 				hidden;				
+
+			overflow: 				hidden;
 			cursor: 				pointer;
 			width: 					34px;
 			height: 				36px;
-			
+
 			background-color: 		rgb(202, 204, 210);
-			
-			
+
+
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 					rgb(150,150,150) 0 .1em 3px,
@@ -68,7 +68,7 @@
 			-moz-transform: 		translateY(.1em);
 			transform: 				translateY(.1em);
 		}
-		
+
 		#viewToggleRight {
 			background-color: 		white;
 			float: 					right;
@@ -130,18 +130,18 @@
 			margin: 				-7px 0px 0px 13px;
 		}
 		.fileButtonContainer {
-			
+
 			height:					26px;
 			margin:					8px 0 -3px 0;
-		}		
+		}
 		.fileButtonContainerShowHide {
 			display:				none;
 		}
-		.fileButton {			
+		.fileButton {
 			cursor:					pointer;
 			float:					left;
 		}
-		.fileButton:active {			
+		.fileButton:active {
 			-webkit-transform: 		translateY(.1em);
 			-moz-transform: 		translateY(.1em);
 			transform: 				translateY(.1em);
@@ -153,9 +153,9 @@
 			border: 				0;
 		}
 		#fileRenameButton0:hover ,#fileRenameButton1:hover  {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);			
+			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 		}
-		.ConfigurationAPI-popUpDialog-preloadImage {			
+		.ConfigurationAPI-popUpDialog-preloadImage {
 			width: 				24px;
 			height: 			20px;
 			position:			absolute;
@@ -165,8 +165,8 @@
 		#ConfigurationAPI-popUpDialog-preloadImage-editIconHover {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 		}
-		
-		
+
+
 		.fileRenameButtonLeft {
 			border:					1px solid rgb(202, 204, 210);
 			border-radius:			2px;
@@ -183,39 +183,39 @@
 			height: 				21px;
 			margin: 				-18px 3px 0px 5px;
 		}
-		
+
 
 		#fileDownloadButton0,#fileDownloadButton1 {
 			width: 					24px;
 			height: 				20px;
 			border: 				0;
 		}
-		#fileUploadButton0,#fileUploadButton1 {	
+		#fileUploadButton0,#fileUploadButton1 {
 			width: 					24px;
 			height: 				20px;
 			border: 				0;
 		}
 		.fileButton:hover .fileDownloadButtonBgChild {
-			background-color: 		red !important;			
-		}	
+			background-color: 		red !important;
+		}
 		.fileButton:hover .fileDownloadButtonBorderChild {
-			border-top-color: 		red !important;	
-			border-bottom-color: 	red !important;	
-		}	
+			border-top-color: 		red !important;
+			border-bottom-color: 	red !important;
+		}
 		.fileUndoButton {
 			margin-top: 3px;
 		}
 		.fileUndoButton:hover, .openRelatedFileButton:hover, .refreshFileButton:hover{
-			color: 		red !important;			
-		}	
-		
-				
+			color: 		red !important;
+		}
+
+
 		.textEditor {
 			background-color: 		white;
 			position:				absolute;
 			width:					100%;
 			height:					100%;
-			
+
 			/*inner shadow*/
 		   -moz-box-shadow:    		inset 0 0 10px #000000;
 		   -webkit-box-shadow: 		inset 0 0 10px #000000;
@@ -223,7 +223,7 @@
 		}
 		.textEditor * {
 			color:					black;
-			font-family:			monospace;	
+			font-family:			monospace;
 			caret-color: 			black;
 		}
 		.textEditor a {
@@ -238,24 +238,24 @@
 		.textEditorBody {
 			position:				absolute;
 			overflow:				auto;
-			
+
 			/*inner shadow*/
 		   -moz-box-shadow:    		inset 0 0 10px #000000;
 		   -webkit-box-shadow: 		inset 0 0 10px #000000;
 		   box-shadow:         		inset 0 0 10px #000000;
 		}
-		
+
 		.editableBox {
 			white-space: 			pre; /*nowrap;*/
 			tab-size: 				4;
 			-moz-tab-size:			4;
 			padding-left:			3px; /*to see cursor on left position 0*/
-		}		
+		}
 		.editableBox * {
-			user-select: 			text; 
+			user-select: 			text;
 			-moz-user-select: 		text; /*so that firefox allows highlighting decorated text*/
 			cursor:					text;
-		}		
+		}
 		.editableBoxLeftMargin {
 			white-space: 			pre; /*nowrap;*/
 		    text-align: 			right;
@@ -268,17 +268,17 @@
 		    color: 					rgb(170, 171, 173);
 		}
 
-		
+
 		.directoryNav {
 			background-color: 		rgb(241, 243, 247);
 			position:				absolute;
 			overflow:				auto;
-			
+
 			/*standoff shadow*/
 			-moz-box-shadow:    	3px 3px 5px 6px rgba(100,100,100,0.8);
 			-webkit-box-shadow: 	3px 3px 5px 6px rgba(100,100,100,0.8);
 			box-shadow:         	3px 3px 5px 6px rgba(100,100,100,0.8);
-			
+
 		}
 		.directoryNav * {
 			color:					rgb(109, 108, 108);
@@ -301,7 +301,7 @@
 			color:					rgb(193, 193, 193);
 		}
 
-		
+
 		.dirNavFileNewWindowImgNewWindow {
 			width: 					11px;
 			margin: 				0 0 0 0;
@@ -310,35 +310,35 @@
 			width: 					16px;
 			margin: 				0 10px 0 10px;
 		}
-		
+
 		#fileStringHoverEl {
 
 			outline: 				none;  /* to stop firefox selection*/
 			-webkit-user-select: 	none; /* to stop text highlights */
 			-moz-user-select: 		none;
-			user-select: 			none;	
+			user-select: 			none;
 			padding: 				1px 0px 0px 1px;
 			position:				absolute;
 			width:					71px;
 			height:					14px;
 
 			background-color: 		rgb(241, 241, 241);
-			
+
 			/*standoff shadow*/
 			-moz-box-shadow:    	1px 2px 3px 2px rgba(100,100,100,0.8);
 			-webkit-box-shadow: 	1px 2px 3px 2px rgba(100,100,100,0.8);
 			box-shadow:         	1px 2px 3px 2px rgba(100,100,100,0.8);
 		}
-		
+
 		#fileStringHoverEl * {
-	
+
 			outline: 				none;  /* to stop firefox selection*/
 			-webkit-user-select: 	none; /* to stop text highlights */
 			-moz-user-select: 		none;
-			user-select: 			none;	
+			user-select: 			none;
 			cursor:					pointer;
 		}
-		
+
 		#popUpDialog * {
 			color: black;
 		}
@@ -346,10 +346,3 @@
 			color: rgb(44, 44, 187);
 			font-size: 13px;
 		}
-		
-		
-		
-		
-		
-		
-		

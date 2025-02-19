@@ -1,65 +1,65 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-		<title>Logbook</title>		
+		<title>Logbook</title>
 
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				background-color: rgb(200,200,200);
 				background-image: url(/WebPath/images/windowContentImages/logbook-bg-texture.jpg);
 				overflow: auto;
 			}
-						
+
 			* {
 				color: rgb(255,230,204);
 			}
-			
+
 			a {
-				color: rgb(180,207,237);	
+				color: rgb(180,207,237);
 				font-weight: 800;
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
-			
-			hr {				
+
+			hr {
 				border-top: 1px solid rgb(255,230,204);
 			}
-			
+
 			input {
 				color: #333;
 			}
-			
+
 			input[type=submit] {
 				padding: 5px;
 				border: 1px solid black;
-		    	cursor: pointer;
+				cursor: pointer;
 				height: 23px;
 			}
-			
+
 			div {
-				font-family: 'Comfortaa', serif; /*'Donegal One', serif;*/	
+				font-family: 'Comfortaa', serif; /*'Donegal One', serif;*/
 				color: rgb(255,230,204);
-		    	font-size: 14px;
+				font-size: 14px;
 			}
-			
+
 			#calendarPopup * {
 				-webkit-user-select: 	none;
 				-moz-user-select: 		none;
 				user-select:			none;
 			}
-			
+
 			input:not([type=submit]) {
 				border: 1px solid gray;
-				box-shadow: 
+				box-shadow:
 				  inset 0 0 8px  rgba(0,0,0,0.1),
-				        0 0 16px rgba(0,0,0,0.1); 
+						0 0 16px rgba(0,0,0,0.1);
 				padding: 5px;
 				background: rgba(255,255,255,0.75);
 				border-radius: 3px;
-			
+
 				margin: 0 0 10px 0;
 			}
-			
+
 			.area {
 				position: absolute;
 				overflow: hidden;
@@ -67,63 +67,63 @@
 			}
 
 			.areaContentDiv {
-			    border-radius: 5px;
+				border-radius: 5px;
 				/* overflow-x: auto;
 				overflow-y: hidden; */
 			}
-			
+
 			.areaContent {
-				border: 2px solid rgba(0,0,0,0.6); 
-			    border-radius: 5px;
-			    background-color: rgba(0,0,0,0.5); 
+				border: 2px solid rgba(0,0,0,0.6);
+				border-radius: 5px;
+				background-color: rgba(0,0,0,0.5);
 			}
 
 			.areaContent td {
 				padding: 5px;
 			}
-			
-			#adminArea {				
+
+			#adminArea {
 				border: 0px solid red;
 			}
-			
-			
+
+
 			#logbookArea /*.areaContentDiv*/ {
 					margin-bottom: 50px; /*to provide margin at bottom of page for scrolling nicely*/
 			}
-			
+
 			#newPostSubject {
 				font-family: monospace;
 				font-size: 13px;
 			}
-			
+
 			textarea {
-			    resize: none;
+				resize: none;
 				font-size: 13px;
 
 				border: 1px solid gray;
-				box-shadow: 
+				box-shadow:
 				  inset 0 0 8px  rgba(0,0,0,0.1),
-				        0 0 16px rgba(0,0,0,0.1); 
+						0 0 16px rgba(0,0,0,0.1);
 				padding: 5px;
 				background: rgba(255,255,255,0.75);
 				border-radius: 3px;
 			}
-			
-			#fileToUpload {	
+
+			#fileToUpload {
 			}
-			
+
 			.expandBtn {
 			}
-			
+
 			.expandBtnImg {
 				width: 25px;
 				border-radius: 5px;
 				box-shadow: 0.1em 0.1em 0.2em black;
 				margin: 5px;
 			}
-			
-			.sectionHeader {	
-			    font-size: 20px;
+
+			.sectionHeader {
+				font-size: 20px;
 				margin-left: 10px;
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
@@ -134,67 +134,67 @@
 				font-size: 22px;
 			}
 
-			
+
 			#currentCategoryHeader {
 				font-weight: 800;
-		    	font-size: 22px;
+				font-size: 22px;
 				color: rgb(255,183,74);
 				width: auto;
 				margin: 5px;
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
-			
+
 			#categoryList {
-				overflow-y: scroll;		
+				overflow-y: scroll;
 				text-align: right;
 				padding: 5px;
-				background-color: rgba(0,0,0,0.3); 
+				background-color: rgba(0,0,0,0.3);
 				border-radius: 5px;
 				height: 155px;
 				margin: 10px 0 5px 0;
 			}
-			
+
 			#clearActiveCategoryDiv a {
 				color: rgb(180,207,237);
 				font-weight: 800;
-				
+
 			}
 
-			
+
 			#categoryList a {
 				font-family: arial;
-				color: rgb(180,207,237);				
+				color: rgb(180,207,237);
 			}
-			
+
 			#adminStatusDiv {
 				margin: 15px 0 -20px 0;
 				text-align: center;
 				width: 220px;
 				color: rgb(255,183,74);
 			}
-			
+
 			#loaderGif {
 				margin: 60px 50px 0 0;
-			}				
-			
+			}
+
 			#categoryTextBox {
 				width: 200px;
 			}
-			
+
 			#categoryClearIcon {
 				margin: 6px 0 -6px -30px;
 			}
 
 			#logbookHeader {
-				margin: 0 0 20px 0;	
+				margin: 0 0 20px 0;
 				font-weight: 800;
 			}
-			
+
 			#logbookHeader a, #currentCategoryHeader a {
 				color: rgb(180, 207, 237);
 				font-weight: 800;
 			}
-			
+
 			.logbookSelection {
 				text-decoration: underline;
 				border-radius: 14px;
@@ -203,7 +203,7 @@
 				margin: -10px -4px -10px -4px;
 				background-color: rgba(0,0,0,0.4);
 			}
-			
+
 			#generateReport {
 				float: left;
 				margin: -38px 0 0 5px;
@@ -211,44 +211,44 @@
 				color: #d18b21;
 				font-weight: 800;
 			}
-			
+
 			#generateReport:hover {
 				text-decoration: underline;
 			}
-			
+
 			#newPostText {
 				color: #333;
 				padding: 5px;
 			}
-			
+
 			#postFormDiv {
 				font-size: 16px;
 			}
-			
+
 			#fileDescription {
 				margin: -50px 0 -10px 260px;
 				width: 250px;
 				height: 64px;
 				overflow: hidden;
 			}
-			
+
 			#fileDescription * {
 				font-size: 12px;
-				
+
 			}
-			
+
 			#PreviewStatus {
-				color: rgb(255,183,74);		
+				color: rgb(255,183,74);
 				margin: -20px 0 0 105px;
 				height: 20px;
 				overflow: hidden;
 			}
-			
+
 			/******************** Logbook Entry style *****************/
 			.Logbook-entryOmni div{
 				/*border: 1px solid;*/
 			}
-			
+
 			.Logbook-entryOmni {
 				margin: 10px;
 			}
@@ -257,7 +257,7 @@
 				color: rgb(180, 207, 237);
 				font-weight: 800;
 			}
-			
+
 			#postPreviewDiv .Logbook-entryOmni {
 				height: 240px;
 				overflow: auto;
@@ -268,11 +268,11 @@
 				font-size: 12px;
 				margin-right: 10px;
 			}
-            
+
 			.Logbook-sysLogDiv {
-                float: left;
-            }
-            
+				float: left;
+			}
+
 			.Logbook-entryHeader {
 				clear: both;
 				border-top: 1px solid rgb(255,183,74);
@@ -284,22 +284,22 @@
 			.Logbook-entrySubject {
 				float: left;
 				height: 30px;
-			
+
 				padding: 3px 0 0 10px;
-			
+
 				font-size: 24px;
 				font-weight: 800;
-				
+
 				cursor: pointer;
 				/*background-color: black;*/
 			}
-			
+
 			.Logbook-entryTime {
 				float: right;
 				height: 15px;
-				padding: 2px 10px 0 0;				
+				padding: 2px 10px 0 0;
 			}
-			
+
 			.Logbook-entryCreator {
 				clear: right;
 				float: right;
@@ -310,21 +310,21 @@
 			.Logbook-entryBody {
 				text-align: left;
 				clear: left;
-				float: left;			
+				float: left;
 				padding: 20px;
-			
+
 				font-size: 18px;
 			}
-			
+
 			.Logbook-entryUploads {
 				clear: left;
-				float: left;	
+				float: left;
 				margin: 20px;
 				padding: 5px;
 				border-left: 1px solid rgb(255,183,74);
-				
+
 			}
-			
+
 			.Logbook-entryImages {
 				background-color: black;
 				clear: left;
@@ -334,16 +334,16 @@
 				background-color: blue;
 				clear: left;
 			}
-			
-			.Logbook-entryImages-img {				
+
+			.Logbook-entryImages-img {
 				height: 128px;
 			}
-			
+
 			.Logbook-entryImages-div {
 				float: left;
 				margin: 0 10px 10px 10px;
 			}
-			
+
 			.Logbook-entryFiles-div {
 				float: left;
 				margin-top: -8px;
@@ -354,24 +354,24 @@
 				color: #d18b21;
 				font-weight: 800;
 			}
-            
+
 		</style>
-		
+
 
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/CalendarPopup.js"></script>
-		
+
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
-		
-		<script>		
-			
-			//functions:			
-				//init()	
-				
+
+		<script>
+
+			//functions:
+				//init()
+
 				//setActiveCategory(category)
 				//setResponseCategory(category)
 				//toggleCategoryFilter()
@@ -380,15 +380,15 @@
 
 				//handleCategoryChangeRequest(req)
 				//handleGetCategoryListRequest(req)
-				
+
 				//redrawLogbook()
 				//redrawExpandButtons()
 				//toggleArea(i)
 				//fileSelected()
-		        //handlePreviewPost(req)
+				//handlePreviewPost(req)
 				//cancelPost()
 				//postToLogbook()
-		        //convertForServer(entry)
+				//convertForServer(entry)
 				//convertForClient(entry)
 				//uploadToServer(reqCmd, handler)
 				//uploadProgress(evt)
@@ -398,7 +398,7 @@
 				//handleCategoryInputKeyDown(e)
 				//handleSearchKeyUp()
 				//handleTimeoutSearchKeyUp()
-				
+
 				//createCategory()
 				//removeCategory()
 				//displayCategories()
@@ -417,7 +417,7 @@
 				//advanceByDays(i)
 				//clearFileInput()
 				//generateReport()
-		
+
 			var _AREAS = ['admin','newPost','logbook'];
 			var _areaEls = [0,0,0];
 			var _adminStatusEl;
@@ -429,22 +429,22 @@
 			var _MAX_CATEGORY_NAME_LENGTH = 300;
 			var _DEFAULT_ENTRY_INPUT_TEXT = "Enter the text for your logbook post here.";
 			var _DEFAULT_ENTRY_INPUT_SUBJECT = "Enter subject here.";
-			
+
 			var _isAreaExpanded = [false, false, true];
-			
+
 			var _CategorySearchTimer = 0;
 			var _activeCategory = "";
 			var _categoryFilter = ""; //* for all, if "" go with active category
 			var _categorysShowArray, _categorysArray;
-						
+
 			//preload loader spinner gif
-			var _loaderImage = new Image();			
+			var _loaderImage = new Image();
 			var _loaderImagePath = '/WebPath/images/windowContentImages/loader-Settings.gif';
 			_loaderImage.src = _loaderImagePath;
-			
+
 			var _adminPopUpDiv = 0;
 			var _isAdmin = false;
-			
+
 			//refreshing logbook
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
 			var _refreshDuration = 14;	//init to 2-weeks
@@ -453,47 +453,47 @@
 			var _REFRESH_INTERVAL = 10000; //10 seconds
 
 			var _TIMEZONE_OFFSET_HOURS = (new Date().getTimezoneOffset())/60;
-				
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
-			
+
 			//=====================================================================================
 			//init called once body has loaded
-			function init() 
-			{	
+			function init()
+			{
 				Debug.log("init()");
 
 				if(DesktopContent._windowMessagingInactive) //assume in standalone mode
 				{
 					Debug.log("Standalone mode detected -- Enabling navigation prompt");
-					// Enable navigation prompt 
+					// Enable navigation prompt
 					//	(to prevent accidental/back/forward/nav leaving the page) "Leave page?" on chrome
 					window.onbeforeunload = function() {
 						return true;
-					};	
+					};
 
-					window.parent.document.title = "ots ECL";					
+					window.parent.document.title = "ots ECL";
 				}
 
 				//init area elements
 				for(var i=0;i<_AREAS.length;++i)
 					_areaEls[i] = document.getElementById(_AREAS[i] + 'Area');
-				
+
 				_adminStatusEl = document.getElementById('adminStatusDiv');
-				
+
 				//get active category from url
 				setActiveCategory(DesktopContent.getParameter(1));
 
 				window.onresize = redrawLogbook;
 				newPostText.value = _DEFAULT_ENTRY_INPUT_TEXT; //init text input
-				newPostSubject.value = _DEFAULT_ENTRY_INPUT_SUBJECT; //init text input				
-				
+				newPostSubject.value = _DEFAULT_ENTRY_INPUT_SUBJECT; //init text input
+
 				//init arrows for hide/show
 				for(var i=0;i<_AREAS.length;++i)
 				{
-					document.getElementById("expandBtnImg"+i+"-hide").src = 
+					document.getElementById("expandBtnImg"+i+"-hide").src =
 						"/WebPath/images/windowContentImages/logbook-hide.png";
-					document.getElementById("expandBtnImg"+i+"-show").src = 
+					document.getElementById("expandBtnImg"+i+"-show").src =
 						"/WebPath/images/windowContentImages/logbook-expand.png";
 				}
 
@@ -506,52 +506,52 @@
 					Debug.log("preselectsArr",preselectsArr);
 				}
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
-						"", handleGetCategoryListRequest, preselectsArr);					
-			} //end init()		
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list
+						"", handleGetCategoryListRequest, preselectsArr);
+			} //end init()
 
 			//=====================================================================================
 			//setActiveCategory ~
-			function setActiveCategory(category) 
-			{					
-			    Debug.log("Logbook setActiveCategory to " + category);
+			function setActiveCategory(category)
+			{
+				Debug.log("Logbook setActiveCategory to " + category);
 
 				_activeCategory = category;
 				var str = "";
-				
+
 				str += "<center>";
 				str += "<div id='categoryHeaderLabel'>";
 				if(!_activeCategory || _activeCategory == "")
 				{	_activeCategory = ""; str += "No Active Category Set"; 	}
 				else
-					str += "<font color='white'>Active Category is</font> " + _activeCategory;				
+					str += "<font color='white'>Active Category is</font> " + _activeCategory;
 				str += "</div>";
 
 				str += "<div style='margin: 3px 8px -21px 0;'>" +
-					"<a href='#' onclick='toggleCategoryFilter()'>" + 
-						"hide/show Categories" + 
+					"<a href='#' onclick='toggleCategoryFilter()'>" +
+						"hide/show Categories" +
 					"</a></div>";
-													
+
 				var el = document.getElementById("categoryFilterMultiselect");
-				var display = el && (categoryFilterMultiselect.style.display != "none");				
+				var display = el && (categoryFilterMultiselect.style.display != "none");
 				//if displayed, toggle height to revert to hidden
-				if(display) 
+				if(display)
 					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
 
-				str += "<div id='categoryFilterMultiselect' style='display:none" +					
+				str += "<div id='categoryFilterMultiselect' style='display:none" +
 					"; height:300px; margin-bottom:0px; margin-top:30px;'></div>";
 
-				str += "<a id='toggleAllNoneCategory' style='display:none" + 
+				str += "<a id='toggleAllNoneCategory' style='display:none" +
 						"; font-size:14px; padding:10px; margin-top:-15px;' " +
-						"href='#' onclick='toggleAllNoneCategorySelect()'>" + 
-							"select all/none" + 
+						"href='#' onclick='toggleAllNoneCategorySelect()'>" +
+							"select all/none" +
 						"</a>";
 
 				str += "&nbsp;&nbsp;&nbsp; "+
-						"<a id='openSelectedCategoriesTabLink' style='display:none" + 
+						"<a id='openSelectedCategoriesTabLink' style='display:none" +
 						"; font-size:14px; padding:10px; margin-top:-15px;' " +
-						"href='#' target='_blank'>" + 
-							"open selected in new tab" + 
+						"href='#' target='_blank'>" +
+							"open selected in new tab" +
 						"</a>";
 				str += "</center>";
 
@@ -560,9 +560,9 @@
 
 			//=====================================================================================
 			//setResponseCategory ~
-			function setResponseCategory(category) 
-			{					
-			    Debug.log("Logbook setResponseCategory to " + category);
+			function setResponseCategory(category)
+			{
+				Debug.log("Logbook setResponseCategory to " + category);
 
 				if(category.length && category[0] == '!') //improve inverted wording
 					category = "all wo/" + category.substr(1);
@@ -574,12 +574,12 @@
 
 				window.parent.document.title = "ots ECL - " + category;
 			} //end setResponseCategory()
-			
+
 			//=====================================================================================
 			//toggleCategoryFilter ~
-			function toggleCategoryFilter(toggleCategoryFilter) 
-			{					
-			    Debug.log("Logbook toggleCategoryFilter()");
+			function toggleCategoryFilter(toggleCategoryFilter)
+			{
+				Debug.log("Logbook toggleCategoryFilter()");
 
 				if(categoryFilterMultiselect.innerHTML == "")
 				{
@@ -613,38 +613,38 @@
 
 			//=====================================================================================
 			//initCategoryFilter ~
-			function initCategoryFilter(preselects) 
-			{					
+			function initCategoryFilter(preselects)
+			{
 				_categoryFilter = ""; //clear
-			    Debug.log("Logbook initCategoryFilter()", 
+				Debug.log("Logbook initCategoryFilter()",
 					_categorysArray.length, preselects);
 
 				//////////// make search box (copied from MultiSelectBoxTest.html)
-				{	
-					var noMultiSelect = false; // true or false (false for multiselect functionality) 
+				{
+					var noMultiSelect = false; // true or false (false for multiselect functionality)
 					var maintainPreviousSelections = true; //true or false (true means redraw select box using the js array selects left over from the last time this box was drawn using the same element id)
-					
+
 					var vals = [];
 					for(var i=0;i<_categorysArray.length;++i)
 						vals[i] = _categorysArray[i].getAttribute('value');
 
 					var keys = undefined;
 					var types = undefined;
-										
+
 					//write to a particular div
-					var el = categoryFilterMultiselect;  
+					var el = categoryFilterMultiselect;
 					MultiSelectBox.createSelectBox(el,
 							"categoryFilterMultiselect",
 							"Category Selection Filter",
 							vals,keys,types,handleCategoryFilterChange,noMultiSelect);
-					
+
 					if(!preselects)
-	            	{
+					{
 						MultiSelectBox.initMySelectBoxes(!maintainPreviousSelections);
 						return;
-					}	
-					//else set pre-selections as selected	  
-					
+					}
+					//else set pre-selections as selected
+
 					MultiSelectBox.initMySelectBoxes(true); //init to clear
 
 					var invertedSelection = false;
@@ -659,14 +659,14 @@
 						for(var i=0;i<vals.length;++i)
 							if((preselects[j] == '*' || //all select
 									(!invertedSelection && preselects[j].trim() == vals[i])) || //normal select
-								(invertedSelection && 
+								(invertedSelection &&
 									preselects[j].trim() != vals[i])) //inverted select
-								MultiSelectBox.setSelectionElementByIndex(el,i,true);	
-					MultiSelectBox.initMySelectBoxes(false); //setup selections	
-					
+								MultiSelectBox.setSelectionElementByIndex(el,i,true);
+					MultiSelectBox.initMySelectBoxes(false); //setup selections
+
 					handleCategoryFilterChange(el);
 				}
-				//////////// end make search box				
+				//////////// end make search box
 
 			} //end initCategoryFilter()
 
@@ -676,49 +676,49 @@
 			{
 				Debug.log("handleCategoryFilterChange()");
 
-				var i = MultiSelectBox.getSelectedIndex(el); 
+				var i = MultiSelectBox.getSelectedIndex(el);
 				var selArr = MultiSelectBox.getSelectionArray(el);
 				if(selArr[i])
-					Debug.log("Chosen element index:",i,            		
+					Debug.log("Chosen element index:",i,
 						" value:",el.textContent,
 						" key:",el.getAttribute("key-value"),
 						" type:",el.getAttribute("type-value"));
-				
+
 				var selStr = "", invSelStr = "";
 				var isAll = true;
 				var countWithout = 0; //see if only 1 to 3 without
 				for(var s in selArr)
 					if(selArr[s])
-						selStr += (selStr.length?", ":"") + 
+						selStr += (selStr.length?", ":"") +
 							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
-					else 
+					else
 					{
 						isAll = false;
 						++countWithout;
-						invSelStr += (invSelStr.length?", ":"") + 
+						invSelStr += (invSelStr.length?", ":"") +
 							MultiSelectBox.getSelectionElementByIndex(el,s).textContent;
 					}
 
-				Debug.logv({selStr});	
-				
+				Debug.logv({selStr});
+
 				_categoryFilter = isAll?"*":selStr;
 
-				if((selArr.length > 10 && countWithout < 4) || 
+				if((selArr.length > 10 && countWithout < 4) ||
 					(selArr.length > 4 && countWithout == 1))
 				{	//then change to wo/ inverted selection
-					_categoryFilter = "!" //(indicator) 
+					_categoryFilter = "!" //(indicator)
 						+ invSelStr;
 				}
-					
-								
+
+
 				var newTabUrl = DesktopContent._localOrigin + "/urn:xdaq-application:lid=" + DesktopContent._localUrnLid + "/";
 
 				newTabUrl += "?categories=" + encodeURIComponent(_categoryFilter);
-				Debug.logv({newTabUrl});	
-					
+				Debug.logv({newTabUrl});
+
 				openSelectedCategoriesTabLink.href = newTabUrl;
 			} //end handleCategoryFilterChange()
-			
+
 			//=====================================================================================
 			//toggleAllNoneCategorySelect ~
 			function toggleAllNoneCategorySelect()
@@ -731,56 +731,56 @@
 
 				var setVal = !selArr[0];
 				for(var i=0;i<selArr.length;++i)
-					MultiSelectBox.setSelectionElementByIndex(categoryFilterMultiselect,i,setVal);	
-			
-				MultiSelectBox.initMySelectBoxes(false); //setup selections	
+					MultiSelectBox.setSelectionElementByIndex(categoryFilterMultiselect,i,setVal);
+
+				MultiSelectBox.initMySelectBoxes(false); //setup selections
 				handleCategoryFilterChange(categoryFilterMultiselect);
 			} //end toggleAllNoneCategorySelect()
 
 			//=====================================================================================
 			//redrawLogbook ~
-			function redrawLogbook() 
-			{	
-			    Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
-			    
-			    var w = DesktopContent.getWindowWidth();
-			    if(w < 600) w=600; //prevent super squeeze
-			    			    
+			function redrawLogbook()
+			{
+				Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
+
+				var w = DesktopContent.getWindowWidth();
+				if(w < 600) w=600; //prevent super squeeze
+
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					//only show admin area if have privileges
-					if(i == 0 && !_isAdmin) 
-					{ 
-						_areaEls[i].style.display = "none"; 
-						_isAreaExpanded[i] = true; 
+					if(i == 0 && !_isAdmin)
+					{
+						_areaEls[i].style.display = "none";
+						_isAreaExpanded[i] = true;
 
 						var el = document.getElementById("categoryFilterMultiselect");
-						var display = el && (categoryFilterMultiselect.style.display != "none");	
-						_AREA_HEIGHTS[i] = display?_CATEGORY_FILTER_HEIGHT:0; 
-						continue; 
+						var display = el && (categoryFilterMultiselect.style.display != "none");
+						_AREA_HEIGHTS[i] = display?_CATEGORY_FILTER_HEIGHT:0;
+						continue;
 					}
-					_areaEls[i].style.display = "block"; 
+					_areaEls[i].style.display = "block";
 
 					_areaEls[i].style.left = _MARGIN + "px";
 					_areaEls[i].style.width = (w - _MARGIN*2) + "px";
 				}
-			    
-			    redrawExpandButtons();
+
+				redrawExpandButtons();
 			} //end redrawLogbook()
-			
+
 			//=====================================================================================
 			//redrawExpandButtons ~
-			function redrawExpandButtons() 
-			{					
+			function redrawExpandButtons()
+			{
 				var yoff = 32;
 				for(var i=0;i<_AREAS.length;++i)
 				{
-					document.getElementById("expandBtnImg"+i+"-hide").style.display = 
-						_isAreaExpanded[i]?"none":"block"; 
-					document.getElementById("expandBtnImg"+i+"-show").style.display = 
-						_isAreaExpanded[i]?"block":"none"; 
-						
-						"/WebPath/images/windowContentImages/logbook-" + 
+					document.getElementById("expandBtnImg"+i+"-hide").style.display =
+						_isAreaExpanded[i]?"none":"block";
+					document.getElementById("expandBtnImg"+i+"-show").style.display =
+						_isAreaExpanded[i]?"block":"none";
+
+						"/WebPath/images/windowContentImages/logbook-" +
 						(_isAreaExpanded[i]?"expand":"hide") + ".png";
 					_areaEls[i].style.top = _MARGIN + yoff + "px";
 					if(i==2 && _isAreaExpanded[i])
@@ -790,18 +790,18 @@
 					yoff += (_isAreaExpanded[i]?_AREA_HEIGHTS[i]:_HIDDEN_HEIGHT);
 				}
 			} //end redrawExpandButtons()
-			
+
 			//=====================================================================================
 			//toggleArea ~
-			function toggleArea(i) 
-			{	
+			function toggleArea(i)
+			{
 				_isAreaExpanded[i] = !_isAreaExpanded[i];
-			    redrawExpandButtons();
+				redrawExpandButtons();
 			} //end toggleArea()
-			
+
 			//=====================================================================================
 			//fileSelected ~
-			function fileSelected() 
+			function fileSelected()
 			{
 				var el = document.getElementById('fileToUpload');
 				var totFileSize = 0;
@@ -809,64 +809,64 @@
 				var fileTypeConcat = "";
 				for(var i=0;i<el.files.length;++i)
 				{
-					var file = el.files[i];	
+					var file = el.files[i];
 					Debug.log("Logbook fileSelected " + file.name);
-					if (file) {					    
-					    totFileSize += file.size;
-					    fileNameConcat += file.name + ";";
-					    fileTypeConcat += file.type + ";";
+					if (file) {
+						totFileSize += file.size;
+						fileNameConcat += file.name + ";";
+						fileTypeConcat += file.type + ";";
 					}
 				}
 
 				var fileSize = 0;
 				var MAX = 100; //MB
-			    if (totFileSize > MAX * 1024 * 1024)
-			    {
-			    	//delete file input element and create same empty
-			    	clearFileInput();
-			    	document.getElementById('PreviewStatus').innerHTML = "File upload limit is " + MAX + " MB";
-			    	return;
-			    }
-			    else if (totFileSize > 1024 * 1024)
-			    	fileSize = (Math.round(totFileSize * 100 / (1024 * 1024)) / 100).toString() + ' MB';
-			    else	
-			    	fileSize = (Math.round(totFileSize * 100 / 1024) / 100).toString() + ' KB';
-			    
-				document.getElementById('fileName').innerHTML = '<b>Name:</b> ' + 
+				if (totFileSize > MAX * 1024 * 1024)
+				{
+					//delete file input element and create same empty
+					clearFileInput();
+					document.getElementById('PreviewStatus').innerHTML = "File upload limit is " + MAX + " MB";
+					return;
+				}
+				else if (totFileSize > 1024 * 1024)
+					fileSize = (Math.round(totFileSize * 100 / (1024 * 1024)) / 100).toString() + ' MB';
+				else
+					fileSize = (Math.round(totFileSize * 100 / 1024) / 100).toString() + ' KB';
+
+				document.getElementById('fileName').innerHTML = '<b>Name:</b> ' +
 					fileNameConcat.substr(0,60) + (fileNameConcat.length > 60?"...":"");
 				document.getElementById('fileSize').innerHTML = '<b>Size:</b>&nbsp;&nbsp;&nbsp; ' + fileSize;
-				document.getElementById('fileType').innerHTML = '<b>Type:</b>&nbsp;&nbsp; ' + 
+				document.getElementById('fileType').innerHTML = '<b>Type:</b>&nbsp;&nbsp; ' +
 					fileTypeConcat.substr(0,20) + (fileTypeConcat.length > 20?"...":"");
 			} //end fileSelected()
-            
+
 			//=====================================================================================
 			//handlePreviewPost ~~
 			//	preview user post before submitting to logbook
 			//	hide input, show preview with scroll
-			function handlePreviewPost(evt) 
+			function handlePreviewPost(evt)
 			{
 				var req = evt.target;
 				Debug.log("Logbook handlePreviewPost " + req.responseText);
-				
+
 				var logbookStatus;
 				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed
 				{
 					document.getElementById('PreviewStatus').innerHTML = logbookStatus;
-					return;					
+					return;
 				}
 				//successful preview submitted
-				
+
 				//hide input form
 				document.getElementById('postFormDiv').style.display = "none";
 
 				//show preview
 				var previewIndex = DesktopContent.getXMLValue(req,"logbook_entry_time");
 				var el = document.getElementById('postPreviewDiv');
-				var str = "";				
-				str += "<input type='submit' onmouseup='cancelPost(\"" + previewIndex + "\");' value='Back'>";				
+				var str = "";
+				str += "<input type='submit' onmouseup='cancelPost(\"" + previewIndex + "\");' value='Back'>";
 				str += "<center><div id='logbookPreviewPostDiv'></div></center><div id='clearDiv'></div>";
 				str += "<br><input type='submit' onmouseup='postToLogbook(\"" + previewIndex + "\");' value='Post to Logbook'>";
-				el.innerHTML = str;			
+				el.innerHTML = str;
 
 				displayLogbookEntry(document.getElementById('logbookPreviewPostDiv'),req.responseXML);
 
@@ -874,68 +874,68 @@
 
 			//=====================================================================================
 			//cancelPost ~~
-			function cancelPost(previewNum) 
+			function cancelPost(previewNum)
 			{
 				Debug.log("Logbook cancelPost " );
 				document.getElementById('postPreviewDiv').innerHTML = "";
 				document.getElementById('postFormDiv').style.display = "block";
-				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry", 
-						"Approve=0&PreviewNumber="+previewNum);	
+				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry",
+						"Approve=0&PreviewNumber="+previewNum);
 				document.getElementById('PreviewStatus').innerHTML = "Post cancelled.";
 			} //end cancelPost()
 
 			//=====================================================================================
 			//postToLogbook ~~
-			function postToLogbook(previewNum) 
+			function postToLogbook(previewNum)
 			{
 				Debug.log("Logbook postToLogbook " );
 				document.getElementById('postPreviewDiv').innerHTML = "";
 				document.getElementById('postFormDiv').style.display = "block";
 				newPostText.value = _DEFAULT_ENTRY_INPUT_TEXT;
 				newPostSubject.value = _DEFAULT_ENTRY_INPUT_SUBJECT;
-				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry", 
-						"Approve=1&PreviewNumber="+previewNum);	
-				document.getElementById('PreviewStatus').innerHTML = "Entry posted.";	
+				DesktopContent.XMLHttpRequest("Request?RequestType=ApproveEntry",
+						"Approve=1&PreviewNumber="+previewNum);
+				document.getElementById('PreviewStatus').innerHTML = "Entry posted.";
 				clearFileInput();
-				refreshLogbook();				
+				refreshLogbook();
 			} //end postToLogbook()
-            
+
 			//=====================================================================================
 			//convertForServer ~
 			//	replace server reserved characters with %<hex> equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
-			function convertForServer(entry) 
+			function convertForServer(entry)
 			{
-			    return entry
-		         .replace(/&/g, "%26")
-		         .replace(/</g, "%3C")
-		         .replace(/>/g, "%3E")
-		         .replace(/"/g, "%22")
-		         .replace(/'/g, "%27")
+				return entry
+				 .replace(/&/g, "%26")
+				 .replace(/</g, "%3C")
+				 .replace(/>/g, "%3E")
+				 .replace(/"/g, "%22")
+				 .replace(/'/g, "%27")
 				 .replace(/\n/g,"%0A%0D")
-				 .replace(/  /g, "%20%20");				
+				 .replace(/  /g, "%20%20");
 			} //end convertForServer()
-			
+
 			//=====================================================================================
 			//convertForClient ~
 			//	replace server reserved characters with html equivalents
 			//	reserved: ", ', &, <, >, newline, double-space
-			function convertForClient(entry) 
+			function convertForClient(entry)
 			{
 				//replace special HTML chars-----------
-			    return entry
-			         .replace(/%26/g, "&amp;")  			//&
-			         .replace(/%3C/g, "&lt;") 				//<
-			         .replace(/%3E/g, "&gt;")				//>
-			         .replace(/%22/g, "&quot;")				//"
-			         .replace(/%27/g, "&#039;")				//'
+				return entry
+					 .replace(/%26/g, "&amp;")  			//&
+					 .replace(/%3C/g, "&lt;") 				//<
+					 .replace(/%3E/g, "&gt;")				//>
+					 .replace(/%22/g, "&quot;")				//"
+					 .replace(/%27/g, "&#039;")				//'
 					 .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")//tab
-			         .replace(/%0A%0D/g, "<br>")			//newline
-					 .replace(/&#010;/g, "<br>")			//newline					 
+					 .replace(/%0A%0D/g, "<br>")			//newline
+					 .replace(/&#010;/g, "<br>")			//newline
 					 .replace(/\n/g, 	 "<br>")			//newline
-			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
+					 .replace(/%20%20/g, "&nbsp;&nbsp;");	//space
 			} //end convertForClient()
-		
+
 			//=====================================================================================
 			//uploadToServer ~~
 			//	upload logbook entry to server.
@@ -944,13 +944,13 @@
 			{
 				if(newPostText.value == _DEFAULT_ENTRY_INPUT_TEXT ||
 						newPostSubject.value == _DEFAULT_ENTRY_INPUT_SUBJECT ||
-						newPostText.value == "") 
+						newPostText.value == "")
 				{
 					document.getElementById('PreviewStatus').innerHTML = "Must enter subject/text before submitting.";
 					return;
 				}
-					
-				
+
+
 				Debug.log("Logbook uploadFile " );
 				var xhr = new XMLHttpRequest();
 				var fd = new FormData(document.getElementById('fileForm'));
@@ -964,18 +964,18 @@
 				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
 				requestURL = "/urn:xdaq-application:lid="+urn+"/";
 				xhr.open("POST", requestURL + "Log");
-                
-                //add other values to form so they are transmitted with files
-                fd.append("RequestType","PreviewEntry"); 
-                fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
-                fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
-                fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
-                xhr.send(fd);
+
+				//add other values to form so they are transmitted with files
+				fd.append("RequestType","PreviewEntry");
+				fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
+				fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
+				fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
+				xhr.send(fd);
 			} //end uploadToServer()
 
 			//=====================================================================================
 			//uploadProgress ~~
-			function uploadProgress(evt) 
+			function uploadProgress(evt)
 			{
 				if (evt.lengthComputable) {
 					var percentComplete = Math.round(evt.loaded * 100 / evt.total);
@@ -991,31 +991,31 @@
 			//=====================================================================================
 			//uploadComplete ~
 			// This event is raised when the server send back a response
-			function uploadComplete(evt) 
+			function uploadComplete(evt)
 			{
 				Debug.info("Logbook uploadComplete " +  evt.target.responseText);
 			} //end uploadComplete()
 
 			//=====================================================================================
 			//uploadFailed ~
-			function uploadFailed(evt) 
+			function uploadFailed(evt)
 			{
 				Debug.err("There was an error attempting to upload the file.");
 			} //end uploadFailed()
 
 			//=====================================================================================
 			//uploadCanceled ~
-			function uploadCanceled(evt) 
+			function uploadCanceled(evt)
 			{
 				Debug.log("The upload has been canceled by the user or the browser dropped the connection.");
-			} //end uploadCanceled()		
+			} //end uploadCanceled()
 
 			//=====================================================================================
-			//handleCategoryInputKeyDown ~~ 
+			//handleCategoryInputKeyDown ~~
 			//	allow alphanumeric character only
 			//	if allowSpace is set, then spaces also allowed
-			function handleCategoryInputKeyDown(e, allowSpace) 
-			{	
+			function handleCategoryInputKeyDown(e, allowSpace)
+			{
 				//Debug.log("Logbook handleCategoryInputKeyDown " + e.keyCode);
 				if(e.key == "Tab") return true;		//if tab focus on next box
 				else if((!e.shiftKey && (e.keyCode >= 48 && e.keyCode <= 57)) || //accept numbers but not shifted numbers
@@ -1025,111 +1025,111 @@
 					e.key == "Home" || e.key == "End" ||  //home and end
 					e.key == '-' || e.key == '_' ||  //dashes and underscores
 					(e.keyCode == 32 && allowSpace) ||  //spaces in special case
-					(e.keyCode >= 37 && e.keyCode <= 40))  //arrows are accepted 
+					(e.keyCode >= 37 && e.keyCode <= 40))  //arrows are accepted
 					return true;
-				
+
 				return false; //to stop tab and enter (and unaccepted chars) from propagating to window
 			} //end handleCategoryInputKeyDown()
 
 			//=====================================================================================
-			//handleSearchKeyUp ~~ 
+			//handleSearchKeyUp ~~
 			//	show loader image and set timer for search
 			function handleSearchKeyUp()
-			{				
+			{
 
-				var el = document.getElementById("categoryTextBox");	
+				var el = document.getElementById("categoryTextBox");
 				if(el.value.length > _MAX_CATEGORY_NAME_LENGTH)
 				{
 					el.value = el.value.substr(0,_MAX_CATEGORY_NAME_LENGTH);
 					_adminStatusEl.innerHTML = "Max category name length is " + _MAX_CATEGORY_NAME_LENGTH + ".";
 				}
-				
+
 				el = document.getElementById("categoryList");
 				if(el && el.innerHTML.indexOf("loaderGif") == -1)
 					el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
-					
+
 				if(_CategorySearchTimer) clearTimeout(_CategorySearchTimer);
-				_CategorySearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);				
+				_CategorySearchTimer = setTimeout(handleTimeoutSearchKeyUp,500);
 			} //end handleSearchKeyUp()
 
 			//=====================================================================================
-			//handleTimeoutSearchKeyUp ~~ 
-			function handleTimeoutSearchKeyUp() 
-			{			
-				var el = document.getElementById("categoryTextBox");				
+			//handleTimeoutSearchKeyUp ~~
+			function handleTimeoutSearchKeyUp()
+			{
+				var el = document.getElementById("categoryTextBox");
 				Debug.log("Logbook handleTimeoutSearchKeyUp " + el.value);
 				applyCategoriesSearch(el.value);
 				displayCategories();
 			} //end handleTimeoutSearchKeyUp()
-			
+
 			//=====================================================================================
-			//createCategory ~~ 
-			function createCategory() 
-			{	
-				var el = document.getElementById("categoryTextBox");				
+			//createCategory ~~
+			function createCategory()
+			{
+				var el = document.getElementById("categoryTextBox");
 				Debug.log("Logbook createCategory " + el.value);
-				
-				DesktopContent.XMLHttpRequest("Request?RequestType=CreateCategory", 
-						"Category="+el.value, handleCategoryChangeRequest);	
+
+				DesktopContent.XMLHttpRequest("Request?RequestType=CreateCategory",
+						"Category="+el.value, handleCategoryChangeRequest);
 			} //end createCategory()
-			
+
 			//=====================================================================================
-			//removeCategory ~~ 
-			function removeCategory() 
-			{	
-				var el = document.getElementById("categoryTextBox");				
+			//removeCategory ~~
+			function removeCategory()
+			{
+				var el = document.getElementById("categoryTextBox");
 				Debug.log("Logbook removeCategory " + el.value);
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=RemoveCategory", 
-						"Category="+el.value, handleCategoryChangeRequest);				
+				DesktopContent.XMLHttpRequest("Request?RequestType=RemoveCategory",
+						"Category="+el.value, handleCategoryChangeRequest);
 			} //end removeCategory()
 
 			//=====================================================================================
-			//handleCategoryChangeRequest ~~ 
-			function handleCategoryChangeRequest(req) 
-			{							
-				_adminStatusEl.innerHTML = DesktopContent.getXMLValue(req,"logbook_admin_status");				
+			//handleCategoryChangeRequest ~~
+			function handleCategoryChangeRequest(req)
+			{
+				_adminStatusEl.innerHTML = DesktopContent.getXMLValue(req,"logbook_admin_status");
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list 
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list
 						"", handleGetCategoryListRequest);
 			} //end handleCategoryChangeRequest()
 
 			//=====================================================================================
-			//handleGetCategoryListRequest ~~ 
-			function handleGetCategoryListRequest(req, preselectsArr) 
+			//handleGetCategoryListRequest ~~
+			function handleGetCategoryListRequest(req, preselectsArr)
 			{
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
 
 				_categorysArray = req.responseXML.getElementsByTagName("category");
 
-				if(_isAdmin) 
-				{				
+				if(_isAdmin)
+				{
 					//reset active category, in case request was a setActiveCategory request
-					setActiveCategory(DesktopContent.getXMLValue(req,"active_category")); 
-					
+					setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
+
 					_categorysShowArray = new Array(); //init all elements to show
 					for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1;
-					
+
 					displayCategories();
-				}		
-				
+				}
+
 				initCategoryFilter(preselectsArr);
 
 				if(DesktopContent._windowMessagingInactive) //assume in standalone mode and no user credential for log entry, so just provide link
 				{
 					var str = ""; //create alternate text for posting entry
 
-					var ecl_url = DesktopContent.getXMLValue(req,"ecl_url"); 
+					var ecl_url = DesktopContent.getXMLValue(req,"ecl_url");
 					if(ecl_url && ecl_url != "")
 					{
-						str += "Click <a target='_blank' href='" + ecl_url + 
+						str += "Click <a target='_blank' href='" + ecl_url +
 							"/E/create_entry'>here</a> to create a new Logbook entry.";
 						postFormDiv.innerHTML = str;
 						_AREA_HEIGHTS[1] = 72; // shrink new post area
 					}
 				}
 
-				redrawLogbook(); //setup window divs based on admin	
+				redrawLogbook(); //setup window divs based on admin
 				refreshLogbook(); //refresh logbook, by default start with today for one day
 								//NOTE: call refresh logbook here so that _isAdmin is gauranteed to be set
 			} //end handleGetCategoryListRequest()
@@ -1137,62 +1137,62 @@
 			//=====================================================================================
 			//applyCategoriesSearch ~~
 			//	filter _categorysArray based on needle
-			function applyCategoriesSearch(needle) 
+			function applyCategoriesSearch(needle)
 			{
 				for(var i=0;i<_categorysArray.length;++i) _categorysShowArray[i] = 1; //reset show array
 				if(needle == "") return;
-				Debug.log("Logbook applyCategoriesSearch needle " + needle);	
+				Debug.log("Logbook applyCategoriesSearch needle " + needle);
 
 				for(var i=0;i<_categorysArray.length;++i)
 					if(_categorysArray[i].getAttribute('value').indexOf(needle) == -1)
-						_categorysShowArray[i] = 0;		//no needle, so hide		
+						_categorysShowArray[i] = 0;		//no needle, so hide
 			} //end applyCategoriesSearch()
-			
+
 			//=====================================================================================
-			//displayCategories ~~ 
+			//displayCategories ~~
 			//	diplay in reverse so newest at top
-			function displayCategories() 
+			function displayCategories()
 			{
-				Debug.log("Logbook displayCategories _categorysArray.length " + _categorysArray.length);	
+				Debug.log("Logbook displayCategories _categorysArray.length " + _categorysArray.length);
 				var el = document.getElementById("categoryList");
-				
+
 				var str = "";
 				var atLeastOne = false;
 				for(var i=_categorysArray.length-1;i >= 0;--i)
 					if(!_categorysShowArray[i]) continue;
 					else {
-						str += "<a href='Javascript:activeCategorySetRequest(\""+ 
-							_categorysArray[i].getAttribute('value') + "\")' title='Left-click to make " + 
+						str += "<a href='Javascript:activeCategorySetRequest(\""+
+							_categorysArray[i].getAttribute('value') + "\")' title='Left-click to make " +
 							_categorysArray[i].getAttribute('value') +
-							" the active category'>" + 
+							" the active category'>" +
 							_categorysArray[i].getAttribute('value') + "</a><br>";
 						atLeastOne = true;
 					}
-				
+
 				if(atLeastOne)
 					el.innerHTML = str;
 				else
 					el.innerHTML = "No matching category found.";
 			} //end displayCategories()
-			
+
 			//=====================================================================================
-			//activeCategorySetRequest ~~ 
-			function activeCategorySetRequest(category) 
+			//activeCategorySetRequest ~~
+			function activeCategorySetRequest(category)
 			{
 				Debug.log("Logbook activeCategorySetRequest category " + category);
-				DesktopContent.XMLHttpRequest("Request?RequestType=SetActiveCategory", 		//update category list 
+				DesktopContent.XMLHttpRequest("Request?RequestType=SetActiveCategory", 		//update category list
 						"Category="+category, handleCategoryChangeRequest);
 
-				var el = document.getElementById("categoryTextBox");	
+				var el = document.getElementById("categoryTextBox");
 				el.value = category;
 				el.focus();
 			} //end activeCategorySetRequest()
-			
+
 			//=====================================================================================
-			//clearCategoryInput ~~ 
-			function clearCategoryInput() 
+			//clearCategoryInput ~~
+			function clearCategoryInput()
 			{
-				var el = document.getElementById("categoryTextBox");	
+				var el = document.getElementById("categoryTextBox");
 				el.value = "";
 				el.focus();
 				applyCategoriesSearch(el.value);
@@ -1200,16 +1200,16 @@
 			} //end clearCategoryInput()
 
 			//=====================================================================================
-			//toggleAutoRefresh ~~ 
+			//toggleAutoRefresh ~~
 			var _autoRefreshTimer = 0;
-			function toggleAutoRefresh() 
+			function toggleAutoRefresh()
 			{
 				Debug.log("Logbook toggleAutoRefresh()");
 				if(_autoRefreshTimer) window.clearTimeout(_autoRefreshTimer);
 				_autoRefreshTimer = 0;
 
 				if(autoRefreshLink.innerText.indexOf("off") > 0)
-				{ //then turn on					
+				{ //then turn on
 					autoRefreshLink.innerText = "Auto-refresh is on";
 
 					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
@@ -1221,35 +1221,35 @@
 				}
 
 			} //end toggleAutoRefresh()
-			
+
 			//=====================================================================================
-			//refreshLogbook ~~ 
-			//	generates request for logbook based on dayIndex and duration 
+			//refreshLogbook ~~
+			//	generates request for logbook based on dayIndex and duration
 			//		dayIndex = 0 for today, 1 for yesterday, etc
 			//		duration is number of days in past to request
 			//		if either is undefined, last request value is used
 			//	request is looking for time_t seconds
 			var _delayLogbookRequestTimer = 0;
-			function refreshLogbook(dayIndex,duration) 
-			{		
+			function refreshLogbook(dayIndex,duration)
+			{
 				Debug.log("Logbook refreshLogbook " + dayIndex + " - " + duration);
-				if(_activeCategory == "")	{ 
-					Debug.log("Logbook refreshLogbook active category not set"); 
-					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + 
+				if(_activeCategory == "")	{
+					Debug.log("Logbook refreshLogbook active category not set");
+					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" +
 						"Currently there is no active category selected. Contact an admin if you think this is an error." + "</div>";
-					return; 
+					return;
 				}
-				
+
 				if(typeof dayIndex != "undefined")
 					_refreshDayIndex = dayIndex; //get day index integer
 				if(typeof duration != "undefined")
 					_refreshDuration = duration;
 				Debug.log("Logbook refreshLogbook " + _refreshDayIndex + " - " + _refreshDuration);
 				var reqDate = (((((new Date()).getTime())/(1000*60*60*24)) | 0) - _refreshDayIndex)*24*60*60;
-				if(_mostRecentDayIndex < 0) //most recent day request 
+				if(_mostRecentDayIndex < 0) //most recent day request
 					reqDate = 0; //to indicate get most recent day
 
-				Debug.logv({_categoryFilter});	
+				Debug.logv({_categoryFilter});
 
 				//always show date
 				refreshDateDisplay();
@@ -1261,21 +1261,21 @@
 						if(_delayLogbookRequestTimer) window.clearTimeout(_delayLogbookRequestTimer);
 						_delayLogbookRequestTimer = 0;
 
-						DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list 
+						DesktopContent.XMLHttpRequest("Request?RequestType=RefreshLogbook", 		//update category list
 								"Date=" + reqDate +
-								"&Duration=" + _refreshDuration + 
+								"&Duration=" + _refreshDuration +
 								"&CategoryFilter=" + encodeURIComponent(_categoryFilter),  //* for all, if "" go with active category
-								handleRefreshLogbook);	
-					
+								handleRefreshLogbook);
+
 					}, 500 /* ms */ ); //end delay handler
-				
+
 			} //end refreshLogbook()
-			
+
 			//=====================================================================================
-			//handleRefreshLogbook ~~ 
+			//handleRefreshLogbook ~~
 			//	receives entries from oldest to newest, but display
 			//	from newest to oldest
-			function handleRefreshLogbook(req) 
+			function handleRefreshLogbook(req)
 			{
 				Debug.log("Logbook handleRefreshLogbook", req.responseText.length);
 
@@ -1284,9 +1284,9 @@
 					window.clearTimeout(_autoRefreshTimer);
 					_autoRefreshTimer = window.setTimeout(refreshLogbook, 30 * 1000 /* 30 seconds */);
 				}
-		        
-		        var logbookStatus;
-				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed 
+
+				var logbookStatus;
+				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed
 					document.getElementById("logbookDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" + logbookStatus + "</div>";
 				else
 				{
@@ -1304,7 +1304,7 @@
 						mostRecentDayEl.innerHTML = "Most Recent Day";
 
 					refreshDateDisplay();
-					
+
 					//extract logbook display
 					var entries = req.responseXML.getElementsByTagName("logbook_entry");
 					// setActiveCategory(DesktopContent.getXMLValue(req,"active_category"));
@@ -1312,35 +1312,35 @@
 
 					var logbookEl = document.getElementById("logbookDiv");
 					logbookEl.innerHTML = "";
-					
+
 					//display from newest to oldest
 					for(var i=entries.length-1;i>=0;--i)
-						displayLogbookEntry(logbookEl,entries[i]);		
-					
-						
+						displayLogbookEntry(logbookEl,entries[i]);
+
+
 					//add helper to move starting date back
 					var tmp = document.createElement("div");
 					tmp.setAttribute("id", "clearDiv");
-					logbookEl.appendChild(tmp); 
+					logbookEl.appendChild(tmp);
 					var tmp = document.createElement("div");
 					tmp.innerText = "Note: If you are expecting more entries for the selected critieria, try moving the selected date back in time.";
-					logbookEl.appendChild(tmp); 
+					logbookEl.appendChild(tmp);
 				}
-		        
+
 				 //schedule next update
-		        if(_logbookUpdateTimer)
-			    	clearTimeout(_logbookUpdateTimer);
-		        //_logbookUpdateTimer = window.setTimeout(refreshLogbook,_REFRESH_INTERVAL);  //NOTE: if want refresh every period, uncomment.
-		        																				//currently user must use manual refresh
+				if(_logbookUpdateTimer)
+					clearTimeout(_logbookUpdateTimer);
+				//_logbookUpdateTimer = window.setTimeout(refreshLogbook,_REFRESH_INTERVAL);  //NOTE: if want refresh every period, uncomment.
+																								//currently user must use manual refresh
 
 
 				redrawLogbook(); //in case of new scroll bars
 			} //end handleRefreshLogbook()
 
 			//=====================================================================================
-			//replaceBrWithSpace ~~ 
+			//replaceBrWithSpace ~~
 			// Replace all <br> tags with a space
-			function replaceBrWithSpace(el) 
+			function replaceBrWithSpace(el)
 			{
 				el.isBrReplaced = "true";
 				el.querySelectorAll('br').forEach(br => {
@@ -1350,15 +1350,15 @@
 				});
 
 				var condensedWidth = currentCategoryHeader.offsetWidth;
-				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " + 
+				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " +
 					(condensedWidth-130) + "px;" +
 					"padding-top: 2px; padding-bottom: 10px; color: rgb(216 189 139);");
 			} //end replaceBrWithSpace()
 
 			//=====================================================================================
-			//restoreBr ~~ 
+			//restoreBr ~~
 			// Restore <br> tags
-			function restoreBr(el) 
+			function restoreBr(el)
 			{
 				el.isBrReplaced = undefined;
 				el.childNodes.forEach(node => {
@@ -1368,32 +1368,32 @@
 					}
 				});
 				var condensedWidth = currentCategoryHeader.offsetWidth;
-				el.setAttribute("style", "overflow-x: auto; width: " + 
+				el.setAttribute("style", "overflow-x: auto; width: " +
 					(condensedWidth-130) + "px;" +
 					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
 			} //end restoreBr()
 
 			//=====================================================================================
-			//refreshDateDisplay ~~ 
-			function refreshDateDisplay() 
+			//refreshDateDisplay ~~
+			function refreshDateDisplay()
 			{
 				Debug.log("refreshDateDisplay()",_refreshDayIndex);
 				var reqTime = (new Date()).getTime() - _refreshDayIndex*24*60*60*1000; //in ms
 				var dateObj = new Date(reqTime);
-				
+
 				// (((((new Date()).getTime() + _TIMEZONE_OFFSET_HOURS*60*60*1000)/
-				// 					(1000*60*60*24)) | 0) - 
+				// 					(1000*60*60*24)) | 0) -
 				// 				_refreshDayIndex)*24*60*60; //in seconds
 				// var dateObj = new Date(reqDate*1000); //js date object expects ms
 				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" + 
-					displayDate + ")</a>";	
-				
+				document.getElementById("logbookCalendarDateDisplay").innerHTML =
+					"<a href='Javascript:;' onmouseup='refreshLogbook(" + _refreshDayIndex + ");'>(" +
+					displayDate + ")</a>";
+
 				//decorate selection properly
 				var aArr = document.getElementById("logbookHeader").getElementsByTagName("a");
 				//all of the links in the logbook header (0=today, 1=yesterday,.. 6=max days) max days before might be 6 or 7
-				for(var i=0;i<aArr.length;++i) 
+				for(var i=0;i<aArr.length;++i)
 					if(i < 1 && (reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
 						aArr[i].setAttribute("class", "logbookSelection");
 					else if(i == 1 && !(reqTime == 0 || _refreshDayIndex == _mostRecentDayIndex))
@@ -1406,11 +1406,11 @@
 			} //end refreshDateDisplay()
 
 			//=====================================================================================
-			//displayLogbookEntry ~~ 
-			//	fields are 
+			//displayLogbookEntry ~~
+			//	fields are
 			//		"logbook_entry_subject"
-			//		"logbook_entry_text" 
-			//		"logbook_entry_time" 
+			//		"logbook_entry_text"
+			//		"logbook_entry_time"
 			//		"logbook_entry_creator"
 			//		"logbook_entry_file" (can be many) (file name is from "preview_index")
 			//  get field with entry.getElementsByTagName(field)[0].getAttribute("value");
@@ -1420,91 +1420,91 @@
 			//		"logbook_entry_hidden_time"
 			//	Note: if _isAdmin, then give option to remove/restore entry based on "logbook_entry_hidden"
 			//		"logbook_entry_hidden" by "logbook_entry_hider" on "logbook_entry_hidden_time"
-			function displayLogbookEntry(divEl, entry) 
-			{ 				
+			function displayLogbookEntry(divEl, entry)
+			{
 				//<omni>
 				//	<header>subject --- time, creator </header>
 				//	<body>text</body>
 				//	<attachment uploads />
 				//</omni>
-				
+
 				var isPreview = divEl.id == "logbookPreviewPostDiv"; //create bool to indicate this is post preview
-				
-			    var tmp;
-			    //first clear all floating
-			    tmp = document.createElement("div");
-			    tmp.setAttribute("id", "clearDiv");
-			    divEl.appendChild(tmp); 
-			    
-			    //then add entry
-			    var omni = document.createElement("div");
-			    omni.setAttribute("class", "Logbook-entryOmni");
-			    
-			    //get time in seconds from xml
-			    var entryTimeString = entry.getElementsByTagName("logbook_entry_time")[0].getAttribute("value");
-			    var timeVal = parseInt(entryTimeString);
-			    timeVal = new Date(timeVal*1000); //convert time in seconds to js date
-                var creator = entry.getElementsByTagName("logbook_entry_creator")[0].getAttribute("value");
-                          
-			    var hidden = entry.getElementsByTagName("logbook_entry_hidden")[0]?true:false;
-			    if(_isAdmin && !isPreview)
-			    {
-				    var admin = document.createElement("div");
-				    admin.setAttribute("class", "Logbook-entryAdmin");
-				    admin.innerHTML = "Admin: <a href='Javascript:;' onmouseup='adminRemoveRestoreEntry(\"" + entryTimeString + "\"," + !hidden + 
-				    	");' title='Remove/Restore Entry'>" + (hidden?"Restore":"Remove") + " Entry</a>";
-				    omni.appendChild(admin);  
-			    }
-			    
-			    if(hidden) //display alternate hidden reality 
-			    {
-				    var hiddenDiv = document.createElement("div");
-				    hiddenDiv.setAttribute("class", "Logbook-entryHidden");
-				    var hideDate = new Date(1000*parseInt(entry.getElementsByTagName("logbook_entry_hidden_time")[0].getAttribute("value")));
-				    hiddenDiv.innerHTML = "This entry was removed by " + 
-				    	entry.getElementsByTagName("logbook_entry_hider")[0].getAttribute("value") + 
-				    	" on " + hideDate.toDateString() + " " + hideDate.toLocaleTimeString();				    	
-				    omni.appendChild(hiddenDiv);
-				    divEl.appendChild(omni);			    //add entry to div element  
-				    return;			    	
-			    }
-                         
+
+				var tmp;
+				//first clear all floating
+				tmp = document.createElement("div");
+				tmp.setAttribute("id", "clearDiv");
+				divEl.appendChild(tmp);
+
+				//then add entry
+				var omni = document.createElement("div");
+				omni.setAttribute("class", "Logbook-entryOmni");
+
+				//get time in seconds from xml
+				var entryTimeString = entry.getElementsByTagName("logbook_entry_time")[0].getAttribute("value");
+				var timeVal = parseInt(entryTimeString);
+				timeVal = new Date(timeVal*1000); //convert time in seconds to js date
+				var creator = entry.getElementsByTagName("logbook_entry_creator")[0].getAttribute("value");
+
+				var hidden = entry.getElementsByTagName("logbook_entry_hidden")[0]?true:false;
+				if(_isAdmin && !isPreview)
+				{
+					var admin = document.createElement("div");
+					admin.setAttribute("class", "Logbook-entryAdmin");
+					admin.innerHTML = "Admin: <a href='Javascript:;' onmouseup='adminRemoveRestoreEntry(\"" + entryTimeString + "\"," + !hidden +
+						");' title='Remove/Restore Entry'>" + (hidden?"Restore":"Remove") + " Entry</a>";
+					omni.appendChild(admin);
+				}
+
+				if(hidden) //display alternate hidden reality
+				{
+					var hiddenDiv = document.createElement("div");
+					hiddenDiv.setAttribute("class", "Logbook-entryHidden");
+					var hideDate = new Date(1000*parseInt(entry.getElementsByTagName("logbook_entry_hidden_time")[0].getAttribute("value")));
+					hiddenDiv.innerHTML = "This entry was removed by " +
+						entry.getElementsByTagName("logbook_entry_hider")[0].getAttribute("value") +
+						" on " + hideDate.toDateString() + " " + hideDate.toLocaleTimeString();
+					omni.appendChild(hiddenDiv);
+					divEl.appendChild(omni);			    //add entry to div element
+					return;
+				}
+
 				var entryText = convertForClient(
 					entry.getElementsByTagName("logbook_entry_text")[0].getAttribute("value"));
-							
-                if(creator == "SYSTEM LOG") //System Logbook Entry
-                {
-                    var sysLogDiv = document.createElement("div");
-				    sysLogDiv.setAttribute("class", "Logbook-sysLogDiv");
-				    sysLogDiv.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString() + " -- " +
+
+				if(creator == "SYSTEM LOG") //System Logbook Entry
+				{
+					var sysLogDiv = document.createElement("div");
+					sysLogDiv.setAttribute("class", "Logbook-sysLogDiv");
+					sysLogDiv.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString() + " -- " +
 						entryText;
-				    omni.appendChild(sysLogDiv);
-				    divEl.appendChild(omni);			    //add entry to div element  
-				    return;	              
-                }
-			    
-			    var header = document.createElement("div");
-			    header.setAttribute("class", "Logbook-entryHeader");
-			    omni.appendChild(header);  
-			    
-			    var body = document.createElement("div");
-			    body.setAttribute("class", "Logbook-entryBody");
-			    omni.appendChild(body);  
-			    
-			    var uploads = document.createElement("div");
-			    uploads.setAttribute("class", "Logbook-entryUploads");
-			    
-			    var str = "";
-			    
-			    //subject
-			    tmp = document.createElement("div");
-			    tmp.setAttribute("class", "Logbook-entrySubject");
-			    tmp.setAttribute("title", "Click to expand/collapse log entry.");
-			    tmp.innerHTML = entry.getElementsByTagName("logbook_entry_subject")[0].getAttribute("value");
+					omni.appendChild(sysLogDiv);
+					divEl.appendChild(omni);			    //add entry to div element
+					return;
+				}
+
+				var header = document.createElement("div");
+				header.setAttribute("class", "Logbook-entryHeader");
+				omni.appendChild(header);
+
+				var body = document.createElement("div");
+				body.setAttribute("class", "Logbook-entryBody");
+				omni.appendChild(body);
+
+				var uploads = document.createElement("div");
+				uploads.setAttribute("class", "Logbook-entryUploads");
+
+				var str = "";
+
+				//subject
+				tmp = document.createElement("div");
+				tmp.setAttribute("class", "Logbook-entrySubject");
+				tmp.setAttribute("title", "Click to expand/collapse log entry.");
+				tmp.innerHTML = entry.getElementsByTagName("logbook_entry_subject")[0].getAttribute("value");
 				tmp.onclick = function()
 				{
 					//navigate to entry 'body' element
-					var el = this.parentElement.parentElement.children[1];	
+					var el = this.parentElement.parentElement.children[1];
 					Debug.log("Toggle expand/collaps entry", el.textContent);
 
 					if(el.isBrReplaced)
@@ -1512,220 +1512,220 @@
 					else
 						replaceBrWithSpace(el);
 				}
-			    header.appendChild(tmp);
-			    //time
-			    tmp = document.createElement("div");
-			    tmp.setAttribute("class", "Logbook-entryTime");
-			    tmp.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString();
-			    header.appendChild(tmp);
-			    //creator
-			    tmp = document.createElement("div");
-			    tmp.setAttribute("class", "Logbook-entryCreator");
-			    tmp.innerHTML = "by " + creator;
-			    header.appendChild(tmp);
-			    //body text
-			    body.innerHTML = entryText;
+				header.appendChild(tmp);
+				//time
+				tmp = document.createElement("div");
+				tmp.setAttribute("class", "Logbook-entryTime");
+				tmp.innerHTML = timeVal.toDateString() + " " + timeVal.toLocaleTimeString();
+				header.appendChild(tmp);
+				//creator
+				tmp = document.createElement("div");
+				tmp.setAttribute("class", "Logbook-entryCreator");
+				tmp.innerHTML = "by " + creator;
+				header.appendChild(tmp);
+				//body text
+				body.innerHTML = entryText;
 
 				//condition for condensed-view single line by removing <br>
 				replaceBrWithSpace(body); //to toggle call restoreBr(el)
 
-			    //uploads
-			    var uploadsArr = entry.getElementsByTagName("logbook_entry_file");
-			    if(uploadsArr.length)
-			    {
-			    	//file types
-			    	//	application 
-			    	//		zip, pdf
-			    	//	images
-			    	//		png, gif, bmp, jpeg
-			    	//	text
-			    	//		plain
-			    	
-			    	//for each file, add images to display, and icon links for others
-			    	//	icon links first, and images below
+				//uploads
+				var uploadsArr = entry.getElementsByTagName("logbook_entry_file");
+				if(uploadsArr.length)
+				{
+					//file types
+					//	application
+					//		zip, pdf
+					//	images
+					//		png, gif, bmp, jpeg
+					//	text
+					//		plain
 
-				    var imagesEl = document.createElement("div");
-				    imagesEl.setAttribute("class", "Logbook-entryImages");
-				    
-				    var filesEl = document.createElement("div");
-				    filesEl.setAttribute("class", "Logbook-entryFiles");
-				    
-				    var countAttachments = 0, countImages = 0;
-				    var types;
-				    var filesElStr = "";
-				    var imagesElStr = "";
-				    var pathPreface = "/WebPath/LogbookPath/";
-				    var entryId = entry.getElementsByTagName("logbook_entry_time")[0].getAttribute("value");
-				    if(entry.getElementsByTagName("preview_index")[0]) //is a preview 
-				    	pathPreface += "previews/" + entryId + "/upload_";
-				    else //regular logbook read
-				    	pathPreface += "logbooks/log_" + _activeCategory + "/uploads/upload_" + entryId + "_";
-				    
-				    var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
+					//for each file, add images to display, and icon links for others
+					//	icon links first, and images below
+
+					var imagesEl = document.createElement("div");
+					imagesEl.setAttribute("class", "Logbook-entryImages");
+
+					var filesEl = document.createElement("div");
+					filesEl.setAttribute("class", "Logbook-entryFiles");
+
+					var countAttachments = 0, countImages = 0;
+					var types;
+					var filesElStr = "";
+					var imagesElStr = "";
+					var pathPreface = "/WebPath/LogbookPath/";
+					var entryId = entry.getElementsByTagName("logbook_entry_time")[0].getAttribute("value");
+					if(entry.getElementsByTagName("preview_index")[0]) //is a preview
+						pathPreface += "previews/" + entryId + "/upload_";
+					else //regular logbook read
+						pathPreface += "logbooks/log_" + _activeCategory + "/uploads/upload_" + entryId + "_";
+
+					var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
 					var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogImage&src=";
-					
-					Debug.log("Logbook pathPreface " + pathPreface);
-				    for(var i=0;i<uploadsArr.length;++i)
-				    {
-					    types = uploadsArr[i].getAttribute("value").split("/");
-						Debug.log("Logbook types[0] " + types[0]);
-					    if(types[0] == "image") //image
-					    {
-					    	++countImages;					    	
-					    	
-					    	imagesElStr += "<div class='Logbook-entryImages-div'>" + 
-					    		"<a target='_blank' title='Open in new window' href='" + requestURL +
-					    		pathPreface + i + "." + types[1] + "'>" + 					    	
-					    		"<img class='Logbook-entryImages-img' src='" +
-					    		pathPreface + i + "." + types[1] + "'></a></div>";
-					    	
-					    }
-					    else //other file type
-					    {
-					    	++countAttachments;
-					    	filesElStr += "<div class='Logbook-entryFiles-div'>" + 
-					    		"<a target='_blank' title='Open in new window' href='" + 
-					    		pathPreface + i + "." + types[1] + "' download>" + 					    	
-					    		"<img src='/WebPath/images/windowContentImages/logbook-uploads-icon-" +
-					    		types[1] + ".png'></a></div>";
-					    }
-				    	
-				    }
 
-				    if(countAttachments) //if there are other file types, add div
-				    {
-				    	filesEl.innerHTML = "<div class='Logbook-entryUploadsLabel'>" + countAttachments + 
-				    		" Attachment" + (countAttachments>1?"s: ":": ") + "</div>" + filesElStr;
-					    uploads.appendChild(filesEl);
-				    }
-				    if(countImages)
-				    {
-				    	imagesEl.innerHTML = "<div class='Logbook-entryUploadsLabel'>" + countImages + 
-			    		" Image" + (countImages>1?"s: ":": ") + "</div>" + imagesElStr;
-					    uploads.appendChild(imagesEl);
-				    }
-				    
-				    ///WebPath/images/windowContentImages/logbook-clear.png
-				    
-				    omni.appendChild(uploads); //add uploads section only if there are uploads  
-			    }
-			    
-			    divEl.appendChild(omni);			    //add entry to div element  
+					Debug.log("Logbook pathPreface " + pathPreface);
+					for(var i=0;i<uploadsArr.length;++i)
+					{
+						types = uploadsArr[i].getAttribute("value").split("/");
+						Debug.log("Logbook types[0] " + types[0]);
+						if(types[0] == "image") //image
+						{
+							++countImages;
+
+							imagesElStr += "<div class='Logbook-entryImages-div'>" +
+								"<a target='_blank' title='Open in new window' href='" + requestURL +
+								pathPreface + i + "." + types[1] + "'>" +
+								"<img class='Logbook-entryImages-img' src='" +
+								pathPreface + i + "." + types[1] + "'></a></div>";
+
+						}
+						else //other file type
+						{
+							++countAttachments;
+							filesElStr += "<div class='Logbook-entryFiles-div'>" +
+								"<a target='_blank' title='Open in new window' href='" +
+								pathPreface + i + "." + types[1] + "' download>" +
+								"<img src='/WebPath/images/windowContentImages/logbook-uploads-icon-" +
+								types[1] + ".png'></a></div>";
+						}
+
+					}
+
+					if(countAttachments) //if there are other file types, add div
+					{
+						filesEl.innerHTML = "<div class='Logbook-entryUploadsLabel'>" + countAttachments +
+							" Attachment" + (countAttachments>1?"s: ":": ") + "</div>" + filesElStr;
+						uploads.appendChild(filesEl);
+					}
+					if(countImages)
+					{
+						imagesEl.innerHTML = "<div class='Logbook-entryUploadsLabel'>" + countImages +
+						" Image" + (countImages>1?"s: ":": ") + "</div>" + imagesElStr;
+						uploads.appendChild(imagesEl);
+					}
+
+					///WebPath/images/windowContentImages/logbook-clear.png
+
+					omni.appendChild(uploads); //add uploads section only if there are uploads
+				}
+
+				divEl.appendChild(omni);			    //add entry to div element
 			} //end displayLogbookEntry()
 
 			//=====================================================================================
-			//adminRemoveRestoreEntry ~~ 
+			//adminRemoveRestoreEntry ~~
 			//	admin remove and restore based on entryId and hide
 			//	if hide, remove entry specified by entryId from view (not deleted from disk)
 			//	if not hide, restore entry
-			function adminRemoveRestoreEntry(entryId, hide) 
+			function adminRemoveRestoreEntry(entryId, hide)
 			{
 
 				Debug.log("Logbook adminRemoveRestoreEntry " + entryId + " - " + hide);
-				DesktopContent.XMLHttpRequest("Request?RequestType=AdminRemoveRestoreEntry", 
-						"EntryId=" + entryId + "&Hide=" + (hide?1:0),handleRemoveRestoreEntry);				
+				DesktopContent.XMLHttpRequest("Request?RequestType=AdminRemoveRestoreEntry",
+						"EntryId=" + entryId + "&Hide=" + (hide?1:0),handleRemoveRestoreEntry);
 			} //end adminRemoveRestoreEntry()
-			
+
 			//=====================================================================================
 			//handleRemoveRestoreEntry ~~
 			//	refresh current logbook view after remove/restore by admin
-			function handleRemoveRestoreEntry(req) 
+			function handleRemoveRestoreEntry(req)
 			{
 				refreshLogbook();
 			} //end handleRemoveRestoreEntry()
-			
+
 			//=====================================================================================
-			//showCalendar ~~ 
-			//	generates request for logbook based on dayIndex and duration 
-			function showCalendar(e) 
+			//showCalendar ~~
+			//	generates request for logbook based on dayIndex and duration
+			function showCalendar(e)
 			{
 				Debug.log("Logbook calendar xy " + e.pageX + " - " + e.pageY);
 
 				//_refreshDayIndex is days into past, 0 for today
 				calendarPopup(e.pageX, e.pageY, calendarHandler, (new Date()).getTime() - _refreshDayIndex * (1000*60*60*24));
 			} //end showCalendar()
-			
+
 			//=====================================================================================
 			//calendarHandler ~~
 			//	parameter is days since Jan 1, 1970
-			function calendarHandler(userDate) 
-			{				
+			function calendarHandler(userDate)
+			{
 				var dateObj = new Date(userDate*1000*60*60*24);
-				Debug.log("Logbook calendarHandler userDate " + userDate + " = " + 
+				Debug.log("Logbook calendarHandler userDate " + userDate + " = " +
 						dateObj.toDateString());
-				
+
 				//update display with user date
 				var refreshDayIndex = ((((new Date()).getTime()  + _TIMEZONE_OFFSET_HOURS*1000*60*60 )
-					/ (1000*60*60*24)) | 0) 
+					/ (1000*60*60*24)) | 0)
 					- userDate;
 				Debug.logv({refreshDayIndex});
 				var displayDate = (dateObj.getMonth()+1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
-								
-				document.getElementById("logbookCalendarDateDisplay").innerHTML = 
-					"<a href='Javascript:;' onmouseup='refreshLogbook(" + refreshDayIndex + ");'>(" + 
+
+				document.getElementById("logbookCalendarDateDisplay").innerHTML =
+					"<a href='Javascript:;' onmouseup='refreshLogbook(" + refreshDayIndex + ");'>(" +
 					displayDate + ")</a>";
-					
+
 				//refresh logbook with user date
 				refreshLogbook(refreshDayIndex);
 			} //end calendarHandler()
-			
+
 			//=====================================================================================
 			//advanceByDays ~~
 			//	refresh logbook with new day offset and display next to calendar
 			//	increasing i is subtracted from _refreshDayIndex to go back in time
-			function advanceByDays(i) 
-			{			
-				refreshLogbook(_refreshDayIndex - i); //positive is back in time						
+			function advanceByDays(i)
+			{
+				refreshLogbook(_refreshDayIndex - i); //positive is back in time
 			} //end advanceByDays()
 
 			//=====================================================================================
 			//clearFileInput ~~
-			function clearFileInput() 
+			function clearFileInput()
 			{
 				//delete file input element and create same empty
 				var el = document.getElementById('fileToUpload');
-		    	var fileParent = el.parentNode; //fileInputHolder div			    	
-		    	fileParent.removeChild(el);
-		    	fileParent.innerHTML = "<input type='file' name='fileToUpload' " + 
-		    		"id='fileToUpload' onchange='fileSelected();' multiple='multiple' size='16'/>";
-		    	document.getElementById('fileName').innerHTML = "";
-		    	document.getElementById('fileSize').innerHTML = "";
-		    	document.getElementById('fileType').innerHTML = "";
+				var fileParent = el.parentNode; //fileInputHolder div
+				fileParent.removeChild(el);
+				fileParent.innerHTML = "<input type='file' name='fileToUpload' " +
+					"id='fileToUpload' onchange='fileSelected();' multiple='multiple' size='16'/>";
+				document.getElementById('fileName').innerHTML = "";
+				document.getElementById('fileSize').innerHTML = "";
+				document.getElementById('fileType').innerHTML = "";
 			} //end clearFileInput()
-			
+
 			//=====================================================================================
 			//generateReport ~~
 			//	opens up separate window to generate reports
-			function generateReport() 
+			function generateReport()
 			{
 				if(!_activeCategory || _activeCategory == "")
 				{
 					alert("Error! There must be an active category selected.");
 					return;
 				}
-					
+
 				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
-				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeCategory=";				
+				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeCategory=";
 				window.open(requestURL + _activeCategory,	'_blank');	//open in new window
 			} //end generateReport()
 
 		</script>
-		
+
 	</head>
-	
-	
-	<body onload='//init() called by DesktopContent.js'>	
+
+
+	<body onload='//init() called by DesktopContent.js'>
 
 	<center><div class='areaContent' id='currentCategoryHeader'></div></center>
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='adminArea'>
 		<!-- area where admins control active category and create new categorys -->
-		
+
 		<table width='100%'>
 			<td width='25px'>
 			<div class='expandBtn'>
-				<a href='Javascript:toggleArea(0);' title='Toggle expand/hide'> 
+				<a href='Javascript:toggleArea(0);' title='Toggle expand/hide'>
 					<img class='expandBtnImg' id='expandBtnImg0-hide'>
 					<img class='expandBtnImg' id='expandBtnImg0-show'>
 				</a>
@@ -1736,7 +1736,7 @@
 			</td>
 			<td>
 				<div class='sectionLine'><hr width='100%'></div>
-			</td>		
+			</td>
 		</table>
 
 		<!------------------------ AREA CONTENT --------------------------------->
@@ -1746,7 +1746,7 @@
 			<div style='float:left;'>
 				<b>Category:</b><br>
 				<input type='text' id='categoryTextBox' spellcheck='false'
-					value='' 
+					value=''
 					onkeydown='return handleCategoryInputKeyDown(event)'
 					onkeyup='handleSearchKeyUp()'
 						>
@@ -1757,14 +1757,14 @@
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
 						"Are you sure you want to <u><i>Create</i></u> the new category, <i><b>REPLACE</b></i>?<br><br>",
-						createCategory, document.getElementById("categoryTextBox").value);' 
+						createCategory, document.getElementById("categoryTextBox").value);'
 					value='Create Category' title='Create a new category, or re-add to list'><br><br>
 				<input type='submit' onmouseup=
 					'DesktopContent.popUpVerification(
 					"Are you sure you want to <u><i>Remove</i></u> the category, <i><b>REPLACE</b></i>?<br><br>",
-					removeCategory, document.getElementById("categoryTextBox").value,"#ffddd1");'  
+					removeCategory, document.getElementById("categoryTextBox").value,"#ffddd1");'
 					value='Remove Category'  title='Remove an category from list' style='color:red'>
-				<div id='adminStatusDiv'>Status updates are displayed here.</div> 
+				<div id='adminStatusDiv'>Status updates are displayed here.</div>
 			</div>
 			<div style='float:left;margin-left:20px;text-align:right;'>
 				<b>Click to Set Active Category:</b>
@@ -1772,9 +1772,9 @@
 				<font color='grey'>No categorys in list</font>
 				</div>
 				<div id='clearActiveCategoryDiv'>
-					<a href='Javascript:activeCategorySetRequest("")' 
+					<a href='Javascript:activeCategorySetRequest("")'
 						title='Click to set no active category'>Clear Active Category</a>
-				</div> 
+				</div>
 			</div>
 		</td>
 		</table>
@@ -1784,12 +1784,12 @@
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='newPostArea'>
-		<!-- area where new logbook posts are made -->	
+		<!-- area where new logbook posts are made -->
 		<table width='100%'>
 			<td width='25px'>
 			<div class='expandBtn'>
-				<a href='Javascript:toggleArea(1);' title='Toggle expand/hide'> 
-					<img class='expandBtnImg' id='expandBtnImg1-hide'> 
+				<a href='Javascript:toggleArea(1);' title='Toggle expand/hide'>
+					<img class='expandBtnImg' id='expandBtnImg1-hide'>
 					<img class='expandBtnImg' id='expandBtnImg1-show'>
 				</a>
 			</div>
@@ -1799,35 +1799,35 @@
 			</td>
 			<td>
 				<div class='sectionLine'><hr width='100%'></div>
-			</td>		
+			</td>
 		</table>
-		
+
 
 		<!------------------------ AREA CONTENT --------------------------------->
 		<div class='areaContentDiv'>
 		<table class='areaContent' width='100%'>
 		<td>
-		
+
 			<div id='postFormDiv'>
 				Type your new Logbook entry with subject below, select a file to upload (optional),
 				and then click Preview Post.<br><br>
 
 				<input type="text" id="newPostSubject" spellcheck="false" size='50'
 					onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
-	                onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
+					onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_SUBJECT) this.value = "";'
 					onkeydown="return handleCategoryInputKeyDown(event,true)"> <!-- keep subject alpha-numeric -->
 				<br>
-                <textarea id='newPostText' rows="8" cols="50"
-                    onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
-                    onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
-                    ></textarea>
-                
+				<textarea id='newPostText' rows="8" cols="50"
+					onmouseup='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
+					onfocus='if(this.value == _DEFAULT_ENTRY_INPUT_TEXT) this.value = "";'
+					></textarea>
+
 				<form id="fileForm" enctype="multipart/form-data" method="post" action="Log">
-				
+
 					<div class="row">
 					  <label for="fileToUpload">Select a File to Upload</label><br />
 					  <div id='fileInputHolder'>
-					  <input type="file" name="fileToUpload" id="fileToUpload" 
+					  <input type="file" name="fileToUpload" id="fileToUpload"
 						  onchange="fileSelected();" multiple='multiple' size='16'/>
 					  </div>
 					</div>
@@ -1835,30 +1835,30 @@
 						<div id="fileName"></div>
 						<div id="fileType"></div>
 						<div id="fileSize"></div>
-					</div>		
+					</div>
 				</form>
 
 				<input type='submit' onmouseup='uploadToServer("Preview",handlePreviewPost);' value='Preview Post'>
 				<div id="PreviewStatus"></div>
 
 			</div>
-			
+
 			<div id='postPreviewDiv'></div>
-			
+
 		</td>
 		</table>
 		</div>
 	</div>
-	
+
 
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='logbookArea'>
-		<!-- area where logbook for active category is shown -->	
+		<!-- area where logbook for active category is shown -->
 		<table width='100%'>
 			<td width='25px'>
 			<div class='expandBtn'>
-				<a href='Javascript:toggleArea(2);' title='Toggle expand/hide'> 
+				<a href='Javascript:toggleArea(2);' title='Toggle expand/hide'>
 					<img class='expandBtnImg' id='expandBtnImg2-hide'>
 					<img class='expandBtnImg' id='expandBtnImg2-show'>
 				</a>
@@ -1869,23 +1869,23 @@
 			</td>
 			<td>
 				<div class='sectionLine'><hr width='100%'></div>
-			</td>		
+			</td>
 		</table>
-		
-		
+
+
 		<!------------------------ AREA CONTENT --------------------------------->
 		<div class='areaContentDiv'>
 		<table class='areaContent' width='100%'>
 		<td align='center'>
 
 			<div id='logbookHeader'>
-				Showing Logbook for 
+				Showing Logbook for
 				<a href='Javascript:;' onmouseup='_mostRecentDayIndex = -1; refreshLogbook();'>Most Recent Day</a>
 				<a href='Javascript:;' onmouseup='showCalendar(event);'
 					><img style='margin:5px 0 -5px 0'
 						src='/WebPath/images/windowContentImages/logbook-calendar-icon-small.gif'></a>
 					<span id='logbookCalendarDateDisplay'></span> and
-				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,1);'>1</a> | 
+				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,1);'>1</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,2);'>2</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,7);'>7</a> |
 				<a href='Javascript:;' onmouseup='refreshLogbook(undefined,14);'>14</a> |
@@ -1895,8 +1895,8 @@
 				days before.
 				<br><br>
 				<a href='Javascript:;' onmouseup='advanceByDays(-1);'>Previous Day</a> |
-				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>			
-			</div>				
+				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>
+			</div>
 			<!--<div id='generateReport' onmouseup='generateReport();' title='Advanced Logbook Reporting'
 				><img style='margin:-15px 0 0 0' height='48px'
 				src='/WebPath/images/windowContentImages/logbook-report.png'></div> -->
@@ -1905,15 +1905,15 @@
 			<div id='generateReport' style='float:right' onmouseup='refreshLogbook();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>
-			
-				
+
+
 			<div id='logbookDiv'>
 			</div>
 		</td>
 		</table>
 		</div>
 	</div>
-		
+
 	</body>
-	
+
 </html>

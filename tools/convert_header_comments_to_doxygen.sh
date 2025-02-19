@@ -29,6 +29,3 @@ find "$1" -type f -name "*.h" | while read -r file; do
 done
 
 echo "Conversion complete for all .h files in $1"
-
-
-

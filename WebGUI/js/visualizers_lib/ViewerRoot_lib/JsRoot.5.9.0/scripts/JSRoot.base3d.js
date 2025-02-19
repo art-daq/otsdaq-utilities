@@ -1074,4 +1074,3 @@ JSROOT.define(['d3', 'threejs_jsroot', 'painter'], (d3, THREE, jsrp) => {
    return THREE;
 
 });
-

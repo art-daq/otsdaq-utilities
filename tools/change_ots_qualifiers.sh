@@ -21,21 +21,21 @@ echo -e "change_ots_qualifiers.sh [${LINENO}]  "
 
 
 # Need this source local scripts
-SCRIPT_DIR="$( 
+SCRIPT_DIR="$(
  cd "$(dirname "$(readlink "$0" || printf %s "$0")")"
- pwd -P 
+ pwd -P
 )"
 
 # get function from a single place (also used by UpdateOTS.sh, for example)
 source "${SCRIPT_DIR}"/displayVersionsAndQualifiers.sh
 
- 
+
 # #############################
 # #############################
 # # function to display otsdaq versions and qualifiers
-# function displayVersionsAndQualifiers 
-# {	
-	
+# function displayVersionsAndQualifiers
+# {
+
 
 # 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t Note: below are the available otsdaq releases..."
 # 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t ----------------------------"
@@ -47,7 +47,7 @@ source "${SCRIPT_DIR}"/displayVersionsAndQualifiers.sh
 
 # 	ALL_RELEASES=( $(curl -s https://scisoft.fnal.gov/scisoft/bundles/otsdaq/ | grep \<\/a\> | grep _ | grep v  | grep --invert-match href | sed -e 's/<.*//') )
 # 	LATEST_RELEASE=${ALL_RELEASES[${#ALL_RELEASES[@]}-1]}
-# 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t The latest otsdaq release is $LATEST_RELEASE"	
+# 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t The latest otsdaq release is $LATEST_RELEASE"
 
 # 	echo
 # 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t Note: below are the available qualifiers for $LATEST_RELEASE.."
@@ -73,7 +73,7 @@ source "${SCRIPT_DIR}"/displayVersionsAndQualifiers.sh
 # 	echo
 # 	echo
 
-	
+
 # } #end displayVersionsAndQualifiers
 
 #check parameters
@@ -88,10 +88,10 @@ if [[ "x$1" == "x"  || "x$2" == "x" ]]; then
 	echo -e "change_ots_qualifiers.sh [${LINENO}]  "
 	echo -e "change_ots_qualifiers.sh [${LINENO}]  \t\t\t ./change_ots_qualifiers.sh    v2_05_00    s89:e19:prof"
 	echo -e "change_ots_qualifiers.sh [${LINENO}]  "
-		
+
 	displayVersionsAndQualifiers
-	
-		
+
+
 	echo -e "change_ots_qualifiers.sh [${LINENO}]  "
 	exit
 fi
@@ -125,16 +125,6 @@ echo -e "change_ots_qualifiers.sh [${LINENO}]  \t ots change_ots_qualifiers scri
 echo -e "change_ots_qualifiers.sh [${LINENO}]  \t *******************************"
 echo -e "change_ots_qualifiers.sh [${LINENO}]  \t *******************************"
 
-		
+
 
 exit
-
-
-
-
-
-
-		
-
-
-

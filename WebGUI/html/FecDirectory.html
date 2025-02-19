@@ -2,66 +2,66 @@
 <html lang="en">
 	<head>
 		<title>Supervisor</title>
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				background-color: #af2269;
 			}
 		</style>
-		
-		
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-		
-		
-		<script>		
-				
+
+
+		<script>
+
 			var _reqFields = ["fec_url","fec_urn"];
 			var _addrsArr;
-            
-            function init() {               
+
+            function init() {
 
 				getFEWs();
 			}
-            
-            function getFEWs() {               
+
+            function getFEWs() {
 
 				Debug.log("Settings getFEWs");
-				
+
 				//get current settings from server
-				DesktopContent.XMLHttpRequest("Request?RequestType=getFecList", "", fecsRequestHandler);			
+				DesktopContent.XMLHttpRequest("Request?RequestType=getFecList", "", fecsRequestHandler);
 			}
 
-            function fecsRequestHandler(req) {         
+            function fecsRequestHandler(req) {
 				Debug.log("Settings fecsRequestHandler");
 				Debug.log("req " +  req.responseText);
 
 				_addrsArr = new Array();
 				for(i=0;i<_reqFields.length;++i)
 					_addrsArr.push(req.responseXML.getElementsByTagName("fec_list")[0].getElementsByTagName(_reqFields[i]));
-				
+
             }
 
-            function test() {     
+            function test() {
 
 				Debug.log("Settings test " + _addrsArr[0][0].getAttribute('value') + "/" +  _addrsArr[1][0].getAttribute('value'));
-				
-				
+
+
 				//TODO, go through a mailbox to have desktop open a new window
 				window.location.href = _addrsArr[0][0].getAttribute('value') + "/" +  _addrsArr[1][0].getAttribute('value');
             }
 		</script>
-		
+
 	</head>
-	
-	
-	<body onload='//init() called by DesktopContent.js'>	
-		
+
+
+	<body onload='//init() called by DesktopContent.js'>
+
 		<h1>Fec Directory</h1>
 		<div id='fecDirectoryDiv'></div>
-		
+
 		<a href='javascript:test();'>Hello</a>
-	
+
 	</body>
-	
+
 </html>

@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 <head>
-	<script>		
-		
+	<script>
+
 		//	Description of Template for Record Wizard Configuration GUI:
-		//	
+		//
 		//		Example of presenting the record creation wizard.
-		//			
+		//
 		//
 
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
-		
+
 
 	</script>
 
@@ -19,7 +19,7 @@
 	<title>ConfigurationGUI</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
-		
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationGUI.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
 
@@ -27,64 +27,64 @@
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
-	<style type="text/css">			
+	<style type="text/css">
 
-	
-		
+
+
 	</style>
-	
-	
-	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/RecordWiz_ConfigurationGUI.js"></script>
-	
-	<script>		
-				
+
+	<script>
+
 		//=====================================================================================
 		//init ~~
 		//	init called once body has loaded
-		function init() 
-		{									
+		function init()
+		{
 			Debug.log("CfgGUI record Wiz example init ");
-			
+
 			var recordsAlias = extractGETParameters();
-		
+
 			RecordWiz.createWiz(
 					function(atLeastOneRecordWasCreated)
-					{				
+					{
 				Debug.log("Done with Wizard! At least one record was successfully modified.",
 						Debug.INFO_PRIORITY);
 					},
 					recordsAlias);
-						
+
 		} //end init()
-				
+
 		//=====================================================================================
 		//extractGETParameters ~~
 		//	return false, if illegal params
-		function extractGETParameters() 
+		function extractGETParameters()
 		{
 			//extract get parameters
 			//		<recordsAlias> 		= Target record type, e.g. "Front-ends"
-			
+
 			var recordsAlias		= DesktopContent.getParameter(0,"recordAlias"); //"Front-ends"; //default to records
 			if(!recordsAlias) recordsAlias = "";
 			Debug.log("recordsAlias " + recordsAlias);
-			
+
 			return recordsAlias;
 		}	//end extractGETParameters()
-		
+
 	</script>
 </head>
-	
 
-<body onload='//init() called by DesktopContent.js'>	
-		
+
+<body onload='//init() called by DesktopContent.js'>
+
 	<!-- body content populated by javascript paint(), etc. -->
-	
+
 </body>
-	
+
 </html>

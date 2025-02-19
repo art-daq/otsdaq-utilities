@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License             *
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.         *
  ================================================================================*/
-   
+
 Ext.Loader.setConfig({enabled: true});
 
 Ext.Loader.setPath('Ext.ux', '../../../extjsLib-6/classic/ux');
@@ -38,13 +38,13 @@ Ext.require(
              'Ext.tree.*',
              'Ext.selection.*',
              'Ext.tab.Panel',
-             'Ext.ux.layout.Center'  
+             'Ext.ux.layout.Center'
             ]
            );
 //------------------------- General utility function ---------------------------
 // Retrieves the local URN number
-var getLocalURN = function(index,name) 
-{      
+var getLocalURN = function(index,name)
+{
  var params = (window.location.search.substr(1)).split('&');
  var splitted, vs;
  if(name)
@@ -52,17 +52,17 @@ var getLocalURN = function(index,name)
   for(index=0;index<params.length;++index)
   {
    splitted = params[index].indexOf('=');
-   if(splitted < 0) continue; 
+   if(splitted < 0) continue;
    vs = [params[index].substr(0,splitted),params[index].substr(splitted+1)];
    if(decodeURIComponent(vs[0]) == name) return decodeURIComponent(vs[1]);
   }
-  return; 
+  return;
  }
 
- if(index >= params.length) return; 
+ if(index >= params.length) return;
 
  splitted = params[index].indexOf('=');
- if(splitted < 0) return;     
+ if(splitted < 0) return;
  vs = [params[index].substr(0,splitted),params[index].substr(splitted+1)];
  return decodeURIComponent(vs[1]);
 }
@@ -70,9 +70,9 @@ var getLocalURN = function(index,name)
 //=====================================================================================================================
 Ext.onReady(
 function()
-{ 
+{
  Ext.tip.QuickTipManager.init();
- 
+
  function xmlKeysPrintout(fromWhere)
  {
       const e = new Error();
@@ -109,29 +109,29 @@ function()
                           "/Request?"                                                             ;
 
  //-----------------------------------------------------------------------------
- getXMLValue          = function(req, name) 
+ getXMLValue          = function(req, name)
                         {
-                         if(!name) return req.getAttribute("value");       
+                         if(!name) return req.getAttribute("value");
                          return getXMLAttributeValue(req,name,"value");
                         }
 
  //-----------------------------------------------------------------------------
- getXMLAttributeValue = function(req, name, attribute) 
+ getXMLAttributeValue = function(req, name, attribute)
                         {
                          var el;
                          if(el = getXMLNode(req,name)) return el.getAttribute(attribute);
-                         else if((name == "Error" )&& (!req || !req.responseXML)) 
-                          return "Unknown error occured "               + 
+                         else if((name == "Error" )&& (!req || !req.responseXML))
+                          return "Unknown error occured "               +
                                  "(XML response may have been illegal)!";
                          else
                           return undefined;
                         }
 
  //-----------------------------------------------------------------------------
- getXMLNode           = function(req, name) 
+ getXMLNode           = function(req, name)
                         {
                          var els;
-                         if(req && req.responseXML) 
+                         if(req && req.responseXML)
                                  req = req.responseXML;
                          if(req)
                          {
@@ -140,26 +140,26 @@ function()
                           if(els.length) return els[0];
                          }
 
-                         return undefined;       
+                         return undefined;
                         }
-              
+
  //-----------------------------------------------------------------------------
- getXMLNodes          = function(req, name) 
+ getXMLNodes          = function(req, name)
                         {
                          var els;
-                         if(req && req.responseXML) 
+                         if(req && req.responseXML)
                                  req = req.responseXML;
                          if(req)
                          {
                           return req.getElementsByTagName(name);
                          }
 
-                         return undefined;       
+                         return undefined;
                         }
-              
+
  //-----------------------------------------------------------------------------
  var store            = Ext.create(
-                                   'Ext.data.TreeStore',     
+                                   'Ext.data.TreeStore',
                                    {
                                     root : {
                                             expanded: true
@@ -170,10 +170,10 @@ function()
                                            }
                                    }
                                   );
-                          
+
  //-----------------------------------------------------------------------------
  var contentPanel     = Ext.create(
-                                   'Ext.panel.Panel',     
+                                   'Ext.panel.Panel',
                                    {
                                     title     : 'Canvas'          ,
                                     id        : 'content-panel'   ,
@@ -184,10 +184,10 @@ function()
                                     border    : true
                                    }
                                   );
-                    
+
  //-----------------------------------------------------------------------------
  var treePanel        = Ext.create(
-                                   'Ext.tree.Panel', 
+                                   'Ext.tree.Panel',
                                    {
                                     id         : 'tree-panel'     ,
                                     title      : 'Filesystem view',
@@ -204,65 +204,65 @@ function()
                                                    id       : 'provenance'    ,
                                                    text     : 'where'           ,
                                                    flex     : 1               ,
-                                                   dataIndex: 'fDisplayName' 
-                                                  }, 
-                                                  { 
+                                                   dataIndex: 'fDisplayName'
+                                                  },
+                                                  {
                                                    xtype    : 'treecolumn'    ,
                                                    hidden   : false           ,
                                                    text     : 'type'          ,
                                                    width    : 1               ,
-                                                   dataIndex: 'leaf'                 
-                                                  }, 
-                                                  { 
+                                                   dataIndex: 'leaf'
+                                                  },
+                                                  {
                                                    xtype    : 'treecolumn'    ,
                                                    hidden   : false           ,
                                                    text     : 'fSystemPath'   ,
                                                    width    : 1               ,
-                                                   dataIndex: 'fSystemPath'              
-                                                  }, 
-                                                  { 
+                                                   dataIndex: 'fSystemPath'
+                                                  },
+                                                  {
                                                    xtype    : 'treecolumn'    ,
                                                    hidden   : false           ,
                                                    text     : 'fRootPath'     ,
                                                    width    : 1               ,
-                                                   dataIndex: 'fRootPath'                
-                                                  }, 
-                                                  { 
+                                                   dataIndex: 'fRootPath'
+                                                  },
+                                                  {
                                                    xtype    : 'treecolumn'    ,
                                                    hidden   : false           ,
                                                    text     : 'fFoldersPath'  ,
                                                    width    : 1               ,
-                                                   dataIndex: 'fFoldersPath'             
-                                                  }, 
-                                                  { 
+                                                   dataIndex: 'fFoldersPath'
+                                                  },
+                                                  {
                                                     xtype    : 'treecolumn'   ,
                                                     hidden   : false          ,
                                                     text     : 'fFileName'    ,
                                                     width    : 1              ,
-                                                    dataIndex: 'fFileName'               
-                                                   }, 
-                                                   { 
+                                                    dataIndex: 'fFileName'
+                                                   },
+                                                   {
                                                     xtype    : 'treecolumn'   ,
                                                     hidden   : false          ,
                                                     text     : 'fRFoldersPath',
                                                     width    : 1              ,
-                                                    dataIndex: 'fRFoldersPath'           
-                                                   }, 
-                                                  { 
+                                                    dataIndex: 'fRFoldersPath'
+                                                   },
+                                                  {
                                                     xtype    : 'treecolumn'  ,
                                                     hidden   : false         ,
                                                     text     : 'fHistName'   ,
                                                     width    : 1             ,
-                                                    dataIndex: 'fHistName'               
+                                                    dataIndex: 'fHistName'
                                                    }
                                                  ],
                                     collapsible: true
                                    }
                                   );
-                                  
+
  //-----------------------------------------------------------------------------
  var ROOTFilesPanel   = Ext.create(
-                                   'Ext.tree.Panel', 
+                                   'Ext.tree.Panel',
                                    {
                                     id         : 'details-panel'                       ,
                                     title      : 'ROOT files contents'                 ,
@@ -277,7 +277,7 @@ function()
 
  //-----------------------------------------------------------------------------
 //  var activateControls = Ext.create(
-//                                    'Ext.Button', 
+//                                    'Ext.Button',
 //                                    {
 //                                     text   : 'Control buttons',
 //                                     region : 'south'          ,
@@ -288,43 +288,43 @@ function()
 //                                    }
 //                                   );
  var activateControls = Ext.create(
-                                   'Ext.panel.Panel', 
+                                   'Ext.panel.Panel',
                                    {
                                     title   : 'Control buttons',
                                     height  : 100,
                                     html    : "quarcheccosa"
                                    }
                                   );
-                                 
+
  //-----------------------------------------------------------------------------
  function createControlsWindow()
  {
   controlsWindow_  = Ext.create(
-                                'Ext.window.Window', 
+                                'Ext.window.Window',
                                 {
                                  title : 'Control panel',
                                  height: 400            ,
                                  width : 500            ,
-                                 items : {  
+                                 items : {
                                          }
                                 }
                                ).show() ;
  }
- //--------------------------------------------------------------------------------------------------------- 
+ //---------------------------------------------------------------------------------------------------------
  function createSources(dirs)
  {
   STDLINE("") ;
   theSources_ = Ext.create  (
-                             'Ext.data.Store', 
+                             'Ext.data.Store',
                              {
                               fields: ['abbr', 'dir'],
                               data  : dirs
                              }
                             );
   theSourcesCB_ = Ext.create(
-                             'Ext.form.ComboBox', 
+                             'Ext.form.ComboBox',
                              {
-                              id          : 'source'   ,    
+                              id          : 'source'   ,
                               fieldLabel  : 'Source:'  ,
                               labelWidth  : 45         ,
                               height      : 25         ,
@@ -343,13 +343,13 @@ function()
                                                           makeStore(fRootPath_, 'RequestType=getMeDirs') ;
                                                           makeGrid (fRootPath_, 'Directories and files') ;
                                                          },
-                                             focusleave: function (thisCombo) 
+                                             focusleave: function (thisCombo)
                                                          {
                                                           STDLINE('remove  selection listener') ;
                                                           thisCombo.suspendEvent('select')      ;
                                                           STDLINE('removed selection listener') ;
                                                          },
-                                             focusenter: function (thisCombo) 
+                                             focusenter: function (thisCombo)
                                                          {
                                                           STDLINE('reinstate  selection listener') ;
                                                           thisCombo.resumeEvent('select')          ;
@@ -362,10 +362,10 @@ function()
  }
  //-----------------------------------------------------------------------------
  function makeStore(path, reqType)
- { 
+ {
   xmlKeysPrintout("Sending parameters block to server")
   theStore_ = Ext.create(
-                         'Ext.data.TreeStore', 
+                         'Ext.data.TreeStore',
                          {
                           model    : 'DirectoriesDataModel',
                           id       : 'theStore',
@@ -377,8 +377,8 @@ function()
                                       type         : 'ajax',
                                       actionMethods: {
                                                       read          : 'POST'
-                                                     }, 
-                                      extraParams  : { 
+                                                     },
+                                      extraParams  : {
                                                       "CookieCode"  : _cookieCode   ,
                                                       "Path"        : path          , // used by Ryan's part
                                                       "fRootPath"   : fRootPath_    ,
@@ -394,7 +394,7 @@ function()
                                                      },
                                      },
                           listeners: {
-                                      beforeload : function(thisStore, operation, eOpts) 
+                                      beforeload : function(thisStore, operation, eOpts)
                                                    {
                                                     STDLINE("Request: "+_requestURL + reqType) ;
                                                    },
@@ -412,26 +412,26 @@ function()
  // This function serves two different purposes:
  // 1 - retrieve the heads of the filesystem directories where ROOT files reside
  // 2 - retrieve a specific ROOT file object to display on an Extjs canvas
- 
- function theAjaxRequest(theRequestURL,theParams,theRawData)                                                                   
- { 
+
+ function theAjaxRequest(theRequestURL,theParams,theRawData)
+ {
   var today = new Date();
   var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-  STDLINE("Ajax request issued to "+theRequestURL+ " at " + time) ;                                                                                                                                      
-  Ext.Ajax.request(                                                                                                                       
-                   {                                                                                                                      
-                    url    : theRequestURL,                                                                                               
-                    method : 'POST'       ,                                                                                                      
-                    headers: {                                                                                                            
-                              'Content-Type': 'text/plain;charset=UTF-8'                                                                  
-                             }            ,                                                                                                           
-                    params : theParams    ,                                                                                                          
-                    rawData: theRawData   ,                                                                                                  
-                    timeout: 50000        ,                                                                                                       
-                    success: function(response, request)                                                                                  
-                             { 
+  STDLINE("Ajax request issued to "+theRequestURL+ " at " + time) ;
+  Ext.Ajax.request(
+                   {
+                    url    : theRequestURL,
+                    method : 'POST'       ,
+                    headers: {
+                              'Content-Type': 'text/plain;charset=UTF-8'
+                             }            ,
+                    params : theParams    ,
+                    rawData: theRawData   ,
+                    timeout: 50000        ,
+                    success: function(response, request)
+                             {
                               STDLINE("Successful") ;
-                              if(getXMLValue(response,"headOfSearch") == 'located') // Returns the list of available fRooPaths                                                                     
+                              if(getXMLValue(response,"headOfSearch") == 'located') // Returns the list of available fRooPaths
                               { // Get list of head-points
                                 var dirs     = [] ;
                                var theNodes = getXMLNodes(response,'dir') ;
@@ -443,34 +443,34 @@ function()
                                }
 
                                createSources(dirs) ;
-                               var a = 0 ;                                                    
-                              }                                                                                                         
-                              else if(!(typeof getXMLValue(response,"rootType") == 'undefined')) // Returns the plot to display                                                                     
+                               var a = 0 ;
+                              }
+                              else if(!(typeof getXMLValue(response,"rootType") == 'undefined')) // Returns the plot to display
                               { // get specific ROOT Object and display
                                canvasPos_++ ;
-                               var rootName  = getXMLValue (response,"path"    );                                       
-                               var rootJSON  = getXMLValue (response,"rootJSON");                                   
-                               var object    = JSROOT.parse(rootJSON           );  
+                               var rootName  = getXMLValue (response,"path"    );
+                               var rootJSON  = getXMLValue (response,"rootJSON");
+                               var object    = JSROOT.parse(rootJSON           );
                                STDLINE("Launchin displayPlot")                  ;
                                activeObjects_.push(object) ;
 //                               displayPlot_() ; // This is to get an immediate response
                               }
-                             },                                                                                                           
-                    failure: function(response, options)                                                                                  
-                             {                                                                                                            
-                              var a = response ;                                                                                          
-                              Ext.MessageBox.alert(                                                                                       
-                                                   'Something went wrong:',                                                               
-                                                   'Response: ' + response.responseText                                                   
-                                                  );                                                                                      
-                             }                                                                                                            
-                   }                                                                                                                      
-           );                                                                                                
- } ;                                                                                                                                      
+                             },
+                    failure: function(response, options)
+                             {
+                              var a = response ;
+                              Ext.MessageBox.alert(
+                                                   'Something went wrong:',
+                                                   'Response: ' + response.responseText
+                                                  );
+                             }
+                   }
+           );
+ } ;
 
- //--------------------------------------------------------------------------------------------------------- 
+ //---------------------------------------------------------------------------------------------------------
  Ext.create(
-            'Ext.Viewport', 
+            'Ext.Viewport',
             {
              layout: 'border',
              title : "Template of Visualizer layout for FNAL's otsdaq ",
@@ -489,11 +489,11 @@ function()
                        collapsible: true                    ,
                        items      : [
                                      activateControls       ,
-                                     treePanel              , 
+                                     treePanel              ,
                                      ROOTFilesPanel         ,
                                      //theSourcesCB_
                                     ]
-                      }, 
+                      },
                       contentPanel
                      ],
                      renderTo     : 'goesHere'
@@ -502,11 +502,11 @@ function()
 
  theAjaxRequest(
                 _requestURL+"RequestType=getDirectoryContents",
-                {                                                            
-                 CookieCode: _cookieCode,                                   
-                 Path      : "/"                                 
-                }, 
+                {
+                 CookieCode: _cookieCode,
+                 Path      : "/"
+                },
                 ""
-               ) ;                                                          
+               ) ;
 
 });

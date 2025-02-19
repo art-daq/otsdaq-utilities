@@ -1,37 +1,37 @@
-	
+
 		body {
-			background-color: 		white; 
-			overflow: 				hidden;	
+			background-color: 		white;
+			overflow: 				hidden;
 		}
-		
+
 		b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 			color:					rgb(12, 10, 113);
 		}
-		
+
 		/* make buttons and links have a hand cursor */
 		input[type="button"], button, a, select {
 			cursor: 				pointer;
 		}
-		
+
 		.controlsPane {
-			position:				absolute;			
+			position:				absolute;
 			top:					-2px;
 			z-index:				1002;
 		}
-		
+
 		.controlsButton {
 			-webkit-user-select: 	none;
 			-moz-user-select: 		none;
 			user-select:			none;
-			
-			overflow: 				hidden;				
+
+			overflow: 				hidden;
 			cursor: 				pointer;
 			width: 					34px;
 			height: 				36px;
-			
+
 			background-color: 		rgb(202, 204, 210);
-			
-			
+
+
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 					rgb(150,150,150) 0 .1em 3px,
@@ -50,7 +50,7 @@
 			-moz-transform: 		translateY(.1em);
 			transform: 				translateY(.1em);
 		}
-				
+
 		#directoryNavToggleTop {
 			float: 					left;
 			width: 					10px;
@@ -89,39 +89,39 @@
 			height: 				5px;
 			margin: 				-7px 0px 0px 13px;
 		}
-				
+
 		#theGridCanvas, #theCanvas, #theActionCanvas, #preCanvas, #postCanvas {
 			position: 				absolute;
 			left: 					0;
 			top: 					0;
 		}
 		#theCanvas, #theActionCanvas {
-			z-index:				1000;			
+			z-index:				1000;
 		}
 		.node-point /*place on top of the canvas*/ {
 			z-index:				1001;
 		}
-				
+
 		.node {
 			position:				absolute;
 			cursor:					pointer;
 		}
-		
+
 		.node-box {
-			background-color : 		rgb(241, 231, 231);			
+			background-color : 		rgb(241, 231, 231);
 
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-			border-radius: 			3px;	
-			
+			border-radius: 			3px;
+
 			position:				absolute;
 			cursor:					pointer;
-			z-index:				1000; /*get above arrows*/					
+			z-index:				1000; /*get above arrows*/
 		}
-		
+
 		.node-box:hover {
 
 			background-color: 		rgb(230, 201, 201);
@@ -131,12 +131,12 @@
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-		}		
-		
+		}
+
 		.node-point {
 			background-color : 		rgb(206, 148, 148);
 			border:					3px solid rgb(132, 92, 92);
-			border-radius: 			9px;	
+			border-radius: 			9px;
 			width:					9px;
 			height:					9px;
 
@@ -145,16 +145,16 @@
 									rgba(200, 200, 200, 0.6) 0 0 3px,
 									rgba(200, 200, 200, 0.6) 0 0 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 0 5px;	/* drop shadow */
-			
+
 			position:				absolute;
 			cursor:					pointer;
 			display:				none;
 		}
-			
+
 		.node-point:hover {
 			background-color: 		rgb(230, 201, 201);
 		}
-		
+
 		.node-boxText {
 			width: 					100%;
 			text-align: 			center;
@@ -163,71 +163,71 @@
 			-webkit-user-select: 	none;
 			-moz-user-select: 		none;
 			user-select:			none;
-			
+
 			margin-top: 			43px;
 		}
-		
-		.node-headerText {		
+
+		.node-headerText {
 			-webkit-user-select: 	none;
 			-moz-user-select: 		none;
 			user-select:			none;
-			
+
 			text-align: 			center;
-			color: 					black;			
+			color: 					black;
 			font-size: 				10px;
 			position: 				absolute;
-			
+
 			white-space:			nowrap;
 			overflow:				hidden;
-			
+
 		}
 		.node-headerTextHover {
 			-webkit-user-select: 	auto;
 			-moz-user-select: 		auto;
 			user-select:			auto;
-						
+
 			z-index:				3000; /*get above arrows*/
-			
+
 
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .3em 5px;	/* drop shadow */
-									
+
 			background:				white;
 			padding:				5px;
 			overflow-x:				auto;
 		}
-		
+
 		#createNodeDiv {
-			background-color: 		rgb(195, 230, 193);	
+			background-color: 		rgb(195, 230, 193);
 			cursor:					pointer;
 			width: 					32px;
 			height: 				32px;
 			border-radius: 			32px;
 			border: 				0px solid rgb(6, 82, 9);
-			
+
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .3em 5px;	/* drop shadow */
-			
-			left:					-1000px;			
+
+			left:					-1000px;
 			position: 				absolute;
 		    z-index:				2000; 	/* to place on top of everything */
 		}
-		
+
 		#createNodeDiv:hover {
-			background-color: 		rgb(215, 255, 213);			
+			background-color: 		rgb(215, 255, 213);
 		}
 
 		#createNode {
 			margin: 				1px 16px -10px 8px;
 			float:					left;
-			
-			text-decoration: 		none;			
+
+			text-decoration: 		none;
 			font-size: 				30px;
 			font-weight: 			bold;
 			color: 					rgb(15, 152, 76);
@@ -236,23 +236,23 @@
 			-moz-user-select: 		none;
 			user-select:			none;
 		}
-		
+
 		#selectionBoxDiv {
 			border:					1px dashed gray;
-			
-			left:					-1000px;			
+
+			left:					-1000px;
 			position: 				absolute;
 			z-index:				2000;
 		}
 
 		.node-icon {
 			position:			absolute;
-			display:			none;	
+			display:			none;
 			z-index:			1001; /* same as node anchor points */
 			background-repeat:	no-repeat;
 		}
-				
-		.node-editIcon {			
+
+		.node-editIcon {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
 			width: 				24px;
 			height: 			20px;
@@ -264,8 +264,8 @@
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 			cursor: 			pointer;
 		}
-		
-		.node-deleteIcon {			
+
+		.node-deleteIcon {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 				16px;
 			height: 			20px;
@@ -276,7 +276,7 @@
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
 			cursor: 			pointer;
 		}
-		
+
 		.node-viewFclIcon {
 		    border: 			2px solid rgb(202, 204, 210);
 		    width: 				16px;
@@ -294,14 +294,14 @@
 		.node-viewFclIcon-line {
 			border-top: 		2px solid rgb(202, 204, 210);
 			border-bottom: 		2px solid rgb(202, 204, 210);
-			height: 			2px;			    
+			height: 			2px;
 			width:				12px;
 			float:				left;
 			margin:				3px 0 -1px 2px;
-		}    
+		}
 
 		.editNodeDialog-table {
-			margin-bottom: 		10px; 
+			margin-bottom: 		10px;
 			width:				400px;
 		}
 		.editNodeDialog-fieldCol {
@@ -316,7 +316,7 @@
 		#ConfigurationAPI-popUpDialog a b {
 			color: 				rgb(138, 99, 99) !important;
 		}
-		
+
 		.grid-plusMinusArrows {
 			position:			absolute;
 			z-index:			1001;
@@ -325,29 +325,29 @@
 		.grid-plusMinusArrows-arrow {
 			cursor:				pointer;
 		}
-		.grid-plusMinusArrows-arrow:hover 
-		.grid-plusMinusArrows-down-body, 
-		.grid-plusMinusArrows-arrow:hover 
-		.grid-plusMinusArrows-up-body, 
-		.grid-plusMinusArrows-arrow:hover 
-		.grid-plusMinusArrows-left-body, 
-		.grid-plusMinusArrows-arrow:hover 
+		.grid-plusMinusArrows-arrow:hover
+		.grid-plusMinusArrows-down-body,
+		.grid-plusMinusArrows-arrow:hover
+		.grid-plusMinusArrows-up-body,
+		.grid-plusMinusArrows-arrow:hover
+		.grid-plusMinusArrows-left-body,
+		.grid-plusMinusArrows-arrow:hover
 		.grid-plusMinusArrows-right-body {
-			background-color:	rgb(225, 227, 233);					
+			background-color:	rgb(225, 227, 233);
 		}
-		.grid-plusMinusArrows-arrow:hover 
+		.grid-plusMinusArrows-arrow:hover
 		.grid-plusMinusArrows-down-point {
 			border-top-color:	rgb(225, 227, 233);
 		}
-		.grid-plusMinusArrows-arrow:hover 
+		.grid-plusMinusArrows-arrow:hover
 		.grid-plusMinusArrows-up-point {
 			border-bottom-color:rgb(225, 227, 233);
 		}
-		.grid-plusMinusArrows-arrow:hover 
+		.grid-plusMinusArrows-arrow:hover
 		.grid-plusMinusArrows-left-point {
 			border-right-color:	rgb(225, 227, 233);
 		}
-		.grid-plusMinusArrows-arrow:hover 
+		.grid-plusMinusArrows-arrow:hover
 		.grid-plusMinusArrows-right-point {
 			border-left-color:	rgb(225, 227, 233);
 		}
@@ -376,57 +376,57 @@
 		}
 		.grid-plusMinusArrows-down-body,
 		.grid-plusMinusArrows-up-body {
-			display: 			block; 
-			margin-left: 		5px; 
+			display: 			block;
+			margin-left: 		5px;
 			height:				16px;
-			width: 				14px; 
+			width: 				14px;
 			background-color: 	rgb(202, 204, 210);
-		} 
+		}
 		.grid-plusMinusArrows-down-point {
-			display: 			block; 
-			width: 				0; 
+			display: 			block;
+			width: 				0;
 			height: 			0;
-			border-left: 		12px solid transparent; 
-			border-right: 		12px solid transparent; 
+			border-left: 		12px solid transparent;
+			border-right: 		12px solid transparent;
 			border-top: 		14px solid rgb(202, 204, 210);
 		}
 		.grid-plusMinusArrows-up-point {
-			display: 			block; 
-			width: 				0; 
+			display: 			block;
+			width: 				0;
 			height: 			0;
-			border-left: 		12px solid transparent; 
-			border-right: 		12px solid transparent; 
+			border-left: 		12px solid transparent;
+			border-right: 		12px solid transparent;
 			border-bottom: 		14px solid rgb(202, 204, 210);
 		}
 		.grid-plusMinusArrows-left-body,
 		.grid-plusMinusArrows-right-body {
 			display: 			block;
 			float:				left;
-			margin-top: 		5px; 
+			margin-top: 		5px;
 			height:				14px;
 			width: 				16px;
 			background-color: 	rgb(202, 204, 210);
-		} 
+		}
 		.grid-plusMinusArrows-left-point {
-			display: 			block; 
+			display: 			block;
 			float:				left;
-			width: 				0; 
+			width: 				0;
 			height: 			0;
-			border-top: 		12px solid transparent; 
-			border-bottom: 		12px solid transparent; 
+			border-top: 		12px solid transparent;
+			border-bottom: 		12px solid transparent;
 			border-right: 		14px solid rgb(202, 204, 210);
 		}
 		.grid-plusMinusArrows-right-point {
-			display: 			block; 
+			display: 			block;
 			float:				left;
-			width: 				0; 
+			width: 				0;
 			height: 			0;
-			border-top: 		12px solid transparent; 
-			border-bottom: 		12px solid transparent; 
+			border-top: 		12px solid transparent;
+			border-bottom: 		12px solid transparent;
 			border-left: 		14px solid rgb(202, 204, 210);
 		}
-		
-		.preloadImage {			
+
+		.preloadImage {
 			width: 				24px;
 			height: 			20px;
 			position:			absolute;
@@ -439,4 +439,3 @@
 		#preloadImage-treeEditIconHover {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 		}
-		

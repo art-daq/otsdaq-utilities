@@ -5,7 +5,7 @@
 		transition: 				background-color .25s;
 	}
 
-	* {			
+	* {
 		-webkit-user-select: 	none; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
 		-moz-user-select: 		none;
 		user-select:			none;
@@ -13,7 +13,7 @@
 	}
 
 	input {	/*normal highlight selecting effects on inputs*/
-		-webkit-user-select: 	auto; 
+		-webkit-user-select: 	auto;
 		-moz-user-select: 		auto;
 		user-select: 			auto;
 	}
@@ -32,7 +32,7 @@
 		clear: 						both;
 	}
 
-	.preloadImage {			
+	.preloadImage {
 		width: 						24px;
 		height: 					20px;
 		position:					absolute;
@@ -41,7 +41,7 @@
 		z-index:					1000;
 	}
 
-	.widgetEditIcon {			
+	.widgetEditIcon {
 		background-image: 			url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
 		width: 						24px;
 		height: 					20px;
@@ -50,15 +50,15 @@
 		cursor: 					pointer;
 	}
 
-	.widgetOtherEditIcon {		
+	.widgetOtherEditIcon {
 		margin: 					-24px -3px -25px -1px !important;
 	}
 
 	.widgetEditIcon:hover, #preloadImage-treeEditIconHover {
-		background-image: 			url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);		
+		background-image: 			url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 	}
 
-	.widgetDeleteIcon {			
+	.widgetDeleteIcon {
 		background-image: 			url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 		width: 						16px;
 		height: 					20px;
@@ -169,7 +169,7 @@
 		z-index:					150;
 		border: 					0;
 		transition: 				margin-left .25s;
-		
+
 		background: 				#90908a; /* For browsers that do not support gradients */
 		background: 				-webkit-linear-gradient(left, #000000 , #90908a); /* For Safari 5.1 to 6.0 */
 		background: 				-o-linear-gradient(right, #000000 , #90908a); /* For Opera 11.1 to 12.0 */
@@ -295,7 +295,7 @@
 	#popupSaveControlsPage {
 		display:					none;
 	}
-	
+
 	#popupSaveControlsPage h2 {
 		margin-top:					5px;
 	}
@@ -305,7 +305,7 @@
 	}
 
 	#popupSaveControlsPage button {
-		width:						100px;	
+		width:						100px;
 	}
 
 	#popupSaveControlsPage #makeControlsPagePublic {
@@ -348,7 +348,7 @@
 		border: 					10px solid rgb(255, 204, 0);
 		box-shadow: 				0px 10px 20px 10px rgba(0, 0, 0, 0.05) inset, 0px 0px 16px 10px rgba(255, 204, 0, 0.6);
 		-webkit-box-shadow: 		0px 10px 20px 10px rgba(0, 0, 0, 0.05) inset, 0px 0px 16px 10px rgba(255, 204, 0, 0.6);
-		-moz-box-shadow:			0px 10px 20px 10px rgba(0, 0, 0, 0.05) inset, 0px 0px 16px 10px rgba(255, 204, 0, 0.6);				
+		-moz-box-shadow:			0px 10px 20px 10px rgba(0, 0, 0, 0.05) inset, 0px 0px 16px 10px rgba(255, 204, 0, 0.6);
 	}
 
 	#addPVMenuDiv {
@@ -379,7 +379,7 @@
 	}
 
 	#hotkeyMenuDiv {
-		z-index: 					10;	
+		z-index: 					10;
 		margin: 					auto;
 		height: 					auto;
 		width: 						auto;
@@ -555,13 +555,13 @@
 		border-radius:				0 4px 4px 0;
 		border-right:				none;
 	}
-	
+
 	#navigationMenu {
 		position:					absolute;
 		left: 						4.5%;
 		top: 						1%;
 	}
-	
+
 	.navigationMenu--active {
 		display: 					block;
 		z-index: 					15;
@@ -571,12 +571,12 @@
 	}
 
 	.navigationMenu--Edit {
-        background-image: 			-webkit-gradient(linear, left bottom, left top, color-stop(0, #3F3F3F), color-stop(0.5, #383838), color-stop(0.51, #     434343), color-stop(1, #555555));   
-        background-image: 			-moz-linear-gradient(center bottom, #3F3F3F 0%, #383838 50%, #434343 51%, #555555 100% );
-        background-color:			#383838;
-        -moz-box-shadow: 			inset 0 0 5px 5px #535353;
-        -webkit-box-shadow: 		inset 0 0 5px 5px #535353;
-        box-shadow: 				inset 0 0 5px 5px #535353;
+		background-image: 			-webkit-gradient(linear, left bottom, left top, color-stop(0, #3F3F3F), color-stop(0.5, #383838), color-stop(0.51, #     434343), color-stop(1, #555555));
+		background-image: 			-moz-linear-gradient(center bottom, #3F3F3F 0%, #383838 50%, #434343 51%, #555555 100% );
+		background-color:			#383838;
+		-moz-box-shadow: 			inset 0 0 5px 5px #535353;
+		-webkit-box-shadow: 		inset 0 0 5px 5px #535353;
+		box-shadow: 				inset 0 0 5px 5px #535353;
 	}
 
 	.editWidgetAttributesPopup-container {
@@ -587,18 +587,18 @@
 		left: 						10%;
 		background-color: 			rgba(0, 0, 0, 0.8);
 		border: 					1px solid #888;
-	    width: 						80%;
+		width: 						80%;
 		height: 					80%;
-	    box-shadow: 				0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+		box-shadow: 				0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
 		-webkit-animation-name: 	animatetop;
 		-webkit-animation-duration: 0.4s;
 		-moz-animation-name: 		animatetop;
 		-moz-animation-duration: 	0.4s;
 		animation-name: 			animatetop;
- 	    animation-duration: 		0.4s;
+		animation-duration: 		0.4s;
 	}
 
-	.editWidgetAttributesPopup-container * {	
+	.editWidgetAttributesPopup-container * {
 		-webkit-user-select: 		none; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
 		-moz-user-select: 			none;
 		user-select:				none;
@@ -672,12 +672,12 @@
 
 	.editPopupButton:hover,
 	.editPopupButton.hover {
-	    box-shadow: 				inset 0 0 0 1px #262626,0 5px 15px #191919;
+		box-shadow: 				inset 0 0 0 1px #262626,0 5px 15px #191919;
 	}
 
 	.editPopupButton:active,
 	.editPopupButton.active {
-	    box-shadow: 				inset 0 0 0 1px #262626, inset 0 5px 30px #191919;
+		box-shadow: 				inset 0 0 0 1px #262626, inset 0 5px 30px #191919;
 	}
 
 	.widgetPopupTable {
@@ -691,75 +691,75 @@
 	}
 
 	tr.widgetPopupTable {
-	    background-color: 			rgba(154,154,154,0.8);
+		background-color: 			rgba(154,154,154,0.8);
 	}
-	
+
 	tr:nth-child(even).widgetPopupTable {
-	    background-color: 			rgba(198,198,198, 0.8);
+		background-color: 			rgba(198,198,198, 0.8);
 	}
 
 	td.widgetPopupTable {
-	    border: 					1px solid rgba(154,154,154,0.8);
+		border: 					1px solid rgba(154,154,154,0.8);
 	}
 
 	/* Animations */
 	@-webkit-keyframes animatetop {
-	    from {
-	    	top: 					-300px; 
-	    	opacity: 				0;
-	    } 
-	    to {
-	    	top: 					1%; 
-	    	opacity: 				1;
-	    }
+		from {
+			top: 					-300px;
+			opacity: 				0;
+		}
+		to {
+			top: 					1%;
+			opacity: 				1;
+		}
 	}
 	@-moz-keyframes animatetop {
-	    from {
-	    	top: 					-300px;
-	    	opacity: 				0;
-	    }
-	    to {
-	    	top: 					1%; 
-	    	opacity: 				1;
-	    }
+		from {
+			top: 					-300px;
+			opacity: 				0;
+		}
+		to {
+			top: 					1%;
+			opacity: 				1;
+		}
 	}
 	@keyframes animatetop {
-	    from {
-	    	top: 					-300px;
-	    	opacity: 				0;
-	    }
-	    to {
-	    	top: 					1%;
-	    	opacity:				1;
-	    }
+		from {
+			top: 					-300px;
+			opacity: 				0;
+		}
+		to {
+			top: 					1%;
+			opacity:				1;
+		}
 	}
 	/* Fade in animation (Webkit only) */
 	@-webkit-keyframes showMenu {
-	    from {
-	    	top:					-20px;
-	    	opacity: 				0; 
-	    }
-	    to   { 
-	    	opacity: 				1;
-	    }
+		from {
+			top:					-20px;
+			opacity: 				0;
+		}
+		to   {
+			opacity: 				1;
+		}
 	}
 	@-moz-keyframes animatetop {
 		from {
 			top:					-20px;
-			opacity: 				0; 
+			opacity: 				0;
 		}
-	    to   { 
-	    	opacity: 				1;
-	    }
+		to   {
+			opacity: 				1;
+		}
 	}
 	@keyframes animatetop {
 		from {
 			top:					-20px;
 			opacity: 				0;
 		}
-	    to   {
-	    	opacity: 				1; 
-	    }
+		to   {
+			opacity: 				1;
+		}
 	}
 
 	.pane {
@@ -787,7 +787,7 @@
 	.tabWidgetSelectButton {
 		color:						red;
 		background-color: 			darkblue;
-		
+
 		padding:					5px 10px;
 		border-radius:				10px 10px 0 0;
 		border:						1px solid white;
@@ -804,11 +804,11 @@
 
 	}
 
-	.tabWidgetBody { 
+	.tabWidgetBody {
 		background-color: 			lightblue;
 		height: 					100%;
 		position:					relative; /* so that scroll considers all absolute-positioned children */
 		overflow:					auto;
 		z-index: 					49;
-    	color: 						rgb(72 119 148);
+		color: 						rgb(72 119 148);
 	}

@@ -3,7 +3,7 @@
 	<head>
 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<script type="text/javascript" src="./Rotating3DFiles/webgl-utils.js"></script>	
+<script type="text/javascript" src="./Rotating3DFiles/webgl-utils.js"></script>
 <script type="text/javascript" src="./Rotating3DFiles/glMatrix-0.9.5.min.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
@@ -12,32 +12,32 @@
 <script type="text/JavaScript" src="https://developer.mozilla.org/samples/webgl/sample2/glUtils.js"></script>
 
 
-    <script id="shader-fs" type="x-shader/x-fragment">
+	<script id="shader-fs" type="x-shader/x-fragment">
 		precision mediump float; 					//precision set to medium because of support. Many mobile devices cannot handle high precision
-		
+
 		void main(void) {
 			gl_FragColor = vec4(0.0, 4.0, 0.0, 1.0);	//establishes green as the color of drawn objects
 		}
 		 </script>
-		    
-		    <!-- Vertex shader program -->
-		    
-		    <script id="shader-vs" type="x-shader/x-vertex">
-		      attribute vec3 aVertexPosition;
-		    
-		      uniform mat4 uMVMatrix;
-		      uniform mat4 uPMatrix;
-		    
-		      void main(void) {
-		        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-		      }
-		    </script>  
-    
-<script type="text/javascript">        
 
-/// NOTE!!! Server requests go to 
+			<!-- Vertex shader program -->
+
+			<script id="shader-vs" type="x-shader/x-vertex">
+			  attribute vec3 aVertexPosition;
+
+			  uniform mat4 uMVMatrix;
+			  uniform mat4 uPMatrix;
+
+			  void main(void) {
+				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+			  }
+			</script>
+
+<script type="text/javascript">
+
+/// NOTE!!! Server requests go to
 //				Supervisor/src/common/Supervisor.cc
-//				line 1200 
+//				line 1200
 // 				void Supervisor::request(xgi::Input * in, xgi::Output * out )  throw (xgi::exception::Exception)
 //					request names: getGeometry and get3dData
 
@@ -54,10 +54,10 @@
 	var _lineCoordinates;
 
 	var _vertices = [100000.000000,10000.000000,-15000.000000,
-	                 80979.000000,23820.000000,-15000.000000,
-	                 88244.000000,46180.000000,-15000.000000,
-	                 111756.000000,46180.000000,-15000.000000,
-	                 119021.000000,23820.000000,-15000.000000 ];
+					 80979.000000,23820.000000,-15000.000000,
+					 88244.000000,46180.000000,-15000.000000,
+					 111756.000000,46180.000000,-15000.000000,
+					 119021.000000,23820.000000,-15000.000000 ];
 	var _startStopTimeInterval;
 	var _geometryVertices;
 	var _rotationGeometry = 100;
@@ -66,60 +66,60 @@
 	var _zAxisRotation = -10000;
 	var _localGeometry = [];
 	var _toggle = 0;
-	
-    var pitch = 0;
-    var pitchRate = 0;
 
-    var yaw = 0;
-    var yawRate = 0;
+	var pitch = 0;
+	var pitchRate = 0;
 
-    var xPos = 0;
-    var yPos = 0.4;
-    var zPos = -10000;
+	var yaw = 0;
+	var yawRate = 0;
 
-    var speed = 0;
-	
+	var xPos = 0;
+	var yPos = 0.4;
+	var zPos = -10000;
+
+	var speed = 0;
+
 	//
 	// start
 	//
 	//
 	function js_init() {
-		_canvas = document.getElementById("Rotating3D");		
-		
+		_canvas = document.getElementById("Rotating3D");
+
 		initWebGL(_canvas);      // Initialize the _gl context
-		  
+
 		// Only continue if WebGL is available and working
-		  
-		
-		    _gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+
+
+			_gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 			_gl.clearDepth(1.0);                 // Clear everything
 			_gl.enable(_gl.DEPTH_TEST);           // Enable depth testing
 			_gl.depthFunc(_gl.LEQUAL);            // Near things obscure far things
-			
+
 			// Initialize the shaders; this is where all the lighting for the
 			// vertices and so forth is established.
-			
+
 			initShaders();
-////			
+////
 ////			// Here's where we call the routine that builds all the objects
 ////			// we'll be drawing.
-////			
+////
 			initBuffers();
-			
+
 			// Set up to draw the scene periodically.
 			_canvas.width = window.innerWidth;
-			_canvas.height = window.innerHeight;   
-		    _canvas.onmousedown = handleMouseDown;
-	        document.onkeydown = handleKeys;
+			_canvas.height = window.innerHeight;
+			_canvas.onmousedown = handleMouseDown;
+			document.onkeydown = handleKeys;
 //	        drawScene(_vertices);
-	        getGeometryFromServer ();
+			getGeometryFromServer ();
 
-	        _startStopTimeInterval=setInterval(function(){tick()}, 1000);
-			
+			_startStopTimeInterval=setInterval(function(){tick()}, 1000);
+
 //	        tick ();
-		
+
 	}
-	
+
 	//
 	// initWebGL
 	//
@@ -128,12 +128,12 @@
 	//
 	function initWebGL() {
 		_gl = null;
-		
+
 		_gl = WebGLUtils.setupWebGL(_canvas);
 
-		
+
 		// If we don't have a _gl context, give up now
-		
+
 		if (!_gl) {
 			alert("Unable to initialize WebGL. Your browser may not support it.");
 		}
@@ -146,49 +146,49 @@
 	// one object -- a simple two-dimensional square.
 	//
 	function initBuffers() {
-	  	
+
 		// Create a buffer for the square's vertices.
-		
+
 		_verticesBuffer = _gl.createBuffer();
-		
+
 		// Select the _verticesBuffer as the one to apply vertex
 		// operations to from here out.
-		
+
 		_gl.bindBuffer(_gl.ARRAY_BUFFER, _verticesBuffer);
-		
+
 		// Now create an array of vertices for the square. Note that the Z
 		// coordinate is always 0 here.
-		
-		
-		
+
+
+
 		// Now pass the list of vertices into WebGL to build the shape. We
 		// do this by creating a Float32Array from the JavaScript array,
 		// then use it to fill the current vertex buffer.
-		
+
 //		_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(_vertices), _gl.STATIC_DRAW);
 	}
-	
-	
+
+
 	//
 	// drawScene
 	//
 	// Draw the scene.
 	//
 
-	
+
 	function drawScene(coordinates) {
 
-		
+
 		_vertices = coordinates;
-		_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(_vertices), _gl.STATIC_DRAW);		
-		
+		_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(_vertices), _gl.STATIC_DRAW);
+
 		Debug.log ("drawScene(vertices) = " + _vertices);
 		//size canvas to window
 
-		
+
 		// Clear the _canvas before we start drawing on it.
 
-		
+
 		// Establish the perspective with which we want to view the
 		// scene. Our field of view is 45 degrees, with a width/height
 		// ratio, and we only want to see objects between 0.1 units
@@ -198,14 +198,14 @@
 		loadIdentity();
 		// Set the drawing position to the "identity" point, which is
 		// the center of the scene.
-		
+
 		mat4.identity(_mvMatrix);
 		mvTranslate([0.0, 0.0, 20000.0]);
-		
-		
+
+
 		// Now move the drawing position a bit to where we want to start
 		// drawing the square.
-		
+
 //		mvPushMatrix();
 //	    mat4.rotate(_mvMatrix, degToRad(-pitch), [1, 0, 0]);
 //	    mat4.rotate(_mvMatrix, degToRad(-yaw), [0, 1, 0]);
@@ -214,17 +214,17 @@
 //		_glRotatef(_rotationGeometry, 0.0f, 1.0f, 0.0f);
 		// Draw the square by binding the array buffer to the square's vertices
 		// array, setting attributes, and pushing it to _gl.
-	
+
 		_gl.bindBuffer(_gl.ARRAY_BUFFER, _verticesBuffer);
 		_gl.vertexAttribPointer(_vertexPositionAttribute, 3, _gl.FLOAT, false, 0, 0);
 		setMatrixUniforms();
-		_gl.drawArrays(_gl.LINE_LOOP, 0, _vertices.length/3);		
+		_gl.drawArrays(_gl.LINE_LOOP, 0, _vertices.length/3);
 		//draw the arrays mentioned above and start with the 0th and end with the numItems'th
-		
+
 //		mvPopMatrix();
-	
+
 	}
-	
+
 	function loadIdentity() {
 		  _mvMatrix = Matrix.I(4);
 		}
@@ -243,7 +243,7 @@
 			  var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 			  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 			}
-		
+
 	//
 	// initShaders
 	//
@@ -252,25 +252,25 @@
 	function initShaders() {
 	  var fragmentShader = getShader(_gl, "shader-fs");
 	  var vertexShader = getShader(_gl, "shader-vs");
-	  
+
 	  // Create the shader program
-	  
+
 	  _shaderTool = _gl.createProgram();
 	  _gl.attachShader(_shaderTool, vertexShader);
 	  _gl.attachShader(_shaderTool, fragmentShader);
 	  _gl.linkProgram(_shaderTool);
-	  
+
 	  // If creating the shader program failed, alert
-	  
+
 	  if (!_gl.getProgramParameter(_shaderTool, _gl.LINK_STATUS)) {
-	    alert("Unable to initialize the shader program.");
+		alert("Unable to initialize the shader program.");
 	  }
-	  
+
 	  _gl.useProgram(_shaderTool);
-	  
+
 	  _vertexPositionAttribute = _gl.getAttribLocation(_shaderTool, "aVertexPosition");
 	  _gl.enableVertexAttribArray(_vertexPositionAttribute);
-//	  
+//
 //      _shaderTool.pMatrixUniform = _gl.getUniformLocation(_shaderTool, "uPMatrix");
 //      _shaderTool.mvMatrixUniform = _gl.getUniformLocation(_shaderTool, "uMVMatrix");
 	}
@@ -281,10 +281,10 @@
 //    }
 
 
-    function degToRad(degrees) {
-        return degrees * Math.PI / 180;
-    }
-	
+	function degToRad(degrees) {
+		return degrees * Math.PI / 180;
+	}
+
 	//
 	// getShader
 	//
@@ -293,60 +293,60 @@
 	//
 	function getShader(_gl, id) {
 	  var shaderScript = document.getElementById(id);
-	  
+
 	  // Didn't find an element with the specified ID; abort.
-	  
+
 	  if (!shaderScript) {
-	    return null;
+		return null;
 	  }
-	  
+
 	  // Walk through the source element's children, building the
 	  // shader source string.
-	  
+
 	  var theSource = "";
 	  var currentChild = shaderScript.firstChild;
-	  
+
 	  while(currentChild) {
-	    if (currentChild.nodeType == 3) {
-	      theSource += currentChild.textContent;
-	    }
-	    
-	    currentChild = currentChild.nextSibling;
+		if (currentChild.nodeType == 3) {
+		  theSource += currentChild.textContent;
+		}
+
+		currentChild = currentChild.nextSibling;
 	  }
-	  
+
 	  // Now figure out what type of shader script we have,
 	  // based on its MIME type.
-	  
+
 	  var shader;
-	  
+
 	  if (shaderScript.type == "x-shader/x-fragment") {
-	    shader = _gl.createShader(_gl.FRAGMENT_SHADER);
+		shader = _gl.createShader(_gl.FRAGMENT_SHADER);
 	  } else if (shaderScript.type == "x-shader/x-vertex") {
-	    shader = _gl.createShader(_gl.VERTEX_SHADER);
+		shader = _gl.createShader(_gl.VERTEX_SHADER);
 	  } else {
-	    return null;  // Unknown shader type
+		return null;  // Unknown shader type
 	  }
-	  
+
 	  // Send the source to the shader object
-	  
+
 	  _gl.shaderSource(shader, theSource);
-	  
+
 	  // Compile the shader program
-	  
+
 	  _gl.compileShader(shader);
-	  
+
 	  // See if it compiled successfully
-	  
+
 	  if (!_gl.getShaderParameter(shader, _gl.COMPILE_STATUS)) {
-	    alert("An error occurred compiling the shaders: " + _gl.getShaderInfoLog(shader));
-	    return null;
+		alert("An error occurred compiling the shaders: " + _gl.getShaderInfoLog(shader));
+		return null;
 	  }
-	  
+
 	  return shader;
 	}
-	
 
-	
+
+
 
 	//Responsible for handling the DAQ from server
 	//import the data and store as local variable _Coordinates
@@ -354,24 +354,24 @@
 	//ignores the data if it is a repeat
 	//passes it to drawLines if it is new Data
 //	function DAQHandler () {
-//		
-//		__startStopTimeInterval=SetTimeInterval(getDataFromServer, 1);	
+//
+//		__startStopTimeInterval=SetTimeInterval(getDataFromServer, 1);
 //		return _Coordinates;
 //		if (_Coordinates == _vertices){
 //			return null;
 //		}else if (_Coordinate.length/3 == 4){
 //			_Coordinates = _vertices;
 //			drawSquares(_vertices);
-//			
+//
 //		}
 //		else {
 //			_Coordinates = _vertices;
 //			drawScene(_vertices);
 //		}
-//		
-//		
+//
+//
 //	}
-//	
+//
 	function getDataFromServer () {
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=get3dData", "", get3dDataHandler);
@@ -380,18 +380,18 @@
 	}
 
 	function get3dDataHandler (req) {
-	    Debug.log("Rotating3d get3dDataHandler " + req.responseText);
-	    
-	    
-		
+		Debug.log("Rotating3d get3dDataHandler " + req.responseText);
+
+
+
 	}
-	
+
 	function getGeometryFromServer () {
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=getGeometry", "", getGeometryHandler);
 	}
 
-	
+
 	//getGeometryHandler ~~
 	//	Geometry Format:
 	//	<geometry>
@@ -404,36 +404,36 @@
 	//			</xyz_point>
 	//			<xyz_point>...
 	//		</object>
-	//		<object>....	
+	//		<object>....
 	//	</geometry>
 	function getGeometryHandler (req) {
-	    Debug.log("Rotating3d get3dDataHandler " + req.responseText);
-	    
-	    //_coordinates
+		Debug.log("Rotating3d get3dDataHandler " + req.responseText);
+
+		//_coordinates
 		var objects = req.responseXML.getElementsByTagName("object");
-		
+
 		//_coordinates = [];
-		
+
 		var locObjects = [];
-		
-		//if () then 
+
+		//if () then
 		//else if()
 		//else
 		//
-		
+
 		// i += 2
 		// i -= 4
 		// i /= 3
 		// i *= 2  ==> i = i * 2
-		
+
 		//C++ int, float (32 bit) , double, char
-		
-		
-		//for(       var i = 0       ;      i < 5            ;     i = i + 1         ) 
+
+
+		//for(       var i = 0       ;      i < 5            ;     i = i + 1         )
 		//{
-				
+
 				//
-				//...actions 
+				//...actions
 				//
 				//drawScene()
 		//}
@@ -441,61 +441,61 @@
 		// var i = 0;
 		// while (  i < 5            )
 		// {
-		
+
 		//		i++;
 		// }
-		
-		
-		// do 
+
+
+		// do
 		// {
-		
+
 		// } while (   )
-		
-		
+
+
 		//for each object, get type and all xyz points
-        for(var i=0;i<objects.length;++i)
-        {
-        	var objectType = objects[i].getElementsByTagName("object_type");
-    	    Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
-        	var xyzPoints = objects[i].getElementsByTagName("xyz_point");
+		for(var i=0;i<objects.length;++i)
+		{
+			var objectType = objects[i].getElementsByTagName("object_type");
+			Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
+			var xyzPoints = objects[i].getElementsByTagName("xyz_point");
 
-    		var locPoints = [];
-    		locObjects[locObjects.length] = locPoints;
-        	
-            for(var j=0;j<xyzPoints.length;++j)
-            {
-            	locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
-            }
+			var locPoints = [];
+			locObjects[locObjects.length] = locPoints;
 
-    	    Debug.log("Rotating3d get3dDataHandler _coordinates " + locObjects[locObjects.length-1]);
-        }
+			for(var j=0;j<xyzPoints.length;++j)
+			{
+				locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
+			}
 
-	    Debug.log("Rotating3d get3dDataHandler locObjects " + locObjects);
-        _geometryVertices = locObjects;
-        _localRotationGeometry = _geometryVertices;
-	    //[
-	    	//[points to object 0]
-	    	//[points to object 1]
-	    //]
-	    
-	   
+			Debug.log("Rotating3d get3dDataHandler _coordinates " + locObjects[locObjects.length-1]);
+		}
+
+		Debug.log("Rotating3d get3dDataHandler locObjects " + locObjects);
+		_geometryVertices = locObjects;
+		_localRotationGeometry = _geometryVertices;
+		//[
+			//[points to object 0]
+			//[points to object 1]
+		//]
+
+
 	 // Initialize the shaders; this is where all the lighting for the
 		// vertices and so forth is established.
-		
 
-	    
-	    
-	    //Debug.log (locObjects); //prints out [Array[12], Array[12]]
-	    
-//		drawGeometry();		
+
+
+
+		//Debug.log (locObjects); //prints out [Array[12], Array[12]]
+
+//		drawGeometry();
 	}
 function drawGeometry() {
-		
+
 		//_vertices = vertices;
 
-		
+
 		var arr = _geometryVertices;
-		           
+
 		for(var l=0; l < arr.length; ++l)
 		{
 			_vertices = arr[l];
@@ -504,142 +504,142 @@ function drawGeometry() {
 			animate();
 			drawScene(_vertices);
 		}
-	
-		
+
+
 
 		Debug.log("function drawGeometry = called & working");
-	  
-	
+
+
 	}
 function degToRad(degrees) {
-    return degrees * Math.PI / 180;
+	return degrees * Math.PI / 180;
 }
 var lastTime = 0;
 
 
 function animate() {
-    var timeNow = new Date().getTime();
-    if (lastTime != 0) {
-        var elapsed = timeNow - lastTime;
+	var timeNow = new Date().getTime();
+	if (lastTime != 0) {
+		var elapsed = timeNow - lastTime;
 
-        if (speed != 0) {
-            xPos -= Math.sin(degToRad(yaw)) * speed * elapsed * 5000;
-            zPos -= Math.cos(degToRad(yaw)) * speed * elapsed * 5000;
-        }
+		if (speed != 0) {
+			xPos -= Math.sin(degToRad(yaw)) * speed * elapsed * 5000;
+			zPos -= Math.cos(degToRad(yaw)) * speed * elapsed * 5000;
+		}
 
-        yaw += yawRate * elapsed;
-        pitch += pitchRate * elapsed;
+		yaw += yawRate * elapsed;
+		pitch += pitchRate * elapsed;
 
-    }
-    lastTime = timeNow;
+	}
+	lastTime = timeNow;
 }
 
 
 	var _toggle = 0;
 	function handleMouseDown(event) {
-	    mouseDown = true;
+		mouseDown = true;
 
-	    if (_toggle == 0){
-	    	clearInterval(_startStopTimeInterval);
-	    	_toggle = 1;
-	    	alert("Rotation of 3D World = Paused");
-	    	Debug.log("Rotation of 3D World = Paused");
-	    } else if (_toggle == 1){
-	        _startStopTimeInterval = setInterval(function(){tick()}, 1000);
-	    	_toggle = 0;
-	    	alert("Rotation of 3D World = Unpaused");
-	    	Debug.log ("Rotation of 3D World = Unpaused");
-	    }
-	    
+		if (_toggle == 0){
+			clearInterval(_startStopTimeInterval);
+			_toggle = 1;
+			alert("Rotation of 3D World = Paused");
+			Debug.log("Rotation of 3D World = Paused");
+		} else if (_toggle == 1){
+			_startStopTimeInterval = setInterval(function(){tick()}, 1000);
+			_toggle = 0;
+			alert("Rotation of 3D World = Unpaused");
+			Debug.log ("Rotation of 3D World = Unpaused");
+		}
+
 	}
-	
+
 //	function rotateTheWorld();
-    var currentlyPressedKeys = {};
+	var currentlyPressedKeys = {};
 
-    function handleKeyDown(event) {
-        currentlyPressedKeys[event.keyCode] = true;
-        Debug.log (event.keyCode);
-    }
+	function handleKeyDown(event) {
+		currentlyPressedKeys[event.keyCode] = true;
+		Debug.log (event.keyCode);
+	}
 
 
-    function handleKeyUp(event) {
-    	currentlyPressedKeys[event.keyCode] = false;
-    }
-	
-	
+	function handleKeyUp(event) {
+		currentlyPressedKeys[event.keyCode] = false;
+	}
+
+
 	  function handleKeys(event) {
-		  
-	      if (event.keyCode == 71){
-	        	//G
-	        	alert("Getting Geometry for server!");
-	        	getGeometryFromServer ();
-	        	drawGeometry();
-	        }
-	        if (event.keyCode == 72) {
-	        	//H
-	        	alert("Opening Help Window");
-	        	window.open("https://docs.google.com/document/d/1Mw4HByYfLo1bO5Hy9npDWkD4CFxa9xNsYZ5pJ7qwaTM/edit?pli=1");
-	        }
-	        if (event.keyCode == 67){
-	        	//C
+
+		  if (event.keyCode == 71){
+				//G
+				alert("Getting Geometry for server!");
+				getGeometryFromServer ();
+				drawGeometry();
+			}
+			if (event.keyCode == 72) {
+				//H
+				alert("Opening Help Window");
+				window.open("https://docs.google.com/document/d/1Mw4HByYfLo1bO5Hy9npDWkD4CFxa9xNsYZ5pJ7qwaTM/edit?pli=1");
+			}
+			if (event.keyCode == 67){
+				//C
 				Debug.log("windowResize = working");
 				_canvas.width = window.innerWidth;
 				_canvas.height = window.innerHeight;
-			    _gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+				_gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 				_gl.clearDepth(1.0);                 // Clear everything
 				_gl.enable(_gl.DEPTH_TEST);           // Enable depth testing
 				_gl.depthFunc(_gl.LEQUAL);            // Near things obscure far things
-		        _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
-	        }if (event.keyCode == 80){
-	        	//P
-	    	    if (_toggle == 0){
-	    	    	clearInterval(_startStopTimeInterval);
-	    	    	_toggle = 1;
-	    	    	alert("Rotation of 3D World = Paused");
-	    	    	Debug.log("Rotation of 3D World = Paused");
-	    	    } else if (_toggle == 1){
-	    	        _startStopTimeInterval=setInterval(tick(), 1000);
-	    	    	_toggle = 0;
-	    	    	alert("Rotation of 3D World = Unpaused");
-	    	    	Debug.log ("Rotation of 3D World = Unpaused");
-	    	    }
-	        }   
-	            if (event.keyCode == 33) {
-	                // Page Up
-	                pitchRate = 0.1;
-	                Debug.log("Pitchrate = 0.1"); 
-	            } else if (event.keyCode == 34) {
-	                // Page Down
-	                pitchRate = -0.1;
-	                Debug.log("Pitchrate = -0.1");
-	            } else {
-	                pitchRate = 0;
-	            }
+				_gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
+			}if (event.keyCode == 80){
+				//P
+				if (_toggle == 0){
+					clearInterval(_startStopTimeInterval);
+					_toggle = 1;
+					alert("Rotation of 3D World = Paused");
+					Debug.log("Rotation of 3D World = Paused");
+				} else if (_toggle == 1){
+					_startStopTimeInterval=setInterval(tick(), 1000);
+					_toggle = 0;
+					alert("Rotation of 3D World = Unpaused");
+					Debug.log ("Rotation of 3D World = Unpaused");
+				}
+			}
+				if (event.keyCode == 33) {
+					// Page Up
+					pitchRate = 0.1;
+					Debug.log("Pitchrate = 0.1");
+				} else if (event.keyCode == 34) {
+					// Page Down
+					pitchRate = -0.1;
+					Debug.log("Pitchrate = -0.1");
+				} else {
+					pitchRate = 0;
+				}
 
-	            if (event.keyCode == 37 || event.keyCode == 65) {
-	                // Left cursor key or A
-	                yawRate = 0.1;
-	                Debug.log("yawRate = 0.1");
-	            } else if (event.keyCode == 39 || event.keyCode == 68) {
-	                // Right cursor key or D
-	                yawRate = -0.1;
-	                Debug.log("yawRate = -0.1");
-	            } else {
-	                yawRate = 0;
-	            }
+				if (event.keyCode == 37 || event.keyCode == 65) {
+					// Left cursor key or A
+					yawRate = 0.1;
+					Debug.log("yawRate = 0.1");
+				} else if (event.keyCode == 39 || event.keyCode == 68) {
+					// Right cursor key or D
+					yawRate = -0.1;
+					Debug.log("yawRate = -0.1");
+				} else {
+					yawRate = 0;
+				}
 
-	            if (event.keyCode == 38 || event.keyCode == 87) {
-	                // Up cursor key or W
-	                speed = 0.003;
-	                Debug.log("speed = 0.003");
-	            } else if (event.keyCode == 40 || event.keyCode == 83) {
-	                // Down cursor key
-	                speed = -0.003;
-	                Debug.log("speed = -0.003");
-	            } else {
-	                speed = 0;
-	            }
-	        
+				if (event.keyCode == 38 || event.keyCode == 87) {
+					// Up cursor key or W
+					speed = 0.003;
+					Debug.log("speed = 0.003");
+				} else if (event.keyCode == 40 || event.keyCode == 83) {
+					// Down cursor key
+					speed = -0.003;
+					Debug.log("speed = -0.003");
+				} else {
+					speed = 0;
+				}
+
 	  }
 
 
@@ -647,27 +647,27 @@ function animate() {
 			Debug.log("windowResize = working");
 			_canvas.width = window.innerWidth;
 			_canvas.height = window.innerHeight;
-		    _gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+			_gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 			_gl.clearDepth(1.0);                 // Clear everything
 			_gl.enable(_gl.DEPTH_TEST);           // Enable depth testing
 			_gl.depthFunc(_gl.LEQUAL);            // Near things obscure far things
-	        _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
-	        }
-		
+			_gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
+			}
+
 		function tick() {
-//	        requestAnimFrame(tick);			 
+//	        requestAnimFrame(tick);
 			windowResize(); //clears the canvas and makes sure the window is the proper size
 //			 rotateTheWorld();
 //			handleKeys();
 
-			animate(); 
+			animate();
 			drawGeometry();
-			
-			 
+
+
 		}
 
-		
-		
+
+
 
 		//
 		// Matrix utility functions
@@ -686,15 +686,15 @@ function animate() {
 		}
 		Matrix.prototype.flatten = function ()
 		{
-		    var result = [];
-		    if (this.elements.length == 0)
-		        return [];
+			var result = [];
+			if (this.elements.length == 0)
+				return [];
 
 
-		    for (var j = 0; j < this.elements[0].length; j++)
-		        for (var i = 0; i < this.elements.length; i++)
-		            result.push(this.elements[i][j]);
-		    return result;
+			for (var j = 0; j < this.elements[0].length; j++)
+				for (var i = 0; i < this.elements.length; i++)
+					result.push(this.elements[i][j]);
+			return result;
 		}
 
 		function setMatrixUniforms() {
@@ -707,34 +707,34 @@ function animate() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////FUNCTIONS END////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    </script>
-    
-    
+	</script>
+
+
   </head>
 
-		
+
 	<style type="text/css">
-    canvas {
+	canvas {
 		position:absolute;
 		left:0;
 		top:0;
 		border: none;
-    	background-color: black;
-    }
+		background-color: black;
+	}
  /*   #loadingtext {
-        position:absolute;
-        top:250px;
-        left:150px;
-        font-size:4em;
-        color: green;
-    }*/
+		position:absolute;
+		top:250px;
+		left:150px;
+		font-size:4em;
+		color: green;
+	}*/
 	body {
 		background-color: rgb(0, 255, 0);
 	}
 	</style>
-	
+
 	<body onload="js_init()">
-    <canvas id="Rotating3D">
+	<canvas id="Rotating3D">
 			Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
 		</canvas>
 			<div id="loadingtext">Loading 3D Display...</div>

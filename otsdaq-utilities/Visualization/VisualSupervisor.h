@@ -56,8 +56,8 @@ class VisualSupervisor : public CoreSupervisorBase
 	virtual void setSupervisorPropertyDefaults(void) override;
 	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
 	                                                            ///< supervisor property
-	                                                            ///< values (and ignore user
-	                                                            ///< settings)
+	///< values (and ignore user
+	///< settings)
 
 	/// RAR commented out below.. better/safer handling (of errors) done by
 	/// CoreSupervisorBase

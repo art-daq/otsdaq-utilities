@@ -27,7 +27,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	virtual void 			setSupervisorPropertyDefaults			(void) override;
 	virtual void 			forceSupervisorPropertyValues			(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
-  private:	
+  private:
 	void					handleSaveTableInfoXML					(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
 																	std::string&            tableName,
@@ -82,7 +82,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      modifiedTables,
 																	bool                    refreshAll      = true,
 																	bool                    getGroupInfo    = false,
-																	std::map<std::string /*name*/, 
+																	std::map<std::string /*name*/,
 																		TableVersion /*version*/>* returnMemberMap = 0,
 																	bool         			outputActiveTables = true,
 																	std::string* 			accumulatedErrors  = 0);
@@ -113,13 +113,13 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      recordList,
 																	const std::string&      fieldList);
 	void         			handleFillUniqueFieldValuesForRecordsXML(HttpXmlDocument&       xmldoc,
-																 	ConfigurationManagerRW* cfgMgr,
-																 	const std::string&      groupName,
-																 	const TableGroupKey&    groupKey,
-																 	const std::string&      startPath,
-																 	const std::string&      modifiedTables,
-																 	const std::string&      recordList,
-																 	const std::string&      fieldList);
+																	ConfigurationManagerRW* cfgMgr,
+																	const std::string&      groupName,
+																	const TableGroupKey&    groupKey,
+																	const std::string&      startPath,
+																	const std::string&      modifiedTables,
+																	const std::string&      recordList,
+																	const std::string&      fieldList);
 	void        			handleFillGetTreeNodeFieldValuesXML		(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string&      groupName,
@@ -249,7 +249,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const TableVersion&     vA,
 																	const TableVersion&     vB);
 
-	
+
 
 	void  					testXDAQContext							(void);
 

@@ -8,8 +8,8 @@
 ///
 /// compile with:
 /// g++ doxygen_main_editor.cpp -o doxygen_main_editor
-///	 or 
-/// g++ ./srcs/otsdaq-utilities/onlineDoc/doxygen_main_editor.cpp -o doxygen_main_editor 
+///	 or
+/// g++ ./srcs/otsdaq-utilities/onlineDoc/doxygen_main_editor.cpp -o doxygen_main_editor
 ///
 /// if developing, consider appending -D_GLIBCXX_DEBUG to get more
 /// descriptive error messages

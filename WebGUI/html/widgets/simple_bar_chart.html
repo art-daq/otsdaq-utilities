@@ -1,12 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  	<head>
-    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
-    	<title>d3.js gauges</title>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>d3.js gauges</title>
 
 		<style>
 
-		        body {  
+				body {
 			  font: 10px sans-serif;
 			  background: rgba(255, 255, 255, 1);
 			}
@@ -56,17 +56,17 @@
 			.d3-tip.n:after {
 				margin: -1px 0 0 0;
 				top: 100%;
-		 		left: 0;
+				left: 0;
 			}
 
 		</style>
 
 			<script src="https://d3js.org/d3.v5.min.js"></script>
 			<script type="text/javascript" src="libraries/d3_tooltip.js"></script>
-			<canvas id="canvas"></canvas>		
+			<canvas id="canvas"></canvas>
 		<script>
-			//functions:			
-			//init()					
+			//functions:
+			//init()
 
 			var pv_settings_ = [];
 
@@ -90,8 +90,8 @@
 				pv_settings_ = settings;
 			}
 
-			function newWidget(widget, parameters) 
-			{				
+			function newWidget(widget, parameters)
+			{
 				drawGraph();
 			}
 
@@ -104,13 +104,13 @@
 
 			function setParameters(attributes)
 			{
-				
+
 			}
 
 			var data =[];
 
 			function newValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
-			{				
+			{
 				var date = new Date(pvTime*1000);
 				if (data.length)
 					if (date <= data[data.length-1].time) { console.log("return"); return;}
@@ -125,10 +125,10 @@
 
 			function drawGraph(pvName, pvStatus, pvSeverity)
 			{
-				var canvas = document.querySelector("canvas"),    
-				    context = canvas.getContext("2d");
+				var canvas = document.querySelector("canvas"),
+					context = canvas.getContext("2d");
 
-				// Store the current transformation matrix				
+				// Store the current transformation matrix
 				//context.save();
 
 				// Use the identity matrix while clearing the canvas
@@ -140,36 +140,36 @@
 
 				canvas.width = window.innerWidth;
 				canvas.height = window.innerHeight;
-				
+
 				context.clearRect(0, 0, canvas.width, canvas.height);
 
 				console.log(window.innerWidth);
 
 				var margin = {top: 20, right: 50, bottom: 50, left: 50},
-				    width = window.innerWidth - margin.left - margin.right,
-				    height = window.innerHeight - margin.top - margin.bottom;
+					width = window.innerWidth - margin.left - margin.right,
+					height = window.innerHeight - margin.top - margin.bottom;
 
-			    var parseTime = d3.timeParse("%I:%M");
+				var parseTime = d3.timeParse("%I:%M");
 
 				//var x = d3.scaleLinear()
 				var x = d3.scaleTime()
-				    .range([0, width]);
+					.range([0, width]);
 
 				var y = d3.scaleLinear()
-				    .range([height, 0]);
+					.range([height, 0]);
 
 				var line = d3.line()
-				    .x(function(d) { return x(d.time); })
-				    .y(function(d) { return y(d.value); })
-				    //.curve(d3.curveCardinal);
+					.x(function(d) { return x(d.time); })
+					.y(function(d) { return y(d.value); })
+					//.curve(d3.curveCardinal);
 
 				context.translate(margin.left, margin.top);
 
 				x.domain(d3.extent(data, function(d) { return d.time; }));
 				y.domain(d3.extent(data, function(d) { return d.value; }));
 
-			    context.lineWidth = 2.0;
-			    context.strokeStyle = 'blue';
+				context.lineWidth = 2.0;
+				context.strokeStyle = 'blue';
 				line.context(context);
 				context.beginPath();
 
@@ -185,14 +185,14 @@
 
 				function xAxis() {
 				  var tickCount = 10,
-				      tickSize = 6,
-				      ticks = x.ticks(tickCount),
-				      tickFormat = x.tickFormat();
+					  tickSize = 6,
+					  ticks = x.ticks(tickCount),
+					  tickFormat = x.tickFormat();
 
 				  context.beginPath();
 				  ticks.forEach(function(d) {
-				    context.moveTo(x(d), height);
-				    context.lineTo(x(d), height + tickSize);
+					context.moveTo(x(d), height);
+					context.lineTo(x(d), height + tickSize);
 				  });
 				  context.strokeStyle = "black";
 				  context.stroke();
@@ -206,21 +206,21 @@
 				  context.textAlign = "center";
 				  context.textBaseline = "top";
 				  ticks.forEach(function(d) {
-				    context.fillText(tickFormat(d), x(d), height + tickSize);
+					context.fillText(tickFormat(d), x(d), height + tickSize);
 				  });
 				}
 
 				function yAxis(pv) {
 				  var tickCount = 10,
-				      tickSize = 6,
-				      tickPadding = 3,
-				      ticks = y.ticks(tickCount),
-				      tickFormat = y.tickFormat(tickCount);
+					  tickSize = 6,
+					  tickPadding = 3,
+					  ticks = y.ticks(tickCount),
+					  tickFormat = y.tickFormat(tickCount);
 
 				  context.beginPath();
 				  ticks.forEach(function(d) {
-				    context.moveTo(0, y(d));
-				    context.lineTo(-6, y(d));
+					context.moveTo(0, y(d));
+					context.lineTo(-6, y(d));
 				  });
 
 				  context.strokeStyle = "black";
@@ -237,7 +237,7 @@
 				  context.textAlign = "right";
 				  context.textBaseline = "middle";
 				  ticks.forEach(function(d) {
-				    context.fillText(tickFormat(d), -tickSize - tickPadding, y(d));
+					context.fillText(tickFormat(d), -tickSize - tickPadding, y(d));
 				  });
 
 				  context.save();
@@ -245,21 +245,21 @@
 				  context.textAlign = "right";
 				  context.textBaseline = "top";
 				  context.font = "bold 10px sans-serif";
-				  				  
+
 //				  console.log(pv_settings_);
 //				  console.log(pv);
 //				  console.log(pv_settings_[pv]);
 //				  console.log("y_axis_label: " + pv_settings_[pv].Units);
 
 				  if (pv !== undefined && pv_settings_[pv].Units != "")
-				  	context.fillText(pv_settings_[pv].Units, -10, 10);
+					context.fillText(pv_settings_[pv].Units, -10, 10);
 				  else
-				  	context.fillText("Label (Units)", -10, 10);
+					context.fillText("Label (Units)", -10, 10);
 
 				  context.restore();
 				}
 
-				function caption() 
+				function caption()
 				{
 					context.save();
 

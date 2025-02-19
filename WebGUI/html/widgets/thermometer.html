@@ -10,7 +10,7 @@
 			}
 			.wrapper {
 				display: grid;
-			 	//grid-template-columns: repeat(2, 1fr);
+				//grid-template-columns: repeat(2, 1fr);
 				grid-template-columns: repeat(auto-fill,minmax(120px, 1fr));
 				grid-gap: 0px;
 				grid-auto-rows: minmax(100px, auto);
@@ -141,23 +141,23 @@
 
 					// SVG width
 					width: wdth, //80,
-				    // SVG height
-				    height: hght, // 160,
-				    // Color of the mercury
-				    mercuryColor: "rgb(230, 0, 0)",
-				    // Color of the shine effect on the bulb
-				    bulbShineColor: "rgb(230, 200, 200)",
-				    // Color of the tube border
-				    borderColor: "rgb(136, 136, 136)",
-				    // Width of the tube border (pixels)
-				    borderWidth: 1,
-				    // Color of the empty space between tube border and mercury
-				    backgroundColor: "rgb(255, 255, 255)",
-				    // Radius of the thermometer bulb (pixes)
-				    bulbRadius: 18,
-				    // Horizontal width of the tube (pixels)
-				    tubeWidth: 18.5
- 
+					// SVG height
+					height: hght, // 160,
+					// Color of the mercury
+					mercuryColor: "rgb(230, 0, 0)",
+					// Color of the shine effect on the bulb
+					bulbShineColor: "rgb(230, 200, 200)",
+					// Color of the tube border
+					borderColor: "rgb(136, 136, 136)",
+					// Width of the tube border (pixels)
+					borderWidth: 1,
+					// Color of the empty space between tube border and mercury
+					backgroundColor: "rgb(255, 255, 255)",
+					// Radius of the thermometer bulb (pixes)
+					bulbRadius: 18,
+					// Horizontal width of the tube (pixels)
+					tubeWidth: 18.5
+
 				});
 
 				thermometers[name] = thermometer;
@@ -193,7 +193,7 @@
 
 </head>
 
-	<body onload="Javascript:init()">	
+	<body onload="Javascript:init()">
 		<div id="display" width="100%" height="100%">
 		</div>
 	</body>

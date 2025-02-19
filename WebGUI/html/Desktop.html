@@ -6,27 +6,27 @@
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/Desktop.css">
 
-		<style type="text/css">		
-			
-		</style>		
-		
+		<style type="text/css">
+
+		</style>
+
 		<!--link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Donegal+One'-->
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Donegal+One:400' rel='stylesheet' type='text/css'>
 
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Desktop.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 
 		<!-- MultiSelectBox: Must include .css style sheet and .js functionality -->
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
-		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>	
+		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
 
 		<!-- adding DesktopWindowContentCode for tooltip functionality -->
-		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script> 
+		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 
 		<script type="text/JavaScript" src="/WebPath/js/DesktopDashboard.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopWindow.js"></script>
@@ -38,20 +38,20 @@
 			var urnLid_ = params_[0].split('=')[1];
 			var securityType_ = params_[1].split('=')[1];
 			var serverOrigin_ = window.location.origin;
-			
+
 			Debug.log("securityType: " +  securityType_);
 			Debug.log("Gateway Application URN-LID #" + urnLid_);
 			Debug.log("Gateway Supervisor Application Origin = " + serverOrigin_);
 
 			//=====================================================================================
-			function init() 
-			{					
-				Desktop.init(securityType_);				
-			}						
-            
+			function init()
+			{
+				Desktop.init(securityType_);
+			}
+
         </script>
-        
-        
+
+
         <!-- Note: usually this page is in frame and ots icon is shown by C++ -->
         <!-- start ots icon handling -->
 		<link rel="apple-touch-icon" sizes="57x57" href="/WebPath/images/otsdaqIcons/apple-icon-57x57.png">
@@ -72,17 +72,17 @@
         <meta name="msapplication-TileImage" content="/WebPath/images/otsdaqIcons/ms-icon-144x144.png">
         <meta name="theme-color" content="#ffffff">
         <!-- end ots icon handling -->
-		
-	</head>	
-	
+
+	</head>
+
 	<body onload='init();'>
-		 
+
 		<a style="text-decoration:none" href="#">
 			<div onclick="Desktop.turtleClick();" id="turtle" style="position:absolute; z-index:1; width:256px; height:256px;">
 			<img src="/WebPath/images/otsdaqIcons/turtle.png" style="display:none" />
 			</div>
 	   </a>
-	   
+
 	</body>
-	
+
 </html>

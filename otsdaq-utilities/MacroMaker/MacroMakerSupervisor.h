@@ -27,8 +27,8 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
 	                                                            ///< supervisor property
-	                                                            ///< values (and ignore user
-	                                                            ///< settings)
+	///< values (and ignore user
+	///< settings)
 
   private:
 	/// start MacroMaker only functions

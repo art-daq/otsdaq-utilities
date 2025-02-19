@@ -1,9 +1,9 @@
  STDLINE("Initializing theCanvasModel") ;
  STDLINE("theCanvasModel_.currentCanvas: " +
-          theCanvasModel_.currentCanvas    +
-         " has "                           +
-         theCanvasModel_.canvases.length   +
-         " canvases") ;
+		  theCanvasModel_.currentCanvas    +
+		 " has "                           +
+		 theCanvasModel_.canvases.length   +
+		 " canvases") ;
 //  theCanvasModel_ = {
 //                     canvases     : [
 //                                     {
@@ -18,5 +18,5 @@
 //                                     }
 //                                    ],
 //                     currentCanvas : 'canvas1',
-//                     currentDiv    : 1  
+//                     currentDiv    : 1
 //                    }

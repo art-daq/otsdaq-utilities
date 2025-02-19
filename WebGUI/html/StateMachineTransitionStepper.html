@@ -10,7 +10,7 @@
 
 	//init()
 	//setIterationBreakpoint(val)
-	//getCurrentState() 
+	//getCurrentState()
 	//getIterationsBreakpointHandler(req)
 
 //end function list.
@@ -19,7 +19,7 @@
 
 <link rel='stylesheet' type='text/css' href='/WebPath/css/fonts.css?family=Donegal+One'>
 
-<style type="text/css">			
+<style type="text/css">
 			body {
 				background-color: 	rgb(5,10,50);
 				color:				white;
@@ -28,16 +28,16 @@
 			a, input[type=submit] {
 				cursor: 			pointer;
 			}
-			
+
 			a:hover {
 				text-decoration:	underline;
 			}
-			
+
 			#clearDiv {
 				clear: 				both;
 			}
-			
-			
+
+
 		</style>
 
 
@@ -46,244 +46,244 @@
 <script type="text/JavaScript"src="/WebPath/js/DesktopContent.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
 
-<script>		
+<script>
 
-			
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
-			
+
 			var transitionSteps_ = [
 									{
-			"name" : "initialize"				
+			"name" : "initialize"
 									},
 									{
-											"name" : "initialize"				
+											"name" : "initialize"
 									},
 			];
-		
-			
+
+
 			//init called once body has loaded
 			function init()
 			{
 				Debug.log("init()");
-				
+
 				_fsmName = "";
-				
+
 				window.setTimeout(getCurrentState,500);
-				
-				DesktopContent.XMLHttpRequest("StateMachineIterationBreakpoint?Request=get" + 
+
+				DesktopContent.XMLHttpRequest("StateMachineIterationBreakpoint?Request=get" +
 						"&fsmName=" + _fsmName
 						, //end get
-						"", 
+						"",
 						getIterationsBreakpointHandler//end request handler
-				);	
+				);
 				return;
-				
+
 
 				//get state machine from server
 				DesktopContent.XMLHttpRequest(
-						"Request?RequestType=getStateMachine" + 
-						"&fsmName=" + _fsmName, "", 
-						smRequestHandler);	
-				
-			} //end init()	
+						"Request?RequestType=getStateMachine" +
+						"&fsmName=" + _fsmName, "",
+						smRequestHandler);
+
+			} //end init()
 
 
 			//=====================================================================================
 			//setIterationBreakpoint ~~
-			function setIterationBreakpoint(val) 
+			function setIterationBreakpoint(val)
 			{
 				if(val === undefined)
 					val = document.getElementById("breakpointInput").value;
-				
+
 				val |= 0; //force to integer
 				Debug.log("setIterationBreakpoint = " + val);
-				
-				DesktopContent.XMLHttpRequest("StateMachineIterationBreakpoint?Request=set" + 
+
+				DesktopContent.XMLHttpRequest("StateMachineIterationBreakpoint?Request=set" +
 						"&fsmName=" + _fsmName +
 						"&breakpointSetValue=" + val
 						, //end get
-						"", 
+						"",
 						getIterationsBreakpointHandler//end request handler
-				);				
+				);
 			} //end setIterationBreakpoint()
-			
+
 
 			//=====================================================================================
 			//getCurrentState ~~
-			function getCurrentState() 
+			function getCurrentState()
 			{
-				DesktopContent.XMLHttpRequest("Request?RequestType=getCurrentState" + 
-						"&fsmName=" + _fsmName, 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getCurrentState" +
+						"&fsmName=" + _fsmName,
 						"", currStateRequestHandler, //end request handler
-						0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
-						true /*doNoShowLoadingOverlay*/);				
+						0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/,
+						true /*doNoShowLoadingOverlay*/);
 			} //end getCurrentState()
-			
+
 			//=====================================================================================
 			//getIterationsBreakpointHandler ~~
-			function getIterationsBreakpointHandler(req) 
-			{	
+			function getIterationsBreakpointHandler(req)
+			{
 				var breakpoint = DesktopContent.getXMLValue(req,"iterationBreakpoint");
 				Debug.log("getIterationsBreakpointHandler = " + breakpoint);
-				
+
 				document.getElementById('breakpointInput').value = breakpoint;
 			} //end getIterationsBreakpointHandler
 
 			//=====================================================================================
 			//currStateRequestHandler ~~
 			//	poll current state of state machine
-			function currStateRequestHandler(req,id,err) 
-			{		
+			function currStateRequestHandler(req,id,err)
+			{
 
-            	if(!req) //error! stop handler
-            	{            		
-            		window.clearTimeout(_verifyStateTimeout);
-            		window.clearInterval(_timeUpdateTimeout);
-            		Debug.log("Error: " + err, Debug.HIGH_PRIORITY); 
-            		return;
-            	}            	
-            	
-			    var cs = DesktopContent.getXMLValue(req,"current_state");
-			    var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
-			    
-			    Debug.log("Physics currStateRequestHandler: " + cs + " -- " + inTrans);
-			    
-			    var str = "";
-			    str += "Current state = " + cs + " <br>";
-			    if(inTrans)
-			    	str += "In transition...";
-			    else 
-			    	str += "Idle.";
-			    document.getElementById('transitionStatus').innerHTML = str;
+				if(!req) //error! stop handler
+				{
+					window.clearTimeout(_verifyStateTimeout);
+					window.clearInterval(_timeUpdateTimeout);
+					Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
+					return;
+				}
+
+				var cs = DesktopContent.getXMLValue(req,"current_state");
+				var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
+
+				Debug.log("Physics currStateRequestHandler: " + cs + " -- " + inTrans);
+
+				var str = "";
+				str += "Current state = " + cs + " <br>";
+				if(inTrans)
+					str += "In transition...";
+				else
+					str += "Idle.";
+				document.getElementById('transitionStatus').innerHTML = str;
 
 				window.setTimeout(getCurrentState,500); //launch next check
 			} //end currStateRequestHandler()
-			
 
-            //physicsLaunchHandler ~~
-            //  handle response to launch of physics state change
-            function physicsLaunchHandler(req,transitionAttempted) {
-            	            	
-            	Debug.log("Physics physicsLaunchHandler " + req.responseText);
-            	return;
-            	
-                if(transitionAttempted)
-                {
+
+			//physicsLaunchHandler ~~
+			//  handle response to launch of physics state change
+			function physicsLaunchHandler(req,transitionAttempted) {
+
+				Debug.log("Physics physicsLaunchHandler " + req.responseText);
+				return;
+
+				if(transitionAttempted)
+				{
 					var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
-					if(!success) 
+					if(!success)
 					{
 						var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
 						if(err)
 							Debug.log(err,Debug.HIGH_PRIORITY);
 						Debug.log("Server indicated failure to attempt state transition. Attempting to refresh state machine...",Debug.HIGH_PRIORITY);
-						//alert("Server indicated failure to attempt state transition.");                	
+						//alert("Server indicated failure to attempt state transition.");
 						_inAnimation = false;
-						
+
 						//refresh FSM
-						_transitionProgress = -1; 
+						_transitionProgress = -1;
 						window.clearInterval(_transitionTimer);
 						_transitionTimer = window.setInterval(transitionTimerHandler,_TRANS_TRANSLATE_PERIOD);
 						return;
 					}
-					
-                }
-                
-            } //end physicsLaunchHandler()
-            
 
-            //handleCheckTransitionProgress ~~
-            function handleCheckTransitionProgress(req,id,err) {
-            	
-                Debug.log("Physics handleCheckTransitionProgress " + req.responseText);
-            	return;
-            	
-            	if(!req) //error! stop checking progress..
-            	{            		
-            		Debug.log("Physics handleCheckTransitionProgress Error: " + err, Debug.HIGH_PRIORITY);
-            		
-//            		//show refresh link            		
+				}
+
+			} //end physicsLaunchHandler()
+
+
+			//handleCheckTransitionProgress ~~
+			function handleCheckTransitionProgress(req,id,err) {
+
+				Debug.log("Physics handleCheckTransitionProgress " + req.responseText);
+				return;
+
+				if(!req) //error! stop checking progress..
+				{
+					Debug.log("Physics handleCheckTransitionProgress Error: " + err, Debug.HIGH_PRIORITY);
+
+//            		//show refresh link
 //            		var str = "";
 //            		str += "<div style='margin:10px'>";
 //            		str += "Did the server crash? If it's back, try a ";
-//            		str += "<a onclick='_transitionProgress = -1; " + 
+//            		str += "<a onclick='_transitionProgress = -1; " +
 //					"window.clearInterval(_transitionTimer);" +
 //					"_transitionTimer = window.setInterval(transitionTimerHandler,_TRANS_TRANSLATE_PERIOD);' " +
 //						">Refresh</a>.";
 //            		str += "</div>";
 //            		_blackoutReveal.innerHTML = str;
-            		return;
-            	}
-            	_blackoutReveal.innerHTML = ""; //clear blackout reveal refresh
+					return;
+				}
+				_blackoutReveal.innerHTML = ""; //clear blackout reveal refresh
 
-			    var inTransition = DesktopContent.getXMLValue(req,"in_transition")=="1";			    
-			    var progress = DesktopContent.getXMLValue(req,"transition_progress");		    
-			    
-			    _transitionResultingState = DesktopContent.getXMLValue(req,"current_state");
-			    
-			    if(!inTransition)
-			    {
-			    	_transitionProgress = 100;
-			    	
+				var inTransition = DesktopContent.getXMLValue(req,"in_transition")=="1";
+				var progress = DesktopContent.getXMLValue(req,"transition_progress");
+
+				_transitionResultingState = DesktopContent.getXMLValue(req,"current_state");
+
+				if(!inTransition)
+				{
+					_transitionProgress = 100;
+
 					//update run number
 					document.getElementById("run-number").innerHTML = DesktopContent.getXMLValue(req,"run_number");
-			    }
-			    else
-			    {
-			    	if(progress > 99) progress = 99; //if not completed with transition, make sure progress is a legal value
-			    	else if(progress < 0) progress = 0;
-			    	
-			    	if(_transitionProgress == -1) //if first time receiving progress, setup progress view
-			    	{
-	            		//draw state from on left
-				    	_context.clearRect(0, 0, _canvas.width, _canvas.height);
-				    	drawState(_currState,_canvas.width/6,_canvas.height/2+15);
-				    	drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
-					    _blackout.style.backgroundColor = 'rgba(' + _TRANS_BLACKOUT_COLOR + ',0)'; //remove blackout for to and from state display
-			    	}
-			    	if(progress != _transitionProgress)
-			    		Debug.log("Physics handleCheckTransitionProgress " + progress);
-			    	_transitionProgress = progress;
-			    	
-//			    	//show refresh link            		
+				}
+				else
+				{
+					if(progress > 99) progress = 99; //if not completed with transition, make sure progress is a legal value
+					else if(progress < 0) progress = 0;
+
+					if(_transitionProgress == -1) //if first time receiving progress, setup progress view
+					{
+						//draw state from on left
+						_context.clearRect(0, 0, _canvas.width, _canvas.height);
+						drawState(_currState,_canvas.width/6,_canvas.height/2+15);
+						drawState(_transitions[_currStateTransArr[_selectedTransition]][1],_canvas.width*5/6,_canvas.height/2+15);
+						_blackout.style.backgroundColor = 'rgba(' + _TRANS_BLACKOUT_COLOR + ',0)'; //remove blackout for to and from state display
+					}
+					if(progress != _transitionProgress)
+						Debug.log("Physics handleCheckTransitionProgress " + progress);
+					_transitionProgress = progress;
+
+//			    	//show refresh link
 //			    	var str = "";
 //			    	str += "<div style='margin:10px'>";
 //
-//			    	str += "<a onclick='_transitionProgress = -1; " + 
+//			    	str += "<a onclick='_transitionProgress = -1; " +
 //			    			"window.clearInterval(_transitionTimer);" +
 //							"_transitionTimer = window.setInterval(transitionTimerHandler,_TRANS_TRANSLATE_PERIOD);' " +
 //							">Refresh</a>";
 //			    	str += "</div>";
 //			    	_blackoutReveal.innerHTML = str;
-			    }
+				}
 
-		    	_progressBar.style.width = _transitionProgress + "%";
-            	
-            	if(_transitionProgress < 100)	
-            		window.setTimeout(function(){
-            			DesktopContent.XMLHttpRequest("Request?RequestType=getCurrentState" + 
-    			    			"&fsmName=" + _fsmName,  
-            					"", handleCheckTransitionProgress, //end request handler
-								0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/, 
+				_progressBar.style.width = _transitionProgress + "%";
+
+				if(_transitionProgress < 100)
+					window.setTimeout(function(){
+						DesktopContent.XMLHttpRequest("Request?RequestType=getCurrentState" +
+								"&fsmName=" + _fsmName,
+								"", handleCheckTransitionProgress, //end request handler
+								0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/,
 								true /*doNoShowLoadingOverlay*/);
-            		},10); //attempt to get current state again in 10ms
-			    	
-            }
-            
-           
+					},10); //attempt to get current state again in 10ms
+
+			}
+
+
 		</script>
 </head>
 
 
 <body onload='//init() called by DesktopContent.js'>
-		
+
 	<div id='transitionButtons'>
 		<a onclick='setIterationBreakpoint()'>
 		Set Breakpoint</a>
 		<input id='breakpointInput' type='text' />
-		</div> 
+		</div>
 	<div id='transitionStatus'>
-		
+
 		</div>
 
 

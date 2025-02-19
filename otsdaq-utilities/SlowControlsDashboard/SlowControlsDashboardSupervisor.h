@@ -41,8 +41,8 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	virtual void setSupervisorPropertyDefaults(void) override;
 	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
 	                                                            ///< supervisor property
-	                                                            ///< values (and ignore user
-	                                                            ///< settings)
+	///< values (and ignore user
+	///< settings)
 
 	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string UID);
 	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);

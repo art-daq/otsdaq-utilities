@@ -280,7 +280,7 @@ int main(int argc, char** argv)
 
 	std::map<unsigned int, unsigned int> sourceLastSequenceID;  // map from sourceID to
 	                                                            // lastSequenceID to
-	    // identify missed messages
+	// identify missed messages
 
 	// this should ip/port of Console xdaq app Receiver port
 	sendSockfd = makeSocket(myFwdIP_.c_str(), myFwdPort, p);

@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<title>LED</title>
-		<style type="text/css">	
+		<style type="text/css">
 
 			body {
 				font: 10px arial;
@@ -108,9 +108,9 @@
 				context.fillStyle = 'green';
 				if( pvSeverity == "MAJOR" )
 					context.fillStyle = 'red';
-				if( 
+				if(
 					   isNaN(pvValue)
-					|| pvSeverity == "INVALID" 
+					|| pvSeverity == "INVALID"
 					|| pvSeverity == undefined
 					|| !window.parent.checkPVTime(window.frameElement.id, pv, pvTime)
 				)

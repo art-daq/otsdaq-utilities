@@ -30,6 +30,6 @@ o manager" },
        { name: "cheon", asurl: true, file: "https://root.cern/files/cheongwadae.root", item: "geom;1", opt: "", title: "One more building" },
        { name: "proj2", url: "?nobrowser&layout=h21_12&files=[https://root.cern/files/alice_ESDgeometry.root,$$$geom/eve_tracks.root]&items=[[0]/G\
 entle,[0]/Gentle,[[0]/Gentle,[1]/tracks]]&opts=[projz,projx,main;black]", title: "Place main drawing not on the first place" }
-       
+
    ]
  };

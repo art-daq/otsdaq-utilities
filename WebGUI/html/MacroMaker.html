@@ -3,7 +3,7 @@
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>MacroMaker</title>
-		
+
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css" />
 		<!--link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBoxForMacroMaker.css"-->
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
@@ -18,12 +18,12 @@
 		<script type="text/JavaScript" src="/WebPath/js/MacroMaker.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/Sortable.js"></script>
-		  
+
 	</head>
 
 
 	<body onload='//init() called by DesktopContent.js'>
-	
+
 		<div id="nav">
 			<ul>
 				<li><a id="page1tag" onclick="toggleDisplay(0)" > Manual Commands </a></li>
@@ -35,10 +35,10 @@
 					</a>
 				</li>
 				<li style="float:right">
-					<img src="/WebPath/images/windowContentImages/macromaker-refresh.png" alt="Refresh" id="refreshButton" 
+					<img src="/WebPath/images/windowContentImages/macromaker-refresh.png" alt="Refresh" id="refreshButton"
 					width='20' height='20' onclick="initLite()" title="Refresh"/>
 				</li>
-			</ul>		
+			</ul>
 		</div>
 
 
@@ -49,7 +49,7 @@
 				<!-- position relative allows MultiSelectBox search box to show-up in the right place, because absolute positioning is relative to this div -->
 				<div id='list' style='position:relative'></div>
 			</div>
-	
+
 			<div class='mainBlock' id='main'>
 				<h3>Manual Commands</h3>
 				<div class="rightjustify">
@@ -72,18 +72,18 @@
 					<div>
 						<input style="margin-top: 5px"id="lsbFirst" class="checkValues" type="checkbox"> <p style="padding-left:1em; padding-bottom: 10px">Least Significant Byte First</p>
 					</div>
-					
+
 					<div id="reminder" class="red"></div>
-					
+
 					<div>
 						<button onclick="callRead()">Read</button>
 						<button onclick="callWrite()">Write</button>
 					</div>
-	
+
 					<div style="margin-top: 10px">
-							 
+
 					  <input id="enableReadBitField" class="checkValues" type="checkbox" onclick="toggleReadBitField()"> <a onclick='toggleReadBitField(1)'>Read Bit-field</a></input>
-					  
+
 					   <center>
 						<div id='readBitFieldTable' style='display:none'>
 						<center>
@@ -91,7 +91,7 @@
 					   <tr><td>Bit-field Start Position: </td><td><input type="text"
 							   style='width:20px'
 							   id="readBitFieldStartPos" class="inputBox" value="0"/></td></tr>
-					   <tr><td>Bit-field Length: </td><td><input type="text" 
+					   <tr><td>Bit-field Length: </td><td><input type="text"
 							   style='width:20px'
 							   id="readBitFieldLength" class="inputBox" value="8"/></td></tr>
 					   </table>
@@ -99,15 +99,15 @@
 					   </div>
 					   </center>
 					</div>
-					   
-					   
+
+
 					<div style='margin-top:10px'>
 						<button onclick="showPopupClearHistoryConfirm()">Clear History</button>
 					</div>
-				</div> 
+				</div>
 				<!-- end of div inside Manual commands -->
 			</div>
-			
+
 			<div class='mainBlock' id='macroLib'>
 				<h3>Macro Library</h3>
 
@@ -115,17 +115,17 @@
 					<a id="privateTag" onclick="toggleMacroPublicity(0)"> Private Macros </a>
 					<a id="publicTag" style="margin-left:8px" onclick="toggleMacroPublicity(1)"> Public Macros </a>
 				</div>
-		
+
 				<div id="listOfPrivateMacros" class="listOfMacros"></div>
 				<div id="listOfPublicMacros" class="listOfMacros"></div>
 			</div>
-			
+
 			<!-- id's sequence and maker belong to the tab "Macro Maker" -->
 			<div class='mainBlock' id='sequence'>
 				<h3>Macro Sequence</h3>
 				<div id="sequenceContent"></div>
 			</div>
-			
+
 			<div class='mainBlock' id='maker'>
 				<h3>Macro Maker</h3>
 				<div class="rightjustify">
@@ -149,13 +149,13 @@
 					<div>
 						<input style="margin-top:5px" id="macroLsbFirst" class="checkValues" type="checkbox"> <p style="padding-left:1em; padding-bottom: 10px">Least Significant Byte First</p>
 					</div>
-						        
-	
+
+
 					<div>
 						<button onclick="addCommand('w')">Add Write</button>
 						<button onclick="addCommand('r')">Add Read</button>
 					</div>
-					
+
 					<br>
 					<p>Delay:  <input type="text" id="delayInput" class="inputBox"/>
 					   <select id="delayUnit" class="dropdown">
@@ -174,7 +174,7 @@
 					<div>
 						<button id="undoDelete" onclick="undoDelete()" disabled>Undo Delete</button>
 					</div>
-					 <div class="formatSelection" onchange="reloadMacroSequence()">Display 
+					 <div class="formatSelection" onchange="reloadMacroSequence()">Display
 					   <select id="sequenceFormat" class="dropdown">
 						<option class="select" value="hex" selected="selected">hex</option>
 						<option class="select" value="dec">dec</option>
@@ -193,27 +193,27 @@
 					<b>Scroll to see the history of commands. Click to rerun.</b>
 				</div>
 				<div id="historyContent">
-					
+
 				</div>
 		 </div>
-		
+
 		 <!-- clears the float layout set in the divs macroContent and history -->
 		 <div id="footer"></div>
 
 		<div class='mainBlock' id='progressBarOuter'>
 		  <div id='progressBarInner'>
-		    <center><h4>Macro Running...</h4></center>
+			<center><h4>Macro Running...</h4></center>
 			<div id="macroRunningProgress">
- 			   <div id="macroRunningBar">
- 			     <center>
- 			      <p id="macroRunningPercentage">5%</p>
- 			     </center>
- 			   </div>
+			   <div id="macroRunningBar">
+				 <center>
+				  <p id="macroRunningPercentage">5%</p>
+				 </center>
+			   </div>
 			</div>
 		  </div>
 		</div>
-	
-		
+
+
 		<div id="popupSaveMacro" class="popup">
 			<center><h2>Save your Macro</h2></center>
 			<div>
@@ -222,10 +222,10 @@
 				<p><b>Macro Notes</b></p>
 				<center><textarea id="macroNotes" cols="43" rows="6"></textarea></center>
 				<div id="makeMacroPublic">
-				    <input type="checkbox" class="checkValues" id="isMacroPublic"> Make accessible to public</input>
+					<input type="checkbox" class="checkValues" id="isMacroPublic"> Make accessible to public</input>
 				</div>
 				<div id="makeMacroLSBF">
-				    <input type="checkbox" class="checkValues" id="isMacroLSBF"> Set LSB first for this macro</input>
+					<input type="checkbox" class="checkValues" id="isMacroLSBF"> Set LSB first for this macro</input>
 				</div>
 				<div class="buttongroup">
 					<center>
@@ -245,17 +245,17 @@
 				<p><b>Macro Notes</b></p>
 				<center>
 					<textarea id="macroNotesEdit">Pre-fill here</textarea>
-					<div onchange="reloadEditSequence()">Display 
-			           <select id="editFormat" class="dropdown">
-					    <option class="select" value="hex" selected="selected">hex</option>
-					    <option class="select" value="dec">dec</option>
-					    <option class="select" value="ascii">ascii</option>
+					<div onchange="reloadEditSequence()">Display
+					   <select id="editFormat" class="dropdown">
+						<option class="select" value="hex" selected="selected">hex</option>
+						<option class="select" value="dec">dec</option>
+						<option class="select" value="ascii">ascii</option>
 					   </select>
 					format for all numerical fields in this macro</div>
 				</center>
 				<div class="buttongroup" id="macroEditSettings">
 				  <center>
-			   		<input type="checkbox" id="isMacroEditLSBF"> Set LSB first for this macro</input>
+					<input type="checkbox" id="isMacroEditLSBF"> Set LSB first for this macro</input>
 					<button onclick="hidePopupEditMacro()">Cancel</button>
 					<button onclick="saveChangedMacro()">Save changes</button>
 				  </center>
@@ -264,10 +264,10 @@
 		</div>
 		<div id="popupNameVariable" class="smallPopup">
 			<h4 id="nameVariablePrompt">How would you like to name this variable?</h4>
-		    <center><textarea id="nameVariable" cols="20" rows="1"></textarea></center>
-		    <div class="buttongroup">
+			<center><textarea id="nameVariable" cols="20" rows="1"></textarea></center>
+			<div class="buttongroup">
 			  <center>
-			  	<button id="popupNameVariableYesButton">Yes</button>
+				<button id="popupNameVariableYesButton">Yes</button>
 				<button id="popupNameVariableCancelButton">Cancel</button>
 				<button id="popupNameVariableSaveButton"">Save</button>
 			  </center>
@@ -275,7 +275,7 @@
 		</div>
 		<div id="popupClearAllConfirm" class="smallPopup" style= "background-color: rgb(240, 194, 194)">
 			<h4>You will be clearing macro sequence. Do you wish to continue?</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="clearAll(this)">Yes, please</button>
 				<button onclick="hideSmallPopup(this)">Cancel</button>
@@ -283,8 +283,8 @@
 			</div>
 		</div>
 		<div id="popupClearHistoryConfirm" class="smallPopup" style= "background-color: rgb(240, 194, 194)">
-		    <h4>You will be clearing command history. Do you wish to continue?</h4>
-		    <div class="buttongroup">
+			<h4>You will be clearing command history. Do you wish to continue?</h4>
+			<div class="buttongroup">
 			  <center>
 				<button onclick="clearHistory(this)">Yes, please</button>
 				<button onclick="hideSmallPopup(this)">Cancel</button>
@@ -292,9 +292,9 @@
 			</div>
 		</div>
 		<div id="popupAskForVariableValue" class="smallPopup">
-		    <h4 id="assignValuePrompt">What value would you assign to variable <span id="variableNameAtRunTime" class="red"></span>?</h4>
-		    <center><textarea id="valueAtRunTime" cols="20" rows="1"></textarea></center>
-		    <div class="buttongroup">
+			<h4 id="assignValuePrompt">What value would you assign to variable <span id="variableNameAtRunTime" class="red"></span>?</h4>
+			<center><textarea id="valueAtRunTime" cols="20" rows="1"></textarea></center>
+			<div class="buttongroup">
 			  <center>
 				<button id="popupAskForVariableValueContinue">Continue</button>
 				<button onclick="hideSmallPopup(this);isMacroRunning=false">Cancel</button>
@@ -303,7 +303,7 @@
 		</div>
 		<div id="popupDeleteMacroConfirm" class="smallPopup">
 			<h4>You are deleting <span id="macroNameForDelete" class="red"></span>. Do you wish to continue?</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button id="popupDeleteMacroConfirmYes">Yes, please</button>
 				<button id="popupDeleteMacroConfirmCancel">Cancel</button>
@@ -312,7 +312,7 @@
 		</div>
 		<div id="popupNoEditPermission" class="smallPopup">
 			<h4>You have no permission to edit public macros</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
@@ -320,7 +320,7 @@
 		</div>
 		<div id="popupNoDeletePermission" class="smallPopup">
 			<h4>You have no permission to delete public macros</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
@@ -328,7 +328,7 @@
 		</div>
 		<div id="popupIllegalNaming" class="smallPopup">
 			<h4>Macro name can only contain alphanumeric and underscore</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
@@ -337,23 +337,23 @@
 		<div id="popupIllegalInput" class="smallPopup">
 			<h4>Found illegal characters in the following field: </h4>
 			<h4 id="illegalInputValue"></h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
 			</div>
 		</div>
-	    <div id="popupIllegalEdit" class="smallPopup">
+		<div id="popupIllegalEdit" class="smallPopup">
 			<h4>Address/data field can only be a number</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
 			</div>
 		</div>
-	    <div id="popupEmptyInput" class="smallPopup">
+		<div id="popupEmptyInput" class="smallPopup">
 			<h4>You have one or more empty address/data field(s)</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
@@ -361,7 +361,7 @@
 		</div>
 		<div id="popupIllegalNotes" class="smallPopup">
 			<h4>Macro notes cannot contain "#", "@" or ".."</h4>
-		    <div class="buttongroup">
+			<div class="buttongroup">
 			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
@@ -369,8 +369,8 @@
 		</div>
 		<div id="popupMacroAlreadyExists" class="smallPopup">
 			<h4><span id="duplicateName" class="red"></span> already exists. Do you wish to overwrite?</h4>
-		    <div class="buttongroup">
-		      <center>
+			<div class="buttongroup">
+			  <center>
 				<button id="popupMacroAlreadyExistsOverwrite">Yes, please</button>
 				<button id="popupMacroAlreadyExistsCancel">Cancel</button>
 			  </center>
@@ -378,37 +378,35 @@
 		</div>
 		<div id="popupMacroEditDuplicateName" class="smallPopup">
 			<h4><span id="duplicateNameEdit" class="red"></span> already exists. Please enter another name.</h4>
-		    <div class="buttongroup">
-		      <center>
+			<div class="buttongroup">
+			  <center>
 				<button onclick="hideSmallPopup(this)">Okay</button>
 			  </center>
 			</div>
 		</div>
 	  <nav id="context-menu" class="context-menu">
-	    <ul class="context-menu__items" style = "text-align: left;">
-	      <li class="context-menu__item">
-	        <a href="#" class="context-menu__link" data-action="Edit"> Edit Macro</a>
-	      </li>
-	      <li class="context-menu__item">
-	        <a href="#" class="context-menu__link" data-action="Delete"> Delete Macro</a>
-	      </li>
-	      <li class="context-menu__item">
-	        <a href="#" class="context-menu__link" data-action="Start"> Clone to start of sequence</a>
-	      </li>
-	      <li class="context-menu__item">
-	        <a href="#" class="context-menu__link" data-action="End"> Clone to end of sequence</a>
-	      </li>
-	      <li class="context-menu__item">
-	        <a href="#" class="context-menu__link" data-action="Export"> Export Macro to C++ file</a>
-	      </li>
+		<ul class="context-menu__items" style = "text-align: left;">
+		  <li class="context-menu__item">
+			<a href="#" class="context-menu__link" data-action="Edit"> Edit Macro</a>
+		  </li>
+		  <li class="context-menu__item">
+			<a href="#" class="context-menu__link" data-action="Delete"> Delete Macro</a>
+		  </li>
+		  <li class="context-menu__item">
+			<a href="#" class="context-menu__link" data-action="Start"> Clone to start of sequence</a>
+		  </li>
+		  <li class="context-menu__item">
+			<a href="#" class="context-menu__link" data-action="End"> Clone to end of sequence</a>
+		  </li>
+		  <li class="context-menu__item">
+			<a href="#" class="context-menu__link" data-action="Export"> Export Macro to C++ file</a>
+		  </li>
 		  <li class="context-menu__item">
 			<a href="#" class="context-menu__link" data-action="FEExport"> Export Macro to selected FE plugin</a>
 		  </li>
-	    </ul> 
+		</ul>
 	  </nav>
 	  <script type="text/JavaScript" src="/WebPath/js/js_lib/MacroMakerContextMenu.js"></script>
 	</body>
-	   
-</html>
 
- 
+</html>

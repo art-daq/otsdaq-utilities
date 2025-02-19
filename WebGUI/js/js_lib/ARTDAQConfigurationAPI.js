@@ -5,11 +5,11 @@
 //
 //	ARTDAQConfigurationAPI.js
 //
-//  Requirements: 
-//   1. paste the following: 
-//				
-//				<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-//				<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+//  Requirements:
+//   1. paste the following:
+//
+//				<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+//				<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 //				<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 //				<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfiguraitonAPI.js"></script>
 //				<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
@@ -24,10 +24,10 @@
 
 var ARTDAQConfigurationAPI = ARTDAQConfigurationAPI || {}; //define ARTDAQConfigurationAPI namespace
 
-if (typeof ConfigurationAPI == 'undefined') 
+if (typeof ConfigurationAPI == 'undefined')
 	alert('ERROR: ConfigurationAPI is undefined! Must include ConfigurationAPI.js before ARTDAQConfigurationAPI.js');
 
-//"public" function list: 
+//"public" function list:
 //	ARTDAQConfigurationAPI.getArtdaqNodes(responseHandler,modifiedTables)
 //	ARTDAQConfigurationAPI.saveArtdaqNodes(responseHandler,modifiedTables)
 //	ARTDAQConfigurationAPI.getTypeIndex(typeName)
@@ -82,12 +82,12 @@ ARTDAQConfigurationAPI.getTypeIndex = function(typeName)
 			(typeName == ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_ROUTER]		? ARTDAQConfigurationAPI.NODE_TYPE_ROUTER:
 			(typeName == ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR]	? ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR:
 			(typeName == ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_MONITOR]	? ARTDAQConfigurationAPI.NODE_TYPE_MONITOR:-1))))));
-	
+
 	if(t < 0)
-	{	
-		Debug.log("Illegal type name " + typeName + 
+	{
+		Debug.log("Illegal type name " + typeName +
 				". Tell admins how you got here!", Debug.HIGH_PRIORITY);
-		return; 
+		return;
 	}
 	return t;
 } //end getTypeIndex()
@@ -97,12 +97,12 @@ ARTDAQConfigurationAPI.getTypeIndex = function(typeName)
 ARTDAQConfigurationAPI.getTypeName = function(typeIndex)
 {
 	//Debug.log("getTypeName " + typeIndex);
-	
+
 	if(ARTDAQConfigurationAPI.NODE_TYPES[typeIndex] === undefined)
-	{	
-		Debug.log("Illegal type index " + typeIndex + 
+	{
+		Debug.log("Illegal type index " + typeIndex +
 				". Tell admins how you got here!", Debug.HIGH_PRIORITY);
-		return; 
+		return;
 	}
 	return ARTDAQConfigurationAPI.NODE_TYPES[typeIndex];
 } //end getTypeName()
@@ -112,12 +112,12 @@ ARTDAQConfigurationAPI.getTypeName = function(typeIndex)
 ARTDAQConfigurationAPI.getShortTypeName = function(typeIndex)
 {
 	//Debug.log("getShortTypeName " + typeIndex);
-	
+
 	if(ARTDAQConfigurationAPI.NODE_SHORT_TYPE_NAMES[typeIndex] === undefined)
-	{	
-		Debug.log("Illegal type index " + typeIndex + 
+	{
+		Debug.log("Illegal type index " + typeIndex +
 				". Tell admins how you got here!", Debug.HIGH_PRIORITY);
-		return; 
+		return;
 	}
 	return ARTDAQConfigurationAPI.NODE_SHORT_TYPE_NAMES[typeIndex];
 } //end getShortTypeName()
@@ -127,12 +127,12 @@ ARTDAQConfigurationAPI.getShortTypeName = function(typeIndex)
 ARTDAQConfigurationAPI.getFullTypeName = function(typeIndex)
 {
 	//Debug.log("getFullTypeName " + typeIndex);
-	
+
 	if(ARTDAQConfigurationAPI.NODE_FULL_TYPE_NAMES[typeIndex] === undefined)
-	{	
-		Debug.log("Illegal type index " + typeIndex + 
+	{
+		Debug.log("Illegal type index " + typeIndex +
 				". Tell admins how you got here!", Debug.HIGH_PRIORITY);
-		return; 
+		return;
 	}
 	return ARTDAQConfigurationAPI.NODE_FULL_TYPE_NAMES[typeIndex];
 } //end getFullTypeName()
@@ -153,10 +153,10 @@ ARTDAQConfigurationAPI.getFullTypeName = function(typeIndex)
 //
 //		<nodeType> = ARTDAQConfigurationAPI.NODE_TYPES := reader, builder, aggregator, dispatcher, monitor
 //
-//		
+//
 ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 		modifiedTables)
-{	
+{
 	var modifiedTablesListStr = "";
 	for(var i=0;modifiedTables && i<modifiedTables.length;++i)
 	{
@@ -164,11 +164,11 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 		modifiedTablesListStr += modifiedTables[i].tableName + "," +
 				modifiedTables[i].tableVersion;
 	}
-	
+
 	//get active configuration group
 	DesktopContent.XMLHttpRequest("Request?RequestType=getArtdaqNodes",
-			"modifiedTables=" + modifiedTablesListStr, //end post data, 
-			function(req) 
+			"modifiedTables=" + modifiedTablesListStr, //end post data,
+			function(req)
 			{
 		var errArr = DesktopContent.getXMLRequestErrors(req);
 		var errStr = "";
@@ -177,19 +177,19 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 			errStr += (i?"\n\n":"") + errArr[i];
 			Debug.log("Error: " + errArr[i], Debug.HIGH_PRIORITY);
 		}
-		
+
 		responseHandler(localExtractActiveArtdaqNodes(req));
 			},
 			0,0,true  //reqParam, progressHandler, callHandlerOnErr
 	); //end of getActiveTableGroups handler
-	
+
 	return;
-	
+
 	//=================
 	function localExtractActiveArtdaqNodes(req)
 	{
 		Debug.log("localExtractActiveArtdaqNodes");
-		
+
 		//Example xml response:
 		//		<artdaqSupervisor value='ARTDAQSupervisor'>
 		//			<artdaqSupervisor-contextAddress value='http://correlator2.fnal.gov'/>
@@ -224,51 +224,51 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 		//			<dispatcher-hostname value='localhost'/>
 		//			<dispatcher-subsystem value='3'/>
 		//		</artdaqSupervisor>
-		
+
 		//can call this at almost all API handlers
 		try
 		{
 			var types = ARTDAQConfigurationAPI.NODE_TYPES;
-			
+
 			var i,j;
-			var retObj = {};	
-			
+			var retObj = {};
+
 
 			retObj.nodeCount = 0;
-			
+
 			var artdaqSupervisor = DesktopContent.getXMLNode(
 					req.responseXML,
 					types[ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR]);
-			
+
 			if(artdaqSupervisor)
 			{
-				//extract all nodes from the artdaq supervisor object		
-				
+				//extract all nodes from the artdaq supervisor object
+
 				for(i=0;i<types.length;++i)
 				{
 					Debug.log("Extracting " + types[i]);
-					
+
 					retObj[types[i]] = {};
-					
+
 					if(i == ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR)
 					{
 						//handle artdaq Supervisor node in a special way
 						//	because field types are different
-						
+
 						//add artdaq supervisor object
 						var artdaqSupervisorName = artdaqSupervisor.getAttribute('value');
 
 						retObj[types[i]][artdaqSupervisorName] = {
-								"status" : DesktopContent.getXMLValue(artdaqSupervisor, 
+								"status" : DesktopContent.getXMLValue(artdaqSupervisor,
 										types[i] + "-status") | 0, //integer 0 or 1
-								"contextAddress" : DesktopContent.getXMLValue(artdaqSupervisor, 
+								"contextAddress" : DesktopContent.getXMLValue(artdaqSupervisor,
 										types[i] + "-contextAddress"),
-								"contextPort" : DesktopContent.getXMLValue(artdaqSupervisor, 
+								"contextPort" : DesktopContent.getXMLValue(artdaqSupervisor,
 										types[i] + "-contextPort"),
 						};
 						continue;
 					}
-					
+
 					var nodes = artdaqSupervisor.getElementsByTagName(
 							types[i]);
 					var statuses = artdaqSupervisor.getElementsByTagName(
@@ -277,51 +277,51 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 							types[i] + "-hostname");
 					var subsystemIds = artdaqSupervisor.getElementsByTagName(
 							types[i] + "-subsystem");
-	
-	
+
+
 					for(j=0;j<nodes.length;++j)
 					{
 						var multiNodeString = nodes[j].getElementsByTagName(types[i] + "-multinode");
 						var nodeFixedWidth = nodes[j].getElementsByTagName(types[i] + "-nodefixedwidth");
 						var hostArrayString = nodes[j].getElementsByTagName(types[i] + "-hostarray");
 						var hostFixedWidth = nodes[j].getElementsByTagName(types[i] + "-hostfixedwidth");
-						
+
 						console.log("parameters",multiNodeString,
 								nodeFixedWidth,hostArrayString,hostFixedWidth);
-						
+
 						var nodeName = nodes[j].getAttribute('value');
-						retObj[types[i]][nodeName] = 
+						retObj[types[i]][nodeName] =
 							{
 								"status": 		statuses[j].getAttribute('value') | 0, //integer 0 or 1
 								"hostname": 	decodeURIComponent(hostnames[j].getAttribute('value')),
 								"subsystemId": 	subsystemIds[j].getAttribute('value') | 0, //integer
 							};
-							
+
 						if(multiNodeString.length)
 							retObj[types[i]][nodeName].multiNodeString = multiNodeString[0].getAttribute('value');
 
 
 						if(nodeFixedWidth.length)
 							retObj[types[i]][nodeName].nodeFixedWidth = nodeFixedWidth[0].getAttribute('value') | 0;
-							
+
 
 						if(hostArrayString.length)
 							retObj[types[i]][nodeName].hostArrayString = hostArrayString[0].getAttribute('value');
-							
+
 
 						if(hostFixedWidth.length)
 							retObj[types[i]][nodeName].hostFixedWidth = hostFixedWidth[0].getAttribute('value') | 0;
-							
+
 					}
-					
-					Debug.log("Extracted " + 
+
+					Debug.log("Extracted " +
 							nodes.length + " " +
 							types[i]);
-					
+
 					retObj.nodeCount += nodes.length;
-					
+
 				} //end type extraction loop
-				
+
 				//extract all subsystems
 				retObj.subsystems = {};
 				var subsystems = artdaqSupervisor.getElementsByTagName("subsystem");
@@ -333,27 +333,27 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 						"subsystem" + "-destination");
 
 				for(j=0;j<subsystems.length;++j)
-				{				
-					retObj.subsystems[subsystemIds[j].getAttribute('value') | 0 /*integer*/] = 
+				{
+					retObj.subsystems[subsystemIds[j].getAttribute('value') | 0 /*integer*/] =
 						{
 							"label":			subsystems[j].getAttribute('value'),
 							"sourcesCount":		subsystemSourcesCount[j].getAttribute('value'),
 							"destinationId":	(subsystemDestination[j].getAttribute('value') | 0) /*integer*/,
 						};
 				}
-				
-				
+
+
 			} //end artdaq Supervisor extraction
 			else
 				Debug.log("No artdaq Supervisor found (or there were more than one conflicting). You can manually setup one artdaq Supervisor in the Configuration Tree, " +
 						"or it will be created for you the first time you save your artdaq node configuration.", Debug.WARN_PRIORITY);
-			
+
 			Debug.log("Total nodes extracted " +
 					retObj.nodeCount);
-			
+
 			if(retObj.nodeCount == 0)
 				Debug.log("Successful node extraction, but no artdaq nodes found!", Debug.WARN_PRIORITY);
-			
+
 		}
 		catch(e)
 		{
@@ -363,7 +363,7 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 
 		return retObj;
 	} // end localExtractActiveArtdaqNodes()
-	
+
 } // end getArtdaqNodes()
 
 //====================================================================================
@@ -371,7 +371,7 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 //	save artdaq nodes and subsystems to active groups (with modified tables)
 //		nodeObj := {}
 //			nodeObj.<nodeType> = {}
-//			nodeObj.<nodeType>.<nodeName> = 
+//			nodeObj.<nodeType>.<nodeName> =
 //				{originalName,status,hostname,subsystemName,
 //				(nodeArrString),(hostnameArrString),(nodeNameFixedWidth),(hostnameFixedWidth)}
 //
@@ -382,10 +382,10 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 //
 ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject, responseHandler,
 		modifiedTables)
-{	
+{
 	console.log("nodesObject",nodesObject);
 	console.log("subsystemsObject",subsystemsObject);
-	
+
 	var modifiedTablesListStr = "";
 	for(var i=0;modifiedTables && i<modifiedTables.length;++i)
 	{
@@ -393,20 +393,20 @@ ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject,
 		modifiedTablesListStr += modifiedTables[i].tableName + "," +
 				modifiedTables[i].tableVersion;
 	}
-	
+
 	var nodeString = "";
 	var subsystemString = "";
-	
+
 	for(var i in nodesObject)
 	{
 		if(i == ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR])
 			continue; //skip supervisor type.. it is handled automatically
-		
+
 		nodeString += encodeURIComponent(i) + ":";
 		for(var j in nodesObject[i])
 		{
 			nodeString += encodeURIComponent(j) + "=";
-			
+
 			//map undefined to "" so it is not confused with an actual record UID
 			nodeString += encodeURIComponent(nodesObject[i][j].originalName === undefined?"":nodesObject[i][j].originalName) + ",";
 
@@ -423,30 +423,30 @@ ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject,
 				nodeString += "," + encodeURIComponent(nodesObject[i][j].hostnameArrString);
 			if(nodesObject[i][j].hostnameFixedWidth)
 				nodeString += "," + encodeURIComponent("hnfw," + nodesObject[i][j].hostnameFixedWidth);
-			
+
 			nodeString += ";"; //end node
 		}
-		nodeString += "|"; //end artdaq type		
+		nodeString += "|"; //end artdaq type
 	}
 	for(var i in subsystemsObject)
 	{
 		subsystemString += encodeURIComponent(i) + ":";
 		subsystemString += encodeURIComponent(subsystemsObject[i].destinationName);
-		subsystemString += ";"; //end subsystem 	
+		subsystemString += ";"; //end subsystem
 	}
-	
+
 	console.log("nodeString",nodeString);
 	console.log("subsystemStr",subsystemString);
 
 	//save nodes and subsystems to server
-	DesktopContent.XMLHttpRequest("Request?RequestType=saveArtdaqNodes",			
-			"modifiedTables=" + modifiedTablesListStr + 
+	DesktopContent.XMLHttpRequest("Request?RequestType=saveArtdaqNodes",
+			"modifiedTables=" + modifiedTablesListStr +
 			"&nodeString=" + nodeString +
-			"&subsystemString=" + subsystemString, //end post data, 
-			function(req) 
+			"&subsystemString=" + subsystemString, //end post data,
+			function(req)
 			{
 		console.log("response",req);
-		
+
 		var errArr = DesktopContent.getXMLRequestErrors(req);
 		var errStr = "";
 		for(var i=0;i<errArr.length;++i)
@@ -454,34 +454,15 @@ ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject,
 			errStr += (i?"\n\n":"") + errArr[i];
 			Debug.log("Error: " + errArr[i], Debug.HIGH_PRIORITY);
 		}
-		
+
 		if(errArr.length) return; // do not proceed on error
 		//else call response handler
 		responseHandler(req);
-		
+
 			},
 			0,0,true  //reqParam, progressHandler, callHandlerOnErr
 	); //end of getActiveTableGroups handler
 
 	return;
-	
+
 } // end saveArtdaqNodes()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

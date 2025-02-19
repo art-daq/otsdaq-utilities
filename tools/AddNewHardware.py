@@ -2,7 +2,7 @@
 #____________________________________________________________
 #
 #  addNewHardware.py --help
-# 
+#
 #____________________________________________________________
 #
 
@@ -35,7 +35,7 @@ print
 # at this point call is legal according to argparse
 
 scriptDir = os.path.dirname(os.path.abspath(__file__))
-     
+
 
 print 'Script directory is:'
 print scriptDir
@@ -57,7 +57,7 @@ if ((not os.path.isdir(dest + "/"))):
     print
     print "****************"
     exit("Error: Invalid destination path '" + (args.dest) + "')\n\n")
-    
+
 
 print  'Copy files...'
 
@@ -65,7 +65,7 @@ srcFile = scriptDir + "/../../otsdaq/otsdaq/DAQHardware/FrontEndHardwareTemplate
 os.system("cp " + srcFile + " " + args.dest + "/" + args.name + ".cc");
 os.system("sed -i s/FrontEndHardwareTemplate/" + args.name + "/g " + \
 	args.dest + "/" + args.name + ".cc");
-	
+
 srcFile = scriptDir + "/../../otsdaq/otsdaq/DAQHardware/FrontEndHardwareTemplate.h"
 os.system("cp " + srcFile + " " + args.dest + "/" + args.name + ".h");
 os.system("sed -i s/FrontEndHardwareTemplate/" + args.name + "/g " + \
@@ -79,4 +79,3 @@ print "***********************\n"
 print 'Success!'
 print
 print
-

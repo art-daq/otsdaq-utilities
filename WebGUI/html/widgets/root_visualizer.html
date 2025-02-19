@@ -7,7 +7,7 @@
 
 		<link rel='stylesheet' type='text/css' href='/WebPath/css/fonts.css?family=Donegal+One'>
 
-		<style type="text/css">	
+		<style type="text/css">
 			body {
 				font: 10px arial;
 				background-color: rgba(250, 250, 250, 0);
@@ -24,7 +24,7 @@
 		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-<!-- 
+<!--
 		<link   rel="stylesheet" type="text/css" href="/WebPath/css/ViewerRoot.css" />
 		<script type="text/JavaScript" src="/WebPath/js/visualizers_lib/ViewerRoot.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/visualizers_lib/ViewerRoot_lib/JsRoot-original/scripts/JSRootCore.js?jq2d&onload=createGUI"></script>
@@ -52,16 +52,16 @@
 
 				_savedLID = DesktopContent._localUrnLid;
 				//fill in Visualizer appId
-				DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" + 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
 						"&classNeedle=ots::VisualSupervisor",
 						"", //end post data,
 						function(req)
-						{			
+						{
 							_visualLID = DesktopContent.getXMLValue(req,"id") | 0;
 							DesktopContent._localUrnLid = _visualLID;
 							Debug.log("_ViusalizerAppId " + _visualLID);
 						}, //end handler
-						0, 0, true,//reqParam, progressHandler, callHandlerOnErr, 
+						0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 						false,//doNotShowLoadingOverlay,
 						true //targetGatewaySupervisor
 				); //end getAppId request
@@ -73,11 +73,11 @@
 				var rootFiles = "";
 				window.parent.pagesList_.forEach(function(page){
 						if(page != "undefined" && page.includes(".root")){
-							rootFiles += page + ";"; 
+							rootFiles += page + ";";
 							console.log(rootFiles)
 						}
 					});
-				
+
 				document.getElementById("simpleGUI").attributes["files"].nodeValue = rootFiles;
 				JSROOT.Initialize();
 			}
