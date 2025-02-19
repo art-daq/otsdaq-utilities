@@ -2,14 +2,14 @@
 /// g++ convert_comments_to_doxygen.cpp -o convert_comments_to_doxygen #to compile
 /// Usage: ./convert_comments_to_doxygen myfile.cpp
 ///
-/// The philosophy is that this tool can be used to fix the standard otsdaq 
-///	format comments (which are // at first character for functions and classes, 
+/// The philosophy is that this tool can be used to fix the standard otsdaq
+///	format comments (which are // at first character for functions and classes,
 ///	and // at end of line for header member variable/functions)...
 ///	... and changes them to /// at first character and ///< at end of lines
 ///	such that Doxygen extracts these comments for the web documentation.
-///	
+///
 /// This tool can be run multiple times on the same code and is intended to always
-///	leave the same result (i.e. it will not touch comments already in the correct format). 
+///	leave the same result (i.e. it will not touch comments already in the correct format).
 ///
 /// For example, this tool should be run before a new release, and then
 /// 	followed with otsdaq-utilities/tools/OnlineDocPushUpdate.sh
@@ -65,23 +65,17 @@
 #define __COUTVS__(LVL, X) \
 	TLOG(TLVL_DEBUG + LVL) << __COUT_HDR__ << QUOTE(X) << " = " << X << __E__
 
-
 //==============================================================================
 /// isTypeToFix
 bool isTypeToFix(const std::string& extension)
 {
 	__COUTTV__(extension);
-	if(extension == ".cc" ||
-		extension == ".icc" ||
-		extension == ".cpp" ||
-		extension == ".CC" ||
-		extension == ".h"  ||
-		extension == ".hh" ||
-		extension == ".H")
+	if(extension == ".cc" || extension == ".icc" || extension == ".cpp" ||
+	   extension == ".CC" || extension == ".h" || extension == ".hh" || extension == ".H")
 		return true;
 	__COUT_INFO__ << "===========================> skipping " << extension << __E__;
 	return false;
-} //end isTypeToFix()
+}  //end isTypeToFix()
 
 //==============================================================================
 /// fixFile
@@ -100,7 +94,7 @@ void fixFile(const std::string& path)
 
 	std::string newContents = "";
 
-	bool isHeaderType = path[path.size()-1] == 'h';
+	bool isHeaderType = path[path.size() - 1] == 'h';
 	__COUTV__(isHeaderType);
 
 	//For Doxygen parsing:
@@ -108,13 +102,14 @@ void fixFile(const std::string& path)
 	//	- for source files, convert first character // to ///
 
 	char line[200];
-	bool isNewLine = true;
-	bool inCommentBlock = false;
+	bool isNewLine            = true;
+	bool inCommentBlock       = false;
 	bool inHeaderCommentBlock = false;
-	bool inFunctionBlock = false;
-	bool skippedLastLine = false; //prevent comment block start with empty comment if previous line was skipped
+	bool inFunctionBlock      = false;
+	bool skippedLastLine =
+	    false;  //prevent comment block start with empty comment if previous line was skipped
 	size_t lineNum = 0;
-	while(fgets(line,200,fp))
+	while(fgets(line, 200, fp))
 	{
 		size_t len = strlen(line);
 		++lineNum;
@@ -123,26 +118,25 @@ void fixFile(const std::string& path)
 		{
 			//only look for end of line comments
 			if(!isNewLine || (len > 10 && line[0] != '/' && line[0] != '#' &&
-				!(line[0] == '\t' && line[1] == '/') ))
+			                  !(line[0] == '\t' && line[1] == '/')))
 			{
-				bool found = false;
+				bool found   = false;
 				bool inQuote = false;
 				for(size_t c = 0; c < len; ++c)
 				{
-					newContents += line[c];					
+					newContents += line[c];
 
-					if(!found && !inQuote && c > 10 && c+2 < len && 
-						line[c] == '/' && 
-						line[c+1] == '/' && line[c-1] != ':')
+					if(!found && !inQuote && c > 10 && c + 2 < len && line[c] == '/' &&
+					   line[c + 1] == '/' && line[c - 1] != ':')
 					{
 						//not-: and !inQuote protects against lines like this
-						// const std::string link = "http://xdaq.web.cern.ch";					
+						// const std::string link = "http://xdaq.web.cern.ch";
 
 						found = true;
-						if(line[c+2] != '/') //only apply if needed
+						if(line[c + 2] != '/')  //only apply if needed
 						{
 							newContents += "//<";
-							c += 1; //skip ahead						
+							c += 1;  //skip ahead
 						}
 					}
 					else if(!found && !inQuote && line[c] == '"')
@@ -152,265 +146,265 @@ void fixFile(const std::string& path)
 				}
 
 				inHeaderCommentBlock = false;
-				inCommentBlock = false;
-				inFunctionBlock = false;
-				skippedLastLine = false;
+				inCommentBlock       = false;
+				inFunctionBlock      = false;
+				skippedLastLine      = false;
 
 				continue;
 			}
 		}
-		
+
 		//do source type behavior for headers as well
 
 		if(1 && path.find("RootFileExplorer.h") != std::string::npos)
-			__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " " << 
-				inCommentBlock << " " <<
-				line << __E__;
+			__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " "
+			         << inCommentBlock << " " << line << __E__;
 
 		// else //source type
 		// {
-			if(isNewLine && ((len > 2 && 
-				line[0] == '/' &&
-				line[1] == '/' && 				
-				line[2] != '=') || 
-				(isHeaderType && len > 3 && 
-				line[0] == '\t' && //header might tab in comments
-				line[1] == '/' &&
-				line[2] == '/' && 				
-				line[3] != '='
-				)))
+		if(isNewLine &&
+		   ((len > 2 && line[0] == '/' && line[1] == '/' && line[2] != '=') ||
+		    (isHeaderType && len > 3 && line[0] == '\t' &&  //header might tab in comments
+		     line[1] == '/' && line[2] == '/' && line[3] != '=')))
+		{
+			bool headerTab = (isHeaderType && line[0] == '\t');
+
+			if(path.find("RootFileExplorer.h") != std::string::npos)
+				__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " "
+				         << inCommentBlock << " " << inHeaderCommentBlock << " "
+				         << headerTab << " " << line << __E__;
+
+			if(isHeaderType && !inHeaderCommentBlock && !inCommentBlock)
 			{
-				bool headerTab = (isHeaderType && line[0] == '\t');
+				//ignore commented functions in header files
+				std::string testStr(line);
+				size_t      i0a = testStr.find(' ');
+				size_t      i0b = testStr.find('\t');
+				size_t      i1  = testStr.find('(');
+				size_t      i2  = testStr.find(')');
+				size_t      i3  = testStr.find(';');
 
 				if(path.find("RootFileExplorer.h") != std::string::npos)
-					__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " " << 
-						inCommentBlock << " " << inHeaderCommentBlock << " " << headerTab << " " <<
-						line << __E__;
-
-				if(isHeaderType && !inHeaderCommentBlock && !inCommentBlock)
 				{
-					//ignore commented functions in header files
-					std::string testStr(line);
-					size_t i0a = testStr.find(' ');
-					size_t i0b = testStr.find('\t');
-					size_t i1 = testStr.find('(');
-					size_t i2 = testStr.find(')');
-					size_t i3 = testStr.find(';');
+					__COUTV__(i0a);
+					__COUTV__(i0b);
+				}
+
+				if(i0a != std::string::npos ||
+				   i0b != std::string::
+				              npos)  //must have a space or tab in function declaration
+				{
+					size_t i0 = (i0b < i0a) ? i0b : i0a;
 
 					if(path.find("RootFileExplorer.h") != std::string::npos)
 					{
-						__COUTV__(i0a);
-						__COUTV__(i0b);						
+						__COUTV__(i0);
+						__COUTV__(i3);
 					}
 
-					if(i0a != std::string::npos || i0b != std::string::npos) //must have a space or tab in function declaration
-					{						
-						size_t i0 = (i0b < i0a)?i0b:i0a;
-
-						if(path.find("RootFileExplorer.h") != std::string::npos)
+					if(i1 != std::string::npos && i2 != std::string::npos &&
+					   i3 != std::string::npos)  // ( ); style exists
+					{
+						if(i0 < i1 && i1 < i2 && i2 < i3)
 						{
-							__COUTV__(i0);
-							__COUTV__(i3);						
-						}
-
-						if(i1 != std::string::npos && i2 != std::string::npos && i3 != std::string::npos) // ( ); style exists 
-						{
-							
-							if(i0 < i1 && i1 < i2 && i2 < i3)
-							{
-								__COUT__ << "skipping header commented function delcaration: " << line;
-								newContents += line;
-								isNewLine = true;
-								skippedLastLine = true;
-								continue;
-							}
-						}
-						//ignore commented member variable declaraionts in header files
-						if(i3 != std::string::npos && i3 == len - 2) //ends with ;
-						{
-							__COUT__ << "skipping header commented member variable delcaration: " << line;
+							__COUT__ << "skipping header commented function delcaration: "
+							         << line;
 							newContents += line;
-							isNewLine = true;
+							isNewLine       = true;
 							skippedLastLine = true;
 							continue;
 						}
 					}
-				}
-
-				if(path.find("RootFileExplorer.h") != std::string::npos)
-					__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " " << 
-						inCommentBlock << " " << inHeaderCommentBlock << " " << headerTab << " " <<
-						line << __E__;
-
-				if(line[2] == '{')
-					inFunctionBlock = true;
-				if(len > 3 && line[2] == ' ' && line[3] == '{')
-					inFunctionBlock = true;
-
-				if(inFunctionBlock)
-				{
-					__COUTT__ << "skipping comment block: " << line << __E__;
-					inCommentBlock = false;
-					newContents += line;
-					isNewLine = true;
-
-					if(line[2] == '}')
-						inFunctionBlock = false;
-					if(len > 3 && line[2] == ' ' && line[3] == '}')
-						inFunctionBlock = false;
-					if(len > 3 && line[2] == '{' && line[3] == '}')
-						inFunctionBlock = false;
-					if(len > 4 && line[2] == '{' && line[4] == '}')
-						inFunctionBlock = false;
-					if(len > 4 && line[3] == '{' && line[4] == '}')
-						inFunctionBlock = false;
-
-					if(!inFunctionBlock)
-						skippedLastLine = true; //mark in case of gratuitous empty // to follow
-
-					continue;
-				}
-
-				if(len > 5) //check for clang-format
-				{
-					std::string testStr(line);
-					if(len < 30 && testStr.find("clang-format") != std::string::npos)
+					//ignore commented member variable declaraionts in header files
+					if(i3 != std::string::npos && i3 == len - 2)  //ends with ;
 					{
-						__COUTT__ << "skipping clang: " << line << __E__;
+						__COUT__
+						    << "skipping header commented member variable delcaration: "
+						    << line;
 						newContents += line;
-						isNewLine = true;
-						skippedLastLine = true;
-						continue;
-					}
-					else if(!inCommentBlock && !inHeaderCommentBlock &&
-						testStr.find("#") < 5)
-					{
-						__COUTT__ << "skipping # pragma: " << line << __E__;
-						newContents += line;
-						isNewLine = true;
-						skippedLastLine = true;
-						continue;
-					}
-					else if(!inCommentBlock && !inHeaderCommentBlock &&
-						testStr.find("BOOST_") < 5)
-					{
-						__COUTT__ << "skipping BOOST: " << line << __E__;
-						newContents += line;
-						isNewLine = true;
-						skippedLastLine = true;
-						continue;
-					}
-					else if(!inCommentBlock && !inHeaderCommentBlock &&
-						testStr.find("XDAQ_") < 5)
-					{
-						__COUTT__ << "skipping XDAQ: " << line << __E__;
-						newContents += line;
-						isNewLine = true;
-						skippedLastLine = true;
-						continue;
-					}
-					else if(!inCommentBlock && !inHeaderCommentBlock &&
-						testStr.find("static ") < 5)
-					{
-						__COUTT__ << "skipping static: " << line << __E__;
-						newContents += line;
-						isNewLine = true;
+						isNewLine       = true;
 						skippedLastLine = true;
 						continue;
 					}
 				}
-
-				if(0 && path.find("JSONDispatcher_module.cc") != std::string::npos)
-					__COUT__ << len << ": " << inFunctionBlock << " " << 
-						inCommentBlock << " " << headerTab << " " <<
-						line << __E__;
-
-				if(len == 3 && skippedLastLine)
-				{
-					//prevent comment block start with empty comment if previous line was skipped
-					__COUTT__ << "skipping gratuitous comment in skipzone: " << line << __E__;
-					newContents += line;
-					isNewLine = true;
-					continue;
-				}
-				else if(headerTab && len == 4 && skippedLastLine)
-				{
-					//prevent comment block start with empty comment if previous line was skipped
-					__COUTT__ << "skipping gratuitous header comment in skipzone: " << line << __E__;
-					newContents += line;
-					isNewLine = true;
-					continue;
-				}
-				else 
-					skippedLastLine = false;
-
-
-				if(0 && path.find("JSONDispatcher_module.cc") != std::string::npos)
-					__COUT__ << len << ": " << inFunctionBlock << " " << 
-						inCommentBlock << " " << headerTab << " " <<
-						line << __E__;
-
-				if(!headerTab && line[2] != '/') //dont add if already 3 (but stay in comment block)
-					newContents += '/'; //add extra '/'
-				else if(headerTab && line[3] != '/')
-				{
-					inHeaderCommentBlock = true;
-					newContents += "\t//";
-					newContents += '/'; //add extra '/'
-					newContents += (&line[3]);
-
-					if(len && line[len-1] == '\n')
-						isNewLine = true;
-					else
-					{
-						__COUT__ << "No new line at size " << len << __E__;
-						isNewLine = false;
-					}
-					continue;
-				}
-				else if(!headerTab && len > 4 && line[2] == '/' && line[3] == '/' && line[4] == '/')
-				{
-					//prevent comment block start with empty comment if previous line was skipped
-					__COUTT__ << "Ending comment block with /////: " << line << __E__;
-					inCommentBlock = false;
-					newContents += line;
-					if(len && line[len-1] == '\n')
-						isNewLine = true;
-					else
-					{
-						__COUT__ << "No new line at size " << len << __E__;
-						isNewLine = false;
-					}
-					continue;
-				}
-
-				if(headerTab)
-					inHeaderCommentBlock = true;
-				else
-					inCommentBlock = true;
 			}
-			else if(isNewLine && inCommentBlock && len == 1) //keep comment block going for empty newlines
+
+			if(path.find("RootFileExplorer.h") != std::string::npos)
+				__COUT__ << lineNum << ". " << len << ": " << inFunctionBlock << " "
+				         << inCommentBlock << " " << inHeaderCommentBlock << " "
+				         << headerTab << " " << line << __E__;
+
+			if(line[2] == '{')
+				inFunctionBlock = true;
+			if(len > 3 && line[2] == ' ' && line[3] == '{')
+				inFunctionBlock = true;
+
+			if(inFunctionBlock)
 			{
-				__COUTT__ << "Continue comment block" << __E__;
-				newContents += "///"; //add extra '///' to keep comment block going
-			}
-			else if(isNewLine && inHeaderCommentBlock && len == 1) //keep comment block going for empty newlines
-			{
-				__COUTT__ << "Continue header comment block" << __E__;
-				newContents += "\t///"; //add extra '\t///' to keep comment block going
-			}
-			else 
-			{
-				inHeaderCommentBlock = false;
+				__COUTT__ << "skipping comment block: " << line << __E__;
 				inCommentBlock = false;
-				inFunctionBlock = false;
-				skippedLastLine = false;
+				newContents += line;
+				isNewLine = true;
+
+				if(line[2] == '}')
+					inFunctionBlock = false;
+				if(len > 3 && line[2] == ' ' && line[3] == '}')
+					inFunctionBlock = false;
+				if(len > 3 && line[2] == '{' && line[3] == '}')
+					inFunctionBlock = false;
+				if(len > 4 && line[2] == '{' && line[4] == '}')
+					inFunctionBlock = false;
+				if(len > 4 && line[3] == '{' && line[4] == '}')
+					inFunctionBlock = false;
+
+				if(!inFunctionBlock)
+					skippedLastLine =
+					    true;  //mark in case of gratuitous empty // to follow
+
+				continue;
 			}
-			
-			newContents += line;
+
+			if(len > 5)  //check for clang-format
+			{
+				std::string testStr(line);
+				if(len < 30 && testStr.find("clang-format") != std::string::npos)
+				{
+					__COUTT__ << "skipping clang: " << line << __E__;
+					newContents += line;
+					isNewLine       = true;
+					skippedLastLine = true;
+					continue;
+				}
+				else if(!inCommentBlock && !inHeaderCommentBlock && testStr.find("#") < 5)
+				{
+					__COUTT__ << "skipping # pragma: " << line << __E__;
+					newContents += line;
+					isNewLine       = true;
+					skippedLastLine = true;
+					continue;
+				}
+				else if(!inCommentBlock && !inHeaderCommentBlock &&
+				        testStr.find("BOOST_") < 5)
+				{
+					__COUTT__ << "skipping BOOST: " << line << __E__;
+					newContents += line;
+					isNewLine       = true;
+					skippedLastLine = true;
+					continue;
+				}
+				else if(!inCommentBlock && !inHeaderCommentBlock &&
+				        testStr.find("XDAQ_") < 5)
+				{
+					__COUTT__ << "skipping XDAQ: " << line << __E__;
+					newContents += line;
+					isNewLine       = true;
+					skippedLastLine = true;
+					continue;
+				}
+				else if(!inCommentBlock && !inHeaderCommentBlock &&
+				        testStr.find("static ") < 5)
+				{
+					__COUTT__ << "skipping static: " << line << __E__;
+					newContents += line;
+					isNewLine       = true;
+					skippedLastLine = true;
+					continue;
+				}
+			}
+
+			if(0 && path.find("JSONDispatcher_module.cc") != std::string::npos)
+				__COUT__ << len << ": " << inFunctionBlock << " " << inCommentBlock << " "
+				         << headerTab << " " << line << __E__;
+
+			if(len == 3 && skippedLastLine)
+			{
+				//prevent comment block start with empty comment if previous line was skipped
+				__COUTT__ << "skipping gratuitous comment in skipzone: " << line << __E__;
+				newContents += line;
+				isNewLine = true;
+				continue;
+			}
+			else if(headerTab && len == 4 && skippedLastLine)
+			{
+				//prevent comment block start with empty comment if previous line was skipped
+				__COUTT__ << "skipping gratuitous header comment in skipzone: " << line
+				          << __E__;
+				newContents += line;
+				isNewLine = true;
+				continue;
+			}
+			else
+				skippedLastLine = false;
+
+			if(0 && path.find("JSONDispatcher_module.cc") != std::string::npos)
+				__COUT__ << len << ": " << inFunctionBlock << " " << inCommentBlock << " "
+				         << headerTab << " " << line << __E__;
+
+			if(!headerTab &&
+			   line[2] != '/')       //dont add if already 3 (but stay in comment block)
+				newContents += '/';  //add extra '/'
+			else if(headerTab && line[3] != '/')
+			{
+				inHeaderCommentBlock = true;
+				newContents += "\t//";
+				newContents += '/';  //add extra '/'
+				newContents += (&line[3]);
+
+				if(len && line[len - 1] == '\n')
+					isNewLine = true;
+				else
+				{
+					__COUT__ << "No new line at size " << len << __E__;
+					isNewLine = false;
+				}
+				continue;
+			}
+			else if(!headerTab && len > 4 && line[2] == '/' && line[3] == '/' &&
+			        line[4] == '/')
+			{
+				//prevent comment block start with empty comment if previous line was skipped
+				__COUTT__ << "Ending comment block with /////: " << line << __E__;
+				inCommentBlock = false;
+				newContents += line;
+				if(len && line[len - 1] == '\n')
+					isNewLine = true;
+				else
+				{
+					__COUT__ << "No new line at size " << len << __E__;
+					isNewLine = false;
+				}
+				continue;
+			}
+
+			if(headerTab)
+				inHeaderCommentBlock = true;
+			else
+				inCommentBlock = true;
+		}
+		else if(isNewLine && inCommentBlock &&
+		        len == 1)  //keep comment block going for empty newlines
+		{
+			__COUTT__ << "Continue comment block" << __E__;
+			newContents += "///";  //add extra '///' to keep comment block going
+		}
+		else if(isNewLine && inHeaderCommentBlock &&
+		        len == 1)  //keep comment block going for empty newlines
+		{
+			__COUTT__ << "Continue header comment block" << __E__;
+			newContents += "\t///";  //add extra '\t///' to keep comment block going
+		}
+		else
+		{
+			inHeaderCommentBlock = false;
+			inCommentBlock       = false;
+			inFunctionBlock      = false;
+			skippedLastLine      = false;
+		}
+
+		newContents += line;
 		//}
 
-		if(len && line[len-1] == '\n')
+		if(len && line[len - 1] == '\n')
 			isNewLine = true;
 		else
 		{
@@ -418,15 +412,14 @@ void fixFile(const std::string& path)
 			isNewLine = false;
 		}
 
-	} //end main loop
+	}  //end main loop
 	std::fclose(fp);
 
-
-	fp = std::fopen(path.c_str(), "wb");	
+	fp = std::fopen(path.c_str(), "wb");
 	if(!fp)
 	{
-		__SS__ << "Could not open file to write at " << path << ". Error: " << errno << " - "
-		       << strerror(errno) << __E__;
+		__SS__ << "Could not open file to write at " << path << ". Error: " << errno
+		       << " - " << strerror(errno) << __E__;
 		__SS_THROW__;
 	}
 	std::fwrite(&newContents[0], 1, newContents.size(), fp);
@@ -445,7 +438,7 @@ void fixFile(const std::string& path)
 	// __COUTV__(contents.size());
 }  // end fixFile
 
-#include <dirent.h>    //DIR and dirent
+#include <dirent.h>  //DIR and dirent
 //==============================================================================
 /// recursiveFixPathContent
 ///		return empty vector if path can not be opened as directory.
@@ -471,7 +464,6 @@ void recursiveFixPathContent(const std::string& path)
 
 		return;
 	}
-
 
 	// else directory good, get all folders, .h, .cc, .txt files
 	while((entry = readdir(pDIR)))
@@ -501,7 +493,7 @@ void recursiveFixPathContent(const std::string& path)
 				}
 				else  //assume file
 					__COUT__ << "Unable to open path as directory: "
-					    << (path + "/" + name) << __E__;
+					         << (path + "/" + name) << __E__;
 			}
 
 			if(type == 4)
@@ -529,8 +521,8 @@ void recursiveFixPathContent(const std::string& path)
 				}
 				catch(...)
 				{
-					__COUT_WARN__ << "Invalid file extension, skipping '" << name << "' ..."
-					          << __E__;
+					__COUT_WARN__ << "Invalid file extension, skipping '" << name
+					              << "' ..." << __E__;
 				}
 			}
 		}
@@ -546,12 +538,11 @@ try
 {
 	if(argc < 2)
 	{
-		fprintf(stderr,
-		        "Usage: $0 <path>.\n");
+		fprintf(stderr, "Usage: $0 <path>.\n");
 		exit(1);
 	}
 
-	std::string path   = argv[1];
+	std::string path = argv[1];
 
 	__COUTV__(path);
 

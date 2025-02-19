@@ -240,7 +240,7 @@ try
 
 	std::map<unsigned int, unsigned int> sourceLastSequenceID;  // map from sourceID to
 	                                                            // lastSequenceID to
-	    // identify missed messages
+	// identify missed messages
 	long long    newSourceId;
 	uint32_t     newSequenceId;
 	unsigned int c;
@@ -1238,8 +1238,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 			modifiedTraceList +=
 			    ";" + hostLabelsPair.first;  // insert xdaq context version of name
-			    // FIXME and create mapp from user's typed in xdaq
-			    // context name to TRACE hostname resolution
+			// FIXME and create mapp from user's typed in xdaq
+			// context name to TRACE hostname resolution
 
 			modifiedTraceList += rxParameters.getValue("TRACEList");
 

@@ -239,7 +239,7 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	//	__COUT__ << "requestType " << requestType << " files: " << cgiIn.getFiles().size()
 	//<< std::endl;
 	//
-	
+
 	// to report to logbook admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,tempStr);
 
