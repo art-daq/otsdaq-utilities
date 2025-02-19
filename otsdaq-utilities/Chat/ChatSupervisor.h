@@ -3,7 +3,6 @@
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
-// clang-format off
 namespace ots
 {
 /// ChatSupervisor
@@ -14,23 +13,23 @@ class ChatSupervisor : public CoreSupervisorBase
   public:
 	XDAQ_INSTANTIATOR();
 
-								ChatSupervisor					(xdaq::ApplicationStub* s);
-	virtual 					~ChatSupervisor					(void);
+	ChatSupervisor(xdaq::ApplicationStub* s);
+	virtual ~ChatSupervisor(void);
 
-	void 						destroy							(void);
+	void destroy(void);
 
-	virtual void				defaultPage						(xgi::Input* in, xgi::Output* out) override;
-	void 						Default							(xgi::Input* in, xgi::Output* out);
-	
-	virtual void 				request							(const std::string&               requestType,
-	             				       							 cgicc::Cgicc&                    cgiIn,
-	             				       							 HttpXmlDocument&                 xmlOut,
-	             				       							 const WebUsers::RequestUserInfo& userInfo) override;
+	virtual void defaultPage(xgi::Input* in, xgi::Output* out) override;
+	void         Default(xgi::Input* in, xgi::Output* out);
 
-	virtual void 				forceSupervisorPropertyValues	(void) override;  	///< override to force
-	                                                         	  					///< supervisor property
-	                                                         	  					///< values (and ignore user
-	                                                         	  					///< settings)
+	virtual void request(const std::string&               requestType,
+	                     cgicc::Cgicc&                    cgiIn,
+	                     HttpXmlDocument&                 xmlOut,
+	                     const WebUsers::RequestUserInfo& userInfo) override;
+
+	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
+	                                                            ///< supervisor property
+	    ///< values (and ignore user
+	    ///< settings)
 
   private:
 	///"Chat History" database associations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,8 +48,8 @@ class ChatSupervisor : public CoreSupervisorBase
 
 	enum
 	{
-		CHAT_HISTORY_EXPIRATION_TIME = 30*60,   ///< 30 minutes
-		CHAT_HISTORY_MAX_ENTRIES     = 100,  ///< 100 entries is vector max size
+		CHAT_HISTORY_EXPIRATION_TIME = 30 * 60,  ///< 30 minutes
+		CHAT_HISTORY_MAX_ENTRIES     = 100,      ///< 100 entries is vector max size
 	};
 
 	uint64_t incrementAndGetLastUpdate();
@@ -71,6 +70,5 @@ class ChatSupervisor : public CoreSupervisorBase
 	void escapeChat(std::string& chat);
 };
 }  // namespace ots
-// clang-format on
 
 #endif

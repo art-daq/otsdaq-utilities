@@ -1,7 +1,7 @@
 include(CetTest)
 cet_enable_asserts()
 
-cet_script(ALWAYS_COPY 
+cet_script(ALWAYS_COPY
 	ProductsUpdate.py
 	UpdateOTS.sh
 	AddNewInterface.py

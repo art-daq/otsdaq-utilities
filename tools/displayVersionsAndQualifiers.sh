@@ -3,8 +3,8 @@
 #############################
 #############################
 # function to display otsdaq versions and qualifiers
-function displayVersionsAndQualifiers 
-{	
+function displayVersionsAndQualifiers
+{
 	#this is TODO for the new Spack world:
 	OTS_ENV=`ls -l -rta | grep tdaq-v | rev | cut -d '/' -f1 | rev | head -1`
 	echo -e "displayVersionsAndQualifiers.sh:${LINENO} |  \t OTS_ENV=$OTS_ENV"
@@ -34,7 +34,7 @@ function displayVersionsAndQualifiers
 	#the above should be a clean array of v##_##_##, as of April 2021, the latest release is now first (instead of last)
 	#LATEST_RELEASE=${ALL_RELEASES[${#ALL_RELEASES[@]}-1]}
 	LATEST_RELEASE=${ALL_RELEASES[0]}
-	echo -e "displayVersionsAndQualifiers.sh:${LINENO}  \t The latest otsdaq release is $LATEST_RELEASE"	
+	echo -e "displayVersionsAndQualifiers.sh:${LINENO}  \t The latest otsdaq release is $LATEST_RELEASE"
 
 	echo
 	echo -e "displayVersionsAndQualifiers.sh:${LINENO}  \t Note: below are the available qualifiers for $LATEST_RELEASE.."
@@ -62,5 +62,5 @@ function displayVersionsAndQualifiers
 	ls ${MRB_SOURCE}/../ | grep localProducts
 	echo
 	echo
-	
+
 } #end displayVersionsAndQualifiers

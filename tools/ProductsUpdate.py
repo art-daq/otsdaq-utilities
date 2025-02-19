@@ -24,7 +24,7 @@ os.chdir(cmd);
 
 if(os.path.isfile('pullProducts')):
 	os.remove('pullProducts');
-	
+
 ######################################################################
 cmd='curl -O http://scisoft.fnal.gov/scisoft/bundles/tools/pullProducts';
 print cmd
@@ -95,9 +95,3 @@ for otsdaq_version in reversed(otsdaq_versions):
 cmd="rm -f *.bz2 *.txt";
 print cmd
 os.system(cmd)
-
-
-
-
-
-
