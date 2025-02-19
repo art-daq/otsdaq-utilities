@@ -26,10 +26,8 @@ class ChatSupervisor : public CoreSupervisorBase
 	                     HttpXmlDocument&                 xmlOut,
 	                     const WebUsers::RequestUserInfo& userInfo) override;
 
-	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
-	                                                            ///< supervisor property
-	    ///< values (and ignore user
-	    ///< settings)
+	virtual void forceSupervisorPropertyValues(void)
+	    override;  ///< override to force supervisor property values (and ignore user settings)
 
   private:
 	///"Chat History" database associations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
