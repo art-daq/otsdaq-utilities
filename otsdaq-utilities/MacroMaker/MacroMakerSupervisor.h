@@ -5,10 +5,10 @@
 
 namespace ots
 {
-// MacroMakerSupervisor
-//	This class handles the user interface to the web desktop MacroMaker. MacroMaker
-//	is a tool to conduct read and write commands with front-end interfaces and to manage
-//	sequence of commands on a per user basis.
+/// MacroMakerSupervisor
+///	This class handles the user interface to the web desktop MacroMaker. MacroMaker
+///	is a tool to conduct read and write commands with front-end interfaces and to manage
+///	sequence of commands on a per user basis.
 class MacroMakerSupervisor : public CoreSupervisorBase
 {
   public:
@@ -25,20 +25,20 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                     HttpXmlDocument&                 xmlOut,
 	                     const WebUsers::RequestUserInfo& userInfo) override;
 
-	virtual void forceSupervisorPropertyValues(void) override;  // override to force
-	                                                            // supervisor property
-	                                                            // values (and ignore user
-	                                                            // settings)
+	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
+	                                                            ///< supervisor property
+	///< values (and ignore user
+	///< settings)
 
   private:
-	// start MacroMaker only functions
+	/// start MacroMaker only functions
 	void generateURL(void);
 	void verification(xgi::Input* in, xgi::Output* out);
 	void requestIcons(xgi::Input* in, xgi::Output* out);
 	void tooltipRequest(xgi::Input* in, xgi::Output* out);
 	void requestWrapper(xgi::Input* in, xgi::Output* out);
-	// end MacroMaker only functions
-
+	/// end MacroMaker only functions
+	///
 	static void RemoteControlWorkLoop(MacroMakerSupervisor* supervisorPtr);
 
 	void handleRequest(const std::string                Command,
@@ -141,7 +141,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	bool        defaultSequence_;
 
 	std::map<std::string /* username */, std::vector<std::string> /* last command */>
-	    lastFeCommandToHistory_;  //prevent repeats to history
+	    lastFeCommandToHistory_;  ///<prevent repeats to history
 
 };  // end MacroMakerSupervisor declaration
 

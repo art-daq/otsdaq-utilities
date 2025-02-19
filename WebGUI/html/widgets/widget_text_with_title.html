@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Text</title>
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				//background-color: rgb(41,46,55);
 				background-color: rgb(250,250,250);
@@ -10,7 +10,7 @@
 			a{
 				color: green;
 				height: auto;
-		    	text-align: center;
+				text-align: center;
 			}
 			div{
 			padding: 2.5px;
@@ -30,7 +30,7 @@
 
 		</style>
 
-		<script>		
+		<script>
 
 			//functions:
 				//init()
@@ -51,8 +51,8 @@
 				console.log("setupPVs() : " , settings);
 			}
 
-			function newWidget(widget, parameters) 
-			{			
+			function newWidget(widget, parameters)
+			{
 				var table = document.createElement('table');
 				table.id = "display-table";
 				table.style.height = "100%";
@@ -103,7 +103,7 @@
 					a_title.style.width = "50px";
 					a_title.style.height = "40%";
 
-//					document.getElementById("display").appendChild(a);	
+//					document.getElementById("display").appendChild(a);
 //					a = document.getElementById(pv);
 //					console.log("td" + Math.floor(counter/columns) + "-" + (counter%rows +1));
 					var center = document.createElement("center");
@@ -111,7 +111,7 @@
 					center.appendChild(a);
 					console.log(document.body);
 					var first = Math.floor(counter/columns);
-					if(first < 1) {first = 1;}				
+					if(first < 1) {first = 1;}
 					console.log("td" + first + "-" + (counter%rows +1));
 					document.getElementById("td" + first + "-" + (counter%rows +1)).appendChild(center);
 					counter++;
@@ -136,7 +136,7 @@
 
 			function setParameters(attributes)
 			{
-				
+
 			}
 
 			function newValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
@@ -200,7 +200,7 @@
 			}
 
 		</script>
-		
+
 	</head>
 
 	<body onload='//init() called by DesktopContent.js'>

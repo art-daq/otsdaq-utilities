@@ -1,5 +1,5 @@
 //============================================================================================
-// function getBasicLayouts() 
+// function getBasicLayouts()
 // {
 //  var start = Ext.create(
 //                         'Ext.container.Container',
@@ -8,11 +8,11 @@
 //                          title    : 'Start Page',
 //                          layout   : 'fit',
 //                          bodyStyle: 'padding:25px',
-//                          contentEl: 'goesHere'  
+//                          contentEl: 'goesHere'
 //                         },
-//                        ).show(); 
-// 
+//                        ).show();
+//
 //  return {
-//          start: start 
+//          start: start
 //         } ;
 // } ;

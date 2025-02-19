@@ -4,49 +4,49 @@
 <title>Parilla - Rotating in 3D - Test 4</title>
 
 
-	<style type="text/css">			
+	<style type="text/css">
 	body {
 		background-color: rgb(255,177,20);
 	}
-	
+
 		cavnas
 			{
-		
+
 			}
-	
+
 	</style>
 
 
 
-<script type="text/javascript" src="./Rotating3DFiles/glMatrix-0.9.5.min.js"></script> 
-<script type="text/javascript" src="./Rotating3DFiles/webgl-utils.js"></script>		 
+<script type="text/javascript" src="./Rotating3DFiles/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="./Rotating3DFiles/webgl-utils.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-	
+
 <script id="shader-fs" type="x-shader/x-fragment">
 	precision mediump float;
-	
+
 	varying vec4 vColor;
-	
+
 	void main(void) {
-	    gl_FragColor = vColor;
+		gl_FragColor = vColor;
 	}
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
-    attribute vec3 aVertexPosition;
-    attribute vec4 aVertexColor;
+	attribute vec3 aVertexPosition;
+	attribute vec4 aVertexColor;
 
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
 
-    varying vec4 vColor;
+	varying vec4 vColor;
 
-    void main(void) {
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        vColor = aVertexColor;
-    }
+	void main(void) {
+		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+		vColor = aVertexColor;
+	}
 </script>
 
 
@@ -55,16 +55,16 @@
 
 //////////////////////////////////////////TABLE_OF_CONTENTS//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	 NOTE!!! Server requests go to 
+//	 NOTE!!! Server requests go to
 //	Supervisor/src/common/Supervisor.cc
-//	line 1200 
+//	line 1200
 //	void Supervisor::request(xgi::Input * in, xgi::Output * out )  throw (xgi::exception::Exception)
 //	request names: getGeometry and getHits
 
 
 //onload function - webGlStart -
 //color scale based on number of collisions - getPlaneParticleCollisionsHandler (req)
-//key bindings - handleKeys(event) 
+//key bindings - handleKeys(event)
 
 
 
@@ -82,8 +82,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// MY VARIABLES//////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-var canvas; 
-var gl; //function initGL (cavnas) 
+var canvas;
+var gl; //function initGL (cavnas)
 var shaderScript; //function getShader
 var str;//-
 var k;//-
@@ -91,7 +91,7 @@ var shaderProgram; //function initShaders
 var shader;//-
 var fragmentShader; //-
 var vertexShader; //-
-var vertexPositionBuffer; // assign coordinates to planes of pyramid 
+var vertexPositionBuffer; // assign coordinates to planes of pyramid
 var pyramidVertexColorBuffer; // assign color to planes of pyramid
 var cubeVertexPositionBuffer; // assign coordinates to planes of cube
 var cubeVertexColorBuffer; // assign color to planes of cube
@@ -138,199 +138,199 @@ var _arrayIdentifier;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-   
-//Draws canvas or warns user that their browser is incompatible 
-    function initGL(canvas) {
-    		try {
-    gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-	            gl.viewportWidth = canvas.width;
-	            gl.viewportHeight = canvas.height;
-	        					} 
-		        	
-    		catch (e) {
-		        				}
-	        
-    		if (!gl) {
-	            alert("Could not initialize WebGL, sorry :-(");
-	        					}
-    		
-    		
-    		}
+
+//Draws canvas or warns user that their browser is incompatible
+	function initGL(canvas) {
+			try {
+	gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+				gl.viewportWidth = canvas.width;
+				gl.viewportHeight = canvas.height;
+								}
+
+			catch (e) {
+								}
+
+			if (!gl) {
+				alert("Could not initialize WebGL, sorry :-(");
+								}
 
 
-    function getShader(gl, id) {
-        shaderScript = document.getElementById(id);
-        if (!shaderScript) 
-	        	{
-	            return null;
-	        	}
-
-        var theSource = "";
-  	  var currentChild = shaderScript.firstChild;
-  	  
-  	  while(currentChild) {
-  	    if (currentChild.nodeType == 3) {
-  	      theSource += currentChild.textContent;
-  	    }
-  	    
-  	    currentChild = currentChild.nextSibling;
-  	  }
-
-  	  var shader;
-        
-        if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
-        } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
-        } else {
-            return null;
-        }
-     // Send the source to the shader objectCollisonArr
-  	  
-  	  gl.shaderSource(shader, theSource);
-  	  
-  	  // Compile the shader program
-  	  
-  	  gl.compileShader(shader);
-  	  
-  	  // See if it compiled successfully
-  	  
-  	  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-  	    alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
-  	    return null;
-  	  }
-  	  return shader;
-    }
+			}
 
 
-    
+	function getShader(gl, id) {
+		shaderScript = document.getElementById(id);
+		if (!shaderScript)
+				{
+				return null;
+				}
 
-    function initShaders() {
-        fragmentShader = getShader(gl, "shader-fs");
-        vertexShader = getShader(gl, "shader-vs");
+		var theSource = "";
+	  var currentChild = shaderScript.firstChild;
+
+	  while(currentChild) {
+		if (currentChild.nodeType == 3) {
+		  theSource += currentChild.textContent;
+		}
+
+		currentChild = currentChild.nextSibling;
+	  }
+
+	  var shader;
+
+		if (shaderScript.type == "x-shader/x-fragment") {
+			shader = gl.createShader(gl.FRAGMENT_SHADER);
+		} else if (shaderScript.type == "x-shader/x-vertex") {
+			shader = gl.createShader(gl.VERTEX_SHADER);
+		} else {
+			return null;
+		}
+	 // Send the source to the shader objectCollisonArr
+
+	  gl.shaderSource(shader, theSource);
+
+	  // Compile the shader program
+
+	  gl.compileShader(shader);
+
+	  // See if it compiled successfully
+
+	  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+		alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+		return null;
+	  }
+	  return shader;
+	}
+
+
+
+
+	function initShaders() {
+		fragmentShader = getShader(gl, "shader-fs");
+		vertexShader = getShader(gl, "shader-vs");
 //        gl.bindAttribLocation(shaderProgram, 0, "aVertex");
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+		shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		gl.linkProgram(shaderProgram);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert("Could not initialize shaders");
-        }
+		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			alert("Could not initialize shaders");
+		}
 
-        gl.useProgram(shaderProgram);
+		gl.useProgram(shaderProgram);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-       
-        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+		shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-    }
+		shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+		gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
-
-    mvMatrix = mat4.create();
-    mvMatrixStack = [];
-    pMatrix = mat4.create();
-
-    function mvPushMatrix() {
-        copy = mat4.create();
-        mat4.set(mvMatrix, copy);
-        mvMatrixStack.push(copy);
-    }
-
-    function mvPopMatrix() {
-        if (mvMatrixStack.length == 0) {
-            throw "Invalid popMatrix!";
-        }
-        mvMatrix = mvMatrixStack.pop();
-    }
+		shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+		shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+	}
 
 
-    function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-    }
+	mvMatrix = mat4.create();
+	mvMatrixStack = [];
+	pMatrix = mat4.create();
+
+	function mvPushMatrix() {
+		copy = mat4.create();
+		mat4.set(mvMatrix, copy);
+		mvMatrixStack.push(copy);
+	}
+
+	function mvPopMatrix() {
+		if (mvMatrixStack.length == 0) {
+			throw "Invalid popMatrix!";
+		}
+		mvMatrix = mvMatrixStack.pop();
+	}
 
 
-    function degToRad(degrees) {
-        return degrees * Math.PI / 180;
-    }
+	function setMatrixUniforms() {
+		gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+		gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+	}
 
 
-    
+	function degToRad(degrees) {
+		return degrees * Math.PI / 180;
+	}
 
-    function initBuffers() {
-        vertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        vertexPositionBuffer.itemSize = 3;
-    
-        linePositionBuffer = gl.createBuffer();
 
-    
 
-    		
-    
+
+	function initBuffers() {
+		vertexPositionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		vertexPositionBuffer.itemSize = 3;
+
+		linePositionBuffer = gl.createBuffer();
+
+
+
+
+
 		geometryColorBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, geometryColorBuffer);
 		var colors = [];
-		    for (var i=0; i < 4; i++) {
-     			 colors = colors.concat([0.0, 2.0, .0, 1.0]);
-    		}
-    	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-		
+			for (var i=0; i < 4; i++) {
+				 colors = colors.concat([0.0, 2.0, .0, 1.0]);
+			}
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
 		particleColorBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
 		var colors = [];
-		    for (var i=0; i < 4; i++) {
-     			 colors = colors.concat([0.0, 0.0, 2.0, 1.0]);
-    		}
-    	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-    
-    }
+			for (var i=0; i < 4; i++) {
+				 colors = colors.concat([0.0, 0.0, 2.0, 1.0]);
+			}
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+	}
 
 
 
 
-   
 
 
-    lastTime = 0;
 
-    function animate() {
-        timeNow = new Date().getTime();
-        if (lastTime != 0) {
-            elapsed = timeNow - lastTime;
+	lastTime = 0;
+
+	function animate() {
+		timeNow = new Date().getTime();
+		if (lastTime != 0) {
+			elapsed = timeNow - lastTime;
 
 
-            if (speed != 0) {
-                xPos -= Math.sin(degToRad(yaw)) * speed * elapsed * 15000;
-                zPos -= Math.cos(degToRad(yaw)) * speed * elapsed * 15000;
+			if (speed != 0) {
+				xPos -= Math.sin(degToRad(yaw)) * speed * elapsed * 15000;
+				zPos -= Math.cos(degToRad(yaw)) * speed * elapsed * 15000;
 
-            }
+			}
 
-            yaw += yawRate * elapsed;
-            pitch += pitchRate * elapsed;
-            
-        }
-        lastTime = timeNow;
-    }
-   
+			yaw += yawRate * elapsed;
+			pitch += pitchRate * elapsed;
+
+		}
+		lastTime = timeNow;
+	}
+
 
 
 	function windowResize() {
 		//Debug.log("windowResize = working");
 		canvas.width = window.innerWidth;
 		canvas.height = window.innerHeight;
-	    gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+		gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 		gl.clearDepth(1.0);                 // Clear everything
 		gl.enable(gl.DEPTH_TEST);           // Enable depth testing
 		gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        }
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		}
 
 function getPlaneParticleCollisionsFromServer() {
 
@@ -338,53 +338,53 @@ function getPlaneParticleCollisionsFromServer() {
 }
 
 function getPlaneParticleCollisionsHandler (req) {
-    //Debug.log("Rotating3d getPlaneParticleCollisionsHandler" + req.responseText);
-    
-    
+	//Debug.log("Rotating3d getPlaneParticleCollisionsHandler" + req.responseText);
+
+
 		var objects = req.responseXML.getElementsByTagName("object");
-	
+
 	var locObjectsColor = [];
-    for(var i=0;i<objects.length;++i)
-    {
-    	var objectType = objects[i].getElementsByTagName("object_type");
-	    //Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
-    	var xyzPoints = objects[i].getElementsByTagName("xyz_point");
+	for(var i=0;i<objects.length;++i)
+	{
+		var objectType = objects[i].getElementsByTagName("object_type");
+		//Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
+		var xyzPoints = objects[i].getElementsByTagName("xyz_point");
 
 		var locPoints = [];
 		locObjectsColor[locObjectsColor.length] = locPoints;
-    	
-        for(var j=0;j<xyzPoints.length;++j)
-        {
-        	locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
-        }
 
-	    //Debug.log("Rotating3d getCollisions " + locObjectsColor);
-    }
-	
-	
+		for(var j=0;j<xyzPoints.length;++j)
+		{
+			locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
+		}
+
+		//Debug.log("Rotating3d getCollisions " + locObjectsColor);
+	}
+
+
 	var localCollisionArr;
 	var savelocalCollisionArr;
 	var colorDeterminedByHits;
-	
-    //Debug.log("Rotating3d getCollisions locObjects " + locObjectsColor);
-    localCollisionArr = locObjectsColor;
-    savelocalCollisionArr = localCollisionArr;
-    
-    colorOfPlanesArr = [];
-    
-    var arr = savelocalCollisionArr
-	
+
+	//Debug.log("Rotating3d getCollisions locObjects " + locObjectsColor);
+	localCollisionArr = locObjectsColor;
+	savelocalCollisionArr = localCollisionArr;
+
+	colorOfPlanesArr = [];
+
+	var arr = savelocalCollisionArr
+
 	//Debug.log("localCollisionArr = " + localCollisionArr);
-	
+
 	var  colorOfPlanesArr = [];
-	           
+
 	for(var l=0; l < arr.length; ++l)
 	{
 		colorDeterminedByHits = arr[l];
 		//Debug.log ("3D Particle Collision Data: Array [" + l + "] = called = " + arr[l]);
-		
+
 		if (colorDeterminedByHits <= 256){
-		colorOfPlanesArr[l] = [0, 0, 0.545098, 0.25];		
+		colorOfPlanesArr[l] = [0, 0, 0.545098, 0.25];
 		}else if (colorDeterminedByHits <= 512 && colorDeterminedByHits > 256){
 		colorOfPlanesArr[l] = [0, 0, 1, 0.25];
 		}else if (colorDeterminedByHits <= 768 && colorDeterminedByHits > 5120){
@@ -407,9 +407,9 @@ function getPlaneParticleCollisionsHandler (req) {
 		colorOfPlanesArr[l] = [1, 1, 1, 0.25];
 		}
 		//Debug.log ("3D Particle Collision Data: colorOfPlanesArr[" + l + "] = called = " + colorOfPlanesArr[l]);
-		
+
 	}
-    _colorArray = colorOfPlanesArr;
+	_colorArray = colorOfPlanesArr;
 }
 
 
@@ -420,38 +420,38 @@ function get3dDataFromServer() {
 }
 
 function get3dDataHandler (req) {
-    Debug.log("Rotating3d get3dDataHandler " + req.responseText);	
-    
+	Debug.log("Rotating3d get3dDataHandler " + req.responseText);
+
 	var objects = req.responseXML.getElementsByTagName("object");
-	
+
 	var locObjects = [];
-    for(var i=0;i<objects.length;++i)
-    {
-    	var objectType = objects[i].getElementsByTagName("object_type");
-	    //Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
-    	var xyzPoints = objects[i].getElementsByTagName("xyz_point");
+	for(var i=0;i<objects.length;++i)
+	{
+		var objectType = objects[i].getElementsByTagName("object_type");
+		//Debug.log("Rotating3d get3dDataHandler objectType " + objectType[0].getAttribute("value"));
+		var xyzPoints = objects[i].getElementsByTagName("xyz_point");
 
 		var locPoints = [];
 		locObjects[locObjects.length] = locPoints;
-    	
-        for(var j=0;j<xyzPoints.length;++j)
-        {
-        	locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
-        }
 
-	    Debug.log("Rotating3d get3dDataHandler coordinates " + locObjects);
-    }
-    
-    _localPts = locObjects;
-    drawParticles();
-    
+		for(var j=0;j<xyzPoints.length;++j)
+		{
+			locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
+		}
+
+		Debug.log("Rotating3d get3dDataHandler coordinates " + locObjects);
+	}
+
+	_localPts = locObjects;
+	drawParticles();
+
 }
 function drawParticles() {
-	
 
-	
+
+
 	var arr = _localPts;
-	           
+
 	for(var l=0; l < arr.length; ++l)
 	{
 		_vertices = arr[l];
@@ -461,7 +461,7 @@ function drawParticles() {
 		drawLines(_vertices);
 	}
 
-	
+
 
 	//Debug.log("function drawParticles = called & working");
 }
@@ -475,48 +475,48 @@ function getGeometryFromServer () {
 }
 
 function getGeometryHandler (req) {
-    Debug.log("Rotating3d getGeometry " + req.responseText);
-    
-    //_coordinates
+	Debug.log("Rotating3d getGeometry " + req.responseText);
+
+	//_coordinates
 	var objects = req.responseXML.getElementsByTagName("object");
-	
+
 	//_coordinates = [];
-	
+
 	var locObject = [];
-    for(var i=0;i<objects.length;++i)
-    {
-    	var objectType = objects[i].getElementsByTagName("object_type");
-	    //Debug.log("Rotating3d getGeometry objectType " + objectType[0].getAttribute("value"));
-    	var xyzPoints = objects[i].getElementsByTagName("xyz_point");
+	for(var i=0;i<objects.length;++i)
+	{
+		var objectType = objects[i].getElementsByTagName("object_type");
+		//Debug.log("Rotating3d getGeometry objectType " + objectType[0].getAttribute("value"));
+		var xyzPoints = objects[i].getElementsByTagName("xyz_point");
 
 		var locPoints = [];
 		locObject[locObject.length] = locPoints;
-    	
-        for(var j=0;j<xyzPoints.length;++j)
-        {
-        	locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
-        }
 
-	    //Debug.log("Rotating3d getGeometry Geometry " + locObject[locObject.length-1]);
-    }
+		for(var j=0;j<xyzPoints.length;++j)
+		{
+			locPoints[locPoints.length] = xyzPoints[j].getAttribute("value");
+		}
 
-    //Debug.log("Rotating3d getGeometry locObjects " + locObject);
-    _geometryVertices = locObject;
-    //Debug.log("Rotating3d getGeometry _geometryVertices = " + _geometryVertices);
-    _localRotationGeometry = _geometryVertices;
-    numberOfPlanes = _geometryVertices;
-    
-    //Debug.log("_geometryVertices = " + _geometryVertices);
-    //Debug.log("locObject = " + locObject);
-    //Debug.log("_localRotationGeometry = " + _localRotationGeometry);
-    //Debug.log("numberOfPlanes = " + numberOfPlanes);
-    
+		//Debug.log("Rotating3d getGeometry Geometry " + locObject[locObject.length-1]);
+	}
+
+	//Debug.log("Rotating3d getGeometry locObjects " + locObject);
+	_geometryVertices = locObject;
+	//Debug.log("Rotating3d getGeometry _geometryVertices = " + _geometryVertices);
+	_localRotationGeometry = _geometryVertices;
+	numberOfPlanes = _geometryVertices;
+
+	//Debug.log("_geometryVertices = " + _geometryVertices);
+	//Debug.log("locObject = " + locObject);
+	//Debug.log("_localRotationGeometry = " + _localRotationGeometry);
+	//Debug.log("numberOfPlanes = " + numberOfPlanes);
+
 }
 
 function drawGeometry() {
-		
+
 	var array = _geometryVertices;
-	//Debug.log("VAR ARRAY = " + array.length + "     ---------  " + _geometryVertices[2]);           
+	//Debug.log("VAR ARRAY = " + array.length + "     ---------  " + _geometryVertices[2]);
 	for(var L=0;L<array.length;++L)
 	{
 		//Debug.log ("drawGeometry: Loop Array [" + L + "] = called = " + array[L]);
@@ -524,10 +524,10 @@ function drawGeometry() {
 		//Debug.log("coordinateStorage = " + coordinateStorage);
 		_arrayIdentifier = L;
 		animate();
-		drawColorIdentifier(coordinateStorage);  
+		drawColorIdentifier(coordinateStorage);
 	}
 
-	
+
 
 	//Debug.log("function drawGeometry = called & working");
 }
@@ -536,128 +536,128 @@ function drawGeometry() {
 function drawScene(pts) {
 	vertices = pts;
 	initBuffers();
-	
+
 	//Debug.log ("drawScene(vertices) = " + vertices);
-	
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+
+	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
 
-    mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
+	mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
 
-    mat4.identity(mvMatrix);
-    
-    mvPushMatrix();
-    mat4.multiply(mvMatrix, worldRotationMatrix);
-    mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
-    mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
-    mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
-    mat4.translate(mvMatrix, [0, 0, 0]);
+	mat4.identity(mvMatrix);
+
+	mvPushMatrix();
+	mat4.multiply(mvMatrix, worldRotationMatrix);
+	mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
+	mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
+	mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
+	mat4.translate(mvMatrix, [0, 0, 0]);
 //    mat4.rotate(mvMatrix, degToRad(rCube), [0, 1, 0]); //one unit of rotation for planes two through seven
 
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, geometryColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-    
-    setMatrixUniforms();
-    //Debug.log(vertices.length/3)
-	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);	
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    mvPopMatrix();
+	gl.bindBuffer(gl.ARRAY_BUFFER, geometryColorBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+	setMatrixUniforms();
+	//Debug.log(vertices.length/3)
+	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);
+
+	mvPopMatrix();
 
 }
 function drawColorIdentifier(pts) {
 
-	var color = _colorArray[_arrayIdentifier]; 
+	var color = _colorArray[_arrayIdentifier];
 	vertices = pts;
 
 //    //Debug.log("drawColorIdentifier: _geometryVertices = " + _geometryVertices);
 //    //Debug.log("drawColorIdentifier: _localRotationGeometry = " + _localRotationGeometry);
 //    //Debug.log("drawColorIdentifier: numberOfPlanes = " + numberOfPlanes);
-	      
-    vertexPositionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pts), gl.STATIC_DRAW);
-    vertexPositionBuffer.itemSize = 3;
+
+	vertexPositionBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pts), gl.STATIC_DRAW);
+	vertexPositionBuffer.itemSize = 3;
 
 //Debug.log("vertices.length/3 = " + vertices.length/3);
-	
+
 	 var colorz = [];
-  	hitsColorBuffer = gl.createBuffer();
+	hitsColorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, hitsColorBuffer);
 	for (var i=0; i < vertices.length/3; i++) {
 
-	    colorz = colorz.concat(color);
-    }
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorz), gl.STATIC_DRAW);
+		colorz = colorz.concat(color);
+	}
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorz), gl.STATIC_DRAW);
 
 
 	//Debug.log("Color = " + color);
 //	//Debug.log("pts.length = " + pts.length);
 //	//Debug.log("PTS = " + pts);
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
 
-    mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
+	mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
 
-    mat4.identity(mvMatrix);
-    
-    mvPushMatrix();
-    mat4.multiply(mvMatrix, worldRotationMatrix);
-    mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
-    mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
-    mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
-    mat4.translate(mvMatrix, [0, 0, 0]);
+	mat4.identity(mvMatrix);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	mvPushMatrix();
+	mat4.multiply(mvMatrix, worldRotationMatrix);
+	mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
+	mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
+	mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
+	mat4.translate(mvMatrix, [0, 0, 0]);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, hitsColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-   
-    setMatrixUniforms();
-    //Debug.log("vertices = " + vertices + " vertices.length/3 = " + vertices.length/3);
-	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);	
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    mvPopMatrix();
-	
+	gl.bindBuffer(gl.ARRAY_BUFFER, hitsColorBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+	setMatrixUniforms();
+	//Debug.log("vertices = " + vertices + " vertices.length/3 = " + vertices.length/3);
+	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);
+
+	mvPopMatrix();
+
 }
 
 function drawCollisions(pts) {
 	vertices = pts;
 	initBuffers();
-	
+
 	//Debug.log ("drawCollisions(vertices) = " + vertices);
-	
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+
+	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
 
-    mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
+	mat4.perspective(45, 1920/1080, 0.1, 10000000.0, pMatrix);
 
-    mat4.identity(mvMatrix);
-    
-    mvPushMatrix();
-    mat4.multiply(mvMatrix, worldRotationMatrix);
-    mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
-    mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
-    mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
-    mat4.translate(mvMatrix, [0, 0, 0]);
+	mat4.identity(mvMatrix);
+
+	mvPushMatrix();
+	mat4.multiply(mvMatrix, worldRotationMatrix);
+	mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
+	mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
+	mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
+	mat4.translate(mvMatrix, [0, 0, 0]);
 //    mat4.rotate(mvMatrix, degToRad(rCube), [0, 1, 0]); //one unit of rotation for planes two through seven
 
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
 //    gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
 //    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-    
-    setMatrixUniforms();
-    //Debug.log(vertices.length/3)
-	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);	
 
-    mvPopMatrix();
+	setMatrixUniforms();
+	//Debug.log(vertices.length/3)
+	gl.drawArrays(gl.LINE_LOOP, 0, vertices.length/3);
+
+	mvPopMatrix();
 
 }
 
@@ -667,40 +667,40 @@ function drawCollisions(pts) {
 function drawLines(lines) {
 	_lines = lines;
 	initBuffers();
-	
+
 	//Debug.log ("drawLines(lines) = " + _lines);
 	//Debug.log ("drawLines(lines) = " + lines);
-	
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, linePositionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(_lines), gl.STATIC_DRAW);
-        linePositionBuffer.itemSize = 3;
+	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 
-
-
-    mat4.identity(mvMatrix);
-    
-    mvPushMatrix();
-    mat4.multiply(mvMatrix, worldRotationMatrix);
-    mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
-    mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
-    mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
-    mat4.translate(mvMatrix, [0, 0, -15]);
-    mat4.rotate(mvMatrix, degToRad(rCube), [0, 1, 0]); //one unit of rotation for planes two through seven
+		gl.bindBuffer(gl.ARRAY_BUFFER, linePositionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(_lines), gl.STATIC_DRAW);
+		linePositionBuffer.itemSize = 3;
 
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, linePositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, linePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-    
-    setMatrixUniforms();
-    //Debug.log(_lines.length/3)
-	gl.drawArrays(gl.LINES, 0, _lines.length/3);	
 
-    mvPopMatrix();
+	mat4.identity(mvMatrix);
+
+	mvPushMatrix();
+	mat4.multiply(mvMatrix, worldRotationMatrix);
+	mat4.rotate(mvMatrix, degToRad(-pitch), [1, 0, 0]);
+	mat4.rotate(mvMatrix, degToRad(-yaw), [0, 1, 0]);
+	mat4.translate(mvMatrix, [-xPos, -yPos, -zPos]);
+	mat4.translate(mvMatrix, [0, 0, -15]);
+	mat4.rotate(mvMatrix, degToRad(rCube), [0, 1, 0]); //one unit of rotation for planes two through seven
+
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, linePositionBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, linePositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, particleColorBuffer);
+	gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+	setMatrixUniforms();
+	//Debug.log(_lines.length/3)
+	gl.drawArrays(gl.LINES, 0, _lines.length/3);
+
+	mvPopMatrix();
 
 }
 
@@ -708,8 +708,8 @@ function drawLines(lines) {
 var _toggle = 0;
 function handleMouseDown(event) {
 	mouseDown = true;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
+	lastMouseX = event.clientX;
+	lastMouseY = event.clientY;
 //  mouseDown = true;
 //
 //    if (_toggle == 0){
@@ -723,30 +723,30 @@ function handleMouseDown(event) {
 //    	alert("Rotation of 3D World = Unpaused");
 //    	//Debug.log ("Rotation of 3D World = Unpaused");
  //   }
-    
+
 }
 function handleMouseUp(event) {
-    mouseDown = false;
+	mouseDown = false;
 }
 function handleMouseMove(event) {
-    if (!mouseDown) {
-        return;
-    }
-    var newX = event.clientX;
-    var newY = event.clientY;
+	if (!mouseDown) {
+		return;
+	}
+	var newX = event.clientX;
+	var newY = event.clientY;
 
-    var deltaX = newX - lastMouseX
-    var newRotationMatrix = mat4.create();
-    mat4.identity(newRotationMatrix);
-    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
+	var deltaX = newX - lastMouseX
+	var newRotationMatrix = mat4.create();
+	mat4.identity(newRotationMatrix);
+	mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
 
-    var deltaY = newY - lastMouseY;
-    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+	var deltaY = newY - lastMouseY;
+	mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
 
-    mat4.multiply(newRotationMatrix, worldRotationMatrix, worldRotationMatrix);
+	mat4.multiply(newRotationMatrix, worldRotationMatrix, worldRotationMatrix);
 
-    lastMouseX = newX
-    lastMouseY = newY;
+	lastMouseX = newX
+	lastMouseY = newY;
 
 	//Debug.log("handleMouseMove");
 }
@@ -755,9 +755,9 @@ function handleMouseMove(event) {
 var currentlyPressedKeys = {};
 
 function handleKeyDown(event) {
-    currentlyPressedKeys[event.keyCode] = true;
-    //Debug.log (event.keyCode + " handleKeyDown");
-    	currentlyPressedKeys = [event.keyCode];
+	currentlyPressedKeys[event.keyCode] = true;
+	//Debug.log (event.keyCode + " handleKeyDown");
+		currentlyPressedKeys = [event.keyCode];
 }
 
 
@@ -768,168 +768,168 @@ function handleKeyUp(event) {
 
 
   function handleKeys(event) {
-	  
-	     
-    	currentlyPressedKeys = [event.keyCode];
-	   	//Debug.log (event.keyCode + " handleKeyDown");
-      if (event.keyCode == 71){
-        	//G
-        	alert("Getting Geometry for server!");
-        	getGeometryFromServer ();
-        	drawGeometry();
-        }
-        if (event.keyCode == 72) {
-        	//H
-        	alert("Opening Help Window");
-        	window.open("https://docs.google.com/document/d/1Mw4HByYfLo1bO5Hy9npDWkD4CFxa9xNsYZ5pJ7qwaTM/edit?pli=1");
-        }
-        if (event.keyCode == 67){
-        	//C
+
+
+		currentlyPressedKeys = [event.keyCode];
+		//Debug.log (event.keyCode + " handleKeyDown");
+	  if (event.keyCode == 71){
+			//G
+			alert("Getting Geometry for server!");
+			getGeometryFromServer ();
+			drawGeometry();
+		}
+		if (event.keyCode == 72) {
+			//H
+			alert("Opening Help Window");
+			window.open("https://docs.google.com/document/d/1Mw4HByYfLo1bO5Hy9npDWkD4CFxa9xNsYZ5pJ7qwaTM/edit?pli=1");
+		}
+		if (event.keyCode == 67){
+			//C
 			//Debug.log("windowResize = working");
 			canvas.width = window.innerWidth;
 			canvas.height = window.innerHeight;
-		    gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+			gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 			gl.clearDepth(1.0);                 // Clear everything
 			gl.enable(gl.DEPTH_TEST);           // Enable depth testing
 			gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-	        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        }if (event.keyCode == 80){
-        	//P
-    	    if (_toggle == 0){
-    	    	clearInterval(_startStopTimeInterval);
-    	    	_toggle = 1;
-    	    	alert("Rotation of 3D World = Paused");
-    	    	//Debug.log("Rotation of 3D World = Paused");
-    	    } else if (_toggle == 1){
-    	           _startStopTimeInterval=setInterval(function(){tick()}, 10);
-    	    	_toggle = 0;
-    	    	alert("Rotation of 3D World = Unpaused");
-    	    	//Debug.log ("Rotation of 3D World = Unpaused");
-    	    }
-        }   
-            if (event.keyCode == 33) {
-                // Page Up
-                pitchRate = 0.1;
-                //Debug.log("Pitchrate = 0.1"); 
-            } else if (event.keyCode == 34) {
-                // Page Down
-                pitchRate = -0.1;
-                //Debug.log("Pitchrate = -0.1");
-            } else {
-                pitchRate = 0;
-            }
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		}if (event.keyCode == 80){
+			//P
+			if (_toggle == 0){
+				clearInterval(_startStopTimeInterval);
+				_toggle = 1;
+				alert("Rotation of 3D World = Paused");
+				//Debug.log("Rotation of 3D World = Paused");
+			} else if (_toggle == 1){
+				   _startStopTimeInterval=setInterval(function(){tick()}, 10);
+				_toggle = 0;
+				alert("Rotation of 3D World = Unpaused");
+				//Debug.log ("Rotation of 3D World = Unpaused");
+			}
+		}
+			if (event.keyCode == 33) {
+				// Page Up
+				pitchRate = 0.1;
+				//Debug.log("Pitchrate = 0.1");
+			} else if (event.keyCode == 34) {
+				// Page Down
+				pitchRate = -0.1;
+				//Debug.log("Pitchrate = -0.1");
+			} else {
+				pitchRate = 0;
+			}
 
-            if (event.keyCode == 37) {
-                // Left cursor key
-                yawRate = 0.1;
-                //Debug.log("yawRate = 0.1");
-            } else if (event.keyCode == 39) {
-                // Right cursor key
-                yawRate = -0.1;
-                //Debug.log("yawRate = -0.1");
-            } else {
-                yawRate = 0;
-            }
+			if (event.keyCode == 37) {
+				// Left cursor key
+				yawRate = 0.1;
+				//Debug.log("yawRate = 0.1");
+			} else if (event.keyCode == 39) {
+				// Right cursor key
+				yawRate = -0.1;
+				//Debug.log("yawRate = -0.1");
+			} else {
+				yawRate = 0;
+			}
 
-            if (event.keyCode == 38) {
-                // Up cursor key
-                speed = 0.003;
-                //Debug.log("speed = 0.003");
-            } else if (event.keyCode == 40) {
-                // Down cursor key
-                speed = -0.003;
-                //Debug.log("speed = -0.003");
-            } else {
-                speed = 0;
-            }
-        	if (event.keyCode == 82) {
-        	//R
-        	xPos = 0;
-        	yPos = 0;
-        	zPos = 0;
-        	pitch = 0;
+			if (event.keyCode == 38) {
+				// Up cursor key
+				speed = 0.003;
+				//Debug.log("speed = 0.003");
+			} else if (event.keyCode == 40) {
+				// Down cursor key
+				speed = -0.003;
+				//Debug.log("speed = -0.003");
+			} else {
+				speed = 0;
+			}
+			if (event.keyCode == 82) {
+			//R
+			xPos = 0;
+			yPos = 0;
+			zPos = 0;
+			pitch = 0;
 			pitchRate = 0;
 			yaw = 0;
 			yawRate = 0;
 			speed = 0;
 			mat4.identity(worldRotationMatrix);
-        	}
-        	if (event.keyCode == 70) {
-        	//F
-        	get3dDataFromServer();
-        	}
-        	
-        	if (event.keyCode == 187 || event.keyCode == 32) {
-        	//+/= and spacebar
-        	yPos = yPos + 1000;
-        	}else if (event.keyCode == 189) {
-        	//- and
-        	yPos = yPos - 1000;
-        	}else {
-        	}
-        	
-        
-        	if (event.keyCode == 68){
-        	//D
-        	xPos = xPos + 5000;
-        	}else if (event.keyCode == 65) {
-        	//A
-        	xPos = xPos - 5000;
-        	}else {
-        	}
-        	
-        	if (event.keyCode == 87){
-        	//W
-        	zPos = zPos - 5000;
-        	}else if (event.keyCode == 83){
-        	//S
-        	zPos = zPos + 5000;
-        	}else {
-        	}
-        	
+			}
+			if (event.keyCode == 70) {
+			//F
+			get3dDataFromServer();
+			}
+
+			if (event.keyCode == 187 || event.keyCode == 32) {
+			//+/= and spacebar
+			yPos = yPos + 1000;
+			}else if (event.keyCode == 189) {
+			//- and
+			yPos = yPos - 1000;
+			}else {
+			}
+
+
+			if (event.keyCode == 68){
+			//D
+			xPos = xPos + 5000;
+			}else if (event.keyCode == 65) {
+			//A
+			xPos = xPos - 5000;
+			}else {
+			}
+
+			if (event.keyCode == 87){
+			//W
+			zPos = zPos - 5000;
+			}else if (event.keyCode == 83){
+			//S
+			zPos = zPos + 5000;
+			}else {
+			}
+
 }
-  
-  
+
+
   function tick() {
-      windowResize();
-      handleKeys;
-      animate();
-      get3dDataFromServer();
-      getPlaneParticleCollisionsFromServer();
-      drawGeometry();
+	  windowResize();
+	  handleKeys;
+	  animate();
+	  get3dDataFromServer();
+	  getPlaneParticleCollisionsFromServer();
+	  drawGeometry();
 
   }
 
 
   function webGLStart() {
-  	window.onresize = windowResize;
-  	canvas = document.getElementById("Rotating_3D");
-  	canvas.width = window.innerWidth;
-  	canvas.height = window.innerHeight;
-  	
-    canvas.onmousedown = handleMouseDown;
-    document.onmouseup = handleMouseUp;
-    document.onmousemove = handleMouseMove;
-    
-    document.onkeydown = handleKeys;
-    
-    getPlaneParticleCollisionsFromServer();
-    getGeometryFromServer();
-	
-	
+	window.onresize = windowResize;
+	canvas = document.getElementById("Rotating_3D");
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	canvas.onmousedown = handleMouseDown;
+	document.onmouseup = handleMouseUp;
+	document.onmousemove = handleMouseMove;
+
+	document.onkeydown = handleKeys;
+
+	getPlaneParticleCollisionsFromServer();
+	getGeometryFromServer();
+
+
    _startStopTimeInterval=setInterval(function(){tick()}, 10);
 
 
-      initShaders()
+	  initShaders()
 //      initBuffers();
-      
 
 
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.enable(gl.DEPTH_TEST);
-      
+
+	  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	  gl.enable(gl.DEPTH_TEST);
+
 }
-  
+
 
 </script>
 
@@ -949,10 +949,10 @@ canvas {
 <body onload="webGLStart();">
 
 
-    <canvas id="Rotating_3D"  width="1080" height="1920">
-    </canvas>
+	<canvas id="Rotating_3D"  width="1080" height="1920">
+	</canvas>
 
-    <br>
+	<br>
 
 
 

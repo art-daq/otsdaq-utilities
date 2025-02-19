@@ -5,11 +5,11 @@
 		margin: auto;
 		padding-top: 10px;
 		font-family: 'Comfortaa', serif;
-	
+
 		/*background: #989791;*/
 		background:  #A7A8AA;
 	}
-	
+
 	/* make buttons and inputs have a hand cursor */
 	input, button, select, a {
 		cursor: 			pointer;
@@ -19,51 +19,51 @@
 		cursor: pointer;
 		float:right;
 	}
-		
+
 	#clearDiv {
 		clear: both;
 		text-align: center;
 	}
-	
+
 	a {
 		color: blue;
 		cursor:pointer;
 		text-decoration: underline;
-	} 
-	
+	}
+
 	input:not([type=submit]) {
 		border: 2px solid gray;
-		box-shadow: 
+		box-shadow:
 		  inset 0 0 8px  rgba(0,0,0,0.1),
-				0 0 16px rgba(0,0,0,0.1); 
+				0 0 16px rgba(0,0,0,0.1);
 		padding: 5px;
 		background: rgba(255,255,255,0.75);
 		margin: 0 0 10px 0;
-		border-radius: 1px;	
+		border-radius: 1px;
 	}
-	
+
 	#colorInputs {
 		width: 470px;
 		padding: 8px;
-		
-	}		
-				
+
+	}
+
 	#colorInputs input {
 		width: 40px;
 		text-align: center;
-	}				
-	
+	}
+
 	.Settings-el {
 		float: left;
 		margin: 5px;
 	}
-	
+
 	.Settings-colorName {
 		width:150px;
 		text-align: right;
 		white-space: nowrap;
 	}
-	
+
 	.Settings-colorBox {
 		width:25px;
 		height:25px;
@@ -73,46 +73,46 @@
 	}
 	table{
 		box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em,
-		 inset rgba(0,0,0,0.15) 0 -0.1em .3em, 
+		 inset rgba(0,0,0,0.15) 0 -0.1em .3em,
 		 /* inner shadow */ rgba(200, 200, 200,0.6) 0 .1em 3px,
-		 rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */ 
+		 rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
 		 rgba(0,0,0,0.2) 0 .5em 5px;
 		 padding: 8px;
 	}
-	 
+
 	#windLayoutDiv {
-		
+
 		width: 500px;
 		text-align: center;
 		box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-							inset rgba(0,0,0,0.15) 0 -0.1em .3em, 
+							inset rgba(0,0,0,0.15) 0 -0.1em .3em,
 							/* inner shadow */ rgba(200, 200, 200,0.6) 0 .1em 3px,
-							rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */ 
+							rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
 							rgba(0,0,0,0.2) 0 .5em 5px;
-		
+
 	}
-	
+
 	.winLayoutLink {
 		text-decoration: none;
 		font-weight: 800;
 		color: black;
-		height: 20px;    
+		height: 20px;
 		display: block;
 	}
 	.winLayoutLink:hover {
 		text-decoration: underline;
 	}
-		
+
 	li {
 		list-style-type:square;
 		width: 400px;
 		text-align: center;
 	}
-	
+
 	.winLayoutText {
-		white-space: nowrap;			
+		white-space: nowrap;
 	}
-	
+
 	tr {
 		text-align: center;
 	}
@@ -122,7 +122,7 @@
 	.accountsHeaderFld {
 		font-weight: 800;
 	}
-				
+
 	#accountsPageNav a {
 		color: #880000;
 		text-decoration: none;
@@ -138,32 +138,32 @@
 	.accountsHeaderFld a:hover {
 		text-decoration: underline;
 	}
-	
+
 	#loaderGif {
 		margin: 50px 0 0 100px;
 	}
-	
+
 	.actPermInput {
 		width: 90px;
 		margin: 5px;
 	}
-	
+
 	.actDispNameInput {
-		width: 90px;	
-		margin: 25px 0 0 0;		
+		width: 90px;
+		margin: 25px 0 0 0;
 	}
-	
+
 	table {
 		border: 2px solid #aaaaaa;
 		border-radius: 2px;
 		background-color: #dddddd;
 		text-align: center;
 	}
-	
+
 	#accountsPermNote {
-		font-size: 12px;	
+		font-size: 12px;
 		margin-left: 10px;
-		color: #444444;			
+		color: #444444;
 	}
 	#windSystemLayoutDiv hr {
 		width: 80%;
@@ -182,7 +182,7 @@
 	.winLayoutText {
 		border: 1 px solid red;
 		text-align: center;
-		
+
 	}
 	table {
 		text-align: center;
@@ -195,12 +195,12 @@
 	td{
 		text-align:				center;
 	}
-	
+
 	li:hover,li:active {
 		font-size: 				120%;
 	}
 	#accountsPermNote{
-		padding: 				5px;	
+		padding: 				5px;
 	}
 
 	#accountsSearchDiv,	#accountsPageNav{
@@ -255,5 +255,3 @@
 		border-color: #494949 !important;
 		transition: all 0.3s ease 0s;
 	}
-		
-					

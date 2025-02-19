@@ -1,8 +1,8 @@
 FONTLOG for the Donegal font
 
-This file provides detailed information on 
-Donegal Font Software. This information should be 
-distributed along with the Donegal font and any 
+This file provides detailed information on
+Donegal Font Software. This information should be
+distributed along with the Donegal font and any
 derivative works.
 
 Basic Font Information
@@ -21,13 +21,13 @@ Latin-1, Latin-2: Easern Europe, Turkish, Macintosh Character Set.
 
 There are four source files:
 
-1. DonegalOne-Regular.vfb Original Source Files with 
+1. DonegalOne-Regular.vfb Original Source Files with
    contour overlaps
 
-2. DonegalOne-Regular_otf.sfd Merged contours and 
+2. DonegalOne-Regular_otf.sfd Merged contours and
    optimized file corresponding to the OTF file
 
-3. DonegalOne-Regular_ttf.sfd TrueType outlines with 
+3. DonegalOne-Regular_ttf.sfd TrueType outlines with
    hinting adjustments corresponding to the TTF file
 
 4. DonegalOne-Regular.otf PostScript outlines OTF-CFF font.
@@ -50,8 +50,8 @@ ChangeLog
 - Mastered VBF to TTF and other formats.
 - Altered naming to be compatible with Google web fonts
 - Fixed rendering problems seen in the letters e and L
-- Added OpenType code to support ordinals, superiors (1234), onehalf, onequarter, 
-  threequarters percent and perthousand signs 
+- Added OpenType code to support ordinals, superiors (1234), onehalf, onequarter,
+  threequarters percent and perthousand signs
 - Completed third complete version of Donegal in Fontlab ( VBF format )
 
 22 Nov 2012 (Eben Sorkin) Donegal v1.002

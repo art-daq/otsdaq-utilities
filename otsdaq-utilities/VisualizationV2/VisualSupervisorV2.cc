@@ -10,9 +10,9 @@
 #include "otsdaq/Macros/MessageTools.h"
 #include "otsdaq/RootUtilities/RootFileExplorer.h"
 
-// ROOT documentation
-// http://root.cern.ch/root/html/index.html
-
+/// ROOT documentation
+/// http://root.cern.ch/root/html/index.html
+///
 #include <TBranchElement.h>
 #include <TBuffer.h>
 #include <TBufferJSON.h>
@@ -194,9 +194,9 @@ void VisualSupervisorV2::transitionHalting(toolbox::Event::Reference e)
 }  // end transitionHalting()
 
 //==============================================================================
-// setSupervisorPropertyDefaults
-//		override to set defaults for supervisor property values (before user settings
-// override)
+/// setSupervisorPropertyDefaults
+///		override to set defaults for supervisor property values (before user settings
+/// override)
 void VisualSupervisorV2::setSupervisorPropertyDefaults()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -210,8 +210,8 @@ void VisualSupervisorV2::setSupervisorPropertyDefaults()
 }
 
 //========================================================================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void VisualSupervisorV2::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(

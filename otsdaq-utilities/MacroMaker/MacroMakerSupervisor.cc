@@ -174,8 +174,8 @@ void MacroMakerSupervisor::destroy(void)
 }
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void MacroMakerSupervisor::forceSupervisorPropertyValues() {
 }  // end forceSupervisorPropertyValues()
 
@@ -418,8 +418,8 @@ void MacroMakerSupervisor::requestIcons(xgi::Input* in, xgi::Output* out)
 }  // end requestIcons()
 
 //==============================================================================
-// xoap::supervisorSequenceCheck
-//	verify cookie
+/// xoap::supervisorSequenceCheck
+///	verify cookie
 xoap::MessageReference MacroMakerSupervisor::supervisorSequenceCheck(
     xoap::MessageReference message)
 {
@@ -456,8 +456,8 @@ xoap::MessageReference MacroMakerSupervisor::supervisorSequenceCheck(
 }  //end supervisorSequenceCheck()
 
 //==============================================================================
-// RemoteControlWorkLoop
-//	child thread
+/// RemoteControlWorkLoop
+///	child thread
 void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSupervisor)
 {
 	// ConfigurationTree configLinkNode = theSupervisor->CorePropertySupervisorBase::getSupervisorTableNode();
@@ -598,8 +598,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 }  // end RemoteControlWorkLoop()
 
 //==============================================================================
-// requestWrapper ~
-//	wrapper for handling very-specialized MacroMaker mode Supervisor request call
+/// requestWrapper ~
+///	wrapper for handling very-specialized MacroMaker mode Supervisor request call
 void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 {
 	// use default wrapper if not Macro Maker mode
@@ -1453,13 +1453,13 @@ void MacroMakerSupervisor::createMacro(HttpXmlDocument& /*xmldoc*/,
 }  // end createMacro()
 
 //==============================================================================
-// loadMacro
-//	Load macro string from file.
-//	look in public macros and username (if given)
-//	for the macroName.
-//
-//	If found, return by reference
-//	Else, throw exception
+/// loadMacro
+///	Load macro string from file.
+///	look in public macros and username (if given)
+///	for the macroName.
+///
+///	If found, return by reference
+///	Else, throw exception
 void MacroMakerSupervisor::loadMacro(const std::string& macroName,
                                      std::string&       macroString,
                                      const std::string& username /*=""*/)
@@ -2473,7 +2473,7 @@ void MacroMakerSupervisor::exportMacro(HttpXmlDocument&   xmldoc,
 }  // end exportMacro()
 
 //==============================================================================
-// createCode
+/// createCode
 void MacroMakerSupervisor::createCode(std::ostream&                   out,
                                       const std::vector<std::string>& commands,
                                       const std::string&              tabOffset,
@@ -2737,8 +2737,8 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 }  // end createCode()
 
 //==============================================================================
-// isArgumentVariable
-//	returns true if string should be interpreted as a variable for MacroMaker
+/// isArgumentVariable
+///	returns true if string should be interpreted as a variable for MacroMaker
 bool MacroMakerSupervisor::isArgumentVariable(const std::string& argumentString)
 {
 	for(unsigned int i = 0; i < argumentString.length(); ++i)
@@ -2752,15 +2752,15 @@ bool MacroMakerSupervisor::isArgumentVariable(const std::string& argumentString)
 	return false;
 }  // end isArgumentVariable()
 //==============================================================================
-// generateHexArray
-//	returns a char array initializer
-//	something like this
-//	"[8] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x09};"
-//		..depending a size of source string
-//
-// FIXME -- identify variables in a better way from macromaker...!
-//	for now just assume a non hex is a variable name
-//	return -1 size
+/// generateHexArray
+///	returns a char array initializer
+///	something like this
+///	"[8] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x09};"
+///		..depending a size of source string
+///
+/// FIXME -- identify variables in a better way from macromaker...!
+///	for now just assume a non hex is a variable name
+///	return -1 size
 std::string MacroMakerSupervisor::generateHexArray(const std::string& sourceHexString,
                                                    int&               numOfBytes)
 {

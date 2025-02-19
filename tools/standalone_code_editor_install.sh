@@ -31,10 +31,10 @@ mkdir otsCodeEditor/images/otsdaqIcons
 mkdir otsCodeEditor/fonts
 mkdir otsCodeEditor/fonts/comfortaa
 
-wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/html/CodeEditor_standalone.html -P otsCodeEditor/html/ --no-check-certificate || curl -o  otsCodeEditor/html/CodeEditor_standalone.html https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/html/CodeEditor_standalone.html  	
+wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/html/CodeEditor_standalone.html -P otsCodeEditor/html/ --no-check-certificate || curl -o  otsCodeEditor/html/CodeEditor_standalone.html https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/html/CodeEditor_standalone.html
 
-wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/ots.css -P otsCodeEditor/css/ --no-check-certificate	 || curl -o  otsCodeEditor/css/ots.css https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/ots.css 
-wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/MultiSelectBox.css -P otsCodeEditor/css/ --no-check-certificate || curl -o  otsCodeEditor/css/MultiSelectBox.css https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/MultiSelectBox.css	
+wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/ots.css -P otsCodeEditor/css/ --no-check-certificate	 || curl -o  otsCodeEditor/css/ots.css https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/ots.css
+wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/MultiSelectBox.css -P otsCodeEditor/css/ --no-check-certificate || curl -o  otsCodeEditor/css/MultiSelectBox.css https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/MultiSelectBox.css
 wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/CodeEditor.css -P otsCodeEditor/css/ --no-check-certificate	|| curl -o  otsCodeEditor/css/CodeEditor.css https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/css/CodeEditor.css
 
 wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/js/Globals.js -P otsCodeEditor/js/ --no-check-certificate	|| curl -o  otsCodeEditor/js/Globals.js https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisions/develop/raw/WebGUI/js/Globals.js
@@ -60,7 +60,7 @@ wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisio
 
 #fix style paths
 sed -i '' 's/\/WebPath/\.\./g' otsCodeEditor/css/*.css
-sed -i '' 's/\/WebPath/\.\./g' otsCodeEditor/js/*.js  
+sed -i '' 's/\/WebPath/\.\./g' otsCodeEditor/js/*.js
 
 echo -e "standalone_code_editor_install.sh [${LINENO}]  \t =================="
 echo -e "standalone_code_editor_install.sh [${LINENO}]  \t Code Editor stand-alone installation done"
@@ -69,9 +69,3 @@ echo -e "standalone_code_editor_install.sh [${LINENO}]  \t Now open this file in
 echo -e "standalone_code_editor_install.sh [${LINENO}]  \t "
 echo -e "standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
 echo -e "standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
-
-		
-		
-
-
-

@@ -6,26 +6,26 @@
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/Desktop.css">
 
-		<style type="text/css">		
-			
-		</style>		
-		
+		<style type="text/css">
+
+		</style>
+
 		<!--link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Donegal+One'-->
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Donegal+One:400' rel='stylesheet' type='text/css'>
 
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Desktop.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 
 		<!-- MultiSelectBox: Must include .css style sheet and .js functionality -->
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
-		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>	
+		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
 		<!-- adding DesktopWindowContentCode for tooltip functionality -->
-		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script> 
+		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 
 		<script type="text/JavaScript" src="/WebPath/js/DesktopDashboard.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopWindow.js"></script>
@@ -34,16 +34,16 @@
 
 
 		<script>
-			
+
 
 			var urnLid_  = DesktopContent.getDesktopWindowParameter(0,"urn");
 			var serverOrigin_ = window.location.origin;
-			
+
 			Debug.log("Application URN-LID #" + urnLid_);
 
 			//=====================================================================================
-			function init() 
-			{				
+			function init()
+			{
 				Desktop.init(window.parent.window.location.search.split("?")[1].split("&")[0].split("=")[1]);
 				Desktop.desktop.icons.resetWithPermissions(255);
 
@@ -55,24 +55,24 @@
 				//		            notSecure = (window.location.search.split("?")[1].split("&")[1].split("=")[1]);
 
 
-				if (notSecure) 
-				{ 
+				if (notSecure)
+				{
 					var msg = "<b>Note: Your Wiz-mode is not as secure as it could be!</b>\n" +
 							"\nWe see that you are using the default security sequence for accessing your otsdaq Wiz mode." +
 							"\n\nIn Wiz-mode, many sensitive paramters for your DAQ system can be changed, so you may want it to be more secure. " +
-							"This page is secured by an authentication sequence to help avoid unauthorized access. " + 
-							"The sequence is only displayed at the Linux console and is never transmitted by your otsdaq server for security." + 
-							'\n\n <p style="color:red;">Warning: This will change the current URL for the wiz mode immediately.</p>' + 
+							"This page is secured by an authentication sequence to help avoid unauthorized access. " +
+							"The sequence is only displayed at the Linux console and is never transmitted by your otsdaq server for security." +
+							'\n\n <p style="color:red;">Warning: This will change the current URL for the wiz mode immediately.</p>' +
 							"\n If you would like to make your Wiz mode more secure, you can click " +
 							"<a href='#' onclick='DesktopContent.setSecurityOn(true)'>here</a>" +
 							" to enable a longer, randomly generated sequence generated at each runtime or you can set up this feature any time by " +
-							"visiting the 'Edit Security' app on the Wiz-mode desktop."; 
+							"visiting the 'Edit Security' app on the Wiz-mode desktop.";
 					//Debug.log(msg, Debug.INFO_PRIORITY);
-					DesktopContent.tooltip("Security Alert",msg); 
+					DesktopContent.tooltip("Security Alert",msg);
 				}
 
 				DesktopContent.tooltip("Wiz-mode Introduction",
-						"Welcome to the otsdaq Wiz-mode Desktop. Wiz-mode is like safe mode " +						 
+						"Welcome to the otsdaq Wiz-mode Desktop. Wiz-mode is like safe mode " +
 						"when everything is broken and crashing down around you, you can come here to " +
 						"revive your system. If you are here, you are considered an otsdaq system " +
 						"administrator.\n\n" +
@@ -82,12 +82,12 @@
 						"\n\t- <b>Edit Security:</b> " +
 						"<INDENT>" +
 						"You can choose the type of security and user access " +
-						"you would like for your system." +				
-						"</INDENT>" +		
+						"you would like for your system." +
+						"</INDENT>" +
 
 						"\n\t- <b>Edit User Data:</b> " +
 						"<INDENT>" +
-						"You can reset user data for all accounts here. " + 
+						"You can reset user data for all accounts here. " +
 						"(be careful!) " +
 						"</INDENT>" +
 
@@ -110,41 +110,41 @@
 
 						"\n\nRemember, if you would like to take a look at the available online documentation, " +
 						"click the question mark at the top-right of the Desktop."
-				);				
+				);
 
-			} //end init()			            
+			} //end init()
 
 
 
-			        
-                                
-			
-        </script>
-		
 
-        <!-- Note: usually this page is in frame and ots icon is shown by C++ -->
-        <!-- start ots icon handling -->
-        <link rel="apple-touch-icon" sizes="57x57" href="/WebPath/images/otsdaqIcons/apple-icon-57x57.png">
-        <link rel="apple-touch-icon" sizes="60x60" href="/WebPath/images/otsdaqIcons/apple-icon-60x60.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/WebPath/images/otsdaqIcons/apple-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="76x76" href="/WebPath/images/otsdaqIcons/apple-icon-76x76.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/WebPath/images/otsdaqIcons/apple-icon-114x114.png">
-        <link rel="apple-touch-icon" sizes="120x120" href="/WebPath/images/otsdaqIcons/apple-icon-120x120.png">
-        <link rel="apple-touch-icon" sizes="144x144" href="/WebPath/images/otsdaqIcons/apple-icon-144x144.png">
-        <link rel="apple-touch-icon" sizes="152x152" href="/WebPath/images/otsdaqIcons/apple-icon-152x152.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/WebPath/images/otsdaqIcons/apple-icon-180x180.png">
-        <link rel="icon" type="image/png" sizes="192x192"  href="/WebPath/images/otsdaqIcons/android-icon-192x192.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/WebPath/images/otsdaqIcons/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="96x96" href="/WebPath/images/otsdaqIcons/favicon-96x96.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/WebPath/images/otsdaqIcons/favicon-16x16.png">
-        <link rel="manifest" href="/WebPath/images/otsdaqIcons/manifest.json">
-        <meta name="msapplication-TileColor" content="#ffffff">
-        <meta name="msapplication-TileImage" content="/WebPath/images/otsdaqIcons/ms-icon-144x144.png">
-        <meta name="theme-color" content="#ffffff">
-        <!-- end ots icon handling -->
-	</head>	
-	
+
+
+		</script>
+
+
+		<!-- Note: usually this page is in frame and ots icon is shown by C++ -->
+		<!-- start ots icon handling -->
+		<link rel="apple-touch-icon" sizes="57x57" href="/WebPath/images/otsdaqIcons/apple-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="/WebPath/images/otsdaqIcons/apple-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="/WebPath/images/otsdaqIcons/apple-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="/WebPath/images/otsdaqIcons/apple-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="/WebPath/images/otsdaqIcons/apple-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="/WebPath/images/otsdaqIcons/apple-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="/WebPath/images/otsdaqIcons/apple-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="/WebPath/images/otsdaqIcons/apple-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/WebPath/images/otsdaqIcons/apple-icon-180x180.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="/WebPath/images/otsdaqIcons/android-icon-192x192.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="/WebPath/images/otsdaqIcons/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="96x96" href="/WebPath/images/otsdaqIcons/favicon-96x96.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/WebPath/images/otsdaqIcons/favicon-16x16.png">
+		<link rel="manifest" href="/WebPath/images/otsdaqIcons/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffffff">
+		<meta name="msapplication-TileImage" content="/WebPath/images/otsdaqIcons/ms-icon-144x144.png">
+		<meta name="theme-color" content="#ffffff">
+		<!-- end ots icon handling -->
+	</head>
+
 	<body onload='init();'>
 	</body>
-	
+
 </html>

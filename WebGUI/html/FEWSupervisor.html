@@ -1,53 +1,53 @@
 <!DOCTYPE HTML>
 <html lang="en">
 	<head>
-	
-		
+
+
 		<title>Supervisor</title>
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				background-color: rgb(0,100,200);
 			}
 		</style>
-		
-		
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-		
-		
-		<script>		
-				
+
+
+		<script>
+
 			function test(write)
 			{
-			
+
 				var addr = document.getElementById("addr").value;
-				var data = document.getElementById("data").value; 
-				
+				var data = document.getElementById("data").value;
+
 				Debug.log("Testing command " + write + " addr " + addr + " data " + data);
-			    
-				DesktopContent.XMLHttpRequest("Request", 		//update experiment list 
-						"write="+write+"&addr="+addr+"&data="+data, 0);// handleGetExperimentListRequest);	
+
+				DesktopContent.XMLHttpRequest("Request", 		//update experiment list
+						"write="+write+"&addr="+addr+"&data="+data, 0);// handleGetExperimentListRequest);
 			}
-			
+
 		</script>
-		
+
 	</head>
-	
-	
-	<body>	
+
+
+	<body>
 		<br><br><br>
-		
+
 		Hello I'm the FEWSupervisor
 		<div id='myDiv'></div>
 		addr <input type='text' id='addr' value='01'/> <br>
 		data <input type='text' id='data' value='ABCD'/> <br>
-		
-		
+
+
 		<a href='javascript:test(1);'><input type='button' value='Write'/></a>
 		<a href='javascript:test(0);'><input type='button' value='Read'/></a>
-	
-	
+
+
 	</body>
-	
+
 </html>

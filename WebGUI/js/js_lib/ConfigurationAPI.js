@@ -6963,21 +6963,3 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 	str += "</div>";
 	return str;		
 } //end createTableColumnHeaderHTML()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

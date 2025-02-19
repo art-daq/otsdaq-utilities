@@ -4,7 +4,7 @@
 	/* CSS Reset */
 	html{color:white;background:#FFF}
 	body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0}table{border-collapse:collapse;border-spacing:0}fieldset,img{border:0}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal}ol,ul{list-style:none}caption,th{text-align:left}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal}q:before,q:after{content:''}abbr,acronym{border:0;font-variant:normal}sup{vertical-align:text-top}sub{vertical-align:text-bottom}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;*font-size:100%}
-	legend{color:#000}	
+	legend{color:#000}
 	* {
 		margin: 				0;
 		spacing: 				0;
@@ -14,42 +14,42 @@
 		-webkit-user-select: 	none; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
 		-moz-user-select: 		none;
 		user-select:			none;
-		outline: 				none;  /* to stop firefox selection*/	
-		font-family: 			'Comfortaa', serif; /*'Donegal One', serif;*/		
+		outline: 				none;  /* to stop firefox selection*/
+		font-family: 			'Comfortaa', serif; /*'Donegal One', serif;*/
 		font-size: 				20px;
 	}
 
-	
+
 	#Desktop {
 		height: 				1000px;
 		width: 					1000px;
 	}
-	
+
 	#Desktop a {
 		font-size: 				14px;
 	}
-	
-	#Desktop input {	
-		-webkit-user-select: 	auto; 
+
+	#Desktop input {
+		-webkit-user-select: 	auto;
 		-moz-user-select: 		auto;
 		user-select: 			auto;
 	}
-	
-	#Desktop div {	
+
+	#Desktop div {
 	}
-	
+
 	#Desktop .hiddenDiv {
 		display: 				none;
 	}
-	
+
 	#Desktop #DesktopDashboard-windowDashboard {
-		background-image: 		-webkit-linear-gradient(bottom, rgba(0,0,0,0.8) 0%, rgba(75,75,75,0.4) 100%); 
+		background-image: 		-webkit-linear-gradient(bottom, rgba(0,0,0,0.8) 0%, rgba(75,75,75,0.4) 100%);
 		background-image: 		-moz-linear-gradient(bottom, rgba(0,0,0,0.8) 0%, rgba(75,75,75,0.4) 100%);
 		background-image: 		linear-gradient(bottom, rgba(0,0,0,0.8) 0%, rgba(75,75,75,0.4) 100%);
 		box-shadow: 			4px 0 4px -4px black;
 		border-right: 			1px solid black;
 	}
-	
+
 	#Desktop .DesktopDashboard-windowDashboard-win {
 		font-family: 			arial;
 		font-size: 				14px;
@@ -61,7 +61,7 @@
 		cursor: 				pointer;
 		border-radius: 			3px;
 		white-space: 			nowrap; /* disable multi-line header*/
-		overflow: 				hidden;	
+		overflow: 				hidden;
 		background-color: 		rgba(100,100,100,0.6);
 		border: 				1px solid rgba(255,255,255,0.8);
 		box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
@@ -74,12 +74,12 @@
 		background-color: 		rgba(200,200,200,0.6);
 		color: 					white;
 	}
-	
+
 	#Desktop .DesktopDashboard-windowDashboard-win:hover {
 		background-color: 		rgba(150,150,150,0.6);
 		color: 					#ccc;
 	}
-	
+
 	#Desktop .DesktopDashboard-windowDashboard-win:active {
 		color: 					#ccc;
 		-webkit-transform: 		translateY(.1em);
@@ -88,8 +88,8 @@
 		box-shadow: 			rgb(100,100,100) 0 .1em 1px,
 								rgba(0,0,0,0.2) 0 .2em 2px;	/* drop shadow */
 	}
-	
-	
+
+
 	#Desktop .DesktopDashboard-topBar {
 		border-bottom: 			1px solid black;
 		box-shadow: 			0 0 4px black;
@@ -98,7 +98,7 @@
 		background-image: 		linear-gradient(bottom, rgba(75,75,75,0.4) 0%, rgba(0,0,0,0.8) 100%);
 		overflow: 				hidden;
 	}
-	
+
 	#Desktop .DesktopDashboard-button {
 		font-family: 			arial;
 		font-weight: 			lighter;
@@ -117,23 +117,23 @@
 								rgb(10,10,10) 0 .2em 1px, /* color border */
 								rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
 	}
-	
+
 	/*input button type seems to interpret text height differently than divs */
 	#Desktop input[type=submit] {
 		height: 				28px !important;
 	}
-	
+
 	.DesktopDashboard-button a:hover {
 		text-decoration: 		none;
 	}
-	
+
 	#Desktop .DesktopDashboard-button:hover {
 		background-image: 		-webkit-linear-gradient(bottom, rgba(75,75,75,0.3) 0%, rgba(30,30,30,0.3) 100%);
 		background-image: 		-moz-linear-gradient(bottom, rgba(75,75,75,0.3) 0%, rgba(30,30,30,0.3) 100%);
 		background-image: 		linear-gradient(bottom, rgba(75,75,75,0.3) 0%, rgba(30,30,30,0.3) 100%);
 		color: 					#ccc;
 	}
-	
+
 	#Desktop .DesktopDashboard-button:active {
 		color: 					#ccc;
 		-webkit-transform: 		translateY(.1em);
@@ -142,36 +142,36 @@
 		box-shadow: 			rgb(100,100,100) 0 .1em 1px,
 								rgba(0,0,0,0.2) 0 .2em 2px;	/* drop shadow */
 	}
-	
+
 	#Desktop .DesktopDashboard-button-left {
 		float: 					left;
 		margin: 				6px 0 6px 20px;
 	}
-	
+
 	#Desktop .DesktopDashboard-button-right {
 		float: 					right;
-		margin: 				6px 20px 20px 0;    
+		margin: 				6px 20px 20px 0;
 	}
-	
+
 	#Desktop .DesktopDashboard-user-account {
 		float: 					right;
 		margin: 				6px 20px 0 0;
-		padding: 				5px 10px 5px 10px;		
+		padding: 				5px 10px 5px 10px;
 	}
-	
+
 	#Desktop .DesktopIcons {
 		overflow: 				auto;
 	}
-	
+
 	#Desktop .DesktopIcons-iconContainer {
 		float:					left;
-		margin: 				20px;	
+		margin: 				20px;
 	}
-	
+
 	#Desktop .DesktopIcons-iconDiv :hover {
 		box-shadow: 			rgba(0,0,0,0.6) 0 0 .3em;
 	}
-	
+
 
 	#Desktop .DesktopIcons-iconDiv:active {
 		box-shadow: 			rgba(0,0,0,0.6) 0 0 .2em;
@@ -179,57 +179,57 @@
 		-moz-transform: 		translateY(.1em);
 		transform: 				translateY(.1em);
 	}
-	
+
 	#Desktop .DesktopIcons-iconDiv .DesktopIcons-iconDiv:active {
 		box-shadow: 			rgba(0,0,0,0.6) 0 0 .2em;
 		-webkit-transform: 		translateY(.0em);
 		-moz-transform: 		translateY(.0em);
 		transform: 				translateY(.0em);
 	}
-	
+
 	#Desktop .DesktopIcons-iconDiv, #Desktop .DesktopIcons-folderDiv {
 		border: 				1px solid grey;
-		border-radius: 			6px;    
+		border-radius: 			6px;
 		box-shadow: 			inset rgba(255,255,255,0.6) 0 0.3em .3em;
 		background-image: 		-webkit-linear-gradient(bottom, rgba(175,175,175,0.3) 0%, rgba(30,30,30,0.3) 100%);
 		background-image: 		-moz-linear-gradient(bottom, rgba(175,175,175,0.3) 0%, rgba(30,30,30,0.3) 100%);
 		background-image:		linear-gradient(bottom, rgba(175,175,175,0.3) 0%, rgba(30,30,30,0.3) 100%);
 	}
-	
+
 	#Desktop .DesktopIcons-folderDiv .mySelect div {
 		font-size:				14px;
 	}
-	
+
 	#Desktop .DesktopIcons-iconSubText {
 		text-align: 			center;
 		font-size: 				16px;
 		margin-top: 			2px;
 	}
-	
+
 	#Desktop .DesktopIcons-iconLink {
 		cursor: 				pointer;
 	}
-		
+
 	#Desktop .DesktopIcons-folderDiv {
 		z-index: 				99900;
 	}
 	/* for mouse over highlighting */
 	#Desktop .DesktopIcons-folderDiv .myOption:hover {
 		background-color: 		rgb(213, 227, 245);
-	}    
+	}
 	/*#Desktop .DesktopIcons-folderDiv .optionhighlighted:hover {
 		background-color : rgb(11, 66, 138);
 	}*/
-	
-	.DesktopDashboard-user-logout {		
-		cursor: 				pointer;	
+
+	.DesktopDashboard-user-logout {
+		cursor: 				pointer;
 		font-size: 				16px !important;
 		/*padding-top: 8px !important; */
 		margin-top: 			6px !important;
 		margin-right: 			4px !important;
 	}
-	
-	.DesktopDashboard-user-logout:hover {		
+
+	.DesktopDashboard-user-logout:hover {
 		text-decoration: 		underline;
 	}
 
@@ -237,8 +237,8 @@
 		margin-right: 			2px !important;
 		margin-top: 			5px !important;
 	}
-	
-	
+
+
 	#DesktopDashboard-user-displayName {
 		cursor: 				default;
 		font-size: 				16px !important;
@@ -246,24 +246,24 @@
 	    margin-right: 			5px !important;
 	    margin-top: 			9px !important;
 	}
-	
-	
+
+
 	#Desktop .DesktopWindowFrameHolder {
-		border: 				1px solid rgba(196,229,255,.9);		
-		box-shadow: 			0px 0px 10px #002; 
+		border: 				1px solid rgba(196,229,255,.9);
+		box-shadow: 			0px 0px 10px #002;
 		border-radius: 			5px;
 	}
-	
+
 	#Desktop .DesktopWindow {
 		border: 				1px solid rgba(196,229,255,.9);
-		box-shadow: 			0px 0px 15px #002; 
+		box-shadow: 			0px 0px 15px #002;
 		border-radius: 			5px;
 	}
-	
+
 	#Desktop .DesktopWindow * {
 		float: 					left;
 	}
-	
+
 	#Desktop .DesktopWindowButton {
 		background-color: 		rgba(196,229,255,.5);
 		box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
@@ -273,15 +273,15 @@
 								/*hsl(208, 50%, 55%) 0 .1em 3px,
 								hsl(208, 50%, 40%) 0 .2em 1px,  color border */
 								rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-		border-radius: 			3px;		
-		cursor: 				pointer;	
-		border: 				1px solid rgba(196,229,255,1);	
+		border-radius: 			3px;
+		cursor: 				pointer;
+		border: 				1px solid rgba(196,229,255,1);
 	}
-	
+
 	#Desktop .DesktopWindowButton:hover {
 		background-color: 		rgba(176,209,235,.8);
 	}
-	
+
 	#Desktop .DesktopWindowButton:active {
 		box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 								inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
@@ -291,7 +291,7 @@
 		-moz-transform: 		translateY(.1em);
 		transform: 				translateY(.1em);
 	}
-	
+
 	#Desktop .DesktopWindowHeader {
 		padding-top: 			5px;  /* push text off window top just for looks */
 		margin-bottom: 			-5px;  /* to compensate for top padding */
@@ -321,7 +321,7 @@
 		font-size: 				18px;
 		line-height: 			16px;
 	}
-	
+
 	#Desktop .DesktopWindowButtonGraphicMin {
 		width: 					11px;
 		height: 				12px;
@@ -340,12 +340,12 @@
 		height: 				12px;
 		margin: 				1px 0 0 5px;
 		color:					#0f2269;
-		/*font-family: arial; this is displaying differently in chrome and firefox .. so trying different font */	
+		/*font-family: arial; this is displaying differently in chrome and firefox .. so trying different font */
 		font-family: 			'Comfortaa', serif;
-		font-size: 				18px;	
+		font-size: 				18px;
 		line-height: 			16px;
 	}
-	
+
 	#Desktop .Desktop-systemMessageBox {
 		position: 				absolute;
 		z-index: 				100000;
@@ -354,12 +354,12 @@
 		background-image: 		-moz-linear-gradient(bottom, rgba(2,62,122,0.8) 0%, rgba(3,157,235,0.8) 100%);
 		background-image: 		linear-gradient(bottom, rgba(2,62,122,0.8) 0%, rgba(3,157,235,0.8) 100%);
 		border: 				2px solid rgba(255,255,255,1);
-		border-radius: 			3px;	
+		border-radius: 			3px;
 		padding: 				5px;
-		width: 					450px;		
-		overflow-y: 			scroll;	
+		width: 					450px;
+		overflow-y: 			scroll;
 	}
-	
+
 	#Desktop #Desktop-loginDiv {
 		position: 				absolute;
 		z-index: 				100000;
@@ -374,44 +374,44 @@
 	#Desktop #Desktop-loginDiv input[type=checkbox] {
 		cursor: 				pointer;
 	}
-	
+
 	#Desktop #Desktop-loginDiv input {
 		background-color: 		black;
 	}
-	
+
 	#Desktop #Desktop-loginDiv input:not([type=submit]) {
 		border: 				5px solid white;
-		box-shadow: 
+		box-shadow:
 							  inset 0 0 8px  rgba(0,0,0,0.1),
-									0 0 16px rgba(0,0,0,0.1); 
+									0 0 16px rgba(0,0,0,0.1);
 		padding: 				5px;
 		background: 			rgba(255,255,255,0.35);
 		margin: 				0 0 10px 0;
-		border-radius: 			3px;	
+		border-radius: 			3px;
 	}
-	
+
 	#Desktop #Desktop-loginDiv #loginInputRememberMeDiv {
 		width: 					200px;
 		height: 				100px;
 		margin: 				-40px -130px -60px -70px;
 		font-size: 				14px;
 	}
-	
+
 	#Desktop #Desktop-loginDiv input:not([type=submit]):hover {
 		background: 			rgba(255,255,255,0.65);
 	}
-	
+
 	#Desktop #Desktop-loginDiv input:not([type=submit]):focus {
 		background: 			rgba(255,255,255,0.35);
 	}
-	
+
 	#Desktop #loginFeedbackDiv {
 		color: 					rgb(255,150,100);
 		font-size: 				14px;
 		margin-top: 			10px;
 		height:					25px;
 	}
-	
+
 	#Desktop #DesktopDashboard-defaults-dropdown {
 		background-color: 		rgba(0,0,0,1);
 		position: 				absolute;
@@ -421,15 +421,15 @@
 		background-image: 		linear-gradient(bottom, rgba(75,75,75,0.4) 0%, rgba(0,0,0,0.8) 100%);
 		left: 					70px;
 		top: 					40px;
-		box-shadow: 			0px 0px 15px #002; 
+		box-shadow: 			0px 0px 15px #002;
 		border-radius: 			5px;
 		padding: 				5px;
 	}
-	
+
 	#dashboard_bi_arrow {
 		margin: 				-5px -5px -7px -5px;
 	}
-	
+
 	/*firefox seems to put an extra pixel of letter-spacing in bold words*/
 	@-moz-document url-prefix() {  /*target firefox*/
 		b, th {
@@ -439,14 +439,3 @@
 			letter-spacing: 	-2px;
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	

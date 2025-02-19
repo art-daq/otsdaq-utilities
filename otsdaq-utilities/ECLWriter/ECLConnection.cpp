@@ -44,7 +44,7 @@ size_t ECLConnection::WriteMemoryCallback(char*        data,
 }  //end WriteMemoryCallback()
 
 //==============================================================================
-//Note: make sure GET url parameter 's' is URI encoded
+///Note: make sure GET url parameter 's' is URI encoded
 bool ECLConnection::Get(std::string s, std::string& response)
 {
 	response = "NULL";

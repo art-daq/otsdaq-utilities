@@ -15,10 +15,10 @@
 
 using namespace ots;
 
-// UDP Message Format:
-// UDPMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
-// FILE and LINE are only printed for s67+
-
+/// UDP Message Format:
+/// UDPMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
+/// FILE and LINE are only printed for s67+
+///
 XDAQ_INSTANTIATOR_IMPL(ConsoleSupervisor)
 
 #define USER_CONSOLE_PREF_PATH \
@@ -48,7 +48,7 @@ XDAQ_INSTANTIATOR_IMPL(ConsoleSupervisor)
 
 #define CONSOLE_MISSED_NEEDLE "Console missed * packet(s)"
 
-//Count always happens, and System Message always happens for FSM commands
+///Count always happens, and System Message always happens for FSM commands
 const std::set<std::string> ConsoleSupervisor::CUSTOM_TRIGGER_ACTIONS({"Count Only",
                                                                        "System Message",
                                                                        "Halt",
@@ -162,9 +162,9 @@ xoap::MessageReference ConsoleSupervisor::resetConsoleCounts(
 }  // end resetConsoleCounts()
 
 //==============================================================================
-// messageFacilityReceiverWorkLoop ~~
-//	Thread for printing Message Facility messages without decorations
-//	Note: Uses std::mutex to avoid conflict with reading thread.
+/// messageFacilityReceiverWorkLoop ~~
+///	Thread for printing Message Facility messages without decorations
+///	Note: Uses std::mutex to avoid conflict with reading thread.
 void ConsoleSupervisor::messageFacilityReceiverWorkLoop(ConsoleSupervisor* cs)
 try
 {
@@ -240,7 +240,7 @@ try
 
 	std::map<unsigned int, unsigned int> sourceLastSequenceID;  // map from sourceID to
 	                                                            // lastSequenceID to
-	    // identify missed messages
+	// identify missed messages
 	long long    newSourceId;
 	uint32_t     newSequenceId;
 	unsigned int c;
@@ -476,8 +476,8 @@ catch(...)
 }  // end messageFacilityReceiverWorkLoop() exception handling
 
 //==============================================================================
-// customTriggerActionThread ~~
-//	Thread for sequentially handling customTriggerActionQueue_
+/// customTriggerActionThread ~~
+///	Thread for sequentially handling customTriggerActionQueue_
 void ConsoleSupervisor::customTriggerActionThread(ConsoleSupervisor* cs)
 try
 {
@@ -575,7 +575,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 }  // end doTriggeredAction()
 
 //==============================================================================
-//Never allow priority 0 to change, forced to be missed packets
+///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
                                                  uint32_t           priority /* = -1 */)
@@ -667,9 +667,9 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 }  // end addCustomTriggeredAction()
 
 //==============================================================================
-//Never allow priority 0 to change, forced to be missed packets
-// modifyType := {"Deletion", "Priority", "Action","Search String", "All"}
-// Returns the modified priority position, or -1 on deletion
+///Never allow priority 0 to change, forced to be missed packets
+/// modifyType := {"Deletion", "Priority", "Action","Search String", "All"}
+/// Returns the modified priority position, or -1 on deletion
 uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& currentNeedle,
                                                         const std::string& modifyType,
                                                         const std::string& setNeedle,
@@ -881,8 +881,8 @@ void ConsoleSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 }  // end defaultPage()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void ConsoleSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -891,9 +891,9 @@ void ConsoleSupervisor::forceSupervisorPropertyValues()
 }  // end forceSupervisorPropertyValues()
 
 //==============================================================================
-//	Request
-//		Handles Web Interface requests to Console supervisor.
-//		Does not refresh cookie for automatic update checks.
+///	Request
+///		Handles Web Interface requests to Console supervisor.
+///		Does not refresh cookie for automatic update checks.
 void ConsoleSupervisor::request(const std::string&               requestType,
                                 cgicc::Cgicc&                    cgiIn,
                                 HttpXmlDocument&                 xmlOut,
@@ -1238,8 +1238,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 			modifiedTraceList +=
 			    ";" + hostLabelsPair.first;  // insert xdaq context version of name
-			    // FIXME and create mapp from user's typed in xdaq
-			    // context name to TRACE hostname resolution
+			// FIXME and create mapp from user's typed in xdaq
+			// context name to TRACE hostname resolution
 
 			modifiedTraceList += rxParameters.getValue("TRACEList");
 
@@ -1847,8 +1847,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 }  // end request()
 
 //==============================================================================
-// virtual progress string that can be overridden with more info
-//	like Console Error and Warning count
+/// virtual progress string that can be overridden with more info
+///	like Console Error and Warning count
 std::string ConsoleSupervisor::getStatusProgressDetail(void)
 {
 	//Console Supervisor status detatil format is:
@@ -1911,28 +1911,28 @@ std::string ConsoleSupervisor::getStatusProgressDetail(void)
 }  // end getStatusProgressDetail()
 
 //==============================================================================
-// ConsoleSupervisor::insertMessageRefresh()
-//	if lastUpdateClock is current, return nothing
-//	else return new messages
-//	(note: lastUpdateIndex==(unsigned int)-1 first time and returns as much as possible//
-// nothing but lastUpdateClock)
-//
-//	format of xml:
-//
-//	<last_update_count/>
-//	<last_update_index/>
-//	<messages>
-//		<message_FIELDNAME*/>
-//"Level"
-//"Label"
-//"Source"
-//"Msg"
-//"Time"
-//"Count"
-//	</messages>
-//
-//	NOTE: Uses std::mutex to avoid conflict with writing thread. (this is the reading
-// thread)
+/// ConsoleSupervisor::insertMessageRefresh()
+///	if lastUpdateClock is current, return nothing
+///	else return new messages
+///	(note: lastUpdateIndex==(unsigned int)-1 first time and returns as much as possible//
+/// nothing but lastUpdateClock)
+///
+///	format of xml:
+///
+///	<last_update_count/>
+///	<last_update_index/>
+///	<messages>
+///		<message_FIELDNAME*/>
+///"Level"
+///"Label"
+///"Source"
+///"Msg"
+///"Time"
+///"Count"
+///	</messages>
+///
+///	NOTE: Uses std::mutex to avoid conflict with writing thread. (this is the reading
+/// thread)
 void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
                                              const size_t     lastUpdateCount)
 {
@@ -2023,26 +2023,26 @@ void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
 }  // end insertMessageRefresh()
 
 //==============================================================================
-// ConsoleSupervisor::prependHistoricMessages()
-//	if earliestOnhandMessageCount is 0, return nothing
-//	else return earlier messages as much as possible
-//
-//	format of xml:
-//
-//	<last_update_count/>
-//	<last_update_index/>
-//	<messages>
-//		<message_FIELDNAME*/>
-//"Level"
-//"Label"
-//"Source"
-//"Msg"
-//"Time"
-//"Count"
-//	</messages>
-//
-//	NOTE: Uses std::mutex to avoid conflict with writing thread. (this is the reading
-// thread)
+/// ConsoleSupervisor::prependHistoricMessages()
+///	if earliestOnhandMessageCount is 0, return nothing
+///	else return earlier messages as much as possible
+///
+///	format of xml:
+///
+///	<last_update_count/>
+///	<last_update_index/>
+///	<messages>
+///		<message_FIELDNAME*/>
+///"Level"
+///"Label"
+///"Source"
+///"Msg"
+///"Time"
+///"Count"
+///	</messages>
+///
+///	NOTE: Uses std::mutex to avoid conflict with writing thread. (this is the reading
+/// thread)
 void ConsoleSupervisor::prependHistoricMessages(HttpXmlDocument* xmlOut,
                                                 const size_t earliestOnhandMessageCount)
 {

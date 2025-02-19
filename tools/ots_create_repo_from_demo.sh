@@ -28,7 +28,7 @@ echo "repo = $repo"
 echo "repoName = $repoName"
 
 # download tutorial database
-echo 
+echo
 echo "*****************************************************"
 echo "Downloading template..."
 echo
@@ -42,7 +42,7 @@ echo "mrb uc"
 mrb uc
 
 
-echo 
+echo
 echo "*****************************************************"
 echo "Modifying template..."
 echo
@@ -62,7 +62,7 @@ echo "sed -i s/otsdaq_demo/${repo}/g                                ${repo}/ups/
 sed -i s/otsdaq_demo/${repo}/g 		${repo}/ups/product_deps
 
 echo "mv ${repo}/otsdaq-demo ${repo}/${repoName}"
-mv ${repo}/otsdaq-demo ${repo}/${repoName} 
+mv ${repo}/otsdaq-demo ${repo}/${repoName}
 
 echo "sed -i s/add_subdirectory/#add_subdirectory/g                 ${repo}/${repoName}/CMakeLists.txt"
 sed -i s/add_subdirectory/#add_subdirectory/g 		${repo}/${repoName}/CMakeLists.txt
@@ -72,7 +72,7 @@ sed -i s/add_subdirectory/#add_subdirectory/g 		${repo}/${repoName}/CMakeLists.t
 cd ${Base} #return to starting directory
 
 
-echo 
+echo
 echo "*****************************************************"
 echo "Wrapping up..."
 echo
@@ -80,14 +80,14 @@ echo
 
 echo "Now, if you have an empty repository and want to fill it, do this:"
 echo "  download your repo with write access (make sure to use a different temporary folder name):"
-echo "    mrb gitCheckout -d <folder name> ssh://p-<main-repo-name>@cdcvs.fnal.gov/cvs/projects/<target-repo-name>  #target and main are often the same" 
-echo 
+echo "    mrb gitCheckout -d <folder name> ssh://p-<main-repo-name>@cdcvs.fnal.gov/cvs/projects/<target-repo-name>  #target and main are often the same"
+echo
 echo "... then you can copy the .git folder from your repo into ${repo}"
 echo
 echo "...   cp -r <folder name>/.git ${repo}/.git"
 echo "...   rm -rf <folder name> # you do not need temporary folder anymore"
 echo "...   cd ${repo}/; git status  # to check status from your repo perspective"
-echo 
+echo
 echo "...   mrb uc #to clean up top level CMake based on resulting folders in srcs"
 echo
 echo "... and you will need to uncomment any add_subdirectory lines that you want to revive."
@@ -97,6 +97,3 @@ echo "p.s. You may need to do... mrb z"
 echo
 echo
 echo "Complete!"
-
-
-

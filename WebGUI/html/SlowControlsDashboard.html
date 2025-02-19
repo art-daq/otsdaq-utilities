@@ -46,10 +46,10 @@
 			//	endWidgetDragAndResize(e,id)
 			//
 			//	redrawTargetWidget(e)
-			//			
+			//
 			//	--- END drawing widgets
 			//
-			//	openTabPage(e, id) 
+			//	openTabPage(e, id)
 			//	popWidgetOutOfTabBody()
 			//	addWidgetToTabBody(id);
 			//
@@ -111,7 +111,7 @@
 			//	deleteWidget()
 			//	cutWidget(widgetCover)
 			//	pasteWidget()
-			//	setEditModeWidgetTarget(target)	
+			//	setEditModeWidgetTarget(target)
 			//	evaluateJS(str)
 			//	setRefreshRate(keyField,rateField)
 			//	isEmpty(obj)
@@ -121,44 +121,44 @@
 
 			var page_ = page_ || {}; 	//define the page object if needed
 										//	page_.widgets = {
-										//		<widgetID> : <widget object := x, y, 
+										//		<widgetID> : <widget object := x, y,
 										//			w, h, pvList{}, attributes{},
 										//			displayName, loaded,
 										//			el /*iframe element*/
-										//	} 
+										//	}
 
 			//====================== start high-level behavior description
 			//
 			//	High-level description of page-widget interactions:
 			//
-			//	- widget's init() is called by 2: 
-			//		1. widget's own onload() 
+			//	- widget's init() is called by 2:
+			//		1. widget's own onload()
 			//		2. top-level addPVToWidget()
-			//	- In edit mode, user draws a widget square...		
+			//	- In edit mode, user draws a widget square...
 			//		* immediately onload, widget should call init()
-			//		* widget should call setupWidget() like this from init: 
-			//				function init() { 	
-			//					window.parent.setupWidget(window.frameElement.id, 
-			//						getAttributes());   
+			//		* widget should call setupWidget() like this from init:
+			//				function init() {
+			//					window.parent.setupWidget(window.frameElement.id,
+			//						getAttributes());
 			//				}
 			//		* getAttributes() is defined by user widget and
 			//			should describe user-editable fields for widget:
 			//			- like { "param1" : "DEFAULT_VAL", "param2" : "" }
 			//		* calling setupWidget() propagates parameters to the high-level page object
-			//	- parent.setupWidget(): 
+			//	- parent.setupWidget():
 			//		* Note: this gets called by widget's init() (e.g. from onload)
 			//		* setupWidget gives Top-level parameters that become user-editable
 			//		* Then top-level gets PV settings (e.g. alarm thresholds) through server request based on widgets pvList
-			//			and then propagates settings back to widget by calling... 
+			//			and then propagates settings back to widget by calling...
 			//				- contentWindow.setupPVs(settings)
 			//				- contentWindow.drawWidget(object)
-			//	
+			//
 			//
 			//	- contentWindow.setupPVs(settings)
 			//		* Pass alarm thresholds, etc associated with pvList to widget content
 			//	- contentWindow.setAttributes(attributes)
 			//		* Notify widget attributes have been changed
-			//	- contentWindow.drawWidget(object, attributes)			
+			//	- contentWindow.drawWidget(object, attributes)
 			//		* (re)Draw widget elements, based on attributes.
 			//		* Note: called by window resize
 			//
@@ -175,7 +175,7 @@
 			var pagesList_ = [];
 			var mainBlock_ = {name:"", isHidden:false, el:""}; // = ["mainBlock", false ];
 
-			var PAGE_POSITIONS_ = 1000; //number of allowed integer locations (e.g. x,y,w,h for widgets) 
+			var PAGE_POSITIONS_ = 1000; //number of allowed integer locations (e.g. x,y,w,h for widgets)
 			var refreshRate_ = 15000; //set default to refresh every 15 seconds (ms)
 			var timerVariable_;
 			var lastAlarmsTimerVariable_;
@@ -227,7 +227,7 @@
 			var WIDGET_TYPE_NAVTAB		= 13;
 			var WIDGET_TYPE_PROGRESS_BAR= 13;
 			var WIDGET_TYPE_TANK		= 13;
-			
+
 
 			var nav_;
 			var gridColor_;
@@ -249,7 +249,7 @@
 			var xPos_;
 			var yPos_;
 			var drawingSelectionRectangle_ = false;
-			var dragAndDrawTargetEl_ = undefined;			
+			var dragAndDrawTargetEl_ = undefined;
 			var dragAndDrawWidgetType_ = undefined;
 
 			var resizeLockout_ = false;
@@ -258,7 +258,7 @@
 			var saveCursorType_;
 
 			var dragLockout_ = false;
-			var targetElement_ = undefined;			
+			var targetElement_ = undefined;
 			var targetTabBodyId_ = undefined;
 
 			var dragTimeout_ = 0;
@@ -279,7 +279,7 @@
 
 			//=====================================================================================
 			//init called once body has loaded
-			function init() 
+			function init()
 			{
 				Debug.log("init() was called");
 
@@ -287,7 +287,7 @@
 				if (readOnlyMode !== undefined) //set read mode if parameter
 				{
 					Debug.log("Launching readonly mode to true!");
-					READ_ONLY_ = true; //readOnlyMode | 0;     
+					READ_ONLY_ = true; //readOnlyMode | 0;
 				}
 
 				//to make an icon on desktop -- DesktopContent.addDesktopIcon(iconName)
@@ -297,7 +297,7 @@
 				window.onkeydown = makeHandlerWithID(true/*isKeyDown*/,handleKeys);
 				window.onresize = handleResize;
 
-				var parameterPageName = DesktopContent.getParameter(0,"page_name");				
+				var parameterPageName = DesktopContent.getParameter(0,"page_name");
 
 				Debug.log("Parameter filename: " + parameterPageName);
 
@@ -326,19 +326,19 @@
 				var myTimer = setInterval(checkMailbox, 1000);
 				dragAndDrawWidgetType_ = undefined;
 
-			 	DesktopContent.XMLHttpRequest(
-                                	"Request?RequestType=getPages",
-                                         "", 
-                                         pagesReqHandler,
-                                         0 /*reqParam*/, 
-                                         0 /*progressHandler*/, 
-                                         0 /*callHandlerOnErr*/, 
-                                         true /*doNoShowLoadingOverlay*/);
+				DesktopContent.XMLHttpRequest(
+									"Request?RequestType=getPages",
+										 "",
+										 pagesReqHandler,
+										 0 /*reqParam*/,
+										 0 /*progressHandler*/,
+										 0 /*callHandlerOnErr*/,
+										 true /*doNoShowLoadingOverlay*/);
 				pagesList_ = "Loading";
 				DesktopContent.XMLHttpRequest(
-				                    "Request?RequestType=isUserAdmin",
-				                    "",
-				                    isUserAdminHandler);
+									"Request?RequestType=isUserAdmin",
+									"",
+									isUserAdminHandler);
 
 				//get command string if opening a new window
 				var cmdStr = DesktopContent.getParameter(2); //from  location.search
@@ -387,42 +387,42 @@
 				nav_.classList.add("navigationMenu--active");
 				//END JS Style
 
-				Debug.log(parameterPageName);	
+				Debug.log(parameterPageName);
 
 				//mainBlock_.el.removeEventListener("mousedown", startDrag, true);
 				document.body.addEventListener("mousedown", handleMouseDown); //drawSelectionRectangle(id), false);
 				document.body.addEventListener("mouseup", handleMouseUp);
 				document.body.addEventListener("mousemove", handleMouseMove);
 
-                handleResize(); //redraw window for first time
+				handleResize(); //redraw window for first time
 
 				if(parameterPageName == undefined)
-			    {
-                    toggleEditMode();
-                }
-                else
-                {
-                	Debug.log("Loading page from url");
-                	//loadPage(parameterPageName);
-                	loadPhoebusPage(parameterPageName);
-                }
+				{
+					toggleEditMode();
+				}
+				else
+				{
+					Debug.log("Loading page from url");
+					//loadPage(parameterPageName);
+					loadPhoebusPage(parameterPageName);
+				}
 			} //end init()
 
 
 			//=====================================================================================
 			//indicate that login should be kept alive
 			//	e.g. user is editing widgets in edit mode
-			function indicateUserActivityToServer() 
+			function indicateUserActivityToServer()
 			{
 				Debug.log("indicateUserActivityToServer()");
 				DesktopContent.XMLHttpRequest(
 						"Request?RequestType=userActivityHeartbeat",
-						"", 
-						undefined /*returnHandler*/, 
-						0 /*reqParam*/, 
-						0 /*progressHandler*/, 
-						0 /*callHandlerOnErr*/, 
-						true /*doNoShowLoadingOverlay*/);	
+						"",
+						undefined /*returnHandler*/,
+						0 /*reqParam*/,
+						0 /*progressHandler*/,
+						0 /*callHandlerOnErr*/,
+						true /*doNoShowLoadingOverlay*/);
 			} //end indicateUserActivityToServer()
 
 
@@ -442,13 +442,13 @@
 			//=====================================================================================
 			function handleMail(mail)
 			{
-                if(mail == "Save") {
-                   savePage();
-                }
-                else
-                {
-                   Debug.log("Don't know what to do with mail: " + mail);
-                }
+				if(mail == "Save") {
+				   savePage();
+				}
+				else
+				{
+				   Debug.log("Don't know what to do with mail: " + mail);
+				}
 			} //end  handleMail()
 
 
@@ -470,7 +470,7 @@
 					}
 				}
 				else
-				{	
+				{
 					console.log("No pages found in server!");
 				}
 			} //end pagesReqHandler()
@@ -501,13 +501,13 @@
 			//=====================================================================================
 			function pvListReqHandler(req)
 			{
-				console.log("pvListReqHandler: response received!");	
+				console.log("pvListReqHandler: response received!");
 				console.log(req.responseText);
 				var datalist = document.getElementById("pvDatalist");
 				datalist.innerHTML = "";
 
 				var jsonStr = DesktopContent.getXMLValue(req, "JSON");
-				if(!jsonStr || jsonStr == "") return;				
+				if(!jsonStr || jsonStr == "") return;
 				var pvListJSON;
 
 				//if invalid JSON return
@@ -527,7 +527,7 @@
 				}
 			} //end pvListReqHandler()
 
-			
+
 			//=====================================================================================
 			var PHOEBUS_MAP = {   "textupdate":	WIDGET_TYPE_TEXT
 								, "table":		WIDGET_TYPE_TABLE
@@ -563,7 +563,7 @@
 					{
 						var widgetContainerEls = document.getElementsByClassName("widgetContainerDiv");
 						console.log("Removing widget containers",widgetContainerEls);
-						while((widgetContainerEls = 
+						while((widgetContainerEls =
 							document.getElementsByClassName("widgetContainerDiv")) &&
 							widgetContainerEls.length)
 							widgetContainerEls[0].parentNode.removeChild(widgetContainerEls[0]);
@@ -704,13 +704,13 @@
 				{
 					for (j=0; j<i; ++j)
 					{
-						if (   page_.widgets[j] !== undefined 
-							&& page_.widgets[j].type == widgetObject.type 
-						    && page_.widgets[j].displayName == widgetObject.displayName
-						    && displayName !== undefined
-						    && groups[j] == group)
+						if (   page_.widgets[j] !== undefined
+							&& page_.widgets[j].type == widgetObject.type
+							&& page_.widgets[j].displayName == widgetObject.displayName
+							&& displayName !== undefined
+							&& groups[j] == group)
 						{
-							if (pv !== undefined) 
+							if (pv !== undefined)
 								page_.widgets[j].pvList[pv.innerHTML] = refreshRate_;
 							groups[i] = group;
 						}
@@ -783,7 +783,7 @@
 							if (chl[k].children[l].tagName == "file")
 								widgetObject.attributes["file_"+ k] = chl[k].children[l].innerHTML;
 							if (chl[k].children[l].tagName == "name")
-								widgetObject.attributes["tabname_"+ k] = chl[k].children[l].innerHTML;	
+								widgetObject.attributes["tabname_"+ k] = chl[k].children[l].innerHTML;
 						}
 					}
 				}
@@ -832,13 +832,13 @@
 
 				if(!editBlock_.isHidden)
 				{
-					Debug.log("Ingoring pool response in edit mode");	
+					Debug.log("Ingoring pool response in edit mode");
 					return;
 				}
 
- 				var jsonStr = DesktopContent.getXMLValue(req, "JSON");
-				jsonStr = jsonStr.replace(/\s/g, ''); //hack for removing whitespace 
-    			if(!jsonStr || jsonStr == "") 
+				var jsonStr = DesktopContent.getXMLValue(req, "JSON");
+				jsonStr = jsonStr.replace(/\s/g, ''); //hack for removing whitespace
+				if(!jsonStr || jsonStr == "")
 					return;
 
 				Debug.log(jsonStr);
@@ -858,8 +858,8 @@
 				else
 				{
 					for(var pv in serverResponse)//have to use each pv and then loop through
-					{	
-						console.log("pollServerHandlerFunction: pv" + pv);						
+					{
+						console.log("pollServerHandlerFunction: pv" + pv);
 						for (var widget in page_.widgets)
 						{
 							console.log("pollServerHandlerFunction: " + page_.widgets[widget]);
@@ -871,18 +871,18 @@
 									console.log("Widget*************", widget, pv);
 									try
 									{
-										document.getElementById("widget-" + 
+										document.getElementById("widget-" +
 											widget).contentWindow.drawNewValue(
-												pv, 
-												serverResponse[pv].Value, 
-												serverResponse[pv].Timestamp, 
-												serverResponse[pv].Status, 
+												pv,
+												serverResponse[pv].Value,
+												serverResponse[pv].Timestamp,
+												serverResponse[pv].Status,
 												serverResponse[pv].Severity);
 									}
 									catch(e)
 									{
 										Debug.log("Error was caught updating new value to widget 'widget-" +
-											widget + "': " + e);											
+											widget + "': " + e);
 									}
 								}
 							}
@@ -917,7 +917,7 @@
 			//=====================================================================================
 			function settingsReqHandler(req, passParams)
 			{
-				var settings = JSON.parse(DesktopContent.getXMLValue(req, "JSON"));				
+				var settings = JSON.parse(DesktopContent.getXMLValue(req, "JSON"));
 				var id = passParams[0]|0; //force integer
 				var attributes = passParams[1];
 
@@ -934,7 +934,7 @@
 
 
 			//=====================================================================================
-			function pvHistoryReqHandler(req, passParams) 
+			function pvHistoryReqHandler(req, passParams)
 			{
 				var jsonArr = req.responseXML.getElementsByTagName("JSON");
 				console.log("pvHistoryReqHandler()", jsonArr);
@@ -944,7 +944,7 @@
 				console.log("id: " + id + " parameter: " + parameters);
 
 				for (var i = jsonArr.length - 1; i >= 0; i--){
-					var history = JSON.parse(DesktopContent.getXMLValue(jsonArr[i]));				
+					var history = JSON.parse(DesktopContent.getXMLValue(jsonArr[i]));
 
 					for (var pv in history) {
 						console.log(pv);
@@ -967,12 +967,12 @@
 			function createControlsPageHandler(req)
 			{
 				Debug.log("createControlsPageHandler() was called for " + controlsPageName);// Req: " + req.responseText);
-				Debug.log("Your page was succesfully saved!",Debug.INFO_PRIORITY);		
+				Debug.log("Your page was succesfully saved!",Debug.INFO_PRIORITY);
 			} //end createControlsPageHandler()
 
 
 			//=====================================================================================
-			function handlerFunction(req) 
+			function handlerFunction(req)
 			{
 				var child1data = DesktopContent.getXMLValue(req,"child");
 				var child2data = DesktopContent.getXMLValue(req,"child2");
@@ -1047,7 +1047,7 @@
 
 				var passParams = [id, parameters];
 				DesktopContent.XMLHttpRequest("Request?RequestType=getLastAlarmsData",
-					//post data 
+					//post data
 					"pvList=" + pvList +
 					"&id=" + id,
 					lastAlarmsReqHandler /*handler*/,
@@ -1125,7 +1125,7 @@
 
 				var passParams = [id, parameters];
 				DesktopContent.XMLHttpRequest("Request?RequestType=getAlarmsLogData",
-					//post data 
+					//post data
 					"pvList=" + pvList +
 					"&id=" + id,
 					alarmsLogReqHandler /*handler*/,
@@ -1152,12 +1152,12 @@
 				{
 					DesktopContent.XMLHttpRequest(
 						"Request?RequestType=poll&uid=" + UID_,
-						"", 
-						pollServerHandlerFunction /*returnHandler*/, 
-						0 /*reqParam*/, 
-						0 /*progressHandler*/, 
-						0 /*callHandlerOnErr*/, 
-						true /*doNoShowLoadingOverlay*/);	
+						"",
+						pollServerHandlerFunction /*returnHandler*/,
+						0 /*reqParam*/,
+						0 /*progressHandler*/,
+						0 /*callHandlerOnErr*/,
+						true /*doNoShowLoadingOverlay*/);
 				}
 			} //end pollServer()
 
@@ -1210,8 +1210,8 @@
 			function loadPhoebusPage(page,targetTabWidgetId)
 			{
 				DesktopContent.XMLHttpRequest(
-					"Request?RequestType=loadPhoebusPage&Page=" + page, 
-					"", 
+					"Request?RequestType=loadPhoebusPage&Page=" + page,
+					"",
 					loadPhoebusPageReqHandler,
 					targetTabWidgetId);//, undefined, undefined, "sequence");
 				previousPage_ = actualPage_;
@@ -1258,57 +1258,57 @@
 
 
 			//=====================================================================================
-			function savePage() 
+			function savePage()
 			{
 				//Conditions to stop page saving e.g. blank page, using illegal pvs, etc Or overwrite?
 				if(false)
 					Debug.log("No reason to save a blank page!");
-    			else
-    			{
+				else
+				{
 					console.log("Showing save popup");
-		       		fileBlock_.savePopup.style.display = "block";
-		       		fileBlock_.savePopup.style["z-index"] = "9000";
+					fileBlock_.savePopup.style.display = "block";
+					fileBlock_.savePopup.style["z-index"] = "9000";
 					if (userPermission == ADMIN_PERMISSION_THRESHOLD)
-			       		document.getElementById("makeControlsPagePublic").style.display = "block";
-    			}
+						document.getElementById("makeControlsPagePublic").style.display = "block";
+				}
 			} //end savePage()
 
 
 			//=====================================================================================
 			function hidePopupSaveControlsPage()
 			{
-		        fileBlock_.savePopup.style.display = "none";
-		        fileBlock_.savePopup.style["z-index"] = "0";
-		        document.getElementById("controlsPageName").value="";
-	            document.getElementById("controlsPageNotes").value="";
-		        Debug.log("Controls Page successfully saved!");
+				fileBlock_.savePopup.style.display = "none";
+				fileBlock_.savePopup.style["z-index"] = "0";
+				document.getElementById("controlsPageName").value="";
+				document.getElementById("controlsPageNotes").value="";
+				Debug.log("Controls Page successfully saved!");
 			} //end hidePopupSaveControlsPage()
 
 
 			//=====================================================================================
 			function savePageAs()
 			{
-	            var controlsPageName = document.getElementById("controlsPageName").value;
-	            console.log("Here is our name: " + controlsPageName);
-	            var Regex = /^[a-zA-Z0-9\_]+$/g;
-	            if (!Regex.test(controlsPageName)) 
-		        	Debug.log("Illegal characters in name. Please remove these characters and try again.", Debug.HIGH_PRIORITY);
-	    		else
-	    		{
-    		        var controlsPageNotes = document.getElementById("controlsPageNotes").value;
-    		        Debug.log(controlsPageNotes);
+				var controlsPageName = document.getElementById("controlsPageName").value;
+				console.log("Here is our name: " + controlsPageName);
+				var Regex = /^[a-zA-Z0-9\_]+$/g;
+				if (!Regex.test(controlsPageName))
+					Debug.log("Illegal characters in name. Please remove these characters and try again.", Debug.HIGH_PRIORITY);
+				else
+				{
+					var controlsPageNotes = document.getElementById("controlsPageNotes").value;
+					Debug.log(controlsPageNotes);
 
 					if(controlsPageNotes.indexOf("@") >= 0 || controlsPageNotes.indexOf("#") >= 0 || controlsPageNotes.indexOf("..") >= 0)
 					{
-				         Debug.log("Illegal characters in notes. Please remove these characters and try again.", Debug.HIGH_PRIORITY);
-				         return;
+						 Debug.log("Illegal characters in notes. Please remove these characters and try again.", Debug.HIGH_PRIORITY);
+						 return;
 					}
 
-	    			var controlsPageLibEl = document.getElementById('listOfPrivateControlsPages');
-	    			var isControlsPagePublic = document.getElementById("isControlsPagePublic").checked;
+					var controlsPageLibEl = document.getElementById('listOfPrivateControlsPages');
+					var isControlsPagePublic = document.getElementById("isControlsPagePublic").checked;
 
 					var pagetosave = Object.assign({}, page_)
-	    			for (var widget in pagetosave.widgets)
+					for (var widget in pagetosave.widgets)
 					{
 						pagetosave.widgets[widget].x = page_.widgets[widget].x;// * windowWidth_ / (PAGE_POSITIONS_) | 0;
 						pagetosave.widgets[widget].y = page_.widgets[widget].y;// * windowHeight_ / (PAGE_POSITIONS_) | 0;
@@ -1316,16 +1316,16 @@
 						pagetosave.widgets[widget].h = page_.widgets[widget].h;// * windowHeight_ / (PAGE_POSITIONS_) | 0;
 					}
 
-	    			var pageString = JSON.stringify(pagetosave);
+					var pageString = JSON.stringify(pagetosave);
 
-	        		if(pagesList_.indexOf(controlsPageName) !== -1) //duplicate name
-	        		{
-	    				Debug.log("ControlsPage name already exists!");
+					if(pagesList_.indexOf(controlsPageName) !== -1) //duplicate name
+					{
+						Debug.log("ControlsPage name already exists!");
 
-	    				document.getElementById('popupControlsPageAlreadyExistsOverwrite').onclick = function(){ //call edit
-	    					DesktopContent.XMLHttpRequest("Request?RequestType=editControlsPage",
-	    						//post data
-	    						"isPublic=" + isControlsPagePublic +
+						document.getElementById('popupControlsPageAlreadyExistsOverwrite').onclick = function(){ //call edit
+							DesktopContent.XMLHttpRequest("Request?RequestType=editControlsPage",
+								//post data
+								"isPublic=" + isControlsPagePublic +
 								"&oldControlsPageName=" + controlsPageName +
 								"&newControlsPageName=" + controlsPageName +
 								"&Page=" + pageString +
@@ -1333,10 +1333,10 @@
 								"&Notes=" + encodeURIComponent(controlsPageNotes),
 								saveChangedControlsPageHandler /*handler*/,
 								controlsPageName /*parameter*/);};
-	        		}
-	        		else
-	        		{
-				        DesktopContent.XMLHttpRequest("Request?RequestType=createControlsPage",
+					}
+					else
+					{
+						DesktopContent.XMLHttpRequest("Request?RequestType=createControlsPage",
 							//post data
 							"isPublic=" + isControlsPagePublic +
 							"&Name=" + controlsPageName +
@@ -1346,8 +1346,8 @@
 							createControlsPageHandler /*handler*/);
 
 						hidePopupSaveControlsPage();
-	        		}
-    			}
+					}
+				}
 			} //end savePageAs()
 
 
@@ -1654,26 +1654,26 @@
 			//=====================================================================================
 			function savePhoebusPageAs()
 			{
-	            var controlsPageName = document.getElementById("controlsPageName").value;
-	            console.log("Here is our name: " + controlsPageName);
-	            var Regex = /^[a-zA-Z0-9\_]+$/g;
-	            if (!Regex.test(controlsPageName)) 
-		        	Debug.log("Illegal characters in name " +
-		        		"(No spaces, only alpha-numeric, dash and underscore allowed)." +
-		        		" Please fix and try again.", Debug.HIGH_PRIORITY);
-	    		else
-	    		{
-    		        var controlsPageNotes = document.getElementById("controlsPageNotes").value;
-    		        Debug.log(controlsPageNotes);
+				var controlsPageName = document.getElementById("controlsPageName").value;
+				console.log("Here is our name: " + controlsPageName);
+				var Regex = /^[a-zA-Z0-9\_]+$/g;
+				if (!Regex.test(controlsPageName))
+					Debug.log("Illegal characters in name " +
+						"(No spaces, only alpha-numeric, dash and underscore allowed)." +
+						" Please fix and try again.", Debug.HIGH_PRIORITY);
+				else
+				{
+					var controlsPageNotes = document.getElementById("controlsPageNotes").value;
+					Debug.log(controlsPageNotes);
 
 					if(controlsPageNotes.indexOf("@") >= 0 || controlsPageNotes.indexOf("#") >= 0 || controlsPageNotes.indexOf("..") >= 0)
 					{
-				         Debug.log("Illegal characters in notes (no @, #, or .. allowed). Please remove these characters and try again.", Debug.HIGH_PRIORITY);
-				         return;
+						 Debug.log("Illegal characters in notes (no @, #, or .. allowed). Please remove these characters and try again.", Debug.HIGH_PRIORITY);
+						 return;
 					}
 
-	    			var controlsPageLibEl = document.getElementById('listOfPrivateControlsPages');
-	    			var isControlsPagePublic = document.getElementById("isControlsPagePublic").checked;
+					var controlsPageLibEl = document.getElementById('listOfPrivateControlsPages');
+					var isControlsPagePublic = document.getElementById("isControlsPagePublic").checked;
 
 					var pageString = document.implementation.createDocument("", "", null);
 					var display = pageString.createElement("display");
@@ -1682,7 +1682,7 @@
 					display.appendChild(nm);
 
 					var group = 0;
-	    			for (var widgetId in page_.widgets)
+					for (var widgetId in page_.widgets)
 					{
 						if (page_.widgets[widgetId].type != WIDGET_TYPE_TAB
 						  && page_.widgets[widgetId].type != WIDGET_TYPE_NAVTAB
@@ -1731,7 +1731,7 @@
 
 						hidePopupSaveControlsPage();
 					}
-    			}
+				}
 
 				refreshPagesList();
 			} //end savePhoebusPageAs()
@@ -1742,14 +1742,14 @@
 			{
 				console.log("Slow Controls Dashboard: refreshPagesList()");
 
-			 	DesktopContent.XMLHttpRequest(
-                                	"Request?RequestType=getPages",
-                                         "", 
-                                         pagesReqHandler,
-                                         0 /*reqParam*/, 
-                                         0 /*progressHandler*/, 
-                                         0 /*callHandlerOnErr*/, 
-                                         true /*doNoShowLoadingOverlay*/);
+				DesktopContent.XMLHttpRequest(
+									"Request?RequestType=getPages",
+										 "",
+										 pagesReqHandler,
+										 0 /*reqParam*/,
+										 0 /*progressHandler*/,
+										 0 /*callHandlerOnErr*/,
+										 true /*doNoShowLoadingOverlay*/);
 
 				window.setTimeout(
 					function()
@@ -1760,7 +1760,7 @@
 
 
 			//=====================================================================================
-			//	expecting id as 'widget-#' ..and this function extracts the 
+			//	expecting id as 'widget-#' ..and this function extracts the
 			//	widget UID as integer #
 			function setupWidget(id, parameters)
 			{
@@ -1769,7 +1769,7 @@
 
 				if(page_.widgets[id] === undefined)
 				{
-					Debug.log("Illegal widget UID (not found in widget list) received from child widget frame: " + 
+					Debug.log("Illegal widget UID (not found in widget list) received from child widget frame: " +
 							id, Debug.HIGH_PRIORITY);
 					return;
 				}
@@ -1789,10 +1789,10 @@
 					pvListCSV += pv + ",";
 				}
 
-				var passParams = [id, page_.widgets[id].attributes];	
+				var passParams = [id, page_.widgets[id].attributes];
 				DesktopContent.XMLHttpRequest("Request?RequestType=getPVSettings",
-							//post data 
-    						"pvList=" + pvListCSV + 
+							//post data
+							"pvList=" + pvListCSV +
 							"&id=" + id,
 							settingsReqHandler /*handler*/,
 							passParams /*parameter*/);
@@ -1816,14 +1816,14 @@
 				+ "\nSeverity: "
 				+ pvSeverity
 				+ "\nLower Warning Limit:  " + Number.parseFloat(pv_settings_[pvName].Lower_Warning_Limit).toExponential(2) + "\n"
-			  	+ "Upper Warning Limit:  "   + Number.parseFloat(pv_settings_[pvName].Upper_Warning_Limit).toExponential(2) + "\n"
-			  	+ "Lower Alarm Limit:    "   + Number.parseFloat(pv_settings_[pvName].Lower_Alarm_Limit).toExponential(2)   + "\n"
-			  	+ "Upper Alarm Limit:    "   + Number.parseFloat(pv_settings_[pvName].Upper_Alarm_Limit).toExponential(2)   + "\n"
-			  	+ "Lower Control Limit:   "  + Number.parseFloat(pv_settings_[pvName].Lower_Control_Limit).toExponential(2) + "\n"
-			  	+ "Upper Control Limit:   "  + Number.parseFloat(pv_settings_[pvName].Upper_Control_Limit).toExponential(2) + "\n"
-			  	+ "Lower Display Limit:   "  + Number.parseFloat(pv_settings_[pvName].Lower_Display_Limit).toExponential(2) + "\n"
-			  	+ "Upper Display Limit:   "  + Number.parseFloat(pv_settings_[pvName].Upper_Display_Limit).toExponential(2) + "\n";
-			  	return toolTip;
+				+ "Upper Warning Limit:  "   + Number.parseFloat(pv_settings_[pvName].Upper_Warning_Limit).toExponential(2) + "\n"
+				+ "Lower Alarm Limit:    "   + Number.parseFloat(pv_settings_[pvName].Lower_Alarm_Limit).toExponential(2)   + "\n"
+				+ "Upper Alarm Limit:    "   + Number.parseFloat(pv_settings_[pvName].Upper_Alarm_Limit).toExponential(2)   + "\n"
+				+ "Lower Control Limit:   "  + Number.parseFloat(pv_settings_[pvName].Lower_Control_Limit).toExponential(2) + "\n"
+				+ "Upper Control Limit:   "  + Number.parseFloat(pv_settings_[pvName].Upper_Control_Limit).toExponential(2) + "\n"
+				+ "Lower Display Limit:   "  + Number.parseFloat(pv_settings_[pvName].Lower_Display_Limit).toExponential(2) + "\n"
+				+ "Upper Display Limit:   "  + Number.parseFloat(pv_settings_[pvName].Upper_Display_Limit).toExponential(2) + "\n";
+				return toolTip;
 			} //end setWidgetToolTip()
 
 
@@ -1876,7 +1876,7 @@
 						widgetElement.style.backgroundColor = 'white';
 					else
 						widgetElement.style.backgroundColor = bkgColor;
-					
+
 					if(pvSeverity == "MAJOR" )
 						widgetElement.style.border = "2px solid red";
 					else
@@ -1893,10 +1893,10 @@
 				var pvList = "";
 
 				id = id.split('-')[1];
-				
+
 				if(page_.widgets[id] === undefined)
 				{
-					Debug.log("Illegal widget UID (not found in widget list) received from child widget frame: " + 
+					Debug.log("Illegal widget UID (not found in widget list) received from child widget frame: " +
 							id, Debug.HIGH_PRIORITY);
 					return;
 				}
@@ -1912,8 +1912,8 @@
 
 				var passParams = [id, parameters];
 				DesktopContent.XMLHttpRequest("Request?RequestType=getPvArchiverData",
-									//post data 
-		    						"pvList=" + pvList + 
+									//post data
+									"pvList=" + pvList +
 									"&id=" + id +
 									"&startTime=" + startTime +
 									"&endTime=" + endTime,
@@ -1969,7 +1969,7 @@
 			{
 				Debug.log("parent level setupForDrawSelectionRectangle " + id);
 
-				indicateUserActivityToServer();		
+				indicateUserActivityToServer();
 
 				if(id === undefined)
 				{
@@ -2008,7 +2008,7 @@
 
 				var selectionRectangle = document.getElementById("selectionRectangle");
 				selectionRectangle.style.top  = y + "px";
-				selectionRectangle.style.left = x + "px";	
+				selectionRectangle.style.left = x + "px";
 
 				if(widgetLibrary.dimensions[type])
 				{
@@ -2036,9 +2036,9 @@
 					if(widgetLibrary.dimensions[type]["Scale"] != "False")
 					{
 						console.log("Widget is scalable");
-					}	
+					}
 				}
-				else //Default - no aspect ratio, no min size, 
+				else //Default - no aspect ratio, no min size,
 				{
 					selectionRectangle.style.height = "1px";
 					selectionRectangle.style.width = "1px";
@@ -2049,7 +2049,7 @@
 
 
 			//=====================================================================================
-			function redrawSelectionRectangle(event) 
+			function redrawSelectionRectangle(event)
 			{
 				var type = dragAndDrawWidgetType_;
 				//Debug.log("redrawSelectionRectangle() " + type);
@@ -2074,10 +2074,10 @@
 				}
 
 				drawAndDragBox.style.left = x + "px";
-				drawAndDragBox.style.top = y + "px";	
+				drawAndDragBox.style.top = y + "px";
 
-				if(widgetLibrary.dimensions[type] && 
-						widgetLibrary.dimensions[type]["Y"] && 
+				if(widgetLibrary.dimensions[type] &&
+						widgetLibrary.dimensions[type]["Y"] &&
 						widgetLibrary.dimensions[type]["X"])
 				{ //if forced aspect ratio, then maintain aspect ratio
 
@@ -2092,25 +2092,25 @@
 						if(adjusted_y_displacement >= w)
 						{
 							drawAndDragBox.style.width = parseFloat(h * aspect_ratio) + "px";
-							drawAndDragBox.style.height = h + "px";						
+							drawAndDragBox.style.height = h + "px";
 						}
 						else
-						{							
+						{
 							drawAndDragBox.style.width = w + "px";
-							drawAndDragBox.style.height = parseFloat(w / aspect_ratio) + "px";					
+							drawAndDragBox.style.height = parseFloat(w / aspect_ratio) + "px";
 						}
 					}
 				}
 				else //free draw, no aspect constraint
-				{					
+				{
 					drawAndDragBox.style.width = w + "px";
-					drawAndDragBox.style.height = h + "px";						
+					drawAndDragBox.style.height = h + "px";
 				}
 			} //end redrawSelectionRectangle()
 
 
 			//=====================================================================================
-			function stopDragAndDrawRectangle(event) 
+			function stopDragAndDrawRectangle(event)
 			{
 				var type = dragAndDrawWidgetType_;
 				Debug.log("stopDragAndDrawRectangle() " + type);
@@ -2126,7 +2126,7 @@
 
 				//if widget attribute Scale is set to false, then always a fixed size
 				if(widgetLibrary.dimensions[type] &&
-						widgetLibrary.dimensions[type]["Scale"] && 
+						widgetLibrary.dimensions[type]["Scale"] &&
 						widgetLibrary.dimensions[type]["Scale"].toLowerCase() == "false")
 				{
 					w = widgetLibrary.dimensions[type]["X"]|0;
@@ -2152,17 +2152,17 @@
 
 
 			//=====================================================================================
-			function openTabPage(e) 
+			function openTabPage(e)
 			{
 				Debug.log("openTabPage",e.target.id);
-				targetTabBodyId_ = e.target.id.replace("tabSelectButton","tabBody");				
-				
+				targetTabBodyId_ = e.target.id.replace("tabSelectButton","tabBody");
+
 				//allow race condition to endWidgetDragAndResize() to win
-				window.clearTimeout(dragTimeout_);				
+				window.clearTimeout(dragTimeout_);
 				dragTimeout_ = window.setTimeout(
 					function()
 					{
-						startWidgetDrag(e,e.target.id.split('-')[1]|0);	
+						startWidgetDrag(e,e.target.id.split('-')[1]|0);
 					}, 300 /*ms*/);
 			} // end openTabPage()
 
@@ -2170,8 +2170,8 @@
 			function checkWidgetInTabBody(widget, tabWidget)
 			{
 				if (widget.x >= tabWidget.x && widget.y >= tabWidget.y
-				    && ((widget.x + widget.w) <= (tabWidget.x + tabWidget.w))
-				    && ((widget.y + widget.h) <= (tabWidget.y + tabWidget.h)))
+					&& ((widget.x + widget.w) <= (tabWidget.x + tabWidget.w))
+					&& ((widget.y + widget.h) <= (tabWidget.y + tabWidget.h)))
 					return true;
 				return false;
 			} //end checkWidgetInTabBody()
@@ -2206,9 +2206,9 @@
 				var tabBodyEl = document.createElement("div");
 				tabBodyEl.className = "tabWidgetBodyContainer";
 				str = "";
-				for(var i=0;i<STARTING_TAB_COUNT;++i)						
-					str += "<div id='widget-" + id + "-tabBody-" + i + 
-						"'' style='display:" + (i == 0?"block":"none") + 
+				for(var i=0;i<STARTING_TAB_COUNT;++i)
+					str += "<div id='widget-" + id + "-tabBody-" + i +
+						"'' style='display:" + (i == 0?"block":"none") +
 						"' class='tabWidgetBody'>Tab Body " + i + "</div>";
 
 				tabBodyEl.innerHTML = str;
@@ -2219,14 +2219,14 @@
 				var tabBodies = widgetObject.el.getElementsByClassName("tabWidgetBody");
 				for (var i = 0; i < tabBodies.length; i++)
 				{
-					tabBodies[i].addEventListener("mousedown", 
+					tabBodies[i].addEventListener("mousedown",
 							makeHandlerWithID(id,		handleWidgetCoverMouseDown));
-					tabBodies[i].addEventListener("mouseup", 
+					tabBodies[i].addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					tabBodies[i].addEventListener("mousemove", 
+					tabBodies[i].addEventListener("mousemove",
 						function()
 						{
-							if(!drawingSelectionRectangle_ && 
+							if(!drawingSelectionRectangle_ &&
 								dragAndDrawWidgetType_ !== undefined)
 								this.style.cursor = "crosshair";
 							else
@@ -2234,11 +2234,11 @@
 						});
 
 				} //end tab body handlers
-				var tabButtons = widgetObject.el.getElementsByClassName("tabWidgetSelectButton");		
+				var tabButtons = widgetObject.el.getElementsByClassName("tabWidgetSelectButton");
 				for (var i = 0; i < tabButtons.length; i++)
 				{
 					tabButtons[i].addEventListener("mousedown", openTabPage);
-					tabButtons[i].addEventListener("mouseup", 
+					tabButtons[i].addEventListener("mouseup",
 							makeHandlerWithID(id, endWidgetDragAndResize));
 				} //end tab button handlers
 
@@ -2246,7 +2246,7 @@
 				{
 					Debug.log("Show starting point widgets");
 					window.setTimeout(
-						function()							
+						function()
 						{
 							var tabBodyPages = [];
 							for(var i=0;i<STARTING_TAB_COUNT;++i)
@@ -2271,12 +2271,12 @@
 			//	if hideFrame, hides the iframe and widget content (more moving and resizing).
 			function drawWidget(id, type, newx, newy, neww,
 					newh, hideFrame)
-			{			
+			{
 				//console.log("drawWidget() id=",id,
 				//		" type=",type);
 
 				var OUTLINE_OFFSET = 5;
-				
+
 				var containerDiv;
 				var widgetCover;
 
@@ -2314,10 +2314,10 @@
 				var widgetObject;
 
 				if(id === undefined || page_.widgets[id] === undefined)
-				{					
+				{
 					Debug.log("Creating new widget object..");
 
-					//start at number of widgets, and then keep adding 1 until no record found in 
+					//start at number of widgets, and then keep adding 1 until no record found in
 					id = Object.keys(page_.widgets).length;
 					while(page_.widgets[id] !== undefined)
 						++id;
@@ -2376,7 +2376,7 @@
 						widgetObject.el.scrolling="No";
 						widgetObject.el.id = "widget-" + id;
 
-						widgetObject.el.src = "widgets/" + 
+						widgetObject.el.src = "widgets/" +
 								widgetLibrary.typeToSrc[widgetObject.type];
 						widgetObject.el.style.border = "0";
 						widgetObject.el.innerHTML = widgetObject.displayName;
@@ -2447,58 +2447,58 @@
 					otherEditIcon = document.createElement("div");
 					otherEditIcon.className = "widgetEditIcon widgetOtherEditIcon";
 					otherEditIcon.id = "widget-" + id + "-otherEditIcon";
-					otherEditIcon.title = "Edit the attributes and PV-list for this widget-" + 
+					otherEditIcon.title = "Edit the attributes and PV-list for this widget-" +
 						id + ".";
 					otherEditIcon.onmouseup = makeHandlerWithID(id,
 							toggleContextMenu);
-					otherEditIcon.onmousedown = function(e){e.stopPropagation();}				
+					otherEditIcon.onmousedown = function(e){e.stopPropagation();}
 
-					widgetCover.addEventListener("mousedown", 
+					widgetCover.addEventListener("mousedown",
 							makeHandlerWithID(id,		handleWidgetCoverMouseDown));
-					widgetCover.addEventListener("mouseup", 
+					widgetCover.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					widgetCover.addEventListener("mousemove", 
+					widgetCover.addEventListener("mousemove",
 						function()
 						{
-							if(!drawingSelectionRectangle_ && 
+							if(!drawingSelectionRectangle_ &&
 								dragAndDrawWidgetType_ !== undefined)
 								this.style.cursor = "crosshair";
 							else
 								this.style.cursor = "grab";
 						});
 
-					resizeDivTop.addEventListener("mousedown", 
+					resizeDivTop.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivLeft.addEventListener("mousedown", 
+					resizeDivLeft.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivRight.addEventListener("mousedown", 
+					resizeDivRight.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivBottom.addEventListener("mousedown", 
+					resizeDivBottom.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivTopLeft.addEventListener("mousedown", 
+					resizeDivTopLeft.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivTopRight.addEventListener("mousedown", 
+					resizeDivTopRight.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivBottomRight.addEventListener("mousedown", 
+					resizeDivBottomRight.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
-					resizeDivBottomLeft.addEventListener("mousedown", 
+					resizeDivBottomLeft.addEventListener("mousedown",
 							makeHandlerWithID(id,		startWidgetResize));
 
-					resizeDivTop.addEventListener("mouseup", 
+					resizeDivTop.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivLeft.addEventListener("mouseup", 
+					resizeDivLeft.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivRight.addEventListener("mouseup", 
+					resizeDivRight.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivBottom.addEventListener("mouseup", 
+					resizeDivBottom.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivTopLeft.addEventListener("mouseup", 
+					resizeDivTopLeft.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivTopRight.addEventListener("mouseup", 
+					resizeDivTopRight.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivBottomRight.addEventListener("mouseup", 
+					resizeDivBottomRight.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
-					resizeDivBottomLeft.addEventListener("mouseup", 
+					resizeDivBottomLeft.addEventListener("mouseup",
 							makeHandlerWithID(id,		endWidgetDragAndResize));
 
 					resizeDiv.appendChild(resizeDivTop);
@@ -2532,7 +2532,7 @@
 					widgetCover 			= document.getElementById("widget-" + id + "-cover");
 
 					editIcon 				= document.getElementById("widget-" + id + "-editIcon");
-					otherEditIcon 				= document.getElementById("widget-" + id + "-otherEditIcon");					
+					otherEditIcon 				= document.getElementById("widget-" + id + "-otherEditIcon");
 
 					resizeDiv 				= document.getElementById("widget-" + id + "-resize-cover");
 
@@ -2549,16 +2549,16 @@
 					resizeDivBottomLeft 	= document.getElementById("widget-" + id + "-resize-cover-southwest");
 
 					//hide and show widget children properly
-					if(widgetObject.type == WIDGET_TYPE_TAB || 
+					if(widgetObject.type == WIDGET_TYPE_TAB ||
 						widgetObject.type == WIDGET_TYPE_NAVTAB)
-					{				
+					{
 						Debug.log("Drawing tab widget..");
 
-						var tabBodies = widgetObject.el.getElementsByClassName("tabWidgetBody");						
+						var tabBodies = widgetObject.el.getElementsByClassName("tabWidgetBody");
 						if(targetTabBodyId_ == "")
 							targetTabBodyId_ = undefined;
 						//find active tab body (if not specified)
-						for (var i = 0; i < tabBodies.length; i++) 
+						for (var i = 0; i < tabBodies.length; i++)
 						{
 							if ((targetTabBodyId_ !== undefined &&
 								tabBodies[i].id == targetTabBodyId_) ||
@@ -2573,9 +2573,9 @@
 						}
 
 						//clear tab button colors
-						var tabButtons = widgetObject.el.getElementsByClassName("tabWidgetSelectButton");						
-						for (i = 0; i < tabButtons.length; i++) 
-							tabButtons[i].style.backgroundColor = "";	
+						var tabButtons = widgetObject.el.getElementsByClassName("tabWidgetSelectButton");
+						for (i = 0; i < tabButtons.length; i++)
+							tabButtons[i].style.backgroundColor = "";
 
 						if(!tabBodies.length) return;
 
@@ -2589,10 +2589,10 @@
 						var activeTabButton = document.getElementById(
 							targetTabBodyId_.replace("tabBody","tabSelectButton"));
 						activeTabButton.style.backgroundColor = "#777";
-						
+
 
 						Debug.log("Done drawing tab widget..");
-						
+
 					} //end tab content draw handling
 				}
 
@@ -2778,11 +2778,11 @@
 				//Make sure pv list is up-to-date
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=getList",
-					"", 
-					pvListReqHandler /*returnHandler*/, 
-					0 /*reqParam*/, 
-					0 /*progressHandler*/, 
-					0 /*callHandlerOnErr*/, 
+					"",
+					pvListReqHandler /*returnHandler*/,
+					0 /*reqParam*/,
+					0 /*progressHandler*/,
+					0 /*callHandlerOnErr*/,
 					false /*doNoShowLoadingOverlay*/);
 
 				UID_ = 0;
@@ -2837,7 +2837,7 @@
 					var allAlarmsLogSize = 0;
 
 					for (var widget in page_.widgets)
-					{						
+					{
 						if (!isEmpty(page_.widgets[widget].pvList))
 							pvListSize ++;
 						else
@@ -2889,7 +2889,7 @@
 			} //end goBackToPreviousPage()
 
 			//=====================================================================================
-			// returns a handler function that can be used to respond 
+			// returns a handler function that can be used to respond
 			//	to event handlers and pass an id parameter
 			function makeHandlerWithID(id,handlerFunction)
 			{
@@ -2902,7 +2902,7 @@
 
 			//=====================================================================================
 			function toggleContextMenu(e, id)
-			{			
+			{
 				if(e) e.stopPropagation();
 
 				console.log("toggle toggleContextMenu id=",id);
@@ -2939,7 +2939,7 @@
 					menu_.setAttribute("widgetID", id);
 					menu_.classList.add(activeMenu_);
 
-					
+
 					//set target element
 					targetElement_ = document.getElementById("widget-" + id);
 				}
@@ -2949,7 +2949,7 @@
 			//=====================================================================================
 			function toggleContextMenuOff(e)
 			{
-				if(e) e.stopPropagation();			
+				if(e) e.stopPropagation();
 				if(menuState_ !== 0)
 				{
 					menuState_ = 0;
@@ -3006,7 +3006,7 @@
 				cover.style.height = mainBlockContainer.offsetHeight + "px";
 
 				//file toggle movement approach is always leave left
-				//	the same, and change margin-left 
+				//	the same, and change margin-left
 				//	(style transition speed on margin-left property for graceful movement)
 				fileBlock_.el.style.left = (- FILE_BLOCK_WIDTH) + "px";
 
@@ -3044,7 +3044,7 @@
 
 			//=====================================================================================
 			//createTopPaneContent ~~
-			function createTopPaneContent(H, W) 
+			function createTopPaneContent(H, W)
 			{
 				var popupBody = document.getElementById("editWidgetAttributesPopup-body-pvlist");
 				popupBody.innerHTML = "";
@@ -3083,7 +3083,7 @@
 						//);
 						//"margin-bottom: 0px;" +
 						"margin: -15px 0 -10px 0;" +
-						"height:" + H + "px;" + 
+						"height:" + H + "px;" +
 						"width:" + (W-25) + "px;");
 
 				//write MultiSelectBox to a particular div
@@ -3103,7 +3103,7 @@
 
 			//=====================================================================================
 			//createAddRemovePVContent ~~
-			function createAddRemovePVContent(W) 
+			function createAddRemovePVContent(W)
 			{
 				if (document.getElementById("addRemovePv") != null) return;
 
@@ -3115,7 +3115,7 @@
 						//);
 						//"margin-bottom: 0px;" +
 						"margin: 10px 0 35px 0;" +
-						"height:" + 20 + "px;" + 
+						"height:" + 20 + "px;" +
 						"width:" + (W-25) + "px;");
 
 				var add = document.createElement("button");
@@ -3220,13 +3220,13 @@
 				var _bottomPane = document.createElement("div");
 				_bottomPane.setAttribute("class", "pane");
 				_bottomPane.setAttribute("id", "bottomPane");
-			
+
 				var el = document.createElement("div");
 				el.setAttribute("class", "recordBottomMultiSelect");
 				el.setAttribute("id", "recordBottomMultiSelect");
 				el.setAttribute("style",
 					"margin: -15px 0 -10px 0;" +
-					"height:" + H + "px;" + 
+					"height:" + H + "px;" +
 					"width:" + (W-25) + "px;");
 
 				//write MultiSelectBox to a particular div
@@ -3246,7 +3246,7 @@
 
 			//=====================================================================================
 			//createPVTable ~~
-			function createPVTable() 
+			function createPVTable()
 			{
 				//BEGIN PVTable
 				var popupBody = document.getElementById("editWidgetAttributesPopup-body-pvlist");
@@ -3291,7 +3291,7 @@
 
 			//=====================================================================================
 			//createAttributesTable ~~
-			function createAttributesTable() 
+			function createAttributesTable()
 			{
 				//BEGIN AttributesTable
 				var attributeBody = elPointer_["editWidgetAttributesPopup-body-attributes"];
@@ -3376,7 +3376,7 @@
 				saveButton.style.left = "35%";
 				saveButton.innerHTML = "Save";
 				saveButton.onclick = function(){editWidgetAttributesSave(); editWidgetAttributesClose();};
-				footer.appendChild(saveButton);				
+				footer.appendChild(saveButton);
 				//END FOOTER
 			} //end editWidgetAttributesOpen()
 
@@ -3449,7 +3449,7 @@
 						var parameter = attributesTable.getElementsByTagName("tr")[tr].getElementsByTagName("td")[0].getElementsByTagName("input")[0].value;
 						if(parameter != "")
 						{
-							var value = attributesTable.getElementsByTagName("tr")[tr].getElementsByTagName("td")[1].getElementsByTagName("input")[0].value;							
+							var value = attributesTable.getElementsByTagName("tr")[tr].getElementsByTagName("td")[1].getElementsByTagName("input")[0].value;
 							console.log(" a: " + parameter, value);
 							if(value == 'undefined')
 								actionRequired = true;
@@ -3474,7 +3474,7 @@
 								if (page_.widgets[menu_.getAttribute("widgetID")].el.contentWindow.tabledata)
 									tdButton.disabled = false;
 								else
-									tdButton.disabled = true; 
+									tdButton.disabled = true;
 							}
 							else if(parameter == "upload_image")
 							{
@@ -3490,7 +3490,7 @@
 								var tdTextArea = attributesTable.getElementsByTagName("tr")[tr].getElementsByTagName("td")[1].getElementsByTagName("input")[0];
 								tdTextArea.style.backgroundColor = "white";
 								var tdButton = attributesTable.getElementsByTagName("tr")[tr].getElementsByTagName("td")[0].getElementsByTagName("input")[0];
-								
+
 								//Use this Button to go to https://www.image-map.net/ to make image map area code. After add your <area ....> code in the next text area
 								tdButton.setAttribute("type", "button");
 								tdButton.className = "";
@@ -3525,7 +3525,7 @@
 						// update tabs widgets
 						var widgetObject = page_.widgets[menu_.getAttribute("widgetID")];
 						var tabs_num = widgetObject.el.children[0].childElementCount;
-						
+
 						// delete attributes and widgets when tabs are removed
 						if (widgetObject.attributes["tabs_num"] < tabs_num)
 							for (var i=widgetObject.attributes["tabs_num"]; i<tabs_num;++i)
@@ -3534,7 +3534,7 @@
 								delete widgetObject.attributes["tabname_"+i];
 								if (page_.widgets[menu_.getAttribute("widgetID")].type == WIDGET_TYPE_NAVTAB)
 									delete widgetObject.attributes["file_"+i];
-									
+
 								// delete widgets in tab bodies
 								for(wid in page_.widgets)
 									if(page_.widgets[wid].tabBodyID == "widget-"+menu_.getAttribute("widgetID")+"-tabBody-"+i)
@@ -3605,7 +3605,7 @@
 					if (page_.widgets[menu_.getAttribute("widgetID")].el.contentWindow.tabledata)
 						keyField.disabled = false;
 					else
-						keyField.disabled = true; 
+						keyField.disabled = true;
 				}
 				else if(keyParam == "upload_image")
 				{
@@ -3651,7 +3651,7 @@
 				dummytr.appendChild(dummyts);
 				dummytr.appendChild(dummyts2);
 				dummytr.style["max-height"] = "10%";
-				tbody.appendChild(dummytr);	
+				tbody.appendChild(dummytr);
 				if(keyParam == "inner_map_html")
 				{
 					valueField.style.backgroundColor = "white";
@@ -3702,7 +3702,7 @@
 
 
 			//=====================================================================================
-			function popupUploadCSVTableForm() 
+			function popupUploadCSVTableForm()
 			{
 				document.getElementById("popupUploadSaveCsvFile").style.display = "block";
 				document.getElementById("popupUploadSaveCsvFile").style["z-index"] = 101;
@@ -3749,7 +3749,7 @@
 						var file = files[0];
 						var reader = new FileReader();
 						var uploadbutton = document.getElementById('popUpDialog-submitButton');
-						reader.onload = 
+						reader.onload =
 							function ()
 							{
 								//store uploaded file and enable button
@@ -3766,10 +3766,10 @@
 
 
 			//=====================================================================================
-			function popupExportCSVTableForm() 
+			function popupExportCSVTableForm()
 			{
 				console.log("popupExportCSVTableForm()");
-				
+
 				var popupSave = document.getElementById("popupUploadSaveCsvFile");
 				popupSave.style.display = "block";
 				popupSave.style["z-index"] = 101;
@@ -3804,7 +3804,7 @@
 				el.innerHTML = str;
 				popupSave.appendChild(el); //add element to editWidgetAttributesPopup-file div
 
-				document.getElementById('popUpDialog-fileSave').onclick = 
+				document.getElementById('popUpDialog-fileSave').onclick =
 					function ()
 					{
 						var data = page_.widgets[menu_.getAttribute("widgetID")].el.contentWindow.tabledata;
@@ -3852,10 +3852,10 @@
 
 				//auto find record delimeter (finding auto-row delimiter is more complicated if there are options.. to avoid confusion with data)
 				//	take last found, which must always be correct
-				//	because last fields are forced fields (author/time) and 
+				//	because last fields are forced fields (author/time) and
 				//	do not have special characters.
 
-				for (var i = _tableUploadStr.length-1;i >= 0; --i) 
+				for (var i = _tableUploadStr.length-1;i >= 0; --i)
 				{
 					if (_tableUploadStr[i] == ',')
 					{
@@ -3871,10 +3871,10 @@
 
 				//find row and col size
 				var srcRows = _tableUploadStr.length? //if no data, make no rows
-						_tableUploadStr.replace(/"([^"]+(?="))"/g, '$1').split(rowDel):[]; 
+						_tableUploadStr.replace(/"([^"]+(?="))"/g, '$1').split(rowDel):[];
 				var src = []; //src = [r][c]
 				for (var i = 0; i < srcRows.length; ++i)
-					src.push(srcRows[i].split(colDel));			
+					src.push(srcRows[i].split(colDel));
 				console.log("uploadTableFromCSV(): src matrix", src);
 
 				var ySize = src.length-1;
@@ -3939,7 +3939,7 @@
 
 
 			//=====================================================================================
-			function popupUploadImage() 
+			function popupUploadImage()
 			{
 				document.getElementById("popupUploadSaveCsvFile").style.display = "block";
 				document.getElementById("popupUploadSaveCsvFile").style["z-index"] = 101;
@@ -3992,7 +3992,7 @@
 						{
 							if (!file.type.includes("image"))
 							{
-						    	document.getElementById('checkFileSize').innerHTML = "<span style='color:red'>Selected File is not an image<span>";
+								document.getElementById('checkFileSize').innerHTML = "<span style='color:red'>Selected File is not an image<span>";
 								return;
 							}
 
@@ -4006,22 +4006,22 @@
 			function checkFileSize(file, maxSize)
 			{
 				var fileSize;
-			    if (file.size > maxSize * 1024 * 1024)
-			    {
-			    	document.getElementById('checkFileSize').innerHTML = "Selected file exceeds file upload limit of " + maxSize + " MB.";
-			    	return;
-			    }
-			    else if (file.size > 1024 * 1024)
-			    	fileSize = (Math.round(file.size * 100 / (1024 * 1024)) / 100).toString() + ' MB';
-			    else	
-			    	fileSize = (Math.round(file.size * 100 / 1024) / 100).toString() + ' KB';
+				if (file.size > maxSize * 1024 * 1024)
+				{
+					document.getElementById('checkFileSize').innerHTML = "Selected file exceeds file upload limit of " + maxSize + " MB.";
+					return;
+				}
+				else if (file.size > 1024 * 1024)
+					fileSize = (Math.round(file.size * 100 / (1024 * 1024)) / 100).toString() + ' MB';
+				else
+					fileSize = (Math.round(file.size * 100 / 1024) / 100).toString() + ' KB';
 
 				document.getElementById('checkFileSize').innerHTML = "File upload limit is " + maxSize + " MB. Actual file size is: " + fileSize;
 
 				var uploadbutton = document.getElementById('popUpDialog-submitButton');
 				uploadbutton.disabled = false;
 				uploadbutton.title = "Upload the chosen " + file.name + " file to the current widget";
-				uploadbutton.onmouseup = 
+				uploadbutton.onmouseup =
 					function (){
 						uploadImage(file.name, file);
 					};
@@ -4051,7 +4051,7 @@
 				requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=saveImageFile&CookieCode=" + DesktopContent._cookieCodeMailbox;
 				xhr.open("POST", requestURL);
 
-                //add other values to form so they are transmitted with files
+				//add other values to form so they are transmitted with files
 				fd.append("isPublic", "false");
 				fd.append("image", file);
 				xhr.send(fd);
@@ -4156,8 +4156,8 @@
 			{
 				if(gridSnap_)
 				{
-			    	var snap_candidate = gridSize * Math.round(val/gridSize);
-			    	return snap_candidate;
+					var snap_candidate = gridSize * Math.round(val/gridSize);
+					return snap_candidate;
 				}
 				else return val;
 			} //end snapToGrip()
@@ -4178,21 +4178,21 @@
 					switch(e.keyCode)
 					{
 					case 88: 	//X (cut)
-				    	console.log("cut widget",targetElement_);
-				    	cutWidget(targetElement_);
-				    	break;
+						console.log("cut widget",targetElement_);
+						cutWidget(targetElement_);
+						break;
 					case 86: 	//V (paste)
-				    	console.log("paste widget");
-				    	pasteWidget();
-				    	break;
+						console.log("paste widget");
+						pasteWidget();
+						break;
 					case 79: 	//O (open)
-				    	console.log("toggle file manager");
-				    	toggleFileMenu();
-				    	break;
+						console.log("toggle file manager");
+						toggleFileMenu();
+						break;
 					case 69: 	//E (edit mode)
-				    	console.log("toggle edit mode");
-				    	toggleEditMode();
-				    	break;
+						console.log("toggle edit mode");
+						toggleEditMode();
+						break;
 					case 38: 	//up arrow (move widget)
 						id = localGetWidgetId();
 						console.log(isKeyDown,"up move widget",id);
@@ -4229,22 +4229,22 @@
 					{
 					case 38: 	//up arrow (move widget)
 						id = localGetWidgetId();
-				    	console.log(isKeyDown,"up move widget",id);
-				    	page_.widgets[id].y -= ARROW_SPEED;
-				    	drawWidget(id);
-				    	break;
+						console.log(isKeyDown,"up move widget",id);
+						page_.widgets[id].y -= ARROW_SPEED;
+						drawWidget(id);
+						break;
 					case 40: 	//down arrow (move widget)
 						id = localGetWidgetId();
-				    	console.log(isKeyDown,"down move widget",id);
+						console.log(isKeyDown,"down move widget",id);
 						page_.widgets[id].y += ARROW_SPEED;
-				    	drawWidget(id);
-				    	break;
+						drawWidget(id);
+						break;
 					case 37: 	//left arrow (move widget)
 						id = localGetWidgetId();
-				    	console.log(isKeyDown,"left move widget",id);
-				    	page_.widgets[id].x -= ARROW_SPEED;
-				    	drawWidget(id);
-				    	break;
+						console.log(isKeyDown,"left move widget",id);
+						page_.widgets[id].x -= ARROW_SPEED;
+						drawWidget(id);
+						break;
 					case 39: 	//right arrow (move widget)
 						id = localGetWidgetId();
 						console.log(isKeyDown,"right move widget",id);
@@ -4288,7 +4288,7 @@
 				}
 				var id = targetElement_.id.split('-')[1]|0;
 
-				var widgetContainer = document.getElementById("widget-" + id + 
+				var widgetContainer = document.getElementById("widget-" + id +
 					"-container");
 				if(widgetContainer)
 				{
@@ -4299,7 +4299,7 @@
 					{
 						if(widget != id)
 						{
-							var container = document.getElementById("widget-" + widget + 
+							var container = document.getElementById("widget-" + widget +
 								"-container");
 							if(container && container.style.zIndex > 0)
 								container.style.zIndex--;
@@ -4323,7 +4323,7 @@
 				}
 				var id = targetElement_.id.split('-')[1]|0;
 
-				var widgetContainer = document.getElementById("widget-" + id + 
+				var widgetContainer = document.getElementById("widget-" + id +
 					"-container");
 				if(widgetContainer)
 				{
@@ -4335,7 +4335,7 @@
 					{
 						if(widget != id)
 						{
-							var container = document.getElementById("widget-" + widget + 
+							var container = document.getElementById("widget-" + widget +
 								"-container");
 							if(container && container.style.zIndex < size)
 								container.style.zIndex++;
@@ -4361,17 +4361,17 @@
 
 				// delete widgets in tab bodies
 				if (page_.widgets[id].type == WIDGET_TYPE_TAB
-			 	 || page_.widgets[id].type == WIDGET_TYPE_NAVTAB)
-			 	 {
-			 	 	var tabs_num = targetElement_.children[0].childElementCount;
-			 	 	for (var i=0; i<tabs_num; ++i)
+				 || page_.widgets[id].type == WIDGET_TYPE_NAVTAB)
+				 {
+					var tabs_num = targetElement_.children[0].childElementCount;
+					for (var i=0; i<tabs_num; ++i)
 						for(wid in page_.widgets)
 							if(page_.widgets[wid].tabBodyID == "widget-"+id+"-tabBody-"+i)
 							{
 								targetElement_ = page_.widgets[wid].el;
 								deleteWidget();
 							}
- 	 			}
+				}
 
 				if(page_.widgets[id] && page_.widgets[id].el)
 				{
@@ -4381,7 +4381,7 @@
 				if(page_.widgets[id])
 					delete page_.widgets[id];
 
-				var widgetContainer = document.getElementById("widget-" + id + 
+				var widgetContainer = document.getElementById("widget-" + id +
 					"-container");
 				if(widgetContainer)
 				{
@@ -4390,7 +4390,7 @@
 
 					for(widget in page_.widgets)
 					{
-						var container = document.getElementById("widget-" + widget + 
+						var container = document.getElementById("widget-" + widget +
 							"-container");
 
 						if(widget != id)
@@ -4464,7 +4464,7 @@
 
 				if(copyWidget_)
 				{
-					//start at number of widgets, and then keep adding 1 until no record found in 
+					//start at number of widgets, and then keep adding 1 until no record found in
 					var id = Object.keys(page_.widgets).length;
 					while(page_.widgets[id] !== undefined)
 						++id;
@@ -4530,7 +4530,7 @@
 					widget.el.style.display = "block";
 					var	els = widget.el.parentNode.getElementsByTagName("resizeWidgetCover");
 					if(els.length)
-						els[0].style.display = "none";		
+						els[0].style.display = "none";
 				}
 
 				//second select new target
@@ -4544,7 +4544,7 @@
 					widget.el.style.display = "none";
 					var	els = widget.el.parentNode.getElementsByTagName("resizeWidgetCover");
 					if(els.length)
-						els[0].style.display = "block";		
+						els[0].style.display = "block";
 				}
 
 				// if(targetElement_ && targetElement_.parentNode)
@@ -4556,7 +4556,7 @@
 
 				// 	els = targetElement_.parentNode.getElementsByTagName("resizeWidgetCover");
 				// 	if(els.length)
-				// 		els[0].style.display = "none";			
+				// 		els[0].style.display = "none";
 				// }
 
 				targetElement_ = target;
@@ -4575,14 +4575,14 @@
 			//=====================================================================================
 			function handleWidgetCoverMouseDown(e,id)
 			{
-				if(id !== undefined && page_.widgets[id] && 
+				if(id !== undefined && page_.widgets[id] &&
 				(page_.widgets[id].type == WIDGET_TYPE_TAB || page_.widgets[id].type == WIDGET_TYPE_NAVTAB))
 				{
 					Debug.log("start Tab!");
 				}
 
 				//if clicking a scrollbar of a tab widget, BLOCK!
-				if(e && e.target && 
+				if(e && e.target &&
 					(e.offsetX > e.target.clientWidth ||
 					e.offsetY > e.target.clientHeight))
 				{
@@ -4593,18 +4593,18 @@
 
 				targetTabBodyId_ = undefined;
 				//allow drawing widget in widget cover
-				if(!drawingSelectionRectangle_ && 
+				if(!drawingSelectionRectangle_ &&
 						dragAndDrawWidgetType_ !== undefined)
 				{
 					Debug.log("handleMouseDown " + dragAndDrawWidgetType_ );
 
 					//check if starting drawing over a tab widget
-					if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB || 
+					if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB ||
 								page_.widgets[id].type == WIDGET_TYPE_NAVTAB))//page_.widgets[id].type == WIDGET_TYPE_TAB)
 					{
 
-						var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");						
-						for (var i = 0; i < tabcontent.length; i++) 
+						var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");
+						for (var i = 0; i < tabcontent.length; i++)
 						{
 							if (tabcontent[i].style.display == "block")
 							{
@@ -4613,7 +4613,7 @@
 							}
 						}
 						Debug.log("Over tab widget",id,targetTabBodyId_);
-						
+
 					}
 
 					drawSelectionRectangle(e);
@@ -4648,18 +4648,18 @@
 
 				if(targetTabBodyId_ && (targetTabBodyId_.split('-')[1]|0) != (id|0))
 					targetTabBodyId_ = undefined; //clear target for new tab widget, otherwise take current value
-				
+
 				//check if starting drawing over a tab widget
 				//if dragging tab widget, hide all content widgets
-				if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB || 
+				if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB ||
 								page_.widgets[id].type == WIDGET_TYPE_NAVTAB))
 				{
-					var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");						
-					for (var i = 0; i < tabcontent.length; i++) 
+					var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");
+					for (var i = 0; i < tabcontent.length; i++)
 					{
 						//save active tab body if not defined
 						if (!targetTabBodyId_ &&
-							tabcontent[i].style.display == "block")						
+							tabcontent[i].style.display == "block")
 							targetTabBodyId_ = tabcontent[i].id;
 
 						tabcontent[i].style.display = "none"; //hide all bodies
@@ -4669,8 +4669,8 @@
 				resizeWidgetId_ = id;
 				dragLockout_ = true; //indicate dragging
 
-				redrawTargetWidget(e, 
-						false /*doNotRestorePosition*/, 
+				redrawTargetWidget(e,
+						false /*doNotRestorePosition*/,
 						true /*isFirstTime*/); //redraw for first time
 			} //end startWidgetDrag()
 
@@ -4691,15 +4691,15 @@
 
 				Debug.log("startWidgetResize() id=" + id);
 
-				indicateUserActivityToServer();	
+				indicateUserActivityToServer();
 
 				resizeWidgetId_ = id;
 				resizeLockout_ = true;
 				resizeFrom_ = e.target.id.substring(
 						e.target.id.indexOf("resize-cover") + ("resize-cover").length + 1);
 
-				redrawTargetWidget(e, 
-						false /*doNotRestorePosition*/, 
+				redrawTargetWidget(e,
+						false /*doNotRestorePosition*/,
 						true /*isFirstTime*/); //redraw for first time
 			} //end startWidgetResize()
 
@@ -4708,7 +4708,7 @@
 			//	because the user is inaccurate with mouseup elements
 			function endWidgetDragAndResize(e,id)
 			{
-				if(id !== undefined && page_.widgets[id] && 
+				if(id !== undefined && page_.widgets[id] &&
 				(page_.widgets[id].type == WIDGET_TYPE_TAB || page_.widgets[id].type == WIDGET_TYPE_NAVTAB))
 				{
 					Debug.log("end Tab!");
@@ -4716,7 +4716,7 @@
 				window.clearTimeout(dragTimeout_);
 				if(e) e.stopPropagation();
 
-				if(!resizeLockout_ && !dragLockout_ && 
+				if(!resizeLockout_ && !dragLockout_ &&
 						!dragAndDrawTargetEl_)
 				{
 					Debug.log("Unknown drag/resize end target. Ignoring drag/resize end.");
@@ -4735,7 +4735,7 @@
 
 				Debug.log("endWidgetDragAndResize() " + id);
 				if(!id)
-				{	
+				{
 					id = dragAndDrawTargetEl_.id.split('-')[1];
 					Debug.log("endWidgetDragAndResize() " + id);
 				}
@@ -4744,20 +4744,20 @@
 				dragAndDrawTargetEl_.style.cursor = saveCursorType_;
 
 				//if target element is a tab widget, redraw children objects at new position
-				// if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB || 
+				// if(id !== undefined && (page_.widgets[id].type == WIDGET_TYPE_TAB ||
 				// 				page_.widgets[id].type == WIDGET_TYPE_NAVTAB))
 				// {
-				// 	var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");						
+				// 	var tabcontent = page_.widgets[id].el.getElementsByClassName("tabWidgetBody");
 
-				// 	Debug.log("endWidgetDragAndResize() tab widget", id, targetTabBodyId_);	
-					
-				// 	for (var j = 0; j < Object.keys(page_.widgets).length; j++) 						
+				// 	Debug.log("endWidgetDragAndResize() tab widget", id, targetTabBodyId_);
+
+				// 	for (var j = 0; j < Object.keys(page_.widgets).length; j++)
 				// 		if (j != id && //move all widgets in ANY tab
 				// 			page_.widgets[j].tabBodyID.length &&
-				// 			page_.widgets[j].tabBodyID.split('-')[1] == id) 				
+				// 			page_.widgets[j].tabBodyID.split('-')[1] == id)
 				// 		{
-				// 			//hide the -container element of the tab's active body's children							
-				// 			if(page_.widgets[j].tabBodyID == targetTabBodyId_) 
+				// 			//hide the -container element of the tab's active body's children
+				// 			if(page_.widgets[j].tabBodyID == targetTabBodyId_)
 				// 				page_.widgets[j].el.parentElement.style.display = "block";
 
 				// 			if(resizeLockout_)
@@ -4788,23 +4788,23 @@
 				redrawTargetWidget(e, true /*doNotRestorePosition*/);
 
 				//check if widget is now within a tab body
-				if(id !== undefined && 
-					(page_.widgets[id].tabBodyID == "" || !page_.widgets[id].tabBodyID) && 
+				if(id !== undefined &&
+					(page_.widgets[id].tabBodyID == "" || !page_.widgets[id].tabBodyID) &&
 					page_.widgets[id].type != WIDGET_TYPE_TAB  &&
-				 	page_.widgets[id].type != WIDGET_TYPE_NAVTAB)
+					page_.widgets[id].type != WIDGET_TYPE_NAVTAB)
 				{
-					for (var j = 0; j < Object.keys(page_.widgets).length; j++) 
+					for (var j = 0; j < Object.keys(page_.widgets).length; j++)
 						if(page_.widgets[j].type == WIDGET_TYPE_TAB || page_.widgets[j].type == WIDGET_TYPE_NAVTAB)
 						{
-							var tabcontent = page_.widgets[j].el.getElementsByClassName("tabWidgetBody");						
-							for (var i = 0; i < tabcontent.length; i++) 
+							var tabcontent = page_.widgets[j].el.getElementsByClassName("tabWidgetBody");
+							for (var i = 0; i < tabcontent.length; i++)
 							{
 								if (tabcontent[i].style.display == "block")
 								{
 									//found display body
-									if(checkWidgetInTabBody(page_.widgets[id], 
-										page_.widgets[j])) 
-									{										
+									if(checkWidgetInTabBody(page_.widgets[id],
+										page_.widgets[j]))
+									{
 										addWidgetToTabBody(id,tabcontent[i].id);
 										//apply x,y offset to compensate for tab body
 										page_.widgets[id].x -= page_.widgets[j].x;
@@ -4813,7 +4813,7 @@
 									}
 									break; //can only be one active body, so break
 								} //end body within tab widget handling
-							} //end body within tab widget search loop		
+							} //end body within tab widget search loop
 						} //end tab widget handling
 					//end tab widget search loop
 				}
@@ -4837,7 +4837,7 @@
 					return;
 				}
 				page_.widgets[id].tabBodyID = "";
-				
+
 				var parentId = page_.widgets[id].el.parentNode.parentNode.id.split('-')[1];
 				if(!page_.widgets[parentId])
 				{
@@ -4912,7 +4912,7 @@
 					//save current cursor and set to grabbing cursor
 					saveCursorType_ = dragAndDrawTargetEl_.style.cursor;
 					dragAndDrawTargetEl_.style.cursor = "grabbing";
-			
+
 					xPos_ = ex;
 					yPos_ = ey;
 
@@ -4975,7 +4975,7 @@
 						{
 							newy += deltaY;
 							newh -= deltaY;
-						}												
+						}
 					}
 
 					if(resizeFrom_ == "east" || resizeFrom_ == "northeast" ||
@@ -4992,8 +4992,8 @@
 						}
 					}
 
-				 	if(resizeFrom_ == "south" || resizeFrom_ == "southeast" ||
-				 		resizeFrom_ == "southwest")
+					if(resizeFrom_ == "south" || resizeFrom_ == "southeast" ||
+						resizeFrom_ == "southwest")
 					{
 						if(newh + deltaY < 0) //if passed top
 						{
@@ -5059,11 +5059,11 @@
 			function handleMouseDown(e)
 			{
 				console.log("handleMouseDown",e.buttons,e.button);
-				if(!drawingSelectionRectangle_ && 
+				if(!drawingSelectionRectangle_ &&
 						dragAndDrawWidgetType_ !== undefined)
 				{
 					targetTabBodyId_ = undefined;
-					Debug.log("handleMouseDown " + dragAndDrawWidgetType_ );	
+					Debug.log("handleMouseDown " + dragAndDrawWidgetType_ );
 					drawSelectionRectangle(e);
 				}
 			} //end handleMouseDown()
@@ -5071,12 +5071,12 @@
 
 			//=====================================================================================
 			function handleMouseUp(e)
-			{	
+			{
 				Debug.log("handleMouseUp()");
 
 				if(drawingSelectionRectangle_)
 				{
-					Debug.log("handleMouseUp finish widget draw type=" + 
+					Debug.log("handleMouseUp finish widget draw type=" +
 							dragAndDrawWidgetType_);
 					stopDragAndDrawRectangle(e);
 				}
@@ -5113,7 +5113,7 @@
 						stopDragAndDrawRectangle(e);
 				}
 				else if(resizeLockout_ || dragLockout_)
-				{ //dragging or resizing	
+				{ //dragging or resizing
 					//console.log("handleMouseMove", dragAndDrawTargetEl_);
 					if(e.buttons != 0)
 						redrawTargetWidget(e);
@@ -5144,7 +5144,7 @@
 			function redrawWindow(event, hover)
 			{
 				Debug.log("redrawWindow() clicked-hover: " + event + "-" + hover
-				 	+ " w,h: " + windowWidth_+ "," + windowHeight_);
+					+ " w,h: " + windowWidth_+ "," + windowHeight_);
 
 				var _MARGIN = 10;
 				var _TOPMARGIN = 40;
@@ -5161,7 +5161,7 @@
 				//DEFAULT VALUES //Sides Hidden
 				var fileTop = _MARGIN, fileWidth = FILE_BLOCK_WIDTH, fileHeight = window.innerHeight;
 				var editWidth = maxWidth, editHeight = EDIT_BLOCK_HEIGHT;
-				var mainLeft = 0, mainTop = 0, mainWidth = maxWidth, mainHeight = window.innerHeight;			
+				var mainLeft = 0, mainTop = 0, mainWidth = maxWidth, mainHeight = window.innerHeight;
 
 				mainBlock_.el.style.left = mainLeft + "px";
 				mainBlock_.el.style.top = "0px";
@@ -5170,7 +5170,7 @@
 				mainBlock_.el.style.marginLeft = "0px";
 
 				fileBlock_.el.style.top =  0 + "px";
-			    fileBlock_.el.style.width =  fileWidth + "px";
+				fileBlock_.el.style.width =  fileWidth + "px";
 				fileBlock_.el.style.height =  fileHeight + "px";
 
 				editBlock_.el.style.width =  editWidth + "px";
@@ -5245,13 +5245,13 @@
 
 	<body onload='//init() called by DesktopContent.js'>
 		<div id="navigationBarDiv">
-	   	  <nav>
-		    <ul id="navigationMenu">
-		      <li><a href="#" title="" id="menuli1" onclick="toggleFileMenu()">File Manager</a></li>
-		      <li><a href="#" title="" id="menuli2" onclick="toggleEditMode()">Edit Mode</a></li>
-		      <a href="#" title="" id="menuli3" onclick="goBackToPreviousPage()"></a>
-		    </ul>
-	      </nav>
+		  <nav>
+			<ul id="navigationMenu">
+			  <li><a href="#" title="" id="menuli1" onclick="toggleFileMenu()">File Manager</a></li>
+			  <li><a href="#" title="" id="menuli2" onclick="toggleEditMode()">Edit Mode</a></li>
+			  <a href="#" title="" id="menuli3" onclick="goBackToPreviousPage()"></a>
+			</ul>
+		  </nav>
 		</div>
 
 		<div class='mainBlock' 	id='fileBlock'  ></div>
@@ -5265,64 +5265,64 @@
 					  <ul class="menu__items ">
 						<!--li class="menu__item ">
 						  <a href="#" class="menu__link "
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); toggleAddPV();">
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); toggleAddPV();">
 							<i class=""></i> Add PV
 						  </a>
 						</li-->
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); editWidgetAttributesOpen()" >
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); editWidgetAttributesOpen()" >
 							<i class=""></i> Edit Attributes
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); bringToFront()">
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); bringToFront()">
 							<i class=""></i> Bring to Front
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); sendToBack()">
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); sendToBack()">
 							<i class=""></i> Send to Back
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); copyPasteWidget()">
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); copyPasteWidget()">
 							<i class=""></i> Copy and Paste Widget
 						  </a>
 						</li>
 						<li class="menu__item" id="menu__item_popOutOfTab">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); popWidgetOutOfTabBody(); toggleContextMenuOff();" >
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); popWidgetOutOfTabBody(); toggleContextMenuOff();" >
 							<i class=""></i> Pop-out of Tab Body
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); resizeWidgetToFullPage()">
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); resizeWidgetToFullPage()">
 							<i class=""></i> Resize Widget to full Page
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); deleteWidget();">
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); deleteWidget();">
 							<i class=""></i> Delete Widget
 						  </a>
 						</li>
 						<li class="menu__item">
-						  <a href="#" class="menu__link" 
-						  	onmousedown="event.stopPropagation();"
-						  	onmouseup="event.stopPropagation(); toggleContextMenuOff();" >
+						  <a href="#" class="menu__link"
+							onmousedown="event.stopPropagation();"
+							onmouseup="event.stopPropagation(); toggleContextMenuOff();" >
 							<i class=""></i> Close
 						  </a>
 						</li>
@@ -5335,7 +5335,7 @@
 					  <li class="menu__item ">
 					<span class="menu__link">
 					  <i class=""></i><input type="text" id="addPVPV" class="editableInput addPVMenuInput" placeholder="PV" list="pvDatalist"></input>
-					</span> 		
+					</span>
 					  </li>
 					  <li class="menu__item">
 					<span class="menu__link">

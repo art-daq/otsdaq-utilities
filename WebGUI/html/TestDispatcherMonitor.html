@@ -1,101 +1,101 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Supervisor</title>
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				background-color: rgb(200,200,200);
 			}
-			
+
 			#clearDiv {
 				clear: both;
 			}
-			
+
 			a {
 				color: blue;
 			}
-			
-									
+
+
 		</style>
-		
-		
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-		
-		
-		<script>		
-			
-			
-		
-			//functions:			
-				//init()	
+
+
+		<script>
+
+
+
+			//functions:
+				//init()
 				//uploadTextFromFile()
-				
+
 			//top-level scope (global) variables:
 			var  _fileUploadString;
-		
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
-			
+
 			//init called once body has loaded
-			function init() {			
+			function init() {
 				Debug.log("init() was called");
 
 				document.getElementById('popUpDialog-fileUpload').addEventListener(
 						'change', function(evt) {
 					var files = evt.target.files;
-					var file = files[0];           
+					var file = files[0];
 					var reader = new FileReader();
 					reader.onload = function() {
 						//store uploaded file and enable button
 						_fileUploadString = this.result;
-						Debug.log("_fileUploadString = " + _fileUploadString);							
+						Debug.log("_fileUploadString = " + _fileUploadString);
 						document.getElementById('popUpDialog-submitButton').disabled = false;
 					}
 					reader.readAsText(file);
 				}, false);
-				
+
 
 			}	 //end init()
-			
+
 			function handlerFunction(req) {
 				Debug.log("handlerFunction() was called. Req: " + req.responseText);
 
 				var child1data = DesktopContent.getXMLValue(req,"child");
 				var child2data = DesktopContent.getXMLValue(req,"child2");
-				
+
 				Debug.log("--child1data:",child1data," --child2data:",child2data);
 				block1El = document.getElementById('block1');
 				block1.innerHTML = child1data;
-				
+
 			}
-			
+
 			function uploadTextFromFile() {
 				Debug.log("uploadTextFromFile");
-				Debug.log("_fileUploadString = " + _fileUploadString);		
+				Debug.log("_fileUploadString = " + _fileUploadString);
 
 				DesktopContent.XMLHttpRequest(
 						"Request?RequestType=RegisterMonitor",
 						"fcl=" + _fileUploadString,
 						handlerFunction);
 			} //end uploadTextFromFile()
-			
+
 		</script>
-		
+
 	</head>
-	
-	
-	<body onload='//init() called by DesktopContent.js'>	
-			
-		<input type='file' id='popUpDialog-fileUpload' 
+
+
+	<body onload='//init() called by DesktopContent.js'>
+
+		<input type='file' id='popUpDialog-fileUpload'
 				accept='.fcl' enctype='multipart/form-data' />
 		<br><br>
-				
-		<input id='popUpDialog-submitButton' disabled type='button' 
+
+		<input id='popUpDialog-submitButton' disabled type='button'
 				onmouseup='document.getElementById("popUpDialog-submitButton").disabled = true; uploadTextFromFile();'
 				value='Upload File' title='Upload the chosen file text content and register monitor'/>
-		
+
 	</body>
-	
+
 </html>

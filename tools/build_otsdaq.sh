@@ -74,7 +74,7 @@ OS=`uname`
 if [ "${OS}" = "Linux" ]
 then
     flvr=slf`lsb_release -r | sed -e 's/[[:space:]]//g' | cut -f2 -d":" | cut -f1 -d"."`
-else 
+else
   echo "ERROR: unrecognized operating system ${OS}"
   exit 1
 fi
@@ -90,7 +90,7 @@ blddir=${working_dir}/build
 # start with clean directories
 rm -rf ${blddir}
 rm -rf ${srcdir}
-rm -rf $WORKSPACE/copyBack 
+rm -rf $WORKSPACE/copyBack
 # now make the dfirectories
 mkdir -p ${srcdir} || exit 1
 mkdir -p ${blddir} || exit 1
@@ -111,14 +111,14 @@ if [ -d ${blddir}/otsdaq ] || [ -d ${blddir}/otsdaq_utilities ] || [ -d ${blddir
   echo "Removing ${blddir}/otsdaq*"
   rm -rf ${blddir}/otsdaq*
   if [ `ls -l ${blddir}/otsdaq*.tar.bz2 | wc -l` -gt 0 ]; then rm -fv ${blddir}/otsdaq*.tar.bz2; fi
-fi 
+fi
 
 echo
 echo "begin build"
 echo
 ./buildFW -t -b ${basequal} ${pyflag:+-l ${pyflag}} -s ${squal} ${blddir} ${build_type} otsdaq-${version} || \
  { mv ${blddir}/*.log  $WORKSPACE/copyBack/
-   exit 1 
+   exit 1
  }
 
 source ${blddir}/setups

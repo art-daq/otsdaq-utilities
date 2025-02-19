@@ -30,7 +30,7 @@ function enableSTDLINE(enable)
 }
 
 //--------------------------------------------------------------------------------
-function STDLINE(str) 
+function STDLINE(str)
 {
   if( !enableDebug_ ) return ;
   const e = new Error();
@@ -54,4 +54,3 @@ function STDGETLNUM()
   const n = w[s].split(":")[0] ;
   return l ;
 }
-

@@ -16,18 +16,18 @@
 
 called=$_
 if [[ $called != $0 ]]; then
-    echo "This script must be executed and not sourced!"
+	echo "This script must be executed and not sourced!"
 
-	
+
 	echo -e "quick_ots_install.sh [${LINENO}]  "
 	echo -e "quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
 	echo -e "quick_ots_install.sh [${LINENO}]  "
 	echo -e "quick_ots_install.sh [${LINENO}]  \t usage: ./quick_ots_install.sh"
 	echo -e "quick_ots_install.sh [${LINENO}]  "
-    return 1
+	return 1
 fi
 
-	
+
 echo -e "quick_ots_install.sh [${LINENO}]  "
 echo -e "quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
 echo -e "quick_ots_install.sh [${LINENO}]  "
@@ -37,7 +37,7 @@ echo -e "quick_ots_install.sh [${LINENO}]  "
 #clear environment
 unsetup_all >/dev/null 2>&1
 
-####################################### start redmine login code copied from "${OTSDAQ_DIR}"/tools/quick_ots_install.sh	
+####################################### start redmine login code copied from "${OTSDAQ_DIR}"/tools/quick_ots_install.sh
 ####################################### start redmine login code
 ####################################### start redmine login code
 ####################################### start redmine login code
@@ -64,33 +64,33 @@ do_login() {
 	get_passwords
 	get_auth_token "${REDMINE_LOGIN_SITE}/login"
 	post_url  \
-       "${REDMINE_LOGIN_SITE}/login" \
-       "back_url=$REDMINE_LOGIN_SITE" \
-       "authenticity_token=$authenticity_token" \
-       "username=`echo $user | urlencode`" \
-       "password=`echo $pass | urlencode`" \
-       "login=Login ?" 
+	   "${REDMINE_LOGIN_SITE}/login" \
+	   "back_url=$REDMINE_LOGIN_SITE" \
+	   "authenticity_token=$authenticity_token" \
+	   "username=`echo $user | urlencode`" \
+	   "password=`echo $pass | urlencode`" \
+	   "login=Login ?"
 	if grep '>Sign in' $REDMINE_LOGIN_LISTF > /dev/null;then
 
 		echo
-        echo -e "quick_ots_install.sh [${LINENO}]  \t Login failed."
+		echo -e "quick_ots_install.sh [${LINENO}]  \t Login failed."
 		unset user #force new login attempt
 		unset pass
 		export REDMINE_LOGIN_WORKED=0
-        false
+		false
 	else
 		export REDMINE_LOGIN_WORKED=1
-        true
+		true
 	fi
 }
 get_passwords() {
-	
-   	case "x${user-}y${pass-}" in
-   	xy)
-       	if [ -r   ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile ];then 
-	   		read -r user pass < ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile
-       	else
-	   
+
+	case "x${user-}y${pass-}" in
+	xy)
+		if [ -r   ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile ];then
+			read -r user pass < ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile
+		else
+
 			printf "Enter your Services username: "
 			read user
 
@@ -99,31 +99,31 @@ get_passwords() {
 			printf "Services password for $user: "
 			read pass
 			stty echo
-       	fi;;
-    esac
+		fi;;
+	esac
 }
 get_auth_token() {
-    authenticity_token=`fetch_url "${1}" |
-                  tee /tmp/at_p$$ |
-                  grep 'name="authenticity_token"' |
-                  head -1 |
-                  sed -e 's/.*value="//' -e 's/".*//' | 
-                  urlencode `
+	authenticity_token=`fetch_url "${1}" |
+				  tee /tmp/at_p$$ |
+				  grep 'name="authenticity_token"' |
+				  head -1 |
+				  sed -e 's/.*value="//' -e 's/".*//' |
+				  urlencode `
 }
 #
 # fetch_url -- GET a url from a REDMINE_LOGIN_SITE, maintaining cookies, etc.
 #
 fetch_url() {
-     wget \
-        --no-check-certificate \
+	 wget \
+		--no-check-certificate \
 	--load-cookies=${REDMINE_LOGIN_COOKIEF} \
-        --referer="${lastpage-}" \
+		--referer="${lastpage-}" \
 	--save-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--keep-session-cookies \
 	-o ${debugout:-/dev/null} \
 	-O - \
 	"$1"  | ${debugfilter:-cat}
-     lastpage="$1"
+	 lastpage="$1"
 }
 #
 # post_url POST to a url maintaining cookies, etc.
@@ -131,49 +131,49 @@ fetch_url() {
 #    which are joined with "&" signs
 #
 post_url() {
-     url="$1"
-     extra=""
-     if  [ "$url" == "-b" ];then
-         extra="--remote-encoding application/octet-stream"
-         shift
-         url=$1
-     fi
-     shift
-     the_data=""
-     sep=""
-     df=/tmp/postdata_p$$
-     :>$df
-     for d in "$@";do
-        printf "%s" "$sep$d" >> $df
-        sep="&"
-     done
-     wget -O $REDMINE_LOGIN_LISTF \
-        -o $REDMINE_LOGIN_LISTF.log \
-        --debug \
-        --verbose \
-        $extra \
-        --no-check-certificate \
+	 url="$1"
+	 extra=""
+	 if  [ "$url" == "-b" ];then
+		 extra="--remote-encoding application/octet-stream"
+		 shift
+		 url=$1
+	 fi
+	 shift
+	 the_data=""
+	 sep=""
+	 df=/tmp/postdata_p$$
+	 :>$df
+	 for d in "$@";do
+		printf "%s" "$sep$d" >> $df
+		sep="&"
+	 done
+	 wget -O $REDMINE_LOGIN_LISTF \
+		-o $REDMINE_LOGIN_LISTF.log \
+		--debug \
+		--verbose \
+		$extra \
+		--no-check-certificate \
 	--load-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--save-cookies=${REDMINE_LOGIN_COOKIEF} \
-        --referer="${lastpage-}" \
+		--referer="${lastpage-}" \
 	--keep-session-cookies \
-        --post-file="$df"  $url
-     if grep '<div.*id=.errorExplanation' $REDMINE_LOGIN_LISTF > /dev/null;then
-        echo "Failed: error was:"
-        cat $REDMINE_LOGIN_LISTF | sed -e '1,/<div.*id=.errorExplanation/d' | sed -e '/<.div>/,$d'
-        return 1
-     fi
-     if grep '<div.*id=.flash_notice.*Success' $REDMINE_LOGIN_LISTF > /dev/null;then
-        $REDMINE_LOGIN_RLVERBOSEF && echo "Succeeded"
-        return 0
-     fi
-     # not sure if it worked... 
-     $REDMINE_LOGIN_RLVERBOSEF && echo "Unknown -- detagged output:"
-     $REDMINE_LOGIN_RLVERBOSEF && cat $REDMINE_LOGIN_LISTF | sed -e 's/<[^>]*>//g'
-     $REDMINE_LOGIN_RLVERBOSEF && echo "-----"
-     $REDMINE_LOGIN_RLVERBOSEF && cat $REDMINE_LOGIN_LISTF.log
-     $REDMINE_LOGIN_RLVERBOSEF && echo "-----"
-     return 0
+		--post-file="$df"  $url
+	 if grep '<div.*id=.errorExplanation' $REDMINE_LOGIN_LISTF > /dev/null;then
+		echo "Failed: error was:"
+		cat $REDMINE_LOGIN_LISTF | sed -e '1,/<div.*id=.errorExplanation/d' | sed -e '/<.div>/,$d'
+		return 1
+	 fi
+	 if grep '<div.*id=.flash_notice.*Success' $REDMINE_LOGIN_LISTF > /dev/null;then
+		$REDMINE_LOGIN_RLVERBOSEF && echo "Succeeded"
+		return 0
+	 fi
+	 # not sure if it worked...
+	 $REDMINE_LOGIN_RLVERBOSEF && echo "Unknown -- detagged output:"
+	 $REDMINE_LOGIN_RLVERBOSEF && cat $REDMINE_LOGIN_LISTF | sed -e 's/<[^>]*>//g'
+	 $REDMINE_LOGIN_RLVERBOSEF && echo "-----"
+	 $REDMINE_LOGIN_RLVERBOSEF && cat $REDMINE_LOGIN_LISTF.log
+	 $REDMINE_LOGIN_RLVERBOSEF && echo "-----"
+	 return 0
 } # post_url
 
 echo
@@ -181,8 +181,8 @@ echo -e "quick_ots_install.sh [${LINENO}]  \t Attempting login... $SKIP_REDMINE_
 
 if [ "x$SKIP_REDMINE_LOGIN" != "x1" ]; then
 	do_login $REDMINE_LOGIN_SITE
-	export SKIP_REDMINE_LOGIN=1 
-fi 
+	export SKIP_REDMINE_LOGIN=1
+fi
 
 if [ $REDMINE_LOGIN_WORKED == 0 ]; then
 	echo
@@ -190,14 +190,14 @@ if [ $REDMINE_LOGIN_WORKED == 0 ]; then
 	echo -e "quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
 	echo -e "quick_ots_install.sh [${LINENO}]  \t !!!!!!!!!!"
 	echo
-	exit 1 
+	exit 1
 fi
 
 echo
 echo -e "quick_ots_install.sh [${LINENO}]  \t Login successful."
 echo
 
-		
+
 
 
 
@@ -230,7 +230,7 @@ echo
 #        "authenticity_token=$authenticity_token" \
 #        "username=`echo $user | urlencode`" \
 #        "password=`echo $pass | urlencode`" \
-#        "login=Login ?" 
+#        "login=Login ?"
 # 	if grep '>Sign in' $listf > /dev/null;then
 # 		echo
 #         echo -e "quick_ots_install.sh [${LINENO}]  \t Login failed."
@@ -244,13 +244,13 @@ echo
 # 	fi
 # }
 # get_passwords() {
-	
+
 #    	case "x${user-}y${pass-}" in
 #    	xy)
-#        	if [ -r   ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile ];then 
+#        	if [ -r   ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile ];then
 # 	   		read -r user pass < ${REDMINE_AUTHDIR:-.}/.redmine_lib_passfile
 #        	else
-	   
+
 # 			printf "Enter your Services username: "
 # 			read user
 
@@ -267,7 +267,7 @@ echo
 #                   tee /tmp/at_p$$ |
 #                   grep 'name="authenticity_token"' |
 #                   head -1 |
-#                   sed -e 's/.*value="//' -e 's/".*//' | 
+#                   sed -e 's/.*value="//' -e 's/".*//' |
 #                   urlencode `
 # }
 # #
@@ -327,7 +327,7 @@ echo
 #         $rlverbose && echo "Succeeded"
 #         return 0
 #      fi
-#      # not sure if it worked... 
+#      # not sure if it worked...
 #      $rlverbose && echo "Unknown -- detagged output:"
 #      $rlverbose && cat $listf | sed -e 's/<[^>]*>//g'
 #      $rlverbose && echo "-----"
@@ -342,12 +342,12 @@ echo
 
 # if [ $LOGIN_WORKED == 0 ]; then
 # 	echo -e "quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
-# 	exit 1 
+# 	exit 1
 # fi
 
 # echo -e "quick_ots_install.sh [${LINENO}]  \t Login successful."
 
-		
+
 ####################################### end redmine login code
 ####################################### end redmine login code
 ####################################### end redmine login code
@@ -373,7 +373,7 @@ read DO_INSTALL
 echo
 if [ $DO_INSTALL == "y" ]; then
 	echo -e "quick_ots_install.sh [${LINENO}]  \t Proceeding with ots install..."
-else	
+else
 	echo -e "quick_ots_install.sh [${LINENO}]  \t User chose not to proceed with ots install."
 	exit
 fi
@@ -388,7 +388,7 @@ if [ $USER == "root" ]; then
 	yum install -y gcc kernel-devel make #as root for compiling
 	yum install -y lsb #as root for lsb_release
 	yum install -y kde-baseapps #as root for kdialog
-	yum install -y python2-devel elfutils-devel 
+	yum install -y python2-devel elfutils-devel
 	yum install -y epel-release #repository to find libzstd and xxhash
 	yum install -y libzstd xxhash xxhash-devel pcre2
 
@@ -396,18 +396,18 @@ if [ $USER == "root" ]; then
 	yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 	yum clean all
 	yum install -y cvmfs cvmfs-config-default
-	
+
 	mkdir /etc >/dev/null 2>&1
 	mkdir /etc/cvmfs >/dev/null 2>&1
 	mkdir /etc/cvmfs/default.d >/dev/null 2>&1
-	
+
 	rm -rf /etc/cvmfs/default.d/70-artdaq.conf
 	echo "CVMFS_REPOSITORIES=fermilab.opensciencegrid.org" >> /etc/cvmfs/default.d/70-artdaq.conf
 	echo "CVMFS_HTTP_PROXY=DIRECT" >> /etc/cvmfs/default.d/70-artdaq.conf
-	
+
 	#refresh cvmfs
 	cvmfs_config setup
-	#Check if CernVM-FS mounts the specified repositories by (restart if failure): 
+	#Check if CernVM-FS mounts the specified repositories by (restart if failure):
 	cvmfs_config probe || service autofs restart
 
 fi
@@ -420,7 +420,7 @@ rm quick_ots_install.zip &>/dev/null
 
 # wget https://otsdaq.fnal.gov/downloads/quick_ots_install.zip  \
 wget https://cdcvs.fnal.gov/redmine/attachments/download/66419/quick_ots_install.zip \
-    --no-check-certificate \
+	--no-check-certificate \
 	--load-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--save-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--keep-session-cookies
@@ -430,21 +430,21 @@ cd ots
 
 #update all
 REPO_DIR="$(find srcs/ -maxdepth 1 -iname 'otsdaq*')"
-		
+
 for p in ${REPO_DIR[@]}; do
 	if [ -d $p ]; then
 		if [ -d $p/.git ]; then
-		
+
 			bp=$(basename $p)
-			subfolder=${bp//-/_}			
+			subfolder=${bp//-/_}
 			echo -e "UpdateOTS.sh [${LINENO}]  \t Repo directory found as: $bp $subfolder"
-			
+
 			cd $p
-			git checkout . # fix repo by checking out missing folders 
+			git checkout . # fix repo by checking out missing folders
 			git pull
 			cd -
 		fi
-	fi	   
+	fi
 done
 
 #setup qualifiers
@@ -459,7 +459,7 @@ source setup_ots.sh >/dev/null 2>&1
 #clean compile
 mrb z
 mrb uc
-source setup_ots.sh 
+source setup_ots.sh
 mz || exit 1
 
 echo -e "quick_ots_install.sh [${LINENO}]  \t Finished compiling attempt, now updating user data and databases..."
@@ -469,7 +469,7 @@ UpdateOTS.sh --tables #update tables and get reset_ots_tutorial.sh
 
 rm -rf reset_ots_tutorial.sh >/dev/null 2>&1
 wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/demo/revisions/develop/raw/tools/reset_ots_tutorial.sh \
-    --no-check-certificate \
+	--no-check-certificate \
 	--load-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--save-cookies=${REDMINE_LOGIN_COOKIEF} \
 	--keep-session-cookies
@@ -493,7 +493,7 @@ echo -e "quick_ots_install.sh [${LINENO}]  \t =================="
 echo -e "quick_ots_install.sh [${LINENO}]  \t quick_ots_install script done!"
 echo -e "quick_ots_install.sh [${LINENO}]  \t"
 echo -e "quick_ots_install.sh [${LINENO}]  \t Now and Next time..."
-echo -e "quick_ots_install.sh [${LINENO}]  \t            cd ${INSTALL_DIR}/ots " 
+echo -e "quick_ots_install.sh [${LINENO}]  \t            cd ${INSTALL_DIR}/ots "
 echo -e "quick_ots_install.sh [${LINENO}]  \t            source setup_ots.sh            ### to setup ots"
 echo -e "quick_ots_install.sh [${LINENO}]  \t            mb                             ### for incremental build"
 echo -e "quick_ots_install.sh [${LINENO}]  \t            mz                             ### for clean build"
@@ -515,8 +515,8 @@ fi
 
 
 #cleanup any remaining credentials
-echo -e "quick_ots_install.sh [${LINENO}]  \t Cleaning up..."; 
-rm -f /tmp/postdata$$ /tmp/at_p$$ $REDMINE_LOGIN_COOKIEF $REDMINE_LOGIN_LISTF*; unset SKIP_REDMINE_LOGIN >/dev/null 2>&1 
+echo -e "quick_ots_install.sh [${LINENO}]  \t Cleaning up...";
+rm -f /tmp/postdata$$ /tmp/at_p$$ $REDMINE_LOGIN_COOKIEF $REDMINE_LOGIN_LISTF*; unset SKIP_REDMINE_LOGIN >/dev/null 2>&1
 
 #remove self so users do not install twice!
 rm -rf ${INSTALL_DIR}/quick_ots_install.sh

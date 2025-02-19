@@ -2,57 +2,57 @@
 <html lang="en">
 <head>
 <title>Supervisor</title>
-<style type="text/css">			
+<style type="text/css">
 			body {
 				background-color: rgb(255,177,20);
 			}
-			
+
 			#clearDiv {
 				clear: both;
 			}
-			
+
 			#calsDiv a {
 				text-decoration: none;
 				color: black;
 			}
-			
+
 			td {
 				text-align:center;
 			}
-			
+
 			.aliasValue {
 				text-align:left;
 			}
-			
+
 			#statusDiv table {
 				width: 500px;
 				overflow: hidden;
-				
+
 			}
 			#statusDiv td {
 				font-size: 8px;
 				overflow: hidden;
 				height: 30px;
 			}
-			
+
 			#statusDiv td {
 				font-size: 8px;
 				overflow: hidden;
 				height: 30px;
 			}
-			
+
 			/*
-			
+
 				border: 5px solid white;
-				box-shadow: 
+				box-shadow:
 				  inset 0 0 8px  rgba(0,0,0,0.1),
-				        0 0 16px rgba(0,0,0,0.1); 
+				        0 0 16px rgba(0,0,0,0.1);
 				padding: 5px;
 				background: rgba(255,255,255,0.35);
 				margin: 0 0 10px 0;
-				border-radius: 3px;	
+				border-radius: 3px;
 			*/
-			
+
 		</style>
 
 
@@ -62,8 +62,8 @@
 
 
 
-<script>		
-				
+<script>
+
 			///////////-----------------
 			// Calibration Alias members
 			var _selectedCalibration = -1;
@@ -74,23 +74,23 @@
 			// Request Launch and Status members
 			var _reqNameArr, _reqNumberArr, _reqStartTimeArr, _reqProgressArr, _reqStatusArr, _needsStatusArr;
 			var _allReqArr;
-			
+
 			var _timerLaunchHandle = 0, _timerStatusHandle = 0;
 			var _TIMEOUT_LAUNCH_PERIOD = 500, _TIMEOUT_STATUS_PERIOD = 100; //in ms
-				
-			//functions:			
+
+			//functions:
 				//init()
-				//aliasListRequest()		
-				//aliasListRequestHandler(req)			
-			
-			
+				//aliasListRequest()
+				//aliasListRequestHandler(req)
+
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
-			
+
 			//init called once body has loaded
-			function init() {					
+			function init() {
 				Debug.log("Calibrations init");
-				
+
 				//1. get Alias List
 				//2. start status monitoring
 					//req data:
@@ -98,21 +98,21 @@
 						//number - req number
 						//start time - time of launch, 0 if not launched (Launch Timer write access)
 						//progress - 0 to 100 percent, 100 if done (Status Timer write access)
-						//status - text situation						
+						//status - text situation
 					//Two timer threads:
 						//Launch Timer
 							//launches request, if not one launched
 							//writes to start time
 							//reads from progress
-						//Status Timer 
+						//Status Timer
 							//reads launchedArr
 							//writes to progress
 							//reads from start time
 
-				
+
 				//=================================//
-				//STATUS MONITORING		
-				//=================================//				
+				//STATUS MONITORING
+				//=================================//
 				//First time, check status of every major item.
 				//	When a calibration is launched by user,
 				//		- check that no active calibration
@@ -129,8 +129,8 @@
 					//		- Current Master User (current number of slave users)
 					//		- Status of Calibration That Is Running
 				//
-				//	
-				
+				//
+
 				_reqNameArr 	 	= ["StateMachineStatus","SupervisorsStatus","MasterUserStatus"];
 				_reqNumberArr 	 	= new Array();
 				_reqStartTimeArr 	= new Array(); //0 init (launch thread writes)
@@ -138,196 +138,196 @@
 				_reqStatusArr 	 	= new Array();
 				_needsStatusArr  	= new Array();
 				_allReqArr = [_reqNumberArr,_reqNameArr,_reqStartTimeArr,_reqProgressArr,_reqStatusArr,_needsStatusArr];
-					
+
 				//initialize status array to need to launch all
 				for(var i=0;i<_reqNameArr.length;++i) {
 					_reqNumberArr[i]    = -1;
 					_reqStartTimeArr[i] =  0; //not launched yet
-					_reqProgressArr[i]  = -1; 
+					_reqProgressArr[i]  = -1;
 					_reqStatusArr[i]    = "Unlaunched";
 					_needsStatusArr[i]  =  0;
 				}
-				
+
 				//=================================//
 				//request calibration alias list
 				aliasListRequest();
-				
+
 				setInterval(updateStatus,_TIMEOUT_STATUS_PERIOD);
-			}	
-			
-			
+			}
+
+
 			// updateStatus ~~
 			//		refresh the status table, always running, reads all arrays
 			function updateStatus() {
-				
+
 				var htmlStr = "";
-						
+
 				var fields = ["Req #","Name","Start Time","Progress","Status"];
 				var widths = [100,150,150,50,50];
 				htmlStr += "<table border='1'><tr>";
-				for(var i=0;i<fields.length;++i) {				
+				for(var i=0;i<fields.length;++i) {
 					htmlStr += "<th style='width:"+widths[i]+"px'>" + fields[i] + "</th>";
 				}
 				htmlStr += "</tr>";
-				
+
 				for(var j=0;j<_reqNameArr.length;++j) {
 					htmlStr += "<tr>";
-					for(var i=0;i<fields.length;++i) {	
+					for(var i=0;i<fields.length;++i) {
 						var bg = (i == 3 && _allReqArr[i][j] == 100)?";background: green":"";
-						htmlStr += "<td><div style='width:"+widths[i]+"px"+bg+"'>" + _allReqArr[i][j] + "</div></td>";		
-					}			
-					htmlStr += "</tr>";	
-				}				
-					htmlStr += "</table>";	
-				
-				var el = document.getElementById("statusDiv");	
+						htmlStr += "<td><div style='width:"+widths[i]+"px"+bg+"'>" + _allReqArr[i][j] + "</div></td>";
+					}
+					htmlStr += "</tr>";
+				}
+					htmlStr += "</table>";
+
+				var el = document.getElementById("statusDiv");
 				el.innerHTML = htmlStr;
 			}
-			
+
 			// launchThread ~~
 			//		checks if items need to be checked and launches
 			function launchThread() {
-			
+
 				//Debug.log("Calibrations launchThread" );
-				
-				//if update needed, request info for major request				
-				for(var i=0;i<_reqNameArr.length;++i) 
+
+				//if update needed, request info for major request
+				for(var i=0;i<_reqNameArr.length;++i)
 				{
-					if(_reqStartTimeArr[i] == 0) //if not launched, or progress complete			
-					{	
+					if(_reqStartTimeArr[i] == 0) //if not launched, or progress complete
+					{
 						_reqNumberArr   [i] = -1; //no request number yet
 						_reqStartTimeArr[i] = parseInt((new Date()).getTime()/1000); //seconds since 1/1/1970
 						_reqProgressArr [i] = 0;
 						_reqStatusArr   [i] = "Launched";
 						Debug.log("Calibrations launching " + _reqNameArr[i] + " at " + _reqStartTimeArr[i]);
-						
+
 						DesktopContent.XMLHttpRequest("InfoRequestHandler?InfoRequest=" + _reqNameArr[i], "", launchResponse, i);
 					}
-				
+
 				}
-					
-				//start status monitoring			
+
+				//start status monitoring
 				//if(_timerLaunchHandle) {clearTime(_timerLaunchHandle); _timerLaunchHandle = 0;}
 				_timerLaunchHandle = setTimeout(launchThread,_TIMEOUT_LAUNCH_PERIOD);
-						
+
 			}
-			
+
 			// launchResponse ~~
 			//		this is the launch handler, item i initiated the request
 			function launchResponse(req, i) {
-							
+
 				Debug.log("Calibrations launchResponse " + i + ": " + DesktopContent.getXMLValue(req,"RequestName") + " - #" +
 					DesktopContent.getXMLValue(req,"RequestNumber"));
-						
+
 				_reqNumberArr[i] = DesktopContent.getXMLValue(req,"RequestNumber");
-				_reqStatusArr[i] = "Requesting Status";	
-								
-				if(_reqStartTimeArr[i] != 0 && _reqProgressArr[i] < 100)	//if launched and not complete	
-					_needsStatusArr[i] = 1; //need status							
+				_reqStatusArr[i] = "Requesting Status";
+
+				if(_reqStartTimeArr[i] != 0 && _reqProgressArr[i] < 100)	//if launched and not complete
+					_needsStatusArr[i] = 1; //need status
 			}
-			
+
 			// statusThread ~~
 			//
 			function statusThread() {
-			
+
 				//Debug.log("Calibrations statusThread" );
-							
+
 				for(var i=0;i<_reqNameArr.length;++i) {
-					if(_needsStatusArr[i]) {	//if launched and not complete	
-					
+					if(_needsStatusArr[i]) {	//if launched and not complete
+
 						_needsStatusArr[i] = 0;
-						DesktopContent.XMLHttpRequest("InfoRequestResultHandler?RequestNumber=" + _reqNumberArr[i], "", statusResponse, i);						
+						DesktopContent.XMLHttpRequest("InfoRequestResultHandler?RequestNumber=" + _reqNumberArr[i], "", statusResponse, i);
 					}
 				}
-				
+
 				_timerStatusHandle = setTimeout(statusThread,_TIMEOUT_STATUS_PERIOD);
 			}
-			
+
 			// statusResponse ~~
 			//
 			function statusResponse(req, i) {
-									
-				_reqStatusArr[i] = DesktopContent.getXMLValue(req,"RequestStatus");	
-				_reqProgressArr[i] = parseInt(DesktopContent.getXMLValue(req,"RequestProgress"));	
-				
-				Debug.log("Calibrations statusResponse " + i + ": " + _reqNameArr[i]  + " - #" + 
+
+				_reqStatusArr[i] = DesktopContent.getXMLValue(req,"RequestStatus");
+				_reqProgressArr[i] = parseInt(DesktopContent.getXMLValue(req,"RequestProgress"));
+
+				Debug.log("Calibrations statusResponse " + i + ": " + _reqNameArr[i]  + " - #" +
 					_reqNumberArr[i] + " %" + _reqProgressArr[i]);
-				
-				if(_reqProgressArr[i] != 100)	//if launched and not complete	
-					_needsStatusArr[i] = 1;		
+
+				if(_reqProgressArr[i] != 100)	//if launched and not complete
+					_needsStatusArr[i] = 1;
 				else
-					_reqStartTimeArr[i] = 0;  //mark need to launch again						
+					_reqStartTimeArr[i] = 0;  //mark need to launch again
 			}
-			
+
 			//request current settings immediately once page loads
-			function aliasListRequest() {			
-												
+			function aliasListRequest() {
+
 				//get current calRequest from server
-				DesktopContent.XMLHttpRequest("Request?RequestType=getAliasList", "", aliasListRequestHandler);				
+				DesktopContent.XMLHttpRequest("Request?RequestType=getAliasList", "", aliasListRequestHandler);
 			}
-			
+
 
 			//handle request for calRequest
 			function aliasListRequestHandler(req) {
-								
+
 				Debug.log("Settings calRequestHandler " + req);
-				
+
 				_aliasArr = req.responseXML.getElementsByTagName("config_alias");
 				_keyArr = req.responseXML.getElementsByTagName("config_key");
-				
+
 				var htmlStr = "<table><tr><td><b>Alias</b></td><td width='75px'><b>Key</b></td></tr>";
 				for(i=0;i<_aliasArr.length;++i) {
 					if(_aliasArr[i].getAttribute('value').indexOf("Physics") != -1) continue;
-					
+
 					htmlStr += "<tr><td class='aliasValue'>";
 					htmlStr += "<a href='Javascript:selectCalibrationList(" + i + ")'>";
 					htmlStr += "<input onclick='selectCalibrationList(" + i + ");' type='radio' id='config_radio"+ i + "'> ";
 					htmlStr += _aliasArr[i].getAttribute('value') + "</a>";
-					htmlStr += "</td><td>";					
+					htmlStr += "</td><td>";
 					htmlStr += _keyArr[i].getAttribute('value') + "</td></tr>";
 				}
-				htmlStr += "</table>";				
+				htmlStr += "</table>";
 				htmlStr += "<br><br><input type='submit' onmouseup='configure(event); return false;' value='Configure'> <br>";
-					
-				var el = document.getElementById("calsDiv");	
+
+				var el = document.getElementById("calsDiv");
 				el.innerHTML = htmlStr;
-				
+
 				//start status monitoring
 				//				if(_timerLaunchHandle) { clearTimeout(_timerLaunchHandle); _timerLaunchHandle = 0; Debug.log("Calibrations clear _timerLaunchHandle, response happened during wait");	}
 				_timerLaunchHandle = setTimeout(launchThread,_TIMEOUT_LAUNCH_PERIOD);
 				_timerStatusHandle = setTimeout(statusThread,_TIMEOUT_STATUS_PERIOD);
-				
-				
+
+
 			}
-			
-			function selectCalibrationList(i) {	
+
+			function selectCalibrationList(i) {
 				Debug.log("Settings selectCalibrationList " + i);
 				var el;
-				if(_selectedCalibration != -1) { //uncheck current				
-					el = document.getElementById("config_radio"+_selectedCalibration);	
+				if(_selectedCalibration != -1) { //uncheck current
+					el = document.getElementById("config_radio"+_selectedCalibration);
 					el.checked = false;
 				}
-				_selectedCalibration = i;			
-				el = document.getElementById("config_radio"+_selectedCalibration);	
+				_selectedCalibration = i;
+				el = document.getElementById("config_radio"+_selectedCalibration);
 				el.checked = true;
-			
+
 			}
-			function configure(mouseEvent) 
-			{	
+			function configure(mouseEvent)
+			{
 				if(_selectedCalibration == -1) return;
-				Debug.log("Settings configure " + _selectedCalibration + " - " + 
-					_aliasArr[_selectedCalibration].getAttribute('value') + " - " + 
+				Debug.log("Settings configure " + _selectedCalibration + " - " +
+					_aliasArr[_selectedCalibration].getAttribute('value') + " - " +
 					_keyArr[_selectedCalibration].getAttribute('value'));
-					
+
 				//FIXME?this crashes the ots Supervisor
 				//DesktopContent.XMLHttpRequest("StateMachineXgiHandler?StateInput=Configure", "ConfigurationAlias="+_aliasArr[_selectedCalibration].getAttribute('value'), configureHandler);
 			}
-			
-			function configureHandler(req) 
+
+			function configureHandler(req)
 			{
 				Debug.log("Settings calRequestHandler " + req);
 			}
-			
+
 		</script>
 
 </head>

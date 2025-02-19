@@ -1,36 +1,36 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 <head>
 	<title>Smart Launch</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
 	<link href='/WebPath/css/fonts.css?family=Comfortaa:400' rel='stylesheet' type='text/css'>
-		
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/pretty-checkbox.min.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/library/MaterialDesign-Webfont-master/css/materialdesignicons.min.css">
-	
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/SmartLaunch.css">
-	
-	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
-	
+
 	<script type="text/JavaScript" src="/WebPath/js/SmartLaunch.js"></script>
-	
-	<script>		
-	
-	
-		
+
+	<script>
+
+
+
 		//	Smart Launch template:
-		//	
+		//
 		//		Checkboxes on left to select configuration subsystems to enable
 		//		Giant RED button on right to (re)launch ots
 		//		GREEN button on right to start ots run
-		//	
-		//		The user can copy this template into their own repository and 
+		//
+		//		The user can copy this template into their own repository and
 		//			and make custom groupings of contexts. For example,
 		//			the 'Tracker' might consist of 5 contexts, and could then
 		//			be reduced to a single checkbox.
@@ -47,32 +47,32 @@
 		//	In short, subsystems comprise your configuration, and subsystem names map to
 		//		one or many context records that can be on/off as a group (activating/deactivating their segment of the full configuration).
 
-	
+
 
 
 	SmartLaunch.MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
 	SmartLaunch.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
-	
+
 //	var _NAME_STRIPS 	= "Strip Telescope";
 //	var _NAME_MWPC 		= "Wire Chambers";
 //	var _NAME_NIMPLUS 	= "NIM+ Trigger/Coincidence Module";
-	
+
 	SmartLaunch.doShowContexts = true; //true to also include contexts
 	SmartLaunch.getConfigAliases = true; //if true, will show dropdown box of config aliases for user to select
-	
+
 	SmartLaunch.subsystems = [];
 //					   _NAME_STRIPS,
 //					   _NAME_MWPC,
 //					   _NAME_NIMPLUS
-//					   ]; 
-	
+//					   ];
+
 	SmartLaunch.systemToContextMap = {};
 //	SmartLaunch.systemToContextMap[_NAME_STRIPS] = [
 //										 "StripTelescopeContext"
 //										 ];
 //	SmartLaunch.systemToContextMap[_NAME_MWPC] = [
 //									   "WireChamberContext",
-//									   "ARTDAQBoardReader0", 
+//									   "ARTDAQBoardReader0",
 //									   "ARTDAQEventBuilder0",
 //									   "ARTDAQEventBuilder1",
 //									   "ARTDAQAggregator0"
@@ -84,17 +84,17 @@
 	//=====================================================================================
 	//init ~~
 	//	init called once body has loaded
-	function init() 
-	{		
+	function init()
+	{
 		SmartLaunch.create();
 	} //end init()
-	
+
 	</script>
 </head>
-	
 
-<body onload='//init() called by DesktopContent.js'>		
-	
+
+<body onload='//init() called by DesktopContent.js'>
+
 </body>
-	
+
 </html>

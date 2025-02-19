@@ -1,110 +1,110 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title></title>
-    <script type="text/Javascript" src="/WebPath/html/widgets/WidgetLibrary.js"></script>
-    <style>
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
+	<meta charset="utf-8" />
+	<title></title>
+	<script type="text/Javascript" src="/WebPath/html/widgets/WidgetLibrary.js"></script>
+	<style>
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 60px;
+			height: 34px;
+		}
 
-            .switch input {
-                display: none;
-            }
+			.switch input {
+				display: none;
+			}
 
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #e73827;
-            -webkit-transition: .5s;
-            transition: .5s;
-        }
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #e73827;
+			-webkit-transition: .5s;
+			transition: .5s;
+		}
 
-            .slider:before {
-                position: absolute;
-                content: "";
-                height: 26px;
-                width: 26px;
-                left: 4px;
-                bottom: 4px;
-                background-color: white;
-                -webkit-transition: .5s;
-                transition: .5s;
-            }
+			.slider:before {
+				position: absolute;
+				content: "";
+				height: 26px;
+				width: 26px;
+				left: 4px;
+				bottom: 4px;
+				background-color: white;
+				-webkit-transition: .5s;
+				transition: .5s;
+			}
 
-        input:checked + .slider {
-            background-color: #00ff00;
-        }
+		input:checked + .slider {
+			background-color: #00ff00;
+		}
 
-        input:focus + .slider {
-            box-shadow: 0 0 1px #2196F3;
-        }
+		input:focus + .slider {
+			box-shadow: 0 0 1px #2196F3;
+		}
 
-        input:checked + .slider:before {
-            -webkit-transform: translateX(26px);
-            -ms-transform: translateX(26px);
-            transform: translateX(26px);
-        }
+		input:checked + .slider:before {
+			-webkit-transform: translateX(26px);
+			-ms-transform: translateX(26px);
+			transform: translateX(26px);
+		}
 
-        /* Rounded sliders */
-        .slider.round {
-            border-radius: 34px;
-        }
+		/* Rounded sliders */
+		.slider.round {
+			border-radius: 34px;
+		}
 
-            .slider.round:before {
-                border-radius: 50%;
-            }
+			.slider.round:before {
+				border-radius: 50%;
+			}
 
-        #weather {
-            position: relative;
-            width: 100%;
-            height: 30px;
-            background-color: white; 
-        }
-        #weather_bar {
-            position: absolute;
-            width: 100%;
-            height: 100%;            /*set text color to white, change font*/
-            background-color: white;
-            
-        }
-        #weatherBar_bg {
-            width:100%;
-            height: 100%;
-            position: absolute;
-            background: red; /* For browsers that do not support gradients */
-            background: -webkit-linear-gradient(left, green, rgb(0, 153, 0), yellow, red); /* For Safari 5.1 to 6.0 */
-            background: -o-linear-gradient(right, green, rgb(0, 153, 0), yellow, red); /* For Opera 11.1 to 12.0 */
-            background: -moz-linear-gradient(right, green, rgb(0, 153, 0), yellow, red); /* For Firefox 3.6 to 15 */
-            background: linear-gradient(to right, rgb(26, 255, 26), rgb(0, 153, 0), yellow, rgb(230, 0, 0)); /* Standard syntax */
-        }
-    </style>
+		#weather {
+			position: relative;
+			width: 100%;
+			height: 30px;
+			background-color: white;
+		}
+		#weather_bar {
+			position: absolute;
+			width: 100%;
+			height: 100%;            /*set text color to white, change font*/
+			background-color: white;
+
+		}
+		#weatherBar_bg {
+			width:100%;
+			height: 100%;
+			position: absolute;
+			background: red; /* For browsers that do not support gradients */
+			background: -webkit-linear-gradient(left, green, rgb(0, 153, 0), yellow, red); /* For Safari 5.1 to 6.0 */
+			background: -o-linear-gradient(right, green, rgb(0, 153, 0), yellow, red); /* For Opera 11.1 to 12.0 */
+			background: -moz-linear-gradient(right, green, rgb(0, 153, 0), yellow, red); /* For Firefox 3.6 to 15 */
+			background: linear-gradient(to right, rgb(26, 255, 26), rgb(0, 153, 0), yellow, rgb(230, 0, 0)); /* Standard syntax */
+		}
+	</style>
 </head>
 <body onload="Javascript:init()">
 
 
-    <label id="switchLabel" class="switch">
-        <input id="switch_rounded" type="checkbox" checked>
-        <div class="slider round" id="switch_rounded" ></div>
+	<label id="switchLabel" class="switch">
+		<input id="switch_rounded" type="checkbox" checked>
+		<div class="slider round" id="switch_rounded" ></div>
 
-    </label>
-    <br />
-    <div id="numDisplay">
-        <p id="numbers" style="color: black; text-align: center; font-family: Courier New, Courier, monospace ">0000</p>
-    </div>
-    <br />
-    <div id="weather">
-        <div id="weatherBar_bg" ></div>
-        <div id="weather_bar" ></div>
-    </div>
+	</label>
+	<br />
+	<div id="numDisplay">
+		<p id="numbers" style="color: black; text-align: center; font-family: Courier New, Courier, monospace ">0000</p>
+	</div>
+	<br />
+	<div id="weather">
+		<div id="weatherBar_bg" ></div>
+		<div id="weather_bar" ></div>
+	</div>
 </body>
 </html>

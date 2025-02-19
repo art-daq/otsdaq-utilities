@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 <head>
 	<title>MU2E FRONT END STRUCTURE</title>
 
@@ -8,19 +8,19 @@
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/FEStructure.css">
 
 	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
 
-	<script>		
+	<script>
 
 		//	Description of Configuration-Subset Functionality/Behavior:
-		//	
+		//
 		//	GET parameters:
 		//		<subsetBasePath> = Records at this path are the target of this GUI, e.g. “FEInterfaceConfiguration”
 		//		<groupingFieldList> = CSV list of tree paths relative to <baseTable>, e.g. “LinkToFETypeConfiguration,FEInterfacePluginName”
-		//									- these are the fields that can be used to filter UID records by (and these will cause grouping in square-view)	
+		//									- these are the fields that can be used to filter UID records by (and these will cause grouping in square-view)
 		//		<editableFieldList> = empty string or "DEFAULT" for all, or CSV list of fields to show for editing
 		//		<recordPreFilterList> = CSV list (of forced filter) of tree paths relative to <baseTable> and = value, e.g. "LinkToFETypeConfiguration=NIMPlus,FEInterfacePluginName=NIMPlusPlugin"
 		//									- this is like a pre-filter (filter on records UID that user can not control)
@@ -79,13 +79,13 @@
 						Debug.HIGH_PRIORITY);
 				return;
 			}
-			var windowTooltip = "Welcome to the FE Structure viewer. " + 
+			var windowTooltip = "Welcome to the FE Structure viewer. " +
 				". Here you can view the FE objects and their status.";
 			DesktopContent.tooltip("FE Structure GUI Introduction",
 			windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
 
-			//get subset record uids and 
+			//get subset record uids and
 			//	filter values for all possible grouping fields
 			initSubsetGlobalData();
 
@@ -103,17 +103,17 @@
 			//		<selectedGroupFieldValues>	= Pre-chosen selections for grouping field filters
 			//		<editableFieldList> 	= empty string or "DEFAULT" for all, or CSV list of fields to show for editing
 			//		<recordPreFilterList> 	= semicolon-separated list (of forced filter) of tree paths relative to <baseTable> and = value (CSV for multiple values), e.g. "LinkToFETypeConfiguration=NIMPlus;FEInterfacePluginName=NIMPlusPlugin,FEOtsUDPTemplateInterface"
-			//		<selectedRecords> 		= CSV list of pre-chosen record UID selections (this will override default behavior of selecting the first record,.. if only one record is chosen, that record will be loaded) 
+			//		<selectedRecords> 		= CSV list of pre-chosen record UID selections (this will override default behavior of selecting the first record,.. if only one record is chosen, that record will be loaded)
 			//		<recordsAlias> 			= PLURAL Records display name, e.g. "Front-ends"
 
-			_subsetBasePath		= DesktopContent.getParameter(0,"subsetBasePath");//"FEInterfaceConfiguration"; //DesktopContent.getParameter(0,"subsetBasePath");	
-			_groupingFieldList 	= DesktopContent.getParameter(0,"groupingFieldList"); //"LinkToFETypeConfiguration,FEInterfacePluginName"; //DesktopContent.getParameter(0,"groupingFieldList");			
+			_subsetBasePath		= DesktopContent.getParameter(0,"subsetBasePath");//"FEInterfaceConfiguration"; //DesktopContent.getParameter(0,"subsetBasePath");
+			_groupingFieldList 	= DesktopContent.getParameter(0,"groupingFieldList"); //"LinkToFETypeConfiguration,FEInterfacePluginName"; //DesktopContent.getParameter(0,"groupingFieldList");
 			_editableFieldList	= DesktopContent.getParameter(0,"editableFieldList");//"";//DesktopContent.getParameter(0,"editableFieldList");
 			_recordPreFilterList= DesktopContent.getParameter(0,"recordPreFilterList"); //"";//FEInterfacePluginName=myNewInterface";//DesktopContent.getParameter(0,"recordPreFilterList");
 			_recordsAlias		= DesktopContent.getParameter(0,"recordAlias"); //"Front-ends"; //default to records
 
-			_selectedGroupFieldValues = DesktopContent.getParameter(0,"selectedGroupFieldValues"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface""; 
-			_selectedGroupIDs 	= DesktopContent.getParameter(0,"selectedGroupIDs"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface""; 
+			_selectedGroupFieldValues = DesktopContent.getParameter(0,"selectedGroupFieldValues"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface"";
+			_selectedGroupIDs 	= DesktopContent.getParameter(0,"selectedGroupIDs"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface"";
 			_selectedRecords	= DesktopContent.getParameter(0,"selectedRecords"); //"myNewInterface,myNewInterface2";
 
 
@@ -187,7 +187,7 @@
 							return;
 						}
 						else //treat as initializing active groups
-							_lastActiveGroups = activeConfigGroups;					
+							_lastActiveGroups = activeConfigGroups;
 					}
 
 					for(var i=0;i<_lastActiveGroups.length && activeConfigGroups.length;++i)
@@ -223,9 +223,9 @@
 						"Do you want to <b>reload</b> the FE Structure Configuration GUI (any modifications in this window will be lost!)?",
 						initSubsetGlobalData /*yes-to-reload handler*/
 						,
-						0,0,// val [optional], bgColor [optional], 
-						0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional], 
-						0, //			dialogWidth [optional], 
+						0,0,// val [optional], bgColor [optional],
+						0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional],
+						0, //			dialogWidth [optional],
 						function() /*cancelFunc [optional]*/
 						{
 							Debug.log("Canceled...");
@@ -273,9 +273,9 @@
 
 					}); //end saveModifiedTables handler
 				}	,
-				0,0,// val [optional], bgColor [optional], 
-				0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional], 
-				0, //			dialogWidth [optional], 
+				0,0,// val [optional], bgColor [optional],
+				0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional],
+				0, //			dialogWidth [optional],
 				function (){}
 			);
 		} //end saveAllDtcsStatusChanges
@@ -309,9 +309,9 @@
 
 					}); //end saveModifiedTables handler
 				}	,
-				0,0,// val [optional], bgColor [optional], 
-				0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional], 
-				0, //			dialogWidth [optional], 
+				0,0,// val [optional], bgColor [optional],
+				0,0,0, //			textColor [optional], borderColor [optional], getUserInput [optional],
+				0, //			dialogWidth [optional],
 				function (){}
 			);
 		} //end saveAllRocsStatusChanges
@@ -344,7 +344,7 @@
 				dtcBox.style.backgroundColor = 'red';
 
 			var fields = ["Status"];
-			var valueArr = [status]; 
+			var valueArr = [status];
 			var recordArr = [dtcName];
 
 			Debug.logv({recordArr});
@@ -380,7 +380,7 @@
 						// 	{
 						// 		Debug.log("There was an error while saving the values.",
 						// 				Debug.HIGH_PRIORITY);
-						// 		return;					
+						// 		return;
 						// 	}
 
 						// 	Debug.log("The values for each field were successfully written to the targeted " +
@@ -424,7 +424,7 @@
 				rocBox.style.backgroundColor = 'red';
 
 			var fields = ["Status"];
-			var valueArr = [status]; 
+			var valueArr = [status];
 			var recordArr = [rocName];
 
 			Debug.logv({recordArr});
@@ -446,7 +446,7 @@
 						{
 							Debug.log("There was an error while writing the values.",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 
 						_rocModifiedTables = modifiedTables;
@@ -459,7 +459,7 @@
 						// 	{
 						// 		Debug.log("There was an error while saving the values.",
 						// 				Debug.HIGH_PRIORITY);
-						// 		return;					
+						// 		return;
 						// 	}
 
 						// 	Debug.log("The values for each field were successfully written to the targeted " +
@@ -578,7 +578,7 @@
 					if(!json)
 					{
 						Debug.err("No hardware components found in request to server!");
-						return;	
+						return;
 					}
 					Debug.logv({json});
 					FEstructure_ = JSON.parse(json);
@@ -613,7 +613,7 @@
 					if(_checkActiveGroupsTimer)
 						window.clearTimeout(_checkActiveGroupsTimer);
 					_checkActiveGroupsTimer = window.setTimeout(checkForActiveGroupChange,_CHECK_ACTIVE_GROUPS_PERIOD);
-					
+
 				}, //end DTC getSubsetRecords() handler
 				_modifiedTables);
 		}
@@ -621,7 +621,7 @@
 		</script>
 </head>
 
-<body onload='//init() called by DesktopContent.js'>	
+<body onload='//init() called by DesktopContent.js'>
 
 	<!-- body content populated by javascript paint(), etc. -->
 
@@ -631,7 +631,7 @@
 		<div style="background-color: red">OFF</div>
 		<div style="background-color: gray">PARENT APP OFF</div>
 		<div style="background-color: darkslategray">NOT RECOGNIZED</div>
-	</div> 
+	</div>
 	<button class='setStatus' onclick="saveAllDtcsStatusChanges()">Write Status For Selected DTCs</button>
 	<button class='setStatus' onclick="saveAllRocsStatusChanges()">Write Status For Selected ROCs</button>
 	<div class='mainBlockContainer' id='mainDiv'></div>

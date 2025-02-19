@@ -1,31 +1,31 @@
-// MF_ReceiveAndForward.cpp
-//    by rrivera at fnal dot gov
-//	  created Feb 2016
-//
-// 	This is a simple UDP receive and forward program
-//		for MessageFacility packets.
-//
-//	It echos packets received and only appends '|' as decoration.
-//
-//
-//
-//
-// compile with:
-// g++ MF_ReceiveAndForward.cpp -o MF_ReceiveAndForward.o
-//
-// if developing, consider appending -D_GLIBCXX_DEBUG to get more
-// descriptive error messages
-//
-// run with:
-//./MF_ReceiveAndForward.o <optional port file name>
-//
-//
-//	Port Config File Format:
-//		RECEIVING_PORT 	<port number>
-//		FORWARDING_PORT <port number>
-//
-//
-
+/// MF_ReceiveAndForward.cpp
+///    by rrivera at fnal dot gov
+///	  created Feb 2016
+///
+/// 	This is a simple UDP receive and forward program
+///		for MessageFacility packets.
+///
+///	It echos packets received and only appends '|' as decoration.
+///
+///
+///
+///
+/// compile with:
+/// g++ MF_ReceiveAndForward.cpp -o MF_ReceiveAndForward.o
+///
+/// if developing, consider appending -D_GLIBCXX_DEBUG to get more
+/// descriptive error messages
+///
+/// run with:
+///./MF_ReceiveAndForward.o <optional port file name>
+///
+///
+///	Port Config File Format:
+///		RECEIVING_PORT 	<port number>
+///		FORWARDING_PORT <port number>
+///
+///
+///
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
@@ -69,7 +69,7 @@
 #define QUOTE(X) Q(X)
 #define __COUTV__(X) __COUT__ << QUOTE(X) << " = " << X << __E__
 
-// get sockaddr, IPv4 or IPv6:
+/// get sockaddr, IPv4 or IPv6:
 void* get_in_addr(struct sockaddr* sa)
 {
 	if(sa->sa_family == AF_INET)
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
 
 	std::map<unsigned int, unsigned int> sourceLastSequenceID;  // map from sourceID to
 	                                                            // lastSequenceID to
-	    // identify missed messages
+	// identify missed messages
 
 	// this should ip/port of Console xdaq app Receiver port
 	sendSockfd = makeSocket(myFwdIP_.c_str(), myFwdPort, p);

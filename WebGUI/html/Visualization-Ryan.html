@@ -1,62 +1,62 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Visualization</title>
 
 		<link rel='stylesheet' type='text/css' href='/WebPath/css/fonts.css?family=Donegal+One'>
-				
-		<style type="text/css">			
+
+		<style type="text/css">
 			body {
 				background-color: rgb(50,50,50);
 				color: white;
 				font-size: 18px;
 				font-family: 'Donegal One', arial;
 			}
-						
+
 			#clearDiv {
 				clear: both;
 			}
-			
+
 			a {
 				color: white;
 			}
-			
+
 			#blankScreen {
 				margin-top:150px;
 			}
-			
+
 			#dropDown {
-				background-color: rgb(180,180,180);	
+				background-color: rgb(180,180,180);
 				border: 1px solid white;
-				border-radius: 5px;		
-				padding: 10px;	
+				border-radius: 5px;
+				padding: 10px;
 			}
-			
+
 			#dropDownMouseOverArea {
 				position: absolute;
 				top: -15px;
-				left: 10px;		
+				left: 10px;
 				padding: 5px;
 				z-index: 1000;
 			}
-			
+
 			label, input {
 				cursor: pointer;
 			}
-			
-			#dropDownMouseOverArea * { 
+
+			#dropDownMouseOverArea * {
 				-webkit-user-select: 	none;
 				-moz-user-select: 		none;
 				user-select:			none;
 			}
-						
+
 		</style>
-		
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 
-		
+
 		<link   rel="stylesheet" type="text/css" href="/WebPath/css/ViewerRoot.css" />
 		<script type="text/JavaScript"            src="/WebPath/js/visualizers_lib/ViewerRoot.js"></script>
 		<link   rel="stylesheet" type="text/css" href="/WebPath/css/Viewer2d.css">
@@ -64,37 +64,37 @@
 		<link   rel="stylesheet" type="text/css" href="/WebPath/css/Viewer3d.css">
 		<script type="text/JavaScript"            src="/WebPath/js/visualizers_lib/Viewer3d.js"></script>
 
-		<script>		
-			
-						
-			//functions:			
-				//init()					
+		<script>
+
+
+			//functions:
+				//init()
 				//drawDropDown()
 				//mouseOverDropDown()
-		
-			var dropDownDiv; 
+
+			var dropDownDiv;
 			var isDropDownDown = false;
 			var isDropDownAnimating = false;
 			var animationTargetTop;
 			var DROP_DOWN_SPEED = 12;
-				
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 
 			//=====================================================================================
 			//init called once body has loaded by DesktopContent
-			function init() 
-			{			
+			function init()
+			{
 				dropDownDiv = document.getElementById('dropDownMouseOverArea');
 				dropDownDiv.onmouseover = mouseOverDropDown;
 				dropDownDiv.onmouseout = mouseOutDropDown;
-				
+
 				isDropDownAnimating = true;
 				animationTargetTop = 15 - dropDownDiv.offsetHeight;
 				window.setTimeout(animateDropDown,30);
-				
+
 				if(1 //hide from everyone until 2D and 3D are revived
-						|| !DesktopContent._theDesktopWindow) dropDownDiv.style.display = 'none'; //hide from public users				
+						|| !DesktopContent._theDesktopWindow) dropDownDiv.style.display = 'none'; //hide from public users
 
 
 				//Viewer2d.launch();//
@@ -102,24 +102,24 @@
 			} //end init()
 
 			//=====================================================================================
-			function mouseOverDropDown() 
+			function mouseOverDropDown()
 			{
 				if(isDropDownAnimating) return; //do nothing if animating currently
-								
+
 				if(!isDropDownDown) //start animation
 				{
 					isDropDownDown = true;
 					isDropDownAnimating = true;
 					animationTargetTop = -15;
 					window.setTimeout(animateDropDown,30);
-				}					
+				}
 			}
 
 			//=====================================================================================
-			function mouseOutDropDown(event) 
+			function mouseOutDropDown(event)
 			{
 				if(isDropDownAnimating) return; //do nothing if animating currently
-				
+
 				if(event)
 				{
 					var e = event.toElement || event.relatedTarget;
@@ -127,22 +127,22 @@
 					{
 						if(e == this) return;
 						e = e.parentNode;
-					} 	        
+					}
 				}
-				
+
 				if(isDropDownDown) //start animation
 				{
 					isDropDownDown = false;
 					isDropDownAnimating = true;
 					animationTargetTop = 15 - dropDownDiv.offsetHeight;
 					window.setTimeout(animateDropDown,30);
-				}	
+				}
 			}
-			
+
 			function animateDropDown() {
 				//parseInt(dropDownDiv.offsetTop);
 				var dir = (animationTargetTop - dropDownDiv.offsetTop > 0)? 1: -1;
-				
+
 				var tmpTop = dropDownDiv.offsetTop + dir*DROP_DOWN_SPEED;
 				if(Math.abs(tmpTop - animationTargetTop) <= DROP_DOWN_SPEED) //done
 				{
@@ -157,32 +157,32 @@
 
 			function initVisualizer() {
 				var v = getRadioGroupValue("viewType");
-				Debug.log("initVisualizer: " +  v);		
-				
+				Debug.log("initVisualizer: " +  v);
+
 				if(v == 0)
-					ViewerRoot.launch();	
+					ViewerRoot.launch();
 				else if(v == 1)
-					Viewer2d.launch();	
+					Viewer2d.launch();
 				else if(v == 2)
 					Viewer3d.launch();
 
 			}
-			
+
 			function getRadioGroupValue(name) {
-			    var group = document.getElementsByName(name);
+				var group = document.getElementsByName(name);
 
-			    for (var i=0;i<group.length;i++) { s//>
-			        if (group[i].checked) {
-			            return group[i].value;
-			        }
-			    }
+				for (var i=0;i<group.length;i++) { s//>
+					if (group[i].checked) {
+						return group[i].value;
+					}
+				}
 
-			    return '';
+				return '';
 			}
 		</script>
 	</head>
-	
-	<body onload='//init() called by DesktopContent.js'>	
+
+	<body onload='//init() called by DesktopContent.js'>
 
 		<div id='omni'>
 			<center>
@@ -191,7 +191,7 @@
 			</div>
 			</center>
 		</div>
-		
+
 
 		<div id='dropDownMouseOverArea'>
 			<div id='dropDown'>
@@ -199,8 +199,8 @@
 			<input type='radio' id='viewType1' name="viewType" value='1' /><label for='viewType1'>2-D</label><br>
 			<input type='radio' id='viewType2' name="viewType" value='2' /><label for='viewType2'>3-D</label><br>
 			<input type='button' value='Launch Visualizer' onmouseup='initVisualizer()'/>
-			</div>		
+			</div>
 		</div>
-		
+
 	</body>
 </html>

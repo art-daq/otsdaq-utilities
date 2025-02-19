@@ -60,4 +60,4 @@ gulp.task('bower', function() {
 
 })
 
-gulp.task('default',['bower']);
+gulp.task('default', ['bower']);

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
-//////// Functions and variables to be included by other online monitoring pages ///////////        
+//////// Functions and variables to be included by other online monitoring pages ///////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  functions:
@@ -28,7 +28,7 @@ SlowControlsAPI.setWidgetToolTip = function (pvName, pvValue, pvTime, pvStatus, 
     + Number.parseFloat(pvValue).toFixed(2)
     + " "
     + pvSettings[pvName].Units
-    
+
     + "\nTime: "
     + ConfigurationAPI.getDateString(new Date((pvTime | 0) * 1000))
     + "\nStatus: "
@@ -94,7 +94,7 @@ SlowControlsAPI.setWidgetPvInfo = function (widget, pvName, pvValue, pvTime, pvS
     if (widgetValueElement !== null && widgetValueElement !== undefined)
     {
         if (timeCheck && SlowControlsAPI.checkPvTime(widget, pvName, pvTime))
-        { 
+        {
             if(pvSeverity == "NO_ALARM" )
             {
                     widgetValueElement.style.border = "4px solid green";
@@ -132,11 +132,11 @@ SlowControlsAPI.getAllPvList = function ()
 {
     DesktopContent.XMLHttpRequest(
             "Request?RequestType=getList",
-            "", 
-            pvListReqHandler /*returnHandler*/, 
-            0 /*reqParam*/, 
-            0 /*progressHandler*/, 
-            0 /*callHandlerOnErr*/, 
+            "",
+            pvListReqHandler /*returnHandler*/,
+            0 /*reqParam*/,
+            0 /*progressHandler*/,
+            0 /*callHandlerOnErr*/,
             false /*doNoShowLoadingOverlay*/);
 
 } //end getAllPvList()
@@ -145,14 +145,14 @@ SlowControlsAPI.getAllPvList = function ()
 //=====================================================================================
 SlowControlsAPI.pvListReqHandler = function (req)
 {
-    console.log("pvListReqHandler: response received!");	
+    console.log("pvListReqHandler: response received!");
     console.log(req.responseText);
     SlowControlsAPI._datalist = document.createElement('datalist');
     SlowControlsAPI._datalist.id = "pvDatalist";
     SlowControlsAPI._datalist.innerHTML = "";
 
     var jsonStr = DesktopContent.getXMLValue(req, "JSON");
-    if(!jsonStr || jsonStr == "") return;				
+    if(!jsonStr || jsonStr == "") return;
     var pvListJSON;
 
     try {pvListJSON = JSON.parse(jsonStr); }
@@ -169,7 +169,7 @@ SlowControlsAPI.pvListReqHandler = function (req)
 
 
 //=====================================================================================
-//	expecting id as 'widget-#' ..and this function extracts the 
+//	expecting id as 'widget-#' ..and this function extracts the
 //	widget UID as integer #
 SlowControlsAPI.setupPvParams = function (id, widget)
 {
@@ -183,8 +183,8 @@ SlowControlsAPI.setupPvParams = function (id, widget)
     }
 
     DesktopContent.XMLHttpRequest("Request?RequestType=getPVSettings",
-                //post data 
-                "pvList=" + pvListCSV + 
+                //post data
+                "pvList=" + pvListCSV +
                 "&id=" + id,
                 SlowControlsAPI.settingsReqHandler /*handler*/,
                 widget /*parameter*/);
@@ -195,7 +195,7 @@ SlowControlsAPI.setupPvParams = function (id, widget)
 //=====================================================================================
 SlowControlsAPI.settingsReqHandler = function (req, widget)
 {
-    widget.pvSettings = JSON.parse(DesktopContent.getXMLValue(req, "JSON"));				
+    widget.pvSettings = JSON.parse(DesktopContent.getXMLValue(req, "JSON"));
 
     console.log(req);
     console.log("pvSettings: ", widget.pvSettings);

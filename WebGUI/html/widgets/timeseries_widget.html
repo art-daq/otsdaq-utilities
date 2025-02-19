@@ -1,124 +1,124 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  	<head>
-    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
-    	<title>d3.js gauges</title>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>d3.js gauges</title>
 
 	<style>
-	
+
 	body {
-	    font: 16px 'Open Sans';
-	    color: #2C3E50;
-	    background-color: rgb(250,250,250);
+		font: 16px 'Open Sans';
+		color: #2C3E50;
+		background-color: rgb(250,250,250);
 	}
 	a {
-	    text-decoration: none;
-	    color: #3498DB;
+		text-decoration: none;
+		color: #3498DB;
 	}
 	.container {
-	    margin: 1%;
+		margin: 1%;
 	}
 	.text {
-	    width: 100%;
+		width: 100%;
 	}
 	.text p {
-	    width: 75%;
-	    margin: auto;
-	    padding: 10px 0px;
-	    text-align: center;
+		width: 75%;
+		margin: auto;
+		padding: 10px 0px;
+		text-align: center;
 	}
 	code {
-	    width: 95%;
-	    margin: auto;
-	    text-align: center;
+		width: 95%;
+		margin: auto;
+		text-align: center;
 	}
 	@media screen and (min-width: 800px) {
-	    code {
-	        width: 70%;
-	    }
+		code {
+			width: 70%;
+		}
 	}
 	.header {
-	    width: 100%;
-	    text-align: center;
-	    margin: 1% 0;
+		width: 100%;
+		text-align: center;
+		margin: 1% 0;
 	}
 	.header img {
-	    padding-top: 10px;
+		padding-top: 10px;
 	}
 	.header div {
-	    font-weight: 700;
-	    font-size: 1.6em;
-	    padding-top: 10px;
+		font-weight: 700;
+		font-size: 1.6em;
+		padding-top: 10px;
 	}
 	.dac-logo {
-	    display: none;
+		display: none;
 	}
 	@media screen and (min-width: 800px) {
-	    .dac-logo {
-	        display: block;
-	        position: absolute;
-	        left: 5px;
-	        top: 5px;
-	    }
-	    .dac-logo img {
-	        width: 120px;
-	    }
+		.dac-logo {
+			display: block;
+			position: absolute;
+			left: 5px;
+			top: 5px;
+		}
+		.dac-logo img {
+			width: 120px;
+		}
 	}
 	.contact {
-	    width: 50%;
-	    margin: auto;
-	    text-align: center;
+		width: 50%;
+		margin: auto;
+		text-align: center;
 	}
 	.footer {
-	    font-size: 0.9em;
-	    text-align: center;
-	    padding: 5px;
+		font-size: 0.9em;
+		text-align: center;
+		padding: 5px;
 	}
 	/** Styles for TIMESERIES */
 
 	.timeseries {
-	    width: 100%;
-	    padding: 2% 0;
+		width: 100%;
+		padding: 2% 0;
 	}
 	.circ {
-	    fill: #D35400;
-	    opacity: 0.6;
-	    stroke: rgba(211, 84, 0, 0.7);
-	    stroke-width: 5px;
+		fill: #D35400;
+		opacity: 0.6;
+		stroke: rgba(211, 84, 0, 0.7);
+		stroke-width: 5px;
 	}
 	.domain {
-	    display: none;
+		display: none;
 	}
 	.axis path, .axis line {
-	    fill: none;
-	    stroke: #000;
-	    shape-rendering: crispEdges;
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
 	}
 	.axis text {
-	    font-size: 12px;
+		font-size: 12px;
 	}
 	.tick line {
-	    stroke: #d5d5d5;
-	    opacity: 0.7;
+		stroke: #d5d5d5;
+		opacity: 0.7;
 	}
 	.brush .extent {
-	    stroke: #fff;
-	    fill-opacity: .125;
-	    shape-rendering: crispEdges;
+		stroke: #fff;
+		fill-opacity: .125;
+		shape-rendering: crispEdges;
 	}
 	.clear-brush {
-	    display: none;
+		display: none;
 	}
 	.brush-control {
-	    padding: .5%;
-	    width: 100%;
-	    text-align: center;
+		padding: .5%;
+		width: 100%;
+		text-align: center;
 	}
 	.brush-info {
-	    display: inline-block;
-	    font-size: 14px;
+		display: inline-block;
+		font-size: 14px;
 	}
-	
+
 	</style>
 
 		<script type="text/javascript" src="libraries/d3.js"></script>
@@ -147,8 +147,8 @@
 				console.log("setupPVs() : " , settings);
 			}
 
-			function newWidget(widget, parameters) 
-			{			
+			function newWidget(widget, parameters)
+			{
 				var table = document.createElement('table');
 				table.id = "display-table";
 				table.style.height = "100%";
@@ -188,7 +188,7 @@
 				for(var pv in widget.PVList)
 				{
 					var first = Math.floor(counter/columns);
-					if(first < 1) {first = 1;}	
+					if(first < 1) {first = 1;}
 
 					//Create div for timeseries
 					var div = document.createElement("div");
@@ -226,15 +226,15 @@
 				{
 //					parameters["label_" + i] = "";
 //					parameters["min_" + i]   = "";
-//					parameters["max_" + i]   = "";			
+//					parameters["max_" + i]   = "";
 				}
-				console.log(parameters);	
+				console.log(parameters);
 				return parameters;
 			}
 
 			function setParameters(attributes)
 			{
-				
+
 			}
 
 			function newValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
@@ -266,7 +266,7 @@
 //				{
 //					document.getElementById(pvName).parentElement.style.color = "Light Grey";
 //				}
-//				
+//
 //				if(pvStatus == "NO_ALARM")
 //				{
 //					document.getElementById(pvName).parentElement.style.border = "thin dotted green";
@@ -291,7 +291,7 @@
 //					document.getElementById(pvName).parentElement.style["background-color"] = "yellow";
 //				}
 			}
-			//End Template						
+			//End Template
 
 		</script>
 
@@ -303,4 +303,3 @@
 	</body>
 
 </html>
-

@@ -21,9 +21,9 @@ VisualDataManagerV2::VisualDataManagerV2(
     : DataManager(theXDAQContextConfigTree, supervisorConfigurationPath)
     , theLiveDQMHistos_(nullptr)
     , theRawDataConsumer_(nullptr)
-//, theFileDQMHistos_ (supervisorType, supervisorInstance, "VisualBuffer",
-//"FileDQMHistos") , theFileDQMHistos_ (supervisorType, supervisorInstance,
-//"VisualBuffer", "FileDQMHistos",0) , theFileDQMHistos_ ()
+///, theFileDQMHistos_ (supervisorType, supervisorInstance, "VisualBuffer",
+///"FileDQMHistos") , theFileDQMHistos_ (supervisorType, supervisorInstance,
+///"VisualBuffer", "FileDQMHistos",0) , theFileDQMHistos_ ()
 {
 }
 
@@ -180,13 +180,13 @@ const std::string& VisualDataManagerV2::getRawData(void)
 }
 
 ////==============================================================================
-// const Visual3DEvents& VisualDataManagerV2::getVisual3DEvents(void)
+/// const Visual3DEvents& VisualDataManagerV2::getVisual3DEvents(void)
 //{
 //	return theMonicelliEventAnalyzer_.getEvents();
 //}
 //
 ////==============================================================================
-// const Visual3DGeometry& VisualDataManagerV2::getVisual3DGeometry(void)
+/// const Visual3DGeometry& VisualDataManagerV2::getVisual3DGeometry(void)
 //{
 //	return theMonicelliGeometryConverter_.getGeometry();
 //}

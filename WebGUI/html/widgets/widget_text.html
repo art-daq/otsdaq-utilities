@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Text</title>
-		<style type="text/css">			
+		<style type="text/css">
 
 			body {
 				background-color: rgb(255,255,255);
@@ -19,7 +19,7 @@
 
 		</style>
 
-		<script>		
+		<script>
 
 			//functions:
 			//init()
@@ -46,7 +46,7 @@
 				pv_settings_ = settings;
 			}
 
-			function drawWidget(widget, parameters) 
+			function drawWidget(widget, parameters)
 			{
 				if (parameters) parameters_ = parameters;
 				document.getElementsByTagName("body")[0].style.backgroundColor = parameters_["background_color"];
@@ -74,7 +74,7 @@
 
 						var label = document.createElement('center');
 						var pvValue = document.createElement('center');
-	
+
 						if (parameters_["show_labels"] == "true")
 							label.innerHTML = pv.replace(/[&\/\\#,+()$~%.:*?<>{}]/g, "<br />") + "<br />WAITING FOR A NEW PV VALUE...";
 

@@ -1,13 +1,13 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  	<head>
-    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
-    	<title>2D Stop Light</title>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>2D Stop Light</title>
 
 		<style>
 
-		    body {
+			body {
 			  font: 10px sans-serif;
 			  background: rgba(255, 255, 255, 1);
 			  margin: 0px !important;
@@ -17,7 +17,7 @@
 			  !border: 0px solid grey;
 			  border-collapse: collapse;
 			}
-			
+
 			a {
 			  font-size: 1vw;
 			}
@@ -138,7 +138,7 @@
 							tds[i].style.border = "2px solid grey";
 							tds[i].style.borderColor = parameters_["table_border_color"];
 						}
-						
+
 						//remove right border if next cell has the same pvName
 						if (i > 0  && tabledata[i] && tabledata[i].pvName != "-1" && tabledata[i+1] && tabledata[i+1].pvName == tabledata[i].pvName)
 						{
@@ -188,7 +188,7 @@
 
 					//tds[cell].firstElementChild.title = JSON.stringify(tabledata[cell]);
 					if (pv_settings_[tabledata[cell].pvName])
-						tds[cell].firstElementChild.title = 
+						tds[cell].firstElementChild.title =
 											  window.parent.setWidgetToolTip(tabledata[cell].pvName
 											, tabledata[cell].pvValue
 											, tabledata[cell].pvTime
@@ -217,7 +217,7 @@
 					else if (tabledata[cell].pvStatus == "LOW")
 						tds[cell].style.backgroundColor = "blue";
 					else if (tabledata[cell].pvStatus == "LOLO")
-						tds[cell].style.backgroundColor = "purple";					
+						tds[cell].style.backgroundColor = "purple";
 					else if (!window.parent.checkPVTime(window.frameElement.id, tabledata[cell].pvName, tabledata[cell].pvTime))
 						tds[cell].style.backgroundColor = "lightgray";
 					else

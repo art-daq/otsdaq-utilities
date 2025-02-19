@@ -39,4 +39,3 @@ JavaScript ROOT [changelog](changes.md)
 [JSROOT examples](https://root.cern/js/latest/examples.htm)
 
 [JSROOT API examples](https://root.cern/js/latest/api.htm)
-

@@ -1,15 +1,15 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Text</title>
-		<style type="text/css">			
+		<style type="text/css">
 			body {
 				background-color: rgb(41,46,55);
 			}
 			a{
 				color: green;
 				height: auto;
-		    	text-align: center;
+				text-align: center;
 			}
 			div{
 			padding: 2.5px;
@@ -21,14 +21,14 @@
 				margin: auto;
 				padding: auto;
 			}
-									
-		</style>
-		
-		<script>		
 
-			//functions:			
-				//init()					
-		
+		</style>
+
+		<script>
+
+			//functions:
+				//init()
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -45,8 +45,8 @@
 				console.log("setupPVs() : " , settings);
 			}
 
-			function newWidget(widget, parameters) 
-			{			
+			function newWidget(widget, parameters)
+			{
 				var table = document.createElement('table');
 				table.id = "display-table";
 				table.style.height = "100%";
@@ -95,13 +95,13 @@
 					center.appendChild(a);
 					console.log(document.body);
 					var first = Math.floor(counter/columns);
-					if(first < 1) {first = 1;}				
+					if(first < 1) {first = 1;}
 					console.log("td" + first + "-" + (counter%rows +1));
 					document.getElementById("td" + first + "-" + (counter%rows +1)).appendChild(center);
 					counter++;
 				}
 			}
-			
+
 			function getParameters()
 			{
 				paramters = {
@@ -127,7 +127,7 @@
 					document.getElementById("display").appendChild(div);
 				}*/
 				console.log("newValue() reached", pvName, pvValue);
-				
+
 				document.getElementById(pvName).innerHTML = (pvValue);// + " @ " + pvTime);
 				document.getElementById(pvName).title = pvName + ":" + pvTime;
 				document.getElementById(pvName).parentElement.style.border = pvName + ":" + pvTime;

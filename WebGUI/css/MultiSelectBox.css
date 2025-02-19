@@ -1,87 +1,87 @@
 
- 
- 
-    .multiselectbox .mySelect
-    {
-        /*width:100%;
-        height:100%; */
-        padding:5px;
-        border:1px solid rgb(153,153,153);
-        text-align:left;
-        overflow-y:scroll;
-        
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-    .multiselectbox .mySelect .myOption
-    {
-        padding:2px;
-        white-space: nowrap;
-        cursor:pointer;
-    }
-    .multiselectbox .hidden
-    {
-        display:none;
-    }
-    .multiselectbox .mySelect .optionhighlighted,
+
+
+	.multiselectbox .mySelect
+	{
+		/*width:100%;
+		height:100%; */
+		padding:5px;
+		border:1px solid rgb(153,153,153);
+		text-align:left;
+		overflow-y:scroll;
+
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	.multiselectbox .mySelect .myOption
+	{
+		padding:2px;
+		white-space: nowrap;
+		cursor:pointer;
+	}
+	.multiselectbox .hidden
+	{
+		display:none;
+	}
+	.multiselectbox .mySelect .optionhighlighted,
 	.multiselectbox .mySelect .optionhighlighted u
-    {
-        background:rgb(0,111,255);
-        color:white;
-    }	
+	{
+		background:rgb(0,111,255);
+		color:white;
+	}
 
-    .multiselectbox .selectSearchBar
-    {
-        text-align:right;
-        height:37px;
-        width:100%;
-        padding:3px 0px 3px 0px;
-    }
+	.multiselectbox .selectSearchBar
+	{
+		text-align:right;
+		height:37px;
+		width:100%;
+		padding:3px 0px 3px 0px;
+	}
 
-    .multiselectbox .selectSearchBar img, .multiselectbox a
-    {
-        cursor:pointer;
-    }
-    
-    .multiselectbox .searchimg{
-        cursor:pointer;
-        float:right;
-        margin: 5px;
-    }
-    .multiselectbox .searchimg {        
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
-        border-radius: 5px;
-        -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
-        -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
-        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
+	.multiselectbox .selectSearchBar img, .multiselectbox a
+	{
+		cursor:pointer;
+	}
 
-        -webkit-transition: all 0.30s ease-in-out;
-        -moz-transition: all 0.30s ease-in-out;
-        -ms-transition: all 0.30s ease-in-out;
-        -o-transition: all 0.30s ease-in-out;
-        outline: none;
-    }
+	.multiselectbox .searchimg{
+		cursor:pointer;
+		float:right;
+		margin: 5px;
+	}
+	.multiselectbox .searchimg {
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		-moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
+		-webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
+		box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 8px 0 rgba(0, 0, 0, 0.19);
 
-    .multiselectbox input, textarea {
-        padding: 5px 5px 5px 5px;
-        font-size:16px;
-        color: #222;
-        margin: 5px;
-    }
-    
-    /*firefox seems to put an extra pixel of letter-spacing in bold words*/
-    /* this seems to have been fixed by choosing the correct truetype font in font.css*/
-    /*target firefox*/
-    /*@-moz-document url-prefix() {  
-    	b, th {
-    		letter-spacing: -1px;
-    	}
-    	h1, h2, h3, h4, h5, h6 {
-    		letter-spacing: -2px;
-    	}
-    }*/
+		-webkit-transition: all 0.30s ease-in-out;
+		-moz-transition: all 0.30s ease-in-out;
+		-ms-transition: all 0.30s ease-in-out;
+		-o-transition: all 0.30s ease-in-out;
+		outline: none;
+	}
+
+	.multiselectbox input, textarea {
+		padding: 5px 5px 5px 5px;
+		font-size:16px;
+		color: #222;
+		margin: 5px;
+	}
+
+	/*firefox seems to put an extra pixel of letter-spacing in bold words*/
+	/* this seems to have been fixed by choosing the correct truetype font in font.css*/
+	/*target firefox*/
+	/*@-moz-document url-prefix() {
+		b, th {
+			letter-spacing: -1px;
+		}
+		h1, h2, h3, h4, h5, h6 {
+			letter-spacing: -2px;
+		}
+	}*/

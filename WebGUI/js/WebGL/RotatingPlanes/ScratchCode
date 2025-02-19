@@ -8,66 +8,66 @@
 <script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/DesktopWindowContentCode.js"></script>
 
-  
-    <script id="shader-fs" type="x-shader/x-fragment">
+
+	<script id="shader-fs" type="x-shader/x-fragment">
 		precision mediump float; 					//precision set to medium because of support. Many mobile devices cannot handle high precision
-		
+
 		void main(void) {
 			gl_FragColor = vec4(0.0, 2.0, 0.0, 1.0);	//establishes green as the color of drawn objects
 		}
-    </script>
-    
-    <script id="shader-vs" type="x-shader/x-vertex">		//probably won't be needed if the program only draws lines between two points
-    	attribute vec3 aVertexPosition;
-    	
-    	uniform mat4 uMVMatrix;
-    	uniform mat4 uPMatrix;
-    	
-    	void main(void) {
-    		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-    	}
-    </script>  
-    
-<script type="text/javascript">        
-        
+	</script>
+
+	<script id="shader-vs" type="x-shader/x-vertex">		//probably won't be needed if the program only draws lines between two points
+		attribute vec3 aVertexPosition;
+
+		uniform mat4 uMVMatrix;
+		uniform mat4 uPMatrix;
+
+		void main(void) {
+			gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+		}
+	</script>
+
+<script type="text/javascript">
+
 ////////////////////////////////////
 ///////////GLOBAL_VARIABLES/////////
-      var _canvas;
-      var _gl;
-      var _linePositionBuffer;
-      var _lineCoordinates;
-      var _shaderTool;
-      var _mvMatrix = mat4.create();
-      var _pMatrix = mat4.create();
-////////////////////////////////////      
+	  var _canvas;
+	  var _gl;
+	  var _linePositionBuffer;
+	  var _lineCoordinates;
+	  var _shaderTool;
+	  var _mvMatrix = mat4.create();
+	  var _pMatrix = mat4.create();
 ////////////////////////////////////
-     
-      
-      
-      
-      
+////////////////////////////////////
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////FUNCTIONS START/////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      
-	// start function, called when body onload    
+
+	// start function, called when body onload
 	function js_init() {
 		_canvas = document.getElementById("Rotating3D");			//gets parameters of canvas from it's initialization
-		  
-		    
+
+
 		initWebGL();      // Initialize the _gl context
-		
+
 		// Only continue if WebGL is available and working
-		glTest();     
-		
+		glTest();
+
 		window.onresize = windowResize;
 		windowResize();
 //		initWebGL();
 		initShaders();
 		initBuffers();
-		
+
 	}
-       
+
 	//Attempts to write canvas or warns the user of browser incompatability
 	function initWebGL() {
 		_gl = null;
@@ -75,19 +75,19 @@
 		{
 			_gl = _canvas.getContext("webgl") ||  _canvas.getContext("experimental-webgl");
 		}
-		    	
-		catch(e) 
+
+		catch(e)
 		{
 		}
-		    
+
 		// If it doesn't have a _gl context, give up now
-		        
-		if (!_gl) 
+
+		if (!_gl)
 		{
 			alert("Unable to initialize WebGL. Your browser may not support it.");
 		}
 	}
-          
+
 	//called by init function to resize canvas
 	function windowResize() {
 		Debug.log("windowResize = working " + window.innerWidth + " " + window.innerHeight);
@@ -95,9 +95,9 @@
 		_canvas.height = window.innerHeight;
 		glTest();
 	}
-      
+
 	function glTest() {
-		if (_gl) 
+		if (_gl)
 		{
 			_gl.clearColor(0.0, 0.0, 0.0, 1.0);  // set black as background
 			_gl.clearDepth(1.0);                 // Clear everything
@@ -105,17 +105,17 @@
 			_gl.depthFunc(_gl.LEQUAL);            // Near things obscure far things
 			_gl.viewport(0, 0, _canvas.width, _canvas.height);
 		}
-	} 
+	}
 	//loads the shaders
 	function initShaders() {
 		var fragmentShader = getShaders("shader-fs");		//creates fragment shader
 		var vertexShader = getShaders("shader-vs")			//creates vertex shader
-		
+
 		_shaderTool = _gl.createProgram();						//creates WebGL program called _shaderTool
 		_gl.attachShader(_shaderTool, vertexShader);				//associates vertexShader with _shaderTool
 		_gl.attachShader(_shaderTool, fragmentShader);			//associates fragmentShader with _shaderTool
 		_gl.linkProgram(_shaderTool);							//links the program so when _shaderTool is called, vertexShader & fragmentShader are called
-		
+
 			if (!_gl.getProgramParameter(_shaderTool, _gl.LINK_STATUS)){
 				alert("Could not start shaders")
 				Debug.log("function initShaders = could not initalize shaders");
@@ -123,24 +123,24 @@
 		_gl.useProgram(_shaderTool);
 		_shaderTool.vertexPositionAttribute = _gl.getAttribLocation(_shaderTool, "aVertexPosition"); //gets reference to attribute. used in function drawScene
 		_gl.enableVertexAttribArray(_shaderTool.vertexPositionAttribute);
-		
-        _shaderTool.pMatrixUniform = _gl.getUniformLocation(_shaderTool, "uPMatrix");
-        _shaderTool.mvMatrixUniform = _gl.getUniformLocation(_shaderTool, "uMVMatrix");
+
+		_shaderTool.pMatrixUniform = _gl.getUniformLocation(_shaderTool, "uPMatrix");
+		_shaderTool.mvMatrixUniform = _gl.getUniformLocation(_shaderTool, "uMVMatrix");
 	}
 
 
-    function setMatrixUniforms() {
-        _gl.uniformMatrix4fv(_shaderTool.pMatrixUniform, false, _pMatrix);
-        _gl.uniformMatrix4fv(_shaderTool.mvMatrixUniform, false, _mvMatrix);
-    }	
-	
+	function setMatrixUniforms() {
+		_gl.uniformMatrix4fv(_shaderTool.pMatrixUniform, false, _pMatrix);
+		_gl.uniformMatrix4fv(_shaderTool.mvMatrixUniform, false, _mvMatrix);
+	}
+
 	//	apply shaders to HTML document
 	//	fragment shader - determine color of each pixel
-	//	vertex shader - determines position and shape of each vertex		
+	//	vertex shader - determines position and shape of each vertex
 	//	determines type of shader from source code (fragment | vertex)
 	//	if the shader-script is good then _gl.createShader
 	//grabs specific shader and sends it to caller
-	function getShaders(id) {        
+	function getShaders(id) {
 		var shaderScript = document.getElementById(id);			//looks for an element in page that has an ID that matches a parameter (shaderScript)
 		if (!shaderScript){
 			return null;
@@ -151,7 +151,7 @@
 //			if (k.nodeType == 3)
 //				string += k.textContent;
 //			k = k.nextSibling;
-//			
+//
 //		}
 
 		//pulls out the context of the parameter shaderScript and then converts it and passes it out to a usable WebGL context
@@ -164,19 +164,19 @@
 			return null;
 		}
 
-	      _gl.shaderSource(shader, string);
-	      _gl.compileShader(shader);
+		  _gl.shaderSource(shader, string);
+		  _gl.compileShader(shader);
 
-	      if (!_gl.getShaderParameter(shader, _gl.COMPILE_STATUS)) {
-	          alert(_gl.getShaderInfoLog(shader));
-	          return null;
-	      }
+		  if (!_gl.getShaderParameter(shader, _gl.COMPILE_STATUS)) {
+			  alert(_gl.getShaderInfoLog(shader));
+			  return null;
+		  }
 
-	      return shader;
-	      Debug.log("function initShaders = called and working")
-		
+		  return shader;
+		  Debug.log("function initShaders = called and working")
+
 	}
-	
+
 
 
 	//creates buffer that contains the vertices of said shape
@@ -186,57 +186,57 @@
 		drawLine(2, 2, 2, -2, -2, 2);
 		Debug.log("function initBuffers = called & working");
 	}
-	
+
 	//collects data about a line made up of two points: (a, b, c) & (d, e, f)
 	//stores data in a Buffer
 	function drawLine(a, b, c, d, e, f){
-        var vertices = [
-         a,	b,	c,
-         d,	e,	f,
-         ];
+		var vertices = [
+		 a,	b,	c,
+		 d,	e,	f,
+		 ];
 
-	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(_lineCoordinates), _gl.STATIC_DRAW);
-	    _linePositionBuffer.itemSize = 3;
+		_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(_lineCoordinates), _gl.STATIC_DRAW);
+		_linePositionBuffer.itemSize = 3;
 		_linePositionBuffer.numItems = 2;
-        
+
 		mat4.identity(_mvMatrix);
 
-        mat4.translate(_mvMatrix, [-1.5, 0.0, -7.0]);	
+		mat4.translate(_mvMatrix, [-1.5, 0.0, -7.0]);
 		_gl.bindBuffer(_gl.ARRAY_BUFFER, _linePositionBuffer);
 		_gl.vertexAttribPointer(_shaderTool.vertexPositionAttribute, _linePositionBuffer.itemsize, _gl.FLOAT, false, 0, 0); //calls _gl.bindBuffer to specifiy to use _linePositionBuffer and tells WebGL that these are coordinates
-		setMatrixUniforms();		
+		setMatrixUniforms();
 		_gl.drawArrays(_gl.LINES, 0, _linePositionBuffer.numItems)		//draw the arrays mentioned above and start with the 0th and end with the numItems'th
 		Debug.log("function drawLine = called & working");
 	}
-	
-	
+
+
 	//clears the scene to be rendered
 	function setupScene(){
 		_gl.viewport(0, 0, _gl.viewportWidth, _gl.viewportHeight)								//tells WebGL about the canvas in order to draw
 		_gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT); 								//clears the canvas before drawing so past points are repeated
 		mat4.perspective(45, _gl.viewportWidth / _gl.viewportHeight, 0.1, 100.0, _pMatrix);	//adds perspective (45 degree field of view) Tells WebGL to not display anything   0.1>units>100.0
 		Debug.log("function setupScene = called & working");
-		
+
 	}
-		
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////FUNCTIONS END////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    </script>
+	</script>
   </head>
-	
+
 	<style type="text/css">
-    canvas {
+	canvas {
 		position:absolute;
 		left:0;
 		top:0;
 		border: none;
-    	background-color: black;
-    }
+		background-color: black;
+	}
 	</style>
-	
+
 	<body onload="js_init()">
-    <canvas id="Rotating3D">
+	<canvas id="Rotating3D">
 			Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
 		</canvas>
 	</body>

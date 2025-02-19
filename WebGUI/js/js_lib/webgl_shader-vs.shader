@@ -1,6 +1,6 @@
-	
+
 	//vs shader used by webgl
-	
+
 	attribute vec3 aVertexPosition;
 	attribute vec4 aVertexColor;
 

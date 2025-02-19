@@ -4,37 +4,37 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
 
-	//functions:			
+	//functions:
 		//init()
-		//paint() 
+		//paint()
 		//extractGETParameters()
 		//initIterateData()
-    	//		localCompleteInit()
-    	//		localGetGroups()	
-    	//		localGetNamesOfFSMs()
+		//		localCompleteInit()
+		//		localGetGroups()
+		//		localGetNamesOfFSMs()
 		//getIterationPlans(responseHandler)
-	
+
 		//createTopPaneContent()
 		//createBottomPaneContent()
 		//updateIterationPlanContent()
-	
+
 			//Plan Editing:
-		//createEmptyIterateGroup()			
+		//createEmptyIterateGroup()
 		//createIterationPlan(useTargetPlanName,useCommandsFromGUI)
-		//deleteIterationPlan()        	
+		//deleteIterationPlan()
 		//addCommand(type,params)
 		//deleteCommand(i,noPrompt,noDraw)
 		//savePlanCommandSequence(plan,commands,respsonseHandler)
-    
-    		//Dialogs for Plan Editing:
-    	//showCommandDialog(insertIndex,modifyExisting)
-        //	localShowCommandDialog()
+
+			//Dialogs for Plan Editing:
+		//showCommandDialog(insertIndex,modifyExisting)
+		//	localShowCommandDialog()
 		//	localShowParamControls(commandKey)
 		//popUpParamSystemAliasOnChange(value)
-    			//for targets:
+				//for targets:
 			//showParamTargetWizDialog(paramIndex)
 			//	localClearTargets()
-			//	localExtractTargets() 
+			//	localExtractTargets()
 			//	localFeCheckboxChanged(event)
 			//	localFeCheckboxHandler(event,el)
 			//		localExtractTargetTree(tree)
@@ -42,49 +42,49 @@
 			//targetWizParentMultiSelectHandler(sel)
 			//targetWizRecordMultiSelectHandler(sel)
 				//for path to fields
-    		//showParamPathToFieldWizDialog(paramIndex)
-    	//discardPlanChangesPrompt()
-	
+			//showParamPathToFieldWizDialog(paramIndex)
+		//discardPlanChangesPrompt()
+
 			//Plan Control:
 		//startTargetIterationPlan
 		//haltTargetIterationPlan
 		//pauseTargetIterationPlan
-		
+
 			//Helpers:
-		//saveModifiedTables(successMsg,failureMsg)        	
-	
+		//saveModifiedTables(successMsg,failureMsg)
+
 			//Display:
-        //drawIterationPlan(plan)
-        //  localExtractTree(tree)
-        //  localDrawIterationPlan()        	
-    	//		localCreateSaveButton()
-    	//handlePlanOverlayMouseMove(addIndex,event)
-    	//handlePlanNameMouseMove(deleteIndex,event)
-    	//handlePlanNameDrag(dragIndex,event)
-    	//handlePlanNameDragOver(dragIndex,event)
-    	//handlePlanNameDrop(dragIndex,event)
-    	//handlePlanNameDragEnd(dragIndex,event)
+		//drawIterationPlan(plan)
+		//  localExtractTree(tree)
+		//  localDrawIterationPlan()
+		//		localCreateSaveButton()
+		//handlePlanOverlayMouseMove(addIndex,event)
+		//handlePlanNameMouseMove(deleteIndex,event)
+		//handlePlanNameDrag(dragIndex,event)
+		//handlePlanNameDragOver(dragIndex,event)
+		//handlePlanNameDrop(dragIndex,event)
+		//handlePlanNameDragEnd(dragIndex,event)
 		//handlePlanParamsMouseMove(i,event)
-    	//updateIterateStatus()	
-    	//bodyMouseMoveHandler()
-    	//htmlOpenDiv(idStr,classStr,styleStr,mouseupStr,mousemoveStr,titleStr,mousedownStr,dragStr,dragendStr)
-    	//DesktopContent.htmlOpen(tag,attObj,innerHTML,closeTag)
+		//updateIterateStatus()
+		//bodyMouseMoveHandler()
+		//htmlOpenDiv(idStr,classStr,styleStr,mouseupStr,mousemoveStr,titleStr,mousedownStr,dragStr,dragendStr)
+		//DesktopContent.htmlOpen(tag,attObj,innerHTML,closeTag)
 		//DesktopContent.htmlClearDiv()
-	
+
 			//Input Handlers:
-		//handleMouseOver(type,id) 
-		//handleEndMouseOver() 
-		//handlePlanSelect() 
+		//handleMouseOver(type,id)
+		//handleEndMouseOver()
+		//handlePlanSelect()
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
 </script>
 <head>
-	
+
 	<title>Iterator</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
-		
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationGUI.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
 
@@ -92,17 +92,17 @@
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
-	<style type="text/css">			
-		
+	<style type="text/css">
+
 		body {
-			/*overflow: hidden; /* scrolling only happens in left and right panes */			
+			/*overflow: hidden; /* scrolling only happens in left and right panes */
 		}
 
 		/* make buttons have a hand cursor */
 		input[type="button"], button {
 			cursor: pointer;
 		}
-		
+
 		.pane {
 			border: 0;
 			position: absolute;
@@ -112,7 +112,7 @@
 			overflow-y: auto;
 			overflow-x: hidden;
 		}
-		
+
 		#bottomPane {
 			background-color : rgb(241, 231, 231);
 			overflow: auto;
@@ -122,112 +122,112 @@
 					rgba(200, 200, 200,0.6) 0 .1em 3px,
 					rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 					rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-			border-radius: 3px;	
+			border-radius: 3px;
 		}
-		
+
 		/*
 		<div class="arrow-right"></div>
 		.arrow-right {
-		  width: 0; 
-		  height: 0; 
+		  width: 0;
+		  height: 0;
 		  border-top: 60px solid transparent;
 		  border-bottom: 60px solid transparent;
-		  
+
 		  border-left: 60px solid green;
 		}
 
 		<div class="container">
-		    <div class="triangle"></div>
+			<div class="triangle"></div>
 		</div>
 		.container {
-		    width: 200px;
-		    height: 200px;
-		    position: relative;
-		    border-top: 4px solid #e74c3c;
+			width: 200px;
+			height: 200px;
+			position: relative;
+			border-top: 4px solid #e74c3c;
 		}
 
 		.triangle {
-		    position: absolute;
-		    margin: auto;
-		    top: -70px;
-		    left: 0;
-		    right: 0;
-		    width: 137px;
-		    height: 137px;
-		    transform: rotate(45deg);
-		    -webkit-transform: rotate(45deg);
-		    -moz-transform: rotate(45deg);
-		    -o-transform: rotate(45deg);
-		    -ms-transform: rotate(45deg);
-		    border-right: 4px solid #e74c3c;
-		    border-bottom: 4px solid #e74c3c;
+			position: absolute;
+			margin: auto;
+			top: -70px;
+			left: 0;
+			right: 0;
+			width: 137px;
+			height: 137px;
+			transform: rotate(45deg);
+			-webkit-transform: rotate(45deg);
+			-moz-transform: rotate(45deg);
+			-o-transform: rotate(45deg);
+			-ms-transform: rotate(45deg);
+			border-right: 4px solid #e74c3c;
+			border-bottom: 4px solid #e74c3c;
 		}*/
 
 		#topPane-targetPlan div { float: left; }
-	   
-		#topPane-targetPlan { 
-	    	float: 				left; 
-	    	width: 				246px;
-	        margin: 			-1px 0 -6px 0;
-	        white-space:		nowrap;
+
+		#topPane-targetPlan {
+			float: 				left;
+			width: 				246px;
+			margin: 			-1px 0 -6px 0;
+			white-space:		nowrap;
 		}
-		
+
 		#topPane-controls-playButton {
-			width:				0; 
-			height: 			0; 
+			width:				0;
+			height: 			0;
 			border-top: 		15px solid transparent;
-			border-bottom: 		15px solid transparent;			  
-			border-left: 		25px solid green;			  
+			border-bottom: 		15px solid transparent;
+			border-left: 		25px solid green;
 		}
-		#topPane-controls-playButton:hover {	
-		    border-top: 		20px solid transparent;
-		    border-bottom: 		20px solid transparent;
-		    border-left: 		32px solid rgb(83, 191, 83);
-		    margin: 			-5px -5px 0 15px;
+		#topPane-controls-playButton:hover {
+			border-top: 		20px solid transparent;
+			border-bottom: 		20px solid transparent;
+			border-left: 		32px solid rgb(83, 191, 83);
+			margin: 			-5px -5px 0 15px;
 		}
 
 		#topPane-controls-pauseButton {
-			  width: 			6px; 
-			  height: 			24px;		
+			  width: 			6px;
+			  height: 			24px;
 			  margin-top: 		3px;
-			  border-right: 	9px solid rgb(13, 13, 148);			  
-			  border-left: 		9px solid rgb(13, 13, 148);			  
+			  border-right: 	9px solid rgb(13, 13, 148);
+			  border-left: 		9px solid rgb(13, 13, 148);
 		}
-		#topPane-controls-pauseButton:hover {	
+		#topPane-controls-pauseButton:hover {
 			height: 			32px;
 			width: 				6px;
-			border-right: 		11px solid rgb(79, 166, 255);			  
+			border-right: 		11px solid rgb(79, 166, 255);
 			border-left: 		11px solid rgb(79, 166, 255);
 			margin: 			-1px -2px 0 15px;
 		}
-		
+
 		#topPane-controls-stopButton {
-			width: 				24px; 
-			height: 			24px;	
-			margin-top: 		3px;			  
+			width: 				24px;
+			height: 			24px;
+			margin-top: 		3px;
 			background-color: 	rgb(218, 5, 5);
 		}
-		#topPane-controls-stopButton:hover {	
+		#topPane-controls-stopButton:hover {
 			width: 				32px;
 			height: 			32px;
-		  	background-color: 	rgb(255, 59, 0);	
-			margin: 			-1px -4px 0 13px;	
+			background-color: 	rgb(255, 59, 0);
+			margin: 			-1px -4px 0 13px;
 		}
-			  
+
 		.topPane-controls-button {
 			cursor:				pointer;
 			float: 				left;
 			margin-left:		17px;
 		}
-		
+
 		.topPane-fieldName {
-			font-weight: 		bold; 
+			font-weight: 		bold;
 			color: 				rgb(127, 48, 48);
 		}
-		
+
 		#topPane-status {
 			float: 				left;
-			margin: 			3px 0 -6px 26px;			  
+			margin: 			3px 0 -6px 26px;
 			text-align:			center;
 			width:				160px;
 		}
@@ -246,17 +246,17 @@
 			font-weight: bold;
 			color: rgb(15, 152, 76);
 		}
-		
+
 		#recordAddDiv {
-	    	margin: -2px 16px -10px 0;
+			margin: -2px 16px -10px 0;
 			float: left;
 		}
 		#recordDeleteDiv {
 			margin: 4px 0 0 0;
 			float: left;
 		}
-		
-		.treeNode-deleteIcon {			
+
+		.treeNode-deleteIcon {
 			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 				16px;
 			height: 			20px;
@@ -268,7 +268,7 @@
 			cursor: 			pointer;
 		}
 
-		.preloadImage {			
+		.preloadImage {
 			width: 				24px;
 			height: 			20px;
 			position:			absolute;
@@ -282,43 +282,43 @@
 		#planSelector {
 			margin: 20px 0 0 20px;
 		}
-				
+
 		#planSelectDiv {
 			float: left;
 			margin-right: 20px;
 		}
-		
+
 		#planSelect {
 			width: 210px;
 		}
-		
+
 		select { /*all dropdown boxes*/
 			height: 30px;
 		}
-		
-		/* =============== end plan selector ================ */		
-		
+
+		/* =============== end plan selector ================ */
+
 
 		/* =============== start plan detail ================ */
-		
+
 		#planDetail {
 			margin:				10px 10px 10px 0;
-		    padding-left: 		10px;
+			padding-left: 		10px;
 			/*overflow-x: 		hidden;
-			overflow-y: 		visible;*/			
+			overflow-y: 		visible;*/
 		}
-		
+
 		#planDetail div {
 			outline: 			none; /* to stop firefox selection*/
 			-webkit-user-select:none; /* prevent selection*/
 			-moz-user-select: 	none;
 			user-select:		none;
 		}
-			
+
 		#plan-planName {
 			margin-bottom: 		15px;
 		}
-		
+
 		.plan-depthBar {
 			padding-left: 		10px;
 			border-left: 		20px solid rgb(218, 194, 194);
@@ -329,14 +329,14 @@
 		.plan-command {
 			height:				21px;
 		}
-		
+
 		.plan-command-overlay {
 			position:			absolute;
 			height:				15px;
-			width:				100%;			
-			left: 				-30px;			
+			width:				100%;
+			left: 				-30px;
 		}
-		
+
 		.plan-command-upOverlay {
 			top: 				-5px;
 			/*background-color: rgba(255, 0, 0, 0.2);*/
@@ -345,7 +345,7 @@
 			top: 				10px;
 			/*background-color: rgba(0, 0, 255, 0.2);*/
 		}
-		
+
 		.plan-command-bounceBall-container {
 			position:			relative;
 			display:			none;
@@ -358,7 +358,7 @@
 			border-radius: 		18px;
 			height: 			18px;
 			width:				18px;
-		    z-index:			199; 	/* to place on top of names in loops */
+			z-index:			199; 	/* to place on top of names in loops */
 
 			font-size: 			12px;
 			font-weight: 		bold;
@@ -368,28 +368,28 @@
 			position: 			absolute;
 			text-align:			center;
 			left:				0;
-			top:				0;		
+			top:				0;
 			width:				18px;
 		}
 		.plan-command-bounceBall-connector {
-			position: 			absolute;			
-			height:				3px;			
+			position: 			absolute;
+			height:				3px;
 			top: 				9px;
 			background-color: 	rgb(48, 63, 109);
 			z-index:			198;
 		}
 		.plan-command-bounceBall-vconnector {
-			position: 			absolute;			
+			position: 			absolute;
 			width:				3px;
-			height:				10px;	
+			height:				10px;
 			left: 				9px;
 			top:				16px;
 			background-color: 	rgb(48, 63, 109);
 			z-index:			198;
 		}
 		.plan-command-bounceBall-status {
-			position: 			absolute;	
-			padding:			3px;	
+			position: 			absolute;
+			padding:			3px;
 			left: 				9px;
 			top:				22px;
 			background-color: 	rgb(48, 63, 109);
@@ -403,16 +403,16 @@
 		}
 
 		.plan-command-addCommand {
-		    display: 			block;
-		    width: 				100%;
-		    border-bottom:		1px solid rgb(218, 194, 194);
-		    height: 			1px;
-		    position: 			absolute;
-		    z-index:			200; 	/* to place on top of names in loops */
-		    top: 				0px;
-		    left: 				-30px;
+			display: 			block;
+			width: 				100%;
+			border-bottom:		1px solid rgb(218, 194, 194);
+			height: 			1px;
+			position: 			absolute;
+			z-index:			200; 	/* to place on top of names in loops */
+			top: 				0px;
+			left: 				-30px;
 		}
-		
+
 		.plan-command-addCommand-button {
 			position: 			absolute;
 			top: 				-16px; /* -16 + 21 */
@@ -428,77 +428,77 @@
 		}
 		.plan-command-addCommand-button:hover {
 			text-decoration: 	none;
-			cursor: 			pointer;	
+			cursor: 			pointer;
 		}
 
 		.plan-command-addCommand-button {
-		    background-color: 	rgb(195, 230, 193);			
+			background-color: 	rgb(195, 230, 193);
 		}
 		.plan-command-addCommand-button:hover {
-		    background-color: 	rgb(215, 255, 213);			
+			background-color: 	rgb(215, 255, 213);
 		}
 
 		.plan-command-name {
-			float: 				left;		
+			float: 				left;
 			position: 			relative;
-		    z-index: 			100;		/* to keep on top and hoverable */	
-		    cursor:				pointer; 	/* for dragging */
-		    padding-right:		10px; 		/* to force overlap with delete for mouseover continuity */
-		    width:				260px;		/* to lineup parameters display */
+			z-index: 			100;		/* to keep on top and hoverable */
+			cursor:				pointer; 	/* for dragging */
+			padding-right:		10px; 		/* to force overlap with delete for mouseover continuity */
+			width:				260px;		/* to lineup parameters display */
 		}
-		
+
 		.plan-command-deleteWrapper{
-			float: 				left;	
+			float: 				left;
 			width: 				16px;
 			height: 			20px;
 			border: 			0;
 			position: 			relative;
-		    z-index: 			100;		/* to keep on top and clickable */	
-		    margin-left:		-10px; 		/* to force overlap with name for mouseover continuity */
+			z-index: 			100;		/* to keep on top and clickable */
+			margin-left:		-10px; 		/* to force overlap with name for mouseover continuity */
 		}
-		.plan-command-delete {	
+		.plan-command-delete {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 				16px;
 			height: 			20px;
-			border: 			0;	    
+			border: 			0;
 		}
 		.plan-command-delete:hover {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
 			cursor: 			pointer;
 		}
-		
+
 		.plan-command-params {
 			float: 				left;
 			margin: 			2px 0 0 0;
 			white-space: 		nowrap;
 			width:				5px; 		/* to force on the same line as command name*/
 			position: 			relative;
-		    z-index: 			100;		/* to keep on top and hoverable */
-		    padding-left:		15px;		/* to allow for mouse region to bring-up param display */
+			z-index: 			100;		/* to keep on top and hoverable */
+			padding-left:		15px;		/* to allow for mouse region to bring-up param display */
 		}
-		
+
 		#plan-command-parameterDisplay {
 			position: 			absolute;
 			z-index: 			200;		/* to keep on top of everything */
-			background-color: 	rgb(218, 194, 194);			
-		    border-radius: 		10px 10px 0 0; /* square bottom because scrollbar looks weird otherwise */
-		    padding: 			10px;
-		    border: 			2px solid rgb(160, 102, 102);		
-		    overflow-x:			auto;
-		}		
+			background-color: 	rgb(218, 194, 194);
+			border-radius: 		10px 10px 0 0; /* square bottom because scrollbar looks weird otherwise */
+			padding: 			10px;
+			border: 			2px solid rgb(160, 102, 102);
+			overflow-x:			auto;
+		}
 
 		/* =============== end plan detail ================ */
-		
+
 		#popUp-paramControls {
 			margin-top: 		20px;
 			text-align:			left;
 		}
-		
+
 		input[type="button"] {
 			background-color:	rgb(255,254,254); /* necessary to change bkground color to enable editing other style */
 			padding: 			2px 20px 2px 20px;
 		}
-		
+
 		.popUp-param {
 			width: 				200px;
 			border: 			1px solid rgb(171, 171, 230);
@@ -507,19 +507,19 @@
 			width: 				165px;
 		}
 
-		.popUp-param[type="text"] {					 
+		.popUp-param[type="text"] {
 			height: 			24px;
 			padding-left: 		5px;
 		}
 
 		#popUp-param-systemAliasDetails {
 			border: 			1px solid rgb(191, 187, 187);
-		    padding: 			5px;
-		    margin-top: 		5px;
-		    overflow-x:			auto;
-		    width:				345px;
+			padding: 			5px;
+			margin-top: 		5px;
+			overflow-x:			auto;
+			width:				345px;
 		}
-		
+
 		#popUp-targetDisplayClearButton {
 			padding-left: 1px;
 			width: 18px;
@@ -532,48 +532,48 @@
 			font-weight: bold;
 			border-radius: 11px;
 		}
-		
+
 		#popUp-targetDisplayClearButton:hover {
 			background-color: rgb(247, 204, 161);
 		}
 		#popUp-targetDisplayClearButton:active {
 			background-color: white;
-		}	
-		
-		
+		}
+
+
 	</style>
-	
-	
-	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
-	
-	<script>		
-	
+
+	<script>
+
 		//Iterate desktop icon from:
 		//	http://clipart-library.com/purple-spider-cliparts.html
-	
-		
+
+
 		//	Description of Iterate Functionality/Behavior:
-		//	
+		//
 		//	GET parameters:
 		//		<forceSavingModifiedGroups> = Do not provide user with option in command sequence to use the temporary group for modified groups
 		//		<forceUseOfAliases> = Do not provide user with option in command sequence to use an arbitrary group
 		//		<forceGroupsOnly> = Do not provide user with option in command sequence to use Macros
-		//		
+		//
 		//
 		//	- Requires user to have LOCK
 		//
 		//	- Top Pane:
 		//		* Refresh
 		//		* Iteration Plan: <name> and  > || |_|  controls and "Status: Inactive"
-		//		* when modified, do not show > || |_| controls.. 
+		//		* when modified, do not show > || |_| controls..
 		//			instead show Save and Discard Changes buttons
 		//
 		//	- Bottom Pane:
-		//		* Similar functionality to GUI subset.. in that it edits the 
+		//		* Similar functionality to GUI subset.. in that it edits the
 		//			the currently active Iteration group. (If a user wants to change the active
 		//			Iteration group, they must do so in the Config GUI)
 		//
@@ -583,7 +583,7 @@
 		//				- Configure Configuration Group/System Alias
 		//				- REPEAT_LABEL 0 ( 0 times - when 0 show as END LOOP)
 		//				- In GUI, show END (no representation in table)
-		//					
+		//
 		//		* Create Rows in table that match sequence
 		//
 		//		* Row Types
@@ -593,37 +593,37 @@
 		//			- CHOOSE_STATE_MACHINE <fsm name> #by default ""
 		//			- CONFIGURE_ALIAS <alias name>
 		//			- CONFIGURE_GROUP <group name> <group key>
-		//			- MODIFY_ACTIVE_GROUP <bool:do save new group #else use temporary group> 
+		//			- MODIFY_ACTIVE_GROUP <bool:do save new group #else use temporary group>
 		//				<relative path from FE> <start value> <iteration step size>
-		//				<target Group #which can span multiple FE-Managers or whatever> 
+		//				<target Group #which can span multiple FE-Managers or whatever>
 		//				#note: always must (so that macro things work) have a CONFIGURE_ACTIVE_GROUP after a MODIFY_ACTIVE_GROUP
-		//				#	but can group modifies together and do one CONFIGURE_ACTIVE_GROUP.	
+		//				#	but can group modifies together and do one CONFIGURE_ACTIVE_GROUP.
 		//			- CONFIGURE_ACTIVE_GROUP
 		//			- EXECUTE_MACRO <macro name> <target Group #which can span multiple FE-Managers or whatever>
-		//				<parameter group of name, value, iteration step size to adjust in macro> 
+		//				<parameter group of name, value, iteration step size to adjust in macro>
 		//				#note: must be a public macro
 		//			- EXECUTE_FE_MACRO <FE macro name> <target Group #which can span multiple FE-Managers or whatever>
 		//				<parameter group of name, value, iteration step size to adjust in inputs to FE macro>
-		//			- RUN	<dump type> <bool: wait for all FEs to complete running thread else use time> 
-		//				<seconds for run>	
-		//			- START - execute transition 
+		//			- RUN	<dump type> <bool: wait for all FEs to complete running thread else use time>
+		//				<seconds for run>
+		//			- START - execute transition
 		//			- STOP - execute transition
 		//			- PAUSE - execute transition
 		//			- RESUME - execute transition
 		//			- HALT - execute transition
 		//
-		//		
-		//	- Save functionality should be same as saving tree	
+		//
+		//	- Save functionality should be same as saving tree
 		//		* If admin, could give options to target a certain system alias.. Etc.
 		//		* Else assume saving to currently active groups
 		//
 		//
 		//	- Interactions with Server
 		//		* App must have access to Configuration GUI Supervisor, Gateway Supervisor,
-		//				MacroMaker Supervisor (Macro Maker can run FE Macros) 
+		//				MacroMaker Supervisor (Macro Maker can run FE Macros)
 		//			-- this means primary urn to GUI Supervisor, secondary to Gateway Supervisor,
 		//				and special handshaking (from Gateway Supervisor) with MacroMaker Supervisors
-		//		
+		//
 		//		* Requests:
 		//				= from Configuration GUI Supervisor =
 		//			-- Get Iteration Plan Names
@@ -635,8 +635,8 @@
 		//			-- Pause Iteration Plan
 		//			-- Stop/Reset Iteration Plan
 		//			-- Get Active Iteration Plan Status (status could be: inactive, running, paused)
-		
-		//	Gateway Server Iterator 
+
+		//	Gateway Server Iterator
 		//		- Iterator to manage iterating -- separate thread
 		//		- Commands:
 		//			- stateMachineXgiHandler/PlayIterationPlan:
@@ -650,23 +650,23 @@
 		//				- returns status (status could be: inactive, running, paused)
 		//					and FSM state and isTransitioning,
 		//					and which iteration plan command.
-		//		
-		
-	
-	
-	
+		//
+
+
+
+
 		//
 		//	- Iteration Plan Configuration Tree
 		//		* Iterate
 		//			- records of 'Iteration Plans'
 		//		|* Iteration Plans
-		//			- group of 'Iteration Plan Commands' defining an 'Iteration Plan Sequence' 
+		//			- group of 'Iteration Plan Commands' defining an 'Iteration Plan Sequence'
 		//		||* Specific Command-Type (a table for each type)
 		//			- definition of parameters associated with the command type
 		//		|||* Iteration Targets
 		//			- group of links to UIDs to be targeted
-		
-		
+
+
 		var _topPane, _bottomPane;
 		var _updateTimer = 0;
 		var _UPDATE_TIMER_PERIOD = 1000; //ms
@@ -675,32 +675,32 @@
 		var _need_plan_complete = false;
 		var _need_plan_halted = false;
 		var _need_plan_paused = false;
-		
+
 		var _eventListenersCreated = false;
-		
+
 		//global vars for GET params
 		var _forceSavingModifiedGroups;// = Do not provide user with option to use the temporary group for modified groups
 		var _forceUseOfAliases;// = Do not provide user with option to use an arbitrary group
 		var _forceGroupsOnly;//= Do not provide user with option to use Macros
-		
-		var _ITERATE_BASE_PATH = "IterateTable";	
-		var _PLAN_BASE_PATH = "IterationPlanTable";	
+
+		var _ITERATE_BASE_PATH = "IterateTable";
+		var _PLAN_BASE_PATH = "IterationPlanTable";
 		var _recordsAlias = "Iteration Plan";
-		
+
 		//global vars for iteration plan records
 		var _planUIDs; //array of UIDs in the currently active Iterate group
 		var _targetPlan = "";
 		var _setActiveIterationPlan = "";
-				
+
 		//global vars for saving tables
 		var _modifiedTables;
-		
+
 		//global vars for editing plans
 		var _tableGroupAliases = []; //array of objects:{alias,name,key,groupComment,aliasComment}, only configuration groups
 		var _fsmNames = [];	//array of names
 		var _tableGroups = []; //array of objects:{name,key,groupComment}, only configuration groups
-        var _commands = [];
-        
+		var _commands = [];
+
 		var _COMMAND_TYPES = {}; //for now, keys are same as value, but value is (intended to be) display name
 		_COMMAND_TYPES.BEGIN_LABEL 				= "BEGIN_LABEL";
 		_COMMAND_TYPES.CHOOSE_FSM 				= "CHOOSE_FSM";
@@ -719,7 +719,7 @@
 		_COMMAND_TYPES.PAUSE 					= "PAUSE";
 		_COMMAND_TYPES.RESUME 					= "RESUME";
 		_COMMAND_TYPES.HALT 					= "HALT";
-		
+
 		var _COMMAND_PARAM_FIELDS = {}; //for now, keys are same as value, but value is (intended to be) display name
 		_COMMAND_PARAM_FIELDS.NameOfStateMachine 				= "NameOfStateMachine";
 		_COMMAND_PARAM_FIELDS.SystemAlias 						= "SystemAlias";
@@ -731,8 +731,8 @@
 		_COMMAND_PARAM_FIELDS.RelativePathToField				= "RelativePathToField";
 		_COMMAND_PARAM_FIELDS.LinkToMacroDimensions				= "LinkToMacroDimensionalLoopTable";
 		_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile			= "EnableSavingOutputsToFile";
-		
-		var _COMMAND_PARAMS = {}; //NOTE!!! Fields must be in same order as the tables (in the future could ask server for this order, or not) 
+
+		var _COMMAND_PARAMS = {}; //NOTE!!! Fields must be in same order as the tables (in the future could ask server for this order, or not)
 		_COMMAND_PARAMS[_COMMAND_TYPES.BEGIN_LABEL] 			= ["Label"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.CHOOSE_FSM] 				= [_COMMAND_PARAM_FIELDS.NameOfStateMachine];
 		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_ACTIVE_GROUP] 	= [];
@@ -745,40 +745,40 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
-        _COMMAND_PARAMS[_COMMAND_TYPES.START] 	= [];
+		_COMMAND_PARAMS[_COMMAND_TYPES.START] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.STOP] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.PAUSE] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RESUME] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.HALT] 	= [];
-        
-        var _DEBUG_WOUT_SERVER = 0;
-        
-        var _shownAddCommandIndex = -1;
-        var _shownDeleteCommandIndex = -1;
-        var _shownDragOverCommandIndex = -1;
-        var _planIsModified = false;
-        var _popUpParamsModified = false
-        
-        var _cmdTargetObj = {"tables":[],"uids":[]}; //array of target tables/UIDs
-        var _cmdTargetWizParentTable = "";
-        var _cmdTargetParentSelArr = [];
-		
-	
+
+		var _DEBUG_WOUT_SERVER = 0;
+
+		var _shownAddCommandIndex = -1;
+		var _shownDeleteCommandIndex = -1;
+		var _shownDragOverCommandIndex = -1;
+		var _planIsModified = false;
+		var _popUpParamsModified = false
+
+		var _cmdTargetObj = {"tables":[],"uids":[]}; //array of target tables/UIDs
+		var _cmdTargetWizParentTable = "";
+		var _cmdTargetParentSelArr = [];
+
+
 		var _HEADER_ERROR_BGCLR 		= "rgb(226, 205, 197)";
 		var _HEADER_PAUSED_BGCLR 		= "rgb(197, 205, 226)";
 		var _HEADER_RUNNING_BGCLR 		= "rgb(177, 206, 178)";
 		var _HEADER_INACTIVE_BGCLR 		= "transparent";
-		
+
 		var _FE_TABLE 					= "FEInterfaceTable";
 		var _FE_SUPERVISOR_TABLE		= "FESupervisorTable";
 		var _MACRO_DIM_LOOP_TABLE		= "IterationCommandMacroDimensionalLoopTable";
-        
+
 
 		//=====================================================================================
 		//init ~~
 		//	init called once body has loaded
-		function init() 
-		{		
+		function init()
+		{
 			var windowTooltip = "Welcome to the Iterate GUI. Here you can create 'Iteration Plans' that can facilitate " +
 				"calibrations or complex run plans. \n\n" +
 
@@ -802,12 +802,12 @@
 				"- <b>Bottom Pane</b>\n" +
 				"<INDENT> The 'Bottom Pane' is for viewing and modifying the selected Iteration Plan. " +
 				"</INDENT>" +
-				"</INDENT>"	;						
+				"</INDENT>"	;
 			Debug.log("Iterate init ");
 			DesktopContent.tooltip("Iterate Introduction",
 				windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
-			
+
 			//extract get parameters
 			if(!extractGETParameters())
 			{
@@ -817,21 +817,21 @@
 			}
 
 
-			//get subset record uids and 
+			//get subset record uids and
 			//	calls paint() and adds resize listener when done
 			initIterateData();
-			
+
 
 			//be careful to not override the window.onmousemove DesktopContent action
 			DesktopContent.mouseMoveSubscriber(bodyMouseMoveHandler);
-						
+
 		} //end init()
-		
+
 		//=====================================================================================
 		//paint ~~
 		//	positiong left and right panes based on window size
-		function paint() 
-		{	
+		function paint()
+		{
 			var w = DesktopContent.getWindowWidth();
 			var h = DesktopContent.getWindowHeight();
 			//Debug.log("paint w,h=" + w + "," +h);
@@ -842,55 +842,55 @@
 				w = MIN_W;
 			if(h < MIN_H)
 				h = MIN_H;
-			
+
 			Debug.log("paint w,h=" + w + "," +h);
 
 			var TOP_H = 85;//56;
-			var BORDER_SZ = 0;			
+			var BORDER_SZ = 0;
 			var MARGIN = 5;
-			
+
 			if(!_bottomPane && !_topPane)
 			{
 				//first time create elements
 				createTopPaneContent();
 				createBottomPaneContent();
-				
+
 				updateIterationPlanContent();
 			}
 
-			
+
 			var y = MARGIN;
 			var x = MARGIN;
 			w -= 2*MARGIN;
 			h -= 2*MARGIN;
-			
+
 			_topPane.style.left = x + "px";
 			_topPane.style.top = y + "px";
 			_topPane.style.width = (w - 2*BORDER_SZ) + "px";
 			_topPane.style.height = (TOP_H - 2*BORDER_SZ) + "px";
-			
+
 			y += TOP_H + MARGIN;
 			h -= TOP_H + MARGIN;
 
 			//set bottom pane sizes
 			h -= 2*BORDER_SZ + MARGIN;
-			
+
 			_bottomPane.style.left = x + "px";
 			_bottomPane.style.top = y + "px";
 			_bottomPane.style.width = w + "px";
 			_bottomPane.style.height = h + "px";
-						
+
 		}	//end paint()
 
 		//=====================================================================================
 		//updateIterationPlanContent ~~
-		function updateIterationPlanContent() 
-		{	
+		function updateIterationPlanContent()
+		{
 			var el = document.getElementById("planSelector");
-			if(!el) {Debug.log("Error: updateIterationPlanContent null"); return; } 
-			
+			if(!el) {Debug.log("Error: updateIterationPlanContent null"); return; }
+
 			var optionIndex = -1;
-			
+
 			str = "";
 
 			str += "<div id='planSelectDiv'>";
@@ -907,7 +907,7 @@
 					str += "<option value='" + i + "'>";
 					str += _planUIDs[i];	//can display however
 					str += "</option>";
-					
+
 					if(_planUIDs[i] == _targetPlan)
 						optionIndex = i;
 				}
@@ -918,10 +918,10 @@
 			str += "<div id='recordAddDiv' ";
 			if(_planUIDs.length == 0)
 				str += "style='margin: -4px 16px -10px 0;' ";
-			else 
+			else
 				str += "style='margin: -2px 16px -10px 0;' ";
-			str += "'>";			
-			str += "<a class='recordAdd' onclick='createIterationPlan(); return false;' ";			
+			str += "'>";
+			str += "<a class='recordAdd' onclick='createIterationPlan(); return false;' ";
 			str += "title='Create a new " + _recordsAlias + ".'" +
 					">";
 			str += "+";
@@ -931,340 +931,340 @@
 			str += "<div id='recordDeleteDiv' class='treeNode-deleteIcon' ";
 			if(_planUIDs.length == 0) str += "style='display:none' ";
 			str += "onclick='deleteIterationPlan(); return false;' " +
-					"title='Delete the selected " + _recordsAlias + ".'" +					
+					"title='Delete the selected " + _recordsAlias + ".'" +
 					">";
 			str += "</div>";
 
 			el.innerHTML = str;
-			
+
 			//if no target plan and plans exist, load the first one
 			if(_targetPlan == "")
 			{
 				//first time through, updateIterateStatus() should set target plan (before paint() is called)
-				//drawIterationPlan();					
+				//drawIterationPlan();
 			}
 			else
 			{
-				var sel = document.getElementById("planSelect");				
+				var sel = document.getElementById("planSelect");
 
 				if(optionIndex >= 0)
 				{
 					sel.selectedIndex = optionIndex;
 					sel.focus();
 				}
-				
+
 				drawIterationPlan(_targetPlan);
 			}
-			
+
 		} //end updateIterationPlanContent()
-		
+
 
 		//=====================================================================================
 		//discardPlanChangesPrompt ~~
-		function discardPlanChangesPrompt() 
+		function discardPlanChangesPrompt()
 		{
 			drawIterationPlan(_targetPlan);
 		} // end discardPlanChangesPrompt()
-		
+
 		//=====================================================================================
 		//drawIterationPlan ~~
-        //  if plan then request commands from server, otherwise use current _targetPlan and
-        //      existing _commands.
-		function drawIterationPlan(plan) 
+		//  if plan then request commands from server, otherwise use current _targetPlan and
+		//      existing _commands.
+		function drawIterationPlan(plan)
 		{
 			if(plan !== undefined)
-            {
+			{
 				_targetPlan = plan;
-                
+
 				if(!_DEBUG_WOUT_SERVER)
 					ConfigurationAPI.getTree(_ITERATE_BASE_PATH + "/" + plan,
-                                         6, //down through command parameters
+										 6, //down through command parameters
 										 _modifiedTables,
-                                         localExtractTree
-                                         );
-            }
+										 localExtractTree
+										 );
+			}
 			else
 				plan = _targetPlan;
-			
+
 			Debug.log("drawIterationPlan " + plan);
-			
+
 			//load plan and display detail
 			//	get command sequence
-			
-            if(_DEBUG_WOUT_SERVER)
-            {
-                //bypass server request and fake data
-                var children = document.createElement("div");
-                var commands = [];
-                commands.push({ 	//BEGIN_LABEL
-                "type" : _COMMAND_TYPES.BEGIN_LABEL,
-                "param" : {"Label":"Main"},
-                });
-                commands.push({ 	//CHOOSE_FSM
-                "type" : _COMMAND_TYPES.CHOOSE_FSM,
-                "param" : {"NameOfStateMachine":(_fsmNames.length? //use first name, if any exist
-                		_fsmNames[0]
-                        :"")},
-                });
-                commands.push({		//CONFIGURE_ALIAS aliasMap[0]
-                "type" : _COMMAND_TYPES.CONFIGURE_ALIAS,
-                "param" : {"SystemAlias":(_tableGroupAliases.length? //use first alias, if any exist
-                		_tableGroupAliases[0].alias
+
+			if(_DEBUG_WOUT_SERVER)
+			{
+				//bypass server request and fake data
+				var children = document.createElement("div");
+				var commands = [];
+				commands.push({ 	//BEGIN_LABEL
+				"type" : _COMMAND_TYPES.BEGIN_LABEL,
+				"param" : {"Label":"Main"},
+				});
+				commands.push({ 	//CHOOSE_FSM
+				"type" : _COMMAND_TYPES.CHOOSE_FSM,
+				"param" : {"NameOfStateMachine":(_fsmNames.length? //use first name, if any exist
+						_fsmNames[0]
 						:"")},
-                });
-                commands.push({		//RUN 5 minutes
-                "type" : _COMMAND_TYPES.RUN,
-                "param" : {"WaitForAllFrontEndsRunningThread":0,
+				});
+				commands.push({		//CONFIGURE_ALIAS aliasMap[0]
+				"type" : _COMMAND_TYPES.CONFIGURE_ALIAS,
+				"param" : {"SystemAlias":(_tableGroupAliases.length? //use first alias, if any exist
+						_tableGroupAliases[0].alias
+						:"")},
+				});
+				commands.push({		//RUN 5 minutes
+				"type" : _COMMAND_TYPES.RUN,
+				"param" : {"WaitForAllFrontEndsRunningThread":0,
 					"DurationInSeconds": 5*60},
-                });
-                commands.push({ 	//REPEAT_LABEL
-                "type" : _COMMAND_TYPES.REPEAT_LABEL,
-                "param" : {"Label":"Main", "NumberOfRepetitions":0},
-                });
-                
-                _commands = commands;
-                
-                localDrawIterationPlan();
-                return;
-            }
-            else
-                localDrawIterationPlan();
-            	
-            
-            
-            //::::::::::::::::::::::::::::::::::::
-            //localExtractTree ~
-            //	extract tree into the _commands object
-            function localExtractTree(tree)
-            {
-                if(!tree && !_DEBUG_WOUT_SERVER)
-                {
-                    Debug.log("Invalid tree xml object.");
-                    return;
-                }
-                
-                _commands = []; //clear
-                
-                //try for any errors in format
-                try
-                {
-                	var nodes = tree.children;
-                	var nodeChildren;
-                	var commandChildren;
-                	var commandFieldsChildren;
-                	var parameterChildren;
-                	var parameterName;
-                	var targetCSVStr, targetCount;
-                	var targetChildren;
-                	var countCommands = 0;
+				});
+				commands.push({ 	//REPEAT_LABEL
+				"type" : _COMMAND_TYPES.REPEAT_LABEL,
+				"param" : {"Label":"Main", "NumberOfRepetitions":0},
+				});
 
-                	var type,params; //to make command
+				_commands = commands;
 
-                	//for each plan field
-                	//	find link to command group
-                	//		for each command
-                	//			fill command type
-                	//			find link to parameters
-                	//				fill parameters
-                	for(var i=0;i<nodes.length;++i)
-                	{                    
-                		nodeChildren = nodes[i].children;
+				localDrawIterationPlan();
+				return;
+			}
+			else
+				localDrawIterationPlan();
 
-                		if(nodeChildren[0].nodeName != "value")    //asssume this is group link to commands
-                		{
-                			for(var j=0;j<nodeChildren.length;++j)
-                			{
-                				if(nodeChildren[j].nodeName == "node")
-                				{
-                					//found child node -- command UID level                            	
-                					commandChildren = nodeChildren[j].children;
 
-                					for(var k=0;k<commandChildren.length;++k)
-                					{   	
-                						if(commandChildren[k].nodeName == "node")
-                						{
-                							//found child node -- command field
-                							if(commandChildren[k].getAttribute("value") == "CommandType")
-                							{
-                								type = commandChildren[k].children[0].getAttribute("value");
-                								params = [];
-                							}
-                							else if(commandChildren[k].getAttribute("value") == "LinkToCommandTable")
-                							{
-                								parameterChildren = commandChildren[k].children;
 
-                								for(var l=0;l<parameterChildren.length;++l)
-                								{   	
-                									if(parameterChildren[l].nodeName == "node")
-                									{
-                										//found child node -- parameter field
-                										// take as parameter until the comment field is reached
+			//::::::::::::::::::::::::::::::::::::
+			//localExtractTree ~
+			//	extract tree into the _commands object
+			function localExtractTree(tree)
+			{
+				if(!tree && !_DEBUG_WOUT_SERVER)
+				{
+					Debug.log("Invalid tree xml object.");
+					return;
+				}
 
-                										parameterName = parameterChildren[l].getAttribute("value");
-                										if(parameterName == "CommentDescription")
-                											break;
+				_commands = []; //clear
 
-                										Debug.log("parameter name = " + parameterName);
+				//try for any errors in format
+				try
+				{
+					var nodes = tree.children;
+					var nodeChildren;
+					var commandChildren;
+					var commandFieldsChildren;
+					var parameterChildren;
+					var parameterName;
+					var targetCSVStr, targetCount;
+					var targetChildren;
+					var countCommands = 0;
 
-                										if(parameterName == "LinkToTargets")
-                										{
-                											//extract targets
-                											Debug.log("getting targets");
-                											targetCSVStr = "";
+					var type,params; //to make command
 
-                											targetChildren = parameterChildren[l].children;
-                											targetCount = 0;
+					//for each plan field
+					//	find link to command group
+					//		for each command
+					//			fill command type
+					//			find link to parameters
+					//				fill parameters
+					for(var i=0;i<nodes.length;++i)
+					{
+						nodeChildren = nodes[i].children;
 
-                											for(var m=0;m<targetChildren.length;++m)
-                											{   	
-                												if(targetChildren[m].nodeName == "node")
-                												{
-                													if(targetCount++) targetCSVStr += ",";
+						if(nodeChildren[0].nodeName != "value")    //asssume this is group link to commands
+						{
+							for(var j=0;j<nodeChildren.length;++j)
+							{
+								if(nodeChildren[j].nodeName == "node")
+								{
+									//found child node -- command UID level
+									commandChildren = nodeChildren[j].children;
+
+									for(var k=0;k<commandChildren.length;++k)
+									{
+										if(commandChildren[k].nodeName == "node")
+										{
+											//found child node -- command field
+											if(commandChildren[k].getAttribute("value") == "CommandType")
+											{
+												type = commandChildren[k].children[0].getAttribute("value");
+												params = [];
+											}
+											else if(commandChildren[k].getAttribute("value") == "LinkToCommandTable")
+											{
+												parameterChildren = commandChildren[k].children;
+
+												for(var l=0;l<parameterChildren.length;++l)
+												{
+													if(parameterChildren[l].nodeName == "node")
+													{
+														//found child node -- parameter field
+														// take as parameter until the comment field is reached
+
+														parameterName = parameterChildren[l].getAttribute("value");
+														if(parameterName == "CommentDescription")
+															break;
+
+														Debug.log("parameter name = " + parameterName);
+
+														if(parameterName == "LinkToTargets")
+														{
+															//extract targets
+															Debug.log("getting targets");
+															targetCSVStr = "";
+
+															targetChildren = parameterChildren[l].children;
+															targetCount = 0;
+
+															for(var m=0;m<targetChildren.length;++m)
+															{
+																if(targetChildren[m].nodeName == "node")
+																{
+																	if(targetCount++) targetCSVStr += ",";
 
 																	var targetChildrenChildren = targetChildren[m].getElementsByTagName("node");
 
-                													//found target record
-                													//	second record is link
-                													//		first two nodes are uid and table
-                													targetCSVStr += 
+																	//found target record
+																	//	second record is link
+																	//		first two nodes are uid and table
+																	targetCSVStr +=
 																			targetChildrenChildren[1].getElementsByTagName(
-                																	"LinkTableName")[0].getAttribute("value") +
-																					"/" + 
+																					"LinkTableName")[0].getAttribute("value") +
+																					"/" +
 																			targetChildrenChildren[1].getElementsByTagName(
-																					"UID")[0].getAttribute("value");                                                            	
-                												}
-                											} //end target loop
+																					"UID")[0].getAttribute("value");
+																}
+															} //end target loop
 
-                											params.push(targetCSVStr);
-                										}
-                										else if(parameterName == _COMMAND_PARAM_FIELDS.LinkToMacroDimensions )
-                										{
-                											//for execute FEMacro and Macro commands
-                											
-                											//first push table, then groupID value
-                											params.push(parameterChildren[l].children[1].getAttribute("value"));
-                											params.push(parameterChildren[l].children[0].getAttribute("value"));
-                										}
-                										else                                                
-                											params.push(parameterChildren[l].children[0].getAttribute("value"));
+															params.push(targetCSVStr);
+														}
+														else if(parameterName == _COMMAND_PARAM_FIELDS.LinkToMacroDimensions )
+														{
+															//for execute FEMacro and Macro commands
 
-                										Debug.log("parameter value = " + params[params.length-1]);                                                	
-                									}
-                								} //end parameter loop
-                							}
-                						}
+															//first push table, then groupID value
+															params.push(parameterChildren[l].children[1].getAttribute("value"));
+															params.push(parameterChildren[l].children[0].getAttribute("value"));
+														}
+														else
+															params.push(parameterChildren[l].children[0].getAttribute("value"));
 
-                					}
+														Debug.log("parameter value = " + params[params.length-1]);
+													}
+												} //end parameter loop
+											}
+										}
 
-                					//at this point, have command type and params
-                					console.log(type);	
-                					console.log(params); 
-                					addCommand(type,params);
-                				}
-                			}
+									}
 
-                			Debug.log("countCommands = " + _commands.length);
-                		}
-                	}
-                } //end try
-                catch(e)
-                {
-                	Debug.err("Invalid or corrupt iteration plan '" + plan + 
+									//at this point, have command type and params
+									console.log(type);
+									console.log(params);
+									addCommand(type,params);
+								}
+							}
+
+							Debug.log("countCommands = " + _commands.length);
+						}
+					}
+				} //end try
+				catch(e)
+				{
+					Debug.err("Invalid or corrupt iteration plan '" + plan +
 						"' loaded (please notify admins): " + e);
-                	_commands = []; //clear
-                }
-				
-                _planIsModified = false; //because just loaded
-                localDrawIterationPlan();
-                
-            } // end localExtractTree()
-            
-            //::::::::::::::::::::::::::::::::::::
-            //draw based on _commands
-            function localDrawIterationPlan()
-            {
-                if(!_commands)
-                {
-                    Debug.log("Invalid commands object.");
-                    return;
-                }
-                
-                var el = document.getElementById("planDetail");
-                if(!el) {Debug.log("Error: updateIterationPlanContent null"); return; }
-                
-                el.innerHTML = ""; //clear
-                
-                if(!plan || plan == "")
-                	return;                 
-                
-                var str = "";               
-        		
-                //Display Concept:
-                //  Plan name at top left
-                //      Vertical bar extending down inset off left edge of name
-                //      Each Loop
-                //          New vertical bar extending down inset off BEGIN_LABEL command
+					_commands = []; //clear
+				}
 
-                if(_planIsModified)
-                	str += localCreateSaveButton();
-                
-                str += htmlOpenDiv('plan-planName');                	
-                str += "<b>Plan Name:</b> " + plan;
-                str += "</div>";
+				_planIsModified = false; //because just loaded
+				localDrawIterationPlan();
 
-                //show created time
-        		//ConfigurationAPI.getDateString(date)
+			} // end localExtractTree()
 
-                str += DesktopContent.htmlClearDiv();
+			//::::::::::::::::::::::::::::::::::::
+			//draw based on _commands
+			function localDrawIterationPlan()
+			{
+				if(!_commands)
+				{
+					Debug.log("Invalid commands object.");
+					return;
+				}
 
-                var commands = _commands;
-                var depth = 0;
-                var paramKeys;
-                var i,j;
-                var depthLabelStack = [];
-                var isBeginLabel;
-                
-                
-                //make first vertical bar					
-                str += htmlOpenDiv("plan-depthBar-" + depth,
-                		"plan-depthBar",
+				var el = document.getElementById("planDetail");
+				if(!el) {Debug.log("Error: updateIterationPlanContent null"); return; }
+
+				el.innerHTML = ""; //clear
+
+				if(!plan || plan == "")
+					return;
+
+				var str = "";
+
+				//Display Concept:
+				//  Plan name at top left
+				//      Vertical bar extending down inset off left edge of name
+				//      Each Loop
+				//          New vertical bar extending down inset off BEGIN_LABEL command
+
+				if(_planIsModified)
+					str += localCreateSaveButton();
+
+				str += htmlOpenDiv('plan-planName');
+				str += "<b>Plan Name:</b> " + plan;
+				str += "</div>";
+
+				//show created time
+				//ConfigurationAPI.getDateString(date)
+
+				str += DesktopContent.htmlClearDiv();
+
+				var commands = _commands;
+				var depth = 0;
+				var paramKeys;
+				var i,j;
+				var depthLabelStack = [];
+				var isBeginLabel;
+
+
+				//make first vertical bar
+				str += htmlOpenDiv("plan-depthBar-" + depth,
+						"plan-depthBar",
 						0 /*style*/,
-						0 /*mouseup*/,						
-						"event.stopPropagation();"/*mousemove*/);                  
-                {	//start depth 0 span -----------										
-                	for(i=0;i<commands.length;++i)
-                	{
-                		str += DesktopContent.htmlClearDiv();
+						0 /*mouseup*/,
+						"event.stopPropagation();"/*mousemove*/);
+				{	//start depth 0 span -----------
+					for(i=0;i<commands.length;++i)
+					{
+						str += DesktopContent.htmlClearDiv();
 
-                		//get command parameter keys (already verified, hopefully, in extraction from server or creation of commands)
-                		paramKeys = Object.keys(commands[i].param); 
-                		
-                		isBeginLabel = (commands[i].type == _COMMAND_TYPES.BEGIN_LABEL);
-                		if(isBeginLabel)
-                		{
-                			//start new depth bar
-                			++depth
-                			//Debug.log("New depth bar " + depth);
-                			depthLabelStack.push(commands[i].param[paramKeys[0]]);
-                			
-                            str += htmlOpenDiv("plan-depthBar-" + depth,
-                            		"plan-depthBar",
+						//get command parameter keys (already verified, hopefully, in extraction from server or creation of commands)
+						paramKeys = Object.keys(commands[i].param);
+
+						isBeginLabel = (commands[i].type == _COMMAND_TYPES.BEGIN_LABEL);
+						if(isBeginLabel)
+						{
+							//start new depth bar
+							++depth
+							//Debug.log("New depth bar " + depth);
+							depthLabelStack.push(commands[i].param[paramKeys[0]]);
+
+							str += htmlOpenDiv("plan-depthBar-" + depth,
+									"plan-depthBar",
 									0 /*style*/,
-									0 /*mouseup*/,						
-									"event.stopPropagation();"/*mousemove*/);      
-                		}
-                		
-                		//each command should have a half up/down overlay
-                		//	for showing add command +
+									0 /*mouseup*/,
+									"event.stopPropagation();"/*mousemove*/);
+						}
 
-                		str += htmlOpenDiv(	//start i command ----------- 
-                				"plan-command-" + i,
+						//each command should have a half up/down overlay
+						//	for showing add command +
+
+						str += htmlOpenDiv(	//start i command -----------
+								"plan-command-" + i,
 								"plan-command",
-								"position:relative");                  		
+								"position:relative");
 
-                		//command name
-                		str += htmlOpenDiv(
-                				"plan-command-name-" + i,
+						//command name
+						str += htmlOpenDiv(
+								"plan-command-name-" + i,
 								"plan-command-name",
 								0 /*style*/,
 								"showCommandDialog(" + i + ",true /*modifyExisting*/);" /*mouseup*/,
@@ -1273,115 +1273,115 @@
 								"Click to edit this command, or Drag to insert this command at a new position in the Iteration Plan." /*title*/,
 								0 /*mousedown*/,
 								"handlePlanNameDrag(" + i + ",event)" /*drag*/,
-								"handlePlanNameDragOver(" + i + ",event)" /*dragover*/,								
+								"handlePlanNameDragOver(" + i + ",event)" /*dragover*/,
 								"handlePlanNameDragEnd(" + i + ",event)" /*dragend*/
 								);
-                		str += "<b>" + (i+1) + ". " + commands[i].type + 
-                				(paramKeys.length?":":".") + //show period if 0 params
+						str += "<b>" + (i+1) + ". " + commands[i].type +
+								(paramKeys.length?":":".") + //show period if 0 params
 								"</b> ";
-                		str += "</div>";
+						str += "</div>";
 
-                		//delete command button
-                		str += htmlOpenDiv(0,"plan-command-deleteWrapper");
-                		str += htmlOpenDiv(
-                				"plan-command-delete-" + i,
+						//delete command button
+						str += htmlOpenDiv(0,"plan-command-deleteWrapper");
+						str += htmlOpenDiv(
+								"plan-command-delete-" + i,
 								"plan-command-delete",
 								"display:none" /*style*/,
 								"deleteCommand(" + i + ");" /*mouseup*/,
 								"handlePlanOverlayMouseMove(-1,event);" /*mousemove*/, //trick, to hide add icon and stop event propagation
 								"Delete this command." /*title*/);
-                		str += "";
-                		str += "</div>";
-                		str += "</div>";
+						str += "";
+						str += "</div>";
+						str += "</div>";
 
-                		//command params
-                		str += htmlOpenDiv(
-                				"plan-command-params-" + i,
+						//command params
+						str += htmlOpenDiv(
+								"plan-command-params-" + i,
 								"plan-command-params",
 								0 /*style*/,
 								0 /*mouseup*/,
 								0);//"handlePlanParamsMouseMove(" + i + ",event);" /*mousemove*/);
-                		for(var j=0;j<paramKeys.length;++j)
-                			str += " " + paramKeys[j] + "=" + 
+						for(var j=0;j<paramKeys.length;++j)
+							str += " " + paramKeys[j] + "=" +
 							commands[i].param[paramKeys[j]];
-                		str += "</div>";
+						str += "</div>";
 
-                		//up overlay
-                		str += htmlOpenDiv(
-                				"plan-command-upOverlay-" + i,
+						//up overlay
+						str += htmlOpenDiv(
+								"plan-command-upOverlay-" + i,
 								"plan-command-overlay plan-command-upOverlay",
 								0 /*style*/,
 								0 /*mouseup*/,
 								"handlePlanOverlayMouseMove(" + i + ",event)"/*mousemove*/);
-                		str += "</div>";
+						str += "</div>";
 
-                		//dn overlay
-                		str += htmlOpenDiv(
-                				"plan-command-dnOverlay-" + i,
+						//dn overlay
+						str += htmlOpenDiv(
+								"plan-command-dnOverlay-" + i,
 								"plan-command-overlay plan-command-dnOverlay",
 								0 /*style*/,
 								0 /*mouseup*/,
 								"handlePlanOverlayMouseMove(" + (i+1) + ",event)"/*mousemove*/);
-                		str += "</div>";
-                		
-                		Debug.log("Depth = " + depth);
+						str += "</div>";
 
-                		//add bounceball at each depth
-                		str += htmlOpenDiv( //start bounceball container i ----------- 
-                				"plan-command-bounceBall-container-" + i,
+						Debug.log("Depth = " + depth);
+
+						//add bounceball at each depth
+						str += htmlOpenDiv( //start bounceball container i -----------
+								"plan-command-bounceBall-container-" + i,
 								"plan-command-bounceBall-container");
-                		for(j=0;j<depth+1;++j)
-                		{
-							str += htmlOpenDiv( //start bounceball depth j ----------- 
+						for(j=0;j<depth+1;++j)
+						{
+							str += htmlOpenDiv( //start bounceball depth j -----------
 									"plan-command-bounceBall-" + i + "-depth-" + (depth-j),
 									"plan-command-bounceBall",
 									"left:-" + (29 + 30*j) + "px;"
 									/*style*/);
 							{
-								//bounceball content 
-								str += htmlOpenDiv(  
+								//bounceball content
+								str += htmlOpenDiv(
 										"plan-command-bounceBall-text-" + i+ "-depth-" + (depth-j),
 										"plan-command-bounceBall-text");
 								str += "2";//"2<label style='font-size:9px'>x</label>";
 								str += "</div>";
 							}
 							str += "</div>"; //end bounceball depth j -----------
-                		} //end bounceball
-                		
-                		if(depth > 0)
-                		{
-							str += htmlOpenDiv( //start bounceball connector ----------- 
+						} //end bounceball
+
+						if(depth > 0)
+						{
+							str += htmlOpenDiv( //start bounceball connector -----------
 									"plan-command-bounceBall-connector-" + i,
 									"plan-command-bounceBall-connector",
 									"width:" + 30*(depth) + "px;" +
 									"left:-" + (30*(depth)+15) + "px;"
 									/*style*/);
 							str += "</div>"; //end bounceball connector -----------
-                		}
-                		
-                		
+						}
 
-						str += htmlOpenDiv( //start bounceball vertical connector ----------- 
+
+
+						str += htmlOpenDiv( //start bounceball vertical connector -----------
 								"plan-command-bounceBall-vconnector-" + i,
 								"plan-command-bounceBall-vconnector",
 								"left:-" + (30*(depth)+22) + "px;"
 								/*style*/);
 						str += "</div>"; //end bounceball vertical connector -----------
 
-						str += htmlOpenDiv( //start bounceball status display ----------- 
+						str += htmlOpenDiv( //start bounceball status display -----------
 								"plan-command-bounceBall-status-" + i,
 								"plan-command-bounceBall-status",
 								"left:-" + (30*(depth)+28) + "px;"
 								/*style*/);
 						str += "Status";
 						str += "</div>"; //end bounceball status display -----------
-						
-                		
+
+
 						str += "</div>"; //end bounceball container i -----------
-                		
-                		//add command control
-                		str += htmlOpenDiv( //start add i command ----------- 
-                				"plan-command-addCommand-" + i,
+
+						//add command control
+						str += htmlOpenDiv( //start add i command -----------
+								"plan-command-addCommand-" + i,
 								"plan-command-addCommand",
 								"display:none;" +
 								(isBeginLabel?
@@ -1392,10 +1392,10 @@
 								/*style*/,
 								0 /*mouseup*/,
 								"event.stopPropagation();"/*mousemove*/);
-                		{
-                			//start add command button
-                			str += htmlOpenDiv(  
-                					"plan-command-addCommand-button-" + i,
+						{
+							//start add command button
+							str += htmlOpenDiv(
+									"plan-command-addCommand-button-" + i,
 									"plan-command-addCommand-button",
 									//(isBeginLabel?
 									//		"left:-36px;" //to place in previous depth bar
@@ -1404,51 +1404,51 @@
 										 "top:5px;") /* -16 + 21 */
 									/*style*/,
 									"showCommandDialog(" + i + ")" /*mouseup*/,
-									"event.stopPropagation();"/*mousemove*/, 
+									"event.stopPropagation();"/*mousemove*/,
 									"Insert new command" /*title*/ );
-                			str += "+";
-                			str += "</div>";
-                		}
-                		str += "</div>"; //end add i command -----------
+							str += "+";
+							str += "</div>";
+						}
+						str += "</div>"; //end add i command -----------
 
-                		str += "</div>"; //close i command ----------- 
-                		
-                		if(commands[i].type == _COMMAND_TYPES.REPEAT_LABEL)
-                		{
-                			//remove last depth
-                			// verify label match
+						str += "</div>"; //close i command -----------
 
-                			--depth;
-                			//Debug.log("End depth bar " + (depth));
-                			Debug.log("End depth Label " + depthLabelStack[depthLabelStack.length-1]);
-                    		str += "</div>";  //end depth span -----------
-                    		if(depthLabelStack.pop() != 
-                    				commands[i].param[paramKeys[0]])
-                    		{
-                    			Debug.log("There is a problem with the BEGIN_LABEL and REPEAT_LABEL " +
-                    					"commands for label '" + 
-										commands[i].param[paramKeys[0]] + "' (check command " + 
+						if(commands[i].type == _COMMAND_TYPES.REPEAT_LABEL)
+						{
+							//remove last depth
+							// verify label match
+
+							--depth;
+							//Debug.log("End depth bar " + (depth));
+							Debug.log("End depth Label " + depthLabelStack[depthLabelStack.length-1]);
+							str += "</div>";  //end depth span -----------
+							if(depthLabelStack.pop() !=
+									commands[i].param[paramKeys[0]])
+							{
+								Debug.log("There is a problem with the BEGIN_LABEL and REPEAT_LABEL " +
+										"commands for label '" +
+										commands[i].param[paramKeys[0]] + "' (check command " +
 										(i+1) + "). " +
 										"You can only repeat the label most recently begun (cross-nesting is not allowed).",
 										Debug.WARN_PRIORITY);
-                    		}
-                		}
-                	}
+							}
+						}
+					}
 
-                	//finished with commands, add "End" indicator
-                	//add last command control
-                	{
-                		str += DesktopContent.htmlClearDiv();
+					//finished with commands, add "End" indicator
+					//add last command control
+					{
+						str += DesktopContent.htmlClearDiv();
 
-                		str += htmlOpenDiv(	//start end command ----------- 
-                				"plan-command-" + i,
+						str += htmlOpenDiv(	//start end command -----------
+								"plan-command-" + i,
 								"plan-command",
-								"position:relative");  
+								"position:relative");
 
 
-                		//command name
-                		str += htmlOpenDiv(
-                				"plan-command-name-" + i /*id*/,
+						//command name
+						str += htmlOpenDiv(
+								"plan-command-name-" + i /*id*/,
 								0 /*class*/,
 								0 /*style*/,
 								0 /*mouseup*/,
@@ -1456,248 +1456,248 @@
 								0 /*title*/,
 								0 /*mousedown*/,
 								0 /*drag*/,
-								"handlePlanNameDragOver(" + i + ",event)" /*dragover*/,								
+								"handlePlanNameDragOver(" + i + ",event)" /*dragover*/,
 								0 /*dragend*/
 								);
-                		str += "<b>" + (i+1) + ". PLAN_END." + //show period if 0 params
+						str += "<b>" + (i+1) + ". PLAN_END." + //show period if 0 params
 								"</b> ";
-                		str += "</div>";                		
+						str += "</div>";
 
-                		//up overlay
-                		str += htmlOpenDiv(
-                				"plan-command-upOverlay-" + i,
+						//up overlay
+						str += htmlOpenDiv(
+								"plan-command-upOverlay-" + i,
 								"plan-command-overlay plan-command-upOverlay",
 								0 /*style*/,
 								0 /*mouseup*/,
 								"handlePlanOverlayMouseMove(" + i + ",event)"/*mousemove*/);
-                		str += "</div>";                	
+						str += "</div>";
 
-                		//add command control
-                		str += htmlOpenDiv( //start add end command ----------- 
-                				"plan-command-addCommand-" + i,
+						//add command control
+						str += htmlOpenDiv( //start add end command -----------
+								"plan-command-addCommand-" + i,
 								"plan-command-addCommand",
 								"display:none" /*style*/,
 								0 /*mouseup*/,
 								"event.stopPropagation();"/*mousemove*/);
-                		{
-                			//start add command button
-                			str += htmlOpenDiv(  
-                					"plan-command-addCommand-button-" + i,
+						{
+							//start add command button
+							str += htmlOpenDiv(
+									"plan-command-addCommand-button-" + i,
 									"plan-command-addCommand-button",
 									0 /*style*/,
 									"showCommandDialog(" + i + ")" /*mouseup*/,
 									"event.stopPropagation();"/*mousemove*/,
 									"Insert a new command.");
-                			str += "+";
-                			str += "</div>";
-                		} str += "</div>"; //end add end command -----------
-                		 
-                		str += "</div>"; //close end command -----------
-                	} //end last command span
+							str += "+";
+							str += "</div>";
+						} str += "</div>"; //end add end command -----------
 
-                	
-                	//end any open depth bars
-                	while(depthLabelStack.length)
-                	{
-                		str += "</div>";  //end depth span -----------
-                		depthLabelStack.pop();
-                	}
-                	
-                	
-                } str += "</div>";  //end depth 0 span -----------
+						str += "</div>"; //close end command -----------
+					} //end last command span
 
 
-                if(_planIsModified)
-                {
-                	str += DesktopContent.htmlClearDiv();
-                	str += "<br><br>";
-                	str += localCreateSaveButton();
-                }
-                
-                //done with assembling display string                
-                el.innerHTML = str;    
-                
+					//end any open depth bars
+					while(depthLabelStack.length)
+					{
+						str += "</div>";  //end depth span -----------
+						depthLabelStack.pop();
+					}
 
-                //::::::::::::::::::::::::::::::::::::
-                function localCreateSaveButton()
-                {
-                	str = "";
-                	str += "<input type='button'" +
-                			" onmouseup='" + 
-							"createIterationPlan(true /*useTargetPlanName*/,true /*useCommandsFromGUI*/);" +							
-							"' " + 
-                			" value='Save'" +
+
+				} str += "</div>";  //end depth 0 span -----------
+
+
+				if(_planIsModified)
+				{
+					str += DesktopContent.htmlClearDiv();
+					str += "<br><br>";
+					str += localCreateSaveButton();
+				}
+
+				//done with assembling display string
+				el.innerHTML = str;
+
+
+				//::::::::::::::::::::::::::::::::::::
+				function localCreateSaveButton()
+				{
+					str = "";
+					str += "<input type='button'" +
+							" onmouseup='" +
+							"createIterationPlan(true /*useTargetPlanName*/,true /*useCommandsFromGUI*/);" +
+							"' " +
+							" value='Save'" +
 							" title='" +
 							"Save the current modified Iteration Plan." +
 							"'/>";
-                	str += "&nbsp;&nbsp;&nbsp;"
-                	str += "<input type='button'" +
-                			" onmouseup='" + 
-							"createIterationPlan(false /*useTargetPlanName*/,true /*useCommandsFromGUI*/);" + 						
-							"' " + 
-                			" value='Save as...'" +
+					str += "&nbsp;&nbsp;&nbsp;"
+					str += "<input type='button'" +
+							" onmouseup='" +
+							"createIterationPlan(false /*useTargetPlanName*/,true /*useCommandsFromGUI*/);" +
+							"' " +
+							" value='Save as...'" +
 							" title='" +
 							"Duplicate the current modified Iteration Plan as a new name." +
 							"'/>";
-                	str += "&nbsp;&nbsp;&nbsp;"
-                	str += "<input type='button'" +
-                			" onmouseup='" + 
-							"discardPlanChangesPrompt();" + 						
-							"' " + 
-                			" value='Discard Changes'" +
+					str += "&nbsp;&nbsp;&nbsp;"
+					str += "<input type='button'" +
+							" onmouseup='" +
+							"discardPlanChangesPrompt();" +
+							"' " +
+							" value='Discard Changes'" +
 							" title='" +
 							"Discard the current changes and revert to the original Iteration Plan." +
 							"'/>";
-                	str += "<br><br>";
-                	return str;
-                } //end localCreateSaveButton()
-                
-            } //end localDrawIterationPlan()
-            
+					str += "<br><br>";
+					return str;
+				} //end localCreateSaveButton()
 
-			
+			} //end localDrawIterationPlan()
+
+
+
 		} //end drawIterationPlan()
 
 		//=====================================================================================
-		//htmlOpenDiv ~~		
+		//htmlOpenDiv ~~
 		function htmlOpenDiv(idStr,classStr,styleStr,mouseupStr,mousemoveStr,
 				titleStr,mousedownStr,dragStr,dragoverStr,dragendStr)
 		{
-			return "<div " + 
-					(idStr?("id='" + idStr + "' "):"") + 
+			return "<div " +
+					(idStr?("id='" + idStr + "' "):"") +
 					(classStr?(" class='" + classStr + "' "):"") +
 					(styleStr?(" style='" + styleStr + "' "):"") +
-					(mouseupStr?(" onmouseup='" + mouseupStr + "' "):"") + 
-					(mousemoveStr?(" onmousemove='" + mousemoveStr + "' "):"") + 
-					(titleStr?(" title='" + titleStr + "' "):"") + 
-					(mousedownStr?(" onmousedown='" + mousedownStr + "' "):"") + 
+					(mouseupStr?(" onmouseup='" + mouseupStr + "' "):"") +
+					(mousemoveStr?(" onmousemove='" + mousemoveStr + "' "):"") +
+					(titleStr?(" title='" + titleStr + "' "):"") +
+					(mousedownStr?(" onmousedown='" + mousedownStr + "' "):"") +
 					(dragStr?(" draggable='true' ondragstart='" + dragStr + "' "):"") +
-					(dragoverStr?(" ondragover='" + dragoverStr + "' "):"") +					
+					(dragoverStr?(" ondragover='" + dragoverStr + "' "):"") +
 					(dragendStr?(" ondragend='" + dragendStr + "' "):"") +
 					">";
 		} //end htmlOpenDiv
 
 		//=====================================================================================
-		//handlePlanNameDrag ~~		
+		//handlePlanNameDrag ~~
 		function handlePlanNameDrag(dragIndex,event)
 		{
 			Debug.log("dragstart " + dragIndex);
-			
+
 			handlePlanOverlayMouseMove(-1); //clear add command button
-			
+
 			if(event.dataTransfer) //for firefox draggin, must set dataTransfer
 				event.dataTransfer.setData("Text",dragIndex);
-			
-			
+
+
 		}	//end handlePlanNameDrag()
 
 		//=====================================================================================
-		//handlePlanNameDragOver ~~		
+		//handlePlanNameDragOver ~~
 		function handlePlanNameDragOver(dragIndex,event)
 		{
-			//Debug.log("dragover " + dragIndex);			
-			
+			//Debug.log("dragover " + dragIndex);
+
 			if(_shownDragOverCommandIndex == dragIndex )
 							return;
-			
+
 			//if not current, then hide current and show new
 
 			try //try to hide, and ignore errors
 			{
 				if(_shownDragOverCommandIndex != -1)
 				{
-					document.getElementById("plan-command-name-" + 
-							_shownDragOverCommandIndex).style.backgroundColor = "transparent";					
+					document.getElementById("plan-command-name-" +
+							_shownDragOverCommandIndex).style.backgroundColor = "transparent";
 				}
 			}
 			catch(e){} //ignore
-			
+
 			//do not set to drag over if this is the one being dragged
 			if(dragIndex == _shownDeleteCommandIndex)
 				return;
-			
+
 			_shownDragOverCommandIndex = dragIndex;
 			if(_shownDragOverCommandIndex != -1)
 			{
-				document.getElementById("plan-command-name-" + 
-						_shownDragOverCommandIndex).style.backgroundColor = 
+				document.getElementById("plan-command-name-" +
+						_shownDragOverCommandIndex).style.backgroundColor =
 								"rgb(251, 172, 53)";
 			}
-					
+
 		}	//end handlePlanNameDragOver()
 
 		//=====================================================================================
-		//handlePlanNameDragEnd ~~		
+		//handlePlanNameDragEnd ~~
 		function handlePlanNameDragEnd(dragIndex,event)
 		{
 			Debug.log("dragend " + dragIndex + " to " + _shownDragOverCommandIndex);
-			
+
 			dragIndex = dragIndex|0; //force int
 			_shownDragOverCommandIndex = _shownDragOverCommandIndex|0; //force int
-			
-			
+
+
 			//move dragIndex to _shownDragOverCommandIndex position
-			
+
 			//validate indices
 			if(dragIndex < 0 || dragIndex >=  _commands.length ||
 					dragIndex == _shownDragOverCommandIndex)
 			{
-				Debug.log("Invalid dragIndex -- how? " + 
+				Debug.log("Invalid dragIndex -- how? " +
 						dragIndex + " v " + _shownDragOverCommandIndex);
 				return;
 			}
-			if(_shownDragOverCommandIndex < 0 || 
+			if(_shownDragOverCommandIndex < 0 ||
 					_shownDragOverCommandIndex >  _commands.length)
 			{
-				Debug.log("Invalid _shownDragOverCommandIndex -- how? " + 
+				Debug.log("Invalid _shownDragOverCommandIndex -- how? " +
 						_shownDragOverCommandIndex);
 				return;
 			}
-			
+
 			//remove and insert
 			var movingCommand = _commands.splice(dragIndex, 1); //returns array of elements removed (array size will be 1)
 			if(dragIndex+1 < _shownDragOverCommandIndex) //now with removed, drop by 1
-				--_shownDragOverCommandIndex; //+1 because behavior of swapping nearest neighbor is 'expected'			
+				--_shownDragOverCommandIndex; //+1 because behavior of swapping nearest neighbor is 'expected'
 			_commands.splice(_shownDragOverCommandIndex, 0, movingCommand[0]); //insert element 0 of array
 			_planIsModified = true;
 			drawIterationPlan();
-			
+
 		}	//end handlePlanNameDragEnd()
-		
+
 		//=====================================================================================
-		//handlePlanNameDrop ~~		
+		//handlePlanNameDrop ~~
 		function handlePlanNameDrop(dragIndex,event)
 		{
 			Debug.log("dragdrop " + dragIndex);
-			
-			
+
+
 		}	//end handlePlanNameDrop()
-		
+
 		//=====================================================================================
-		//handlePlanNameMouseMove ~~		
+		//handlePlanNameMouseMove ~~
 		function handlePlanNameMouseMove(deleteIndex,event)
-		{			
+		{
 			//Debug.log("handlePlanNameMouseMove " + deleteIndex);
-							
+
 			//pass along event
 			handlePlanOverlayMouseMove(deleteIndex,event);
 
 			//remove all previous param displays
 			if(event) handlePlanParamsMouseMove(-1);
-			
+
 			if(_shownDeleteCommandIndex == deleteIndex)
 				return;
-			
+
 			//if not current, then hide current and show new
 
 			try //try to hide, and ignore errors
 			{
 				if(_shownDeleteCommandIndex != -1)
 				{
-					document.getElementById("plan-command-delete-" + 
+					document.getElementById("plan-command-delete-" +
 							_shownDeleteCommandIndex).style.display = "none";
-					document.getElementById("plan-command-name-" + 
-							_shownDeleteCommandIndex).style.backgroundColor = "transparent";					
+					document.getElementById("plan-command-name-" +
+							_shownDeleteCommandIndex).style.backgroundColor = "transparent";
 				}
 			}
 			catch(e){} //ignore
@@ -1705,58 +1705,58 @@
 			_shownDeleteCommandIndex = deleteIndex;
 			if(_shownDeleteCommandIndex != -1)
 			{
-				document.getElementById("plan-command-delete-" + 
+				document.getElementById("plan-command-delete-" +
 						_shownDeleteCommandIndex).style.display = "block";
-				document.getElementById("plan-command-name-" + 
-						_shownDeleteCommandIndex).style.backgroundColor = 
+				document.getElementById("plan-command-name-" +
+						_shownDeleteCommandIndex).style.backgroundColor =
 								ConfigurationAPI.editableField_SELECTED_COLOR_;
 			}
 		} //end handlePlanNameMouseMove()
-		
+
 		//=====================================================================================
-		//handlePlanOverlayMouseMove ~~		
+		//handlePlanOverlayMouseMove ~~
 		function handlePlanOverlayMouseMove(addIndex,event)
-		{			
+		{
 			//Debug.log("handlePlanOverlayMouseMove " + addIndex);
-			
+
 			//show add + command icon in right place
-			
-			if(event) event.stopPropagation();			
-			
+
+			if(event) event.stopPropagation();
+
 			if(_shownAddCommandIndex == addIndex)
 				return;
-			
-			//if not current, then hide current and show new			
+
+			//if not current, then hide current and show new
 
 			try //try to hide, and ignore errors
 			{
 				if(_shownAddCommandIndex != -1)
-					document.getElementById("plan-command-addCommand-" + 
+					document.getElementById("plan-command-addCommand-" +
 							_shownAddCommandIndex).style.display = "none";
 			}
 			catch(e){} //ignore
-			
+
 			_shownAddCommandIndex = addIndex;
-			
+
 			if(_shownAddCommandIndex != -1)
-				document.getElementById("plan-command-addCommand-" + 
+				document.getElementById("plan-command-addCommand-" +
 						_shownAddCommandIndex).style.display = "block";
 		} //end handlePlanOverlayMouseMove()
-		
+
 		//=====================================================================================
-		//handlePlanOverlayMouseMove ~~		
+		//handlePlanOverlayMouseMove ~~
 		function handlePlanParamsMouseMove(i,event)
 		{
 			//Debug.log("handlePlanParamsMouseMove " + i);
-			
+
 			if(event) event.stopPropagation();
-			
+
 			if(event) handlePlanNameMouseMove(i); //highlight plan name
-			
+
 			if(event) handlePlanOverlayMouseMove(-1); //clear add command button
-			
+
 			//show parameters in easy to read fashion
-			
+
 			//remove all previous param displays
 			var el;
 			do
@@ -1764,47 +1764,47 @@
 				el = document.getElementById("plan-command-parameterDisplay");
 				if(el) el.parentNode.removeChild(el);
 			} while(el);
-			
+
 			if(i == -1) return;
-			
-			
+
+
 			if(document.getElementById("DesktopContent-verifyPopUp"))
 				return; //do not show if there is a popup
 
 			//Debug.log("handlePlanParamsMouseMove " + i);
-			
-    		//get command parameter keys
+
+			//get command parameter keys
 			var paramKeys = Object.keys(_commands[i].param);
 
 			el = document.createElement("div");
 			el.setAttribute("id","plan-command-parameterDisplay");
 			var str = "";
-			
+
 			//command 'name'
 			str += htmlOpenDiv(0,0,
 					"float:left;" /*style*/);
-			str += "<b>" + (i+1) + ". " + _commands[i].type +					
+			str += "<b>" + (i+1) + ". " + _commands[i].type +
 					"</b>";
 			str += "</div>";
-			
+
 			//edit icon
 			str += htmlOpenDiv(0,
 					"ConfigurationAPI-popUpDialog-editIcon" /*class*/,
 					"display:block;" /*style*/,
 					"showCommandDialog(" + i + ", true /*modifyExisting*/);" /*mouseup*/);
 			str += "</div>";
-			
-			str += DesktopContent.htmlClearDiv();			
-			
-			
+
+			str += DesktopContent.htmlClearDiv();
+
+
 			//str += "<br>";
 			//str += "Time Created: ";
 			str += "<br>";
 			str += "Parameter Count: " + paramKeys.length;
 			str += "<br>";
 			str += "<br>";
-			str += "<table>";		
-			
+			str += "<table>";
+
 			for(var j=0;j<paramKeys.length;++j)
 			{
 				str += "<tr>";
@@ -1816,119 +1816,119 @@
 				str += "</td>";
 				str += "</tr>";
 			}
-			str += "</table>";	
-			
+			str += "</table>";
+
 			el.innerHTML = str;
-			
+
 			//get x, y from offset parents
 			var parentEl = document.getElementById("plan-command-params-" + i);
-					
+
 			var top = 0;
 			var left = 0;
 			var offsetParent; //save last valid offsetParent
-			
+
 			//accumulate parents
 			while(parentEl)
 				{top += parentEl.offsetTop; left += parentEl.offsetLeft;
 				offsetParent = parentEl; //save last valid offsetParent
 				parentEl = parentEl.offsetParent;}
-			
+
 			el.style.top = (top-13) + "px";
 			el.style.left = (left+15) + "px";
 
 			el.style.width = "";
 
 			var width = _bottomPane.offsetWidth - left - 40;
-			
+
 			el.onmousemove = function(event) {event.stopPropagation();} //prevent disappearing act from body mousemove
-			
+
 			//add child to offsetParent so that position is correct
 			offsetParent.appendChild(el);
-			
+
 			//make sure width is on screen
 			if(el.offsetWidth > width)
-				el.style.width = width + "px";			
+				el.style.width = width + "px";
 		} //end handlePlanParamsMouseMove()
-		
+
 		//=====================================================================================
 		//bodyMouseMoveHandler ~~
 		//	handles mouse movements on window body
-		function bodyMouseMoveHandler() 
+		function bodyMouseMoveHandler()
 		{
 			//Debug.log("bodyMouseMoveHandler ");
-			
+
 			//try hiding add command and ignore errors
 			if(_shownAddCommandIndex != -1)
 			{
 				try
 				{
-					document.getElementById("plan-command-addCommand-" + 
+					document.getElementById("plan-command-addCommand-" +
 						_shownAddCommandIndex).style.display = "none";
 				}
 				catch(e){}
 				_shownAddCommandIndex = -1; //clear
 			}
-			
+
 			//try hiding delete command and ignore errors
 			if(_shownDeleteCommandIndex != -1)
 			{
 				try
 				{
-					document.getElementById("plan-command-delete-" + 
+					document.getElementById("plan-command-delete-" +
 							_shownDeleteCommandIndex).style.display = "none";
-					document.getElementById("plan-command-name-" + 
+					document.getElementById("plan-command-name-" +
 							_shownDeleteCommandIndex).style.backgroundColor = "transparent";
 				}
 				catch(e){}
 				_shownDeleteCommandIndex = -1; //clear
 			}
-			
+
 			//remove all previous param displays
 			handlePlanParamsMouseMove(-1);
 		} //end bodyMouseMoveHandler()
-		
+
 		//=====================================================================================
 		//extractGETParameters ~~
 		//	return false, if illegal params
-		function extractGETParameters() 
+		function extractGETParameters()
 		{
 			//extract get parameters
-			
-			_forceSavingModifiedGroups	= DesktopContent.getParameter(0,"forceSavingModifiedGroups");			
-			_forceUseOfAliases		 	= DesktopContent.getParameter(0,"forceUseOfAliases");			
-			_forceGroupsOnly			= DesktopContent.getParameter(0,"forceGroupsOnly");			
-			
+
+			_forceSavingModifiedGroups	= DesktopContent.getParameter(0,"forceSavingModifiedGroups");
+			_forceUseOfAliases		 	= DesktopContent.getParameter(0,"forceUseOfAliases");
+			_forceGroupsOnly			= DesktopContent.getParameter(0,"forceGroupsOnly");
+
 			//setup defaults
 			if(_forceSavingModifiedGroups === undefined) 	_forceSavingModifiedGroups = false;
 			if(_forceUseOfAliases === undefined) 			_forceUseOfAliases = false;
 			if(_forceGroupsOnly === undefined) 				_forceGroupsOnly = false;
-			
+
 			Debug.log("_forceSavingModifiedGroups " + _forceSavingModifiedGroups);
 			Debug.log("_forceUseOfAliases " + _forceUseOfAliases);
 			Debug.log("_forceGroupsOnly " + _forceGroupsOnly);
-			
+
 			return true;
 		}	//end extractGETParameters()
-		
+
 		//=====================================================================================
 		//initIterateData ~~
 		//	fills _planUIDs
 		//		array of UIDs defined by the subset (based on _subsetBasePath and _recordPreFilterList)
 		//	fills _filterValsObj
 		//		for each filter MultiSelect (one for each grouping field), an array of filter values
-		function initIterateData() 
+		function initIterateData()
 		{
 			window.clearTimeout(_updateTimer);
-					
+
 			//get list of records that match <subsetBasePath> AND <recordPreFilterList>
 			_planUIDs = []; //reset
 			_filterValsObj = {}; //reset
 			_fields = undefined; //reset
 			_modifiedTables = undefined; //reset
-            
-            _targetPlan = ""; //reset
-            _commands = []; //reset
-			
+
+			_targetPlan = ""; //reset
+			_commands = []; //reset
+
 
 			if(_bottomPane && _topPane)
 			{
@@ -1936,32 +1936,32 @@
 				_bottomPane.innerHTML = ""; //clear
 				_topPane.parentNode.removeChild(_topPane); //remove element
 				_bottomPane.parentNode.removeChild(_bottomPane); //remove element
-				
+
 			}
 			_topPane = undefined; //reset
 			_bottomPane = undefined; //reset
-            
-            
-            if(_DEBUG_WOUT_SERVER)
-            {
-                //bypass server and give example iterate plan
-                
-                _planUIDs = ["test 1", "testB"];
-                
-                localCompleteInit();
-                return;
-            }
 
-						
+
+			if(_DEBUG_WOUT_SERVER)
+			{
+				//bypass server and give example iterate plan
+
+				_planUIDs = ["test 1", "testB"];
+
+				localCompleteInit();
+				return;
+			}
+
+
 			ConfigurationAPI.getActiveGroups(
 					function(groups)
 					{
-				if(!groups || !groups.Iterate || 
+				if(!groups || !groups.Iterate ||
 						groups.Iterate.groupKey === undefined ||
 						(groups.Iterate.groupKey|0) == -1)
 				{
 					Debug.log("No active Iterate group.");
-					
+
 					//create an empty active group
 					createEmptyIterateGroup(
 							function(params)
@@ -1976,13 +1976,13 @@
 							});
 					return;
 				}
-				
+
 				Debug.log("Active Iterate group is " +
 						groups.Iterate.groupName + " (" +
 						groups.Iterate.groupKey + ").");
 
 				getIterationPlans(localCompleteInit);
-				
+
 
 					}); //end getActiveGroups handler
 
@@ -1990,41 +1990,41 @@
 			function localCompleteInit()
 			{
 				Debug.log("localCompleteInit -- Wrapping up init.");
-				
+
 				if(!_eventListenersCreated)
 				{
 					window.addEventListener("resize",paint);
 					_eventListenersCreated = true; //prevent multiple event creation
-				}	
-				
+				}
+
 				updateIterateStatus(); // calls paint() when _targetPlan is defined
 			} //end localCompleteInit()
 
-						
+
 
 			//::::::::::::::::::::::::::::::::::::
 			//localGetGroups ~
 			//	get groups and aliases
-			function localGetGroups() 
+			function localGetGroups()
 			{
 				Debug.log("localGetGroups");
-				DesktopContent.XMLHttpRequest("Request?RequestType=getGroupAliases" + 
-						"", //end get data 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getGroupAliases" +
+						"", //end get data
 						"", //end post data
 						function(req)
 						{
-	
+
 					Debug.log("getGroupAliases handler");
-	
+
 					var groupAliases = req.responseXML.getElementsByTagName("GroupAlias");
 					var groupNames = req.responseXML.getElementsByTagName("GroupName");
 					var groupKeys = req.responseXML.getElementsByTagName("GroupKey");
 					var groupComments = req.responseXML.getElementsByTagName("GroupComment");
 					var groupTypes = req.responseXML.getElementsByTagName("GroupType");
 					var aliasComments = req.responseXML.getElementsByTagName("AliasComment");
-	
+
 					_tableGroupAliases = [];
-					for(var i=0;i<groupAliases.length;++i) 
+					for(var i=0;i<groupAliases.length;++i)
 						if(groupTypes[i].getAttribute('value') == "Configuration")
 							_tableGroupAliases.push({
 									"alias" : groupAliases[i].getAttribute('value'),
@@ -2033,49 +2033,49 @@
 									"groupComment" : groupComments[i].getAttribute('value'),
 									"aliasComment" : aliasComments[i].getAttribute('value')
 						});
-	
+
 					console.log("_tableGroupAliases",_tableGroupAliases);
-	
-	
+
+
 						}); //end getGroupAliases handler
-				
-				
+
+
 				DesktopContent.XMLHttpRequest("Request?RequestType=getTableGroups"
-						+"&doNotReturnMembers=1", //end get data 
+						+"&doNotReturnMembers=1", //end get data
 						"", //end post data
 						function(req)
 						{
 					Debug.log("getTableGroups handler");
-					
+
 					var groupNames = req.responseXML.getElementsByTagName("TableGroupName");
 					var groupKeys = req.responseXML.getElementsByTagName("TableGroupKey");
 					var groupTypes = req.responseXML.getElementsByTagName("TableGroupType");
 					var groupComments = req.responseXML.getElementsByTagName("TableGroupComment");
-					
+
 					_tableGroups = [];
-					for(var i=0;i<groupNames.length;++i) 
+					for(var i=0;i<groupNames.length;++i)
 						if(groupTypes[i].getAttribute('value') == "Configuration")
-							_tableGroups.push({								
+							_tableGroups.push({
 									"name" : groupNames[i].getAttribute('value'),
 									"key" : groupKeys[i].getAttribute('value'),
 									"groupComment" : groupComments[i].getAttribute('value')
 						});
-					
+
 					console.log("_tableGroups",_tableGroups);
-					
+
 						}); //end getTableGroups handler
-						
+
 			} //end localGetGroups()
 			localGetGroups();
-			
-			
+
+
 			//::::::::::::::::::::::::::::::::::::
 			//localGetNamesOfFSMs ~
 			//	get groups and aliases
-			function localGetNamesOfFSMs() 
+			function localGetNamesOfFSMs()
 			{
-				DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachineNames" + 
-						"", //end get data 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachineNames" +
+						"", //end get data
 						"", //end post data
 						function(req)
 						{
@@ -2085,7 +2085,7 @@
 					var names = req.responseXML.getElementsByTagName("stateMachineName");
 
 					_fsmNames = [];
-					for(var i=0;i<names.length;++i) 
+					for(var i=0;i<names.length;++i)
 						_fsmNames.push(names[i].getAttribute('value'))
 
 					console.log("_fsmNames",_fsmNames);
@@ -2095,24 +2095,24 @@
 						0,false,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 						true /*targetGatewaySupervisor*/);
 			} //end localGetNamesOfFSMs()
-			localGetNamesOfFSMs(); 
-			
-			
+			localGetNamesOfFSMs();
+
+
 		}	//end initIterateData()
 
 		//=====================================================================================
 		//createEmptyIterateGroup ~~
-		function createEmptyIterateGroup(responseHandler) 
+		function createEmptyIterateGroup(responseHandler)
 		{
 			Debug.log("createEmptyIterateGroup");
-			
+
 			//create a group with each table in group key -1 (to use empty mockup table)
 			//  on failure, give up and assume there are existing groups that admin could activate
-					
+
 			ConfigurationAPI.getGroupTypeMemberNames("Iterate",
 					function(members)
 					{
-				Debug.log("getGroupTypeMemberNames handler");				
+				Debug.log("getGroupTypeMemberNames handler");
 				var tableMapStr = "tableList=";
 				for(var i=0;i<members.length;++i)
 					tableMapStr += members[i] + ",-1,";
@@ -2120,19 +2120,19 @@
 						"iterateDefaultGroup",
 						tableMapStr,
 						responseHandler, //pass handler to be called
-						true /*doReturnParams*/						
-						)			
+						true /*doReturnParams*/
+						)
 					}); // end getGroupTypeMemberNames handler
-	
+
 
 		}	//end createEmptyIterateGroup()
-		
+
 		//=====================================================================================
 		//getIterationPlans ~~
-		function getIterationPlans(responseHandler) 
+		function getIterationPlans(responseHandler)
 		{
 			Debug.log("getIterationPlans");
-			
+
 			//get existing iteration plans
 			ConfigurationAPI.getSubsetRecords(
 					_ITERATE_BASE_PATH,
@@ -2144,22 +2144,22 @@
 				console.log(records);
 
 				if(responseHandler) responseHandler();
-				
-					});	//end getSubsetRecords handler	
-			
-		}	//end getIterationPlans()	
-		
+
+					});	//end getSubsetRecords handler
+
+		}	//end getIterationPlans()
+
 		//=====================================================================================
 		//createTopPaneContent ~~
-		function createTopPaneContent() 
+		function createTopPaneContent()
 		{
 			_topPane = document.createElement("div");
 			_topPane.setAttribute("class", "pane");
-			_topPane.setAttribute("id", "topPane");			
-			
+			_topPane.setAttribute("id", "topPane");
+
 			var el;
 			var str;
-			
+
 			el = document.createElement("div");
 			str = "";
 			//str += "<a href='#' onclick='initIterateData()'>Refresh</a>";
@@ -2174,20 +2174,20 @@
 					str += "<tr><td class='topPane-fieldName'>";
 					str += "Iteration Plan:";
 					str += "</td><td id='topPane-targetPlan-name'></td></tr>";
-					
+
 					str += "<tr><td class='topPane-fieldName'>";
 					str += "FSM State:";
 					str += "</td><td id='topPane-field-fsmState'></td></tr>";
-	
+
 					str += "<tr><td class='topPane-fieldName'>";
 					str += "FSM Time-in-State:";
 					str += "</td><td id='topPane-field-fsmStateTime'></td></tr>";
 				str += "</table>";
-			
+
 			str += "</div>"; //end topPane-targetPlan
-			
+
 			str += htmlOpenDiv("topPane-controls",0,"float:left;margin: 24px 0 0 10px;");
-			
+
 				str += htmlOpenDiv("topPane-controls-playButton",
 						"topPane-controls-button",
 						0 /*style*/,
@@ -2209,45 +2209,45 @@
 						0 /*mousemove*/,
 						"Halt Iteration Plan" /*title*/);
 				str += "</div>"; //end topPane-controls-playButton
-			
+
 			str += "</div>"; //end topPane-controls
-			
-			
+
+
 			str += htmlOpenDiv("topPane-status");
 				str += "<label id='topPane-status-fieldName'>Iteration Status</label><br>";
 				str += "<label id='topPane-status-field'></label>";
 			str += "</div>"; //end topPane-status
-			
+
 			//str += htmlOpenDiv("clearDiv","topPane-fieldName");
 			//str += "</div>";
-			
-			
-			
+
+
+
 			el.innerHTML = str;
-			_topPane.appendChild(el);			
+			_topPane.appendChild(el);
 
 //			el = document.createElement("div");
 //			el.setAttribute("id", "clearDiv");
 //			_topPane.appendChild(el);
-//			
+//
 //			el = document.createElement("div");
 //			el.setAttribute("id", "topPane-header");
-//			_topPane.appendChild(el);			
-			
-			document.body.appendChild(_topPane);			
+//			_topPane.appendChild(el);
+
+			document.body.appendChild(_topPane);
 		}	//end createTopPaneContent()
-		
+
 		//=====================================================================================
 		//createBottomPaneContent ~~
-		function createBottomPaneContent(leftW) 
+		function createBottomPaneContent(leftW)
 		{
 			_bottomPane = document.createElement("div");
 			_bottomPane.setAttribute("class", "pane");
 			_bottomPane.setAttribute("id", "bottomPane");
-			
+
 
 			//	- Bottom Pane:
-			//		* Similar functionality to GUI subset.. in that it edits the 
+			//		* Similar functionality to GUI subset.. in that it edits the
 			//			the currently active Iteration group. (If a user wants to change the active
 			//			Iteration group, they must do so in the Config GUI)
 			//
@@ -2257,34 +2257,34 @@
 			//				- Configure Configuration Group/System Alias
 			//				- REPEAT LOOP 0 ( 0 times - when 0 show as END LOOP)
 			//				- In GUI, show END (no representation in table)
-			//					
+			//
 			//		* Create Rows in table that match sequence
-			
+
 			var el;
 			var str;
-						
-						
-						
+
+
+
 			//create target plan selector div: dropdown with + / TRASH
 			el = document.createElement("div");
-			el.setAttribute("id", "planSelector");			
-			_bottomPane.appendChild(el);	
-			
-			el = document.createElement("div");
-			el.setAttribute("id", "clearDiv");
+			el.setAttribute("id", "planSelector");
 			_bottomPane.appendChild(el);
-			
-			//create plan detail div
-			el = document.createElement("div");
-			el.setAttribute("id", "planDetail");			
-			_bottomPane.appendChild(el);	
 
 			el = document.createElement("div");
 			el.setAttribute("id", "clearDiv");
-			_bottomPane.appendChild(el);		
-						
+			_bottomPane.appendChild(el);
+
+			//create plan detail div
+			el = document.createElement("div");
+			el.setAttribute("id", "planDetail");
+			_bottomPane.appendChild(el);
+
+			el = document.createElement("div");
+			el.setAttribute("id", "clearDiv");
+			_bottomPane.appendChild(el);
+
 			document.body.appendChild(_bottomPane);
-						
+
 		}	//end createBottomPaneContent()
 
 
@@ -2293,7 +2293,7 @@
 		function createIterationPlan(useTargetPlanName,useCommandsFromGUI)
 		{
 			var planName;
-			
+
 			if(!useTargetPlanName)
 			{
 				planName = prompt("Please enter a name for the new " +
@@ -2306,7 +2306,7 @@
 			else
 			{
 				planName = _targetPlan;
-								
+
 				if(useCommandsFromGUI) //prompt user for overwrite
 				{
 					DesktopContent.popUpVerification(
@@ -2317,18 +2317,18 @@
 					//if canceled, nothing will happen
 					return;
 				}
-			}			
+			}
 
 			localCreateIterationPlan();
 			return;
-			
+
 			//::::::::::::::::::::::::::::::::::::::::::
 			//localCreateIterationPlan ~
 			function localCreateIterationPlan()
 			{
 				Debug.log("createIterationPlan " + planName);
-				
-				//new default iteration plan 
+
+				//new default iteration plan
 
 				//steps:
 				//	create new record
@@ -2348,12 +2348,12 @@
 						if(err && err.indexOf("Entries in UID are not unique.") >= 0)
 						{
 							//not really an error, can use existing plan
-							Debug.log("Using existing plan name.", Debug.INFO_PRIORITY);							
+							Debug.log("Using existing plan name.", Debug.INFO_PRIORITY);
 						}
 						else
 						{
 							//really an error
-							Debug.log("There was an error while creating the " + _recordsAlias + " '" + 
+							Debug.log("There was an error while creating the " + _recordsAlias + " '" +
 									planName  + ".'",
 									Debug.HIGH_PRIORITY);
 							return;
@@ -2387,16 +2387,16 @@
 
 						if(!modifiedTables.length)
 						{
-							Debug.log("There was an error while creating the " + _recordsAlias + " '" + 
+							Debug.log("There was an error while creating the " + _recordsAlias + " '" +
 									planName  + ".'",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 
 						_modifiedTables = modifiedTables;
 
 						//create DEFAULT commands:
-						//	BEGIN_LABEL			
+						//	BEGIN_LABEL
 						//	CHOOSE_FSM	fsmNames[0]
 						//	CONFIGURE_ALIAS aliasMap[0]
 						//	RUN 5 minutes
@@ -2421,9 +2421,9 @@
 									["Main",
 									 0]); //"NumberOfRepetitions"
 							addCommand(_COMMAND_TYPES.HALT,
-									[]); 
-						}		
-						
+									[]);
+						}
+
 						//FOR DEBUGGING
 						//FOR DEBUGGING
 						//FOR DEBUGGING
@@ -2437,10 +2437,10 @@
 											_fsmNames[0]
 													  :"")]);
 							addCommand(_COMMAND_TYPES.MODIFY_ACTIVE_GROUP,
-									[								
+									[
 									 _FE_TABLE,//"Tables":params[0],
 									 "ExampleInterface0",//"UIDs":params[1],
-									 0,//"DoTrackGroupChanges":params[2], 
+									 0,//"DoTrackGroupChanges":params[2],
 									 "LinkToFETypeTable/FirmwareVersion",//"RelativePathToField":params[3],
 									 5,//"FieldStartValue":params[4],
 									 3]);//"FieldIterationStepSize":params[5]);
@@ -2449,37 +2449,37 @@
 							addCommand(_COMMAND_TYPES.REPEAT_LABEL,
 									["Main",5]);
 						}
-						
+
 						savePlanCommandSequence(planName,_commands,
 								/////////////////////
 								function()
 								{
 							//only arrive here on success
-							
-							_targetPlan = planName;														
-							
-							saveModifiedTables(									
+
+							_targetPlan = planName;
+
+							saveModifiedTables(
 									"The new " +
-									_recordsAlias + " '" + 
+									_recordsAlias + " '" +
 									planName +
 									"' was successfully created!",
 
-									"There was an error while creating the " + _recordsAlias + " '" + 
+									"There was an error while creating the " + _recordsAlias + " '" +
 									planName  + ".'");
-							
+
 								}); //end savePlanCommandSequence handler
-						
+
 							}, //end setFieldValuesForRecords handler
 							_modifiedTables);
-					
+
 						}, //end addSubsetRecords handler
 						_modifiedTables,
 						true /*silenceErrors*/);
-					
-			} //end localCreateIterationPlan()			
-			
+
+			} //end localCreateIterationPlan()
+
 		}	//end createIterationPlan()
-		
+
 		//=====================================================================================
 		//saveModifiedTables ~~
 		function saveModifiedTables(successMsg,failureMsg)
@@ -2493,39 +2493,39 @@
 				{
 					Debug.log(failureMsg,
 							Debug.HIGH_PRIORITY);
-					return;					
+					return;
 				}
 
 				Debug.log(successMsg, Debug.INFO_PRIORITY);
 
 				_modifiedTables = undefined; //clear after save
-				
+
 				_planIsModified = false;
-				 
+
 				getIterationPlans(updateIterationPlanContent); //updates plans display
 
 					}); //end saveModifiedTables handler
-			
+
 		} 	//end saveModifiedTables()
-		
+
 		//=====================================================================================
-		//deleteIterationPlan ~~		
+		//deleteIterationPlan ~~
 		function deleteIterationPlan()
-		{	
+		{
 			var uid = document.getElementById("planSelect").value;
 			uid = _planUIDs[uid];
-			
+
 			Debug.log("deleteIterationPlan " + uid);
 
 			if(_targetPlan == uid)
 				_targetPlan = ""; //clear target plan if being deleted
-			
-			DesktopContent.popUpVerification( 
+
+			DesktopContent.popUpVerification(
 					"Are you sure you want to delete the iteration plan named '" +
 					uid, localHandleDeleteIterationPlan,
 					0,"#efeaea",0,"#770000");
 			return;
-						
+
 
 			/////////////////////
 			//localHandleDeleteIterationPlan ~~
@@ -2546,16 +2546,16 @@
 
 					if(!modifiedTables.length)
 					{
-						Debug.log("There was an error while deleted the " + _recordsAlias + " '" + 
+						Debug.log("There was an error while deleted the " + _recordsAlias + " '" +
 								uid  + ".'",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					_modifiedTables = modifiedTables;
 
 					//delete command sequence
-					//	by saving empty sequence	
+					//	by saving empty sequence
 					savePlanCommandSequence(uid,[],
 							function()
 							{
@@ -2564,11 +2564,11 @@
 						//only arrive here on success
 						saveModifiedTables(
 								"The " +
-								_recordsAlias + " '" + 
+								_recordsAlias + " '" +
 								uid +
 								"' was successfully deleted!",
 
-								"There was an error while deleting the " + _recordsAlias + " '" + 
+								"There was an error while deleting the " + _recordsAlias + " '" +
 								uid  + ".'");
 
 							});
@@ -2578,14 +2578,14 @@
 
 
 			} //end localHandleDeleteIterationPlan
-			
-			
-			
-			
+
+
+
+
 		}	//end deleteIterationPlan()
 
 		//=====================================================================================
-		//showCommandDialog ~~		
+		//showCommandDialog ~~
 		function showCommandDialog(insertIndex, modifyExisting)
 		{
 			Debug.log("showCommandDialog");
@@ -2609,7 +2609,7 @@
 					return;
 				}
 			}
-			
+
 			localShowCommandDialog();
 			return;
 
@@ -2624,19 +2624,19 @@
 				{
 					//remove all existing dialogs
 					el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-					while(el) 
+					while(el)
 					{
 						el.parentNode.removeChild(el); //close popup
 						el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 					}
 				}
-				
+
 				if(!el) //make element if needed
 				{
-					el = document.createElement("div");			
+					el = document.createElement("div");
 					el.setAttribute("id", ConfigurationAPI._POP_UP_DIALOG_ID);
-				}				
-				
+				}
+
 				el.style.display = "none";
 				_popUpParamsModified = false; //reset
 
@@ -2653,21 +2653,21 @@
 				//build display string
 				var str = "";
 				{
-					str += "<a id='" + 
-							ConfigurationAPI._POP_UP_DIALOG_ID + 
+					str += "<a id='" +
+							ConfigurationAPI._POP_UP_DIALOG_ID +
 							"-cancel' href='#'>Cancel</a><br><br>";
 
 					str += htmlOpenDiv(
-							ConfigurationAPI._POP_UP_DIALOG_ID + 
-							"-div"); //start main div ----------- 
+							ConfigurationAPI._POP_UP_DIALOG_ID +
+							"-div"); //start main div -----------
 
 					if(modifyExisting)
 						str += "Modify the ";
 					else
 						str += "Insert a new ";
 
-					str += "command at position #" + (insertIndex+1) + 
-							" in the current Iteration Plan."; 
+					str += "command at position #" + (insertIndex+1) +
+							" in the current Iteration Plan.";
 					str += "<br>";
 					str += "<br>";
 
@@ -2678,8 +2678,8 @@
 
 					//type dropdown
 					str += "<tr><td>Command Type:</td><td>";
-					str += "<select " +												
-							"id='popUp-commandType' " +						
+					str += "<select " +
+							"id='popUp-commandType' " +
 							">";
 					var commandKeys = Object.keys(_COMMAND_TYPES);
 					var defaultType = _COMMAND_TYPES.BEGIN_LABEL;
@@ -2689,11 +2689,11 @@
 
 					for(var i=0;i<commandKeys.length;++i)
 					{
-						str += "<option " + 
+						str += "<option " +
 								(_COMMAND_TYPES[commandKeys[i]]==defaultType?"selected":"") +
 								">";
 						str += _COMMAND_TYPES[commandKeys[i]];
-						str += "</option>";					
+						str += "</option>";
 					}
 					str += "</select>";
 					str += "</td></tr>";
@@ -2711,7 +2711,7 @@
 
 					//then Add/Cancel button
 
-					str += "</div>"; //close main div ----------- 
+					str += "</div>"; //close main div -----------
 
 					str += "<center>";
 					str += "<br>";
@@ -2722,10 +2722,10 @@
 									"value": (modifyExisting?"Modify":"Insert") + " Command at #" + (insertIndex+1),
 									"title": (modifyExisting?"Modify ":"Insert new ") +	"command at position #" + (insertIndex+1) + " in the current Iteration Plan."
 							},
-							0 /*html*/, true /*closeTag*/);	
+							0 /*html*/, true /*closeTag*/);
 
 
-					if(modifyExisting) //add clone button 
+					if(modifyExisting) //add clone button
 					{
 						str += "<br>";
 						str += "<table><tr><td>";
@@ -2736,7 +2736,7 @@
 										"value": "Insert as New Command at #",
 										"title": "Insert new command at position chosen to the right."
 								},
-								0 /*html*/, true /*closeTag*/);					
+								0 /*html*/, true /*closeTag*/);
 
 						"'/>";
 						str += "</td><td>";
@@ -2762,10 +2762,10 @@
 				//now element is there, so setup finishing touches
 
 				//block mousemove from affecting display below
-				el.onmousemove = function(event) {event.stopPropagation();} 
+				el.onmousemove = function(event) {event.stopPropagation();}
 
 				//setup default choice parameters
-				localShowParamControls(defaultType);			
+				localShowParamControls(defaultType);
 
 
 				//::::::::::::::::::::::::::::::::::::
@@ -2774,9 +2774,9 @@
 					Debug.log("localShowParamControls " +commandKey);
 					var el = document.getElementById("popUp-paramControls");
 					var str = "";
-					str += "<b>" +  
-							"Parameter(s) [count = " + 
-							_COMMAND_PARAMS[commandKey].length + 
+					str += "<b>" +
+							"Parameter(s) [count = " +
+							_COMMAND_PARAMS[commandKey].length +
 							"]</b><br>";
 
 					str += "<center>";
@@ -2798,7 +2798,7 @@
 						if (modifyExisting &&  //if modifying give current value, if field exists in command being modified
 								_commands[insertIndex].param.hasOwnProperty(
 										_COMMAND_PARAMS[commandKey][i]))
-							initValue = 
+							initValue =
 									_commands[insertIndex].param
 									[_COMMAND_PARAMS[commandKey][i]];
 
@@ -2828,7 +2828,7 @@
 												{"value":_fsmNames[j]},
 												_fsmNames[j] /*innerHTML*/, true /*closeTag*/);
 
-							str += "</select>";						
+							str += "</select>";
 
 						}
 						else if(_COMMAND_PARAMS[commandKey][i] ==  //system alias
@@ -2848,7 +2848,7 @@
 							{
 								if(_tableGroupAliases[j].alias == initValue)
 									selectedAliasIndex = j;
-							
+
 								str += DesktopContent.htmlOpen("option" +
 										(_tableGroupAliases[j].alias == initValue? //select the init value if match
 												" selected":""),
@@ -2858,17 +2858,17 @@
 										_tableGroupAliases[j].alias/*innerHTML*/, true /*closeTag*/);
 							}
 
-							str += "</select>";	
+							str += "</select>";
 
 							str += DesktopContent.htmlOpen("div",
 									{
-											"id":"popUp-param-systemAliasDetails"										
+											"id":"popUp-param-systemAliasDetails"
 									});
 							if(_tableGroupAliases.length)
 								str += popUpParamSystemAliasOnChange(
 										_tableGroupAliases[selectedAliasIndex].alias);
 							str += "</div>";
-							hDelta += 90;						
+							hDelta += 90;
 						}
 						else if(_COMMAND_PARAMS[commandKey][i] ==  //targets
 									_COMMAND_PARAM_FIELDS.Targets)
@@ -2882,23 +2882,23 @@
 											"value":initValue,
 											"onchange":"_popUpParamsModified = true;"
 									}, 0 /*innerHTML*/, true /*closeTag*/);
-							
+
 							str += DesktopContent.htmlOpen("div",
 									{
 											"class":ConfigurationAPI._POP_UP_DIALOG_ID + "-editIcon",
 											"style":"float:left; display:block; margin: 2px 0 0 10px;",
 											"onclick":"showParamTargetWizDialog(" + i + ");"
 									}, 0 /*innerHTML*/, true /*closeTag*/);
-							
+
 							//extract _cmdTargetObj from init value
-							
-							
+
+
 							//extract initial targets
 							localExtractTargets();
-							
+
 							//::::::::::::::::::::::::::::::::::::
 							//from initValue to targets
-							function localExtractTargets() 
+							function localExtractTargets()
 							{
 								_cmdTargetObj.tables = [];
 								_cmdTargetObj.uids = [];
@@ -2909,7 +2909,7 @@
 									if(targetArr[i].length < 3) continue; //too small, invalid
 									pair = targetArr[i].split('/');
 									_cmdTargetObj.tables.push(pair[0]);
-									_cmdTargetObj.uids.push(pair[1]);					
+									_cmdTargetObj.uids.push(pair[1]);
 								}
 								console.log(_cmdTargetObj);
 							} //end localExtractTargets()
@@ -2926,7 +2926,7 @@
 											"value":initValue,
 											"onchange":"_popUpParamsModified = true;"
 									}, 0 /*innerHTML*/, true /*closeTag*/);
-							
+
 							str += DesktopContent.htmlOpen("div",
 									{
 											"class":ConfigurationAPI._POP_UP_DIALOG_ID + "-editIcon",
@@ -2937,10 +2937,10 @@
 						else if(
 								_COMMAND_PARAMS[commandKey][i] ==  //booleans
 								_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread ||
-								
+
 								_COMMAND_PARAMS[commandKey][i] ==  //booleans
 								_COMMAND_PARAM_FIELDS.DoTrackGroupChanges ||
-								
+
 								_COMMAND_PARAMS[commandKey][i] ==  //booleans
 								_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile)
 						{
@@ -2954,10 +2954,10 @@
 									});
 
 							//give empty option
-							if(initValue == "True" || 
-									initValue == "Yes" || 
-									initValue == "On" || 
-									initValue == "1") 
+							if(initValue == "True" ||
+									initValue == "Yes" ||
+									initValue == "On" ||
+									initValue == "1")
 							{
 								str += DesktopContent.htmlOpen("option selected",
 										{"value":1},
@@ -2980,8 +2980,8 @@
 
 
 
-							str += "</select>";	
-						}		
+							str += "</select>";
+						}
 						else if(_COMMAND_PARAMS[commandKey][i] == // Macro Parameter table link
 								_COMMAND_PARAM_FIELDS.LinkToMacroDimensions)
 						{
@@ -2996,7 +2996,7 @@
 											"onchange":"_popUpParamsModified = true;"
 									}, 0 /*innerHTML*/, true /*closeTag*/);
 						}
-						else //default field input	
+						else //default field input
 							str += DesktopContent.htmlOpen("input",
 									{
 											"id":("popUp-param-" + i),
@@ -3007,11 +3007,11 @@
 									}, 0 /*innerHTML*/, true /*closeTag*/);
 
 
-						str += "</td></tr>";				
+						str += "</td></tr>";
 					}
 					str += "</select>";
-					str += "</table>";		
-					str += "</center>";				
+					str += "</table>";
+					str += "</center>";
 
 					//set new popup height
 					//	25px for each parameter
@@ -3026,14 +3026,14 @@
 				document.getElementById(
 						"popUp-commandType").onchange = function(event) {
 					Debug.log("Selected " + this.value);
-					localShowParamControls(this.value);				
-				}; //end select change  handler	
+					localShowParamControls(this.value);
+				}; //end select change  handler
 
 				//::::::::::::::::::::::::::::::::::::
 				//create cancel onclick handler
-				document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID + 
+				document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
 						"-cancel").onclick = function(event) {
-					
+
 					Debug.log("Cancel click");
 
 					if(_popUpParamsModified)
@@ -3048,23 +3048,23 @@
 					}
 					localCancelCommandDialog();
 					return false;
-					
+
 					//::::::::::::::::::::::::::::::::::::
 					function localCancelCommandDialog()
 					{
 						var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 						if(el) el.parentNode.removeChild(el); //close popup
 					}
-				}; //end cancel onclick  handler	
+				}; //end cancel onclick  handler
 
 				//::::::::::::::::::::::::::::::::::::
 				//create submit onmouseup handler
-				document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID + 
+				document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
 						"-submitButton").onmouseup = function() {
 					Debug.log("Submit mouseup");
 
 					//disable buttons to prevent double clicks
-					this.disabled = true;	
+					this.disabled = true;
 					try {document.getElementById("popUp-cloneButton").disabled = true;}
 					catch(e){} //ignore if no clone button
 
@@ -3075,18 +3075,18 @@
 					for(var i=0;i<_COMMAND_PARAMS[type].length;++i)
 					{
 						params.push(document.getElementById(
-								"popUp-param-" + i).value);				
+								"popUp-param-" + i).value);
 					}
 
 					if(modifyExisting)
 						deleteCommand(insertIndex,true /*noPrompt*/,true /*noDraw*/);
 					addCommand(type,params,insertIndex);
-					drawIterationPlan();				
+					drawIterationPlan();
 
 					var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-					if(el) el.parentNode.removeChild(el); //close popup	
+					if(el) el.parentNode.removeChild(el); //close popup
 
-				}; //end submit onmouseup handler	
+				}; //end submit onmouseup handler
 
 				//::::::::::::::::::::::::::::::::::::
 				//create clone onmouseup handler
@@ -3096,7 +3096,7 @@
 
 						//disable buttons to prevent double clicks
 						this.disabled = true;
-						document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID + 
+						document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
 								"-submitButton").disabled = true;
 						var type = document.getElementById(
 								"popUp-commandType").value;
@@ -3105,20 +3105,20 @@
 						for(var i=0;i<_COMMAND_PARAMS[type].length;++i)
 						{
 							params.push(document.getElementById(
-									"popUp-param-" + i).value);				
+									"popUp-param-" + i).value);
 						}
 						insertIndex =  document.getElementById(
 								"popUp-cloneButtonPosition").value;
 						addCommand(type,params,insertIndex);
-						drawIterationPlan();				
+						drawIterationPlan();
 
 						var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-						if(el) el.parentNode.removeChild(el); //close popup	
-					}} //end clone onmouseup handler	
+						if(el) el.parentNode.removeChild(el); //close popup
+					}} //end clone onmouseup handler
 				catch(e){} //ignore if no clone button
 
 			} //end localShowCommandDialog()
-			
+
 		} //end showCommandDialog()
 
 		//=====================================================================================
@@ -3127,27 +3127,27 @@
 		{
 			Debug.log("showParamPathToFieldWizDialog " + paramIndex);
 
-			_popUpParamsModified = true; 
+			_popUpParamsModified = true;
 
 			//always create element
 			var el;
 			if(1)
 			{
-				el = document.createElement("div");			
+				el = document.createElement("div");
 				el.setAttribute("id", ConfigurationAPI._POP_UP_DIALOG_ID);
 			}
 			el.style.display = "none";
 
 			//set position and size
 			var w = 480;
-			var h = 490; 
+			var h = 490;
 			ConfigurationAPI.setPopUpPosition(el,w /*w*/,h /*h*/);
-			
+
 			//build display string
 			var str = "";
 			{
-				str += "<a id='" + 
-						"popUp-fieldWiz-cancelButton" + 
+				str += "<a id='" +
+						"popUp-fieldWiz-cancelButton" +
 						"' href='#'>Cancel</a><br><br>";
 
 				str += DesktopContent.htmlClearDiv();
@@ -3157,7 +3157,7 @@
 								"style":"height:390px; margin-top: -16px;"
 						},
 						0,true);
-				
+
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("input",
 						{
@@ -3166,21 +3166,21 @@
 								"value": "Select Field",
 								"title": "Select Field and set path to field as the parameter value."
 						},
-						0 /*html*/, true /*closeTag*/);	
-				
+						0 /*html*/, true /*closeTag*/);
+
 			}  //end build display string
 
 			el.innerHTML = str;
 			el.style.display = "block";
 			document.body.appendChild(el); //add element to display div
-			
-			
+
+
 			//::::::::::::::::::::::::::::::::::::
 			//create cancel onclick handler
 			document.getElementById(
-					"popUp-fieldWiz-cancelButton").onclick = 
+					"popUp-fieldWiz-cancelButton").onclick =
 							function(event) {
-				Debug.log("Wiz Cancel click");				
+				Debug.log("Wiz Cancel click");
 				if(el) el.parentNode.removeChild(el); //close popup
 				return false;
 			}; //end submit onmouseup handler
@@ -3188,38 +3188,38 @@
 			//::::::::::::::::::::::::::::::::::::
 			//create cancel onclick handler
 			document.getElementById(
-					"popUp-fieldWiz-submitButton").onclick = 
+					"popUp-fieldWiz-submitButton").onclick =
 							function(event) {
 
 				Debug.log("Wiz ok click");
 
 				//disable buttons to prevent double clicks
 				this.disabled = true;
-				
+
 				var sel = document.getElementById("popUp-fieldWiz-firstBox");
 				var choiceEl = MultiSelectBox.getSelectionElementByIndex(
 						sel,
 						MultiSelectBox.getSelectedIndex(sel));
-						
+
 				//export field string
-				document.getElementById("popUp-param-" + 
-						paramIndex).value = 
-								choiceEl.getAttribute("key-value") + 
+				document.getElementById("popUp-param-" +
+						paramIndex).value =
+								choiceEl.getAttribute("key-value") +
 								choiceEl.innerText;
 
 				if(el) el.parentNode.removeChild(el); //close popup
 				return false;
 			}; //end submit onmouseup handler
-			
-			
+
+
 			//use _cmdTargetObj to ask for common fields
 			console.log(_cmdTargetObj);
 			var recordArr = [];
 
 			for(var i=0;i<_cmdTargetObj.tables.length;++i)
-				recordArr.push(_cmdTargetObj.tables[i] + "/" + 
+				recordArr.push(_cmdTargetObj.tables[i] + "/" +
 						_cmdTargetObj.uids[i]);
-			
+
 			ConfigurationAPI.getFieldsOfRecords(
 					"/"/*subsetBasePath*/,
 					recordArr,
@@ -3228,10 +3228,10 @@
 					localGetFieldsHandler /*responseHandler*/,
 					_modifiedTables,
 					);
-			
-			
+
+
 			return;
-			
+
 
 			//::::::::::::::::::::::::::::::::::::
 			//get common fields handler
@@ -3239,12 +3239,12 @@
 			{
 				Debug.log("localGetFieldsHandler");
 				console.log(fields);
-				
+
 				var msValues = [];
-				var msKeys = [];	
-				var msTypes = [];	
-				var msTitles = [];	
-				
+				var msKeys = [];
+				var msTypes = [];
+				var msTitles = [];
+
 				for(var i=0;i<fields.length;++i)
 				{
 					msTitles.push(fields[i].fieldRelativePath +
@@ -3253,11 +3253,11 @@
 					msKeys.push(fields[i].fieldRelativePath);
 					msTypes.push("");
 				}
-				
-				
+
+
 				//////////// make multiselect box
-				{	
-					var noMultiSelect = true; // true or false (false for multiselect functionality) 
+				{
+					var noMultiSelect = true; // true or false (false for multiselect functionality)
 
 
 					//write to a particular div
@@ -3277,46 +3277,46 @@
 									);
 
 					//set pre-selections for uids already in group
-					MultiSelectBox.initMySelectBoxes(true); //init to clear					
+					MultiSelectBox.initMySelectBoxes(true); //init to clear
 
 				} //////////// end make multiselect box
-				
+
 			} //end localGetFieldsHandler
-			
+
 		} //end showParamPathToFieldWizDialog()
-		
+
 		//=====================================================================================
 		//showParamTargetWizDialog ~~
 		function showParamTargetWizDialog(paramIndex)
 		{
 			Debug.log("showParamTargetWizDialog " + paramIndex);
-			
-			_popUpParamsModified = true; 
-			
+
+			_popUpParamsModified = true;
+
 			//always create element
 			var el;
 			if(1)
 			{
-				el = document.createElement("div");			
+				el = document.createElement("div");
 				el.setAttribute("id", ConfigurationAPI._POP_UP_DIALOG_ID);
 			}
 			el.style.display = "none";
 
 			//set position and size
 			var w = 480;
-			var h = 490; 
+			var h = 490;
 			ConfigurationAPI.setPopUpPosition(el,w /*w*/,h /*h*/);
-			
+
 			//build display string
 			var str = "";
 			{
-				str += "<a id='" + 
-						ConfigurationAPI._POP_UP_DIALOG_ID + 
+				str += "<a id='" +
+						ConfigurationAPI._POP_UP_DIALOG_ID +
 						"-wizcancel' href='#'>Cancel</a><br><br>";
 
 				str += htmlOpenDiv(
-						ConfigurationAPI._POP_UP_DIALOG_ID + 
-						"-div"); //start main div ----------- 
+						ConfigurationAPI._POP_UP_DIALOG_ID +
+						"-div"); //start main div -----------
 
 				//make target display
 				str += DesktopContent.htmlOpen("div",
@@ -3328,12 +3328,12 @@
 						{
 								"id":"popUp-targetDisplay",
 								"type":"text",
-								"style":"float: left; margin: -2px 0 0 1px;" + 
+								"style":"float: left; margin: -2px 0 0 1px;" +
 								"width: 270px;",
 								"class":"popUp-param"
 						});
 				str += "</input>";
-				
+
 				str += DesktopContent.htmlOpen("div",
 						{
 								"id":"popUp-targetDisplayClearButton",
@@ -3344,23 +3344,23 @@
 						true);
 
 				str += DesktopContent.htmlClearDiv();
-				
+
 				//make checkbox for FE only filter
 				str += DesktopContent.htmlOpen("input",
 						{
 								"type":"checkbox",
-								"id":"popUp-targetWizFEOnly"								
+								"id":"popUp-targetWizFEOnly"
 						},
 						DesktopContent.htmlOpen("label",
 								{
 								"id":"popUp-targetWizFEOnlyName",
-								"style":"cursor:pointer;"										
+								"style":"cursor:pointer;"
 								},
 								"Filter on Front-ends only",true),
 								true);
-				
+
 				str += DesktopContent.htmlClearDiv();
-				
+
 				//make checkbox for second-level all UIDs
 				str += DesktopContent.htmlOpen("input",
 						{
@@ -3370,7 +3370,7 @@
 						DesktopContent.htmlOpen("label",
 								{
 										"id":"popUp-targetWizAllUIDsName",
-										"style":"cursor:pointer;"										
+										"style":"cursor:pointer;"
 								},
 								"Target all records within parent",true),
 								true);
@@ -3387,8 +3387,8 @@
 								"id":"popUp-targetWiz-secondBoxDiv",
 								"style":"display:block"
 						});
-				
-				
+
+
 				str += DesktopContent.htmlOpen("div",
 						{
 								"id":"popUp-targetWiz-secondBox",
@@ -3406,26 +3406,26 @@
 								"value": "Save Targets",
 								"title": "Save targets back to the parameter value."
 						},
-						0 /*html*/, true /*closeTag*/);	
+						0 /*html*/, true /*closeTag*/);
 			} //end build display string
-						
-			
+
+
 
 			el.innerHTML = str;
 			el.style.display = "block";
 			document.body.appendChild(el); //add element to display div
-			
+
 			//::::::::::::::::::::::::::::::::::::
 			//create cancel onclick handler
-			document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID + 
+			document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
 					"-wizcancel").onclick = function(event) {
-				Debug.log("Wiz Cancel click");				
+				Debug.log("Wiz Cancel click");
 				if(el) el.parentNode.removeChild(el); //close popup
-				
-				//extract the value back into targets	
-				var str = document.getElementById("popUp-param-" + 
+
+				//extract the value back into targets
+				var str = document.getElementById("popUp-param-" +
 						paramIndex).value;
-				
+
 				_cmdTargetObj.tables = [];
 				_cmdTargetObj.uids = [];
 				var targetArr = str.split(',');
@@ -3434,77 +3434,77 @@
 				{
 					pair = targetArr[i].split('/');
 					_cmdTargetObj.tables.push(pair[0]);
-					_cmdTargetObj.uids.push(pair[1]);					
+					_cmdTargetObj.uids.push(pair[1]);
 				}
 				console.log(_cmdTargetObj);
-				
+
 				return false;
 			}; //end submit onmouseup handler
 
 			//::::::::::::::::::::::::::::::::::::
 			//create cancel onclick handler
 			document.getElementById(
-					"popUp-targetWiz-submitButton").onclick = 
+					"popUp-targetWiz-submitButton").onclick =
 							function(event) {
-				
+
 				Debug.log("Wiz ok click");
-				
+
 				//disable buttons to prevent double clicks
 				this.disabled = true;
-				
+
 				//export target string
-				document.getElementById("popUp-param-" + 
-						paramIndex).value = 
+				document.getElementById("popUp-param-" +
+						paramIndex).value =
 								document.getElementById(
 										"popUp-targetDisplay").value;
-				
-				
+
+
 				if(el) el.parentNode.removeChild(el); //close popup
 				return false;
 			}; //end submit onmouseup handler
-			
+
 			//fe checkbox handlers
 			document.getElementById("popUp-targetWizFEOnly").onchange = localFeCheckboxChanged;
 			document.getElementById("popUp-targetWizFEOnlyName").onmouseup = localFeCheckboxHandler;
-			
+
 			//all-in-parent checkbox handlers
-			document.getElementById("popUp-targetWizAllUIDs").onchange = localAllUIDsCheckboxChanged;			
+			document.getElementById("popUp-targetWizAllUIDs").onchange = localAllUIDsCheckboxChanged;
 			document.getElementById("popUp-targetWizAllUIDsName").onmouseup = localAllUIDsCheckboxHandler;
-						
+
 			document.getElementById("popUp-targetDisplayClearButton").onmouseup = localClearTargets;
 
 			//init handling of targets
-			
-			localFeCheckboxHandler(); //get first box of UIDs 
+
+			localFeCheckboxHandler(); //get first box of UIDs
 			localAllUIDsCheckboxHandler(); //deafult to true for all UIDs
-			
+
 			//assume targets are already extracted by parameter dialog
-			
+
 			targetWizDisplayTargets();
-			
+
 			return;
 
-			
+
 			//::::::::::::::::::::::::::::::::::::
-			function localClearTargets() 
+			function localClearTargets()
 			{
 				_cmdTargetObj = {"tables":[],"uids":[]};
-				targetWizDisplayTargets();				
-			} //end localClearTargets()		
-			
-			
+				targetWizDisplayTargets();
+			} //end localClearTargets()
+
+
 			//::::::::::::::::::::::::::::::::::::
 			//AllUIDs checkbox
-			function localAllUIDsCheckboxChanged(event) 
+			function localAllUIDsCheckboxChanged(event)
 			{
 				//Debug.log("localFeCheckboxChanged " + this.checked);
 
-				localAllUIDsCheckboxHandler(event,this);				
+				localAllUIDsCheckboxHandler(event,this);
 			} //end localFeCheckboxChanged()
 
 			//::::::::::::::::::::::::::::::::::::
 			//enable second level based on checkbox
-			function localAllUIDsCheckboxHandler(event,el) 
+			function localAllUIDsCheckboxHandler(event,el)
 			{
 				if(!el)
 				{
@@ -3513,22 +3513,22 @@
 				}
 				useAllRecords = el.checked;
 				Debug.log("localAllUIDsCheckboxHandler " + useAllRecords);
-				
-				
+
+
 			} //end localAllUIDsCheckboxHandler()
-			
+
 			//::::::::::::::::::::::::::::::::::::
 			//FEs only checkbox
-			function localFeCheckboxChanged(event) 
+			function localFeCheckboxChanged(event)
 			{
 				//Debug.log("localFeCheckboxChanged " + this.checked);
-				
-				localFeCheckboxHandler(event,this);				
+
+				localFeCheckboxHandler(event,this);
 			} //end localFeCheckboxChanged()
-			
+
 			//::::::::::::::::::::::::::::::::::::
 			//populate first level based on checkbox
-			function localFeCheckboxHandler(event,el) 
+			function localFeCheckboxHandler(event,el)
 			{
 				if(!el)
 				{
@@ -3543,7 +3543,7 @@
 						_modifiedTables,
 						localExtractTargetTree
 				);
-				
+
 				//::::::::::::::::::::::::::::::::::::
 				//Extract UIDs from tree request and show in first box
 				function localExtractTargetTree(tree)
@@ -3553,30 +3553,30 @@
 						Debug.log("Invalid tree xml object.",Debug.HIGH_PRIORITY);
 						return;
 					}
-					
+
 					var msValues = [];
-					
+
 					//try for any errors in format
 					try
 					{
 						var nodes = tree.children;
-	                	for(var i=0;i<nodes.length;++i)
-	                	{                    
-	                		if(nodes[i].nodeName != "node")   continue;
-	                			
-	                		//Debug.log(nodes[i].getAttribute("value"));
-	                		msValues.push(nodes[i].getAttribute("value"));
-	                	}
+						for(var i=0;i<nodes.length;++i)
+						{
+							if(nodes[i].nodeName != "node")   continue;
+
+							//Debug.log(nodes[i].getAttribute("value"));
+							msValues.push(nodes[i].getAttribute("value"));
+						}
 					}
 					catch(e)
 					{
 						Debug.log("Invalid tree xml object.",Debug.HIGH_PRIORITY);
 						return;
 					}
-					
+
 					//////////// make multiselect box
-					{	
-						var noMultiSelect = false; // true or false (false for multiselect functionality) 
+					{
+						var noMultiSelect = false; // true or false (false for multiselect functionality)
 
 						var msKeys = []; 	//group keys for multi-select
 						var msTypes = [];	//back link strings for multi-select
@@ -3595,19 +3595,19 @@
 						_cmdTargetParentSelArr = []; //clear what has been loaded
 
 					} //////////// end make multiselect box
-					
-					
+
+
 				} //end localExtractTargetTree()
-				
+
 			}; //end localFeCheckboxHandler()
-			
+
 		} //end showParamTargetWizDialog()
 
 		//=====================================================================================
 		//targetWizRecordMultiSelectHandler ~~
 		function targetWizRecordMultiSelectHandler(sel)
 		{
-			var i = MultiSelectBox.getSelectedIndex(sel); 
+			var i = MultiSelectBox.getSelectedIndex(sel);
 			var selArr = MultiSelectBox.getSelectionArray(sel);
 			MultiSelectBox.dbg("ms Chosen element index:",i,
 					"=", selArr[i],
@@ -3617,13 +3617,13 @@
 			var recordUID = sel.innerText;
 
 			Debug.log("_cmdTargetWizParentTable " + _cmdTargetWizParentTable);
-						
+
 			//if selected add, else remove
-			
+
 			var found = false;
 			for(var j=0;j<_cmdTargetObj.tables.length;++j)
 			{
-				if(_cmdTargetObj.tables[j] == _cmdTargetWizParentTable && 
+				if(_cmdTargetObj.tables[j] == _cmdTargetWizParentTable &&
 						_cmdTargetObj.uids[j] == recordUID)
 				{
 					found = true;
@@ -3635,103 +3635,103 @@
 					break;
 				}
 			}
-			
+
 			if(!found && isChoiceSelected) //add
 			{
 				_cmdTargetObj.tables.push(_cmdTargetWizParentTable);
-				_cmdTargetObj.uids.push(recordUID);						
+				_cmdTargetObj.uids.push(recordUID);
 			}
-			
+
 			targetWizDisplayTargets(); //update display
-			
+
 		} //end targetWizRecordMultiSelectHandler()
-		
+
 		//=====================================================================================
 		//targetWizParentMultiSelectHandler ~~
 		function targetWizParentMultiSelectHandler(sel)
 		{
-			var i = MultiSelectBox.getSelectedIndex(sel); 
+			var i = MultiSelectBox.getSelectedIndex(sel);
 			var selArr = MultiSelectBox.getSelectionArray(sel);
 			MultiSelectBox.dbg("ms Chosen element index:",i,
 					"=", selArr[i],
 					" value:",sel.innerHTML);
-						
+
 			//for(var s in selArr)
 			//	MultiSelectBox.dbg("ms selected [" + s + "]: ",
 			//			selArr[s]);
-			
+
 			var isChoiceSelected = selArr[i]?true:false;
 			var feMode = document.getElementById("popUp-targetWizFEOnly").checked;
 			var allUidMode = document.getElementById("popUp-targetWizAllUIDs").checked;
-			
+
 			var path = feMode?
 					_FE_SUPERVISOR_TABLE:"";
-			
 
-			
+
+
 			//compare selected array to last selected array
 			//	if allUidMode and different
 			//		then load all children and take action
 			//	else if not allUidMode just load the one that was clicked
-			
+
 			if(allUidMode)
-			{				
+			{
 				var parentTable;
-				
+
 				for(var i=0;i<selArr.length;++i)
-					if((_cmdTargetParentSelArr[i] == 
+					if((_cmdTargetParentSelArr[i] ==
 							undefined && selArr[i]) ||
-							(_cmdTargetParentSelArr[i] != undefined && 	
+							(_cmdTargetParentSelArr[i] != undefined &&
 									_cmdTargetParentSelArr[i] != selArr[i]))
 					{
 						_cmdTargetParentSelArr[i] = selArr[i];
-						
+
 						//different, so load children and act
-						
+
 						parentTable = feMode?
 								_FE_TABLE:
 								MultiSelectBox.getSelectionElementByIndex(
 									sel,i).innerText;
 
 						ConfigurationAPI.getTree(
-								path + 
-								("/" + 
+								path +
+								("/" +
 								MultiSelectBox.getSelectionElementByIndex(
-										sel,i).innerText) + 
+										sel,i).innerText) +
 								(feMode?
 								"/LinkToFEInterfaceTable":""),
 								1, //down through command parameters
 								_modifiedTables,
 								localExtractTargetTree,
-								[parentTable,selArr[i]] //pass parentTable and selected bool							
+								[parentTable,selArr[i]] //pass parentTable and selected bool
 						);
 					}
 					//else same, do nothing
-				
-				
+
+
 				return;
 			}
-			
-			
+
+
 			//else not allUidMode
-			
-			
+
+
 			_cmdTargetWizParentTable = feMode?
 					_FE_TABLE:sel.innerText;
-						
+
 			path += "/" + sel.innerText;
 			path += feMode?
 					"/LinkToFEInterfaceTable":"";
-			
+
 			ConfigurationAPI.getTree(path,
 					1, //down through command parameters
 					_modifiedTables,
 					localExtractTargetTree,
 					[_cmdTargetWizParentTable,isChoiceSelected] //pass parentTable and selected bool
 			);
-			
+
 			return;
-			
+
 			//::::::::::::::::::::::::::::::::::::
 			//Extract UIDs from tree request and show in first box
 			function localExtractTargetTree(tree,parentInfo)
@@ -3744,8 +3744,8 @@
 
 				var msValues = [];
 				var msSelected = []; //keep track of ms selected, even though it may not be displayed
-				var found; 
-				
+				var found;
+
 				Debug.log("parentTable " + parentInfo[0]);
 				//_cmdTargetWizParentTable is only valid when not ALL
 				Debug.log("_cmdTargetWizParentTable " + _cmdTargetWizParentTable);
@@ -3754,30 +3754,30 @@
 				//try for any errors in format
 				try
 				{
-					var nodes = tree.children;					
+					var nodes = tree.children;
 					for(var i=0;i<nodes.length;++i)
-					{                    
+					{
 						if(nodes[i].nodeName != "node")   continue;
 
 						//Debug.log(nodes[i].getAttribute("value"));
 						msValues.push(nodes[i].getAttribute("value"));
-						
+
 						//search targets for target
 						found = false;
 						for(var j=0;j<_cmdTargetObj.tables.length;++j)
 						{
-							if(_cmdTargetObj.tables[j] == parentInfo[0] && 
+							if(_cmdTargetObj.tables[j] == parentInfo[0] &&
 									_cmdTargetObj.uids[j] == msValues[i])
 							{
 								//target found in targets
-								
-								found = true;							
-										
+
+								found = true;
+
 								if(allUidMode && !isChoiceSelected)
 								{
-									Debug.log("Found " + _cmdTargetObj.tables[j] + "/" + 
+									Debug.log("Found " + _cmdTargetObj.tables[j] + "/" +
 											_cmdTargetObj.uids[j] + ", clearing");
-	
+
 									//remove!
 									_cmdTargetObj.tables.splice(j,1);
 									_cmdTargetObj.uids.splice(j,1);
@@ -3785,22 +3785,22 @@
 								}
 								else
 									msSelected.push(true);
-								
+
 								break;
 							}
-							
+
 						} //end loop through targets
-						
+
 						if(!found)
 						{
-							//target not found in targets 
+							//target not found in targets
 							if(allUidMode && isChoiceSelected)
 							{
-								Debug.log("Adding " + parentInfo[0] + "/" + 
+								Debug.log("Adding " + parentInfo[0] + "/" +
 										msValues[i]);
 
 								_cmdTargetObj.tables.push(parentInfo[0]);
-								_cmdTargetObj.uids.push(msValues[i]);	
+								_cmdTargetObj.uids.push(msValues[i]);
 								msSelected.push(true);
 							}
 							else
@@ -3816,12 +3816,12 @@
 
 				//clear
 				document.getElementById("popUp-targetWiz-secondBox").innerHTML = "";
-				
+
 				targetWizDisplayTargets(); //update display
-									
+
 				if(!allUidMode)		//////////// make multiselect box
-				{	
-					var noMultiSelect = false; // true or false (false for multiselect functionality) 
+				{
+					var noMultiSelect = false; // true or false (false for multiselect functionality)
 
 					var msKeys = []; 	//group keys for multi-select
 					var msTypes = [];	//back link strings for multi-select
@@ -3840,9 +3840,9 @@
 					MultiSelectBox.initMySelectBoxes(false); //init but do not clear others
 					var memberVal;
 					for(var i=0;i<msSelected.length;++i)
-					{	
+					{
 						MultiSelectBox.setSelectionElementByIndex(
-								sel,i,msSelected[i]);					
+								sel,i,msSelected[i]);
 					}
 					MultiSelectBox.initMySelectBoxes(false); //setup selections
 
@@ -3851,22 +3851,22 @@
 
 			} //end localExtractTargetTree()
 		} //end targetWizParentMultiSelectHandler()
-		
+
 		//=====================================================================================
 		//targetWizDisplayTargets ~~
-		function targetWizDisplayTargets() 
+		function targetWizDisplayTargets()
 		{
 			var labelEl = document.getElementById("popUp-targetDisplayLabel");
 			var el = document.getElementById("popUp-targetDisplay");
 
 			var str = "";
 			var titleStr = "";
-			
+
 			for(var i=0;i<_cmdTargetObj.tables.length;++i)
 			{
 				if(i) {str += ","; titleStr += "\n"; }
 				str += _cmdTargetObj.tables[i] + "/" + _cmdTargetObj.uids[i];
-				titleStr += (i+1) + ". " + 
+				titleStr += (i+1) + ". " +
 						_cmdTargetObj.tables[i] + "/" + _cmdTargetObj.uids[i];
 			}
 
@@ -3875,16 +3875,16 @@
 			labelEl.innerHTML = "You have " + _cmdTargetObj.tables.length + " target(s):";
 
 		} //end targetWizDisplayTargets()
-		
+
 		//=====================================================================================
 		//popUpParamSystemAliasOnChange ~~
 		function popUpParamSystemAliasOnChange(value)
 		{
 			Debug.log("popUpParamSystemAliasOnChange " + value);
-			
+
 			var el = document.getElementById("popUp-param-systemAliasDetails");
 			var str = "";
-			
+
 
 			for(var j=0;j<_tableGroupAliases.length;++j)
 			{
@@ -3910,7 +3910,7 @@
 							_tableGroupAliases[j].aliasComment +
 							"</td></tr>";
 					str += "</table>";
-							
+
 				}
 			}
 			if(!el)
@@ -3919,14 +3919,14 @@
 				el.innerHTML = str;
 			return str;
 		} //end popUpParamSystemAliasOnChange()
-		
+
 		//=====================================================================================
 		//addCommand ~~
 		//	push to _commands object
 		function addCommand(type,params,insertPos)
 		{
 			Debug.log("addCommand type = " + type);
-			
+
 			//if valid type, build command based on parameter key array
 			if(_COMMAND_PARAMS.hasOwnProperty(type))
 			{
@@ -3938,13 +3938,13 @@
 							params.length + " vs " + _COMMAND_PARAMS[type].length, Debug.HIGH_PRIORITY);
 					return;
 				}
-				
+
 				_planIsModified = true;
-				
+
 				//valid command, so add
 				var cmdIndex;
-				if(insertPos == undefined || 
-						insertPos >= _commands.length || 
+				if(insertPos == undefined ||
+						insertPos >= _commands.length ||
 						insertPos < 0) //if invalid, add to end
 				{
 					_commands.push({"param": {} });
@@ -3956,21 +3956,21 @@
 					_commands.splice(cmdIndex, 0, {"param": {} });
 				}
 				Debug.log("addCommand at #" + (cmdIndex+1));
-				
+
 				_commands[cmdIndex].type = type;
-				
-				//fill parameters 
+
+				//fill parameters
 				for(var i=0;i<_COMMAND_PARAMS[type].length;++i)
 					_commands[cmdIndex].param
 						[_COMMAND_PARAMS[type][i]] = params[i];
-			}			
+			}
 			else
 			{
 				Debug.log("Fatal error. Unknown command attempted!", Debug.HIGH_PRIORITY);
 				return;
 			}
-			
-			
+
+
 		}	//end addCommand()
 
 		//=====================================================================================
@@ -3978,13 +3978,13 @@
 		function deleteCommand(i,noPrompt,noDraw)
 		{
 			Debug.log("deleteCommand " + i);
-			
+
 			if(noPrompt)
 			{
 				localDelete();
 				return;
 			}
-				
+
 			DesktopContent.popUpVerification(
 					"Are you sure you want to delete the command <br>" +
 					(i+1) + ". " + _commands[i].type + "?",
@@ -3992,19 +3992,19 @@
 					0,"#efeaea",0,"#770000");
 			return;
 
-            //::::::::::::::::::::::::::::::::::::
-            function localDelete()
-            {
-            	Debug.log("localDelete " + i);
+			//::::::::::::::::::::::::::::::::::::
+			function localDelete()
+			{
+				Debug.log("localDelete " + i);
 
-            	_planIsModified = true;
-            	_commands.splice(i,1);
-            	
-            	if(noDraw) return; //skip display update
-            	
-            	drawIterationPlan(); //update display
-            }
-			
+				_planIsModified = true;
+				_commands.splice(i,1);
+
+				if(noDraw) return; //skip display update
+
+				drawIterationPlan(); //update display
+			}
+
 		}	//end deleteCommand()
 
 		//=====================================================================================
@@ -4012,9 +4012,9 @@
 		function savePlanCommandSequence(plan,commands,responseHandler)
 		{
 			Debug.log("savePlanCommandSequence " + plan);
-			
+
 			plan = encodeURIComponent(plan);
-			
+
 			//; separated commands and comma separated params
 			var cmdStr = "";
 			var pkeys;
@@ -4023,11 +4023,11 @@
 			for(var i=0;i<commands.length;++i)
 			{
 				cmdStr += "type," + encodeURIComponent(commands[i].type);
-				
+
 				pkeys = Object.keys(commands[i].param);
 				for(var j=0;j<pkeys.length;++j)
 				{
-					if(pkeys[j] ==_COMMAND_PARAM_FIELDS.Targets) //targets 
+					if(pkeys[j] ==_COMMAND_PARAM_FIELDS.Targets) //targets
 					{
 						//handle target field differently
 						//	convert from CSV := table/uid,table/uid,...
@@ -4041,17 +4041,17 @@
 						{
 							if(targetArr[k].indexOf('/') < 0)
 								continue; //skip invalid entries
-							
-							if(k) 
+
+							if(k)
 							{
 								targetTableStr += "=";
 								targetUidStr += "=";
 							}
 							targetStr = targetArr[k].split('/');
 							targetTableStr += encodeURIComponent(targetStr[0]);
-							targetUidStr += encodeURIComponent(targetStr[1]);							
+							targetUidStr += encodeURIComponent(targetStr[1]);
 						}
-						
+
 						Debug.log("targetTableStr = " + targetTableStr);
 						Debug.log("targetUidStr = " + targetUidStr);
 
@@ -4067,8 +4067,8 @@
 
 				cmdStr += ";"; //end command
 			}
-			Debug.log("cmdStr = " + cmdStr);	
-			
+			Debug.log("cmdStr = " + cmdStr);
+
 			var modifiedTablesListStr = "";
 			for(var i=0;_modifiedTables && i<_modifiedTables.length;++i)
 			{
@@ -4076,9 +4076,9 @@
 				modifiedTablesListStr += _modifiedTables[i].tableName + "," +
 						_modifiedTables[i].tableVersion;
 			}
-			
+
 			DesktopContent.XMLHttpRequest("Request?RequestType=savePlanCommandSequence" +
-					"&planName=" + plan, //end get data 
+					"&planName=" + plan, //end get data
 					"commands=" + cmdStr +
 					"&modifiedTables=" + modifiedTablesListStr, //end post data
 					function(req)
@@ -4088,7 +4088,7 @@
 
 				_modifiedTables = [];
 				var err = DesktopContent.getXMLValue(req,"Error");
-				if(err) 
+				if(err)
 				{
 					Debug.log(err,Debug.HIGH_PRIORITY);
 					responseHandler();
@@ -4120,13 +4120,13 @@
 					}, //handler
 					0, //handler param
 					0,true); //progressHandler, callHandlerOnErr
-			
+
 		}	//end savePlanCommandSequence()
-		
+
 		//=====================================================================================
 		//handleMouseOver ~~
 		//	based on type and id, handle what should happen during mouseover
-		//	
+		//
 		//	e.g.:
 		//		* when over iteration plan, show author, time, etc.
 		//		* when over a command, show edit icon and any parameters
@@ -4143,50 +4143,50 @@
 		{
 			Debug.log("handleEndMouseOver");
 		}	//end handleEndMouseOver()
-		
+
 		//=====================================================================================
 		//handlePlanSelect ~~
 		function handlePlanSelect()
 		{
 			Debug.log("handlePlanSelect");
-			
+
 			var sel = document.getElementById("planSelect");
 
 			Debug.log("Selected plan: " + sel.value + " " + _planUIDs[sel.value|0]);
-			
+
 			_setActiveIterationPlan = _planUIDs[sel.value|0]; //to request setting as active plan at server
 
-			drawIterationPlan(_planUIDs[sel.value|0]);			
+			drawIterationPlan(_planUIDs[sel.value|0]);
 		}	//end handlePlanSelect()
-		
-		
+
+
 		//=====================================================================================
 		//startTargetIterationPlan ~~
-		function startTargetIterationPlan() 
+		function startTargetIterationPlan()
 		{
 			Debug.log("startTargetIterationPlan " + _targetPlan);
-			
+
 			//for user experience, turn green immediately
 			document.getElementById('topPane').style.backgroundColor = "rgb(177, 206, 178)";
-			
-			window.clearTimeout(_updateTimer);
-			
 
-			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
+			window.clearTimeout(_updateTimer);
+
+
+			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
 					"&StateMachine=iteratePlay" +
-					"&fsmWindowName=" + encodeURIComponent(_targetPlan), //end get data 
+					"&fsmWindowName=" + encodeURIComponent(_targetPlan), //end get data
 					"", //end post data
 					function(req) //start handler
 					{
 				Debug.log("startTargetIterationPlan handler ");
-				
+
 				//resume updating
 				_updateTimer = window.setTimeout(updateIterateStatus,_UPDATE_TIMER_PERIOD);
-				
+
 				var error_message		= DesktopContent.getXMLValue(req,"error_message");
 				if(!error_message || error_message == "")
 					error_message		= DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
-					
+
 				if(error_message && error_message != "")
 					Debug.log(error_message,Debug.HIGH_PRIORITY);
 				else
@@ -4196,24 +4196,24 @@
 					//		Debug.INFO_PRIORITY);
 					_need_plan_complete = true;
 				}
-				
+
 					}, //end handler
 					0, //handler param
 					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 					true /*targetGatewaySupervisor*/);
 		} //end startTargetIterationPlan
-		
+
 		//=====================================================================================
 		//pauseTargetIterationPlan ~~
-		function pauseTargetIterationPlan() 
+		function pauseTargetIterationPlan()
 		{
 			Debug.log("pauseTargetIterationPlan " + _targetPlan);
-			
+
 			//for user experience, turn blue immediately
 			document.getElementById('topPane').style.backgroundColor = "rgb(197, 205, 226)";
 
-			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-					"StateMachine=iteratePause", //end get data 
+			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
+					"StateMachine=iteratePause", //end get data
 					"", //end post data
 					function(req) //start handler
 					{
@@ -4221,12 +4221,12 @@
 
 				var error_message		= DesktopContent.getXMLValue(req,"error_message");
 				var fsm_error_message 	= DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
-				
+
 				if(error_message && error_message != "")
 				{
 					Debug.log(error_message,Debug.HIGH_PRIORITY);
 					document.getElementById('topPane').style.backgroundColor = _HEADER_ERROR_BGCLR;
-				}					
+				}
 				else if(fsm_error_message && fsm_error_message != "")
 				{
 					Debug.log(fsm_error_message,Debug.HIGH_PRIORITY);
@@ -4238,26 +4238,26 @@
 
 					Debug.log("Attempted to pause the iteration plan '" + _targetPlan + ".'",
 							Debug.INFO_PRIORITY);
-					
+
 					_need_plan_paused = true;
 				}
-				
+
 					}, //end handler
 					0, //handler param
 					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 					true /*targetGatewaySupervisor*/);
 		} //end pauseTargetIterationPlan
-		
+
 		//=====================================================================================
 		//haltTargetIterationPlan ~~
-		function haltTargetIterationPlan() 
+		function haltTargetIterationPlan()
 		{
 			Debug.log("haltTargetIterationPlan " + _targetPlan);
 
 			_need_plan_complete = false; //prevent "complete" message, which might be confusing (depend on the error message
 
-			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" + 
-					"StateMachine=iterateHalt", //end get data 
+			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
+					"StateMachine=iterateHalt", //end get data
 					"", //end post data
 					function(req) //start handler
 					{
@@ -4270,13 +4270,13 @@
 				{
 					_old_active_plan_status = ""; //clear for new action
 
-					Debug.log("Attempted to halt the iteration plan '" + 
+					Debug.log("Attempted to halt the iteration plan '" +
 							_targetPlan + "'...",
 							Debug.INFO_PRIORITY);
-					
+
 					_need_plan_halted = true;
 				}
-				
+
 					}, //end handler
 					0, //handler param
 					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
@@ -4285,18 +4285,18 @@
 
 		//=====================================================================================
 		//updateIterateStatus ~~
-		function updateIterateStatus() 
+		function updateIterateStatus()
 		{
 			//Debug.log("updateIterateStatus");
 
-			DesktopContent.XMLHttpRequest("Request?" + 
+			DesktopContent.XMLHttpRequest("Request?" +
 					"RequestType=getIterationPlanStatus" +
 					(_setActiveIterationPlan?
-						("&activeIterationPlan=" + _setActiveIterationPlan):""), //end get data 
+						("&activeIterationPlan=" + _setActiveIterationPlan):""), //end get data
 					"", //end post data
 					function(req,ignoreParam,errStr) //start handler
 					{
-				
+
 				if(errStr)
 				{
 					Debug.log("getIterationPlanStatus ERROR handler ");
@@ -4305,20 +4305,20 @@
 					document.getElementById('topPane-status-field').innerHTML = str;
 					return;
 				} //end error case handler
-				
+
 				//Debug.log("getIterationPlanStatus handler ");
-				
+
 
 				var current_state 		= DesktopContent.getXMLValue(req,"current_state");
 				var in_transition 		= DesktopContent.getXMLValue(req,"in_transition");
 				var transition_progress = DesktopContent.getXMLValue(req,"transition_progress");
 				var time_in_state 		= DesktopContent.getXMLValue(req,"time_in_state");
-				
+
 				var command_duration 	= DesktopContent.getXMLValue(req,"current_command_duration");
 				var command_index		= DesktopContent.getXMLValue(req,"current_command_index");
-				var command_iteration	= DesktopContent.getXMLValue(req,"current_command_iteration");				
+				var command_iteration	= DesktopContent.getXMLValue(req,"current_command_iteration");
 				var depth_iterations 	= req.responseXML.getElementsByTagName("depth_iteration");
-				
+
 				var active_plan_status	= DesktopContent.getXMLValue(req,"active_plan_status");
 				var active_plan			= DesktopContent.getXMLValue(req,"active_plan");
 				var last_started_plan	= DesktopContent.getXMLValue(req,"last_started_plan");
@@ -4327,7 +4327,7 @@
 
 				//first time through, paint target plan
 				if(_targetPlan == "")
-				{ 
+				{
 					if(active_plan != "")
 						_targetPlan = active_plan;
 					else if(last_started_plan != "")
@@ -4339,7 +4339,7 @@
 
 					paint();
 				}
-				
+
 				if(_need_plan_complete && _old_active_plan_status != "" && //require twice to avoid race conditions with startup
 						active_plan_status == "Inactive")
 				{
@@ -4361,25 +4361,25 @@
 							Debug.INFO_PRIORITY);
 					_need_plan_paused = false;
 				}
-				
-				if(active_plan_status == "Error" && 
+
+				if(active_plan_status == "Error" &&
 						_old_active_plan_status != active_plan_status)
 					Debug.log(error_message,Debug.HIGH_PRIORITY);
-				
+
 				_old_active_plan_status = active_plan_status;
-				
-				
+
+
 				//hide old bouncing ball
 				if(_old_command_index != command_index)
 				{
 					try
 					{
-						document.getElementById("plan-command-bounceBall-container-" + 
+						document.getElementById("plan-command-bounceBall-container-" +
 								_old_command_index).style.display = 'none';
 					}
 					catch(e)
 					{} //ignore failure to hide
-					
+
 					_old_command_index = command_index;
 				}
 
@@ -4387,7 +4387,7 @@
 				if(active_plan_status != "Inactive")
 				{
 					try
-					{	
+					{
 						var val;
 						//Debug.log("depth_iterations.length " + depth_iterations.length);
 						for(var i=0;i<depth_iterations.length;++i)
@@ -4397,8 +4397,8 @@
 								val = "...";
 							try
 							{
-								document.getElementById("plan-command-bounceBall-text-" + 
-									command_index + "-depth-" + 
+								document.getElementById("plan-command-bounceBall-text-" +
+									command_index + "-depth-" +
 									(i+1)).innerHTML = val;
 							}
 							catch(e)
@@ -4409,16 +4409,16 @@
 						val = command_iteration | 0;
 						if(val > 99) //truncate text length
 							val = "...";
-						document.getElementById("plan-command-bounceBall-text-" + 
+						document.getElementById("plan-command-bounceBall-text-" +
 								command_index + "-depth-" + 0).innerHTML = val;
 
 						//create status string
 						var str = "";
 						str += "<b>Command " + command_index + ". " + _commands[(command_index|0)].type + "</b>";
 						str += "<br>";
-						str += "<table>";	
-						str += "<tr><td style='text-align:left; color:rgb(222, 222, 222);'>Duration [h:mm:ss]:</td>" + 
-								"<td style='text-align:left;'>";				
+						str += "<table>";
+						str += "<tr><td style='text-align:left; color:rgb(222, 222, 222);'>Duration [h:mm:ss]:</td>" +
+								"<td style='text-align:left;'>";
 						{
 							var hours = (command_duration/60.0/60.0)|0;
 							var mins = ((command_duration%(60*60))/60.0)|0;
@@ -4434,14 +4434,14 @@
 						str += "</td></tr>";
 						str += "<tr><td style='text-align:left; color:rgb(222, 222, 222);'>Number of Executions:</td>" +
 								"<td style='text-align:left;'>" + command_iteration + "</td></tr>";
-						str += "</table>";					
+						str += "</table>";
 
-						document.getElementById("plan-command-bounceBall-status-" + 
+						document.getElementById("plan-command-bounceBall-status-" +
 								command_index).innerHTML = str;
 
 						//display
-						document.getElementById("plan-command-bounceBall-container-" + 
-								command_index).style.display = 'block';					
+						document.getElementById("plan-command-bounceBall-container-" +
+								command_index).style.display = 'block';
 
 					}
 					catch(e)
@@ -4450,15 +4450,15 @@
 					} //ignore failure to show
 				}
 
-				
-				
-				
+
+
+
 				// "Running""Paused""Inactive"
 				//Debug.log("_targetPlan = " + _targetPlan);
 				//Debug.log("active_plan = " + active_plan);
 				//Debug.log("active_plan_status = " + active_plan_status);
-				
-				
+
+
 				//========================================
 				//top controls and status
 
@@ -4468,26 +4468,26 @@
 						str += _targetPlan;
 					else
 						str += active_plan;
-					document.getElementById('topPane-targetPlan-name').innerHTML = 
+					document.getElementById('topPane-targetPlan-name').innerHTML =
 							"&quot;" + str + "&quot;";
-					
+
 					if(active_plan_status == "Running") //play background color green
 						document.getElementById('topPane').style.backgroundColor = _HEADER_RUNNING_BGCLR;
 					else if(active_plan_status == "Paused") //play background color blue
-						document.getElementById('topPane').style.backgroundColor = _HEADER_PAUSED_BGCLR;					 
+						document.getElementById('topPane').style.backgroundColor = _HEADER_PAUSED_BGCLR;
 					else if(active_plan_status == "Error") //play background color red
 						document.getElementById('topPane').style.backgroundColor = _HEADER_ERROR_BGCLR;
-					else 
+					else
 						document.getElementById('topPane').style.backgroundColor = _HEADER_INACTIVE_BGCLR;
 
-					document.getElementById('topPane-status-field').innerHTML = 
+					document.getElementById('topPane-status-field').innerHTML =
 							active_plan_status;
-					
+
 					str = "";
 //					str += "<a onclick='startTargetIterationPlan()'>Start</a> ";
 //					str += "<a onclick='pauseTargetIterationPlan()'>Pause</a> ";
 //					str += "<a onclick='haltTargetIterationPlan()'>Halt</a> ";
-//					
+//
 //					str += "<br>";
 //					str += "| active_plan_status = " + active_plan_status;
 					//str += "<label class='topPane-fieldName'>current_command_index:</label>" +
@@ -4497,7 +4497,7 @@
 					//str += "<label class='topPane-fieldName'>FSM State:</label>" +
 					//		current_state;
 					document.getElementById('topPane-field-fsmState').innerHTML = current_state;
-					//str += "| current_state = " + current_state;					
+					//str += "| current_state = " + current_state;
 					//str += "| in_transition = " + in_transition;
 					//str += "| transition_progress = " + transition_progress;
 					str = "";
@@ -4516,15 +4516,15 @@
 					document.getElementById('topPane-field-fsmStateTime').innerHTML = str;
 					//str += "<label class='topPane-fieldName'>Time in State:</label>" +
 					//		time_in_state;
-					//str += "| time_in_state = " + time_in_state;					
+					//str += "| time_in_state = " + time_in_state;
 					//str += "|";
 
 					//document.getElementById('topPane-header').innerHTML = str;
 				}
-				
+
 				_updateTimer = window.setTimeout(updateIterateStatus,_UPDATE_TIMER_PERIOD);
-				
-				
+
+
 					}, //end handler
 					0, //handler param
 					0,true,true, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
@@ -4532,19 +4532,19 @@
 
 			_setActiveIterationPlan = ""; //clear, so the request only happens once from GUI manipulations
 		} //end updateIterateStatus()
-		
-		
-		
+
+
+
 		</script>
 </head>
-	
 
-<body onload='//init() called by DesktopContent.js'>	
-		
+
+<body onload='//init() called by DesktopContent.js'>
+
 	<!-- body content populated by javascript paint(), etc. -->
 
 	<div class='preloadImage' id='preloadImage-treeEditTrashIconHover'></div>
 	<div class='preloadImage' id='ConfigurationAPI-popUpDialog-preloadImage-editIconHover'></div>
 </body>
-	
+
 </html>
