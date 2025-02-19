@@ -523,4 +523,3 @@ Instance of **TUserHandler** should be registered to the THttpServer like:
 After that web socket connection can be established with the address `ws://host_name:8080/name1/root.websocket`
 Example client code can be found in `$ROOTSYS/tutorials/http/ws.htm` file. Actually, custom HTML page for
 websocket handler can be specified with `TUserHandler::GetDefaultPageContent()` method returning `"file:ws.htm"`.
-

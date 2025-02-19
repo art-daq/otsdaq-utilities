@@ -1,15 +1,15 @@
 FONTLOG for the Inconsolata font
 
-This file provides detailed information on the Inconsolata Bold 
+This file provides detailed information on the Inconsolata Bold
 font Software.
 
-This information should be distributed along with the 
+This information should be distributed along with the
 Inconsolata fonts and any derivative works.
 
 Basic Font Information
 
-Inconsolata Bold is a Unicode typeface family that supports 
-languages that use the Latin script and its variants, and 
+Inconsolata Bold is a Unicode typeface family that supports
+languages that use the Latin script and its variants, and
 could be expanded to support other scripts.
 
 More specifically, this release supports the following Unicode
@@ -39,8 +39,8 @@ ChangeLog
 7 December 2011 (Kirill Tkachev) Inconsolata Bold v. 1.000
 - Completed Bold version of Inconsolata in VBF format.
 
-If you make modifications be sure to add your name (N), 
-email (E), web-address (if you have one) (W) and description (D). 
+If you make modifications be sure to add your name (N),
+email (E), web-address (if you have one) (W) and description (D).
 This list is in alphabetical order.
 
 N: Alexei Vanyashin

@@ -4,42 +4,42 @@
 		spacing: 			0;
 		padding: 			0;
 		color:				white;
-		font-family: 		'Comfortaa', serif; /*'Donegal One', serif;*/		
+		font-family: 		'Comfortaa', serif; /*'Donegal One', serif;*/
 	}
-	
+
 	body {
 		background-color: 	rgb(0,76,151);
 		margin: 			0px;
 		overflow: 			hidden;
 	}
-	
+
 	a {
 		color:				white;
 		cursor: 			pointer;
-		
+
 		text-decoration:	none;
 		outline: 			none;  /* to stop firefox selection*/
 		-webkit-user-select:none; /* to stop text highlights */
 		-moz-user-select: 	none;
-		user-select: 		none;	
+		user-select: 		none;
 	}
-	
+
 	a:hover {
 		text-decoration:	underline;
 	}
-	
+
 	#clearDiv {
 		clear: 				both;
 	}
-	
-	input, select {		
+
+	input, select {
 		cursor: 			pointer;
 		font-size:			11px;
 		height:				18px;
 		padding-left:		2px;
 		padding-right:		2px;
-	}	
-		
+	}
+
 	/*firefox seems to put an extra pixel of letter-spacing in bold words*/
 	@-moz-document url-prefix() {  /*target firefox*/
 	/*	b, th {

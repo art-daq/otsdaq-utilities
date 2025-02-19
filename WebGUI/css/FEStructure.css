@@ -1,6 +1,6 @@
 body {
-	background-color: 		white; 
-	overflow: 				hidden;	
+	background-color: 		white;
+	overflow: 				hidden;
 }
 
 b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */

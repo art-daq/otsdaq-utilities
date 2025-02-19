@@ -10,14 +10,14 @@ var options = {
 };
 function renderProgressBar( options ){
   var progress = d3.select(options.className)
-                  .append("svg")
-                    .attr("width",options.width)
-                    .attr("height",options.height);
+				  .append("svg")
+					.attr("width",options.width)
+					.attr("height",options.height);
   progress.append("rect")
-          .attr("class","progressBar")
-          .attr("width",options.width)
-          .attr("height",options.height/2)
-          .style("fill",options.barColor);
+		  .attr("class","progressBar")
+		  .attr("width",options.width)
+		  .attr("height",options.height/2)
+		  .style("fill",options.barColor);
   animateProgressBar(progress,options);
   return progress;
 }
@@ -25,23 +25,23 @@ function animateProgressBar( element, options){
   d3.selectAll(options.className + " .progress").remove();
    d3.selectAll(options.className + " text").remove();
   element.append("rect")
-          .attr("class","progress")
-          .attr("height",options.height/2)
-          .style("fill",options.progressColor)
-          .attr("width",options.progressStartWidth)
-          .transition()
-          .duration(options.animationDuration)
-          .ease("bounce")
-          .attr("width",options.progressEndWidth);
+		  .attr("class","progress")
+		  .attr("height",options.height/2)
+		  .style("fill",options.progressColor)
+		  .attr("width",options.progressStartWidth)
+		  .transition()
+		  .duration(options.animationDuration)
+		  .ease("bounce")
+		  .attr("width",options.progressEndWidth);
   element.append("text")
-          .attr("y",options.height)
-          .style("text-anchor","middle")
-          .text("▲")
-          .attr("x",options.progressStartWidth)
-          .transition()
-          .duration(options.animationDuration)
-          .ease("bounce")
-          .attr("x",options.progressEndWidth);
+		  .attr("y",options.height)
+		  .style("text-anchor","middle")
+		  .text("▲")
+		  .attr("x",options.progressStartWidth)
+		  .transition()
+		  .duration(options.animationDuration)
+		  .ease("bounce")
+		  .attr("x",options.progressEndWidth);
 }
 
 var _progress = renderProgressBar(options);

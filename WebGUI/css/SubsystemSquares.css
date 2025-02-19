@@ -1,6 +1,6 @@
 
 
-		body {	
+		body {
 			padding:0;
 			margin:0;
 			background-color:white;
@@ -17,14 +17,14 @@
 			text-decoration: underline;
 			cursor: pointer;
 		}
-		
+
 		h3 {
 			font-family: "Comfortaa";
 		}
 
 		#DesktopContent-verifyPopUp * {
 			font-family: "Comfortaa";
-		}				
+		}
 
 
 		/* ===================== Subsystem status div section ================= */
@@ -40,9 +40,9 @@
 			border-radius: 5px;
 			cursor: pointer;
 			overflow-x: auto;
-			overflow-y: hidden;				
+			overflow-y: hidden;
 		}
-		
+
 		.subsystem_name, .subsystem_console {
 			float: left;
 			margin-left: 5px;
@@ -57,19 +57,10 @@
 			font-size: 14px;
 		}
 		.subsystem_status {
-			position: relative;			
+			position: relative;
 			margin-left: 5px;
-    		font-size: 20px;
+			font-size: 20px;
 			white-space: nowrap;
 		}
 
 		/* ===================== end Subsystem status div section  */
-		
-		
-		
-		
-		
-		
-		
-		
-		

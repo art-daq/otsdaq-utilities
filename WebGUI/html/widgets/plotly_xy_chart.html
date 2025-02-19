@@ -1,12 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  	<head>
-    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
-    	<title>Plotly chart</title>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>Plotly chart</title>
 
 		<style>
 
-		    body {
+			body {
 			  font: 10px sans-serif;
 			  !background: rgba(255, 255, 255, 1);
 			  margin: 0px !important;
@@ -91,7 +91,7 @@
 
 				console.log("XY Chart newValue() reached", pvName, pvValue);
 				console.log(xData);
-				console.log(valueData);				
+				console.log(valueData);
 
 				drawGraph(pvName, pvStatus, pvSeverity);
 
@@ -108,18 +108,18 @@
 
 				traces.push({ y: [],  type: parameters_["trace_type"], mode: parameters_["trace_mode"], visible: true });
 				Plotly.newPlot("display"
-			    , traces
-			    , {
+				, traces
+				, {
 					  xaxis: { title: 'X' + PVList[0], 'titlefont': { size: 10 }, showticklabels: true },
 					  yaxis: { title: 'Y' + PVList[1], titlefont: { size: 10 }, zeroline: true }
 					, margin: { l:45, r: 10, b: 70, t: 20 }
 					, showlegend: false
 					, plot_bgcolor: parameters_["background_color"]
 					, paper_bgcolor: parameters_["background_color"]
-	    		}, {responsive: true});
+				}, {responsive: true});
 
-	    		Plotly.relayout(plot, { width: window.innerWidth, height: window.innerHeight });
-				
+				Plotly.relayout(plot, { width: window.innerWidth, height: window.innerHeight });
+
 				console.log("newGraph() reached");
 			}
 
@@ -138,8 +138,8 @@
 
 				if (Object.getOwnPropertyNames(PVList).length == 1)
 				Plotly.relayout(plot, {
-	    			  width: window.innerWidth
-		    		, height: window.innerHeight
+					  width: window.innerWidth
+					, height: window.innerHeight
 					, title: ''
 					, titlefont: { size: 12, color: plotColor }
 				});

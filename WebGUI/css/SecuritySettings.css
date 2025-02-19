@@ -2,7 +2,7 @@ h1{
 	color : white;
 }
 h2{
-	color : rgba(255,188,18,1);	
+	color : rgba(255,188,18,1);
 }
 
 body {
@@ -36,22 +36,22 @@ ul li {
 .inputfile:focus + label,
 .inputfile + label:hover {
 		background: #fff;
-		color: #2f3644;	
+		color: #2f3644;
 }
 #submitBtn {
- 	cursor: pointer; /* "hand" cursor */
- 	padding:5px 15px;
+	cursor: pointer; /* "hand" cursor */
+	padding:5px 15px;
 	border: 0px;
 	width: 80px !important;
 	display: none !important;
  }
- 
+
 .inputfile + label {
 	cursor: pointer; /* "hand" cursor */
-	
-    overflow:hidden;	
-    text-overflow:ellipsis;
-    /* Handle file input name overflow */
+
+	overflow:hidden;
+	text-overflow:ellipsis;
+	/* Handle file input name overflow */
 }
 #submitBtn:focus,
 .inputfile:focus + label {
@@ -65,7 +65,7 @@ ul li {
 	height: 100%;
 	position: relative;
 }
-		
+
 .shape .overlay {
 	display:block;
 	width: 310px;
@@ -81,19 +81,19 @@ ul li {
 	-moz-transition-duration: 0.6s;
 	transform: scale(1,1);
 	transition-timing-function: ease-out;
-	transition-duration: 0.6s;				
+	transition-duration: 0.6s;
 	z-index:500;
 	/* allow user to actually perform actions underneath this layer */
-	pointer-events:none; 
+	pointer-events:none;
 	background-repeat: no-repeat;
-	outline:0;		
-	
+	outline:0;
+
 
 }
 
 /* different shapes */
 .shape .overlay.round {
-	background: url(http://www.queness.com/resources/html/masking-images-with-shape/round.png);		
+	background: url(http://www.queness.com/resources/html/masking-images-with-shape/round.png);
 }
 
 .shape .overlay.hexagon {
@@ -102,7 +102,7 @@ ul li {
 
 .shape .overlay.pentagon {
 	background: url(http://www.queness.com/resources/html/masking-images-with-shape/pentagon.png);
-}			
+}
 
 /* hover effect */
 .shape:hover .overlay {
@@ -131,13 +131,13 @@ ul li {
   -khtml-opacity: 1;
   opacity: 1;
 	z-index:450;
-  display:block;	
-}	
-		
-		
+  display:block;
+}
+
+
 
 /* content styles */
-.shape .bg, 
+.shape .bg,
 .shape .details {
 	position: absolute;
 	width: 300px;
@@ -151,16 +151,16 @@ ul li {
 	-webkit-transition: all 0.3s ease;
   -moz-transition: all 0.3s ease;
   -o-transition: all 0.3s ease;
-  transition: all 0.3s ease;				
-	display:none;  
-}		
+  transition: all 0.3s ease;
+	display:none;
+}
 
 .shape .bg {
-	background: #4b5a78;		
+	background: #4b5a78;
 }
 
 .shape .details span.heading {
-	font-family: 'Roboto Condensed', serif;		
+	font-family: 'Roboto Condensed', serif;
 	font-size:30px;
 	display:block;
 	margin-top:40px;
@@ -169,7 +169,7 @@ ul li {
 }
 
 .shape .details p {
-	font-family: 'Abel', sans-serif;		
+	font-family: 'Abel', sans-serif;
 	color:#fff;
 	width: 70%;
 	font-size:14px;
@@ -179,8 +179,8 @@ ul li {
 .inputfile + label,
 .shape a.button {
 	padding:5px 15px;
-	font-family: 'Abel', sans-serif;	
-	font-size:12px;	
+	font-family: 'Abel', sans-serif;
+	font-size:12px;
 	-webkit-border-radius: 20px;
 	-moz-border-radius: 20px;
 	-ms-border-radius: 20px;
@@ -197,10 +197,10 @@ ul li {
 }
  .shape a.button:hover {
 	background: #fff;
-	color: #2f3644;				
+	color: #2f3644;
 }
-	
-	
+
+
 .glow{
-  	margin: auto;
+	margin: auto;
 }

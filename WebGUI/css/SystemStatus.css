@@ -1,8 +1,8 @@
 
 body {
-    background-color: 		rgb(226, 216, 216);
-    font-family: 			'Inconsolata', monospace;
-    overflow: 				auto;
+	background-color: 		rgb(226, 216, 216);
+	font-family: 			'Inconsolata', monospace;
+	overflow: 				auto;
 }
 
 a:hover {
@@ -21,9 +21,9 @@ h1, h2, h3 {
 
 /*================ HEADER ===============*/
 #headerDiv {
-    margin: 				-10px 10px 0px 10px;
-    text-align:				center;
-    width: 					100%;
+	margin: 				-10px 10px 0px 10px;
+	text-align:				center;
+	width: 					100%;
 }
 
 #toggleFiltersLinkDiv {
@@ -39,112 +39,112 @@ h1, h2, h3 {
 
 /*================ FILTERS ===============*/
 #filtersDiv {
-    float: 					left;
-    margin-left:			-3px;
-    margin-right: 			10px;
-    display: 				none;
-    
+	float: 					left;
+	margin-left:			-3px;
+	margin-right: 			10px;
+	display: 				none;
+
 	box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-			            	inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+							inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 							rgba(200, 200, 200,0.6) 0 .1em 3px,
 							rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 							rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-	border-radius: 			3px;	
+	border-radius: 			3px;
 
-    overflow: 				auto;
+	overflow: 				auto;
 }
 
 #filtersDiv h2 {
-    margin: 				5px 10px;
-    color:					rgb(95, 96, 99);    
-    font-size:				18px;
+	margin: 				5px 10px;
+	color:					rgb(95, 96, 99);
+	font-size:				18px;
 }
 
 .collapsible {
-    cursor: pointer;
+	cursor: pointer;
 }
 
 .contextButton {
-    cursor: pointer;
-    width: 100%;
+	cursor: pointer;
+	width: 100%;
 }
 
 .filterHeader {
-    background-color: 		#777;
-    color: 					white;
-    padding: 				18px;
-    width: 					100%;
-    border: 				none;
-    text-align: 			left;
-    outline: 				none;
-    
-    font-size: 				18px;
-    font-family: 			'Inconsolata', monospace;
-    font-weight:			bold;
+	background-color: 		#777;
+	color: 					white;
+	padding: 				18px;
+	width: 					100%;
+	border: 				none;
+	text-align: 			left;
+	outline: 				none;
+
+	font-size: 				18px;
+	font-family: 			'Inconsolata', monospace;
+	font-weight:			bold;
 }
 
 .collapsible:hover {
-    background-color: 		#555;
+	background-color: 		#555;
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */
 .collapsible:hover .helptext {
-    visibility: 			visible;
-    font-size: 				14px;
+	visibility: 			visible;
+	font-size: 				14px;
 }
 
 .collapsibleRow {
-    /* Use Filters to collapse instead of a link -- color: rgb(6, 6, 235); */
-    /* font-weight: bold; */
+	/* Use Filters to collapse instead of a link -- color: rgb(6, 6, 235); */
+	/* font-weight: bold; */
 }
 
 /* Tooltip text */
 .helptext {
-    visibility: 			hidden;
-    width: 					120px;
-    background-color: 		black;
-    color: 					#fff;
-    text-align: 			center;
-    padding: 				5px 0;
-    border-radius:			6px;
-   
-    /* Position the tooltip text */
-    position: 				absolute;
-    z-index: 				1;
-    margin: 				-4px 0 0 20px;
+	visibility: 			hidden;
+	width: 					120px;
+	background-color: 		black;
+	color: 					#fff;
+	text-align: 			center;
+	padding: 				5px 0;
+	border-radius:			6px;
+
+	/* Position the tooltip text */
+	position: 				absolute;
+	z-index: 				1;
+	margin: 				-4px 0 0 20px;
 }
 
 .filterList {
-    padding: 				0 10px;
-    display: 				none;
-    background-color: 		#f1f1f1;
+	padding: 				0 10px;
+	display: 				none;
+	background-color: 		#f1f1f1;
 }
 
 .filterList li {
 	white-space:			nowrap;
 	margin-right:			10px;
-    width:					100%;
-    cursor:					pointer;
+	width:					100%;
+	cursor:					pointer;
 }
 
 .filterList ul {
-    list-style-type: 		none;
-    margin:					0;
-    padding:				10px;
-    width:					100%;
-    background-color: 		#f1f1f1;
+	list-style-type: 		none;
+	margin:					0;
+	padding:				10px;
+	width:					100%;
+	background-color: 		#f1f1f1;
 }
 
 .filterList ul li:hover {
-    background-color: 		yellow;
-    cursor: 				pointer;
+	background-color: 		yellow;
+	cursor: 				pointer;
 }
 
 /*================ APP STATUS ===============*/
 #appStatusDiv {
-    float: 					left;
-    margin-left:			-3px;
-    width:					1px; /* otherwise will not display? */
+	float: 					left;
+	margin-left:			-3px;
+	width:					1px; /* otherwise will not display? */
 }
 
 #appStatusDiv table {
@@ -171,10 +171,10 @@ h1, h2, h3 {
 }
 
 .progressBar {
-	background-color: 		rgb(0,205,30);	
+	background-color: 		rgb(0,205,30);
 	margin: 				-17px -10px 0 -10px;
 	height:					100%;
-    text-align: 			center;
+	text-align: 			center;
 }
 
 .statusCell {
@@ -185,6 +185,6 @@ h1, h2, h3 {
 							rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
 	color:					black;
 	text-weight:			bold;
-	text-shadow: 			0px 1px 0px rgba(255,255,255,.3), 
+	text-shadow: 			0px 1px 0px rgba(255,255,255,.3),
 							0px -1px 0px rgba(0,0,0,.7);
 }

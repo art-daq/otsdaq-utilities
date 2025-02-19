@@ -1728,27 +1728,27 @@
 
 			var sx = scale.x, sy = scale.y, sz = scale.z;
 
-		        te[ 0 ] = ( 1 - ( yy + zz ) ) * sx;
-		        te[ 1 ] = ( xy + wz ) * sx;
-		        te[ 2 ] = ( xz - wy ) * sx;
-		        te[ 3 ] = 0;
+				te[ 0 ] = ( 1 - ( yy + zz ) ) * sx;
+				te[ 1 ] = ( xy + wz ) * sx;
+				te[ 2 ] = ( xz - wy ) * sx;
+				te[ 3 ] = 0;
 
-		        te[ 4 ] = ( xy - wz ) * sy;
-		        te[ 5 ] = ( 1 - ( xx + zz ) ) * sy;
-		        te[ 6 ] = ( yz + wx ) * sy;
-		        te[ 7 ] = 0;
+				te[ 4 ] = ( xy - wz ) * sy;
+				te[ 5 ] = ( 1 - ( xx + zz ) ) * sy;
+				te[ 6 ] = ( yz + wx ) * sy;
+				te[ 7 ] = 0;
 
-		        te[ 8 ] = ( xz + wy ) * sz;
-		        te[ 9 ] = ( yz - wx ) * sz;
-		        te[ 10 ] = ( 1 - ( xx + yy ) ) * sz;
-		        te[ 11 ] = 0;
+				te[ 8 ] = ( xz + wy ) * sz;
+				te[ 9 ] = ( yz - wx ) * sz;
+				te[ 10 ] = ( 1 - ( xx + yy ) ) * sz;
+				te[ 11 ] = 0;
 
-		        te[ 12 ] = position.x;
-		        te[ 13 ] = position.y;
-		        te[ 14 ] = position.z;
-		        te[ 15 ] = 1;
+				te[ 12 ] = position.x;
+				te[ 13 ] = position.y;
+				te[ 14 ] = position.z;
+				te[ 15 ] = 1;
 
-		        return this;
+				return this;
 
 		},
 
@@ -4317,17 +4317,17 @@
 				m31 = te[ 2 ], m32 = te[ 6 ], m33 = te[ 10 ];
 
 			if ( ( Math.abs( m12 - m21 ) < epsilon ) &&
-			     ( Math.abs( m13 - m31 ) < epsilon ) &&
-			     ( Math.abs( m23 - m32 ) < epsilon ) ) {
+				 ( Math.abs( m13 - m31 ) < epsilon ) &&
+				 ( Math.abs( m23 - m32 ) < epsilon ) ) {
 
 				// singularity found
 				// first check for identity matrix which must have +1 for all terms
 				// in leading diagonal and zero in other terms
 
 				if ( ( Math.abs( m12 + m21 ) < epsilon2 ) &&
-				     ( Math.abs( m13 + m31 ) < epsilon2 ) &&
-				     ( Math.abs( m23 + m32 ) < epsilon2 ) &&
-				     ( Math.abs( m11 + m22 + m33 - 3 ) < epsilon2 ) ) {
+					 ( Math.abs( m13 + m31 ) < epsilon2 ) &&
+					 ( Math.abs( m23 + m32 ) < epsilon2 ) &&
+					 ( Math.abs( m11 + m22 + m33 - 3 ) < epsilon2 ) ) {
 
 					// this singularity is identity matrix so angle = 0
 
@@ -4413,8 +4413,8 @@
 			// as we have reached here there are no singularities so we can handle normally
 
 			var s = Math.sqrt( ( m32 - m23 ) * ( m32 - m23 ) +
-			                   ( m13 - m31 ) * ( m13 - m31 ) +
-			                   ( m21 - m12 ) * ( m21 - m12 ) ); // used to normalize
+							   ( m13 - m31 ) * ( m13 - m31 ) +
+							   ( m21 - m12 ) * ( m21 - m12 ) ); // used to normalize
 
 			if ( Math.abs( s ) < 0.001 ) s = 1;
 
@@ -11004,7 +11004,7 @@
 
 					morphTargetsPosition[ i ] = {
 						name: morphTargets[ i ].name,
-					 	data: []
+						data: []
 					};
 
 				}
@@ -11026,7 +11026,7 @@
 
 					morphTargetsNormal[ i ] = {
 						name: morphNormals[ i ].name,
-					 	data: []
+						data: []
 					};
 
 				}
@@ -14818,7 +14818,7 @@
 				boxMesh.material.uniforms.tFlip.value = ( background.isWebGLRenderTargetCube ) ? 1 : - 1;
 
 				if ( currentBackground !== background ||
-				     currentBackgroundVersion !== texture.version ) {
+					 currentBackgroundVersion !== texture.version ) {
 
 					boxMesh.material.needsUpdate = true;
 
@@ -15020,7 +15020,7 @@
 			if ( precision === 'highp' ) {
 
 				if ( gl.getShaderPrecisionFormat( 35633, 36338 ).precision > 0 &&
-				     gl.getShaderPrecisionFormat( 35632, 36338 ).precision > 0 ) {
+					 gl.getShaderPrecisionFormat( 35632, 36338 ).precision > 0 ) {
 
 					return 'highp';
 
@@ -15033,7 +15033,7 @@
 			if ( precision === 'mediump' ) {
 
 				if ( gl.getShaderPrecisionFormat( 35633, 36337 ).precision > 0 &&
-				     gl.getShaderPrecisionFormat( 35632, 36337 ).precision > 0 ) {
+					 gl.getShaderPrecisionFormat( 35632, 36337 ).precision > 0 ) {
 
 					return 'mediump';
 
@@ -19364,8 +19364,8 @@
 				setFunc: function ( stencilFunc, stencilRef, stencilMask ) {
 
 					if ( currentStencilFunc !== stencilFunc ||
-					     currentStencilRef 	!== stencilRef 	||
-					     currentStencilFuncMask !== stencilMask ) {
+						 currentStencilRef 	!== stencilRef 	||
+						 currentStencilFuncMask !== stencilMask ) {
 
 						gl.stencilFunc( stencilFunc, stencilRef, stencilMask );
 
@@ -19380,8 +19380,8 @@
 				setOp: function ( stencilFail, stencilZFail, stencilZPass ) {
 
 					if ( currentStencilFail	 !== stencilFail 	||
-					     currentStencilZFail !== stencilZFail ||
-					     currentStencilZPass !== stencilZPass ) {
+						 currentStencilZFail !== stencilZFail ||
+						 currentStencilZPass !== stencilZPass ) {
 
 						gl.stencilOp( stencilFail, stencilZFail, stencilZPass );
 
@@ -19610,9 +19610,9 @@
 				compressedTextureFormats = [];
 
 				if ( extensions.get( 'WEBGL_compressed_texture_pvrtc' ) ||
-				     extensions.get( 'WEBGL_compressed_texture_s3tc' ) ||
-				     extensions.get( 'WEBGL_compressed_texture_etc1' ) ||
-				     extensions.get( 'WEBGL_compressed_texture_astc' ) ) {
+					 extensions.get( 'WEBGL_compressed_texture_s3tc' ) ||
+					 extensions.get( 'WEBGL_compressed_texture_etc1' ) ||
+					 extensions.get( 'WEBGL_compressed_texture_astc' ) ) {
 
 					var formats = gl.getParameter( 34467 );
 
