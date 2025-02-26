@@ -1776,7 +1776,7 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 			if(read.is_open())
 			{
 				read.close();
-				sequences = sequences + ent->d_name + ";";
+				sequences += ent->d_name + std::string(";");
 			}
 			else
 				__SUP_COUT__ << "Unable to open file" << __E__;
@@ -1786,7 +1786,35 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 	else
 	{
 		__SUP_COUT__ << "Looping through MacroSequence/" + username +
-		                    " folder failed! Wrong directory"
+		                    " folder failed! Invalid directory."
+		             << __E__;
+	}
+
+	//always add admin sequences (as "public")
+	fullPath  = (std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/";
+
+	if((dir = opendir(fullPath.c_str())) != NULL)
+	{
+		/* print all the files and directories within directory */
+		while((ent = readdir(dir)) != NULL)
+		{
+			std::string   line;
+			std::ifstream read(
+			    ((fullPath + (std::string)ent->d_name)).c_str());  // reading a file
+			if(read.is_open())
+			{
+				read.close();
+				sequences += ent->d_name + std::string(";");
+			}
+			else
+				__SUP_COUT__ << "Unable to open file" << __E__;
+		}
+		closedir(dir);
+	}
+	else
+	{
+		__SUP_COUT__ << "Looping through MacroSequence/" + WebUsers::DEFAULT_ADMIN_USERNAME +
+		                    " folder failed! Invalid directory."
 		             << __E__;
 	}
 
@@ -1858,8 +1886,40 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
 	}
 	else
 	{
-		__SUP_COUT__ << "Unable to open " << fullPath << "!" << __E__;
-		xmldoc.addTextElementToData("error", "ERROR");
+		__SUP_COUT__ << "Unable to open " << fullPath << "! Trying public area..." << __E__;
+
+		//attempt to load from admin "public" area
+		std::string publicFullPath =
+	    	(std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/" + sequenceName + ".dat";
+		__SUP_COUT__ << publicFullPath << __E__;
+
+		std::ifstream      read(publicFullPath.c_str());  // reading the file
+		char*              response;
+		unsigned long long fileSize;
+
+		if(read.is_open())
+		{
+			read.seekg(0, std::ios::end);
+			fileSize           = read.tellg();
+			response           = new char[fileSize + 1];
+			response[fileSize] = '\0';
+			read.seekg(0, std::ios::beg);
+
+			// read data as a block:
+			read.read(response, fileSize);
+			read.close();
+
+			xmldoc.addTextElementToData("FEsequence", &response[0]);
+
+			delete[] response;
+		}
+		else
+		{
+			__SUP_COUT__ << "Unable to open " << fullPath << " and " <<
+				publicFullPath << "!" << __E__;
+
+			xmldoc.addTextElementToData("error", "ERROR");
+		}
 	}
 }  //end getFEMacroSequence()
 
