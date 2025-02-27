@@ -11,7 +11,8 @@
 #include <sys/stat.h>  //for mkdir
 #include <cstdio>
 #include <fstream>
-#include <thread>  //for std::thread
+#include <thread>  		//for std::thread
+#include <filesystem> 	//for std::filesytem
 #include "otsdaq/TableCore/TableGroupKey.h"
 
 #define MACROS_DB_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/MacroData/"
@@ -887,8 +888,8 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 		getFEMacroSequence(xmldoc, cgi, userInfo.username_);
 	else if(Command == "deleteFEMacroSequence")
 		deleteFEMacroSequence(cgi, userInfo.username_);
-	//else if (Command == "runFEMacroSequence")
-	//	runFEMacroSequence(xmldoc, cgi, userInfo.username_);
+	else if (Command == "makeSequencePublic")
+		makeSequencePublic(cgi, userInfo.username_);
 	else
 		xmldoc.addTextElementToData("Error", "Unrecognized command '" + Command + "'");
 }  // end handleRequest()
@@ -1939,7 +1940,35 @@ void MacroMakerSupervisor::deleteFEMacroSequence(cgicc::Cgicc&      cgi,
 	__SUP_COUT__ << fullPath << __E__;
 
 	std::remove(fullPath.c_str());
-	__SUP_COUT__ << "Successfully deleted " << fullPath;
+	__SUP_COUT__ << "Successfully deleted " << fullPath << __E__;
+}  //end deleteFEMacroSequence()
+
+//==============================================================================
+void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
+                                                 const std::string& username)
+{
+	std::string sequenceName = CgiDataUtilities::getData(cgi, "name");
+
+	__SUP_COUTV__(sequenceName);
+
+	// access to the file
+	std::string source =
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + sequenceName + ".dat";
+	__SUP_COUT__ << source << __E__;
+	std::string destination =
+	    (std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/" + sequenceName + ".dat";
+	__SUP_COUT__ << destination << __E__;
+
+	if(std::filesystem::exists(destination))
+	{
+		__SUP_SS__ << "The sequence name '" << sequenceName << "' already exists in the admin/public location: " <<
+			destination << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	//copy if file does not already exist
+	std::filesystem::copy_file(source, destination, std::filesystem::copy_options::skip_existing);
+	__SUP_COUT__ << "Successfully made " << sequenceName << " public at path: " << destination << __E__;
 }  //end deleteFEMacroSequence()
 
 //==============================================================================
@@ -3501,6 +3530,4 @@ void MacroMakerSupervisor::getFEMacroList(HttpXmlDocument&   xmldoc,
 			xmldoc.addTextElementToData(i ? "PrivateMacro" : "PublicMacro",
 			                            xmlMacroStream.str());
 		}
-
-	return;
-}
+} //end getFEMacroList()

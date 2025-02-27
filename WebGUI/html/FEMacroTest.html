@@ -220,6 +220,33 @@
 			//handleSelectedMacroName(r,c)
 			//setCaretPosition(el, caretPos, endPos)
 
+			//handleKeyInput(e)
+			//loadHistory()
+			//appendHistoryRecord(record)
+			//onClickHistoryRecord(recordObj)
+			//showPopupClearHistoryConfirm()
+			//hideSmallPopup(el)
+			//hideSmallPopupLiveView(el)
+			//hideSmallPopupFlag()
+			//clearHistory(el)
+			//toggleLiveView()
+			//setIntervalAndStart()
+
+			//handleEnterPress(event)
+			//PopupMacroFlagAlert()
+			//setFlagKeyword(isPresent)
+
+			//statusActionButtons(status)
+			//statusEditButtons(status)
+
+			//showSequence(target, seq)
+			//showPopupSaveSequence()
+			//hidePopupSaveSequence()
+			//popupSetSequenceDelay()
+			//toggleSequenceMode()
+			//loadSequnces()
+			//makeSequencePublic()
+
 		var verticalOrientation_ = true;
 		var sequenceMode_ = false;
 
@@ -2716,7 +2743,10 @@
 					"id": "sequnce-selector",
 					"style": "margin:10px; display: inline-flex; gap: 15px;"
 				},
-				"<p><strong>Select sequence: </strong></p>" + select,
+				"<p><strong>Select sequence: </strong></p>" + select + 
+				" <a onclick='makeSequencePublic()' " + 
+				"title='Click to make this sequence publicly accessible to all users (must have admin(255) privileges)' " +
+				">Make Public</a>",
 				true);
 			// space used to show the steps of each sequence
 			str += DesktopContent.htmlOpen(
@@ -2887,28 +2917,29 @@
 			);
 		} //end loadSequnces()
 
-		// ACTIONS
+		//=====================================================================================
+		//makeSequencePublic ~~
+		function makeSequencePublic()
+		{
+			Debug.log("makeSequencePublic()");
 
-		// TODO
-		//function runSequence()
-		//	{
-				// call the API
-				//var selector = document.getElementById("select-sequence");
+			var sequenceName = document.getElementById("select-sequence").value;
+			Debug.logv({sequenceName});
+			if(!sequenceName || sequenceName == "undefined" || sequenceName == "None")
+			{
+				Debug.err("Please select a valid sequence name to make public from the 'Select sequence' dropdown menu.");
+				return;
+			}
 
-				//DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacroSequence" +
-				//	"&name=" + selector.value,
-				//	"",
-				//	function() {
-						// request hendler
-				//		Debug.log("runFEMacroSequence() was called.");
-						// TODO: show the results
-
-				//	}
-				//);
-			//	console.log("run", selectedSequence_);
-		//	}
-
-		// call the function when we click on the history
+			DesktopContent.XMLHttpRequest("Request?RequestType=makeSequencePublic" +
+				"&name=" + sequenceName,
+				"",
+				function() 
+				{
+					Debug.info("The sequence '" + sequenceName + "' was made publicly accessible for all users.");
+				} //end makeSequencePublic handler
+			);
+		} //end makeSequencePublic()
 
 		//=====================================================================================
 		//newSequence ~~
@@ -2947,7 +2978,8 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=deleteFEMacroSequence" +
 				"&name=" + selector.value,
 				"",
-				function() {
+				function() //handler
+				{
 					Debug.log("deleteFEMacroSequence() was called.");
 
 					// Find and remove the selected option
@@ -2981,7 +3013,7 @@
 							break;
 						}
 					}
-				}
+				} //end deleteFEMacroSequence handler
 			);
 		} //end deleteSequence()
 
@@ -3528,7 +3560,7 @@
 	<!-- <center> -->
 
 		<a href="#" onclick="toggleView()">Toggle View</a>
-		<a href="#" onclick="toggleSequenceMode()">Sequence Mode</a><br>
+		<a href="#macroModule-sequence" onclick="toggleSequenceMode()">Sequence Mode</a><br>
 		<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>

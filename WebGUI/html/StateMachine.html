@@ -117,11 +117,15 @@
 			}
 			#warn-box {
 				position: absolute;
-				/* background-color: white; */
+				background-color: black;
+				border: 2px solid #808080;
+    			border-radius: 2px;				
 				color: orange;
 				font-size: 18px;
 				font-family: 'Donegal One', arial;
-				text-align: right;
+				text-align: center;
+				padding: 5px;
+				display: none;
 			}
 
 			#parameter-setup a, #extras-box a, #alarm-setup-box a,
@@ -358,7 +362,7 @@
 				_blackoutRevealText, _blackoutRevealContent, _progressBar,
 				_parameterSetup, _extrasBox, _alarmBox, _errorBox, _warnBox;
 
-			var _warnBoxTimeout = 0
+			var _warnBoxTimeout = 0;
 
 			var _timeUpdateTimeout = 0;
 			var _verifyStateTimeout = 0;
@@ -1074,10 +1078,11 @@
 											"State was changed unexpectedly from " +
 											_stateNames[_currState] + " to " + _stateNames[i] +
 											". (Likely another user changed the state)";//);
+										_warnBox.style.display = "block";
 										Debug.log(_warnBox.innerText);
 										window.clearInterval(_warnBoxTimeout);
 										_warnBoxTimeout = window.setInterval(function()
-											{_warnBox.innerText = "";},5000);
+											{_warnBox.style.display = "none";},5000);
 									}
 								}
 								else
@@ -1088,10 +1093,11 @@
 											"State was changed unexpectedly from " +
 											_stateNames[_currState] + " to " + _stateNames[i] +
 											". (Likely the server was restarted or another user changed the state)";//);
+										_warnBox.style.display = "block";
 										Debug.log(_warnBox.innerText);
 										window.clearInterval(_warnBoxTimeout);
 										_warnBoxTimeout = window.setInterval(function()
-											{_warnBox.innerText = "";},5000);
+											{_warnBox.style.display = "none";},5000);
 									}
 
 								}
@@ -1517,10 +1523,11 @@
 							{
 								_warnBox.innerText = //Debug.warn(
 									"State result not anticipated. Attempting to re-align with server.";//);
+								_warnBox.style.display = "block";
 								Debug.log(_warnBox.innerText);
 								window.clearInterval(_warnBoxTimeout);
 								_warnBoxTimeout = window.setInterval(function()
-									{_warnBox.innerText = "";},5000);
+									{_warnBox.style.display = "none";},5000);
 
 								DesktopContent.XMLHttpRequest("Request?RequestType=getStateMachine", "",
 										smRequestHandler, //end request handler
@@ -1954,8 +1961,8 @@
 				_warnBox.style.top =  (_MARGIN + _HUD_Y - 0 - 0 //2 for border //-10 for padding
 						) + "px";
 				_warnBox.style.width = _EXTRAS_WIDTH + "px";
-				_warnBox.style.height = _EXTRAS_HEIGHT + "px";
-				_warnBox.style.display = "block";
+				// _warnBox.style.height = _EXTRAS_HEIGHT + "px"; //do not set height, let box grow with content
+				// _warnBox.style.display = "none";
 
 				_alarmBox.style.left = (w/2 -_ALARM_WIDTH/2 - 5) + "px";
 				_alarmBox.style.top =  (h/2 -_ALARM_HEIGHT/2 - 5) + "px";
