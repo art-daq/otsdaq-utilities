@@ -939,7 +939,7 @@
 				var err = DesktopContent.getXMLValue(req, "Error");
 				if (err)
 				{
-					Debug.log(err, Debug.HIGH_PRIORITY);
+					Debug.err(err);
 					return;
 				}
 			}
@@ -1044,7 +1044,7 @@
 
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err) {
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 
 				//attempt to go on, in case error was just associtate with one group
 				//return;
@@ -1732,7 +1732,7 @@
 		{
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err) {
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 
 				//attempt to go on, in case error was just associtate with one group
 				//return;
@@ -2316,7 +2316,7 @@
 
 			var treeErr = DesktopContent.getXMLValue(req, "TreeErrors");
 			if (treeErr) {
-				Debug.log(treeErr, Debug.WARN_PRIORITY);
+				Debug.warn(treeErr);
 
 				//don't power through if a new group was attempted
 				if (attemptedNewGroupName && attemptedNewGroupName != "")
@@ -2326,7 +2326,7 @@
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err)
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 
 				var el = document.getElementById("display");
 				var str = "";
@@ -2353,7 +2353,7 @@
 					str += "Go-to table &quot;" + errSplit[1] + "&quot;</a>";
 				}
 
-				Debug.log(str, Debug.WARN_PRIORITY);
+				Debug.warn(str);
 				//el.innerHTML = str;
 				//return;
 
@@ -2803,7 +2803,6 @@
 		//specificTableRequestHandler
 		function specificTableRequestHandler(req, backLinkStr, attemptedVersion)
 		{
-
 			_tableViewBackLinkStr = backLinkStr;
 
 			var showSaveButtons = false;
@@ -2811,7 +2810,7 @@
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err)
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 
 				Debug.log("There were errors loading this version.\n\n(You may want to try loading this version again " +
 					"to see what was partially loaded into the cache before failure. " +
@@ -2853,7 +2852,7 @@
 			var kocVersionHdr = req.responseXML.getElementsByTagName("TableVersions");
 			if (!kocVersionHdr.length)
 			{	//should never happen (tag can be empty, but must be there)
-				Debug.log("Error?! No tag for versions returned for tableName: " + tableName, Debug.HIGH_PRIORITY);
+				Debug.err("Error?! No tag for versions returned for tableName: " + tableName);
 				return;
 			}
 			var tableVersions = kocVersionHdr[0].getElementsByTagName("Version");
@@ -3454,7 +3453,7 @@
 						var err = DesktopContent.getXMLValue(req, "Error");
 						if (err)
 						{
-							Debug.log(err, Debug.HIGH_PRIORITY);
+							Debug.err(err);
 							el.innerHTML = str;
 							return;
 						}
@@ -3736,16 +3735,16 @@
 		{
 			if (err) //show login access errors
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 				return;
 			}
 
 			err = DesktopContent.getXMLValue(req, "Error");
 			if (err)
 			{
-				Debug.log("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the page", Debug.HIGH_PRIORITY);
-				Debug.log(err, Debug.HIGH_PRIORITY);
-				Debug.log("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the page", Debug.HIGH_PRIORITY);
+				Debug.err("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the page");
+				Debug.err(err);
+				Debug.err("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the page");
 
 				if (parentId)
 					return;
@@ -3757,9 +3756,9 @@
 			{
 				if (warn != lastTreeWarnStr_)
 				{
-					Debug.log("If you made changes to this tree, they may have been lost.", Debug.WARN_PRIORITY);
-					Debug.log(warn, Debug.WARN_PRIORITY);
-					Debug.log("If you made changes to this tree, they may have been lost.", Debug.WARN_PRIORITY);
+					Debug.warn("If you made changes to this tree, they may have been lost.");
+					Debug.warn(warn);
+					Debug.warn("If you made changes to this tree, they may have been lost.");
 				}
 				else
 					Debug.log(warn);
@@ -5316,7 +5315,7 @@
 						break;
 					}
 				if (i == els.length) {
-					Debug.log("Invalid tree member table targeted!", Debug.HIGH_PRIORITY);
+					Debug.err("Invalid tree member table targeted!");
 					return;
 				}
 			}
@@ -5556,7 +5555,7 @@
 				}
 				else
 				{
-					Debug.log("This should be impossible - tell a developer how you got here!", Debug.HIGH_PRIORITY);
+					Debug.err("This should be impossible - tell a developer how you got here!");
 					return;
 				}
 			}
@@ -6135,6 +6134,12 @@
 		//versionTrackingHandler ~
 		function versionTrackingHandler(req)
 		{
+			if(!req)
+			{
+				Debug.log("Version tracking status missing from req, ignoring...");
+				return;
+			}
+
 			var versionTrackingSystemLink = document.getElementById("versionTrackingSystemLink");
 
 			//set tracking is OFF set Debug prepend message
@@ -6143,7 +6148,7 @@
 			{
 				Debug.prependMessage = "Version TRACKING OFF:::";
 				if (versionTrackingSystemLink) versionTrackingSystemLink.innerHTML = "Turn Version Tracking ON";
-				Debug.log("ALERT! ALERT! Version Tracking is OFF!!!", Debug.WARN_PRIORITY);
+				Debug.warn("ALERT! ALERT! Version Tracking is OFF!!!");
 				_versionTrackingIsOn = false;
 			}
 			else if (versionTracking != "ON")
@@ -6156,7 +6161,7 @@
 				{
 					Debug.prependMessage = "Version TRACKING OFF:::";
 					if (versionTrackingSystemLink) versionTrackingSystemLink.innerHTML = "Turn Version Tracking ON";
-					Debug.log("ALERT! ALERT! Version Tracking is OFF!!!", Debug.WARN_PRIORITY);
+					Debug.warn("ALERT! ALERT! Version Tracking is OFF!!!");
 					_versionTrackingIsOn = false;
 				}
 				else if (versionTracking == "ON" &&  //identify mismatch
@@ -6164,7 +6169,7 @@
 				{
 					Debug.prependMessage = "";
 					if (versionTrackingSystemLink) versionTrackingSystemLink.innerHTML = "Turn Version Tracking OFF";
-					Debug.log("Note: Version Tracking is ON!!!", Debug.WARN_PRIORITY);
+					Debug.warn("Note: Version Tracking is ON!!!");
 					_versionTrackingIsOn = true;
 				}
 				else if (versionTracking != "ON" &&
@@ -6203,7 +6208,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 
 						Debug.log(_OTS_RELAUNCH_STR, Debug.INFO_PRIORITY);
 
@@ -6554,14 +6559,14 @@
 							{
 								if (!name || !key)
 								{
-									Debug.log(err, Debug.HIGH_PRIORITY);
+									Debug.err(err);
 									Debug.log("Process interrupted. Failed to create a new table group!" +
 										" Please see details below.",
 										Debug.HIGH_PRIORITY);
 									setupSystemViewMode();
 									return;
 								}
-								Debug.log(err, Debug.WARN_PRIORITY);
+								Debug.warn(err);
 								Debug.log("Going on with existing name=" + name + " & key=" + key,
 									Debug.WARN_PRIORITY);
 								Debug.log("Process interrupted. Failed to create a new table group!" +
@@ -6575,7 +6580,7 @@
 								if (treeErr)
 								{
 									var attemptedNewGroupName = DesktopContent.getXMLValue(req, "AttemptedNewGroupName");
-									Debug.log(treeErr, Debug.WARN_PRIORITY);
+									Debug.warn(treeErr);
 									Debug.log("There were problems identified in the tree view of the " +
 										"attempted new group &apos;" +
 										attemptedNewGroupName +
@@ -6652,7 +6657,7 @@
 		// 			{
 		// 				if (!name || !key)
 		// 				{
-		// 					Debug.log(err, Debug.HIGH_PRIORITY);
+		// 					Debug.err(err);
 		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
 		// 						" Please see details below.",
 		// 						Debug.HIGH_PRIORITY);
@@ -6663,7 +6668,7 @@
 		// 				}
 		// 				else
 		// 				{
-		// 					Debug.log(err, Debug.WARN_PRIORITY);
+		// 					Debug.warn(err);
 		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
 		// 						" (Likely the currently active Backbone already represents what is being requested)\n\n" +
 		// 						"Going on with existing backbone group, name=" + name + " & key=" + key,
@@ -6724,7 +6729,7 @@
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err)
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 				var el = document.getElementById("display");
 				el.innerHTML = "Failed.";
 				return;
@@ -7117,7 +7122,7 @@
 
 					break;
 				default:
-					Debug.log("Impossible! Should never happen!! Alert system admins.", Debug.HIGH_PRIORITY);
+					Debug.err("Impossible! Should never happen!! Alert system admins.");
 			}
 
 			handleGroupMemberChange();
@@ -7139,7 +7144,7 @@
 			if (treeErr)
 			{
 				var attemptedNewGroupName = DesktopContent.getXMLValue(req, "AttemptedNewGroupName");
-				Debug.log(treeErr, Debug.WARN_PRIORITY);
+				Debug.warn(treeErr);
 				Debug.log("There were problems identified in the tree view of the " +
 					"attempted new group &apos;" +
 					attemptedNewGroupName +
@@ -7166,7 +7171,7 @@
 			var el = document.getElementById('createGroupInfo');
 			if (err)
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 				el.innerHTML = ""; //clear any previous success stories
 				return;
 			}
@@ -8870,7 +8875,7 @@
 								var err = DesktopContent.getXMLValue(req, "Error");
 								if (err)
 								{
-									Debug.log(err, Debug.HIGH_PRIORITY);
+									Debug.err(err);
 
 									//do not kill edit if worked before..
 									//	in case user is playing with tables
@@ -9291,7 +9296,7 @@
 						var err = DesktopContent.getXMLValue(req, "Error");
 						if (err)
 						{
-							Debug.log(err, Debug.HIGH_PRIORITY);
+							Debug.err(err);
 
 							Debug.log("There were errors loading the mockup version of '" +
 									linkInfo.pairColTable + "'.\n\n" +
@@ -9328,7 +9333,7 @@
 						var groupIds = [];
 						if (groupIdCol == -1)
 						{
-							Debug.log("No matching GroupID column found at linked to table!", Debug.HIGH_PRIORITY);
+							Debug.err("No matching GroupID column found at linked to table!");
 						}
 						else
 						{
@@ -10363,7 +10368,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 						el.innerHTML = str;
 						return;
 					}
@@ -10595,7 +10600,7 @@
 
 			if (modTblCount == 0)
 			{
-				Debug.log("No modified tables found. Nothing to save.", Debug.WARN_PRIORITY);
+				Debug.warn("No modified tables found. Nothing to save.");
 				return;
 			}
 
@@ -10622,7 +10627,7 @@
 			//	and save member map to hidden div for Save action
 			var tableGroupEls = document.getElementById("treeView-ConfigGroupLink").childNodes;
 			///////////////////////////////////////////////////////////
-			DesktopContent.XMLHttpRequest("Request?RequestType=getAffectedActiveGroups" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=checkAffectedActiveGroups" +
 				"&groupName=" + tableGroupEls[0].innerHTML +
 				"&groupKey=" + tableGroupEls[1].innerHTML,
 				"&modifiedTables=" + modifiedTables,
@@ -10631,7 +10636,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 						el.innerHTML = str;
 						return;
 					}
@@ -10741,7 +10746,7 @@
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err)
 							{
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err(err);
 								el.innerHTML = str;
 								return;
 							}
@@ -10877,7 +10882,7 @@
 					); //end of getGroupAliases handler
 
 				}, 0, 0, true //reqParam, progressHandler, callHandlerOnErr
-			); //end of getAffectedActiveGroups call
+			); //end of checkAffectedActiveGroups call
 
 
 			document.getElementById("display").appendChild(el); //add element to display div
@@ -10934,7 +10939,7 @@
 
 					if (!el.value || el.value.trim() == "")
 					{
-						Debug.log("Process interrupted. Invalid empty alias given!", Debug.HIGH_PRIORITY);
+						Debug.err("Process interrupted. Invalid empty alias given!");
 
 						//kill popup dialog
 						var el = document.getElementById("popUpDialog");
@@ -10985,7 +10990,7 @@
 						}
 						else
 						{
-							Debug.log("Process interrupted. Failed to modify the currently active Backbone!", Debug.HIGH_PRIORITY);
+							Debug.err("Process interrupted. Failed to modify the currently active Backbone!");
 
 							//kill popup dialog
 							var el = document.getElementById("popUpDialog");
@@ -11074,7 +11079,7 @@
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err)
 							{
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err(err);
 
 								//kill popup dialog
 								var el = document.getElementById("popUpDialog");
@@ -11210,7 +11215,7 @@
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err)
 							{
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err(err);
 
 								//kill popup dialog
 								var el = document.getElementById("popUpDialog");
@@ -11395,7 +11400,7 @@
 
 									if (treeErr)
 									{
-										Debug.log(treeErr, Debug.HIGH_PRIORITY);
+										Debug.err(treeErr);
 										Debug.log("There were problems identified in the tree view of the " +
 											"attempted new group '" +
 											attemptedNewGroupName +
@@ -11423,7 +11428,7 @@
 									var err = DesktopContent.getXMLValue(req, "Error");
 									if (err)
 									{
-										Debug.log(err, Debug.HIGH_PRIORITY);
+										Debug.err(err);
 
 										//kill popup dialog
 										var el = document.getElementById("popUpDialog");
@@ -11918,7 +11923,7 @@
 						{
 							if(errStr)
 							{
-								Debug.log(errStr,Debug.HIGH_PRIORITY);
+								Debug.err(errStr);
 								editCellCancel();
 								return;
 							}
@@ -11927,8 +11932,7 @@
 							{
 								var warnings = req.responseXML.getElementsByTagName("Warning");
 								for (var i = 0; i < warnings.length; ++i)
-									Debug.log(DesktopContent.getXMLValue(warnings[i]),
-										Debug.WARN_PRIORITY);
+									Debug.warn(DesktopContent.getXMLValue(warnings[i]));
 
 								//suppress same value error
 								if (err.indexOf("is the same as the current value. No need to save node.") > 0)
@@ -11937,8 +11941,8 @@
 									editCellCancel();
 									return;
 								}
-								Debug.log("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the Tree-view page.", Debug.HIGH_PRIORITY);
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err("If you do not understand the error, try refreshing the tree from the '>>' menu in the top left of the Tree-view page.");
+								Debug.err(err);
 
 								editCellCancel();
 								return;
@@ -15477,16 +15481,25 @@
 				//get affected groups
 				//	and save member map to hidden div for Save action
 				///////////////////////////////////////////////////////////
-				DesktopContent.XMLHttpRequest("Request?RequestType=getAffectedActiveGroups" +
+				DesktopContent.XMLHttpRequest("Request?RequestType=checkAffectedActiveGroups" +
 					"&groupName=" + _associatedGroupName +
 					"&groupKey=" + _associatedGroupKey,
 					"&modifiedTables=" + modifiedTables,
-					function (req)
+					function (req, reqParam, errStr)
 					{
+						if (errStr)
+						{
+							Debug.err(errStr);
+							//cancel dialog
+							var pel = document.getElementById("popUpDialog"); 
+							if(pel) pel.parentNode.removeChild(pel);
+							return;
+						}
+
 						var err = DesktopContent.getXMLValue(req, "Error");
 						if (err)
 						{
-							Debug.log(err, Debug.HIGH_PRIORITY);
+							Debug.err(err);
 							el.innerHTML = str;
 							return;
 						}
@@ -15597,7 +15610,7 @@
 								var err = DesktopContent.getXMLValue(req, "Error");
 								if (err)
 								{
-									Debug.log(err, Debug.HIGH_PRIORITY);
+									Debug.err(err);
 									el.innerHTML = str;
 									return;
 								}
@@ -15731,7 +15744,7 @@
 						); //end of getGroupAliases handler
 
 					}, 0, 0, true //reqParam, progressHandler, callHandlerOnErr
-				); //end of getAffectedActiveGroups call
+				); //end of checkAffectedActiveGroups call
 
 			}
 
@@ -15827,7 +15840,7 @@
 						var err = DesktopContent.getXMLValue(req, "Error");
 						if (err)
 						{
-							Debug.log(err, Debug.HIGH_PRIORITY);
+							Debug.err(err);
 
 							localFinishDialog();
 
@@ -17040,7 +17053,7 @@
 							var treeErr = DesktopContent.getXMLValue(req, "TreeErrors");
 							if (treeErr)
 							{
-								Debug.log(treeErr, Debug.HIGH_PRIORITY);
+								Debug.err(treeErr);
 								Debug.log("There were problems identified in the tree view of the " +
 									"attempted new group '" +
 									attemptedNewGroupName +
@@ -17070,7 +17083,7 @@
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err)
 							{
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err(err);
 
 								//kill popup dialog
 								var el = document.getElementById("popUpDialog");
@@ -17152,7 +17165,7 @@
 						if (ignoreWarnings)
 						{
 							//try to continue on with saving the group
-							Debug.log(err, Debug.WARN_PRIORITY);
+							Debug.warn(err);
 							Debug.log("Ignoring table saving error and proceding with saving group...",
 								Debug.WARN_PRIORITY);
 
@@ -17161,7 +17174,7 @@
 							return;
 						}
 
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 
 						//kill popup dialog
 						var el = document.getElementById("popUpDialog");
@@ -17200,15 +17213,21 @@
 
 		//==============================================================================
 		//saveTableAsNewVersionHandler ~~
-		function saveTableAsNewVersionHandler(req, backLinkStr)
+		function saveTableAsNewVersionHandler(req, backLinkStr, errStr)
 		{
 			if (!backLinkStr) backLinkStr = _tableViewBackLinkStr;
 			Debug.log("saveTableAsNewVersionHandler requestHandler req " + req.responseText);
 
+			if(errStr)
+			{
+				Debug.err(errStr);
+				return;
+			}
+
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err && err != "")
 			{
-				Debug.log(err, Debug.HIGH_PRIORITY);
+				Debug.err(err);
 				return;
 			}
 
@@ -17395,7 +17414,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 
 						Debug.log("There were errors loading this version.\n\n" +
 							"Please see the detailed Errors below:", Debug.HIGH_PRIORITY);
@@ -17584,7 +17603,7 @@
 
 							if (treeErr)
 							{
-								Debug.log(treeErr, Debug.WARN_PRIORITY);
+								Debug.warn(treeErr);
 								Debug.log("There were problems identified in the tree view of the " +
 									"attempted new group '" +
 									attemptedNewGroupName +
@@ -17612,7 +17631,7 @@
 							var err = DesktopContent.getXMLValue(req, "Error");
 							if (err)
 							{
-								Debug.log(err, Debug.HIGH_PRIORITY);
+								Debug.err(err);
 
 								//							//kill popup dialog
 								//							var el = document.getElementById("popUpDialog");
@@ -17995,7 +18014,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 						el.innerHTML = str;
 						return;
 					}
@@ -18219,7 +18238,7 @@
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if (err)
 					{
-						Debug.log(err, Debug.HIGH_PRIORITY);
+						Debug.err(err);
 						Debug.log("Error! The merger of the two group pairs, " +
 							groupANameContext + "(" + groupAKeyContext + ") & " +
 							groupBNameContext + "(" + groupBKeyContext + "), and " +

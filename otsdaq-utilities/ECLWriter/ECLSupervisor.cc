@@ -682,8 +682,7 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 
 				if(!found)
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 10)
-					    << __COUT_HDR__ << "Skipping unaccepted category: " << category
+					__COUTS__(10) << "Skipping unaccepted category: " << category
 					    << __E__;
 					lastBefore = before;
 					--before;  //move back to prepare for next search

@@ -1388,7 +1388,7 @@ ConfigurationAPI.popUpSaveModifiedTablesForm = function(modifiedTables,responseH
 	//get affected groups
 	//	and save member map to hidden div for Save action
 	///////////////////////////////////////////////////////////
-	DesktopContent.XMLHttpRequest("Request?RequestType=getAffectedActiveGroups" +
+	DesktopContent.XMLHttpRequest("Request?RequestType=checkAffectedActiveGroups" +
 			"&groupName=" +
 			"&groupKey=-1", //end get params
 			"&modifiedTables=" + modifiedTablesListStr, //end post params
@@ -1972,7 +1972,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 			//get affected groups
 			//	and save member map to hidden div for Save action
 			///////////////////////////////////////////////////////////
-			DesktopContent.XMLHttpRequest("Request?RequestType=getAffectedActiveGroups" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=checkAffectedActiveGroups" +
 					"&groupName=" +
 					"&groupKey=-1", //end get params
 					"&modifiedTables=" + modifiedTablesListStr, //end post params
@@ -2058,7 +2058,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 
 				localHandleSavingAffectedGroups();
 					},0,0,true //reqParam, progressHandler, callHandlerOnErr
-			); //end of getAffectedActiveGroups req
+			); //end of checkAffectedActiveGroups req
 		}
 		else
 		{

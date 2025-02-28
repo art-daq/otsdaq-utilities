@@ -1966,56 +1966,68 @@ Desktop.handleWindowMouseMove = function(mouseEvent)
 	var winId = this.id.split('-')[1]; //get id string from div container id
 	var isDashboard = (winId == "windowDashboard");
 	var win;
-	if(!isDashboard){
+	if(!isDashboard)
+	{
 		win = Desktop.desktop.getWindowById(winId);
 		if(win == -1) return false;
 		if(win.isMaximized()) {this.style.cursor = "default";return false;}
 	}
 
 	//change mouse cursor if over a window object and not manipulating the foreground window
-	if(Desktop.foreWinLastMouse[0] == -1) {
+	if(Desktop.foreWinLastMouse[0] == -1) 
+	{
 		var locX = mouseEvent.clientX - this.offsetLeft;
 		var locY = mouseEvent.clientY - this.offsetTop;
 
 		var hotCornerSz = 7;
-		if(isDashboard) {
-			if(locX > Desktop.desktop.dashboard.getDashboardWidth() - hotCornerSz) {
+		if(isDashboard) 
+		{
+			if(locX > Desktop.desktop.dashboard.getDashboardWidth() - hotCornerSz) 
+			{
 				this.style.cursor = "e-resize";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.SIDEBAR;
 			}
 			else
 				this.style.cursor = "default";
 		}
-		else {
+		else 
+		{
 			if((locX < hotCornerSz && locY < hotCornerSz) ||
-				(locX > win.getWindowWidth() - hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) {
+				(locX > win.getWindowWidth() - hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) 
+			{
 				this.style.cursor = "nw-resize";
 				Desktop.winManipMode = locY < hotCornerSz?
 					Desktop.WIN_MANIP_MODE.NW:Desktop.WIN_MANIP_MODE.SE;
 			}
 			else if((locX > win.getWindowWidth() - hotCornerSz && locY < hotCornerSz) ||
-				(locX < hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) {
+				(locX < hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) 
+			{
 				this.style.cursor = "ne-resize";
 				Desktop.winManipMode = locY < hotCornerSz?
 					Desktop.WIN_MANIP_MODE.NE:Desktop.WIN_MANIP_MODE.SW;
 			}
-			else if(locX < hotCornerSz) {
+			else if(locX < hotCornerSz) 
+			{
 				this.style.cursor = "w-resize";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.W;
 			}
-			else if(locX > win.getWindowWidth() - hotCornerSz) {
+			else if(locX > win.getWindowWidth() - hotCornerSz) 
+			{
 				this.style.cursor = "e-resize";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.E;
 			}
-			else if(locY < hotCornerSz) {
+			else if(locY < hotCornerSz) 
+			{
 				this.style.cursor = "n-resize";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.N;
 			}
-			else if(locY > win.getWindowHeight() - hotCornerSz) {
+			else if(locY > win.getWindowHeight() - hotCornerSz) 
+			{
 				this.style.cursor = "s-resize";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.S;
 			}
-			else if(locY < win.getWindowHeaderHeight()) {
+			else if(locY < win.getWindowHeaderHeight()) 
+			{
 				this.style.cursor = "all-scroll";
 				Desktop.winManipMode = Desktop.WIN_MANIP_MODE.MOVE;
 			}
@@ -2645,7 +2657,9 @@ Desktop.handleDashboardHelp = function (mouseEvent)
 	// Check if window exists
 	if(Desktop.desktop.getForeWindow() == 0)
 	{
-		window.open("https://github.com/art-daq/otsdaq#readme", "_blank")
+		// window.open("https://github.com/art-daq/otsdaq#readme", "_blank");
+		// window.open("https://otsdaq.fnal.gov", "_blank");
+		Desktop.desktopTooltip();
 	}
 	else if(Desktop.desktop.getForeWindow().isMaximized())
 	{
@@ -2654,7 +2668,9 @@ Desktop.handleDashboardHelp = function (mouseEvent)
 	}
 	else
 	{
-		window.open("https://github.com/art-daq/otsdaq#readme", "_blank")
+		// window.open("https://github.com/art-daq/otsdaq#readme", "_blank");
+		// window.open("https://otsdaq.fnal.gov", "_blank");
+		Desktop.desktopTooltip();
 	}
 	return false;
 } //end handleWindowHelp()
@@ -3124,8 +3140,10 @@ Desktop.desktopTooltip = function()
 {
 
 	DesktopContent.tooltip("Desktop Introduction",
-			"Welcome to the <i>otsdaq</i> Desktop environment. This is your portal " +
-			"to all of the possibilities of <i>otsdaq</i>.\n\n" +
+			"<center><a href='https://otsdaq.fnal.gov' target='_blank' title='Click to navigate to the otsdaq homepage.'><img src='https://otsdaq.fnal.gov/logo.png' /></a></center>\n" +
+			"Welcome to the <b><i>otsdaq</i> Desktop</b> environment. This is your portal " +
+			"to all of the possibilities of <b><i>otsdaq</i></b>. For more in-depth <b>tutorials</b> and <b>documentation</b>, " +
+			"please visit <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a>. \n\n" +
 			"Briefly, here are the features:" +
 
 			"\n\t- <b>Desktop Window Icons:</b> " +

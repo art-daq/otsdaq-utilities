@@ -121,7 +121,7 @@
 //
 //=====================================================================================
 
-var DesktopContent = DesktopContent || {}; //define Desktop namespace
+var DesktopContent = DesktopContent || {}; //define DesktopContent namespace
 
 if (typeof Debug == 'undefined')
 	alert('ERROR: Debug is undefined! Must include Debug.js before DesktopContent.js');
@@ -1993,7 +1993,7 @@ DesktopContent.popUpVerificationTimeout = 0;
 DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bgColor,
 		textColor, borderColor, getUserInput, dialogWidth, cancelFunc,
 		yesButtonText, noAutoComplete, defaultUserInputValue,
-		cancelButtonText, wantMultilineInput, justDisplayAndTimeoutPopup) {
+		cancelButtonText, wantMultilineInput, justDisplayAndTimeoutPopup, zIndex) {
 
 	//	Debug.log("X: " + DesktopContent._mouseOverXmailbox.innerHTML +
 	//			" Y: " + DesktopContent._mouseOverYmailbox.innerHTML +
@@ -2209,28 +2209,34 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	var x = DesktopContent.getMouseX();
 	var y = DesktopContent.getMouseY();
 	x -= w/2; //center on x, but try to avoid having mouse lineup with buttons to avoid accidental double click by user
-//	Debug.log("X: " + x +
-//			" Y: " + y +
-//			" W: " + w +
-//			" H: " + h);
 
-	while(x+w > DesktopContent.getWindowWidth())
-		x -= w;
-	if(y > DesktopContent.getWindowHeight()/2 + h/2)
-		y -= h; //move to top half of screen
-	while(y+h > DesktopContent.getWindowHeight())
-		y -= h;
+	if(typeof Desktop !== 'undefined') //This call is from Desktop page.. so do not trust x and y
+	{
+		//center of page
+		x = DesktopContent.getWindowWidth()/2 - w/2;
+		y = DesktopContent.getWindowHeight()/2 - h/2;
+	}
+	else
+	{
+		while(x+w > DesktopContent.getWindowWidth())
+			x -= w;
+		if(y > DesktopContent.getWindowHeight()/2 + h/2)
+			y -= h; //move to top half of screen
+		while(y+h > DesktopContent.getWindowHeight())
+			y -= h;
 
-	if(x <= 0) x = 10;
-	if(y <= 0) y = 10;
+		if(x <= 0) x = 10;
+		if(y <= 0) y = 10;
+	}
 
 	Debug.log("X: " + x +
 			" Y: " + y +
 			" W: " + w +
 			" H: " + h);
-	//var
+	
 	el.style.left = (DesktopContent.getWindowScrollLeft() + x) + "px";
 	el.style.top = (DesktopContent.getWindowScrollTop() + y) + "px";
+	if(zIndex) el.style.zIndex = zIndex;
 } //end popUpVerification()
 //=====================================================================================
 //clearPopUpVerification ~~

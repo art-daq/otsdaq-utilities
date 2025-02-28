@@ -498,8 +498,7 @@ try
 
 		if(triggeredAction.action.size())
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 2)
-			    << __COUT_HDR__ << "Handling action '" << triggeredAction.action
+			__COUTS__(2) << "Handling action '" << triggeredAction.action
 			    << "' on custom count search string: "
 			    << StringMacros::vectorToString(triggeredAction.needleSubstrings, {'*'})
 			    << __E__;

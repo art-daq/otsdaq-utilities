@@ -910,7 +910,7 @@ else
 			"#'" +
 			" 'title='Click to open ots documentation in a new tab' ><img src='/WebPath/images/dashboardImages/icon-Help.png'></a>";
 		tmpBtn.onmouseup = Desktop.handleDashboardHelp;
-		tmpBtn.onmousedown = Desktop.handleDashboardHelp;
+		// tmpBtn.onmousedown = Desktop.handleDashboardHelp;
 
 		_topBar.appendChild(tmpBtn);
 
