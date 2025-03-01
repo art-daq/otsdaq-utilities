@@ -501,7 +501,7 @@
 				 .replace(/'/g, "%27")
 				 .replace(/\n/g,"%0A%0D")
 				 .replace(/  /g, "%20%20");
-			}
+			} //end convertForServer()
 
 			//============================================================
 			//convertForClient ~
@@ -787,7 +787,7 @@
 				if((r+b+g)/3 > 128) { r /= 2; g /= 2; b /= 2; } //dim colors if too bright
 
 				return "RGB(" +	r + "," + g + "," + b + ")";
-			}
+			} //end getColorForIndex()
 
 			//============================================================
 			//handleUserScroll ~
@@ -798,7 +798,7 @@
 					_scrollWithNewChats = (_historyEl.scrollTop >=_historyEl.scrollHeight - _historyEl.offsetHeight - 2);
 
 				DesktopContent.handleScroll(e);
-			}
+			} //end handleUserScroll()
 
 			//============================================================
 			//handleUserInputScroll ~
@@ -808,7 +808,7 @@
 				_userMouseInput = true;
 
 				DesktopContent.handleScroll(mouseEvent);
-			}
+			} //end handleUserInputScroll()
 
 			//============================================================
 			//handleMouseMoveScroll ~
@@ -817,15 +817,29 @@
 			{
 				if(_userMouseInput && mouseEvent.which == 0) //mouse button released
 					_userMouseInput = false;
-			}
+			} //end handleMouseMoveScroll()
 
 			//============================================================
 			//pageUser ~
 			function pageUser(u)
 			{
 				Debug.log("Chat pageUser now is " + u);
+
 				DesktopContent.XMLHttpRequest("Request?RequestType=PageUser","topage="+u+"&user="+_displayName,handleRefreshChat);
-			}
+
+				var chat = convertForServer("Paging " + u + " to come to chat!");
+				Debug.log("Chat sendChat page");
+
+				//send chat to server
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=SendChat",
+					"chat="+chat+"&user="+_displayName,
+					getChatUpdates /*returnHandler*/,
+					0 /*reqParam*/,
+					0 /*progressHandler*/,
+					0 /*callHandlerOnErr*/,
+					true /*doNoShowLoadingOverlay*/);
+			} //end pageUser()
 
 		</script>
 
