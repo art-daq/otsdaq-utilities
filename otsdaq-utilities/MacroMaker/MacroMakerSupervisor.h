@@ -31,7 +31,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 			std::string macroName_;
 			std::string inputArgs_;
 			std::string outputArgs_;
-			bool        saveOutputs_; 
+			bool        saveOutputs_;
 			std::string runningUsername_;
 			std::string userGroupPermissions_;
 
@@ -72,13 +72,13 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 		runFEMacroStruct& operator=(const runFEMacroStruct&) = delete;
 
 		/// Allow move constructor because std::atomic is not copyable
-    	runFEMacroStruct(runFEMacroStruct&& other) noexcept 
-		: 		
-		parameters_(other.parameters_) 
+    	runFEMacroStruct(runFEMacroStruct&& other) noexcept
+		:
+		parameters_(other.parameters_)
 		, feMacroRunDone_(other.feMacroRunDone_.load())
 		{}
 		/// Allow move constructor because std::atomic is not copyable, for vector erase
-		runFEMacroStruct& operator=(runFEMacroStruct&& other) noexcept 
+		runFEMacroStruct& operator=(runFEMacroStruct&& other) noexcept
 		{
 			if (this != &other) {
 				parameters_ = other.parameters_;
@@ -98,9 +98,9 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			destroy									(void);
 
 	virtual void 	request									(const std::string&               requestType,
-	                    									 cgicc::Cgicc&                    cgiIn,
-	                    									 HttpXmlDocument&                 xmlOut,
-	                    									 const WebUsers::RequestUserInfo& userInfo) override;
+															 cgicc::Cgicc&                    cgiIn,
+															 HttpXmlDocument&                 xmlOut,
+															 const WebUsers::RequestUserInfo& userInfo) override;
 
 	virtual void 	forceSupervisorPropertyValues			(void) override;  	///< override to force supervisor property values (and ignore user settings)
 
@@ -112,13 +112,13 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			tooltipRequest							(xgi::Input* in, xgi::Output* out);
 	void 			requestWrapper							(xgi::Input* in, xgi::Output* out);
 	/// end MacroMaker only functions
-	
+
 	static void 	RemoteControlWorkLoop					(MacroMakerSupervisor* supervisorPtr);
 
 	void 			handleRequest							(const std::string               Command,
-	                   										HttpXmlDocument&                 xmldoc,
-	                   										cgicc::Cgicc&                    cgi,
-	                   										const WebUsers::RequestUserInfo& userInfo);
+					   										HttpXmlDocument&                 xmldoc,
+					   										cgicc::Cgicc&                    cgi,
+					   										const WebUsers::RequestUserInfo& userInfo);
 
 	xoap::MessageReference frontEndCommunicationRequest		(xoap::MessageReference message);
 	xoap::MessageReference supervisorSequenceCheck			(xoap::MessageReference message);
@@ -127,14 +127,14 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			getFEMacroList							(HttpXmlDocument& xmldoc, const std::string& username);
 
 	void 			writeData								(HttpXmlDocument&   xmldoc,
-	     			         								 cgicc::Cgicc&      cgi,
-	     			         								 const std::string& username);
+		 					 								 cgicc::Cgicc&      cgi,
+		 					 								 const std::string& username);
 	void 			readData								(HttpXmlDocument&   xmldoc,
 	     			        								 cgicc::Cgicc&      cgi,
 	     			        								 const std::string& username);
 	void 			createMacro								(HttpXmlDocument&   xmldoc,
-	     			           								 cgicc::Cgicc&      cgi,
-	     			           								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			loadMacro								(const std::string& macroName,
 	     			         								 std::string&       macroString,
 	     			         								 const std::string& username = "");
@@ -169,16 +169,16 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			loadHistory								(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			loadFEHistory							(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			deleteMacro								(HttpXmlDocument&   xmldoc,
-	     			           								 cgicc::Cgicc&      cgi,
-	     			           								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			editMacro								(HttpXmlDocument&   xmldoc,
 	     			         								 cgicc::Cgicc&      cgi,
 	     			         								 const std::string& username);
 	void 			clearHistory							(const std::string& username);
 	void 			clearFEHistory							(const std::string& username);
 	void 			exportMacro								(HttpXmlDocument&   xmldoc,
-	     			           								 cgicc::Cgicc&      cgi,
-	     			           								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			exportFEMacro							(HttpXmlDocument&   xmldoc,
 	     			             							 cgicc::Cgicc&      cgi,
 	     			             							 const std::string& username);
