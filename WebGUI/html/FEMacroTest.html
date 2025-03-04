@@ -49,7 +49,7 @@
 			margin: auto;
 		}
 		.macroModule {
-			border:				2px solid #000058;
+			border:				2px solid #b0b0b0;
 			padding:			30px;
 			background: rgb(255, 255, 255);
 			/* background: -webkit-linear-gradient(top, #838AB1, #B2FFFC);
@@ -220,6 +220,33 @@
 			//handleSelectedMacroName(r,c)
 			//setCaretPosition(el, caretPos, endPos)
 
+			//handleKeyInput(e)
+			//loadHistory()
+			//appendHistoryRecord(record)
+			//onClickHistoryRecord(recordObj)
+			//showPopupClearHistoryConfirm()
+			//hideSmallPopup(el)
+			//hideSmallPopupLiveView(el)
+			//hideSmallPopupFlag()
+			//clearHistory(el)
+			//toggleLiveView()
+			//setIntervalAndStart()
+
+			//handleEnterPress(event)
+			//PopupMacroFlagAlert()
+			//setFlagKeyword(isPresent)
+
+			//statusActionButtons(status)
+			//statusEditButtons(status)
+
+			//showSequence(target, seq)
+			//showPopupSaveSequence()
+			//hidePopupSaveSequence()
+			//popupSetSequenceDelay()
+			//toggleSequenceMode()
+			//loadSequnces()
+			//makeSequencePublic()
+
 		var verticalOrientation_ = true;
 		var sequenceMode_ = false;
 
@@ -328,9 +355,11 @@
 				"The output is displayed in the middle panel. " +
 				"\n\n" +
 				"The panel on the right tracks your history. You can run previous FE Macros by clicking on them. " +
-				"Optionally, the <b>Live View</b> button can repeatedly run the last FE Macro for a given amount of time. " +
+				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait in between repeat executions. " +
 				"\n\n" +
-				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a sequence of previously ran FE Macros. "
+				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros. " + 
+				"<b>Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " + 
+				"Note that sequences in the admin user's folder are considered public and will be accessible by all users.";
 
 			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
@@ -670,7 +699,8 @@
 			console.log("postData",postData);
 
 			var str = "";
-			str += "Launched... " + getDateString(new Date) +
+			str += "Launched '" + macroName + 
+					"'... " + getDateString(new Date) +
 					".. waiting for response...";
 			var el;
 
@@ -749,6 +779,36 @@
 				el.innerHTML = str;
 				return;
 			}
+
+			//check if not done
+			var notDoneID = DesktopContent.getXMLValue(req,"NotDoneID");
+			Debug.logv({notDoneID});
+			if(notDoneID)
+			{
+				Debug.log("FE Macro run not done", notDoneID);
+
+				//append still running
+				var str = el.innerHTML;
+				str += "<br><br>Received response that FE macro is still running... " + getDateString(new Date);
+				str += "<br>";
+				el.innerHTML = str;
+
+				window.setTimeout(function()
+					{ 
+						Debug.log("Checking if FE Macro is done",notDoneID);
+						DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
+							"&NotDoneID=" + notDoneID
+							,
+							"" /*postData*/,
+							handleMacroResponse,
+							0 /*reqParam*/, 0 /*progressHandler*/,
+							true /*callHandlerOnErr*/,
+							true /*doNotShowLoadingOverlay*/
+							);
+					}, 5000 /* 5 seconds */);
+				return;
+			}
+
 
 			var feExecs = req.responseXML.getElementsByTagName("feMacroExec");
 			var feMacroRunArgNames = req.responseXML.getElementsByTagName("feMacroRunArgs_name");
@@ -2224,14 +2284,14 @@
 			currentHistoryRecord = recordObj;
 
 			// in bulding sequence mode add the macro to the sequence
-			if (sequenceBuilding_)
+			if(sequenceBuilding_)
 			{
 				appendMacroToSequence(JSON.stringify(recordObj));
 				return;
 			}
 
 			var el = document.getElementById("verticalLayoutOutputDiv");
-			if (el)
+			if(el)
 			{
 				Debug.log("Found output div at size ",el.offsetWidth,el.offsetHeight);
 				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight-1];
@@ -2240,11 +2300,18 @@
 
 				el = document.getElementById("macroModule-output");
 				el.style.width = (verticalOutputDivSize_[0] + 30) + "px";
+
+				var str = "";
+				str += "Launched '" + recordObj["macroName"] + 
+						"'... " + getDateString(new Date) +
+						".. waiting for response...";
+				el.innerHTML = str;				
 			}
 
 
 			var str = "";
-			str += "Launched... " + getDateString(new Date) +
+			str += "Launched '" + recordObj["macroName"] + 
+					"'... " + getDateString(new Date) +
 					".. waiting for response...";
 			var el = document.getElementById("history-status");
 			el.innerHTML = str;
@@ -2576,17 +2643,17 @@
 					// up button
 					var upBtn = document.createElement("button");
 					upBtn.className = "sequence-btn";
-					upBtn.innerHTML = "<span>▲</span>";
+					upBtn.innerHTML = "<span>&ShortUpArrow;</span>";
 					upBtn.setAttribute("onClick", "moveUpSequence(" + index + ")");
 					// remove button
 					const removeBtn = document.createElement("button");
 					removeBtn.className = "sequence-btn";
-					removeBtn.innerHTML = "<span>✖</span>";
+					removeBtn.innerHTML = "<span>&#10006;</span>";
 					removeBtn.setAttribute("onClick", "removeFromSequence(" + index + ")");
 					// down button
 					var downBtn = document.createElement("button");
 					downBtn.className = "sequence-btn";
-					downBtn.innerHTML = "<span>▼</v>";
+					downBtn.innerHTML = "<span>&ShortDownArrow;</v>";
 					downBtn.setAttribute("onClick", "moveDownSequence(" + index + ")");
 
 					sequenceAction.appendChild(downBtn);
@@ -2676,7 +2743,10 @@
 					"id": "sequnce-selector",
 					"style": "margin:10px; display: inline-flex; gap: 15px;"
 				},
-				"<p><strong>Select sequence: </strong></p>" + select,
+				"<p><strong>Select sequence: </strong></p>" + select + 
+				" <a onclick='makeSequencePublic()' " + 
+				"title='Click to make this sequence publicly accessible to all users (must have admin(255) privileges)' " +
+				">Make Public</a>",
 				true);
 			// space used to show the steps of each sequence
 			str += DesktopContent.htmlOpen(
@@ -2847,28 +2917,29 @@
 			);
 		} //end loadSequnces()
 
-		// ACTIONS
+		//=====================================================================================
+		//makeSequencePublic ~~
+		function makeSequencePublic()
+		{
+			Debug.log("makeSequencePublic()");
 
-		// TODO
-		//function runSequence()
-		//	{
-				// call the API
-				//var selector = document.getElementById("select-sequence");
+			var sequenceName = document.getElementById("select-sequence").value;
+			Debug.logv({sequenceName});
+			if(!sequenceName || sequenceName == "undefined" || sequenceName == "None")
+			{
+				Debug.err("Please select a valid sequence name to make public from the 'Select sequence' dropdown menu.");
+				return;
+			}
 
-				//DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacroSequence" +
-				//	"&name=" + selector.value,
-				//	"",
-				//	function() {
-						// request hendler
-				//		Debug.log("runFEMacroSequence() was called.");
-						// TODO: show the results
-
-				//	}
-				//);
-			//	console.log("run", selectedSequence_);
-		//	}
-
-		// call the function when we click on the history
+			DesktopContent.XMLHttpRequest("Request?RequestType=makeSequencePublic" +
+				"&name=" + sequenceName,
+				"",
+				function() 
+				{
+					Debug.info("The sequence '" + sequenceName + "' was made publicly accessible for all users.");
+				} //end makeSequencePublic handler
+			);
+		} //end makeSequencePublic()
 
 		//=====================================================================================
 		//newSequence ~~
@@ -2907,7 +2978,8 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=deleteFEMacroSequence" +
 				"&name=" + selector.value,
 				"",
-				function() {
+				function() //handler
+				{
 					Debug.log("deleteFEMacroSequence() was called.");
 
 					// Find and remove the selected option
@@ -2941,7 +3013,7 @@
 							break;
 						}
 					}
-				}
+				} //end deleteFEMacroSequence handler
 			);
 		} //end deleteSequence()
 
@@ -3488,7 +3560,7 @@
 	<!-- <center> -->
 
 		<a href="#" onclick="toggleView()">Toggle View</a>
-		<a href="#" onclick="toggleSequenceMode()">Sequence Mode</a><br>
+		<a href="#macroModule-sequence" onclick="toggleSequenceMode()">Sequence Mode</a><br>
 		<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>

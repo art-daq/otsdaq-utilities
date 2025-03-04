@@ -660,12 +660,21 @@ Debug.errorPop = function(err,severity)
 				"<div style='color:white;font-size:16px;padding-bottom:5px;'>" +
 				"Note: Newest messages are at the top." +
 				"<label style='color:white;font-size:11px;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</font>" +
-				"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' style='float: right; margin: -10px 30px -100px -100px; cursor: pointer'>" +
+
+				"<div id='downloadIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
+				"style='float: right; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;'>" +
+				//make copy tex icon
+					"&#10697;" +
+				"</div>" +			
+				
+				"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' " +
+				"style='float: right; margin: -10px 30px -100px -100px; cursor: pointer;'>" +
 				//make download arrow
 					"<div style='display: block; margin-left: 3px; height:7px; width: 6px; background-color: white;'></div>" +
 					"<div style='display: block; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 8px solid white;'></div>" +
-					"<div style='position: relative; top: 5px; width: 13px; height: 2px; display: block; background-color: white;'></div>" +
+					"<div style='position: relative; top: 5px; width: 12px; height: 2px; display: block; background-color: white;'></div>" +
 				"</div>" +
+
 				"</div>" +
 				"<div id='" +
 				Debug._errBoxId +
@@ -753,7 +762,7 @@ Debug.errorPop = function(err,severity)
 			css += "#" + Debug._errBoxId + " b" +
 					"{" +
 					"font-weight: bold;" +
-					"color: rgb(255, 231, 187);" +
+					"color: rgb(255, 231, 187) !important;" +
 					"}\n\n";
 			css += "#" + Debug._errBoxId + " th" +
 					"{" +
@@ -794,7 +803,9 @@ Debug.errorPop = function(err,severity)
 					",#" + Debug._errBoxId + "-err u" +
 					//",#" + Debug._errBoxId + "-err div" +
 					"{" +
-					"color: rgb(255,200,100); font-size: 18px;" +
+					"color: inherit;" +
+    				"font-weight: inherit;" +
+					"font-size: 18px;" +
 					"font-family: 'Comfortaa', arial;" +
 					"text-align: left;" +
 					"-webkit-user-select: 	text;" +
@@ -818,7 +829,7 @@ Debug.errorPop = function(err,severity)
 
 			css += "#" + Debug._errBoxId + "-err b" +
 					"{" +
-					"color: rgb(255,225,200); font-size: 18px;" +
+					"color: rgb(255,225,200) !important; font-size: 18px;" +
 					"font-family: 'Comfortaa', arial;" +
 					"text-align: left;" +
 					"-webkit-user-select: 	text;" +
@@ -1108,8 +1119,6 @@ Debug.handleErrorMove = function(e) {
 //=====================================================================================
 Debug.handleErrorResize = function()
 {
-
-
 	var offX = document.documentElement.scrollLeft || document.body.scrollLeft || 0;
 	var offY = document.documentElement.scrollTop || document.body.scrollTop || 0;
 	var w;
@@ -1191,9 +1200,7 @@ Debug.downloadMessages = function() {
 
 	var lines = Debug._errBox.innerText.split('\n');
 	for(var i=2;i<lines.length-2;++i)
-	{
 		dataStr += encodeURIComponent(lines[i] + "\n"); //encoded \n
-	}
 
 	var link = document.createElement("a");
 	link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
@@ -1206,3 +1213,33 @@ Debug.downloadMessages = function() {
 	link.parentNode.removeChild(link);
 
 } //end Debug.downloadMessages
+
+//=====================================================================================
+Debug.copyMessagesToClipboard = function() {
+
+	console.log("Copying messages to clipboard...");
+
+	//create CSV data string from html table
+	var dataStr = "";
+
+	var lines = Debug._errBox.innerText.split('\n');
+	for(var i=2;i<lines.length-2;++i)
+		dataStr += lines[i] + "\n"; 
+
+
+	navigator.clipboard.writeText(dataStr)
+		.then(() => {
+			Debug.log("Text copied to clipboard!",dataStr);
+			DesktopContent.popUpVerification(
+				"Text copied!",0,
+				0,"#efeaea",0,"black",
+				0,0,0,0,0,0,0,0,
+				true /* justDisplayAndTimeoutPopup */,
+				2147483646 + 1 /* z-index on top of Debug popup */);
+		})
+		.catch(err => {
+			Debug.err("Failed to copy: ", err);
+		});
+
+
+} //end Debug.copyMessagesToClipboard

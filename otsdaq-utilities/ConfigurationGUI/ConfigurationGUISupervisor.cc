@@ -134,10 +134,12 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 	    "*=10 | deleteTreeNodeRecords=255 | saveTableInfo=255 | "
 	    "deleteTableInfo=255");  // experienced users to edit, admins to delete
+
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
 	    "*");  // all
-	//to enable read-only access to the Configuration Tree:
+
+	//Allow get* AutomatedRequestTypes to enable read-only access to the Configuration Tree:
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes, "get*");
 }  // end setSupervisorPropertyDefaults()
@@ -150,6 +152,8 @@ void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::addSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "getActiveTableGroups");
+
+	//Allow get* to not require lock to enable read-only access to the Configuration Tree:
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes,
 	    "!get*");  // all except read-only requests
@@ -215,7 +219,7 @@ try
 	//	getActiveTableGroups
 	//  copyViewToCurrentColumns
 	//	saveTreeNodeEdit
-	//	getAffectedActiveGroups
+	//	checkAffectedActiveGroups  (formerly 'getAffectedActiveGroups' but then was considered automated req, when it is more correctly associated with write tasks)
 	// 	getLinkToChoices
 	//	getLastTableGroups
 	//	getSubsytemTableGroups
@@ -1109,7 +1113,7 @@ try
 		handleSaveArtdaqNodeLayoutXML(
 		    xmlOut, cfgMgr, layout, contextGroupName, TableGroupKey(contextGroupKey));
 	}
-	else if(requestType == "getAffectedActiveGroups")
+	else if(requestType == "checkAffectedActiveGroups")
 	{
 		std::string groupName      = CgiDataUtilities::getData(cgiIn, "groupName");
 		std::string groupKey       = CgiDataUtilities::getData(cgiIn, "groupKey");
@@ -3512,13 +3516,11 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 		{
 			//for each existing active table, check table for links to tables
 
-			__COUT_TYPE__(TLVL_DEBUG + 30)
-			    << __COUT_HDR__ << "Table " << tableInfo.first << __E__;
+			__COUTS__(30) << "Table " << tableInfo.first << __E__;
 			if(!tableInfo.second.tablePtr_->isActive())
 				continue;  //skip if no active view for table
 			else
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << "Table active " << tableInfo.first << __E__;
+				__COUTS__(30) << "Table active " << tableInfo.first << __E__;
 
 			const TableView& view = tableInfo.second.tablePtr_->getView();
 
@@ -3528,9 +3530,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 				if(!view.getColumnInfo(col).isChildLink())
 					continue;
 
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << "Table " << tableInfo.first
-				    << " col: " << view.getColumnInfo(col).getName() << __E__;
+				__COUTS__(30) << "Table " << tableInfo.first
+				              << " col: " << view.getColumnInfo(col).getName() << __E__;
 
 				for(unsigned int r = 0; r < view.getNumberOfRows(); ++r)
 				{
@@ -3802,12 +3803,12 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
     bool                                                           hideStatusFalse,
     std::optional<std::reference_wrapper<const ConfigurationTree>> diffTree)
 {
-	__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << t.getValueAsString() << __E__;
+	__COUTS__(30) << t.getValueAsString() << __E__;
 
 	if(t.isValueNode())
 	{
-		__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t" << t.getValueName() << ": "
-		                               << t.getValueAsString() << __E__;
+		__COUTS__(30) << "\t" << t.getValueName() << ": " << t.getValueAsString()
+		              << __E__;
 
 		parentEl = xmlOut.addTextElementToParent("node", t.getValueName(), parentEl);
 		if(diffTree.has_value() &&
@@ -3815,18 +3816,15 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 		   t.getValueName() != TableViewColumnInfo::COL_NAME_AUTHOR &&
 		   t.getValueName() != TableViewColumnInfo::COL_NAME_CREATION)
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t diff type "
-			                               << diffTree->get().getNodeType() << __E__;
+			__COUTS__(30) << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
 
 			if(diffTree->get().isValueNode())
 			{
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << "\t" << diffTree->get().getValueAsString() << " ? "
-				    << t.getValueAsString() << __E__;
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << "\t" << diffTree->get().getTableName() << "-v"
-				    << diffTree->get().getTableVersion() << " ? " << t.getTableName()
-				    << "-v" << t.getTableVersion() << __E__;
+				__COUTS__(30) << "\t" << diffTree->get().getValueAsString() << " ? "
+				              << t.getValueAsString() << __E__;
+				__COUTS__(30) << "\t" << diffTree->get().getTableName() << "-v"
+				              << diffTree->get().getTableVersion() << " ? "
+				              << t.getTableName() << "-v" << t.getTableVersion() << __E__;
 
 				if(t.getValueAsString() != diffTree->get().getValueAsString())
 				{
@@ -3852,8 +3850,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);
 			}
 
-			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t" << t.getValueName()
-			                               << ": " << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t" << t.getValueName() << ": " << t.getValueAsString()
+			              << __E__;
 
 		}  //end diff tree handling
 
@@ -3865,7 +3863,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 		if(t.getValueType() == TableViewColumnInfo::TYPE_FIXED_CHOICE_DATA ||
 		   t.getValueType() == TableViewColumnInfo::TYPE_BITMAP_DATA)
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << t.getValueType() << __E__;
+			__COUTS__(30) << t.getValueType() << __E__;
 
 			std::vector<std::string> choices = t.getFixedChoices();
 			for(const auto& choice : choices)
@@ -3874,13 +3872,12 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 	}
 	else
 	{
-		__COUT_TYPE__(TLVL_DEBUG + 30)
-		    << __COUT_HDR__ << "\t" << t.getValueAsString() << __E__;
+		__COUTS__(30) << "\t" << t.getValueAsString() << __E__;
 
 		if(t.isLinkNode())
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t" << t.getValueName()
-			                               << ": " << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t\t" << t.getValueName() << ": " << t.getValueAsString()
+			              << __E__;
 
 			// Note: The order of xml fields is required by JavaScript, so do NOT change
 			// order.
@@ -3888,14 +3885,13 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 			if(diffTree.has_value())
 			{
-				__COUT_TYPE__(TLVL_DEBUG + 30) << __COUT_HDR__ << "\t\t diff type "
-				                               << diffTree->get().getNodeType() << __E__;
+				__COUTS__(30) << "\t\t diff type " << diffTree->get().getNodeType()
+				              << __E__;
 
 				if(diffTree->get()
 				       .isRootNode())  //then diff group does not have this uid!
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUTS__(30) << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs;  //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for missing diff node at this point)
 					auto diffGroupPair =
@@ -3907,9 +3903,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				}
 				else if(t.isDisconnected() != diffTree->get().isDisconnected())
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "\t\t diff isDisconnected "
-					    << diffTree->get().isDisconnected() << __E__;
+					__COUTS__(30) << "\t\t diff isDisconnected "
+					              << diffTree->get().isDisconnected() << __E__;
 
 					std::stringstream missingSs;  //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
@@ -3926,8 +3921,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				else if(!t.isDisconnected() &&
 				        t.isUIDLinkNode() != diffTree->get().isUIDLinkNode())
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUTS__(30) << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs;  //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
 					auto diffGroupPair =
@@ -3944,8 +3938,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				        t.getValueAsString() !=
 				            diffTree->get().getValueAsString())  //both are UID link
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUTS__(30) << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs;  //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
 					auto diffGroupPair =
@@ -3958,8 +3951,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				}
 				else if(!t.isDisconnected() && !t.isUIDLinkNode())  //both are Group links
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUTS__(30) << "" << t.getValueAsString() << __E__;
 					std::stringstream missingSs;  //assume only one group loaded for diff
 
 					auto tchildren  = t.getChildrenMap();
@@ -3989,14 +3981,12 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 					}
 				}
 				else
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+					__COUTS__(30) << "" << t.getValueAsString() << __E__;
 			}  //end diff tree handling
 
 			if(t.isDisconnected())
 			{
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << t.getValueName() << __E__;
+				__COUTS__(30) << t.getValueName() << __E__;
 
 				// xmlOut.addTextElementToParent("value", t.getValueAsString(), parentEl);
 				// xmlOut.addTextElementToParent("DisconnectedLink", t.getValueAsString(),
@@ -4021,8 +4011,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				//{
 
 				std::vector<std::string> choices = t.getFixedChoices();
-				__COUT_TYPE__(TLVL_DEBUG + 30)
-				    << __COUT_HDR__ << "choices.size() " << choices.size() << __E__;
+				__COUTS__(30) << "choices.size() " << choices.size() << __E__;
 
 				for(const auto& choice : choices)
 					xmlOut.addTextElementToParent("fixedChoice", choice, choicesParentEl);
@@ -4056,8 +4045,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 		}
 		else  // uid node (or root node)
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 30)
-			    << __COUT_HDR__ << "\t\t" << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t\t" << t.getValueAsString() << __E__;
 			bool returnNode = true;  // default to shown
 
 			if(t.isUIDNode() && hideStatusFalse)  // only show if status evaluates to true
@@ -4073,15 +4061,13 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 				if(diffTree.has_value())
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 30)
-					    << __COUT_HDR__ << "\t\t diff type "
-					    << diffTree->get().getNodeType() << __E__;
+					__COUTS__(30)
+					    << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
 
 					if(diffTree->get()
 					       .isRootNode())  //then diff group does not have this uid!
 					{
-						__COUT_TYPE__(TLVL_DEBUG + 30)
-						    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+						__COUTS__(30) << "" << t.getValueAsString() << __E__;
 						std::stringstream
 						    missingSs;  //assume only one group loaded for diff
 						//lookup group name in diffManager based on current node's table (best proxy info for diff node at this point)
@@ -4095,8 +4081,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 						    "nodeDiff", missingSs.str(), parentEl);
 					}
 					else
-						__COUT_TYPE__(TLVL_DEBUG + 30)
-						    << __COUT_HDR__ << "" << t.getValueAsString() << __E__;
+						__COUTS__(30) << "" << t.getValueAsString() << __E__;
 				}  //end diff tree handling
 			}
 			else         //hiding node
@@ -4107,8 +4092,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 		// child.toXml(depth-1)
 		if(depth >= 1)
 		{
-			__COUT_TYPE__(TLVL_DEBUG + 30)
-			    << __COUT_HDR__ << "\t\t\t" << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t\t\t" << t.getValueAsString() << __E__;
 			auto C = t.getChildren();
 			for(auto& c : C)
 				recursiveTreeToXML(  //TODO -- implement diffTree for depth > 1 requests

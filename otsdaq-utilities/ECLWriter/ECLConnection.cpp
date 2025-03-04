@@ -105,8 +105,7 @@ bool ECLConnection::Get(std::string s, std::string& response)
 			sprintf(buf, "%02x", resultMD5[i]);
 			xSig.append(buf);
 		}
-		__COUT_TYPE__(TLVL_DEBUG + 20)
-		    << __COUT_HDR__ << "ECL MD5 Signature is: " << xSig << std::endl;
+		__COUTS__(20) << "ECL MD5 Signature is: " << xSig << std::endl;
 	}
 
 	char        errorBuffer[CURL_ERROR_SIZE];
@@ -154,9 +153,10 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	if(result != CURLE_OK)
 	{
 		_safe_url = "";  //clear on error
-		__SS__ << "Error: [" << result << "] - " << errorBuffer << std::endl;
+		__SS__ << "Error ECL request not OK, check URL - here was the error: [" << result
+		       << "] - " << errorBuffer << std::endl;
 
-		__COUT_TYPE__(TLVL_DEBUG + 20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
+		__COUTS__(20) << "ECL Cleanup" << std::endl;
 		// cleanup curl stuff
 		curl_easy_cleanup(curl_handle);
 		// curl_slist_free_all(headers);
@@ -164,14 +164,15 @@ bool ECLConnection::Get(std::string s, std::string& response)
 		__SS_THROW__;
 	}
 
-	__COUT_TYPE__(TLVL_DEBUG + 20) << __COUT_HDR__ << "ECL Cleanup" << std::endl;
+	__COUTS__(20) << "ECL Cleanup" << std::endl;
 	// cleanup curl stuff
 	curl_easy_cleanup(curl_handle);
 	// curl_slist_free_all(headers);
 	curl_global_cleanup();
 
-	if(responseBuffer.find("Error") != std::string::npos ||
-	   responseBuffer.find("301 Moved Permanently") != std::string::npos)
+	if(responseBuffer.find("Error") <
+	       60 ||  //assume 'Error' not in content if early in response
+	   responseBuffer.find("301 Moved Permanently") < 1000)
 	{
 		_safe_url = "";  //clear on error
 		__SS__ << "Error found in request: " << responseBuffer << __E__;

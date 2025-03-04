@@ -12,8 +12,10 @@
 		border: 				0;
 		color: 					white;
 		-webkit-user-select: 	none; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
-		-moz-user-select: 		none;
+		-moz-user-select: 		none;		
 		user-select:			none;
+		user-drag: 				none; /* Prevents dragging in WebKit browsers */
+  		-webkit-user-drag: 		none; /* Safari, Chrome */
 		outline: 				none;  /* to stop firefox selection*/
 		font-family: 			'Comfortaa', serif; /*'Donegal One', serif;*/
 		font-size: 				20px;
