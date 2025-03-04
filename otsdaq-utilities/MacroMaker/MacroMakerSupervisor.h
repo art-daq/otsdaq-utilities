@@ -14,7 +14,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 {
   public:
 	XDAQ_INSTANTIATOR();
-	
+
 	/// runFEMacroStruct is used to track the detached thread
 	///		executing a FE Macro through completion.
 	struct runFEMacroStruct
