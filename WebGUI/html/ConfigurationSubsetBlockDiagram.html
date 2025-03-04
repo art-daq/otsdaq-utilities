@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 <head>
 	<title>System Block Diagram</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
-		
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationGUI.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
 
-	
-	<style type="text/css">			
-		
-		body {	
+
+	<style type="text/css">
+
+		body {
 			padding:0;
 			margin:0;
 			background-color:white;
@@ -31,74 +31,74 @@
 		a:hover .linkDiv {
 			border: 3px solid rgb(63, 63, 234);
 		}
-		
-		
+
+
 		#img, #links {
 			position: absolute;
 			border: 0;
 			-webkit-user-select: 	auto; /* prevent highlight selection (does not stop ghost images, must use el.ondragstart = function() {return false;}; */
 			-moz-user-select: 		none;
 			user-select:			none;
-			outline: none;  /* to stop firefox selection*/	
-		}		
-		
-		
-		
-		
+			outline: none;  /* to stop firefox selection*/
+		}
+
+
+
+
 	</style>
-	
-	
-	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
-	
-	<script>		
-		
+
+	<script>
+
 		//	Description of System Block Diagram Functionality/Behavior:
-		//	
+		//
 		//		- Block diagram is overlayed with link-divs
 		//		- When user puts mouse over a subset component, the link-div appears
 		//			as a red rounded outline
 		//		- When user clicks the associated subset configuration window is opened on the desktop
 		//			-- When user 'deep' clicks the popup menu for new tab, or full screen or tile is shown
 
-		
-		
-		
+
+
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
-	
-		//functions:			
+
+		//functions:
 			//init()
 			//handleWindowResize()
 			//placeLinks()
 			//handleClick(event,i)
-		
-		var _img, _links; 
-		var _il, _it, _iw, _ih; 
+
+		var _img, _links;
+		var _il, _it, _iw, _ih;
 		var _IMG_W = 1866;
 		var _IMG_H = 606;
 		var _IMG_M = 20; //margin
 		var _LINK_M = 14; //link margin
 		var _LINK_B = 3; //link border
 		var _urn;
-		
+
 		var _deepClickTimer = 0;
 
 		var _CONTEXT_MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
 		var _CONTEXT_MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
-	
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
-				
+
 
 		//=====================================================================================
 		//init ~~
 		//	init called once body has loaded
-		function init() 
-		{									
+		function init()
+		{
 			Debug.log("System Block Diagram init ");
 			DesktopContent.tooltip("System Block Diagram",
 					"Welcome to the System Block Diagram. "+
@@ -107,50 +107,50 @@
 					"through the software, the lighter arrows represent control/monitoring data flow " +
 					"through the software. The dashed arrows represent front-end specific communication " +
 					"protocols used to interface to your front-end devices.\n\n" +
-					
+
 					"The diagram is interactive, in the sense that you can click " +
 					"a component of interest and the associated Configuration Subset window will be opened. " +
 					"In the Configuration Subset window, you can modify the active configuration values and " +
 					"save your changes."
 			);
-			
+
 			_img = document.getElementById("img");
 			_img.ondragstart = function() { return false; }; //prevent drag of ghost image
 			_links = document.getElementById("links");
 
 			_urn = DesktopContent._localUrnLid; //get config GUI urn
-			
+
 			//push name, link and rectangles: left, top, bottom, right
 //			_linkLoc.push(["Front-ends",
-//						   "urn=" + _urn + 
+//						   "urn=" + _urn +
 //						   "&subsetBasePath=FEInterfaceTable" +
 //						   "&groupingFieldList=Status,FEInterfacePluginName" +
 //						   "&recordAlias=Front-ends" +
 //						   "&editableFieldList=!*CommentDescription,!SlowControls*"
 //						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-//						   ,2,225,57,287]); 
-			
+//						   ,2,225,57,287]);
+
 			_linkLoc.push(["Front-end Plugins",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=FEInterfaceTable" +
 						   "&groupingFieldList=Status,FEInterfacePluginName" +
 						   "&recordAlias=Front-ends" +
 						   "&editableFieldList=!*CommentDescription,!SlowControls*"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,429,1,807,95]); 
-			
+						   ,429,1,807,95]);
+
 			_linkLoc.push(["Front-end Supervisors",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"XDAQApplicationTable" +
 						   "&groupingFieldList=" + 		"Status,LinkToSupervisorTable" +
 						   "&recordAlias=" + 			"FE Supervisors" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	"Class=ots::FESupervisor"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,852,1,1232,95]); 
-			
+						   ,852,1,1232,95]);
+
 			_linkLoc.push(["Producer Plugins",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=DataBufferTable" +
 						   "&groupingFieldList=Status,ProcessorPluginName" +
 						   "&recordAlias=Producers" +
@@ -158,18 +158,18 @@
 						   "&recordPreFilterList=" + "ProcessorType=Producer"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
 						   ,156,500,537,595]);
-			
+
 			_linkLoc.push(["Data Buffers",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=DataManagerTable" +
 						   "&groupingFieldList=Status" +
 						   "&recordAlias=Data Buffers" +
-						   "&editableFieldList=!*CommentDescription" 						   
+						   "&editableFieldList=!*CommentDescription"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
 						   ,580,500,962,595]);
-			
+
 			_linkLoc.push(["Consumer Plugins",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"DataBufferTable" +
 						   "&groupingFieldList=" + 		"Status,ProcessorPluginName" +
 						   "&recordAlias=" + 			"Consumers" +
@@ -177,65 +177,65 @@
 						   "&recordPreFilterList=" + 	"ProcessorType=Consumer"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
 						   ,1003,500,1384,595]);
-			
+
 			_linkLoc.push(["Visualizer Supervisors",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"XDAQApplicationTable" +
 						   "&groupingFieldList=" + 		"Status,LinkToSupervisorTable" +
 						   "&recordAlias=" + 			"Visualizer Supervisors" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	"Class=ots::VisualSupervisor"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,976,363,1358,460]); 
-			
+						   ,976,363,1358,460]);
+
 			_linkLoc.push(["Controls Plugins",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"XDAQApplicationTable" +
 						   "&groupingFieldList=" + 		"Status,LinkToSupervisorTable" +
 						   "&recordAlias=" + 			"Controls Supervisors" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	"Class=ots::ControlsDashboardSupervisor"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,553,205,936,302]); 
+						   ,553,205,936,302]);
 
 			_linkLoc.push(["Controls Supervisors",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"XDAQApplicationTable" +
 						   "&groupingFieldList=" + 		"Status,LinkToSupervisorTable" +
 						   "&recordAlias=" + 			"Controls Supervisors" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	"Class=ots::ControlsDashboardSupervisor"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,976,205,1358,302]); 
-			
+						   ,976,205,1358,302]);
+
 			_linkLoc.push(["Desktop Icons",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"DesktopIconTable" +
 						   "&groupingFieldList=" + 		"Status,FolderPath" +
 						   "&recordAlias=" + 			"Desktop Icons" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	""
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,1462,18,1885,215]); 
-			
+						   ,1462,18,1885,215]);
+
 			_linkLoc.push(["Visualizer Web-apps",
-						   "urn=" + _urn + 
+						   "urn=" + _urn +
 						   "&subsetBasePath=" + 		"DesktopIconTable" +
 						   "&groupingFieldList=" + 		"Status,FolderPath" +
 						   "&recordAlias=" + 			"Visualizer Web-apps" +
 						   "&editableFieldList=" + 		"!*CommentDescription" +
 						   "&recordPreFilterList=" + 	"WindowContentURL=*Visualization*"
 						   //"/WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A"
-						   ,1462,254,1885,450]); 
-			
-			
-			
+						   ,1462,254,1885,450]);
+
+
+
 
 			window.addEventListener("resize",handleWindowResize);
-						
+
 			handleWindowResize();
-			
-			
+
+
 		} //end init()
 
 		//=====================================================================================
@@ -245,41 +245,41 @@
 		{
 			//adjust link divs to proper size
 			//	use ratio of new-size/original-size to determine proper size
-			
-		    var w = window.innerWidth | 0;
-		    var h = window.innerHeight | 0;	    
-		    
-		    Debug.log("handleWindowResize to " + w + " - " + h);	
-		    
-		    var l = _IMG_M;
-		    var t = _IMG_M;
-		    
-		    //try full width, calculate img height, if too tall shrink width 
-		    var iw = w - 2*_IMG_M;		    
-		    var ih = ((1.0*_IMG_H*w/_IMG_W) | 0) ;
-		    if(ih > h - 2*_IMG_M)
-		    {
-		    	//too tall so shrink width, and adjust left
-		    	ih = h - 2*_IMG_M;
-		    	iw = ((1.0*_IMG_W*ih/_IMG_H) | 0);		
-		    	l = ((w-iw)/2) | 0; 
-		    }
-		    else //adjust top
-		    	t = ((h-ih)/2) | 0;		    	
-		    
+
+			var w = window.innerWidth | 0;
+			var h = window.innerHeight | 0;
+
+			Debug.log("handleWindowResize to " + w + " - " + h);
+
+			var l = _IMG_M;
+			var t = _IMG_M;
+
+			//try full width, calculate img height, if too tall shrink width
+			var iw = w - 2*_IMG_M;
+			var ih = ((1.0*_IMG_H*w/_IMG_W) | 0) ;
+			if(ih > h - 2*_IMG_M)
+			{
+				//too tall so shrink width, and adjust left
+				ih = h - 2*_IMG_M;
+				iw = ((1.0*_IMG_W*ih/_IMG_H) | 0);
+				l = ((w-iw)/2) | 0;
+			}
+			else //adjust top
+				t = ((h-ih)/2) | 0;
+
 
 			_img.style.left = l + "px";
 			_img.style.top = t + "px";
-		    _img.style.width = iw + "px";
-		    _img.style.height = ih + "px";
-		    _il = l;
-		    _it = t;
-		    _iw = iw;
-		    _ih = ih;
-		    
-		    placeLinks();
+			_img.style.width = iw + "px";
+			_img.style.height = ih + "px";
+			_il = l;
+			_it = t;
+			_iw = iw;
+			_ih = ih;
+
+			placeLinks();
 		}
-		
+
 
 		//=====================================================================================
 		//placeLinks ~~
@@ -287,9 +287,9 @@
 		//
 		//	location of links:
 		var _linkLoc = [];
-		//push name, link and rectangles: left, top, bottom, right			
+		//push name, link and rectangles: left, top, bottom, right
 		var _linkClickIndex = -1;
-		
+
 		//placeLinks ~~
 		//=====================================================================================
 		function placeLinks()
@@ -303,13 +303,13 @@
 			clickContextMenuItemHandlers = [];
 			clickContextMenuItemHandlers.push(handleClick);
 			clickContextMenuItemHandlers.push(handleClick);
-			
+
 			_links.innerHTML = ""; //clear all previous links
-			
+
 			for(var i=0;i<_linkLoc.length;++i)
 			{
-				Debug.log(_linkLoc[i][0] + ": \n\n" + _linkLoc[i][1] + 
-						"\n\n" + encodeURIComponent(_linkLoc[i][1]) + 
+				Debug.log(_linkLoc[i][0] + ": \n\n" + _linkLoc[i][1] +
+						"\n\n" + encodeURIComponent(_linkLoc[i][1]) +
 						"\n\n" + decodeURIComponent(_linkLoc[i][1])  );
 
 				l = ((1.0* _linkLoc[i][2]*_iw/_IMG_W) | 0);
@@ -317,35 +317,35 @@
 				w = ((1.0* _linkLoc[i][4]*_iw/_IMG_W) | 0);
 				h = ((1.0* _linkLoc[i][5]*_ih/_IMG_H) | 0);
 
-				Debug.log(l + ": \n\n" + t + 
-						"\n\n" + w + 
+				Debug.log(l + ": \n\n" + t +
+						"\n\n" + w +
 						"\n\n" + h  );
-				
+
 				w += -l + 2*_LINK_M;
 				h += -t + 2*_LINK_M;
 				l += _il - _LINK_M - _LINK_B;
 				t += _it - _LINK_M - _LINK_B;
-				
-				Debug.log(l + ": \n\n" + t + 
-						"\n\n" + w + 
+
+				Debug.log(l + ": \n\n" + t +
+						"\n\n" + w +
 						"\n\n" + h  );
-				
+
 				a = document.createElement("a");
 				a.setAttribute("id","link-" + i);
-				a.title = "Open " + _linkLoc[i][0] + " configuration subset"; 
-				
+				a.title = "Open " + _linkLoc[i][0] + " configuration subset";
+
 				div = document.createElement("div");
 				div.setAttribute("class","linkDiv");
 				div.style.left = l + "px";
 				div.style.top = t + "px";
 				div.style.width = w + "px";
 				div.style.height = h + "px";
-				
+
 				a.appendChild(div);
 				_links.appendChild(a);
-				
-				
-				
+
+
+
 
 				//add context click menu handlers
 				//	mouseup and contextMenu to stop default right-click behavior
@@ -356,13 +356,13 @@
 					Debug.log("click");
 					var i = (this.id.split('-')[1]) | 0;
 					_linkClickIndex = i; //save for handler
-					
+
 					Debug.log("name: " + _linkLoc[i][0]);
 					handleClick(event,0);
-					
+
 						}
-				);// end onclick	
-				
+				);// end onclick
+
 				a.addEventListener("mouseup", function(event) {
 					Debug.log("mouseup");
 					if(_deepClickTimer)
@@ -372,15 +372,15 @@
 					}
 				}); //end onmouseup event
 
-				function localDeepClickHandler(event) {	
-					Debug.log("mousedown");			
-					event.cancelBubble = true; //prevent default behavior 
+				function localDeepClickHandler(event) {
+					Debug.log("mousedown");
+					event.cancelBubble = true; //prevent default behavior
 					event.preventDefault();
 					var i = (this.id.split('-')[1]) | 0;
-					
+
 					_deepClickTimer = window.setTimeout(function() {
 
-						Debug.log("deepclick");						
+						Debug.log("deepclick");
 						_linkClickIndex = i; //save for handler
 
 						Debug.log("name: " + _linkLoc[i][0]);
@@ -403,10 +403,10 @@
 				}; //end deepClickHandler event
 
 				a.addEventListener("mousedown",	localDeepClickHandler);
-				
-				
+
+
 			}
-			
+
 		}
 
 		//=====================================================================================
@@ -420,15 +420,15 @@
 				Debug.log("Out-of-range " + i + ":" + menuIndex);
 				return;
 			}
-			
+
 			Debug.log("handleClick name: " + _linkLoc[i][0]);
-			
+
 			//WebPath/html/ConfigurationGUI_subset.html?urn=281&subsetBasePath=FEInterfaceTable&groupingFieldList=Status%2CFEInterfacePluginName&recordAlias=Front%2Dends&editableFieldList=%21%2ACommentDescription%2C%21SlowControls%2A
 			if(menuIndex == 0) //open new window
 			{
 				DesktopContent.openNewWindow(_linkLoc[i][0],"Subset",
 						"/WebPath/html/ConfigurationGUI_subset.html?" +
-						encodeURIComponent(_linkLoc[i][1]).replace(/%3D/g, "=").replace(/%26/g, "&"),false);				
+						encodeURIComponent(_linkLoc[i][1]).replace(/%3D/g, "=").replace(/%26/g, "&"),false);
 			}
 			else
 			{
@@ -437,19 +437,19 @@
 						"/WebPath/html/ConfigurationGUI_subset.html?" +
 						encodeURIComponent(_linkLoc[i][1]).replace(/%3D/g, "=").replace(/%26/g, "&"),false);
 			}
-			
+
 		}
-		
+
 		</script>
 </head>
-	
 
-<body onload='//init() called by DesktopContent.js'>	
+
+<body onload='//init() called by DesktopContent.js'>
 
 	<!-- body content is just the clickable block diagram that stretches with window-->
-	
+
 	<img id='img' src='/WebPath/images/windowContentImages/subset-components.png' />
 	<div id='links'></div>
 </body>
-	
+
 </html>

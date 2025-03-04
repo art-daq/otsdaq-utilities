@@ -52,7 +52,7 @@ print
 # at this point call is legal according to argparse
 
 scriptDir = os.path.dirname(os.path.abspath(__file__))
-     
+
 
 print 'Script directory is:'
 print scriptDir
@@ -95,7 +95,7 @@ if ((not os.path.isdir(dest + "/"))):
     print
     print "****************"
     exit("Error: Invalid destination path '" + (args.dest) + "')\n\n")
-    
+
 
 print  'Copy files...'
 
@@ -107,7 +107,7 @@ os.system("sed -i s/FrontEndHardwareTemplate/" + args.hardwareName + "/g " + \
 	args.dest + "/" + args.name + ".cc");
 os.system("sed -i s/FrontEndFirmwareTemplate/" + args.firmwareName + "/g " + \
 	args.dest + "/" + args.name + ".cc");
-	
+
 srcFile = scriptDir + "/../../otsdaq/otsdaq/DetectorWriter/FrontEndInterfaceTemplate.h"
 os.system("cp " + srcFile + " " + args.dest + "/" + args.name + ".h");
 os.system("sed -i s/FrontEndInterfaceTemplate/" + args.name + "/g " + \
@@ -126,4 +126,3 @@ print "***********************\n"
 print 'Success!'
 print
 print
-

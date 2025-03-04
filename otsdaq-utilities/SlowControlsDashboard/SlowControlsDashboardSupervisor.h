@@ -12,9 +12,9 @@ namespace ots
 class SlowControlsVInterface;
 class ConfigurationManager;
 
-// SlowControlsDashboardSupervisor
-//	This class handles the management of slow controls interface plugins, as well as the
-// user web interface
+/// SlowControlsDashboardSupervisor
+///	This class handles the management of slow controls interface plugins, as well as the
+/// user web interface
 class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 {
   public:
@@ -39,10 +39,10 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	                           const WebUsers::RequestUserInfo& userInfo);
 
 	virtual void setSupervisorPropertyDefaults(void) override;
-	virtual void forceSupervisorPropertyValues(void) override;  // override to force
-	                                                            // supervisor property
-	                                                            // values (and ignore user
-	                                                            // settings)
+	virtual void forceSupervisorPropertyValues(void) override;  ///< override to force
+	                                                            ///< supervisor property
+	///< values (and ignore user
+	///< settings)
 
 	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string UID);
 	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
@@ -77,7 +77,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void Subscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void Unsubscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 
-	// Utilities, eventually to be moved
+	/// Utilities, eventually to be moved
 	bool isDir(std::string dir);
 	void listFiles(std::string baseDir, bool recursive, std::vector<std::string>* pages);
 
@@ -91,7 +91,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	std::string                          alarmCheckThreadError_;
 	int                                  readOnly_;
 
-	// cached data to expose to the web user
+	/// cached data to expose to the web user
 	std::vector<std::vector<std::string>>              alarms_;
 	std::chrono::time_point<std::chrono::system_clock> alarms_timestamp_;
 

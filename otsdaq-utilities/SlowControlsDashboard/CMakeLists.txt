@@ -8,4 +8,3 @@ SOURCE SlowControlsDashboardSupervisor.cc version.cc
 
 install_headers()
 install_source()
-

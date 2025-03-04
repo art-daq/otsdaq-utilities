@@ -6,26 +6,26 @@
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/ots.css">
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/Desktop.css">
 
-		<style type="text/css">		
-			
-		</style>		
-		
+		<style type="text/css">
+
+		</style>
+
 		<!--link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Donegal+One'-->
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Donegal+One:400' rel='stylesheet' type='text/css'>
 
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Desktop.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 
 		<!-- MultiSelectBox: Must include .css style sheet and .js functionality -->
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
-		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>	
+		<script src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
 		<!-- adding DesktopWindowContentCode for tooltip functionality -->
-		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script> 
+		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 
 		<script type="text/JavaScript" src="/WebPath/js/DesktopDashboard.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopWindow.js"></script>
@@ -34,20 +34,20 @@
 
 
 		<script>
-			
+
 			//copied from /WebPath/html/Wizard.html
 			var urnLid_  = DesktopContent.getDesktopWindowParameter(0,"urn");
 			var serverOrigin_ = window.location.origin;
-			
+
 			Debug.log("Application URN-LID #" + urnLid_);
 
 			//=====================================================================================
 
-			function init() {				
+			function init() {
 				Desktop.init(window.parent.window.location.search.split("?")[1].split("&")[0].split("=")[1]);
 				Desktop.desktop.icons.resetWithPermissions(255);
-				
-				
+
+
 				var notSecure = DesktopContent.getDesktopWindowParameter(0,"secure");
 				if(!notSecure) notSecure = "";
 				//			var notSecure = "";
@@ -72,21 +72,21 @@
 					"</INDENT>" +
 
 					"\n\nRemember, if you would like to take a look at the available online documentation, " +
-					"click the question mark at the top-right of the Desktop.";				
+					"click the question mark at the top-right of the Desktop.";
 				DesktopContent.tooltip("MacroMaker-mode Introduction",
-			      windowTooltip                  
+			      windowTooltip
 				);
-				DesktopContent.setWindowTooltip(windowTooltip);				
-				
-			}			            
+				DesktopContent.setWindowTooltip(windowTooltip);
+
+			}
 
 
 
-			        
-                                
-			
+
+
+
         </script>
-		
+
 
         <!-- Note: usually this page is in frame and ots icon is shown by C++ -->
         <!-- start ots icon handling -->
@@ -108,9 +108,9 @@
         <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
         <meta name="theme-color" content="#ffffff">
         <!-- end ots icon handling -->
-	</head>	
-	
+	</head>
+
 	<body onload='init()'>
 	</body>
-	
+
 </html>

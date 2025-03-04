@@ -1,17 +1,17 @@
 
-	#Viewer2d-hudMouseOver * { 
+	#Viewer2d-hudMouseOver * {
 		-webkit-user-select: 	none;
 		-moz-user-select: 		none;
 		user-select:			none;
 	}
-		
+
 	#Viewer2d-hudMouseOver {
 		padding: 5px;
 	}
-	
+
 	#Viewer2d-hud {
-		background-color: rgb(70,70,70);	
+		background-color: rgb(70,70,70);
 		border: 1px solid white;
-		border-radius: 5px;		
-		padding: 10px;	
+		border-radius: 5px;
+		padding: 10px;
 	}

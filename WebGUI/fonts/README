@@ -1,4 +1,4 @@
-In order to offer the fonts offline, the google fonts here were downloaded from here: 
+In order to offer the fonts offline, the google fonts here were downloaded from here:
 
 https://github.com/google/fonts/archive/master.zip
 
@@ -14,9 +14,6 @@ Here is an example approach to updating a particular font "Comfortaa":
 	wget https://github.com/google/fonts/archive/master.zip
 	unzip master.zip
 	cp fonts-master/ofl/comfortaa <WebGUI path>/fonts/
-	
+
 Note the file names have to match the handling in WebGUI/css/fonts.css
 	 "src: url('/WebPath/fonts/comfortaa/Comfortaa-Regular.ttf') format('truetype');"
-	
-	
-	

@@ -16,8 +16,8 @@ widgetLibrary.typeToSrc =		{
 									"0" :"widget_text.html",
 									"1" :"table.html",
 									"2" :"gauge_widget.html",
-							   		"3" :"plotly_bar_chart.html",
-							   		"4" :"plotly_xy_chart.html",
+									"3" :"plotly_bar_chart.html",
+									"4" :"plotly_xy_chart.html",
 									"5" :"thermometer.html",
 									"6" :"siren_alarm.html",
 									"7" :"label.html",
@@ -33,21 +33,21 @@ widgetLibrary.typeToSrc =		{
 
 widgetLibrary.typeToImgSrc =	{
 									"0" :"txt-icon.png",
-		   							"1" :"table-icon.png",
+									"1" :"table-icon.png",
 									"2" :"gauge-icon.png",
-		   							"3" :"basic-chart-icon.png",
-		   							"4" :"basic-xy-chart-icon.png",
-		   					 		"5" :"thermometer-icon.png" ,
-		   					 		"6" :"red_siren.png",
-		   					 		"7" :"label-icon.png",
-		   					 		"8" :"led-icon.png",
-		   					 		"9" :"picture-icon.png",
-		   					 		"10" :"2d_stop-light.png",
-		   					 		"11" :"root-icon.png",
-		   					 		"12" :"tabs-icon.png",
-		   					 		"13" :"navtabs-icon.png",
-		   							"14" :"progress_bar-icon.png",
-		   							"15" :"tank-icon.png"
+									"3" :"basic-chart-icon.png",
+									"4" :"basic-xy-chart-icon.png",
+									"5" :"thermometer-icon.png" ,
+									"6" :"red_siren.png",
+									"7" :"label-icon.png",
+									"8" :"led-icon.png",
+									"9" :"picture-icon.png",
+									"10" :"2d_stop-light.png",
+									"11" :"root-icon.png",
+									"12" :"tabs-icon.png",
+									"13" :"navtabs-icon.png",
+									"14" :"progress_bar-icon.png",
+									"15" :"tank-icon.png"
 								}
 
 widgetLibrary.typeToName =		{
@@ -89,7 +89,7 @@ widgetLibrary.typeToPurpose =	{
 								}
 
 widgetLibrary.dimensions =		{
-	
+
 									"1": { /* PVs Table */
 										"Min Width": "400",
 										"Min Height": "200",
@@ -144,5 +144,5 @@ widgetLibrary.dimensions =		{
 
 widgetLibrary.init = function()
 {
-	
+
 }

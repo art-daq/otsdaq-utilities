@@ -157,9 +157,9 @@ std::string ECLSupervisor::getIconHeaderString(void)
 }  // end getIconHeaderString()
 
 //==============================================================================
-// setSupervisorPropertyDefaults
-//		override to set defaults for supervisor property values (before user settings
-// override)
+/// setSupervisorPropertyDefaults
+///		override to set defaults for supervisor property values (before user settings
+/// override)
 void ECLSupervisor::setSupervisorPropertyDefaults()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
@@ -176,8 +176,8 @@ void ECLSupervisor::setSupervisorPropertyDefaults()
 }  //end setSupervisorPropertyDefaults()
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void ECLSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::addSupervisorProperty(
@@ -192,9 +192,9 @@ void ECLSupervisor::forceSupervisorPropertyValues()
 }  //end forceSupervisorPropertyValues()
 
 //==============================================================================
-//	request
-//		Handles Web Interface requests to Logbook supervisor.
-//		Does not refresh cookie for automatic update checks.
+///	request
+///		Handles Web Interface requests to Logbook supervisor.
+///		Does not refresh cookie for automatic update checks.
 void ECLSupervisor::request(const std::string&               requestType,
                             cgicc::Cgicc&                    cgiIn,
                             HttpXmlDocument&                 xmlOut,
@@ -336,9 +336,9 @@ void ECLSupervisor::request(const std::string&               requestType,
 }  //end request()
 
 //==============================================================================
-// getCategories
-//		if xmlOut, then output categories to xml
-//		if out, then output to stream
+/// getCategories
+///		if xmlOut, then output categories to xml
+///		if out, then output to stream
 void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* out)
 {
 	if(ECLUser_ == "" ||
@@ -431,9 +431,9 @@ void ECLSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* o
 }  //end getCategories()
 
 //==============================================================================
-// webUserSetActiveCategory
-//		if category exists, set as active
-//		to clear active category set to ""
+/// webUserSetActiveCategory
+///		if category exists, set as active
+///		to clear active category set to ""
 void ECLSupervisor::webUserSetActiveCategory(std::string      category,
                                              HttpXmlDocument* xmlOut)
 {
@@ -445,11 +445,11 @@ void ECLSupervisor::webUserSetActiveCategory(std::string      category,
 }  //end webUserSetActiveCategory()
 
 //==============================================================================
-//	refreshLogbook
-//		returns all the logbook data for active category from starting date and back in
-// time for 			duration total number of days.
-//		e.g. date = today, and duration = 1 returns logbook for today from active
-// category 		The entries are returns from oldest to newest
+///	refreshLogbook
+///		returns all the logbook data for active category from starting date and back in
+/// time for 			duration total number of days.
+///		e.g. date = today, and duration = 1 returns logbook for today from active
+/// category 		The entries are returns from oldest to newest
 void ECLSupervisor::refreshLogbook(time_t              date,
                                    size_t              duration,
                                    HttpXmlDocument*    xmlOut,
@@ -682,9 +682,8 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 
 				if(!found)
 				{
-					__COUT_TYPE__(TLVL_DEBUG + 10)
-					    << __COUT_HDR__ << "Skipping unaccepted category: " << category
-					    << __E__;
+					__COUTS__(10)
+					    << "Skipping unaccepted category: " << category << __E__;
 					lastBefore = before;
 					--before;  //move back to prepare for next search
 					continue;
@@ -948,9 +947,9 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 }  //end refreshLogbook()
 
 //==============================================================================
-// xoap::MakeSystemLogEntry
-//	make a system logbook entry into active category's logbook from Supervisor only
-//	TODO: (how to enforce?)
+/// xoap::MakeSystemLogEntry
+///	make a system logbook entry into active category's logbook from Supervisor only
+///	TODO: (how to enforce?)
 xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference msg)
 {
 	SOAPParameters parameters("EntryText");

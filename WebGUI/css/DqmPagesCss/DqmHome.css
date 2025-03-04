@@ -21,7 +21,7 @@ body {
   .mainBlockContainer span {
 	display: inline-block;
   }
-  
+
   /* Create two unequal columns that sits next to each other */
   /* Sidebar/left column */
   .tableContainer {
@@ -30,7 +30,7 @@ body {
 	background-color: white;
 	padding: 0px;
   }
-  
+
   /* Main column */
   .plotContainer {
 	height: 55%;
@@ -47,7 +47,7 @@ body {
 	width: 100%;
 	border: none;
 	background-color: transparent;
-	
+
   }
 
   .pvButton:hover {

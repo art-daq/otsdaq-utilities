@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>File Tree</title>
 
@@ -15,7 +15,7 @@
 			font-family: 				"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
 		}
 
-		
+
 		#header {
 			position: 					relative;
 		}
@@ -27,7 +27,7 @@
 		}
 
 		.fileTreeTitle:active {
-		    background-color: 			red;
+			background-color: 			red;
 		}
 
 		h2 {
@@ -38,20 +38,20 @@
 		a {
 			color: 						blue;
 		}
-		
+
 		div {
 			position: 					relative;
 		}
 
 		#fileBlock {
 			background-color: 			rgb(26,148,49);
-		}				
-		
+		}
+
 		#saveButton {
 			width:						160px;
 			margin-left: 				65px;
 		}
-		
+
 		#mainBlock {
 			background-color: 			rgb(240,234,214);
 		}
@@ -65,7 +65,7 @@
 		.mainBlock {
 			position:					absolute;
 		}
-		
+
 		#saveul {
 			margin: 					0px;
 			padding: 					0px;
@@ -87,7 +87,7 @@
 			list-style: 				none;
 			border-left:				1px solid gray;
 		}
-		
+
 		ol.tree li li {
 			border-bottom:				1px solid gray;
 		}
@@ -156,7 +156,7 @@
 		}
 		li input:checked + ol > li:last-child
 		{
-			/*margin: 0 0 0.063em;  1px */ 
+			/*margin: 0 0 0.063em;  1px */
 		}
 
 		input:focus
@@ -182,10 +182,10 @@
 			var _CONTEXT_MENU_SECONDARY_COLOR = "rgb(70, 67, 67)";
 
 			var folderCounter = 0;
-			
+
 
 			var FILE_BLOCK_WIDTH = 300;
-			
+
 			//functions:
 			//	initFileTree()
 			//	isFile(path)
@@ -199,7 +199,7 @@
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 
-			//=====================================================================================						
+			//=====================================================================================
 			//init called once body has loaded
 			function initFileTree()
 			{
@@ -210,7 +210,7 @@
 			//=====================================================================================
 			function redrawWindow()
 			{
-				Debug.log("File redrawWindow() to " + window.innerWidth + 
+				Debug.log("File redrawWindow() to " + window.innerWidth +
 						" - " + window.innerHeight);
 
 				var ul = document.createElement("list");
@@ -235,7 +235,7 @@
 					var title = document.createElement("h2");
 
 					title.id = "title";
-					title.innerHTML = 
+					title.innerHTML =
 					  "<div>File Manager"
 					+ "<font style='float:right;'>"
 					+ "<input type='image' onclick='refreshPagesList()' id='refreshImg' title='Refresh Files tree'"
@@ -259,7 +259,7 @@
 							{
 								dir(document.getElementById(
 									"pagesFolder-ol"),
-									page, 
+									page,
 									page);
 							} //FIXME, if pass undefined as filename -> throws error
 						});
@@ -290,7 +290,7 @@
 
 			//=====================================================================================
 			function isFile(path)
-			{			
+			{
 				console.log("isFile()", path);
 				if(path.indexOf("/") != -1)
 					return false;
@@ -304,14 +304,14 @@
 			function dir(parentElement, path, fullPathToPage)
 			{
 				console.log("dir() was called", path);
-				
-			    var ol;
-			    var pathToPath;
 
-			    if(fullPathToPage != path)
-			    	parentID = (fullPathToPage.substring(0, fullPathToPage.search(path)));
-			    else
-			    	parentID = path.substring(0, path.search("/"));
+				var ol;
+				var pathToPath;
+
+				if(fullPathToPage != path)
+					parentID = (fullPathToPage.substring(0, fullPathToPage.search(path)));
+				else
+					parentID = path.substring(0, path.search("/"));
 
 				if(isFile(path))
 				{
@@ -328,7 +328,7 @@
 						};
 						//a.onclick = function(){parent.loadPage(fullPathToPage)};
 						li.appendChild(a);
-					
+
 						parentElement.appendChild(li);
 					}
 				}
@@ -346,21 +346,21 @@
 						{
 							var li = document.createElement("li");
 							li.id = path.substring(0, path.search("/")) + "-li";
-						    var input = document.createElement("input");
-						    input.type = "checkbox";
-						    input.id = path.substring(0, path.search("/"));
-						    var label = document.createElement("label");
-						    label.htmlFor = input.id;
-						    label.innerHTML = input.id
-	
-						    ol = document.createElement("ol");
+							var input = document.createElement("input");
+							input.type = "checkbox";
+							input.id = path.substring(0, path.search("/"));
+							var label = document.createElement("label");
+							label.htmlFor = input.id;
+							label.innerHTML = input.id
+
+							ol = document.createElement("ol");
 							ol.id = parentID + "-ol";
-	
-						    li.appendChild(label);
-						    li.appendChild(input);
-						    li.appendChild(ol);
-						    parentElement.appendChild(li);
-							
+
+							li.appendChild(label);
+							li.appendChild(input);
+							li.appendChild(ol);
+							parentElement.appendChild(li);
+
 							dir(ol, path.substring(path.search("/") + 1), fullPathToPage);
 						}
 						else
@@ -376,7 +376,7 @@
 			function createFileContextMenu(event, fullPathToPage)
 			{
 				Debug.log("createFileContextMenu()");
-				
+
 				var menuItems = [
 					"Load Page",
 					"Load Page in new Desktop Window",
@@ -413,34 +413,34 @@
 			{
 				Debug.log("File Saving....");
 				Debug.log(window.parent.pvList_);
-                window.parent.document.getElementById("mailbox").innerHTML = "Save";
+				window.parent.document.getElementById("mailbox").innerHTML = "Save";
 			}
 
 			//=====================================================================================
-            function saveAs()
-            {
+			function saveAs()
+			{
 				Debug.log("File Saving As....");
 				Debug.log(window.parent.pvList_);
 				window.parent.document.getElementById("mailbox").innerHTML = "SaveAs";
-            }
+			}
 
 		</script>
 
 	</head>
 
-	<body onload='Javascript:initFileTree();'>	
+	<body onload='Javascript:initFileTree();'>
 
 		<div class='mainBlock' id='header' ></div>
 		<button id='saveButton'>Save As...</button>
 		<div class='mainBlock' id='fileTreeDiv' width="100%">
-	    <ol class="tree">
-	      <li>
-	      	<label for="pagesFolder">Pages</label>
-	      	<ol id="pagesFolder-ol" >
+		<ol class="tree">
+		  <li>
+			<label for="pagesFolder">Pages</label>
+			<ol id="pagesFolder-ol" >
 
-	      	</ol>
-	      </li>
-	    </ol>
+			</ol>
+		  </li>
+		</ol>
 		</div>
 		<div id="controlsDiv" >
 			<!--ul id="saveul">

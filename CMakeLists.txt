@@ -19,7 +19,7 @@ cet_cmake_env()
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL Clang AND
-     CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
+	 CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
   # Clang 14 has a bug in which it complains about destructors of template classes
   # e.g. ArtdaqInput<T>::~ArtdaqInput(), when it is expecting the destructor name to
   # match what is on the left-hand side of the ::. This is a violation, however, of
@@ -30,13 +30,13 @@ else()
 endif()
 
 cet_set_compiler_flags(
- DIAGS 
+ DIAGS
  VIGILANT
  WERROR
  NO_UNDEFINED
  EXTRA_FLAGS -Werror -pedantic -D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES=1 ${DT_FLAG}
  )
- 
+
 # Debug streamer.
 string(TOUPPER "x${CMAKE_BUILD_TYPE}" BTYPE_UC )
 if(BTYPE_UC STREQUAL XDEBUG)
@@ -75,7 +75,7 @@ find_package(otsdaq 2.06.06 REQUIRED EXPORT)
  # XDAQ Extra setup
  include_directories($ENV{XDAQ_ROOT}/include/linux $ENV{XDAQ_ROOT}/include)
 link_directories($ENV{XDAQ_ROOT}/lib)
- set(XDAQ_BASIC_LIB_LIST 
+ set(XDAQ_BASIC_LIB_LIST
    xcept
    xoap
    xdaq
@@ -85,7 +85,7 @@ link_directories($ENV{XDAQ_ROOT}/lib)
  )
  set(XDAQ_XERCES-C xerces-c)
 
- 
+
 #string(REGEX MATCHALL "[0-9][0-9]?[0-9]?" MESSAGEFACILITY_VERSION_LIST "$ENV{MESSAGEFACILITY_VERSION}")
 #list(GET MESSAGEFACILITY_VERSION_LIST 0 MESSAGEFACILITY_MAJOR_VERSION)
 #list(GET MESSAGEFACILITY_VERSION_LIST 1 MESSAGEFACILITY_MINOR_VERSION)

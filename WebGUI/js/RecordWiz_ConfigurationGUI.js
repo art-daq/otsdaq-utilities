@@ -1,11 +1,11 @@
 
 
 //	Description of Record Wizard Configuration GUI Functionality/Behavior:
-//	
+//
 //	Example call:
 //		RecordWiz.createWiz(
 //				function(atLeastOneRecordWasCreated)
-//				{				
+//				{
 //			Debug.log("Done at Template! " + atLeastOneRecordWasCreated,
 //					Debug.INFO_PRIORITY);
 //				});
@@ -18,12 +18,12 @@
 //		- steps:
 //			- (error if unrecognized base path)
 //			- "what is the name of your <record type>?"
-//				- note the active context and config group being modified, with dropdown to 
-//					change them.		
+//				- note the active context and config group being modified, with dropdown to
+//					change them.
 //			- "do you want to add it to an existing context or create a new one?"
 //				- if create a new one
 //					- provide default name with edit pencil, and continue
-//			
+//
 //
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -31,13 +31,13 @@
 
 //public functions:
 //	RecordWiz.createWiz(doneHandler)
-//		- when the user closes the wizard dialog, 
+//		- when the user closes the wizard dialog,
 //		doneHandler is called with a bool parameter with true indicating
 //		at least one record was created.
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
-//functions:	
+//functions:
 	//localParameterCheck()
 	//xdaqContextTooltip()
 	//xdaqApplicationTooltip()
@@ -83,12 +83,12 @@
 	//			scopeWhichRecordTypeNext() 			_STEP_WHICH_RECORD_TYPE
 
 	//		localPrevButtonHandler() switch
-	
+
 	//DesktopContent.htmlOpen(tag,attObj,innerHTML,closeTag)
 	//DesktopContent.htmlClearDiv()
 
 	//getApp()
-	//getAppClass()	
+	//getAppClass()
 	//getAppModule()
 	//getAppConfiguration()
 	//getRecordConfiguration()
@@ -108,8 +108,8 @@
 
 
 /*
-<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 <script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
@@ -117,10 +117,10 @@
 
 var RecordWiz = RecordWiz || {}; //define RecordWiz namespace
 
-if (typeof Debug == 'undefined') 
+if (typeof Debug == 'undefined')
 	console.log('ERROR: Debug is undefined! Must include Debug.js before RecordWiz_ConfigurationGUI.js');
 else if (typeof Globals == 'undefined')
-    console.log('ERROR: Globals is undefined! Must include Globals.js before RecordWiz_ConfigurationGUI.js');
+	console.log('ERROR: Globals is undefined! Must include Globals.js before RecordWiz_ConfigurationGUI.js');
 else
 	RecordWiz.wiz; //this is THE RecordWiz variable
 
@@ -131,27 +131,27 @@ else
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
-	
-	
+
+
 	var _TABLE_BOOL_TYPE_TRUE_COLOR = "rgb(201, 255, 201)";
 	var _TABLE_BOOL_TYPE_FALSE_COLOR = "rgb(255, 178, 178)";
 
 
 
-	//global vars for params		
+	//global vars for params
 	var _recordAlias;
 	var _doneHandler = doneHandler;
 	var _aRecordWasModified = false;
-		
+
 	var _RECORD_TYPE_FE = "Front-end";
 	var _RECORD_TYPE_PROCESSOR = "Processor";
 	var _RECORD_TYPE_CONSUMER = "Consumer";
 	var _RECORD_TYPE_PRODUCER = "Producer";
 	var _validRecordTypes = [_RECORD_TYPE_FE,_RECORD_TYPE_PROCESSOR];
 
-	
+
 	////////////////////////////
-	function localParameterCheck() 
+	function localParameterCheck()
 	{
 		//check for valid record alias
 		var i=_validRecordTypes.length-1;
@@ -169,7 +169,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 		}
 		return true;
 	} //end localParameterCheck()
-	
+
 	//global vars for creation
 	var _subsetUIDs; //array of UIDs already defined at base path
 	var _systemGroups; //object of aliases and groups w/active groups
@@ -177,14 +177,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	var _furthestStep = -1;
 	var _lastNextStep = -1;
 	var _intermediateLevel = -1;
-	
+
 	//global vars for saving tables
 	var _modifiedTables;
 
 
 	var _STEP_OUT_OF_SEQUENCE		= 1000; //steps greater or equal are ignored in _furthestStep
-	
-	var 
+
+	var
 	_STEP_PROC_WHICH_BUFFER 		= 200,
 	_STEP_SET_RECORD_FIELDS			= 104,
 	_STEP_WHICH_APP					= 103,
@@ -193,21 +193,21 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	_STEP_CHANGE_GROUP				= 1000,
 	_STEP_GET_RECORD_NAME			= 100,
 	_STEP_WHICH_RECORD_TYPE			= 20;
-	
+
 
 	var _START_STEP_INDEX = _STEP_GET_RECORD_NAME;
 
-	var _XDAQ_BASE_PATH 	= "XDAQContextTable";	
-	var _XDAQAPP_BASE_PATH 	= "XDAQApplicationTable";	
+	var _XDAQ_BASE_PATH 	= "XDAQContextTable";
+	var _XDAQAPP_BASE_PATH 	= "XDAQApplicationTable";
 
 	var _DEFAULT_WIZ_COMMENT= "Generated by Record Creation Wiz";
-	
+
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
 	// end variable declaration
 	Debug.log("RecordWiz.wiz constructed");
-	RecordWiz.wiz = this; 
-	
+	RecordWiz.wiz = this;
+
 	var windowTooltip = "Welcome to the Record Creation Wizard GUI. Here you can create new records for " +
 		"your <i>otsdaq</i> system. \n\n" +
 		"The <b>Record Creation Wizard</b> is presented as a step-by-step process that will walk you through creating the skeleton for your new record.\n\n" +
@@ -218,10 +218,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	if(!recordsAliasFastForward || recordsAliasFastForward == "")
 	{
 		DesktopContent.tooltip("Record Wizard Introduction",
-			windowTooltip	
+			windowTooltip
 		);
 		DesktopContent.setWindowTooltip(windowTooltip);
-	
+
 		showPrompt(_STEP_WHICH_RECORD_TYPE);
 	}
 	else
@@ -232,34 +232,34 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			Debug.log("Invalid parameters to the Record Creation Wizard!", Debug.HIGH_PRIORITY);
 			return;
 		}
-		
+
 
 		DesktopContent.tooltip(_recordAlias + " Wizard Introduction",
 				"Welcome to the " + _recordAlias + " Wizard GUI. Here you can create new records for " +
 				"your <i>otsdaq</i> system. \n\n" +
 				"The " + _recordAlias + " Wizard is presented as a step-by-step process that will walk you through creating the skeleton for your new " +
-				_recordAlias + ".\n\n" +	
+				_recordAlias + ".\n\n" +
 				"Briefly, here is a description of the steps: " +
 				"\n\t- 'Do you want to add your " + _recordAlias + " to an existing context or create a new one?'"
 		);
-		
+
 		initRecordWizard();
 	}
-	
+
 	return;
-	
+
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
 	// start funtion declaration
-	
+
 
 	//=====================================================================================
 	//xdaqContextTooltip ~~
 	function xdaqContextTooltip()
 	{
 		DesktopContent.tooltip("XDAQ Contexts",
-			"What is a XDAQ Context? The lowest level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Context. " + 
-			"Why do I need a XDAQ Context? Do I want a new one for my " + _recordAlias + " or not?" + 
+			"What is a XDAQ Context? The lowest level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Context. " +
+			"Why do I need a XDAQ Context? Do I want a new one for my " + _recordAlias + " or not?" +
 			"<br><br>" +
 			"XDAQ Contexts are the fundamental executable program building blocks of <i>otsdaq</i>. " +
 			"A XDAQ Context runs a group of XDAQ Applications inside of it. If one of those XDAQ Applications crashes, " +
@@ -274,8 +274,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	function xdaqApplicationTooltip()
 	{
 		DesktopContent.tooltip("XDAQ Applications",
-				"What is a XDAQ Application? The second level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Application. " + 
-				"Why do I need a XDAQ Application? Do I want a new one for my " + _recordAlias + " or not?" + 
+				"What is a XDAQ Application? The second level parent for your record, in the <i>otsdaq</i> configuration tree, is a XDAQ Application. " +
+				"Why do I need a XDAQ Application? Do I want a new one for my " + _recordAlias + " or not?" +
 				"<br><br>" +
 				"XDAQ Applications are server processes that can be controlled by <i>otsdaq</i> through network messages. " +
 				"Ther can be one or many XDAQ Applciation in a XDAQ Context. If one of those XDAQ Applications crashes, " +
@@ -284,14 +284,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				"Two other useful features of XDAQ Applications are that they can respond to web requests and state machine transitions."
 		);
 	} //end xdaqApplicationTooltip()
-	
+
 	//=====================================================================================
 	//initRecordWizard ~~
 	//	get active groups and list of all groups
 	//	get list of existing records at base path
-	function initRecordWizard() 
-	{		
-		_subsetUIDs = []; //reset			
+	function initRecordWizard()
+	{
+		_subsetUIDs = []; //reset
 		_modifiedTables = undefined; //reset
 		_furthestStep = -1; // reset
 		_paramObjMap = {}; //reset
@@ -300,7 +300,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 		{	//remove all existing dialogs
 
 			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-			while(el) 
+			while(el)
 			{
 				el.parentNode.removeChild(el); //close popup
 				el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
@@ -315,7 +315,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			_systemGroups = retObj;
 			console.log("_systemGroups",_systemGroups);
 			console.log("ConfigurationAPI._activeGroups",ConfigurationAPI._activeGroups);
-			
+
 
 			// get existing records
 			ConfigurationAPI.getSubsetRecords(
@@ -326,7 +326,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				_subsetUIDs = records;
 				Debug.log("records found = " + records.length);
 				console.log(records);
-				
+
 				showPrompt(_STEP_GET_RECORD_NAME);
 
 					},_modifiedTables); //end getSubsetRecords
@@ -339,7 +339,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 	//showPrompt ~~
 	//	_paramObjMap allows for lookup parameters based on stepIndex
 	//	paramObj is the new object for stepIndex
-	function showPrompt(stepIndex,paramObj) 
+	function showPrompt(stepIndex,paramObj)
 	{
 		//default to step 0
 		if(!stepIndex) stepIndex = 0;
@@ -347,23 +347,23 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 		if(stepIndex > _furthestStep &&
 				_furthestStep < _STEP_OUT_OF_SEQUENCE)
 			_furthestStep = stepIndex;
-		
+
 		Debug.log("showPrompt " + stepIndex);
 		Debug.log("_furthestStep " + _furthestStep);
 
 		//default to empty object
 		if(!_paramObjMap) _paramObjMap = {};
 
-		
+
 		if(paramObj) //store to object map
 			_paramObjMap[stepIndex] = paramObj;
 		else if(_paramObjMap[stepIndex]) //load from object map
 			paramObj = _paramObjMap[stepIndex];
-		else 
-		{	
+		else
+		{
 			//default to empty object
 			_paramObjMap[stepIndex] = {};
-			paramObj = _paramObjMap[stepIndex];  
+			paramObj = _paramObjMap[stepIndex];
 		}
 
 		console.log("_paramObjMap",_paramObjMap);
@@ -372,7 +372,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 		var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 
 		//remove all existing dialogs
-		while(el) 
+		while(el)
 		{
 			el.parentNode.removeChild(el); //close popup
 			el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
@@ -388,15 +388,15 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 		var showPrevButton = true;
 		var showNextButton = true;
-		var prevStepIndex =  stepIndex-1; //default back button to last next step //stepIndex-1;		
+		var prevStepIndex =  stepIndex-1; //default back button to last next step //stepIndex-1;
 		if(prevStepIndex > _lastNextStep)
 			prevStepIndex = _lastNextStep;
 		_lastNextStep = stepIndex;
-		
+
 		var nextStepIndex = stepIndex+1;
 		var prevButtonText = "Go Back";
 		var nextButtonText = "Next Step";
-		
+
 		var recordName = "";
 		try //try to get record name since used often
 		{
@@ -414,20 +414,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			case _STEP_PROC_WHICH_BUFFER:
 				//xdaqApplicationTooltip();
 				h = 370;
-				
-				showNextButton = false; //replace it		
+
+				showNextButton = false; //replace it
 
 				//take parameter recordName
 				Debug.log("_STEP_PROC_WHICH_BUFFER " + recordName);
 
 				// " add to existing buffer or a new one?"
 				str += "<br>";
-				str += "Do you want to add the " + _recordAlias + " named '" +  
+				str += "Do you want to add the " + _recordAlias + " named '" +
 						recordName + "' to a new Data Manager Buffer " +
 						"or an existing one in the Data Manager '" +
 						_paramObjMap[_STEP_WHICH_APP]["appName"] + "'?";
 
-				str += "<center>"; 
+				str += "<center>";
 				str += "<table style='margin-bottom: 10px;'>";
 
 				///////////////////////
@@ -436,8 +436,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					str += DesktopContent.htmlOpen("input",
 							{
-									"type" : 	"text",	
-									"id" : 		stepString + "bufferName",	
+									"type" : 	"text",
+									"id" : 		stepString + "bufferName",
 									"value":	(paramObj["bufferName"]?paramObj["bufferName"]:
 											ConfigurationAPI.createNewRecordName("Buffer",
 													paramObj["allBuffers"])),
@@ -448,10 +448,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									"id": stepString + "addToNew",
 									"type": "button",
 									"value": "Add to New",
-									"title": "Create a new Buffer and add the new " + 
+									"title": "Create a new Buffer and add the new " +
 									_recordAlias + " to it."
 							},
-							0 /*html*/, true /*closeTag*/);	
+							0 /*html*/, true /*closeTag*/);
 					str += "</td></tr>";
 				} //end new app input
 
@@ -467,7 +467,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<paramObj["buffers"].length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									paramObj["buffers"][i] /*innerHTML*/, true /*closeTag*/);
 						}
@@ -480,10 +480,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										"title": "Add new " + _recordAlias +
 											" to the chosen existing Buffer."
 								},
-								0 /*html*/, true /*closeTag*/);	
+								0 /*html*/, true /*closeTag*/);
 					} //end buffers
 					str += "</td></tr>";
-				} //end existing buffers			
+				} //end existing buffers
 
 				str += "</table>";
 
@@ -493,10 +493,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					///////////////////////
 					// existing addresses
 					str += DesktopContent.htmlClearDiv();
-					str += "Here is a dropdown of all existing Buffers " + 
+					str += "Here is a dropdown of all existing Buffers " +
 							" to help you in creating standardized names (Note: shown above are " +
-							"only the Buffers in the chosen Data Manager '" + 
-							_paramObjMap[_STEP_WHICH_APP]["appName"] + 
+							"only the Buffers in the chosen Data Manager '" +
+							_paramObjMap[_STEP_WHICH_APP]["appName"] +
 							"':";
 
 					str += DesktopContent.htmlClearDiv();
@@ -509,7 +509,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					for(var i=0;i<paramObj["allBuffers"].length;++i)
 					{
 						str += DesktopContent.htmlOpen("option",
-								{		
+								{
 								},
 								paramObj["allBuffers"][i] /*innerHTML*/, true /*closeTag*/);
 					}
@@ -520,47 +520,47 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				str += "</center>";
 				break; // _STEP_PROC_WHICH_BUFFER
-				
+
 			case _STEP_SET_RECORD_FIELDS:
-				
+
 				Debug.log("_STEP_SET_RECORD_FIELDS ");
 
 				nextButtonText = "Done!";
-								
+
 				str += "<br>";
 				str += "Please edit the fields for your record and then click 'Done!' to save " +
 						" your new " + _recordAlias + " named '" + recordName + "':";
-				
+
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("div",
 						{
 								"id" :		stepString + "fields",
 								"style" :	"margin: 20px;",
-								
+
 						}, "" /*innerHTML*/, true /*closeTag*/);
 				str += DesktopContent.htmlClearDiv();
-				
+
 				break; //end _STEP_SET_RECORD_FIELDS
-				
+
 			case _STEP_WHICH_APP:
-				
+
 				h = 370;
-				
+
 				xdaqApplicationTooltip();
-				
-				showNextButton = false; //replace it		
+
+				showNextButton = false; //replace it
 
 				//take parameter recordName
 				Debug.log("_STEP_WHICH_APP " + recordName);
 
 				// " add to existing XDAQ App or a new one?"
 				str += "<br>";
-				str += "Do you want to add the " + _recordAlias + " named '" +  
+				str += "Do you want to add the " + _recordAlias + " named '" +
 						recordName + "' to a new XDAQ " + getAppClass() +
 						" Application or an existing one in the context '" +
 						_paramObjMap[_STEP_WHICH_CONTEXT]["contextName"] + "'?";
 
-				str += "<center>"; 
+				str += "<center>";
 				str += "<table style='margin-bottom: 10px;'>";
 
 				///////////////////////
@@ -569,8 +569,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					str += DesktopContent.htmlOpen("input",
 							{
-									"type" : 	"text",	
-									"id" : 		stepString + "appName",	
+									"type" : 	"text",
+									"id" : 		stepString + "appName",
 									"value":	(paramObj["appName"]?paramObj["appName"]:
 											ConfigurationAPI.createNewRecordName(getApp(),paramObj["allApps"])),
 							}, "" /*innerHTML*/, true /*closeTag*/);
@@ -582,7 +582,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									"value": "Add to New",
 									"title": "Create a new XDAQ Application and add the new " + _recordAlias + " to it."
 							},
-							0 /*html*/, true /*closeTag*/);	
+							0 /*html*/, true /*closeTag*/);
 					str += "</td></tr>";
 				} //end new app input
 
@@ -598,7 +598,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<paramObj["apps"].length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									paramObj["apps"][i] /*innerHTML*/, true /*closeTag*/);
 						}
@@ -610,25 +610,25 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										"value": "Add to Existing",
 										"title": "Add new " + _recordAlias + " to the chosen existing XDAQ Application."
 								},
-								0 /*html*/, true /*closeTag*/);	
+								0 /*html*/, true /*closeTag*/);
 					} //end apps
 					str += "</td></tr>";
-				} //end existing apps			
+				} //end existing apps
 
 				str += "</table>";
-				
-				
+
+
 				if(paramObj["allApps"].length)
 				{
 					///////////////////////
 					// existing addresses
 					str += DesktopContent.htmlClearDiv();
-					str += "Here is a dropdown of all existing XDAQ Applications " + 
+					str += "Here is a dropdown of all existing XDAQ Applications " +
 							" to help you in creating standardized names (Note: shown above are " +
-							"only apps with class " + getAppClass() + " and in the chosen context '" + 
-							_paramObjMap[_STEP_WHICH_CONTEXT]["contextName"] + 
+							"only apps with class " + getAppClass() + " and in the chosen context '" +
+							_paramObjMap[_STEP_WHICH_CONTEXT]["contextName"] +
 							"'):";
-					
+
 					str += DesktopContent.htmlClearDiv();
 					str += DesktopContent.htmlOpen("select",
 							{
@@ -639,18 +639,18 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<paramObj["allApps"].length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									paramObj["allApps"][i] /*innerHTML*/, true /*closeTag*/);
 						}
 						str += "</select>"; //end all apps dropdown
 				} //end existing all apps
-				
-				
-				
+
+
+
 				str += "</center>";
 				break; // _STEP_WHICH_APP
-				
+
 			case _STEP_SET_CONTEXT_HOST:
 
 				if(paramObj["isNewContext"])
@@ -662,7 +662,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					"existing Context named '" +
 					_paramObjMap[_STEP_WHICH_CONTEXT]["contextName"] + "':";
 
-				str += "<center>"; 
+				str += "<center>";
 				str += "<table style=''>";
 
 				///////////////////////
@@ -671,8 +671,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					str += DesktopContent.htmlOpen("input",
 							{
-									"type" : 	"text",	
-									"id" : 		stepString + "address",	
+									"type" : 	"text",
+									"id" : 		stepString + "address",
 									"value" : (paramObj["address"]?paramObj["address"]:""),
 							}, "" /*innerHTML*/, true /*closeTag*/);
 
@@ -684,8 +684,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					str += DesktopContent.htmlOpen("input",
 							{
-									"type" : 	"text",	
-									"id" : 		stepString + "port",	
+									"type" : 	"text",
+									"id" : 		stepString + "port",
 									"value" : (paramObj["port"]?paramObj["port"]:""),
 							}, "" /*innerHTML*/, true /*closeTag*/);
 
@@ -698,7 +698,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				///////////////////////
 				// existing addresses
 				str += DesktopContent.htmlClearDiv();
-				str += "Here is a dropdown of existing Host Addresses " + 
+				str += "Here is a dropdown of existing Host Addresses " +
 						" to help you in creating standardized addresses:";
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("select",
@@ -711,7 +711,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				for(var i=0;i<paramObj["hostAddresses"].length;++i)
 				{
 					str += DesktopContent.htmlOpen("option",
-							{		
+							{
 							},paramObj["hostAddresses"][i] /*innerHTML*/, true /*closeTag*/);
 				}
 				str += "</select>"; //end existing records dropdown
@@ -719,7 +719,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				///////////////////////
 				// existing ports
 				str += DesktopContent.htmlClearDiv();
-				str += "Here is a dropdown of existing Host Ports " + 
+				str += "Here is a dropdown of existing Host Ports " +
 						" to help you in creating standardized ports:";
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("select",
@@ -732,7 +732,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				for(var i=0;i<paramObj["hostPorts"].length;++i)
 				{
 					str += DesktopContent.htmlOpen("option",
-							{		
+							{
 							},paramObj["hostPorts"][i] /*innerHTML*/, true /*closeTag*/);
 				}
 				str += "</select>"; //end existing records dropdown
@@ -741,20 +741,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 			case _STEP_WHICH_CONTEXT:
 
-				xdaqContextTooltip();	
-				
-				showNextButton = false; //replace it		
+				xdaqContextTooltip();
+
+				showNextButton = false; //replace it
 
 				//take parameter recordName
 				Debug.log("_STEP_WHICH_CONTEXT " + recordName);
 
 				// " add to existing XDAQ Context or a new one?"
 				str += "<br>";
-				str += "Do you want to add the " + _recordAlias + " named '" +  
+				str += "Do you want to add the " + _recordAlias + " named '" +
 						recordName + "' to a new XDAQ Context or an existing one?";
-							
 
-				str += "<center>"; 
+
+				str += "<center>";
 				str += "<table style='margin-bottom: 10px;'>";
 
 				///////////////////////
@@ -763,8 +763,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					str += DesktopContent.htmlOpen("input",
 							{
-									"type" : 	"text",	
-									"id" : 		stepString + "contextName",	
+									"type" : 	"text",
+									"id" : 		stepString + "contextName",
 									"value":	(paramObj["contextName"]?paramObj["contextName"]:""),
 							}, "" /*innerHTML*/, true /*closeTag*/);
 
@@ -775,7 +775,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									"value": "Add to New",
 									"title": "Create a new XDAQ Context and add the new " + _recordAlias + " to it."
 							},
-							0 /*html*/, true /*closeTag*/);	
+							0 /*html*/, true /*closeTag*/);
 					str += "</td></tr>";
 				} //end new context input
 
@@ -791,7 +791,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<paramObj["contexts"].length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									paramObj["contexts"][i] /*innerHTML*/, true /*closeTag*/);
 						}
@@ -803,7 +803,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										"value": "Add to Existing",
 										"title": "Add new " + _recordAlias + " to the chosen existing XDAQ Context."
 								},
-								0 /*html*/, true /*closeTag*/);	
+								0 /*html*/, true /*closeTag*/);
 					} //end contexts
 					str += "</td></tr>";
 				} //end existing contexts
@@ -816,7 +816,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			case _STEP_CHANGE_GROUP:
 				//take paramter groupType
 
-				showNextButton = false; //replace it					
+				showNextButton = false; //replace it
 				nextStepIndex = _STEP_GET_RECORD_NAME;
 				prevStepIndex = _STEP_GET_RECORD_NAME;
 
@@ -825,7 +825,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				str += DesktopContent.htmlClearDiv();
 
-				str += "<center>"; 
+				str += "<center>";
 				str += "<table style='margin-bottom: 10px;'>";
 				if(_systemGroups.aliases[paramObj["groupType"]].length)
 				{
@@ -839,7 +839,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<_systemGroups.aliases[paramObj["groupType"]].length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									_systemGroups.aliases[paramObj["groupType"]]
 														  [i].alias /*innerHTML*/, true /*closeTag*/);
@@ -852,7 +852,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										"value": "Activate Alias",
 										"title": "Activate chosen System Alias and return to creating your new " + _recordAlias + "."
 								},
-								0 /*html*/, true /*closeTag*/);	
+								0 /*html*/, true /*closeTag*/);
 					} //end aliases
 					str += "</td></tr>";
 				}
@@ -872,7 +872,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						for(var i=0;i<groupNames.length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									groupNames[i] /*innerHTML*/, true /*closeTag*/);
 						}
@@ -897,7 +897,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 														   [groupNames[0]].keys.length;++i)
 						{
 							str += DesktopContent.htmlOpen("option",
-									{		
+									{
 									},
 									_systemGroups.groups[paramObj["groupType"]]
 														 [groupNames[0]].keys[i] /*innerHTML*/, true /*closeTag*/);
@@ -910,40 +910,40 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										"value": "Activate Group",
 										"title": "Activate chosen Group and Key pair and return to creating your new " + _recordAlias + "."
 								},
-								0 /*html*/, true /*closeTag*/);	
+								0 /*html*/, true /*closeTag*/);
 					} //end keys
 					str += "</td></tr>";
 				}
 				str += "</table>";
 				str += "</center>";
 
-				break; //end _STEP_CHANGE_GROUP				
+				break; //end _STEP_CHANGE_GROUP
 
 			case _STEP_GET_RECORD_NAME:
-				
-				
-				prevStepIndex = _STEP_WHICH_RECORD_TYPE;			
+
+
+				prevStepIndex = _STEP_WHICH_RECORD_TYPE;
 
 				///////////////////////
 				// header
 				str += DesktopContent.htmlOpen("div",
 						{
-								"style" : "font-weight:bold; margin: 6px 0 20px 0;"		
-						}, 
+								"style" : "font-weight:bold; margin: 6px 0 20px 0;"
+						},
 						(_aRecordWasModified?
 								("Would you like to create another " + _recordAlias + "?"):
 						("Welcome to the " + _recordAlias + " creation Wizard!")) /*innerHTML*/,
 						true /*closeTag*/);
 				str += DesktopContent.htmlClearDiv();
-				
+
 				///////////////////////
 				// prompt
 				str += "Enter the unique record name for your " + _recordAlias + ": ";
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("input",
 						{
-								"type" : 	"text",	
-								"id" : 		stepString + "recordName",	
+								"type" : 	"text",
+								"id" : 		stepString + "recordName",
 								"style" :	"margin-bottom: 16px;",
 								"value" : 	(paramObj["recordName"]?paramObj["recordName"]:""),
 						}, "" /*innerHTML*/, true /*closeTag*/);
@@ -953,11 +953,11 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				///////////////////////
 				// existing records
 				str += DesktopContent.htmlClearDiv();
-				str += "Here is a dropdown of existing " + _recordAlias + 
+				str += "Here is a dropdown of existing " + _recordAlias +
 						" records to help you in creating standardized record names:";
 				str += DesktopContent.htmlClearDiv();
-				
-				
+
+
 				str += DesktopContent.htmlOpen("select",
 						{
 								"id" :		stepString + "records",
@@ -968,7 +968,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				for(var i=0;i<_subsetUIDs.length;++i)
 				{
 					str += DesktopContent.htmlOpen("option",
-							{		
+							{
 							},_subsetUIDs[i] /*innerHTML*/, true /*closeTag*/);
 				}
 				str += "</select>"; //end existing records dropdown
@@ -976,25 +976,25 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				str += DesktopContent.htmlOpen("div",
 						{
-								"id" : 		stepString + "deleteRecordIcon",	
+								"id" : 		stepString + "deleteRecordIcon",
 								"class":	ConfigurationAPI._POP_UP_DIALOG_ID + "-deleteIcon",
 								"style" :	"float: right; margin: 6px 112px -16px -200px; display: block;",
-								
+
 						}, 0 /*innerHTML*/, true /*closeTag*/);
 
 
 				//preload hover images
 				str += DesktopContent.htmlOpen("div",
 						{
-								"id" : 		ConfigurationAPI._POP_UP_DIALOG_ID + 
-									"-preloadImage-editIconHover",	
-								"class":	ConfigurationAPI._POP_UP_DIALOG_ID + "-preloadImage",								
+								"id" : 		ConfigurationAPI._POP_UP_DIALOG_ID +
+									"-preloadImage-editIconHover",
+								"class":	ConfigurationAPI._POP_UP_DIALOG_ID + "-preloadImage",
 						}, 0 /*innerHTML*/, true /*closeTag*/);
 				str += DesktopContent.htmlOpen("div",
 						{
-								"id" : 		ConfigurationAPI._POP_UP_DIALOG_ID + 
-									"-preloadImage-treeEditTrashIconHover",	
-								"class":	ConfigurationAPI._POP_UP_DIALOG_ID + "-preloadImage",								
+								"id" : 		ConfigurationAPI._POP_UP_DIALOG_ID +
+									"-preloadImage-treeEditTrashIconHover",
+								"class":	ConfigurationAPI._POP_UP_DIALOG_ID + "-preloadImage",
 						}, 0 /*innerHTML*/, true /*closeTag*/);
 
 
@@ -1002,7 +1002,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				// active groups
 				str += DesktopContent.htmlClearDiv();
 				str += "Note you are currently editing these active groups:";
-				str += "<center>"; 
+				str += "<center>";
 				str += "<table style='margin-bottom: 10px;'>";
 				str += "<tr><td><b>Active Context:</b></td><td>";
 				str += ConfigurationAPI._activeGroups.Context.groupName + " (" + ConfigurationAPI._activeGroups.Context.groupKey + ")";
@@ -1036,24 +1036,24 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				break; // end _STEP_GET_RECORD_NAME
 			case _STEP_WHICH_RECORD_TYPE:
-				
+
 				nextStepIndex = _STEP_GET_RECORD_NAME;
 				prevButtonText = "Close Wizard";
-				
+
 				///////////////////////
 				// header
 				str += DesktopContent.htmlOpen("div",
 						{
-								"style" : "font-weight:bold; margin: 6px 0 20px 0;"		
-						}, 
+								"style" : "font-weight:bold; margin: 6px 0 20px 0;"
+						},
 						"Welcome to the record creation Wizard!" /*innerHTML*/,
 						true /*closeTag*/);
 				str += DesktopContent.htmlClearDiv();
-				
+
 				///////////////////////
 				// existing record types
 				str += DesktopContent.htmlClearDiv();
-				str += "Below is a dropdown of record types that this Wizard can help you create. " + 
+				str += "Below is a dropdown of record types that this Wizard can help you create. " +
 						" Choose one and proceed through the steps to create your new record:";
 				str += DesktopContent.htmlClearDiv();
 				str += DesktopContent.htmlOpen("select",
@@ -1065,14 +1065,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				for(var i=0;i<_validRecordTypes.length;++i)
 				{
 					str += DesktopContent.htmlOpen("option",
-							{		
+							{
 							},_validRecordTypes[i] /*innerHTML*/, true /*closeTag*/);
 				}
-				str += "</select>"; //end existing records dropdown	
-						
+				str += "</select>"; //end existing records dropdown
+
 				break; //end _STEP_WHICH_RECORD_TYPE
 			default:
-				Debug.log("Should never happen - bad stepIndex (" + stepIndex + 
+				Debug.log("Should never happen - bad stepIndex (" + stepIndex +
 						")!",Debug.HIGH_PRIORITY);
 				return;
 			}
@@ -1089,7 +1089,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								"value": prevButtonText,
 								"title": "Return to the previous step in the " + _recordAlias + " creation wizard."
 						},
-						0 /*html*/, true /*closeTag*/);	
+						0 /*html*/, true /*closeTag*/);
 			if(showNextButton)
 				ctrlStr += DesktopContent.htmlOpen("input",
 						{
@@ -1098,17 +1098,17 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								"value": nextButtonText,
 								"title": "Proceed to the next step in the " + _recordAlias + " creation wizard."
 						},
-						0 /*html*/, true /*closeTag*/);	
+						0 /*html*/, true /*closeTag*/);
 
-			
+
 			//make popup element
-			el = document.createElement("div");			
+			el = document.createElement("div");
 			el.setAttribute("id", ConfigurationAPI._POP_UP_DIALOG_ID);
-			
+
 			ConfigurationAPI.setPopUpPosition(el,w /*w*/,h /*h*/);
-			
+
 			el.innerHTML = ctrlStr + DesktopContent.htmlClearDiv() + str + DesktopContent.htmlClearDiv() + ctrlStr;
-			document.body.appendChild(el);	
+			document.body.appendChild(el);
 		} //end localAddContent()
 
 
@@ -1125,7 +1125,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			switch(stepIndex)
 			{
 			case _STEP_SET_RECORD_FIELDS:
-				
+
 			{ //start scope of _STEP_SET_RECORD_FIELDS localAddHandlers
 				//add the fields content in after parent element exists
 				scopeForSetRecordFieldsContent();
@@ -1138,7 +1138,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					//disable highlighting of fields
 					ConfigurationAPI.editableField_SELECTED_COLOR_ = "transparent";
-					
+
 					//for each record,
 					//	make an element that is "editable" and "selectable" (_selectedFieldIndex)
 					//		- when clicked becomes selected element
@@ -1162,10 +1162,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						fieldContainerEl.appendChild(el);
 					}
 				} //end scopeForSetRecordFieldsContent
-				
+
 			} //end scope of _STEP_SET_RECORD_FIELDS localAddHandlers
 				break;
-			
+
 			case _STEP_PROC_WHICH_BUFFER:
 
 			{ //start scope of _STEP_WHICH_APP localAddHandlers
@@ -1180,12 +1180,12 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					Debug.log("Selected " + this.value);
 
 					//increment index
-					document.getElementById(stepString + "bufferName").value = 
-							ConfigurationAPI.incrementName(this.value);	
+					document.getElementById(stepString + "bufferName").value =
+							ConfigurationAPI.incrementName(this.value);
 				}; //end onchange handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToNew").onclick = 
+				document.getElementById(stepString + "addToNew").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "bufferName").value.trim();
@@ -1198,7 +1198,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						}; //end addToNew button handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToExisting").onclick = 
+				document.getElementById(stepString + "addToExisting").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "buffers").value.trim();
@@ -1208,7 +1208,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					paramObj["bufferName"] = name;
 
 					if(!_paramObjMap[_STEP_PROC_WHICH_BUFFER]["buffers"]) _paramObjMap[_STEP_PROC_WHICH_BUFFER]["buffers"] = []; //initialize if needed
-					_paramObjMap[_STEP_PROC_WHICH_BUFFER]["isNew" + getIntermediateTypeName()] = false;	
+					_paramObjMap[_STEP_PROC_WHICH_BUFFER]["isNew" + getIntermediateTypeName()] = false;
 
 					//get buffer child group name: _paramObjMap[_STEP_PROC_WHICH_BUFFER]["recordGroupName"]
 					localGetExistingIntermediateTargetGroupID(name);
@@ -1223,7 +1223,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 			break; //end _STEP_WHICH_APP
 			case _STEP_WHICH_APP:
-				
+
 			{ //start scope of _STEP_WHICH_APP localAddHandlers
 
 				//create select change handler for existing records
@@ -1236,12 +1236,12 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					Debug.log("Selected " + this.value);
 
 					//increment index
-					document.getElementById(stepString + "appName").value = 
-							ConfigurationAPI.incrementName(this.value);	
+					document.getElementById(stepString + "appName").value =
+							ConfigurationAPI.incrementName(this.value);
 				}; //end onchange handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToNew").onclick = 
+				document.getElementById(stepString + "addToNew").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "appName").value.trim();
@@ -1254,7 +1254,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						}; //end addToNew button handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToExisting").onclick = 
+				document.getElementById(stepString + "addToExisting").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "apps").value.trim();
@@ -1264,7 +1264,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					paramObj["appName"] = name;
 
 					if(!_paramObjMap[_STEP_WHICH_APP]["apps"]) _paramObjMap[_STEP_WHICH_APP]["apps"] = []; //initialize if needed
-					_paramObjMap[_STEP_WHICH_APP]["isNewApp"] = false;	
+					_paramObjMap[_STEP_WHICH_APP]["isNewApp"] = false;
 
 					//check supervisor config
 					localGetExistingSupervisorTargetGroupID(name);
@@ -1276,7 +1276,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			// and, apparently {} create "function scope" inside a switch case
 			// and, apparently switch statements create "function scope" too.
 
-				
+
 				break; //end _STEP_WHICH_APP
 			case _STEP_SET_CONTEXT_HOST:
 
@@ -1287,8 +1287,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				function localAddressSelectHandler(event) {
 					Debug.log("Selected " + this.value);
-					document.getElementById(stepString + "address").value = 
-							this.value;	
+					document.getElementById(stepString + "address").value =
+							this.value;
 				}; //end onchange handler
 
 				//create select change handler for existing records
@@ -1297,12 +1297,12 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 				function localPortSelectHandler(event) {
 					Debug.log("Selected " + this.value);
-					document.getElementById(stepString + "port").value = 
-							this.value;	
+					document.getElementById(stepString + "port").value =
+							this.value;
 				}; //end onchange handler
 
 			} //end scop of _STEP_SET_CONTEXT_HOST localAddHandlers
-			
+
 				break; //end _STEP_SET_CONTEXT_HOST
 
 			case _STEP_WHICH_CONTEXT:
@@ -1316,12 +1316,12 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					Debug.log("Selected " + this.value);
 
 					//increment index
-					document.getElementById(stepString + "contextName").value = 
-							ConfigurationAPI.incrementName(this.value);	
+					document.getElementById(stepString + "contextName").value =
+							ConfigurationAPI.incrementName(this.value);
 				}; //end onchange handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToNew").onclick = 
+				document.getElementById(stepString + "addToNew").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "contextName").value.trim();
@@ -1343,22 +1343,22 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						if(!modifiedTables.length)
 						{
 							//really an error
-							Debug.log("There was an error while creating the XDAQ Context '" + 
+							Debug.log("There was an error while creating the XDAQ Context '" +
 									name  + ".' " + err,
 									Debug.HIGH_PRIORITY);
 							return;
 						}
 						_modifiedTables = modifiedTables;
 
-						//at this point new context was created 
+						//at this point new context was created
 						Debug.log("New context '" + name + "' was successfully created!");
 
-						newParamObj["isNewContext"] = true;		
-						
+						newParamObj["isNewContext"] = true;
+
 						//add to context list for going back
 						if(paramObj["contexts"].indexOf(name) == -1)
 							paramObj["contexts"].push(name);
-						
+
 						localGetAllHostInfo();
 
 							}, //end addSubsetRecords handler
@@ -1368,7 +1368,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						}; //end addToNew button handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "addToExisting").onclick = 
+				document.getElementById(stepString + "addToExisting").onclick =
 						function()
 						{
 					var name = document.getElementById(stepString + "contexts").value.trim();
@@ -1377,9 +1377,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					//save name to param for this step
 					paramObj["contextName"] = name;
 
-					newParamObj["isNewContext"] = false;							
+					newParamObj["isNewContext"] = false;
 
-					//get host info of 
+					//get host info of
 					ConfigurationAPI.getFieldValuesForRecords(
 							_XDAQ_BASE_PATH,
 							name,
@@ -1388,8 +1388,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							{
 						console.log(objArr);
 						newParamObj["address"] 	= objArr[0].fieldValue;
-						newParamObj["port"] 	= objArr[1].fieldValue;	
-						newParamObj["appGroupId"] 	= objArr[2].fieldValue;						
+						newParamObj["port"] 	= objArr[1].fieldValue;
+						newParamObj["appGroupId"] 	= objArr[2].fieldValue;
 
 						localGetAllHostInfo();
 							}, //end getFieldValuesForRecords handler
@@ -1420,13 +1420,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							_modifiedTables);
 				} //end localGetAllHostInfo()
 			} //end scope of _STEP_WHICH_CONTEXT localAddHandlers
-			
+
 				break; //end _STEP_WHICH_CONTEXT
 
 			case _STEP_GET_RECORD_NAME:
-			
-			{ //start scope of _STEP_GET_RECORD_NAME localAddHandlers	 			
-			
+
+			{ //start scope of _STEP_GET_RECORD_NAME localAddHandlers
+
 				//create select change handler for existing records
 				document.getElementById(stepString + "records").onclick = localRecordsSelectHandler;
 				document.getElementById(stepString + "records").onchange = localRecordsSelectHandler;
@@ -1436,12 +1436,12 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					Debug.log("Selected " + this.value);
 
 					//increment index
-					document.getElementById(stepString + "recordName").value = 
-							ConfigurationAPI.incrementName(this.value);	
+					document.getElementById(stepString + "recordName").value =
+							ConfigurationAPI.incrementName(this.value);
 				}; //end onchange handler for existing records
 
 				/////////////////////////////////
-				document.getElementById(stepString + "editConfig").onclick = 
+				document.getElementById(stepString + "editConfig").onclick =
 						function()
 						{
 					newParamObj["groupType"] = "Configuration";
@@ -1450,7 +1450,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					showPrompt(_STEP_CHANGE_GROUP,newParamObj);
 						};
 				/////////////////////////////////
-				document.getElementById(stepString + "editContext").onclick = 
+				document.getElementById(stepString + "editContext").onclick =
 						function()
 						{
 					newParamObj["groupType"] = "Context";
@@ -1459,7 +1459,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					showPrompt(_STEP_CHANGE_GROUP,newParamObj);
 						};
 				/////////////////////////////////
-				document.getElementById(stepString + "deleteRecordIcon").onclick = 
+				document.getElementById(stepString + "deleteRecordIcon").onclick =
 						function() //start deleteRecordIcon handler
 						{
 					var selectedIndex =  document.getElementById(stepString + "records").selectedIndex;
@@ -1480,9 +1480,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					//reset modified tables at start of deletion process
 					//	to not accidentally permanently save an incompletely created record
-					_modifiedTables = undefined; 
-					
-					localPromptAndHandleRecordDeletion(_recordAlias,recordName);					
+					_modifiedTables = undefined;
+
+					localPromptAndHandleRecordDeletion(_recordAlias,recordName);
 					/////////////////////////////////
 					function localPromptAndHandleRecordDeletion(recordType,recordName)
 					{
@@ -1494,16 +1494,16 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						//	check parent level for any empty children groups
 						//	for each parent found with no children.. offer to delete them
 						//	when complete, re-initialize with initRecordWizard()
-						
+
 						var prompt;
-						
+
 						if(generationsBack == 0)
 							prompt = "Are you sure you want to remove the " + recordType + " named '" +
 								recordName + "' from the active configuration?";
 						else
 							prompt = "Alert! A parent node, " + generationsBack + " level(s) up in the " +
 								"configuration tree from the " +
-								"origial " + _recordAlias + " '" + _subsetUIDs[selectedIndex] + ",' was found to " + 
+								"origial " + _recordAlias + " '" + _subsetUIDs[selectedIndex] + ",' was found to " +
 								"have no children.<br><br>Do you want to remove the childless " + recordType + " named '" +
 								recordName + "' from the active configuration?";
 
@@ -1512,7 +1512,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								function() //OK handler, delete the record handler
 								{
 
-							Debug.log("do deleteRecord " + recordType + " : " + recordName);				
+							Debug.log("do deleteRecord " + recordType + " : " + recordName);
 
 
 							/////////////////////
@@ -1527,7 +1527,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								if(!modifiedTables.length)
 								{
 									//really an error
-									Debug.log("There was an error while creating the XDAQ Context '" + 
+									Debug.log("There was an error while creating the XDAQ Context '" +
 											recordName  + ".' " + err,
 											Debug.HIGH_PRIORITY);
 									return;
@@ -1535,14 +1535,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								_modifiedTables = modifiedTables;
 								console.log(_modifiedTables);
 
-								//at this point context was deleted in modified tables 
-								Debug.log("The " + recordType + " named '" +  
+								//at this point context was deleted in modified tables
+								Debug.log("The " + recordType + " named '" +
 										recordName + "' was successfully removed!",
 										Debug.INFO_PRIORITY);
 
 								parentCheckParentIndex = 0; //reset when record is deleted
-								
-															
+
+
 								//now save, then check parent level for no children
 
 								//proceed to save (quietly) tables, groups, aliases
@@ -1553,7 +1553,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									{
 										Debug.log("There was an error while saving the changes.",
 												Debug.HIGH_PRIORITY);
-										return;					
+										return;
 									}
 
 									Debug.log("The " +
@@ -1573,14 +1573,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										localCheckParentChildren();
 
 										}, //end saveModifiedTables handler
-										
+
 										0, //doNotIgnoreWarnings,
 										0, //doNotSaveAffectedGroups,
 										0, //doNotActivateAffectedGroups,
 										0, //doNotSaveAliases,
 										0, //doNotIgnoreGroupActivationWarnings,
 										true //doNotKillPopUpEl
-										
+
 										); //end saveModifiedTables handler
 
 
@@ -1596,7 +1596,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								function() // on Cancel, check parent children handler
 								{
 									Debug.log("User opted not to delete node.");
-									
+
 									//even if one parent is cancelled.. keep checking
 									if(generationsBack)
 										localCheckParentChildren();
@@ -1614,7 +1614,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								parentCheckParentIndex = 0;
 								lastGenerationsBack = generationsBack;
 							}
-							Debug.log("localCheckParentChildren generationsBack=" + generationsBack + 
+							Debug.log("localCheckParentChildren generationsBack=" + generationsBack +
 									" parentCheckParentIndex=" + parentCheckParentIndex);
 
 							//Steps:
@@ -1634,13 +1634,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							}
 
 							// get tree looking for empty children
-							DesktopContent.XMLHttpRequest("Request?RequestType=getTreeView" + 
+							DesktopContent.XMLHttpRequest("Request?RequestType=getTreeView" +
 									"&tableGroup=" +
 									"&tableGroupKey=-1" +
-									"&hideStatusFalse=0" + 
-									"&depth=3", //make sure to see empty parents 
-									"startPath=/" + getParentTable(generationsBack) +  
-									"&filterList=" + getParentFilter(generationsBack) + 
+									"&hideStatusFalse=0" +
+									"&depth=3", //make sure to see empty parents
+									"startPath=/" + getParentTable(generationsBack) +
+									"&filterList=" + getParentFilter(generationsBack) +
 									"&modifiedTables=" + modifiedTablesListStr, //end post data
 									function(req)
 									{
@@ -1659,7 +1659,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										++parentCheckParentIndex; //next time ensure check next parent record first
 
 										parentName = tree.children[i].getAttribute("value");
-										Debug.log("Checking parent record " + 
+										Debug.log("Checking parent record " +
 												parentCheckParentIndex + ":" +
 												parentName);
 
@@ -1672,7 +1672,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 												parentChildren = DesktopContent.getXMLChildren(
 														tree.children[i].children[j],
 														"node");
-												Debug.log("Num of children " + parentChildren.length);	
+												Debug.log("Num of children " + parentChildren.length);
 
 												if(parentChildren.length == 0)
 												{
@@ -1686,37 +1686,37 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									}
 									//if here then no childless parent nodes found
 									Debug.log("No childless parent nodes found");
-									
+
 									//try next generation back, recursively
 									++generationsBack;
-									localCheckParentChildren();									
+									localCheckParentChildren();
 								}
 								catch(e)
 								{
 									//get here on error, or if completed tree traversal
-									
-									Debug.log("Giving up on childless parent node check. " + 
+
+									Debug.log("Giving up on childless parent node check. " +
 											"Ignoring errors: " + e);
 
 									initRecordWizard(); //start over to update list
 								}
 
 
-									}); //end getTreeView handler									
+									}); //end getTreeView handler
 
 						}
 					} //end localPromptAndHandleRecordDeletion()
 						}; //end deleteRecordIcon handler
 			} //end scope of _STEP_GET_RECORD_NAME localAddHandlers
-			
+
 				break; //end _STEP_GET_RECORD_NAME
 
 			case _STEP_CHANGE_GROUP:
-			
-			{ //start scope of _STEP_CHANGE_GROUP localAddHandlers			
-			
+
+			{ //start scope of _STEP_CHANGE_GROUP localAddHandlers
+
 				/////////////////////////////////
-				document.getElementById(stepString + "activateAlias").onclick = 
+				document.getElementById(stepString + "activateAlias").onclick =
 						function()
 						{
 					//activate alias then go back to record name
@@ -1727,23 +1727,23 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					var aliasObj;
 					for(var i=0;i<
 					_systemGroups.aliases[paramObj["groupType"]].length;++i)
-						if(_systemGroups.aliases[paramObj["groupType"]][i].alias == 
+						if(_systemGroups.aliases[paramObj["groupType"]][i].alias ==
 								alias)
 						{
 							aliasObj = _systemGroups.aliases[paramObj["groupType"]][i];
-							break;						
+							break;
 						}
 
-					Debug.log("activateAlias group " + aliasObj.name + 
+					Debug.log("activateAlias group " + aliasObj.name +
 							"-" + aliasObj.key);
 
-					ConfigurationAPI.activateGroup(aliasObj.name, aliasObj.key, 
-							true /*ignoreWarnings*/, 
+					ConfigurationAPI.activateGroup(aliasObj.name, aliasObj.key,
+							true /*ignoreWarnings*/,
 							/*doneHandler*/
 							function()
 							{
-						Debug.log("The System Alias '" + alias + 
-								"' (" + aliasObj.name + " (" + 
+						Debug.log("The System Alias '" + alias +
+								"' (" + aliasObj.name + " (" +
 								aliasObj.key + ")) was successfully activated!", Debug.INFO_PRIORITY);
 
 						initRecordWizard();
@@ -1751,7 +1751,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						}; //end activate alias handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "groupNames").onchange = 
+				document.getElementById(stepString + "groupNames").onchange =
 						function()
 						{
 					//fill keys drop down
@@ -1761,45 +1761,45 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 													   [this.value].keys.length;++i)
 					{
 						str += DesktopContent.htmlOpen("option",
-								{		
+								{
 								},
 								_systemGroups.groups[paramObj["groupType"]]
 													 [this.value].keys[i] /*innerHTML*/, true /*closeTag*/);
 					}
-					document.getElementById(stepString + "groupKeys").innerHTML = 
+					document.getElementById(stepString + "groupKeys").innerHTML =
 							str;
 						}; //end group names dropdown handler
 
 				/////////////////////////////////
-				document.getElementById(stepString + "activateGroup").onclick = 
+				document.getElementById(stepString + "activateGroup").onclick =
 						function()
 						{
 					//activate alias then go back to record name
 					var name = document.getElementById(stepString + "groupNames").value;
 					var key = document.getElementById(stepString + "groupKeys").value;
 
-					Debug.log("activateGroup " + name + 
+					Debug.log("activateGroup " + name +
 							"-" + key);
 
-					ConfigurationAPI.activateGroup(name, key, 
-							true /*ignoreWarnings*/, 
+					ConfigurationAPI.activateGroup(name, key,
+							true /*ignoreWarnings*/,
 							/*doneHandler*/
 							function()
 							{
-						Debug.log("The Group '" + name + " (" + 
+						Debug.log("The Group '" + name + " (" +
 								key + ") was successfully activated!", Debug.INFO_PRIORITY);
 
 						initRecordWizard();
 							}); //end activate group handler
 						}; //end activate alias handler
-				
+
 			} //end scope of _STEP_CHANGE_GROUP localAddHandlers
-			
+
 				break;  //end _STEP_CHANGE_GROUP
 			default:;
 			}
-			
-			
+
+
 
 
 			///////////////////////////////////////////////////////
@@ -1811,7 +1811,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				function localCreateIntermediateLevelRecord(name)
 				{
 					Debug.log("localCreateIntermediateLevelRecord " + name);
-					
+
 					/////////////////////
 					//create new record
 					ConfigurationAPI.addSubsetRecords(
@@ -1824,17 +1824,17 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						if(!modifiedTables.length)
 						{
 							//really an error
-							Debug.log("There was an error while creating the XDAQ Application '" + 
+							Debug.log("There was an error while creating the XDAQ Application '" +
 									name  + ".' " + err,
 									Debug.HIGH_PRIORITY);
 							return;
 						}
 						_modifiedTables = modifiedTables;
 
-						//at this point new app was created 
+						//at this point new app was created
 						Debug.log("New intermediate record '" + name + "' was successfully created!");
-						
-						newParamObj["isNew" + getIntermediateTypeName()] = true;	
+
+						newParamObj["isNew" + getIntermediateTypeName()] = true;
 
 						if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 						{
@@ -1859,7 +1859,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							_modifiedTables,
 							true /*silenceErrors*/);  //end addSubsetRecords
 				} //end localCreateIntermediateLevelRecord()
-				
+
 				/////////////////////////////////
 				function localSetupIntermediateLevelRecord(name)
 				{
@@ -1876,9 +1876,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					}
 					else
 						throw("?");
-					
-				
-					Debug.log("localSetupIntermediateLevelRecord " + name + 
+
+
+					Debug.log("localSetupIntermediateLevelRecord " + name +
 							" into groupId=" + recordGroupId);
 
 					var fieldArr,valueArr;
@@ -1905,7 +1905,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						}
 						else
 							throw("?");
-						
+
 					}
 
 					ConfigurationAPI.setFieldValuesForRecords(
@@ -1921,22 +1921,22 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						{
 							Debug.log("There was an error while writing the values for the App.",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 						_modifiedTables = modifiedTables;
-						
+
 						//now create record
 
 						//store group name for record setup later
-						if(!_paramObjMap[_STEP_PROC_WHICH_BUFFER]) _paramObjMap[_STEP_PROC_WHICH_BUFFER] = {}; //init if needed							
+						if(!_paramObjMap[_STEP_PROC_WHICH_BUFFER]) _paramObjMap[_STEP_PROC_WHICH_BUFFER] = {}; //init if needed
 						_paramObjMap[_STEP_PROC_WHICH_BUFFER]["recordGroupName"] = name+"ProcessorGroup";
-						
+
 						localCreateRecord(getRecordConfiguration());
-						
+
 							}, //end setFieldValuesForRecords handler
 							_modifiedTables);	//end setFieldValuesForRecords
 				} //end localSetupApp()
-				
+
 				/////////////////////////////////
 				function localCreateApp(name)
 				{
@@ -1953,15 +1953,15 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						if(!modifiedTables.length)
 						{
 							//really an error
-							Debug.log("There was an error while creating the XDAQ Application '" + 
+							Debug.log("There was an error while creating the XDAQ Application '" +
 									name  + ".' " + err,
 									Debug.HIGH_PRIORITY);
 							return;
 						}
 						_modifiedTables = modifiedTables;
 
-						//at this point new app was created 
-						Debug.log("New app '" + name + "' was successfully created!");						
+						//at this point new app was created
+						Debug.log("New app '" + name + "' was successfully created!");
 
 						//add to app list for going back
 						// Note may need to initialize things, if skipped _STEP_WHICH_APP to get here
@@ -1969,7 +1969,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						if(!_paramObjMap[_STEP_WHICH_APP]["apps"]) _paramObjMap[_STEP_WHICH_APP]["apps"] = []; //initialize if needed
 						if(_paramObjMap[_STEP_WHICH_APP]["apps"].indexOf(name) == -1)
 							_paramObjMap[_STEP_WHICH_APP]["apps"].push(name);
-						_paramObjMap[_STEP_WHICH_APP]["isNewApp"] = true;	
+						_paramObjMap[_STEP_WHICH_APP]["isNewApp"] = true;
 
 						localSetupApp(name);
 
@@ -1981,8 +1981,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				/////////////////////////////////
 				function localSetupApp(name)
 				{
-					var context = _paramObjMap[_STEP_WHICH_CONTEXT]["contextName"];	
-					var appGroupId = _paramObjMap[_STEP_SET_CONTEXT_HOST]["appGroupId"];	
+					var context = _paramObjMap[_STEP_WHICH_CONTEXT]["contextName"];
+					var appGroupId = _paramObjMap[_STEP_SET_CONTEXT_HOST]["appGroupId"];
 
 					Debug.log("localSetupApp " + name + " in context=" + context + " groupId=" + appGroupId);
 
@@ -2031,7 +2031,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						{
 							Debug.log("There was an error while writing the values for the App.",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 						_modifiedTables = modifiedTables;
 
@@ -2058,14 +2058,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						if(!modifiedTables.length)
 						{
 							//really an error
-							Debug.log("There was an error while creating the XDAQ Application '" + 
+							Debug.log("There was an error while creating the XDAQ Application '" +
 									name  + ".' " + err,
 									Debug.HIGH_PRIORITY);
 							return;
 						}
 						_modifiedTables = modifiedTables;
 
-						//at this point new app config was created 
+						//at this point new app config was created
 						Debug.log("New app config '" + name + "' was successfully created!");
 
 						//now setup app config
@@ -2084,7 +2084,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 					var fieldArr,valueArr;
 					var groupSuffix;
-					
+
 					_intermediateLevel = 0; //reset
 
 					if(_recordAlias == _RECORD_TYPE_FE)
@@ -2098,7 +2098,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 						valueArr = [
 									getRecordConfiguration(),//"LinkToFEInterfaceTable",
-									name+groupSuffix,//"LinkToFEInterfaceGroupID",									
+									name+groupSuffix,//"LinkToFEInterfaceGroupID",
 									_DEFAULT_WIZ_COMMENT//"CommentDescription"
 									];
 					}
@@ -2113,10 +2113,10 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									];
 
 						groupSuffix = "DMGroup";
-						
+
 						valueArr = [
 									getIntermediateTable(),//"LinkToFEInterfaceTable",
-									name+groupSuffix,//"LinkToFEInterfaceGroupID",									
+									name+groupSuffix,//"LinkToFEInterfaceGroupID",
 									_DEFAULT_WIZ_COMMENT//"CommentDescription"
 									];
 					}
@@ -2135,58 +2135,58 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						{
 							Debug.log("There was an error while writing the values for the App.",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 						_modifiedTables = modifiedTables;
 
 						//save group name for later
 						// Note may need to initialize things, if skipped _STEP_WHICH_APP to get here
-						if(!_paramObjMap[_STEP_WHICH_APP]) _paramObjMap[_STEP_WHICH_APP] = {};//initialize if needed		
-						
+						if(!_paramObjMap[_STEP_WHICH_APP]) _paramObjMap[_STEP_WHICH_APP] = {};//initialize if needed
+
 
 						_paramObjMap[_STEP_WHICH_APP]["appChildGroupName"] = name+groupSuffix;
 
 						if(_recordAlias == _RECORD_TYPE_FE)
-						{							
-							Debug.log("Creating record...");	
+						{
+							Debug.log("Creating record...");
 							// now setup specific plugin
 							localCreateRecord(getRecordConfiguration());
 						}
 						else if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 						{
-							Debug.log("Setting up extra buffer level...");							
-							localHandleIntermediateLevel();							
+							Debug.log("Setting up extra buffer level...");
+							localHandleIntermediateLevel();
 						}
 						else throw("?");
-						
+
 							}, //end setFieldValuesForRecords handler
 							_modifiedTables);	//end setFieldValuesForRecords
 				} //end localSetupAppConfig()
 
 
 				/////////////////////////////////
-				// _intermediateLevel is incremented by some handler, if needed 
+				// _intermediateLevel is incremented by some handler, if needed
 				function localHandleIntermediateLevel()
-				{					
+				{
 					if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 					{
 						switch(_intermediateLevel)
 						{
 						case 0: //create Data Buffer in Data Manager
-						{	
-							
+						{
+
 							var bufferGroupId = _paramObjMap[_STEP_WHICH_APP]["appChildGroupName"];
 							var appName =  _paramObjMap[_STEP_WHICH_APP]["appName"];
-															 
-							
-							Debug.log("localCreateIntermediateLevel-" + _intermediateLevel + 
+
+
+							Debug.log("localCreateIntermediateLevel-" + _intermediateLevel +
 									" DataManager=" + appName);
-							
+
 							//Steps:
 							//	get all buffers, then all buffers associated with data manager
 							//		if 0, make new one
 							//		if some, present choices to user (new or existing)
-							
+
 							// get all existing apps
 							ConfigurationAPI.getSubsetRecords( ////////////////////////////////
 									getIntermediateTable(),
@@ -2200,26 +2200,26 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								if(!_paramObjMap[_STEP_PROC_WHICH_BUFFER]) _paramObjMap[_STEP_PROC_WHICH_BUFFER] = {}; //init if needed
 								_paramObjMap[_STEP_PROC_WHICH_BUFFER]["allBuffers"] = allRecords;
 
-								// get existing apps of appClass 
+								// get existing apps of appClass
 								ConfigurationAPI.getSubsetRecords( ////////////////////////////////
 										getIntermediateTable(),
 										"DataManagerGroupID="+
 										encodeURIComponent(bufferGroupId) /*_recordPreFilterList*/,
 										function(records)
 										{
-									Debug.log("buffers of DataManager '" + appName + 
+									Debug.log("buffers of DataManager '" + appName +
 											"' found = " + records.length);
 									console.log(records);
-									
+
 									//									var bufferName = "";
 									//									if(_paramObjMap[_STEP_PROC_WHICH_BUFFER]["bufferName"])
 									//										bufferName = _paramObj["level" + _intermediateLevel + "RecordName"];
-									//else 
+									//else
 									//	_paramObj["level" + _intermediateLevel + "RecordName"] =
 									//			(bufferName = ConfigurationAPI.createNewRecordName(listOfExisting)appName + "DB"); //generate the buffer name
 
 									//Debug.log("bufferName " + bufferName);
-									
+
 									if(records.length == 0)
 									{
 										//if no buffers in context, create buffer
@@ -2230,28 +2230,28 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										//store bufferName for later
 										_paramObjMap[_STEP_PROC_WHICH_BUFFER]["bufferName"] = bufferName;
 
-										localCreateIntermediateLevelRecord(appName);							
+										localCreateIntermediateLevelRecord(appName);
 									}
 									else //if buffers in context, ask if adding to existing
 									{
 										_paramObjMap[_STEP_PROC_WHICH_BUFFER]["buffers"] = records;
 										showPrompt(_STEP_PROC_WHICH_BUFFER);
 									}
-									
+
 										}, //end all getSubsetRecords handler
 										_modifiedTables); //end all getSubsetRecords
 
 									}, //end all getSubsetRecords handler
 									_modifiedTables); //end all getSubsetRecords
-								
+
 							var bufferName
 						}
 							break; //end create Data Buffer in Data Manager
 						default: throw("?");
 						}
-						
+
 					}
-					else throw("?");					
+					else throw("?");
 
 				} //end localCreateIntermediateLevel()
 
@@ -2260,7 +2260,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				function localGetExistingIntermediateTargetGroupID(intermediateName)
 				{
 
-					Debug.log("localGetExistingSupervisorTargetGroupID " + intermediateName + 
+					Debug.log("localGetExistingSupervisorTargetGroupID " + intermediateName +
 							" of type " + getIntermediateTypeName());
 
 					ConfigurationAPI.getTree(
@@ -2278,7 +2278,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						{ //accessing tree GroupID location directly
 
 							if(_recordAlias == _RECORD_TYPE_PROCESSOR)
-							{	
+							{
 
 								if(tree.children[1].children[0].nodeName !=
 										"GroupID")
@@ -2289,7 +2289,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 								groupId =
 										tree.children[1].children[0].getAttribute("value");
-								table = 
+								table =
 										tree.children[1].children[1].getAttribute("value");
 							}
 							else throw("?");
@@ -2304,8 +2304,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 						//save group name for later
 						// Note may need to initialize things, if skipped _STEP_WHICH_APP to get here
-						
-					
+
+
 						if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 						{
 							if(!_paramObjMap[_STEP_PROC_WHICH_BUFFER]) _paramObjMap[_STEP_PROC_WHICH_BUFFER] = {};//initialize if needed
@@ -2320,7 +2320,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 
 				} //end localGetExistingIntermediateTargetGroupID()
-				
+
 				/////////////////////////////////
 				//for case when using existing supervisor
 				function localGetExistingSupervisorTargetGroupID(supervisorName)
@@ -2340,7 +2340,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 						try
 						{ //accessing tree GroupID location directly
-							
+
 							if(tree.children[1].children[4].children[0].nodeName !=
 									"GroupID")
 								throw("Invalid GroupID location in tree.");
@@ -2350,7 +2350,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 							groupId =
 									tree.children[1].children[4].children[0].getAttribute("value");
-							table = 
+							table =
 									tree.children[1].children[4].children[1].getAttribute("value");
 
 						}
@@ -2366,17 +2366,17 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						// Note may need to initialize things, if skipped _STEP_WHICH_APP to get here
 						if(!_paramObjMap[_STEP_WHICH_APP]) _paramObjMap[_STEP_WHICH_APP] = {};//initialize if needed
 						_paramObjMap[_STEP_WHICH_APP]["appChildGroupName"] = groupId;
-						
+
 						if(_recordAlias == _RECORD_TYPE_FE)
-						{	
-							Debug.log("Creating record...");	
+						{
+							Debug.log("Creating record...");
 							localCreateRecord(table);
 						}
 						else if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 						{
-							Debug.log("Setting up extra buffer level...");	
-							_intermediateLevel = 0; //reset					
-							localHandleIntermediateLevel();							
+							Debug.log("Setting up extra buffer level...");
+							_intermediateLevel = 0; //reset
+							localHandleIntermediateLevel();
 						}
 						else throw("?");
 
@@ -2408,17 +2408,17 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								//then already created record, so ignore error that it exists
 								if(err.indexOf("Entries in UID are not unique") >= 0)
 								{
-									Debug.log("Ignoring UID not unique error since likely already created..." + 
+									Debug.log("Ignoring UID not unique error since likely already created..." +
 											err);
 									reallyAnError = false;
 								}
 							}
-							
+
 							if(reallyAnError)
 							{
 								//really an error
 								Debug.log("There was an error while creating the " + _recordAlias +
-										" record named '" + 
+										" record named '" +
 										recordName  + ".' " + err,
 										Debug.HIGH_PRIORITY);
 								return;
@@ -2428,8 +2428,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							_modifiedTables = modifiedTables;
 
 						console.log("_modifiedTables",_modifiedTables);
-						
-						//at this point new app config was created 
+
+						//at this point new app config was created
 						Debug.log("New " + _recordAlias + " record named '" + recordName + "' was successfully created!");
 
 						//now get helper valuse for record details
@@ -2443,7 +2443,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				/////////////////////////////////
 				//localGetHelperValuesForRecord
 				function localGetHelperValuesForRecord()
-				{					
+				{
 					Debug.log("localGetHelperValuesForRecord " + recordName);
 
 					ConfigurationAPI.getFieldsOfRecords(
@@ -2452,7 +2452,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							"!*Comment*,!*SlowControls*,!Status,!" + getRecordGroupIDField()/*fieldList*/,
 							-1 /*maxDepth*/,
 							function(recordFields)
-							{				
+							{
 						newParamObj["fields"] = recordFields;
 						Debug.log("recordFields found = " + recordFields.length);
 						console.log(recordFields);
@@ -2466,22 +2466,22 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 				} //end localGetHelperValuesForRecord
 
 			} //end fake scope for shared handler functions
-			
-			
-			
-			
+
+
+
+
 
 
 			///////////////////////////////////////////////////////
 			//add handlers for all steps
 			try
 			{
-				document.getElementsByClassName(stepString + "nextButton")[0].onclick = 
+				document.getElementsByClassName(stepString + "nextButton")[0].onclick =
 						localNextButtonHandler;
-				document.getElementsByClassName(stepString + "nextButton")[1].onclick = 
+				document.getElementsByClassName(stepString + "nextButton")[1].onclick =
 						localNextButtonHandler;
 
-				function localNextButtonHandler()		
+				function localNextButtonHandler()
 				{
 
 					//extract specific step parameters
@@ -2492,28 +2492,28 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 						//set record fields and save modified tables
 						localScopeSetRecordFieldsDoIt();
 
-						/////////////////////////////////			
+						/////////////////////////////////
 						function localScopeSetRecordFieldsDoIt() //function just for scoped vars
-						{				
+						{
 							Debug.log("localScopeSetRecordFieldsDoIt");
 
 							var recordFields = paramObj["fields"];
-							
+
 							var groupName = "";
-							
+
 							if(_recordAlias == _RECORD_TYPE_FE)
 								groupName = _paramObjMap[_STEP_WHICH_APP]["appChildGroupName"];
 							else if(_recordAlias == _RECORD_TYPE_PROCESSOR)
 								groupName = _paramObjMap[_STEP_PROC_WHICH_BUFFER]["recordGroupName"];
 							else throw("?");
-							
-							
+
+
 							//make arrays for all field/values pairs
 							var fieldArr = [];
 							var valueArr = [];
-							
+
 							//for each field, get value
-							for(var i=0;i<recordFields.length;++i)	
+							for(var i=0;i<recordFields.length;++i)
 							{
 								fieldArr.push(recordFields[i].fieldRelativePath +
 										recordFields[i].fieldColumnName);
@@ -2521,7 +2521,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										recordFields[i],
 										i));
 							}
-							
+
 							//add groupId field to modify
 							//	and comment, etc.
 							fieldArr.push(getRecordGroupIDField());
@@ -2529,7 +2529,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							fieldArr.push("CommentDescription");
 							valueArr.push(_DEFAULT_WIZ_COMMENT);
 							fieldArr.push("Status");
-							valueArr.push("1");							
+							valueArr.push("1");
 
 							ConfigurationAPI.setFieldValuesForRecords(
 									getRecordConfiguration(),
@@ -2544,7 +2544,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								{
 									Debug.log("There was an error while writing the values.",
 											Debug.HIGH_PRIORITY);
-									return;					
+									return;
 								}
 
 								_modifiedTables = modifiedTables;
@@ -2557,7 +2557,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									{
 										Debug.log("There was an error while saving the values.",
 												Debug.HIGH_PRIORITY);
-										return;					
+										return;
 									}
 
 									Debug.log("The new " +
@@ -2565,9 +2565,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 											Debug.INFO_PRIORITY);
 
 									_modifiedTables = undefined; //clear after save
-									
+
 									_aRecordWasModified = true;
-									
+
 									initRecordWizard(); //start over if no done handler
 
 										}); //end saveModifiedTables handler
@@ -2576,25 +2576,25 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									_modifiedTables);	 //end setFieldValuesForRecords
 
 						} //end localScopeSetRecordFieldsDoIt()
-						
+
 						return; //prevent default next action
-						
+
 						break; //end _STEP_SET_RECORD_FIELDS
-						
+
 					case _STEP_SET_CONTEXT_HOST:
 
 						//set fields for selected context
-						localHandleSetupContext();			
-						
-						/////////////////////////////////			
+						localHandleSetupContext();
+
+						/////////////////////////////////
 						function localHandleSetupContext() //function just for scoped vars
-						{				
+						{
 							Debug.log("localHandleSetupContext");
-							
+
 							var context = _paramObjMap[_STEP_WHICH_CONTEXT]["contextName"];
 							var address = document.getElementById(stepString + "address").value.trim();
 							var port = document.getElementById(stepString + "port").value.trim();
-							
+
 							//save name to param for this step
 							paramObj["address"] = address;
 
@@ -2606,7 +2606,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 								appGroupId = paramObj["appGroupId"];
 							else
 								paramObj["appGroupId"] = appGroupId;
-								
+
 							var fieldArr = ["Status",
 											"LinkToApplicationTable",
 											"ApplicationGroupID",
@@ -2614,7 +2614,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 											"Port",
 											"CommentDescription"
 											];
-	
+
 							var valueArr = ["1",//"Status",
 											_XDAQAPP_BASE_PATH,//"LinkToApplicationTable",
 											appGroupId,//"ApplicationGroupID",
@@ -2622,7 +2622,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 											port,//"Port"
 											_DEFAULT_WIZ_COMMENT//"CommentDescription"
 											];
-							
+
 							ConfigurationAPI.setFieldValuesForRecords(
 											_XDAQ_BASE_PATH,
 											context, 	//recordArr
@@ -2636,30 +2636,30 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										{
 											Debug.log("There was an error while writing the values.",
 													Debug.HIGH_PRIORITY);
-											return;					
+											return;
 										}
 										_modifiedTables = modifiedTables;
-										
+
 										//create Apps now
-										
+
 										//if FE
 										//	if no apps in context, create FESupervisor
 										//	if apps in context, ask if adding to existing
 										//if consumer/producer
 										//	if no apps in context, create DataManagerSupervisor
 										//	if apps in context, ask if adding to existing
-										
+
 										localGetAppInfo();
-										
+
 											}, //end setFieldValuesForRecords handler
 											_modifiedTables);	//end setFieldValuesForRecords
-							
+
 							/////////////////////////////////
 							function localGetAppInfo()
 							{
 								var appGroupId = paramObj["appGroupId"];
 								Debug.log("localGetAppInfo for context app group " + appGroupId);
-								
+
 								// get all existing apps
 								ConfigurationAPI.getSubsetRecords( ////////////////////////////////
 										_XDAQAPP_BASE_PATH,
@@ -2671,14 +2671,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 									console.log(allApps);
 
 									if(!_paramObjMap[_STEP_WHICH_APP]) _paramObjMap[_STEP_WHICH_APP] = {}; //init if needed
-									
+
 									//store all apps for later
 									_paramObjMap[_STEP_WHICH_APP]["allApps"] = allApps;
-									
-									// get existing apps of appClass 
+
+									// get existing apps of appClass
 									ConfigurationAPI.getSubsetRecords( ////////////////////////////////
 											_XDAQAPP_BASE_PATH,
-											"Class=" + 
+											"Class=" +
 											encodeURIComponent(getAppClass()) +
 											";ApplicationGroupID="+
 											//For DEBUG "testContextApps",
@@ -2689,7 +2689,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 										console.log(records);
 
 										if(records.length == 0)
-										{											
+										{
 											//if no apps in context, create XDAQ App
 											//	with made up name
 
@@ -2697,11 +2697,11 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 													getApp() +
 													_paramObjMap[_STEP_GET_RECORD_NAME].recordName,
 													allApps);
-											
+
 											//store app name for later
 											_paramObjMap[_STEP_WHICH_APP]["appName"] = appName;
-											
-											localCreateApp(appName);							
+
+											localCreateApp(appName);
 										}
 										else //if apps in context, ask if adding to existing
 										{
@@ -2716,33 +2716,33 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 							} //end localGetAppInfo()
 
 						} //end localHandleSetupContext()
-						
+
 						return; //stop standard next call
-						
+
 						break; //end _STEP_SET_CONTEXT_HOST next handler
-						
+
 					case _STEP_GET_RECORD_NAME:
-							
+
 						//save name to param for this step
 						recordName = document.getElementById(stepString + "recordName").value.trim();
 						paramObj["recordName"] = recordName;
-						
+
 						if(recordName.length < 1)
 						{
-							Debug.log("Invalid " + _recordAlias + " name ' " + 
+							Debug.log("Invalid " + _recordAlias + " name ' " +
 									recordName + "' (too short). Please enter a valid name.",
 									Debug.HIGH_PRIORITY);
-							return; 
+							return;
 						}
-						
+
 						for(var i=0;i<_subsetUIDs.length;++i)
 							if(_subsetUIDs[i] == recordName)
 							{
-								Debug.log("Invalid " + _recordAlias + " name ' " + 
+								Debug.log("Invalid " + _recordAlias + " name ' " +
 										recordName + "' (name already in use in the active configuration). Please enter a valid name.",
 										Debug.HIGH_PRIORITY);
-								return; 
-							}						
+								return;
+							}
 
 						//get existing contexts and give as parameter
 						ConfigurationAPI.getSubsetRecords(
@@ -2756,29 +2756,29 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 							showPrompt(nextStepIndex,newParamObj);
 
-								});	//end getSubsetRecords handler	
+								});	//end getSubsetRecords handler
 						return; //prevent default show prompt, do in handler
 						break; //end _STEP_GET_RECORD_NAME next handler
-					
+
 					case _STEP_WHICH_RECORD_TYPE:
 
 						///////////////////////
 						if(scopeWhichRecordTypeNext())
 							return; //prevent default show prompt, do initRecordWizard
-						
-						function scopeWhichRecordTypeNext() 
+
+						function scopeWhichRecordTypeNext()
 						{
 							var newRecordAlias = document.getElementById(stepString + "recordTypes").value.trim();
-							
+
 							var needToInit = (_recordAlias != newRecordAlias);
 
 							_recordAlias = newRecordAlias;
 							Debug.log("_recordAlias chosen as " + _recordAlias);
-							
+
 							if(needToInit) initRecordWizard();
 							return needToInit;
-						} //end scopeWhichRecordTypeNext()						
-						
+						} //end scopeWhichRecordTypeNext()
+
 						break; //end _STEP_WHICH_RECORD_TYPE next handler
 					default:;
 					}
@@ -2789,9 +2789,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 			try
 			{
-				document.getElementsByClassName(stepString + "prevButton")[0].onclick = 
+				document.getElementsByClassName(stepString + "prevButton")[0].onclick =
 						localPrevButtonHandler;
-				document.getElementsByClassName(stepString + "prevButton")[1].onclick = 
+				document.getElementsByClassName(stepString + "prevButton")[1].onclick =
 						localPrevButtonHandler;
 
 				function localPrevButtonHandler()
@@ -2800,18 +2800,18 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					switch(stepIndex)
 					{
 					case _STEP_WHICH_RECORD_TYPE:
-						
+
 						//close window and clear data
 
-						_subsetUIDs = []; //reset			
+						_subsetUIDs = []; //reset
 						_modifiedTables = undefined; //reset
 						_furthestStep = -1; // reset
 						_paramObjMap = {}; //reset
 						_systemGroups = {}; //reset
-						
+
 						//remove all existing dialogs
 						ConfigurationAPI.removeAllPopUps();
-						
+
 						if(_doneHandler) _doneHandler(_aRecordWasModified);
 						return; //prevent default prev showPrompt
 						break;
@@ -2828,8 +2828,8 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 
 	//=====================================================================================
-	//getApp ~~	
-	function getApp() 
+	//getApp ~~
+	function getApp()
 	{
 		var retVal = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2838,20 +2838,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			retVal = "DataManagerSupervisor";
 		else
 			throw("?");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getApp()
-	
+
 	//=====================================================================================
-	//getAppClass ~~	
-	function getAppClass() 
+	//getAppClass ~~
+	function getAppClass()
 	{
-		return "ots::" + getApp();		
+		return "ots::" + getApp();
 	} //end getAppClass()
-	
+
 	//=====================================================================================
-	//getAppModule ~~	
-	function getAppModule() 
+	//getAppModule ~~
+	function getAppModule()
 	{
 		var otsModule = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2860,13 +2860,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			otsModule = "${OTSDAQ_LIB}/libCoreSupervisors.so";
 		else
 			throw("?");
-		
-		return otsModule;		
+
+		return otsModule;
 	} //end getAppModule()
-	
+
 	//=====================================================================================
-	//getAppConfiguration ~~	
-	function getAppConfiguration() 
+	//getAppConfiguration ~~
+	function getAppConfiguration()
 	{
 		var retVal = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2875,13 +2875,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			retVal = "DataManagerSupervisorTable";
 		else
 			throw("?");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getAppConfiguration()
-	
+
 	//=====================================================================================
-	//getRecordConfiguration ~~	
-	function getRecordConfiguration() 
+	//getRecordConfiguration ~~
+	function getRecordConfiguration()
 	{
 		var retVal = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2890,13 +2890,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			retVal = "DataBufferTable";
 		else
 			throw("?");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getRecordConfiguration()
 
 	//=====================================================================================
-	//getRecordGroupIDField ~~	
-	function getRecordGroupIDField() 
+	//getRecordGroupIDField ~~
+	function getRecordGroupIDField()
 	{
 		var retVal = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2905,14 +2905,14 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			retVal = "DataBufferGroupID";
 		else
 			throw("?");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getRecordGroupIDField()
-	
-	
+
+
 	//=====================================================================================
-	//getRecordFilter ~~	
-	function getRecordFilter() 
+	//getRecordFilter ~~
+	function getRecordFilter()
 	{
 		var retVal = "";
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2922,13 +2922,13 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 		if(retVal == "")
 			throw("Invalid getRecordFilter");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getRecordFilter()
-	
+
 
 	//=====================================================================================
-	//getIntermediateTable() ~~	
+	//getIntermediateTable() ~~
 	//	based on _intermediateLevel and _recordAlias
 	function getIntermediateTable()
 	{
@@ -2938,15 +2938,15 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			if(_intermediateLevel == 0)
 				retVal = "DataManagerTable";
 		}
-		
+
 		if(retVal == "")
 			throw("Invalid getIntermediateTable");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getIntermediateTable()
 
 	//=====================================================================================
-	//getIntermediateTypeName() ~~	
+	//getIntermediateTypeName() ~~
 	//	based on _intermediateLevel and _recordAlias
 	function getIntermediateTypeName()
 	{
@@ -2956,20 +2956,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			if(_intermediateLevel == 0)
 				retVal = "Buffer";
 		}
-		
+
 		if(retVal == "")
 			throw("Invalid getIntermediateTypeName");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getIntermediateTypeName()
-		
+
 	//=====================================================================================
-	//getParentTable() ~~	
+	//getParentTable() ~~
 	//	based on generationsBack and _recordAlias
 	function getParentTable(generationsBack)
 	{
 		if(generationsBack == 0) return getRecordConfiguration();
-		
+
 		var retVal = "";
 
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -2988,20 +2988,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			else if(generationsBack == 3)
 				retVal = _XDAQAPP_BASE_PATH;
 		}
-		
+
 		if(retVal == "")
 			throw("Invalid getParentTable");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getParentTable()
 
 	//=====================================================================================
-	//getParentType() ~~	
+	//getParentType() ~~
 	//	based on generationsBack and _recordAlias
 	function getParentType(generationsBack)
 	{
 		if(generationsBack == 0) return _recordAlias;
-		
+
 		var retVal = "";
 
 		if(_recordAlias == _RECORD_TYPE_FE)
@@ -3020,20 +3020,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			else if(generationsBack == 3)
 				retVal = "DataManagerSupervisor";
 		}
-		
+
 		if(retVal == "")
 			throw("Invalid getParentType");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getParentType()
 
 	//=====================================================================================
-	//getParentLinkField() ~~	
+	//getParentLinkField() ~~
 	//	based on generationsBack and _recordAlias
 	function getParentLinkField(generationsBack)
 	{
 		var retVal = "";
-		
+
 		if(_recordAlias == _RECORD_TYPE_FE)
 		{
 			if(generationsBack == 1)
@@ -3050,20 +3050,20 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 			else if(generationsBack == 3)
 				retVal = "LinkToSupervisorTable";
 		}
-		
+
 		if(retVal == "")
 			throw("Invalid getParentLinkField");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getParentLinkField()
 
 	//=====================================================================================
-	//getParentFilter() ~~	
+	//getParentFilter() ~~
 	//	based on generationsBack and _recordAlias
 	function getParentFilter(generationsBack)
 	{
 		var retVal = "";
-		
+
 		if(_recordAlias == _RECORD_TYPE_FE)
 		{
 			if(generationsBack == 1)
@@ -3084,18 +3084,9 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 		if(retVal == "")
 			throw("Invalid getParentFilter");
-		
-		return retVal;		
+
+		return retVal;
 	} //end getParentFilter()
-	
+
 
 }; //end RecordWiz.createWiz()
-
-
-
-
-
-
-
-
-

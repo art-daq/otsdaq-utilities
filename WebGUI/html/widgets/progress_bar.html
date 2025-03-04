@@ -10,7 +10,7 @@
 			}
 			.wrapper {
 				display: grid;
-			 	grid-template-columns: repeat(2, 1fr);
+				grid-template-columns: repeat(2, 1fr);
 				//grid-template-columns: repeat(auto-fill,minmax(120px, 1fr));
 				grid-gap: 20px;
 				//grid-auto-rows: minmax(100px, auto);
@@ -35,8 +35,8 @@
 			var parameters_ = {class: "", "show_labels": "false", "old_value_foreground_color": "grey", "old_value_background_color": "lightgrey", "background_color": "transparent"};
 			var widget_;
 			var options_ = {
-  				className:'.d3-progress',
- 				height:20,
+				className:'.d3-progress',
+				height:20,
 				width:200,
 				progressStartWidth:0,
 				progressEndWidth:200,
@@ -44,7 +44,7 @@
 				progressColor:'blue',
 				animationDuration:2000
 			};
-			
+
 			//init called once body has loaded
 			function init()
 			{
@@ -167,14 +167,14 @@
 			function renderProgressBar(id, options ){
 			  //var progress = d3.select(options.className)
 			  var progress = d3.select("#" + id)
-			                  .append("svg")
-			                    .attr("width",options.width)
-			                    .attr("height",options.height);
+							  .append("svg")
+								.attr("width",options.width)
+								.attr("height",options.height);
 			  progress.append("rect")
-			          .attr("class","progressBar")
-			          .attr("width",options.width)
-			          .attr("height",options.height - 10)
-			          .style("fill",options.barColor);
+					  .attr("class","progressBar")
+					  .attr("width",options.width)
+					  .attr("height",options.height - 10)
+					  .style("fill",options.barColor);
 			  animateProgressBar(progress,options);
 			  return progress;
 			}
@@ -182,23 +182,23 @@
 			function animateProgressBar(element, options){
 			  //d3.selectAll(options.className + " .progress").remove();
 			  element.append("rect")
-			          .attr("class","progress")
-			          .attr("height",options.height - 10)
-			          .style("fill",options.progressColor)
-			          .attr("width",options.progressStartWidth)
-			          .transition()
-			          .duration(options.animationDuration)
-			          .ease("bounce")
-			          .attr("width",options.progressEndWidth);
+					  .attr("class","progress")
+					  .attr("height",options.height - 10)
+					  .style("fill",options.progressColor)
+					  .attr("width",options.progressStartWidth)
+					  .transition()
+					  .duration(options.animationDuration)
+					  .ease("bounce")
+					  .attr("width",options.progressEndWidth);
 			  element.append("text")
-			          .attr("y",options.height)
-			          .style("text-anchor","middle")
-			          .text("" + options.progressEndWidth)
-			          .attr("x",options.progressStartWidth)
-			          .transition()
-			          .duration(options.animationDuration)
-			          .ease("bounce")
-		              .attr("x",options.progressEndWidth);
+					  .attr("y",options.height)
+					  .style("text-anchor","middle")
+					  .text("" + options.progressEndWidth)
+					  .attr("x",options.progressStartWidth)
+					  .transition()
+					  .duration(options.animationDuration)
+					  .ease("bounce")
+					  .attr("x",options.progressEndWidth);
 			}
 
 			function resizeWidget()
@@ -221,7 +221,7 @@
 
 </head>
 
-	<body onload="Javascript:init()">	
+	<body onload="Javascript:init()">
 		<div id="display" width="100%" height="100%">
 		</div>
 	</body>

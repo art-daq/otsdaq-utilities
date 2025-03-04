@@ -2,83 +2,83 @@
 		#clearDiv {
 			clear: 					both;
 		}
-		
+
 		#ConfigurationAPI-popUpDialog {
 			position: 				absolute;
-			z-index: 				1000;    
+			z-index: 				1000;
 			border: 				1px solid #770000;
 		    background-color: 		#efeaea;
 		    text-align: 			center;
 		    padding: 				10px;
 			font-size: 				16px;
-			font-family: 			'Inconsolata', monospace;	
-			
+			font-family: 			'Inconsolata', monospace;
+
 
 			outline: 				none; /* to stop firefox selection*/
 			-webkit-user-select:	none; /* prevent selection*/
 			-moz-user-select: 		none;
 			user-select:			none;
 		}
-		#ConfigurationAPI-popUpDialog, 
+		#ConfigurationAPI-popUpDialog,
 		#ConfigurationAPI-popUpDialog * {
 			color: 					black;
 			font-family: 			'Inconsolata', monospace;
 			font-size:				16px;
 		}
-			
+
 		#ConfigurationAPI-popUpDialog #clearDiv {
 			clear: 					both;
 		}
-		
+
 		#ConfigurationAPI-popUpDialog a {
 			color: 					rgb(44, 44, 187);
 		}
-		
+
 		#ConfigurationAPI-popUpDialog a:hover {
 			pointer: 				cursor;
 		}
-		
-		#ConfigurationAPI-popUpDialog h3, 
+
+		#ConfigurationAPI-popUpDialog h3,
 		#ConfigurationAPI-popUpDialog h1 {
 			color: 					rgb(65, 86, 146);
 			font-size: 				20px;
 		}
-		
+
 		#ConfigurationAPI-popUpDialog .bold-header {
 			color: 					rgb(81, 152, 204);
 			font-size: 				16px;
 		}
-		
+
 		#ConfigurationAPI-popUpDialog b {
 			color: 					rgb(65, 86, 146);
 			font-size: 				16px;
 		}
-		
+
 		/*firefox seems to put an extra pixel of letter-spacing in bold words*/
 		/* this seems to have been fixed by choosing the correct truetype font in font.css*/
 		/*target firefox*/
-		/*@-moz-document url-prefix() {  
+		/*@-moz-document url-prefix() {
 			#ConfigurationAPI-popUpDialog b, #ConfigurationAPI-popUpDialog th {
 				letter-spacing: -1px;
 			}
-			#ConfigurationAPI-popUpDialog h1, 
-			#ConfigurationAPI-popUpDialog h2, 
-			#ConfigurationAPI-popUpDialog h3, 
-			#ConfigurationAPI-popUpDialog h4, 
-			#ConfigurationAPI-popUpDialog h5, 
+			#ConfigurationAPI-popUpDialog h1,
+			#ConfigurationAPI-popUpDialog h2,
+			#ConfigurationAPI-popUpDialog h3,
+			#ConfigurationAPI-popUpDialog h4,
+			#ConfigurationAPI-popUpDialog h5,
 			#ConfigurationAPI-popUpDialog h6 {
 				letter-spacing: -2px;
 			}
 		}*/
-		
+
 		/* make buttons have a hand cursor */
-		#ConfigurationAPI-popUpDialog input[type="button"], 
+		#ConfigurationAPI-popUpDialog input[type="button"],
 		#ConfigurationAPI-popUpDialog button {
 			cursor: 				pointer;
 		}
-		
+
 		/* style text inputs */
-		#ConfigurationAPI-popUpDialog input[type="text"], 
+		#ConfigurationAPI-popUpDialog input[type="text"],
 		#ConfigurationAPI-popUpDialog select {
 			height: 				24px;
 			margin:					5px;
@@ -86,13 +86,13 @@
 			width: 					200px;
 			border: 				1px solid rgb(171, 171, 230);
 		}
-		
+
 		#ConfigurationAPI-popUpDialog .prevButton,
 		#ConfigurationAPI-popUpDialog .nextButton {
 			margin:					10px;
-		}		
-		
-		.ConfigurationAPI-popUpDialog-editIcon {			
+		}
+
+		.ConfigurationAPI-popUpDialog-editIcon {
 			background-image: 		url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
 			width: 					24px;
 			height: 				20px;
@@ -104,9 +104,9 @@
 		.ConfigurationAPI-popUpDialog-editIcon:hover {
 			background-image: 		url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 			cursor: 				pointer;
-		}		
+		}
 
-		.ConfigurationAPI-popUpDialog-deleteIcon {			
+		.ConfigurationAPI-popUpDialog-deleteIcon {
 			background-image: 		url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 					16px;
 			height: 				20px;
@@ -117,8 +117,8 @@
 			background-image: 		url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
 			cursor: 				pointer;
 		}
-		
-		.ConfigurationAPI-popUpDialog-preloadImage {			
+
+		.ConfigurationAPI-popUpDialog-preloadImage {
 			width: 					24px;
 			height: 				20px;
 			position:				absolute;
@@ -131,82 +131,82 @@
 		#ConfigurationAPI-popUpDialog-preloadImage-treeEditTrashIconHover {
 			background-image: 		url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
 		}
-		
-		
+
+
 		/* bitmap CSS */
-		
+
 		.ConfigurationAPI-popUpDialog-bitmapDialog div {
 			outline: 				none; /* to stop firefox selection*/
 			-webkit-user-select: 	none; /* prevent selection*/
 			-moz-user-select: 		none;
 			user-select:			none;
 		}
-		
-		#ConfigurationAPI-popUpDialog-bitmap, 
+
+		#ConfigurationAPI-popUpDialog-bitmap,
 		#ConfigurationAPI-popUpDialog-bitmap-overlay,
 		.bitmap-colorSample {
 			image-rendering: 		optimizeSpeed;             /* NO SMOOTHING, GIVE ME SPEED    */
 			image-rendering:		-moz-crisp-edges;          /* Firefox                        */
 			image-rendering: 		pixelated; 				/* Chrome (and eventually Safari) */
-			image-rendering: 		optimize-contrast;         /* CSS3 Proposed                  */	
-			
+			image-rendering: 		optimize-contrast;         /* CSS3 Proposed                  */
+
 			border:					0;
 			outline: 				none; /* to stop firefox selection*/
 			-webkit-user-select: 	none; /* prevent selection*/
 			-moz-user-select: 		none;
 			user-select:			none;
-			/*pointer-events: 		none;  prevent drag by disabling ALL pointer events*/	
+			/*pointer-events: 		none;  prevent drag by disabling ALL pointer events*/
 		}
 
-		#ConfigurationAPI-popUpDialog-bitmap, 
+		#ConfigurationAPI-popUpDialog-bitmap,
 		#ConfigurationAPI-popUpDialog-bitmap-overlay {
-			cursor: pointer; 
+			cursor: pointer;
 			z-index: 1;
 		}
-		
+
 		#ConfigurationAPI-popUpDialog-bitmap-grid {
 			cursor: pointer;
 		}
-		
+
 		.ConfigurationAPI-popUpDialog-bitmap-grid-box {
 			border: 1px solid black;
-			position: absolute;	
+			position: absolute;
 			z-index: 2;
 		}
 
 		.ConfigurationAPI-popUpDialog-bitmap-grid-row-dark,
-		.ConfigurationAPI-popUpDialog-bitmap-grid-col-dark {			
+		.ConfigurationAPI-popUpDialog-bitmap-grid-col-dark {
 			background-color: black; /* same as dialog */
 			position: absolute;
 			z-index: 3;
 		}
 		.ConfigurationAPI-popUpDialog-bitmap-grid-row,
-		.ConfigurationAPI-popUpDialog-bitmap-grid-col {			
+		.ConfigurationAPI-popUpDialog-bitmap-grid-col {
 			background-color: #efeaea; /* same as dialog */
 			position: absolute;
-			z-index: 4; 
+			z-index: 4;
 		}
-		
+
 		.ConfigurationAPI-popUpDialog-bitmap-btn-all {
-			background-color: rgb(173, 162, 162);			
-			border-top: 1px solid rgb(220, 217, 217);	
+			background-color: rgb(173, 162, 162);
+			border-top: 1px solid rgb(220, 217, 217);
 			border-left: 1px solid rgb(220, 217, 217);
 			border-bottom: 1px solid rgb(49, 48, 48);
 			border-right: 1px solid rgb(49, 48, 48);
 			cursor: pointer;
 		}
-		
-		
+
+
 		#ConfigurationAPI-popUpDialog-bitmap-cursor-info,
 		#ConfigurationAPI-popUpDialog-bitmap-cursor-hdrInfo {
 			border: 1px solid rgb(49, 48, 48);
-			background-color: rgb(216,188,188);	
+			background-color: rgb(216,188,188);
 			border-radius: 5px;
 			padding: 5px;
 			white-space: nowrap;
-			z-index: 10;			
-		}		
-		
+			z-index: 10;
+		}
+
 		.ConfigurationAPI-popUpDialog-bitmap-numbers-rowLeft div {
 			text-align: right;
 		}
@@ -217,7 +217,7 @@
 		.ConfigurationAPI-popUpDialog-bitmap-numbers-colBottom div{
 			text-align: center;
 		}
-		
+
 		.ConfigurationAPI-popUpDialog-bitmap-btnInput {
 			padding: 1px;
 		}
@@ -226,20 +226,20 @@
 			border: 1px solid black;
 			border-radius: 3px;
 		}
-		
+
 		.ConfigurationAPI-popUpDialog-bitmap-number {
 			font-size: 12px;
 			position: absolute;
 			z-index: 1;
 		}
-		
-		
+
+
 		.ConfigurationAPI-EditableField {
 			cursor: pointer;
 			white-space: nowrap;
 			width: 10000px; /* big number so that nowrap works even for small spaces */
 		}
-		
+
 		.ConfigurationAPI-EditableField .editableFieldNode {
 			margin-left: 		30px;
 			float:				left;
@@ -255,12 +255,12 @@
 			position:			absolute;
 		}
 
-		.ConfigurationAPI-EditableField .editableFieldNode-Value {			
+		.ConfigurationAPI-EditableField .editableFieldNode-Value {
 			float:				left;
 		}
-		
 
-		.ConfigurationAPI-EditableField .editableFieldNode-Value-editIcon {			
+
+		.ConfigurationAPI-EditableField .editableFieldNode-Value-editIcon {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
 			width: 				24px;
 			height: 			20px;
@@ -273,20 +273,18 @@
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 			cursor: 			pointer;
 		}
-		
+
 		.ConfigurationAPI-EditableField-SelectedField {
 			background-color:	red;
 		}
-		
+
 		.ConfigurationAPI-EditableField .editableFieldNode-ChildLink-SubConfigLink {
 			margin-top:			3px;
 			font-size: 			12px;
 			text-decoration:	underline;
 			color:				rgb(44, 44, 187);
 			cursor:				pointer;
-		}				
+		}
 		.editableFieldNode-Value-leafNode {
 			cursor: crosshair;
 		}
-		
-		

@@ -10,6 +10,7 @@
 #include <stdio.h>     //for file rename
 #include <sys/stat.h>  //for mkdir
 #include <cstdio>
+#include <filesystem>  //for std::filesytem
 #include <fstream>
 #include <thread>  //for std::thread
 #include "otsdaq/TableCore/TableGroupKey.h"
@@ -174,8 +175,8 @@ void MacroMakerSupervisor::destroy(void)
 }
 
 //==============================================================================
-// forceSupervisorPropertyValues
-//		override to force supervisor property values (and ignore user settings)
+/// forceSupervisorPropertyValues
+///		override to force supervisor property values (and ignore user settings)
 void MacroMakerSupervisor::forceSupervisorPropertyValues() {
 }  // end forceSupervisorPropertyValues()
 
@@ -418,8 +419,8 @@ void MacroMakerSupervisor::requestIcons(xgi::Input* in, xgi::Output* out)
 }  // end requestIcons()
 
 //==============================================================================
-// xoap::supervisorSequenceCheck
-//	verify cookie
+/// xoap::supervisorSequenceCheck
+///	verify cookie
 xoap::MessageReference MacroMakerSupervisor::supervisorSequenceCheck(
     xoap::MessageReference message)
 {
@@ -456,8 +457,8 @@ xoap::MessageReference MacroMakerSupervisor::supervisorSequenceCheck(
 }  //end supervisorSequenceCheck()
 
 //==============================================================================
-// RemoteControlWorkLoop
-//	child thread
+/// RemoteControlWorkLoop
+///	child thread
 void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSupervisor)
 {
 	// ConfigurationTree configLinkNode = theSupervisor->CorePropertySupervisorBase::getSupervisorTableNode();
@@ -565,7 +566,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					std::stringstream out;
 					xmldoc.outputXmlDocument((std::ostringstream*)&out,
 					                         false /*dispStdOut*/,
-					                         false /*allowWhiteSpace*/);
+					                         true /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
 					sock.acknowledge(out.str(), true /* verbose */);
 				}
@@ -598,19 +599,19 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 }  // end RemoteControlWorkLoop()
 
 //==============================================================================
-// requestWrapper ~
-//	wrapper for handling very-specialized MacroMaker mode Supervisor request call
+/// requestWrapper ~
+///	wrapper for handling very-specialized MacroMaker mode Supervisor request call
 void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 {
 	// use default wrapper if not Macro Maker mode
 	if(!CorePropertySupervisorBase::allSupervisorInfo_.isMacroMakerMode())
 	{
-		//__SUP_COUT__ << "Default request wrapper" << __E__;
+		__SUP_COUTT__ << "Default request wrapper" << __E__;
 		return CoreSupervisorBase::requestWrapper(in, out);
 	}
 	// else very specialized Macro Maker mode!
 
-	//__SUP_COUT__ << "MacroMaker mode request handler!" << __E__;
+	__SUP_COUTT__ << "MacroMaker mode request handler!" << __E__;
 
 	// checkSupervisorPropertySetup();
 
@@ -634,8 +635,8 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 
 	std::string requestType = CgiDataUtilities::getData(cgiIn, "RequestType");
 
-	//__SUP_COUT__ << "requestType " << requestType << " files: " <<
-	//		cgiIn.getFiles().size() << __E__;
+	__SUP_COUT_TYPE__(TLVL_DEBUG + 10) << __COUT_HDR__ << "requestType " << requestType
+	                                   << " files: " << cgiIn.getFiles().size() << __E__;
 
 	HttpXmlDocument           xmlOut;
 	WebUsers::RequestUserInfo userInfo(
@@ -693,6 +694,7 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	{
 		// call derived class' request()
 		request(requestType, cgiIn, xmlOut, userInfo);
+		__SUP_COUTT__ << "Request '" << requestType << "' complete." << __E__;
 	}
 	catch(const std::runtime_error& e)
 	{
@@ -729,11 +731,11 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 		{
 			__SUP_COUT_ERR__ << "'" << requestType << "' ERROR encountered: " << err
 			                 << __E__;
-			__SUP_COUT_ERR__ << "'" << requestType << "' ERROR encountered: " << err
-			                 << __E__;
 			err = xmlOut.getMatchingValue("Error", occurance++);
 		}
 	}
+
+	__SUP_COUTVS__(10, userInfo.NoXmlWhiteSpace_);
 
 	// return xml doc holding server response
 	xmlOut.outputXmlDocument((std::ostringstream*)out,
@@ -803,7 +805,7 @@ try
 
 	__SUP_COUTT__ << "Total MacroMaker request time: "
 	              << artdaq::TimeUtils::GetElapsedTime(requestStart) << " = "
-	              << time(0) - requestStartTime << __E__;
+	              << time(0) - requestStartTime << " seconds" << __E__;
 }  // end request()
 catch(const std::runtime_error& e)
 {
@@ -886,8 +888,8 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 		getFEMacroSequence(xmldoc, cgi, userInfo.username_);
 	else if(Command == "deleteFEMacroSequence")
 		deleteFEMacroSequence(cgi, userInfo.username_);
-	//else if (Command == "runFEMacroSequence")
-	//	runFEMacroSequence(xmldoc, cgi, userInfo.username_);
+	else if(Command == "makeSequencePublic")
+		makeSequencePublic(cgi, userInfo.username_);
 	else
 		xmldoc.addTextElementToData("Error", "Unrecognized command '" + Command + "'");
 }  // end handleRequest()
@@ -1453,13 +1455,13 @@ void MacroMakerSupervisor::createMacro(HttpXmlDocument& /*xmldoc*/,
 }  // end createMacro()
 
 //==============================================================================
-// loadMacro
-//	Load macro string from file.
-//	look in public macros and username (if given)
-//	for the macroName.
-//
-//	If found, return by reference
-//	Else, throw exception
+/// loadMacro
+///	Load macro string from file.
+///	look in public macros and username (if given)
+///	for the macroName.
+///
+///	If found, return by reference
+///	Else, throw exception
 void MacroMakerSupervisor::loadMacro(const std::string& macroName,
                                      std::string&       macroString,
                                      const std::string& username /*=""*/)
@@ -1761,6 +1763,7 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
                                                 const std::string& username)
 {
+	__COUTT__ << "loadFEMacroSequences for " << username << __E__;
 	DIR*           dir;
 	struct dirent* ent;
 	std::string    fullPath  = (std::string)MACROS_SEQUENCE_PATH + username + "/";
@@ -1776,7 +1779,7 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 			if(read.is_open())
 			{
 				read.close();
-				sequences = sequences + ent->d_name + ";";
+				sequences += ent->d_name + std::string(";");
 			}
 			else
 				__SUP_COUT__ << "Unable to open file" << __E__;
@@ -1786,7 +1789,36 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 	else
 	{
 		__SUP_COUT__ << "Looping through MacroSequence/" + username +
-		                    " folder failed! Wrong directory"
+		                    " folder failed! Invalid directory."
+		             << __E__;
+	}
+
+	//always add admin sequences (as "public")
+	fullPath = (std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/";
+
+	if((dir = opendir(fullPath.c_str())) != NULL)
+	{
+		/* print all the files and directories within directory */
+		while((ent = readdir(dir)) != NULL)
+		{
+			std::string   line;
+			std::ifstream read(
+			    ((fullPath + (std::string)ent->d_name)).c_str());  // reading a file
+			if(read.is_open())
+			{
+				read.close();
+				sequences += ent->d_name + std::string(";");
+			}
+			else
+				__SUP_COUT__ << "Unable to open file" << __E__;
+		}
+		closedir(dir);
+	}
+	else
+	{
+		__SUP_COUT__ << "Looping through MacroSequence/" +
+		                    WebUsers::DEFAULT_ADMIN_USERNAME +
+		                    " folder failed! Invalid directory."
 		             << __E__;
 	}
 
@@ -1858,8 +1890,42 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
 	}
 	else
 	{
-		__SUP_COUT__ << "Unable to open " << fullPath << "!" << __E__;
-		xmldoc.addTextElementToData("error", "ERROR");
+		__SUP_COUT__ << "Unable to open " << fullPath << "! Trying public area..."
+		             << __E__;
+
+		//attempt to load from admin "public" area
+		std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
+		                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" +
+		                             sequenceName + ".dat";
+		__SUP_COUT__ << publicFullPath << __E__;
+
+		std::ifstream      read(publicFullPath.c_str());  // reading the file
+		char*              response;
+		unsigned long long fileSize;
+
+		if(read.is_open())
+		{
+			read.seekg(0, std::ios::end);
+			fileSize           = read.tellg();
+			response           = new char[fileSize + 1];
+			response[fileSize] = '\0';
+			read.seekg(0, std::ios::beg);
+
+			// read data as a block:
+			read.read(response, fileSize);
+			read.close();
+
+			xmldoc.addTextElementToData("FEsequence", &response[0]);
+
+			delete[] response;
+		}
+		else
+		{
+			__SUP_COUT__ << "Unable to open " << fullPath << " and " << publicFullPath
+			             << "!" << __E__;
+
+			xmldoc.addTextElementToData("error", "ERROR");
+		}
 	}
 }  //end getFEMacroSequence()
 
@@ -1877,7 +1943,39 @@ void MacroMakerSupervisor::deleteFEMacroSequence(cgicc::Cgicc&      cgi,
 	__SUP_COUT__ << fullPath << __E__;
 
 	std::remove(fullPath.c_str());
-	__SUP_COUT__ << "Successfully deleted " << fullPath;
+	__SUP_COUT__ << "Successfully deleted " << fullPath << __E__;
+}  //end deleteFEMacroSequence()
+
+//==============================================================================
+void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
+                                              const std::string& username)
+{
+	std::string sequenceName = CgiDataUtilities::getData(cgi, "name");
+
+	__SUP_COUTV__(sequenceName);
+
+	// access to the file
+	std::string source =
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + sequenceName + ".dat";
+	__SUP_COUT__ << source << __E__;
+	std::string destination = (std::string)MACROS_SEQUENCE_PATH +
+	                          WebUsers::DEFAULT_ADMIN_USERNAME + "/" + sequenceName +
+	                          ".dat";
+	__SUP_COUT__ << destination << __E__;
+
+	if(std::filesystem::exists(destination))
+	{
+		__SUP_SS__ << "The sequence name '" << sequenceName
+		           << "' already exists in the admin/public location: " << destination
+		           << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	//copy if file does not already exist
+	std::filesystem::copy_file(
+	    source, destination, std::filesystem::copy_options::skip_existing);
+	__SUP_COUT__ << "Successfully made " << sequenceName
+	             << " public at path: " << destination << __E__;
 }  //end deleteFEMacroSequence()
 
 //==============================================================================
@@ -2473,7 +2571,7 @@ void MacroMakerSupervisor::exportMacro(HttpXmlDocument&   xmldoc,
 }  // end exportMacro()
 
 //==============================================================================
-// createCode
+/// createCode
 void MacroMakerSupervisor::createCode(std::ostream&                   out,
                                       const std::vector<std::string>& commands,
                                       const std::string&              tabOffset,
@@ -2737,8 +2835,8 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 }  // end createCode()
 
 //==============================================================================
-// isArgumentVariable
-//	returns true if string should be interpreted as a variable for MacroMaker
+/// isArgumentVariable
+///	returns true if string should be interpreted as a variable for MacroMaker
 bool MacroMakerSupervisor::isArgumentVariable(const std::string& argumentString)
 {
 	for(unsigned int i = 0; i < argumentString.length(); ++i)
@@ -2752,15 +2850,15 @@ bool MacroMakerSupervisor::isArgumentVariable(const std::string& argumentString)
 	return false;
 }  // end isArgumentVariable()
 //==============================================================================
-// generateHexArray
-//	returns a char array initializer
-//	something like this
-//	"[8] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x09};"
-//		..depending a size of source string
-//
-// FIXME -- identify variables in a better way from macromaker...!
-//	for now just assume a non hex is a variable name
-//	return -1 size
+/// generateHexArray
+///	returns a char array initializer
+///	something like this
+///	"[8] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x09};"
+///		..depending a size of source string
+///
+/// FIXME -- identify variables in a better way from macromaker...!
+///	for now just assume a non hex is a variable name
+///	return -1 size
 std::string MacroMakerSupervisor::generateHexArray(const std::string& sourceHexString,
                                                    int&               numOfBytes)
 {
@@ -2800,7 +2898,7 @@ std::string MacroMakerSupervisor::generateHexArray(const std::string& sourceHexS
 	__SUP_COUT__ << retSs.str() << __E__;
 
 	return retSs.str();
-}
+}  //end generateHexArray()
 
 //==============================================================================
 void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&                 xmldoc,
@@ -2808,7 +2906,89 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&                 xmldoc,
                                       const WebUsers::RequestUserInfo& userInfo)
 try
 {
-	__SUP_COUT__ << __E__;
+	__SUP_COUTT__ << __E__;
+
+	uint64_t NotDoneID = CgiDataUtilities::getDataAsUint64_t(cgi, "NotDoneID");
+	if(NotDoneID)
+	{
+		__SUP_COUT__ << "Checking if recent FE macro run has completed for NotDoneID = "
+		             << NotDoneID << __E__;
+
+		for(const auto& feMacroRunThreadStruct : feMacroRunThreadStruct_)
+			__SUP_COUTT__ << "[] threadID_ = "
+			              << feMacroRunThreadStruct.parameters_.threadID_ << __E__;
+
+		time_t now      = time(0);
+		size_t target_i = -1;
+		for(size_t i = 0; i < feMacroRunThreadStruct_.size(); ++i)
+		{
+			if(feMacroRunThreadStruct_[i].parameters_.threadID_ == NotDoneID)
+			{
+				//found
+				__SUP_COUTT__ << "Found NotDoneID = " << NotDoneID << __E__;
+				target_i = i;
+			}
+			else if(feMacroRunThreadStruct_[i].feMacroRunDone_ &&
+			        now - feMacroRunThreadStruct_[i].parameters_.doneTime_ >
+			            5 * 60 * 60 /* 5 minutes*/)
+			{
+				__SUP_COUTT__ << "Cleaning up completed NotDoneID = " << NotDoneID
+				              << __E__;
+				//clean up old structs
+				feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
+				--i;  //rewind
+			}
+			else if(now - feMacroRunThreadStruct_[i].parameters_.startTime_ >
+			        5 * 60 * 60 /* 5 minutes*/)
+			{
+				__SUP_COUT_WARN__
+				    << "Found old FE Macro exectution of '"
+				    << feMacroRunThreadStruct_[i].parameters_.macroName_ << "' at '"
+				    << feMacroRunThreadStruct_[i].parameters_.feUIDSelected_ << ".'"
+				    << __E__;
+			}
+		}
+
+		if(target_i >= feMacroRunThreadStruct_.size())
+		{
+			__SUP_SS__
+			    << "Attempted to check recent FE Macro run completion with invalid ID="
+			    << NotDoneID
+			    << ". Perhaps this FE Macro completed more than 5 minutes ago?" << __E__;
+			__SUP_SS_THROW__;
+		}
+
+		if(feMacroRunThreadStruct_[target_i].feMacroRunDone_)
+		{
+			__SUP_COUT__ << "Found done for NotDoneID = " << NotDoneID << __E__;
+
+			if(feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_ != "")
+			{
+				__SUP_SS__
+				    << feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_;
+				__SUP_SS_THROW__;
+			}
+			//copy result back to user
+			if(TTEST(1))
+			{
+				std::ostringstream oss;
+				feMacroRunThreadStruct_.back().parameters_.xmldoc_.outputXmlDocument(
+				    &oss);
+				__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+			}
+			xmldoc.copyDataChildren(
+			    feMacroRunThreadStruct_[target_i].parameters_.xmldoc_);
+			__SUP_COUT__ << "FE macro complete." << __E__;
+		}
+		else
+		{
+			__SUP_COUT__ << "Found still going for NotDoneID = " << NotDoneID << __E__;
+			//return same NotDoneID to user for future check
+			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
+		}
+
+		return;
+	}  //end done checking for done long duration FE Macro
 
 	std::string feClassSelected = CgiDataUtilities::getData(cgi, "feClassSelected");
 	std::string feUIDSelected =
@@ -2820,17 +3000,133 @@ try
 	std::string outputArgs  = CgiDataUtilities::postData(cgi, "outputArgs");
 	bool        saveOutputs = CgiDataUtilities::getDataAsInt(cgi, "saveOutputs") == 1;
 
-	runFEMacro(xmldoc,
-	           feClassSelected,
-	           feUIDSelected,
-	           macroType,
-	           macroName,
-	           inputArgs,
-	           outputArgs,
-	           saveOutputs,
-	           userInfo.username_,
-	           StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
-}
+	__SUP_COUTTV__(feClassSelected);
+	__SUP_COUTTV__(feUIDSelected);
+	__SUP_COUTTV__(macroType);
+	__SUP_COUTTV__(macroName);
+	__SUP_COUTTV__(inputArgs);
+	__SUP_COUTTV__(outputArgs);
+	__SUP_COUTTV__(saveOutputs);
+	__SUP_COUTTV__(userInfo.username_);
+	__SUP_COUTTV__(StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+
+	feMacroRunThreadStruct_.emplace_back(  //runFEMacroStruct constructor
+	    xmldoc,
+	    feClassSelected,
+	    feUIDSelected,
+	    macroType,
+	    macroName,
+	    inputArgs,
+	    outputArgs,
+	    saveOutputs,
+	    userInfo.username_,
+	    StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+
+	// Old single-threaded call:
+	// 		runFEMacro(
+	//			  xmldoc,
+	//            feClassSelected,
+	//            feUIDSelected,
+	//            macroType,
+	//            macroName,
+	//            inputArgs,
+	//            outputArgs,
+	//            saveOutputs,
+	//            userInfo.username_,
+	//            StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+
+	std::thread t(
+	    [](runFEMacroStruct* s, MacroMakerSupervisor* mm) {
+		    MacroMakerSupervisor::runFEMacroThread(s, mm);
+	    },
+	    &feMacroRunThreadStruct_.back(),
+	    this);
+
+	size_t sleepTime = 10 * 1000;  //10ms
+	usleep(sleepTime);
+	//if not done in 5 seconds, track in "not-done" queue
+	for(int i = 0; i < 6; ++i)
+	{
+		if(feMacroRunThreadStruct_.back().feMacroRunDone_)
+		{
+			__SUP_COUTT__ << "FE macro marked done" << __E__;
+			break;
+		}
+		else
+		{
+			__SUP_COUTT__ << "FE macro not done, sleeping..." << __E__;
+			sleepTime *= 5;  //50ms, 250ms, 1s
+			if(sleepTime > 1000 * 1000 /* seconds*/)
+				sleepTime = 1000 * 1000;  //max 1 sec
+			usleep(sleepTime);
+		}
+	}  //end wait loop
+
+	if(!feMacroRunThreadStruct_.back().feMacroRunDone_)  //macro not done...
+	{
+		if(t.get_id() == std::thread::id())
+		{
+			__SUP_SS__ << "Invalid thread ID. Contact system admins!" << __E__;
+			__SUP_SS_THROW__;
+		}
+		feMacroRunThreadStruct_.back().parameters_.threadID_ =
+		    std::hash<std::thread::id>{}(t.get_id());
+
+		if(feMacroRunThreadStruct_.back().parameters_.threadID_ == 0)
+		{
+			__SUP_SS__ << "Invalid thread ID hash. Contact system admins!" << __E__;
+			__SUP_SS_THROW__;
+		}
+
+		__SUP_COUT__ << "FE macro not done, detaching thread="
+		             << feMacroRunThreadStruct_.back().parameters_.threadID_ << __E__;
+		t.detach();
+		xmldoc.addNumberElementToData(
+		    "NotDoneID", feMacroRunThreadStruct_.back().parameters_.threadID_);
+
+		if(TTEST(1))
+		{
+			std::ostringstream oss;
+			xmldoc.outputXmlDocument(
+			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
+			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+		}
+	}
+	else  //macro done!
+	{
+		__SUP_COUTT__ << "FE macro marked done - joining threads." << __E__;
+		t.join();  //make sure thread fully complete
+		if(feMacroRunThreadStruct_.back().parameters_.feMacroRunError_ != "")
+		{
+			__SUP_SS__ << feMacroRunThreadStruct_.back().parameters_.feMacroRunError_;
+			__SUP_SS_THROW__;
+		}
+		//copy result back to user
+		if(TTEST(1))
+		{
+			std::ostringstream oss;
+			feMacroRunThreadStruct_.back().parameters_.xmldoc_.outputXmlDocument(
+			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
+			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+		}
+		xmldoc.copyDataChildren(feMacroRunThreadStruct_.back().parameters_.xmldoc_);
+
+		if(TTEST(1))
+		{
+			std::ostringstream oss;
+			xmldoc.outputXmlDocument(
+			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
+			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+		}
+
+		feMacroRunThreadStruct_.pop_back();  //drop the completed struct
+		__SUP_COUT__ << "FE macro complete." << __E__;
+	}
+	for(const auto& feMacroRunThreadStruct : feMacroRunThreadStruct_)
+		__SUP_COUTT__ << "[] threadID_ = " << feMacroRunThreadStruct.parameters_.threadID_
+		              << __E__;
+
+}  //end runFEMacro()
 catch(const std::runtime_error& e)
 {
 	__SUP_SS__ << "Error processing FE communication request: " << e.what() << __E__;
@@ -2855,6 +3151,61 @@ catch(...)
 
 	xmldoc.addTextElementToData("Error", ss.str());
 }  // end runFEMacro() catch
+
+//==============================================================================
+/// static thread version of runFEMacro
+void MacroMakerSupervisor::runFEMacroThread(runFEMacroStruct*     feMacroRunThreadStruct,
+                                            MacroMakerSupervisor* mmSupervisor)
+try
+{
+	__COUT__ << "runFEMacro thread started... threadid = " << std::this_thread::get_id()
+	         << " " << mmSupervisor << " getpid()=" << getpid()
+	         << " gettid()=" << gettid() << __E__;
+
+	mmSupervisor->runFEMacro(feMacroRunThreadStruct->parameters_.xmldoc_,
+	                         feMacroRunThreadStruct->parameters_.feClassSelected_,
+	                         feMacroRunThreadStruct->parameters_.feUIDSelected_,
+	                         feMacroRunThreadStruct->parameters_.macroType_,
+	                         feMacroRunThreadStruct->parameters_.macroName_,
+	                         feMacroRunThreadStruct->parameters_.inputArgs_,
+	                         feMacroRunThreadStruct->parameters_.outputArgs_,
+	                         feMacroRunThreadStruct->parameters_.saveOutputs_,
+	                         feMacroRunThreadStruct->parameters_.runningUsername_,
+	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_);
+
+	feMacroRunThreadStruct->parameters_.doneTime_ = time(0);
+	feMacroRunThreadStruct->feMacroRunDone_       = true;
+	__COUT__ << "runFEMacro thread done. threadid = " << std::this_thread::get_id()
+	         << __E__;
+
+}  //end static runFEMacroThread()
+catch(const std::runtime_error& e)
+{
+	__SS__ << "Error during runFEMacro thread: " << e.what() << __E__;
+	__COUT_ERR__ << ss.str();
+	feMacroRunThreadStruct->parameters_.feMacroRunError_ = ss.str();
+	feMacroRunThreadStruct->parameters_.doneTime_        = time(0);
+	feMacroRunThreadStruct->feMacroRunDone_              = true;
+}
+catch(...)
+{
+	__SS__ << "Unknown error during runFEMacro thread." << __E__;
+	try
+	{
+		throw;
+	}  //one more try to printout extra info
+	catch(const std::exception& e)
+	{
+		ss << "Exception message: " << e.what();
+	}
+	catch(...)
+	{
+	}
+	__COUT_ERR__ << ss.str();
+	feMacroRunThreadStruct->parameters_.feMacroRunError_ = ss.str();
+	feMacroRunThreadStruct->parameters_.doneTime_        = time(0);
+	feMacroRunThreadStruct->feMacroRunDone_              = true;
+}  // end static runFEMacroThread() catch
 
 //==============================================================================
 void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
@@ -3065,7 +3416,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				ss << "\n\n The error was:\n\n" << error << __E__;
 				__SUP_COUT_ERR__ << "\n" << ss.str();
 				xmldoc.addTextElementToData("Error", ss.str());
-
 				return;
 			}
 
@@ -3207,6 +3557,4 @@ void MacroMakerSupervisor::getFEMacroList(HttpXmlDocument&   xmldoc,
 			xmldoc.addTextElementToData(i ? "PrivateMacro" : "PublicMacro",
 			                            xmlMacroStream.str());
 		}
-
-	return;
-}
+}  //end getFEMacroList()

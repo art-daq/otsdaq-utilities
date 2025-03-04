@@ -32,7 +32,7 @@ class VisualDataManagerV2 : public DataManager
 	void stop(void) override;
 
 	void load(std::string fileName, std::string type);
-	// Getters
+	/// Getters
 	DQMHistosBase* getLiveDQMHistos(void);
 	DQMHistosBase& getFileDQMHistos(void);
 	// const Visual3DEvents&   getVisual3DEvents   (void);

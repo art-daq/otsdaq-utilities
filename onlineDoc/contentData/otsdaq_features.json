@@ -8,17 +8,17 @@
 		"keywords" 		: ["State Machine","FSM","Finite State Machine","State","Transition"],
 		"links"			: ["State Machine"]
 	 }
-	 
+
 	 ],
-	
-	
-	"horizon_features" 	: 
+
+
+	"horizon_features" 	:
 	[
 	 {
 		"name" 			: "Application Status Management",
 		"keywords" 		: ["Status","Application","DQM","Quality","Management"],
-		"links"			: ["State Machine"]		
+		"links"			: ["State Machine"]
 	 }
-	 
-	 ]	
+
+	 ]
 }

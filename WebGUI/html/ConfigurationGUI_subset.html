@@ -1,10 +1,10 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 <head>
 	<title>ConfigurationGUI</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
-		
+
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationGUI.css">
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
 
@@ -12,17 +12,17 @@
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
 
-	<style type="text/css">			
-		
+	<style type="text/css">
+
 		body {
-			/*overflow: hidden; /* scrolling only happens in left and right panes */			
+			/*overflow: hidden; /* scrolling only happens in left and right panes */
 		}
 
 		/* make buttons have a hand cursor */
 		input[type="button"], button {
 			cursor: pointer;
 		}
-		
+
 		.pane {
 			border: 0;
 			position: absolute;
@@ -36,9 +36,9 @@
 			/*background-color : rgb(241, 231, 231);*/
 			overflow-x: auto;
 			overflow-y: auto;
-			
-		    border-top: 1px solid rgb(224, 196, 196);
-						
+
+			border-top: 1px solid rgb(224, 196, 196);
+
 		}
 		#rightPane {
 			background-color : rgb(241, 231, 231);
@@ -49,21 +49,21 @@
 					rgba(200, 200, 200,0.6) 0 .1em 3px,
 					rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 					rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-			border-radius: 3px;	
+			border-radius: 3px;
 		}
-		
 
-    	/* for mouse over highlighting */
-		.myOption:hover 
+
+		/* for mouse over highlighting */
+		.myOption:hover
 		{
-            background-color : rgb(241, 231, 231);
-		}    
+			background-color : rgb(241, 231, 231);
+		}
 		#recordMultiSelect .optionhighlighted:hover,
 		.groupFilterMultiSelect .optionhighlighted:hover
 		{
 			background-color : rgb(11, 66, 138);
 		}
-		
+
 		.recordAdd {
 			text-decoration: none;
 			font-size: 30px;
@@ -74,14 +74,14 @@
 			text-decoration: none;
 			color: rgb(16, 204, 16);
 		}
-		
+
 		#recordsNameDiv {
 			float: left;
 			font-size: 20px;
 		}
-		
+
 		#copyRecordsDiv {
-	    	margin: 			-7px 10px 0px 15px;
+			margin: 			-7px 10px 0px 15px;
 			float: 				left;
 		}
 		#copyRecordsDiv:hover {
@@ -92,20 +92,20 @@
 			width:				10px;
 			height:				11px;
 			float: 				left;
-		    border-radius: 		2px;
+			border-radius: 		2px;
 		}
 		#copyRecordsDiv:hover * {
-			border: 			2px solid rgb(119, 126, 204);			
+			border: 			2px solid rgb(119, 126, 204);
 		}
 		#copyRecordsDiv:hover #copyRecordsSubdiv2 {
-			background-color:	white;		
+			background-color:	white;
 		}
 		#copyRecordsSubdiv1 {
 			margin: 			6px 0px -20px -10px;
 		}
 		#copyRecordsSubdiv2 {
 			margin: 			10px 0px -20px -19px;
-			background-color:	rgb(200,200,200);	
+			background-color:	rgb(200,200,200);
 		}
 		#editRecordNameDiv {
 			margin: 			-1px 10px 4px 29px;
@@ -113,21 +113,21 @@
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
 			width: 				24px;
 			height: 			20px;
-		}	
+		}
 		#editRecordNameDiv:hover {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 			cursor: 			pointer;
 		}
 		#recordAddDiv {
-	    	margin: 			-7px 16px 0 10px;
+			margin: 			-7px 16px 0 10px;
 			float: 				left;
 		}
 		#recordDeleteDiv{
 			margin: 			-1px 20px 0 0;
 			float: 				left;
 		}
-		
-		.treeNode-deleteIcon {			
+
+		.treeNode-deleteIcon {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 				16px;
 			height: 			20px;
@@ -139,7 +139,7 @@
 			cursor: 			pointer;
 		}
 
-		.preloadImage {			
+		.preloadImage {
 			width: 				24px;
 			height: 			20px;
 			position:			absolute;
@@ -149,24 +149,24 @@
 		#preloadImage-treeEditTrashIconHover {
 			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
 		}
-		
+
 	</style>
-	
-	
-	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
-	
-	<script>		
-		
+
+	<script>
+
 		//	Description of Configuration-Subset Functionality/Behavior:
-		//	
+		//
 		//	GET parameters:
 		//		<subsetBasePath> = Records at this path are the target of this GUI, e.g. “FEInterfaceConfiguration”
 		//		<groupingFieldList> = CSV list of tree paths relative to <baseTable>, e.g. “LinkToFETypeConfiguration,FEInterfacePluginName”
-		//									- these are the fields that can be used to filter UID records by (and these will cause grouping in square-view)	
+		//									- these are the fields that can be used to filter UID records by (and these will cause grouping in square-view)
 		//		<editableFieldList> = empty string or "DEFAULT" for all, or CSV list of fields to show for editing
 		//		<recordPreFilterList> = CSV list (of forced filter) of tree paths relative to <baseTable> and = value, e.g. "LinkToFETypeConfiguration=NIMPlus,FEInterfacePluginName=NIMPlusPlugin"
 		//									- this is like a pre-filter (filter on records UID that user can not control)
@@ -177,11 +177,11 @@
 		//	- Top Pane:
 		//		* for header info (e.g. subsetBasePath)
 		//
-		//	- Split remaining window into two panes: Left and Right; Left is fixed width and hideable.	
-		//	
+		//	- Split remaining window into two panes: Left and Right; Left is fixed width and hideable.
+		//
 		//	- Left Pane:
 		//		* Fixed width, vertical auto scroll, hideable.
-		//		* Filter icon that toggles display of multi-select boxes for each <subLevelGrouping>. 
+		//		* Filter icon that toggles display of multi-select boxes for each <subLevelGrouping>.
 		//		* Filtering:
 		//		 	- AND/OR option if multiple sublevels
 		//			- multi-select for each <subLevelGrouping>
@@ -190,7 +190,7 @@
 		//			- Multi-select box for selection of UID (based on sublevelgrouping filters)
 		//		* Alternatively can represent the detectors as squares (with mouse over UID names)
 		//			- Squares will be grouped by SubLevel using AND logic with a sublevel-label
-		//					
+		//
 		//	- Right Pane:
 		//		* Show toggle Left Pane link
 		//		* Show fields that are common based on SubLevelGrouping filters
@@ -202,64 +202,64 @@
 		//			- A field enters edit mode when pencil is clicked
 		//			- TAB and SHIFT+TAB should jump to next field for editing
 		//		* Buttons at top and bottom: Read All, Write All, Read Selected, Write Selected.
-		//		
-		//	- Save functionality should be same as saving tree	
+		//
+		//	- Save functionality should be same as saving tree
 		//		* TODO:: If admin, could give options to target a certain system alias.. Etc.
 		//		* Else assume saving to currently active groups
 
-		
-				
+
+
 		var _TABLE_BOOL_TYPE_TRUE_COLOR = "rgb(201, 255, 201)";
 		var _TABLE_BOOL_TYPE_FALSE_COLOR = "rgb(255, 178, 178)";
-		
-		
+
+
 		var _leftPane, _rightPane, _topPane;
 		var _leftPaneHidden = false;
-		
+
 		var _rightPaneFields;
 		var _RIGHT_PANE_RW_BTN_HEIGHT = 48;
-		
+
 		var eventListenersCreated = false;
-		
+
 		//global vars for GET params
-		var _subsetBasePath;			
-		var _groupingFieldList;	
-		var _editableFieldList;			
+		var _subsetBasePath;
+		var _groupingFieldList;
+		var _editableFieldList;
 		var _recordPreFilterList;
 		var _recordsAlias;
-		
+
 		var _mapOfGroupFieldToLinkIndex = {};
-		var _selectedGroupFieldValues;	
-		var _selectedGroupIDs;	
-		var _selectedRecords;	
-		
-		//global vars for multiselects				
+		var _selectedGroupFieldValues;
+		var _selectedGroupIDs;
+		var _selectedRecords;
+
+		//global vars for multiselects
 		var _filterValsObj; //for each filter MultiSelect (one for each grouping field), an array of filter values
 		var _subsetUIDs; //array of UIDs defined by the subset selected filterVals in multiselects (based on _subsetBasePath and _recordPreFilterList)
 		var _filterTimer;
 		MultiSelectBox.REQUIRE_CTRL_MULTI_CLICK = true; //require control
-		
+
 		//global vars for fields
 		var _selectedFieldIndex = -1;
-		var _editFieldIndex = -1;	
+		var _editFieldIndex = -1;
 		var _fields;
-		
+
 		//global vars for saving tables
 		var _modifiedTables;
 
 		var _saveFieldValues = {}; //field : value
-		
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
-	
-		//functions:			
+
+		//functions:
 			//init()
-			//paint() 
+			//paint()
 			//extractGETParameters()
 			//initSubsetGlobalData()
 			//runFilter(selectFirstRecord,loadSelectedRecord)
 			//updateRecordsAndFields(selectFirstRecord,loadSelectedRecord)
-		
+
 			//createTopPaneContent()
 			//createLeftPaneContent(leftW)
 			//		localCreateGroupingFieldFilters()
@@ -267,13 +267,13 @@
 			//groupFilterSelectionHandler(el)
 			//createRightPaneContent()
 			//		localAddReadWriteButtons(cel)
-		
+
 			//		getSelectedRecords(forceOne)
 			//btnActionReadAllFields()
 			//btnActionReadOneField()
 			//btnActionWriteAllFields()
 			//btnActionWriteOneField()
-		
+
 			//deleteRecords()
 			//	localProceedWithDelete()
 			//addRecord()
@@ -282,19 +282,19 @@
 			//	localFinishSave()
 			//copyRecords()
 			//	localProceedWithCopy()
-		
-	
+
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
-				
+
 
 		//=====================================================================================
 		//init ~~
 		//	init called once body has loaded
-		function init() 
-		{									
-			Debug.log("CfgGUI_sebset init ");			
-			
+		function init()
+		{
+			Debug.log("CfgGUI_sebset init ");
+
 			//extract get parameters
 			if(!extractGETParameters())
 			{
@@ -314,20 +314,20 @@
 			windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
 
-			//get subset record uids and 
+			//get subset record uids and
 			//	filter values for all possible grouping fields
 			//	calls paint() and adds resize listener when done
 			initSubsetGlobalData();
 				//paint();
 				//window.addEventListener("resize",paint);
-						
+
 		} //end init()
-		
+
 		//=====================================================================================
 		//paint ~~
 		//	positiong left and right panes based on window size
-		function paint() 
-		{	
+		function paint()
+		{
 			var w = DesktopContent.getWindowWidth();
 			var h = DesktopContent.getWindowHeight();
 			//Debug.log("paint w,h=" + w + "," +h);
@@ -338,35 +338,35 @@
 				w = MIN_W;
 			if(h < MIN_H)
 				h = MIN_H;
-			
+
 			Debug.log("paint w,h=" + w + "," +h);
 
 			var TOP_H = 56;
 			var LEFT_W = 400;
-			var BORDER_SZ = 0;			
+			var BORDER_SZ = 0;
 			var MARGIN = 5;
-			
+
 			if(!_leftPane && !_rightPane && !_topPane)
 			{
 				//first time create elements
 				createTopPaneContent();
 				createLeftPaneContent(LEFT_W-2*BORDER_SZ);
 				createRightPaneContent();
-				
+
 				updateRecordsAndFields();
 			}
 
-			
+
 			var y = MARGIN;
 			var x = MARGIN;
 			w -= 2*MARGIN;
 			h -= 2*MARGIN;
-			
+
 			_topPane.style.left = x + "px";
 			_topPane.style.top = y + "px";
 			_topPane.style.width = (w - 2*BORDER_SZ) + "px";
 			_topPane.style.height = (TOP_H - 2*BORDER_SZ) + "px";
-			
+
 			y += TOP_H + MARGIN;
 			h -= TOP_H + MARGIN;
 
@@ -377,7 +377,7 @@
 				_leftPane.style.top = y + "px";
 				_leftPane.style.width = (LEFT_W-2*BORDER_SZ) + "px";
 				_leftPane.style.height = (h - 2*BORDER_SZ) + "px";
-	
+
 				x += LEFT_W + MARGIN;
 				w -= LEFT_W + MARGIN;
 			}
@@ -394,30 +394,30 @@
 			_rightPaneFields.style.height = (h - 20 - //for left pane hide
 					(_RIGHT_PANE_RW_BTN_HEIGHT*2) - //for top/bottom read/write buttons
 					2*BORDER_SZ - 2*MARGIN) + "px";
-						
+
 		}	//end paint()
 
 		//=====================================================================================
 		//updateRecordsAndFields ~~
 		//	update records selector display
 		//		based on _subsetUIDs
-		function updateRecordsAndFields(selectFirstRecord,loadSelectedRecord) 
+		function updateRecordsAndFields(selectFirstRecord,loadSelectedRecord)
 		{
 			var el = document.getElementById("recordMultiSelect");
-			if(!el) {Debug.log("Error: updateRecordsSelector null"); return; } 
-			
+			if(!el) {Debug.log("Error: updateRecordsSelector null"); return; }
+
 			var str;
-			
-			var noMultiSelect = false; // true or false (false for multiselect functionality) 
-			
+
+			var noMultiSelect = false; // true or false (false for multiselect functionality)
+
 			var vals = _subsetUIDs;//["One little piggy","two little piggies","three little piggies"];
 			var keys = [];
 			var types = [];
 			for(var j=0;j<vals.length;++j)
 			{
 				keys.push(j);
-				types.push("record");								
-			}				
+				types.push("record");
+			}
 
 			str = "";
 
@@ -433,29 +433,29 @@
 			str += "+";
 			str += "</a>";
 			str += "</div>";
-			
+
 			//add copy boxes icon
 			str += "<div id='copyRecordsDiv' " +
 					" title='Copy one or more selected " + _recordsAlias + " records.'" +
 					" onclick='copyRecords(); return false;' " +
 					"><div id='copyRecordsSubdiv1'></div>" +
 					"<div id='copyRecordsSubdiv2'></div></div>";
-			
+
 			//add edit pencil icon
 			str += "<div id='editRecordNameDiv' class='editableFieldNode-Value-editIcon' " +
 					" title='Edit the name of the selected " + _recordsAlias + " record.'" +
 					" onclick='renameRecord(); return false;' " +
 					"></div>";
-			
+
 			//delete record
 			str += "<div id='recordDeleteDiv' class='treeNode-deleteIcon' ";
 			str += "onclick='deleteRecords(); return false;' " +
-					"title='Delete the selected one or more " + _recordsAlias + " records.'" +					
+					"title='Delete the selected one or more " + _recordsAlias + " records.'" +
 					">";
 			str += "</div>";
-			
-			
-			
+
+
+
 
 			//write MultiSelectBox to a particular div
 			MultiSelectBox.createSelectBox(
@@ -469,7 +469,7 @@
 					0 /* mouseUpHandler */,
 					true /* requireCtrlMultiClick */);
 
-				
+
 			MultiSelectBox.initMySelectBoxes(true /* clearPreviousSelections */, "RecordsGroupBox");
 
 			if(selectFirstRecord && vals.length)
@@ -494,34 +494,34 @@
 							if(selectRecords[j] ==
 									MultiSelectBox.getSelectionElementByIndex(el,k).innerText)
 							{
-								Debug.log("Found pre-select record " + 
+								Debug.log("Found pre-select record " +
 										selectRecords[j]);
-								MultiSelectBox.setSelectionElementByIndex(el,k,true /*selected*/);								
+								MultiSelectBox.setSelectionElementByIndex(el,k,true /*selected*/);
 							}
 						}
 					} //end record search loop
 				}
-				
+
 				MultiSelectBox.initMySelectBoxes(false /* clearPreviousSelections */, "RecordsGroupBox"); //update display of not of all multi-select boxes, only RecordsGroupBox
 			}
-			
+
 			//get grouping field values
 			//	for record list
 			_rightPaneFields.innerHTML = ""; //clear any existing fields (for immediate user feedback)
-			
+
 			if(!vals.length)
 			{
 				Debug.log("No records match filters, so not proceeding with field lookup.");
 				return;
 			}
-			
+
 			ConfigurationAPI.getFieldsOfRecords(
 					_subsetBasePath,
 					_subsetUIDs,
 					_editableFieldList,
 					-1 /*maxDepth*/,
 					function(recordFields)
-					{				
+					{
 				_fields = recordFields;
 				Debug.log("recordFields found = " + recordFields.length);
 				console.log("recordFields", recordFields);
@@ -534,12 +534,12 @@
 					return;
 				}
 
-				//		on success, the array will be an array of Field objects	
+				//		on success, the array will be an array of Field objects
 				//		Field := {}
-				//			obj.fieldTableName 
-				//			obj.fieldUID 
+				//			obj.fieldTableName
+				//			obj.fieldUID
 				//			obj.fieldColumnName
-				//			obj.fieldRelativePath 
+				//			obj.fieldRelativePath
 				//			obj.fieldColumnType
 				//			obj.fieldColumnDataType
 				//			obj.fieldColumnDataChoicesArr[]
@@ -559,11 +559,11 @@
 					el.setAttribute("style", "white-space:nowrap;" +
 							"margin: 5px;");
 					_rightPaneFields.appendChild(el); //add field to field container
-										
+
 					el.appendChild(ConfigurationAPI.createEditableFieldElement(
 							recordFields[i],i,undefined /* depthIndex */,
 							_saveFieldValues[recordFields[i].fieldColumnName] /* initValue */));
-					
+
 					//add clear div
 					el = document.createElement("div");
 					el.setAttribute("id", "clearDiv");
@@ -579,11 +579,11 @@
 					}, //end getFieldsOfRecords handler
 					 _modifiedTables);
 		} //end updateRecordsAndFields()
-		
+
 		//=====================================================================================
 		//extractGETParameters ~~
 		//	return false, if illegal params
-		function extractGETParameters() 
+		function extractGETParameters()
 		{
 			//extract get parameters (most optional)
 			//		<subsetBasePath> 		= Records at this path are the target of this GUI, e.g. "FEInterfaceConfiguration"
@@ -591,20 +591,20 @@
 			//		<selectedGroupFieldValues>	= Pre-chosen selections for grouping field filters
 			//		<editableFieldList> 	= empty string or "DEFAULT" for all, or CSV list of fields to show for editing
 			//		<recordPreFilterList> 	= semicolon-separated list (of forced filter) of tree paths relative to <baseTable> and = value (CSV for multiple values), e.g. "LinkToFETypeConfiguration=NIMPlus;FEInterfacePluginName=NIMPlusPlugin,FEOtsUDPTemplateInterface"
-			//		<selectedRecords> 		= CSV list of pre-chosen record UID selections (this will override default behavior of selecting the first record,.. if only one record is chosen, that record will be loaded) 
+			//		<selectedRecords> 		= CSV list of pre-chosen record UID selections (this will override default behavior of selecting the first record,.. if only one record is chosen, that record will be loaded)
 			//		<recordsAlias> 			= PLURAL Records display name, e.g. "Front-ends"
-			
-			_subsetBasePath		= DesktopContent.getParameter(0,"subsetBasePath");//"FEInterfaceConfiguration"; //DesktopContent.getParameter(0,"subsetBasePath");			
-			_groupingFieldList 	= DesktopContent.getParameter(0,"groupingFieldList"); //"LinkToFETypeConfiguration,FEInterfacePluginName"; //DesktopContent.getParameter(0,"groupingFieldList");			
-			_editableFieldList	= DesktopContent.getParameter(0,"editableFieldList");//"";//DesktopContent.getParameter(0,"editableFieldList");			
+
+			_subsetBasePath		= DesktopContent.getParameter(0,"subsetBasePath");//"FEInterfaceConfiguration"; //DesktopContent.getParameter(0,"subsetBasePath");
+			_groupingFieldList 	= DesktopContent.getParameter(0,"groupingFieldList"); //"LinkToFETypeConfiguration,FEInterfacePluginName"; //DesktopContent.getParameter(0,"groupingFieldList");
+			_editableFieldList	= DesktopContent.getParameter(0,"editableFieldList");//"";//DesktopContent.getParameter(0,"editableFieldList");
 			_recordPreFilterList= DesktopContent.getParameter(0,"recordPreFilterList"); //"";//FEInterfacePluginName=myNewInterface";//DesktopContent.getParameter(0,"recordPreFilterList");
 			_recordsAlias		= DesktopContent.getParameter(0,"recordAlias"); //"Front-ends"; //default to records
-			
-			_selectedGroupFieldValues = DesktopContent.getParameter(0,"selectedGroupFieldValues"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface""; 
-			_selectedGroupIDs 	= DesktopContent.getParameter(0,"selectedGroupIDs"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface""; 
+
+			_selectedGroupFieldValues = DesktopContent.getParameter(0,"selectedGroupFieldValues"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface"";
+			_selectedGroupIDs 	= DesktopContent.getParameter(0,"selectedGroupIDs"); //"ParameterGroupID=myNewInterfaceParameters,myNewInterfaceParameters;FEInterfacePluginName=myNewInterface"";
 			_selectedRecords	= DesktopContent.getParameter(0,"selectedRecords"); //"myNewInterface,myNewInterface2";
-									
-			
+
+
 			if(!_subsetBasePath)
 			{
 				Debug.log("Missing required GET parameter 'subsetBasePath.'",
@@ -615,7 +615,7 @@
 			if(!_editableFieldList) _editableFieldList = "";
 			if(!_recordPreFilterList) _recordPreFilterList = "";
 			if(!_recordsAlias) _recordsAlias = "Records";
-			
+
 			if(!_selectedGroupFieldValues) _selectedGroupFieldValues = "";
 			if(!_selectedGroupIDs) _selectedGroupIDs = "";
 			if(!_selectedRecords) _selectedRecords = "";
@@ -629,17 +629,17 @@
 			Debug.logv({_selectedGroupFieldValues});
 			Debug.logv({_selectedGroupIDs});
 			Debug.logv({_selectedRecords});
-			
+
 			return true;
 		}	//end extractGETParameters()
-		
+
 		//=====================================================================================
 		//initSubsetGlobalData ~~
 		//	fills _subsetUIDs
 		//		array of UIDs defined by the subset (based on _subsetBasePath and _recordPreFilterList)
 		//	fills _filterValsObj
 		//		for each filter MultiSelect (one for each grouping field), an array of filter values
-		function initSubsetGlobalData() 
+		function initSubsetGlobalData()
 		{
 			//get list of records that match <subsetBasePath> AND <recordPreFilterList>
 			_subsetUIDs = []; //reset
@@ -647,7 +647,7 @@
 			_fields = undefined; //reset
 			_modifiedTables = undefined; //reset
 			_mapOfGroupFieldToLinkIndex = {}; //reset
-			
+
 
 			if(_leftPane && _rightPane && _topPane)
 			{
@@ -657,18 +657,18 @@
 				_topPane.parentNode.removeChild(_topPane); //remove element
 				_rightPane.parentNode.removeChild(_rightPane); //remove element
 				_leftPane.parentNode.removeChild(_leftPane); //remove element
-				
+
 			}
 			_topPane = undefined; //reset
 			_rightPane = undefined; //reset
 			_leftPane = undefined; //reset
-						
-			window.clearTimeout(_filterTimer); 
+
+			window.clearTimeout(_filterTimer);
 			_selectedFieldIndex = -1;
 			_editFieldIndex = -1;
-			
-			
-			
+
+
+
 			ConfigurationAPI.getSubsetRecords(
 					_subsetBasePath,
 					_recordPreFilterList,
@@ -677,12 +677,12 @@
 				_subsetUIDs = records;
 				Debug.log("records found = " + records.length);
 				console.log(records);
-				
+
 				//groupingFieldList = AUTO is special key word
 				//	if AUTO, then server picks filter fields (usually 3, with preference
 				//	for GroupID, On/Off, and FixedChoice fields.
 				console.log("_groupingFieldList = " + _groupingFieldList);
-				
+
 				ConfigurationAPI.getUniqueFieldValuesForRecords(
 						_subsetBasePath,
 						records,
@@ -692,7 +692,7 @@
 					_filterValsObj = uniqueValues;
 					Debug.log("uniqueValue sets found = " + uniqueValues.length);
 					console.log("uniqueValues",uniqueValues);
-					
+
 					if(_groupingFieldList == "AUTO")
 					{
 						//groupingFieldList = AUTO is special key word
@@ -707,66 +707,66 @@
 						}
 						Debug.log("_groupingFieldList converted from auto: " + _groupingFieldList);
 					}
-					
+
 					//create map of group field to child link index
 					for(var i=0;i<_filterValsObj.length;++i)
 						if(_filterValsObj[i].childLinkIndex)
-							_mapOfGroupFieldToLinkIndex[_filterValsObj[i].fieldName] = 
+							_mapOfGroupFieldToLinkIndex[_filterValsObj[i].fieldName] =
 									_filterValsObj[i].childLinkIndex;
 					console.log("_mapOfGroupFieldToLinkIndex",_mapOfGroupFieldToLinkIndex);
-					
+
 					paint();
-										
+
 					if(!eventListenersCreated)
 					{
 						window.addEventListener("resize",paint);
 						eventListenersCreated = true; //prevent multiple event creation
 					}
-					
+
 					localApplyFilterPreSelections();
 					return;
-					
+
 					//now apply filter selections, if any
 					function localApplyFilterPreSelections()
 					{
 						Debug.log("localApplyFilterPreSelections()");
-						
+
 						var groups = _groupingFieldList.split(',');
 						Debug.log("groups length " + groups.length);
-						
+
 						//handle group filter pre-selects
 						var groupSelects = _selectedGroupFieldValues.split(';');
 						Debug.log("groupSelects length " + groupSelects.length);
-						
+
 						for(var i=0;i<groupSelects.length;++i)
 						{
 							var fieldArr = groupSelects[i].split('=');
-							
+
 							if(fieldArr.length < 2) continue; //skip empty selects
-							
+
 							//find group box
 							for(var g=0;g<groups.length;++g)
 							{
 								if(groups[g] == fieldArr[0])
 								{
 									Debug.log("Found pre-select group " + g);
-									
-									
+
+
 									var el = document.getElementById("groupFilterMultiSelect-" + g);
-									
+
 									var selectValues = fieldArr[1].split(',');
 									console.log("selectValues",selectValues);
 									for(var j=0;j<selectValues.length;++j)
 									{
 										//find select val in multi-select values
-										
+
 										var selectVal = decodeURIComponent(selectValues[j]);
 										for(var k=0;k<_filterValsObj[g].fieldUniqueValueArray.length;++k)
 										{
 											if(selectVal ==
 												_filterValsObj[g].fieldUniqueValueArray[k])
 											{
-												Debug.log("Found pre-select value " + 
+												Debug.log("Found pre-select value " +
 														selectVal);
 												MultiSelectBox.setSelectionElementByIndex(el,k,true /*selected*/);
 											}
@@ -776,7 +776,7 @@
 								}
 							}
 						} //end group pre-selects search loop
-						
+
 						//handle GroupID filter pre-selects
 						var groupIDSelects = _selectedGroupIDs.split(';');
 						Debug.log("groupIDSelects length " + groupIDSelects.length);
@@ -809,7 +809,7 @@
 											if(selectVal ==
 													_filterValsObj[g].fieldUniqueValueArray[k])
 											{
-												Debug.log("Found pre-select groupID value " + 
+												Debug.log("Found pre-select groupID value " +
 														selectVal);
 												MultiSelectBox.setSelectionElementByIndex(el,k,true /*selected*/);
 											}
@@ -819,23 +819,23 @@
 								}
 							}
 						} //end group pre-selects search loop
-						
-						
-						//now consider record pre-selects 
-						
+
+
+						//now consider record pre-selects
+
 						var selectRecords = _selectedRecords.split(',');
 						Debug.log("selectRecords length " + selectRecords.length);
 						var loadSelectedRecord = true;
 						var selectFirstRecord = true;
-						
+
 						el = document.getElementById("recordMultiSelect");
-						var currentSelectedRecordsCount = 
+						var currentSelectedRecordsCount =
 							MultiSelectBox.getSelectedCount(el);
-						
+
 						if(currentSelectedRecordsCount == 0 &&
 								selectRecords.length && selectRecords[0].length)
 						{
-							
+
 							loadSelectedRecord = selectRecords.length == 1; //only load record if one chosen
 
 							for(var j=0;j<selectRecords.length;++j)
@@ -847,15 +847,15 @@
 									if(selectRecords[j] ==
 											_subsetUIDs[k])
 									{
-										Debug.log("Found pre-select record " + 
+										Debug.log("Found pre-select record " +
 												selectRecords[j]);
 										MultiSelectBox.setSelectionElementByIndex(el,k,true /*selected*/);
-										
+
 										selectFirstRecord = false; //use record selection instead, and use as indication that a record was found in search
 									}
 								}
 							} //end record search loop
-							
+
 							if(selectFirstRecord) //error! no record found, but parameter had data
 							{
 								Debug.log("Error! Parameter '_selectedRecords' was not empty, " +
@@ -863,7 +863,7 @@
 										Debug.HIGH_PRIORITY);
 								selectFirstRecord = false; //force false anyway, to show more errors
 							}
-							
+
 						} //end record pre-select handling
 						else if(currentSelectedRecordsCount == 1) //leave and load currect selection
 							selectFirstRecord = false;
@@ -874,85 +874,85 @@
 						}
 
 						MultiSelectBox.initMySelectBoxes(); //update display of all multi-select boxes
-						
-						Debug.log("selectFirstRecord,loadSelectedRecord = " + 
+
+						Debug.log("selectFirstRecord,loadSelectedRecord = " +
 								selectFirstRecord + "," + loadSelectedRecord);
-						
+
 						runFilter(selectFirstRecord, loadSelectedRecord);
 					} //end localApplyFilterPreSelections
-						
+
 						}, //end getUniqueFieldValuesForRecords handler
 						 _modifiedTables);
-				
+
 					});
-			
+
 		}	//end initSubsetGlobalData()
-		
+
 		//=====================================================================================
 		//createTopPaneContent ~~
-		function createTopPaneContent() 
+		function createTopPaneContent()
 		{
 			_topPane = document.createElement("div");
 			_topPane.setAttribute("class", "pane");
-			_topPane.setAttribute("id", "topPane");			
-			
+			_topPane.setAttribute("id", "topPane");
+
 			var el;
 			var str;
-			
+
 			el = document.createElement("div");
 			str = "";
 			//str += "<a href='#' onclick='initSubsetGlobalData()'>Refresh</a>";
 			el.innerHTML = str;
-			_topPane.appendChild(el);			
+			_topPane.appendChild(el);
 
 			el = document.createElement("div");
 			el.setAttribute("id", "clearDiv");
 			_topPane.appendChild(el);
-			
+
 			el = document.createElement("div");
 			el.setAttribute("id", "topPane-header");
 			str = "Targeting ";
-			
+
 			if(_recordPreFilterList != "")
 				str += "<b>" + _recordsAlias + "</b> ";
 			else
 				str += "all <b>" + _recordsAlias + "</b> ";
-		
+
 			str += "at path '/" + _subsetBasePath + ",' ";
-			
+
 			if(_recordPreFilterList != "")
 				str += "matching '" + _recordPreFilterList + ",' ";
 			else
 				str += "";
-			
+
 			if(_groupingFieldList != "")
 				str += "filtered by '" + _groupingFieldList + "' ";
 			else
 				str += "";
-			
+
 			if(_selectedGroupFieldValues != "")
 				str += "and filter pre-selections '" + _selectedGroupFieldValues + "' ";
 			if(_selectedGroupIDs != "")
 				str += "and GroupID pre-selections '" + _selectedGroupIDs + "' ";
 
-			
+
 			el.innerHTML = str;
-			_topPane.appendChild(el);			
-			
-			document.body.appendChild(_topPane);			
+			_topPane.appendChild(el);
+
+			document.body.appendChild(_topPane);
 		}	//end createTopPaneContent()
-		
+
 		//=====================================================================================
 		//createLeftPaneContent ~~
-		function createLeftPaneContent(leftW) 
+		function createLeftPaneContent(leftW)
 		{
 			_leftPane = document.createElement("div");
 			_leftPane.setAttribute("class", "pane");
 			_leftPane.setAttribute("id", "leftPane");
-			
+
 			//	- Left Pane:
 			//		* Fixed width, vertical auto scroll, hideable.
-			//		* Filter link that toggles display of multi-select boxes for each <subLevelGrouping>. 
+			//		* Filter link that toggles display of multi-select boxes for each <subLevelGrouping>.
 			//		* Filtering:
 			//		 	- AND/OR option if multiple sublevels
 			//			- multi-select for each <subLevelGrouping>
@@ -961,12 +961,12 @@
 			//			- Multi-select box for selection of UID (based on sublevelgrouping filters)
 			//		* Alternatively can represent the detectors as squares (with mouse over UID names)
 			//			- Squares will be grouped by SubLevel using AND logic with a sublevel-label
-			
+
 			var el;
 			var str;
-						
-						
-						
+
+
+
 			//:::::::::::::::::::::::::::::
 			//localCreateGroupingFieldFilters ~~
 			function localCreateGroupingFieldFilters()
@@ -974,10 +974,10 @@
 				var groups = _groupingFieldList.split(',');
 				Debug.log("_groupingFieldList " + _groupingFieldList);
 				Debug.log("localCreateGroupingFieldFilters groups.length " + groups.length);
-				
+
 				var filterBoxesEl = document.createElement("div");
 				var defaultShowFilters = false;
-				
+
 				//create toggle icon
 				el = document.createElement("a");
 				el.setAttribute("style", "float:left;");
@@ -992,7 +992,7 @@
 						this.innerHTML = "Show Filters";
 						filterBoxesEl.style.display = "none";
 					}
-				};			
+				};
 				el.innerHTML = defaultShowFilters?"Hide Filters":"Show Filters";
 				_leftPane.appendChild(el); //add toggle icon
 
@@ -1000,20 +1000,20 @@
 				el = document.createElement("div");
 				el.setAttribute("id", "clearDiv");
 				_leftPane.appendChild(el);
-				
-				
+
+
 				//create multi-select filter boxes
 				filterBoxesEl.setAttribute("style", "float:left; position:relative; z-index:1"); //background-color:red; //z-index to get above record selection box
 				filterBoxesEl.style.display = defaultShowFilters?"block":"none";
 
 				var H = 150;
 				try //catch errors due to undefined _filterValsObj[i]
-				{					
+				{
 					for(var i=0;i<groups.length;++i)
-					{	
-						//get group values						
+					{
+						//get group values
 						//create multiselect box
-	
+
 						el = document.createElement("div");
 						el.setAttribute("class", "groupFilterMultiSelect");
 						el.setAttribute("id", "groupFilterMultiSelect-" + i);
@@ -1021,31 +1021,31 @@
 								//);
 										//"margin-bottom: 0px;" +
 								"margin: -15px 0 0 0;" +
-								"height:" + H + "px;" + 
+								"height:" + H + "px;" +
 								"width:" + (leftW-25) + "px;");
-						filterBoxesEl.appendChild(el);			
-						
-						var noMultiSelect = false; // true or false (false for multiselect functionality) 
-							
+						filterBoxesEl.appendChild(el);
+
+						var noMultiSelect = false; // true or false (false for multiselect functionality)
+
 						var vals = _filterValsObj[i].fieldUniqueValueArray;//["One little piggy","two little piggies","three little piggies"];
 						var keys = [];
 						var types = [];
 						for(var j=0;j<vals.length;++j)
 						{
 							keys.push(j);
-							types.push(groups[i]);								
-						}				
-	
+							types.push(groups[i]);
+						}
+
 						//write MultiSelectBox to a particular div
 						MultiSelectBox.createSelectBox(el,
 								"FilterGroupBox" + i,
 								"'" + groups[i] + "' Filter:",
 								vals,keys,types,groupFilterSelectionHandler,noMultiSelect);
-	
+
 						MultiSelectBox.initMySelectBoxes();
-	
+
 						el = document.createElement("div");
-						el.setAttribute("id", "clearDiv");					
+						el.setAttribute("id", "clearDiv");
 						filterBoxesEl.appendChild(el);
 					}
 				}
@@ -1053,18 +1053,18 @@
 				{
 					//likely this error is due to undefined _filterValsObj[i]
 					Debug.log("Error creating group filters.", Debug.HIGH_PRIORITY);
-				} 
-				
+				}
+
 				_leftPane.appendChild(filterBoxesEl);
 
-								
+
 			} //end localCreateGroupingFieldFilters(leftW)
-			
+
 			//if grouping fields given then create
 			if(_groupingFieldList != "")
-				localCreateGroupingFieldFilters(); 
-			
-			
+				localCreateGroupingFieldFilters();
+
+
 			//add records
 			function localCreateRecordsSelector()
 			{
@@ -1077,7 +1077,7 @@
 						//);
 						//"margin-bottom: 0px;" +
 						"margin: -15px 0 -10px 0;" +
-						"height:" + H + "px;" + 
+						"height:" + H + "px;" +
 						"width:" + (leftW-25) + "px;");
 
 				_leftPane.appendChild(el);
@@ -1085,19 +1085,19 @@
 				el = document.createElement("div");
 				el.setAttribute("id", "clearDiv");
 				_leftPane.appendChild(el);
-				
+
 			} localCreateRecordsSelector ();
-						
+
 			document.body.appendChild(_leftPane);
-						
+
 		}	//end createLeftPaneContent()
 
 		//=====================================================================================
 		//groupFilterSelectionHandler ~~
-		function groupFilterSelectionHandler(el) 
+		function groupFilterSelectionHandler(el)
 		{
 			Debug.log("multiselect for " + el.id);
-			
+
 			//if multi select target was a Filter
 			//	then change filter
 			if(el.id.indexOf("selbox-Filter") == 0)
@@ -1105,62 +1105,62 @@
 				window.clearTimeout(_filterTimer);
 				_filterTimer = window.setTimeout(runFilter,1000);
 			}
-			
+
 		}	//end groupFilterSelectionHandler(el)
 
 		//=====================================================================================
 		//runFilter ~~
 		var _lastFilterStr = "";
-		function runFilter(selectFirstRecord,loadSelectedRecord) 
+		function runFilter(selectFirstRecord,loadSelectedRecord)
 		{
 			Debug.log("Run Filter");
-			
+
 			var groups = _groupingFieldList.split(',');
 			Debug.log("groups length " + groups.length);
-			
+
 			var selArr;
-			
+
 			var filterStr = "";
 			var subFilterStr;
 			for(var i=0;i<groups.length;++i)
 			{
 				subFilterStr = "";
-				
+
 				selArr = MultiSelectBox.getSelectionArray(
 						document.getElementById("groupFilterMultiSelect-" + i));
 				for(var s in selArr)
 				{
-					MultiSelectBox.dbg("filter " + i + 
+					MultiSelectBox.dbg("filter " + i +
 							" selected [" + s + "]: ",
-							selArr[s], 
+							selArr[s],
 							_filterValsObj[i].fieldUniqueValueArray[s|0]);
-					
+
 					//if selected, add value to filter string
 					if(selArr[s])
 						subFilterStr += (subFilterStr.length?",":"") +
 							encodeURIComponent(_filterValsObj[i].fieldUniqueValueArray[s|0])
 				}
-				
-				//if any values selected then add to filter string				
+
+				//if any values selected then add to filter string
 				if(subFilterStr.length)
-					filterStr += encodeURIComponent(groups[i]) + 
+					filterStr += encodeURIComponent(groups[i]) +
 						"=" + subFilterStr + ";";
 			}
-			
-			//append global filters 
+
+			//append global filters
 			filterStr += _recordPreFilterList;
 			Debug.log("filterStr " + filterStr);
 
 			if(filterStr == _lastFilterStr)
 			{
 				Debug.log("No need to rerun filter");
-			
+
 				Debug.log("records found = " + _subsetUIDs.length);
-				console.log(_subsetUIDs);				
+				console.log(_subsetUIDs);
 				updateRecordsAndFields(selectFirstRecord,loadSelectedRecord);
 				return;
-			}				
-			
+			}
+
 			ConfigurationAPI.getSubsetRecords(
 					_subsetBasePath,
 					filterStr,
@@ -1172,22 +1172,22 @@
 				console.log(records);
 
 				//clear record selections
-				
+
 				updateRecordsAndFields(selectFirstRecord,loadSelectedRecord);
 					}, //end getSubsetRecords handler
 					 _modifiedTables);
-			
-			
+
+
 		} // end runFilter()
-		
+
 		//=====================================================================================
 		//createRightPaneContent ~~
-		function createRightPaneContent() 
+		function createRightPaneContent()
 		{
 			_rightPane = document.createElement("div");
 			_rightPane.setAttribute("class", "pane");
 			_rightPane.setAttribute("id", "rightPane");
-			
+
 			//	- Right Pane:
 			//		* Show toggle Left Pane link
 			//		* Show fields that are common based on SubLevelGrouping filters
@@ -1199,11 +1199,11 @@
 			//			- A field enters edit mode when pencil is clicked
 			//			- TAB and SHIFT+TAB should jump to next field for editing
 			//		* Buttons at top and bottom: Read All, Write All, Read Selected, Write Selected.
-			//		
-			
+			//
+
 			var el;
 			var str;
-			
+
 			//create toggle left pane link
 			el = document.createElement("a");
 			el.setAttribute("style", "float:left;" +
@@ -1213,20 +1213,20 @@
 				this.innerHTML = (_leftPaneHidden?"Show":"Hide") +
 									" Left Pane";
 				paint();
-			};			
+			};
 			el.innerHTML = (_leftPaneHidden?"Show":"Hide") +
 					" Left Pane";
 			_rightPane.appendChild(el); //add toggle link
-			
+
 			//add clear div
 			el = document.createElement("div");
 			el.setAttribute("id", "clearDiv");
 			_rightPane.appendChild(el);
 
 
-			//create TOP read/write buttons			
+			//create TOP read/write buttons
 			el = document.createElement("div");
-			var readWriteContainerStyle = "height:" + _RIGHT_PANE_RW_BTN_HEIGHT + "px;" + 
+			var readWriteContainerStyle = "height:" + _RIGHT_PANE_RW_BTN_HEIGHT + "px;" +
 					"overflow-x:auto; overflow-y: hidden; " +
 					"white-space:nowrap;";
 			el.setAttribute("style", readWriteContainerStyle);
@@ -1239,23 +1239,23 @@
 			{
 				var btnText = ["Read All Fields",
 							   "Write All Fields",
-							   "Read Selected Field", 
+							   "Read Selected Field",
 							   "Write Selected Field"];
 
 				var btnHelp = ["Read all fields for selected record in Left Pane.",
-							   "Write all fields for selected record(s) in Left Pane.",							   
+							   "Write all fields for selected record(s) in Left Pane.",
 							   "Read selected field for selected record in Left Pane.",
 							   "Write Selected field for selected record(s) in Left Pane."];
-				
+
 				var btnAction = [btnActionReadAllFields,
-								 btnActionWriteAllFields,							   
+								 btnActionWriteAllFields,
 								 btnActionReadOneField,
 								 btnActionWriteOneField];
-				
+
 				for(var i=0;i<btnText.length;++i)
 				{
 					el = document.createElement("input");
-					el.setAttribute("style", "height:22px;" + 
+					el.setAttribute("style", "height:22px;" +
 							"margin:5px; ");
 					el.setAttribute("type", "button");
 					el.value = btnText[i];
@@ -1264,32 +1264,32 @@
 					cel.appendChild(el); //add field container link
 				}
 			} // end localAddReadWriteButtons(cel)
-			
+
 			localAddReadWriteButtons(el);
-			
+
 
 			//add clear div
 			el = document.createElement("div");
 			el.setAttribute("id", "clearDiv");
 			_rightPane.appendChild(el);
-			
+
 			//create field container with auto scroll
 			el = document.createElement("div");
-			el.setAttribute("style", "overflow:auto;" + 
+			el.setAttribute("style", "overflow:auto;" +
 					"border: 1px solid rgb(224, 196, 196);" +
 					"margin: 5px;"
 					);
 			_rightPane.appendChild(el); //add field container link
 			_rightPaneFields = el;
-				
-			//create BOTTOM read/write buttons			
+
+			//create BOTTOM read/write buttons
 			el = document.createElement("div");
 			el.setAttribute("style", readWriteContainerStyle);
 			_rightPane.appendChild(el); //add bottom buttons
 			localAddReadWriteButtons(el);
-			
-			
-			document.body.appendChild(_rightPane);			
+
+
+			document.body.appendChild(_rightPane);
 		}	//end createRightPaneContent()
 
 		//=====================================================================================
@@ -1301,9 +1301,9 @@
 		//	else if not forceOne
 		//		return array of selected records
 		//		else return empty array
-		function getSelectedRecords(forceOne) 
+		function getSelectedRecords(forceOne)
 		{
-			var selArr = 
+			var selArr =
 					MultiSelectBox.getSelectionArray(
 							document.getElementById("recordMultiSelect"));
 			var cntSelected = 0;
@@ -1311,19 +1311,19 @@
 			for(var s in selArr)
 			{
 				//MultiSelectBox.dbg("record selected [" + s + "]: ",
-				//		selArr[s], 
+				//		selArr[s],
 				//		_subsetUIDs[s|0]);
 
-				if(selArr[s]) 
+				if(selArr[s])
 				{
 					++cntSelected;
 					selectedIndices.push(s|0);
 
 					if((s|0) < 0 || (s|0) >= _subsetUIDs.length)
 					{
-						Debug.log("Invalid record index '" + (s|0) + 
+						Debug.log("Invalid record index '" + (s|0) +
 								"' should be impossible. Please notify developers " +
-								"as to how you got here!", Debug.HIGH_PRIORITY);						
+								"as to how you got here!", Debug.HIGH_PRIORITY);
 						return forceOne?-1:[];
 					}
 				}
@@ -1334,26 +1334,26 @@
 				if(cntSelected != 1)
 				{
 					Debug.log("Error! Please choose one and only one target from the list of " +
-							_recordsAlias + " in the Left Pane.", Debug.HIGH_PRIORITY);						
+							_recordsAlias + " in the Left Pane.", Debug.HIGH_PRIORITY);
 					return -1;
 				}
 				return selectedIndices[0];
 			}
 			else
 				return selectedIndices;
-			
+
 		}	//end getSelectedRecords()
 
 		//=====================================================================================
 		//btnActionReadAllFields ~~
 		//	read all fields for one record
-		function btnActionReadAllFields() 
+		function btnActionReadAllFields()
 		{
 			var selectedIndex = getSelectedRecords(true);
 			if(selectedIndex < 0) return;
-							
+
 			Debug.log("btnActionReadAllFields target record = " + _subsetUIDs[selectedIndex]);
-			
+
 			ConfigurationAPI.getFieldValuesForRecords(
 					_subsetBasePath,
 					[_subsetUIDs[selectedIndex]], //array of size 1
@@ -1361,33 +1361,33 @@
 					function(recFieldValues)
 					{
 				console.log(recFieldValues);
-				
+
 				//for each field, set value
 				for(var i=0;i<recFieldValues.length;++i)
-				{					
+				{
 					ConfigurationAPI.setEditableFieldValue(
 							_fields[i],
 							recFieldValues[i].fieldValue,
 							i);
-					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;
 				}
 				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
-			
+
 		}	//end btnActionReadAllFields()
 
-		
+
 		//=====================================================================================
 		//btnActionReadOneField ~~
 		// read one field from one record
-		function btnActionReadOneField() 
+		function btnActionReadOneField()
 		{
 			var selectedIndex = getSelectedRecords(true);
 			if(selectedIndex < 0) return;
-			
+
 			var selectedFieldIndex = ConfigurationAPI.getSelectedEditableFieldIndex();
-			if(selectedFieldIndex < 0) 
+			if(selectedFieldIndex < 0)
 			{
 				Debug.log("Error! There is no selected field. In order to read " +
 						"a field please toggle selection of the target field by " +
@@ -1396,7 +1396,7 @@
 				return;
 			}
 
-			Debug.log("btnActionReadOneField target record = " + 
+			Debug.log("btnActionReadOneField target record = " +
 					_subsetUIDs[selectedIndex]);
 
 			ConfigurationAPI.getFieldValuesForRecords(
@@ -1415,51 +1415,51 @@
 							_fields[selectedFieldIndex],
 							recFieldValues[i].fieldValue,
 							selectedFieldIndex);
-					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;					
+					_saveFieldValues[_fields[i].fieldColumnName] = recFieldValues[i].fieldValue;
 				}
 				Debug.log("_saveFieldValues",_saveFieldValues);
 					}, //end getFieldValuesForRecord handler
 					 _modifiedTables);
-			
+
 		}	//end btnActionReadOneField()
-		
+
 		//=====================================================================================
 		//btnActionWriteAllFields ~~
 		//	write all fields for all selected records
-		function btnActionWriteAllFields() 
+		function btnActionWriteAllFields()
 		{
 			var selectedIndices = getSelectedRecords();
 			if(selectedIndices.length == 0)
 			{
-				Debug.log("Error! There are no selected " + _recordsAlias + 
+				Debug.log("Error! There are no selected " + _recordsAlias +
 						". In order to write " +
 						"the fields to one or more " + _recordsAlias + "," +
 						" please make selections in the Left Pane.", Debug.HIGH_PRIORITY);
 				return;
 			}
-			
-			Debug.log("btnActionWriteAllFields target record length = " + 
+
+			Debug.log("btnActionWriteAllFields target record length = " +
 					selectedIndices.length);
-			
+
 			//make array of all field values
 			var valueArr = [];
-			
+
 			//for each field, get value
-			for(var i=0;i<_fields.length;++i)			
+			for(var i=0;i<_fields.length;++i)
 				valueArr.push(ConfigurationAPI.getEditableFieldValue(
 						_fields[i],
 						i));
 
-			Debug.log("btnActionWriteAllFields values length = " + 
+			Debug.log("btnActionWriteAllFields values length = " +
 					valueArr.length);
-			Debug.log("btnActionWriteAllFields fields length = " + 
+			Debug.log("btnActionWriteAllFields fields length = " +
 					_fields.length);
-			
+
 			//make array of target records
 			var recordArr = [];
-			for(var i=0;i<selectedIndices.length;++i)	
+			for(var i=0;i<selectedIndices.length;++i)
 				recordArr.push(_subsetUIDs[selectedIndices[i]]);
-						
+
 			ConfigurationAPI.setFieldValuesForRecords(
 					_subsetBasePath,
 					recordArr, 	//recordArr
@@ -1468,16 +1468,16 @@
 					function(modifiedTables)
 					{
 				Debug.log("modifiedTables length " + modifiedTables.length);
-								
+
 				if(!modifiedTables.length)
 				{
 					Debug.log("There was an error while writing the values.",
 							Debug.HIGH_PRIORITY);
-					return;					
+					return;
 				}
-									
+
 				_modifiedTables = modifiedTables;
-				
+
 				//proceed to save (quietly) tables, groups, aliases
 				ConfigurationAPI.saveModifiedTables(_modifiedTables,
 						function(savedTables, savedGroups, savedAliases)
@@ -1486,42 +1486,42 @@
 					{
 						Debug.log("There was an error while saving the values.",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
-					
+
 					Debug.log("The values for each field were successfully written to the targeted " +
 							_recordsAlias + " (target count = " + selectedIndices.length + ")!",
 							Debug.INFO_PRIORITY);
-					
+
 					_modifiedTables = undefined; //clear after save
-					
+
 						}); //end saveModifiedTables handler
-				
+
 					}, //end setFieldValuesForRecords handler
-					 _modifiedTables);			
+					 _modifiedTables);
 
 		}	//end btnActionWriteAllFields()
-		
+
 		//=====================================================================================
 		//btnActionWriteOneField ~~
 		//	write the selected field for all selected records
-		function btnActionWriteOneField() 
+		function btnActionWriteOneField()
 		{
 			var selectedIndices = getSelectedRecords();
 			if(selectedIndices.length == 0)
 			{
-				Debug.log("Error! There are no selected " + _recordsAlias + 
+				Debug.log("Error! There are no selected " + _recordsAlias +
 						". In order to write " +
 						"the fields to one or more " + _recordsAlias + "," +
 						" please make selections in the Left Pane.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
-			Debug.log("btnActionWriteOneField target record length = " + 
+			Debug.log("btnActionWriteOneField target record length = " +
 					selectedIndices.length);
-			
+
 			var selectedFieldIndex = ConfigurationAPI.getSelectedEditableFieldIndex();
-			if(selectedFieldIndex < 0) 
+			if(selectedFieldIndex < 0)
 			{
 				Debug.log("Error! There is no selected field. In order to read " +
 						"a field please toggle selection of the target field by " +
@@ -1538,16 +1538,16 @@
 					_fields[selectedFieldIndex],
 					selectedFieldIndex));
 
-			Debug.log("btnActionWriteOneField values length = " + 
+			Debug.log("btnActionWriteOneField values length = " +
 					valueArr.length);
-			
+
 			//make array of target records
 			var recordArr = [];
-			for(var i=0;i<selectedIndices.length;++i)	
+			for(var i=0;i<selectedIndices.length;++i)
 				recordArr.push(_subsetUIDs[selectedIndices[i]]);
-			
+
 			//
-			
+
 			ConfigurationAPI.setFieldValuesForRecords(
 					_subsetBasePath,
 					recordArr, 	//recordArr
@@ -1562,7 +1562,7 @@
 				{
 					Debug.log("There was an error while writing the values.",
 							Debug.HIGH_PRIORITY);
-					return;					
+					return;
 				}
 
 				_modifiedTables = modifiedTables;
@@ -1576,7 +1576,7 @@
 					{
 						Debug.log("There was an error while saving the values.",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					Debug.log("The value for the selected field was successfully written to the targeted " +
@@ -1588,48 +1588,48 @@
 						}); //end saveModifiedTables handler
 
 					}, //end setFieldValuesForRecords handler
-					_modifiedTables);	
-			
+					_modifiedTables);
+
 		}	//end btnActionWriteOneField()
-		
+
 
 		//=====================================================================================
 		//deleteRecords ~~
 		//	delete the selected records
-		function deleteRecords() 
+		function deleteRecords()
 		{
 			var selectedIndices = getSelectedRecords();
 			if(selectedIndices.length == 0)
 			{
-				Debug.log("Error! There are no selected " + _recordsAlias + 
+				Debug.log("Error! There are no selected " + _recordsAlias +
 						" records. In order to delete " +
 						"one or more " + _recordsAlias + " records," +
 						" please make selections in the Left Pane.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
-			Debug.log("deleteRecords target record length = " + 
-					selectedIndices.length);	
+			Debug.log("deleteRecords target record length = " +
+					selectedIndices.length);
 
 
 			//make array of target records
 			var recordArr = [];
 			var recordStr = "";
-			for(var i=0;i<selectedIndices.length;++i)	
+			for(var i=0;i<selectedIndices.length;++i)
 			{
 				if(i) recordStr += ", ";
 				recordStr += decodeURIComponent(_subsetUIDs[selectedIndices[i]]);
 				recordArr.push(_subsetUIDs[selectedIndices[i]]);
-			}			
+			}
 
 			DesktopContent.popUpVerification(
-					"Are you sure you want to remove the following " + _recordsAlias + 
+					"Are you sure you want to remove the following " + _recordsAlias +
 					" records from the table?<br><br>" +
-					"Here are the records (count = " + recordArr.length + 
+					"Here are the records (count = " + recordArr.length +
 					") that will be deleted:<br> <b>" + recordStr + "</b>",
-					localProceedWithDelete							
+					localProceedWithDelete
 					,0,"#efeaea",0,"#770000");
-			
+
 			/////////////////////
 			function localProceedWithDelete()
 			{
@@ -1644,7 +1644,7 @@
 					{
 						Debug.log("There was an error while removing the record(s).",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					_modifiedTables = modifiedTables;
@@ -1658,12 +1658,12 @@
 						{
 							Debug.log("There was an error while removing the record(s).",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 
 						Debug.log("The following " +
 								_recordsAlias + " records (count = " +
-								selectedIndices.length + ") "+ 
+								selectedIndices.length + ") "+
 								"were successfully removed: " + recordStr + ".",
 								Debug.INFO_PRIORITY);
 
@@ -1676,16 +1676,16 @@
 
 
 						}, //end deleteSubsetRecords handler
-						_modifiedTables);	
+						_modifiedTables);
 			} //end localProceedWithDelete()
 		} //end deleteRecords()
-		
+
 		//=====================================================================================
 		//addRecord ~~
 		//	create new record
-		function addRecord() 
+		function addRecord()
 		{
-			var newRowUID = prompt("Please enter the UID for the new " + 
+			var newRowUID = prompt("Please enter the UID for the new " +
 					_recordsAlias + " record:");
 			if(newRowUID)
 				newRowUID = newRowUID.trim();
@@ -1695,8 +1695,8 @@
 			//unselect current record selections, so new record will be selected in aftermath
 			var el = document.getElementById("recordMultiSelect");
 			MultiSelectBox.setSelectionElementByIndex(el,-1 /*all*/,false /*selected*/);
-													
-			
+
+
 			ConfigurationAPI.addSubsetRecords(_subsetBasePath,newRowUID,
 					/////////////////////
 					function(modifiedTables) //start addSubsetRecords handler
@@ -1707,38 +1707,38 @@
 				{
 					Debug.log("There was an error while creating the record.",
 							Debug.HIGH_PRIORITY);
-					return;					
+					return;
 				}
 
 				_modifiedTables = modifiedTables;
 
-				
+
 				//if there is just one selected group ID, apply it to record
 				{
 					var groupIDSelects = [];
 					if(_selectedGroupIDs)
 						groupIDSelects = _selectedGroupIDs.split(';');
-					
+
 					Debug.log("groupIDSelects length " + groupIDSelects.length);
-					
+
 					var fieldArr = [];
 					if(groupIDSelects.length == 1)
 						fieldArr = groupIDSelects[0].split('=');
-					
-					if(_selectedGroupIDs && 
+
+					if(_selectedGroupIDs &&
 							groupIDSelects.length == 1 &&
 							fieldArr.length == 2)
 					{
 						 Debug.log("Have group ID to apply '" +
 								 fieldArr[1] + "'");
-						 
+
 						 for(var field in _mapOfGroupFieldToLinkIndex)
 							 if(_mapOfGroupFieldToLinkIndex[field] ==
 									 fieldArr[0])
 							 {
 								 Debug.log("Applying to field '" +
 										 field + "'");
-								 
+
 								 ConfigurationAPI.setFieldValuesForRecords(
 										 _subsetBasePath,
 										 newRowUID, 	//recordArr
@@ -1752,36 +1752,36 @@
 									 {
 										 Debug.log("There was an error while writing the values.",
 												 Debug.HIGH_PRIORITY);
-										 return;					
+										 return;
 									 }
 
 									 _modifiedTables = modifiedTables;
-									 
+
 									 localFinishSave();
 
 										 }, //end setFieldValuesForRecords handler
 										 _modifiedTables);
-								 
+
 								 return;
 							 } //end applying group ID handling
-						 
+
 					}
-					
+
 					//if did not go groupID path, then finish save
 					localFinishSave();
-					
+
 				} //end record modification or not handling
 
 					}, //end addSubsetRecords handler
-					_modifiedTables);		
-			
+					_modifiedTables);
+
 			return;
-			
+
 			//=====================
 			function localFinishSave()
 			{
 				Debug.log("localFinishSave()");
-				
+
 				//proceed to save (quietly) tables, groups, aliases
 				ConfigurationAPI.saveModifiedTables(_modifiedTables,
 						/////////////////////
@@ -1791,59 +1791,59 @@
 					{
 						Debug.log("There was an error while creating the record.",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					Debug.log("The new " +
-							_recordsAlias + " record '" + 
-							decodeURIComponent(newRowUID) + 
+							_recordsAlias + " record '" +
+							decodeURIComponent(newRowUID) +
 							"' was successfully created!",
 							Debug.INFO_PRIORITY);
 
 					_modifiedTables = undefined; //clear after save
 					_selectedRecords = newRowUID; //select new record after init
-					
+
 					//runFilter(); //updates records and fields, and applies filter
 					initSubsetGlobalData();
 
 						}); //end saveModifiedTables handler
-				
+
 			} //end localFinishSave()
-			
+
 		} //end addRecord()
-		
+
 		//=====================================================================================
 		//renameRecord ~~
 		//	edit selected record name
-		function renameRecord() 
+		function renameRecord()
 		{
 			var selectedIndices = getSelectedRecords();
 			if(selectedIndices.length != 1)
 			{
-				Debug.log("Error! There are " + 
-						selectedIndices.length + " selected " + _recordsAlias + 
+				Debug.log("Error! There are " +
+						selectedIndices.length + " selected " + _recordsAlias +
 						" records. To edit a name, you must select " +
-						"one " + _recordsAlias + 
+						"one " + _recordsAlias +
 						" record to target in the Left Pane.", Debug.HIGH_PRIORITY);
 				return;
 			}
-			
+
 			var originalRecord = decodeURIComponent(_subsetUIDs[selectedIndices[0]]);
-						Debug.log("renameRecord target record = " + 
+						Debug.log("renameRecord target record = " +
 								originalRecord);
-						
+
 			DesktopContent.popUpVerification(
-					"Please enter the new UID to rename the " + 
+					"Please enter the new UID to rename the " +
 					_recordsAlias + " record:?<br><br>",
-					localProceedWithRename							
+					localProceedWithRename
 					,0, //val
-					"#efeaea",0,"#770000", //bgColor, textColor, borderColor, 
-					true /*getUserInput*/, 
-					0,0,// dialogWidth, cancelFunc, 
+					"#efeaea",0,"#770000", //bgColor, textColor, borderColor,
+					true /*getUserInput*/,
+					0,0,// dialogWidth, cancelFunc,
 					"Rename" /*yesButtonText*/,
 					true /*noAutoComplete*/,
 					originalRecord /*defaultUserInputValue*/);
-			
+
 			return;
 
 			/////////////////////
@@ -1866,7 +1866,7 @@
 					{
 						Debug.log("There was an error while renaming the record.",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					_modifiedTables = modifiedTables;
@@ -1875,7 +1875,7 @@
 					localFinishSave(newRowUID);
 
 						}, //end addSubsetRecords handler
-						_modifiedTables);		
+						_modifiedTables);
 			} //end localProceedWithRename()
 
 			//=====================
@@ -1892,12 +1892,12 @@
 					{
 						Debug.log("There was an error while renaming the record.",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					Debug.log("The " +
-							_recordsAlias + " record was renamed to '" + 
-							decodeURIComponent(newRowUID) + 
+							_recordsAlias + " record was renamed to '" +
+							decodeURIComponent(newRowUID) +
 							"' successfully!",
 							Debug.INFO_PRIORITY);
 
@@ -1912,46 +1912,46 @@
 			} //end localFinishSave()
 
 		} //end renameRecord()
-		
+
 		//=====================================================================================
 		//copyRecords ~~
 		//	edit selected record name
-		function copyRecords() 
+		function copyRecords()
 		{
 			var selectedIndices = getSelectedRecords();
 			if(selectedIndices.length == 0)
 			{
-				Debug.log("Error! There are no selected " + _recordsAlias + 
+				Debug.log("Error! There are no selected " + _recordsAlias +
 						" records. In order to copy " +
 						"one or more " + _recordsAlias + " records," +
 						" please make selections in the Left Pane.", Debug.HIGH_PRIORITY);
 				return;
 			}
 
-			Debug.log("copyRecords target record length = " + 
-					selectedIndices.length);	
+			Debug.log("copyRecords target record length = " +
+					selectedIndices.length);
 
 
 			//make array of target records
 			var recordArr = [];
 			var recordStr = "";
-			for(var i=0;i<selectedIndices.length;++i)	
+			for(var i=0;i<selectedIndices.length;++i)
 			{
 				if(i) recordStr += ", ";
 				recordStr += decodeURIComponent(_subsetUIDs[selectedIndices[i]]);
 				recordArr.push(_subsetUIDs[selectedIndices[i]]);
-			}			
+			}
 
 			DesktopContent.popUpVerification(
-					"How many copies do you want of the following " + _recordsAlias + 
+					"How many copies do you want of the following " + _recordsAlias +
 					" records from the table?<br><br>" +
-					"Here are the records (count = " + recordArr.length + 
+					"Here are the records (count = " + recordArr.length +
 					") that will be copied:<br> <b>" + recordStr + "</b>",
-					localProceedWithCopy							
+					localProceedWithCopy
 					,0, //val
-					"#efeaea",0,"#770000", //bgColor, textColor, borderColor, 
-					true /*getUserInput*/, 
-					0,0,// dialogWidth, cancelFunc, 
+					"#efeaea",0,"#770000", //bgColor, textColor, borderColor,
+					true /*getUserInput*/,
+					0,0,// dialogWidth, cancelFunc,
 					"Copy" /*yesButtonText*/,
 					true /*noAutoComplete*/,
 					1 /*defaultUserInputValue*/);
@@ -1973,7 +1973,7 @@
 					{
 						Debug.log("There was an error while copying the record(s).",
 								Debug.HIGH_PRIORITY);
-						return;					
+						return;
 					}
 
 					_modifiedTables = modifiedTables;
@@ -1987,13 +1987,13 @@
 						{
 							Debug.log("There was an error while copying the record(s).",
 									Debug.HIGH_PRIORITY);
-							return;					
+							return;
 						}
 
 						Debug.log("The following " +
 								_recordsAlias + " records (count = " +
-								selectedIndices.length + ") "+ 
-								"were successfully copied " + 
+								selectedIndices.length + ") "+
+								"were successfully copied " +
 								copies + "x: " + recordStr + ".",
 								Debug.INFO_PRIORITY);
 
@@ -2005,22 +2005,22 @@
 
 
 						}, //end copySubsetRecords handler
-						_modifiedTables);	
+						_modifiedTables);
 
 			} //end localProceedWithCopy()
 
 		} //end copyRecords()
-		
-		
+
+
 		</script>
 </head>
-	
 
-<body onload='//init() called by DesktopContent.js'>	
-		
+
+<body onload='//init() called by DesktopContent.js'>
+
 	<!-- body content populated by javascript paint(), etc. -->
 
 	<div class='preloadImage' id='preloadImage-treeEditTrashIconHover'></div>
 </body>
-	
+
 </html>

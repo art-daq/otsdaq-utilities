@@ -1,19 +1,19 @@
 #!/bin/sh
 #
-# create_tutorial_zips.sh 
+# create_tutorial_zips.sh
 #	Creates tutorial Data and databases zip files, updates repository, and transfers to otsdaq.fnal.gov web server.
 #	After this script, there is still the remaining work of updating the links in the html pages of the live tutorial being updated.
 #
 # usage: --tutorial <tutorial name> --version <version string> --repo <path to repo area> --data <path to user data> --database <path to database>
-# 
-#   tutorial 
+#
+#   tutorial
 #		e.g. first_demo or artdaq
-#   version 
-#		usually looks like v2_2 to represent v2.2 release, for example 
+#   version
+#		usually looks like v2_2 to represent v2.2 release, for example
 #		(underscores might be more universal for web downloads than periods)
-# 	repo 
+# 	repo
 #		is the path to the repository folder where tutorial data should be saved for posterity
-#	data 
+#	data
 #		is the full path to the $USER_DATA (NoGitData) folder to become the official tutorial data
 #	database
 #		is the full path to the databases folder to become the official tutorial database
@@ -27,7 +27,7 @@ echo
 echo
 echo -e `date +"%h%y %T"` "create_tutorial_zips.sh [${LINENO}]  \t Do not source this script, run it as ./create_tutorial_zips.sh"
 return  >/dev/null 2>&1 #return is used if script is sourced
-		
+
 echo
 echo -e `date +"%h%y %T"` "create_tutorial_zips.sh [${LINENO}]  \t Extracting parameters..."
 echo
@@ -36,7 +36,7 @@ echo
 SRC='/home/rrivera/data/ots/srcs/otsdaq/tutorial_data'
 UDATA='/home/rrivera/data/ots/srcs/otsdaq_demo/NoGitData'
 UDATABASES='/home/rrivera/data/ots/srcs/otsdaq_demo/NoGitDatabases'
-		
+
 
 if [[ "$1"  == "--tutorial" && "x$2" != "x" ]]; then
 	TUTORIAL="$2"
@@ -86,9 +86,9 @@ echo -e `date +"%h%y %T"` "create_tutorial_zips.sh [${LINENO}]  \t user database
 
 
 #from otsdaq, replace tutorial within repo
-rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases; #replace databases 
+rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases; #replace databases
 cp -r ${UDATABASES} ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases;
-rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases/filesystemdb/test_db.*; 
+rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases/filesystemdb/test_db.*;
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases/filesystemdb/test_db_*;
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases/filesystemdb/test_dbb*; #remove backups or bkups
 cd ${SRC}
@@ -96,15 +96,15 @@ git add ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases/filesystemdb/test_db
 cd -
 
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data; #replace data
-cp -r ${UDATA} ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data; 
+cp -r ${UDATA} ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data;
 rm ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/ActiveConfigurationGroups.cf*;
-rm ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/ActiveTableGroups.cfg.*; 
+rm ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/ActiveTableGroups.cfg.*;
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ConfigurationInfo.*
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/OutputData/*   #*/ fix comment text coloring
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/Logs/*   #*/ fix comment text coloring
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/RunNumber/*  #*/ fix comment text coloring
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/MacroHistory/* #*/ fix comment text coloring
-rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/ProgressBarData 
+rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/ProgressBarData
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/RunControlData
 rm -rf ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data/ServiceData/LoginData/UsersData/TooltipData
 cd ${SRC}
@@ -116,15 +116,15 @@ cd -
 rm tutorial_${TUTORIAL}_${VERSION}_Data.zip
 mv NoGitData NoGitData.mv.bk; #for safety attempt to move and then restore temporary folder
 cp -r ${SRC}/tutorial_${TUTORIAL}_${VERSION}_Data NoGitData;
-zip -r tutorial_${TUTORIAL}_${VERSION}_Data.zip NoGitData; 
-rm -rf NoGitData; 
-mv NoGitData.mv.bk NoGitData; 
+zip -r tutorial_${TUTORIAL}_${VERSION}_Data.zip NoGitData;
+rm -rf NoGitData;
+mv NoGitData.mv.bk NoGitData;
 
 rm tutorial_${TUTORIAL}_${VERSION}_database.zip
 mv databases databases.mv.bk; #for safety attempt to move and then restore temporary folder
-cp -r ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases databases; 
-zip -r tutorial_${TUTORIAL}_${VERSION}_database.zip databases; 
-rm -rf databases; 
+cp -r ${SRC}/tutorial_${TUTORIAL}_${VERSION}_databases databases;
+zip -r tutorial_${TUTORIAL}_${VERSION}_database.zip databases;
+rm -rf databases;
 mv databases.mv.bk databases;
 
 
@@ -145,7 +145,7 @@ scp tutorial_${TUTORIAL}_${VERSION}_Data.zip web-otsdaq@otsdaq.fnal.gov:/web/sit
 scp tutorial_${TUTORIAL}_${VERSION}_database.zip web-otsdaq@otsdaq.fnal.gov:/web/sites/otsdaq.fnal.gov/htdocs/downloads/
 
 rm tutorial_${TUTORIAL}_${VERSION}_Data.zip
-rm tutorial_${TUTORIAL}_${VERSION}_database.zip 
+rm tutorial_${TUTORIAL}_${VERSION}_database.zip
 
 
 
@@ -158,7 +158,3 @@ echo -e `date +"%h%y %T"` "create_tutorial_zips.sh [${LINENO}]  \t DATABASE \t= 
 echo
 echo -e `date +"%h%y %T"` "create_tutorial_zips.sh [${LINENO}]  \t Done handling tutorial UserData and UserDatabases!"
 echo
-
-
-
-	

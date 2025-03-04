@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
-<html lang="en"> 
+<html lang="en">
 	<head>
 		<title>Controls Dashboard Editor</title>
 
 		<link rel="stylesheet" type="text/css" href="/WebPath/css/SlowControlsDashboard.css">
-	
-		<style type="text/css">			
+
+		<style type="text/css">
 			body {
 				background-color: 		#838383;
 				overflow:				auto;
@@ -27,12 +27,12 @@
 				cursor: 				pointer;
 			}
 
-			::color {			 
+			::color {
 			}
 
 			#fileBlock {
 				background-color: 		rgb(26,148,49);
-			}			
+			}
 
 			#mainBlock {
 				background-color: 		rgb(240,234,214);
@@ -71,11 +71,11 @@
 			}
 
 			.rotate270 {
-			    -webkit-transform: 		rotate(270deg);
-			    -moz-transform: 		rotate(90deg);
-			    -o-transform: 			rotate(90deg);
-			    -ms-transform: 			rotate(90deg);
-			    transform: 				rotate(90deg);
+				-webkit-transform: 		rotate(270deg);
+				-moz-transform: 		rotate(90deg);
+				-o-transform: 			rotate(90deg);
+				-ms-transform: 			rotate(90deg);
+				transform: 				rotate(90deg);
 			}
 
 			#widgetFilter {
@@ -89,7 +89,7 @@
 				border: 				none;
 				border-bottom: 			solid 2px #c9c9c9;
 				transition: 			border 0.3s;
-		    	font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;   
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;
 				background-color: 		rgba(105, 105, 105, 0.4);
 				!position:				absolute;
 				appearance: 			none;
@@ -109,7 +109,7 @@
 			}
 
 			option {
-			    font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;   
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;
 				background-color: 		rgba(87,87,87,0.75);//#575757;
 			}
 
@@ -129,7 +129,7 @@
 				display: 				block;
 				margin:					0;
 				width: 					45%;
-				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;   
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px; font-size:13px;
 				appearance: 			none;
 				-webkit-appearance: 	none;
 				-moz-appearance: 		none;
@@ -145,33 +145,33 @@
 				color: 					black;
 			}
 
-			.titleDiv {     
-                background-color: 		white;
-            }
+			.titleDiv {
+				background-color: 		white;
+			}
 
 			#editorPanelTitle {
 				color: 					#d3d3d3;
-                font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; 
-                letter-spacing:			-0.5px; 
-                font-size:				22px;
-                appearance: 			none;
-                -webkit-appearance: 	none;
-                -moz-appearance: 		none;                
-                text-shadow: 			0 -1px 3px #202020;
-    			font-weight: 			normal;
-    			padding-left: 			2px;
-        	}
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
+				letter-spacing:			-0.5px;
+				font-size:				22px;
+				appearance: 			none;
+				-webkit-appearance: 	none;
+				-moz-appearance: 		none;
+				text-shadow: 			0 -1px 3px #202020;
+				font-weight: 			normal;
+				padding-left: 			2px;
+			}
 
-        	.mainBlock div {
+			.mainBlock div {
 				color: 					#d3d3d3;
-        		font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
-        		letter-spacing:			-0.5px; 
-        		font-size:				16px;                         
-                text-shadow: 			0 -1px 3px #202020;
-    			font-weight: 			normal;
-        	}
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
+				letter-spacing:			-0.5px;
+				font-size:				16px;
+				text-shadow: 			0 -1px 3px #202020;
+				font-weight: 			normal;
+			}
 
-			#widgetSearch {	
+			#widgetSearch {
 				padding: 				0px;
 				border: 				none;
 				border-radius: 			2px;
@@ -196,7 +196,7 @@
 				height: 				90%;
 				width: 					20%;
 				margin: 				10%;*/
-			    font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px;    
+				font-family: 			"Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; letter-spacing:-0.5px;
 				color: 					#d3d3d3;
 			}
 
@@ -244,19 +244,19 @@
 
 			.toggle {
 				position:				relative;
-			  	display:				inline-block;
-			 	width:					40px;
+				display:				inline-block;
+				width:					40px;
 				height:					60px;
 				float:					left;
 				background-color:		#bbb;
-			 	-webkit-border-radius:	4px;
-			  	-moz-border-radius:		4px;
-			 	border-radius:			4px;
-			  	text-align:				center;
+				-webkit-border-radius:	4px;
+				-moz-border-radius:		4px;
+				border-radius:			4px;
+				text-align:				center;
 			}
 
 			.toggle_settings {
-			 
+
 			}
 
 			.toggle-margin {
@@ -380,12 +380,12 @@
 
 		</style>
 
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/widgetLibrary.js"></script>
 
-		<script>	
+		<script>
 
 			//functions:
 			//	init()
@@ -431,26 +431,26 @@
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 
-			//=====================================================================================						
+			//=====================================================================================
 			//init called once body has loaded
-			function init() 
+			function init()
 			{
 				var w = window.innerWidth;
 				var h = window.innerHeight;
 
-				Debug.log("EditPane init() was called w,h: " + 
+				Debug.log("EditPane init() was called w,h: " +
 						w + " - " + h);
 
 				//fill in CodeEditor appId
-				DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" + 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
 						"&classNeedle=ots::CodeEditorSupervisor",
-						"", //end post data, 
-						function(req) 
-						{			
+						"", //end post data,
+						function(req)
+						{
 							_codeEditorAppId = DesktopContent.getXMLValue(req,"id") | 0;
 							Debug.log("_codeEditorAppId " + _codeEditorAppId);
 						}, //end handler
-						0, 0, true,//reqParam, progressHandler, callHandlerOnErr, 
+						0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 						false,//doNotShowLoadingOverlay,
 						true //targetGatewaySupervisor
 						);
@@ -475,10 +475,10 @@
 				var gridColorPicker = document.getElementById("gridColorPicker");
 				defaultGridColor_ = parent.gridColor_;
 				gridColorPicker.value = rgbToHex(defaultGridColor_);
-				backgroundColorPicker.innerHTML = "<p>Grid Color</p>";				
+				backgroundColorPicker.innerHTML = "<p>Grid Color</p>";
 				gridColorPicker.title = "Set the color of the grid lines.";
 				backgroundColorPicker.title = "Set the background color.";
-				document.getElementById("gridCheckbox").title = "Toggle the grid lines on/off.";				
+				document.getElementById("gridCheckbox").title = "Toggle the grid lines on/off.";
 				document.getElementById("resetGrid").title = "Reset the grid to default values.";
 				document.getElementById("gridSnap").checked = true;
 
@@ -486,11 +486,11 @@
 				redrawWindow();
 
 				//commented is equivalent to undefined (but keep for search example)
-//				var allIcons = [];			
+//				var allIcons = [];
 //				for(var i = 0; i < widgetKeys_.length; i++)
 //					allIcons.push(widgetKeys_[i]);
 //
-//				drawIcons(allIcons);				
+//				drawIcons(allIcons);
 				//FIXME!!!!
 				drawIcons();
 
@@ -514,15 +514,15 @@
 			} //end initEdit()
 
 			//=====================================================================================
-			function redrawWindow() 
+			function redrawWindow()
 			{
 				var w = window.innerWidth;
 				var h = window.innerHeight;
 
-				Debug.log("EditPane redrawWindow() to " + 
+				Debug.log("EditPane redrawWindow() to " +
 						w + " - " + h);
 
-				draw_.widgetTileContainer_W = (w - draw_.SETTINGS_W - 
+				draw_.widgetTileContainer_W = (w - draw_.SETTINGS_W -
 						4*draw_.MARGIN) |0;
 				draw_.widgetTileContainer_H = (h * 0.75) |0;
 
@@ -551,7 +551,7 @@
 				//position widget filter container
 				//				widgetFilterContainer.style.width = window.innerWidth + "px";
 				//				widgetFilterContainer.style.height = (window.innerHeight * 0.1) + "px";
-				widgetFilterContainerEl_.style.top = draw_.titleText_H + "px"; 
+				widgetFilterContainerEl_.style.top = draw_.titleText_H + "px";
 				widgetFilterContainerEl_.left = "0px";
 
 				//				var searchFields = document.getElementById("searchFields");
@@ -572,11 +572,11 @@
 				//				searchButtonDiv.style.top  = "0px";
 				//				searchButtonDiv.style.left = (window.innerWidth * 0.05 + ((draw_.TILE_SIZE + 5) * (draw_.columns - 1)) - 10) + "px";
 				//				searchButtonDiv.style.position = "absolute";
-				//				
+				//
 				//				var searchButton = document.getElementById("searchButton");
 				//				searchButton.style.width  = "100%";
 				//				searchButton.style.height = "100%";
-				//				
+				//
 				//				var img = document.createElement("img");
 				//				img.src = "/WebPath/images/windowContentImages/SlowControlsDashboardFileTree-magnifyingGlass.png";
 				//				img.style.height = "50%";
@@ -651,26 +651,26 @@
 					tileIMG.style.height = "100%";
 
 					if(i == -1) //handle code editor icon
-					{	
+					{
 						tile.title = "Not finding what you're looking for? \nLaunch the Code Editor to make changes to the Widget Library, including making your own widget!";
 						tileIMG.src = "widgets/code-editor.png";
-						tile.onclick = 
+						tile.onclick =
 								function()
 								{
 							DesktopContent.openNewWindow(
-									"Code Editor", 
+									"Code Editor",
 									"" /*subname*/,
 									"/WebPath/html/CodeEditor.html?" +
-									"urn=" + _codeEditorAppId + 
+									"urn=" + _codeEditorAppId +
 									"&startFilePrimary=/otsdaq_utilities/WebGUI/js/widgetLibrary.js",
-									0 /*unique*/);									 
+									0 /*unique*/);
 								};
 					}
 					else
-						tileIMG.onclick = setupForDrawSelectionRectangle(i); 
+						tileIMG.onclick = setupForDrawSelectionRectangle(i);
 
 					tile.appendChild(tileIMG);
-					widgetTilesEl_.appendChild(tile);				
+					widgetTilesEl_.appendChild(tile);
 
 				} //end localDrawIcon
 
@@ -678,11 +678,11 @@
 
 			//=====================================================================================
 			function setupForDrawSelectionRectangle(tileNumber)
-			{							
+			{
 				return function(){
 					Debug.log("setupForDrawSelectionRectangle() handler " + tileNumber);
 
-					selectWidgetTile(tileNumber);					
+					selectWidgetTile(tileNumber);
 
 					parent.setupForDrawSelectionRectangle(lastTileNumber_);
 				};
@@ -690,7 +690,7 @@
 
 			//=====================================================================================
 			function selectWidgetTile(tileNumber)
-			{							
+			{
 				Debug.log("selectWidgetTile() " + tileNumber);
 
 				var el;
@@ -701,8 +701,8 @@
 					el.style.backgroundColor = "#b2b2b2";
 				}
 
-				if(lastTileNumber_ == tileNumber || 
-						tileNumber === undefined) 
+				if(lastTileNumber_ == tileNumber ||
+						tileNumber === undefined)
 					lastTileNumber_ = undefined; //treat as unselecting
 				else
 					lastTileNumber_ = tileNumber|0;
@@ -726,7 +726,7 @@
 				for(var i = 0; i < widgetKeys_.length; i++)
 				{
 					console.log(i + " : " + parent.widgetLibrary.typeToName + " : " + keyword);
-					
+
 					if(parent.widgetLibrary.typeToName[i] != undefined)
 						parent.widgetLibrary.typeToName[i].indexOf(keyword) != -1 ? foundResult.push(i) : console.log();
 					else if(parent.widgetLibrary.typeToSrc[i] != undefined)
@@ -761,7 +761,7 @@
 				console.log(foundResult);
 
 				drawIcons(foundResult);
-			} //end filterWidgets()		
+			} //end filterWidgets()
 
 			//=====================================================================================
 			function toggleGrid(checkbox)
@@ -775,7 +775,7 @@
 			function setBackgroundColor(color)
 			{
 				Debug.log("setBackgroundColor() " + color.value);
-		
+
 				parent.setBackgroundColor(color.value);
 			} //end setBackgroundColor()
 
@@ -784,7 +784,7 @@
 			{
 				Debug.log("setGridColor() " + color.value);
 
-				parent.setGridColor(color.value, 
+				parent.setGridColor(color.value,
 						document.getElementById("gridCheckbox").checked);
 			} //end setGridColor()
 
@@ -799,7 +799,7 @@
 			function resetToDefault()
 			{
 				Debug.log("resetToDefault()");
-								
+
 				parent.toggleGrid(true);
 				document.getElementById("gridCheckbox").checked = true;
 				parent.setGridColor(defaultGridColor_, true);
@@ -816,7 +816,7 @@
 			function rgbToHex(rgb)
 			{
 				Debug.log("rgbToHex() " + rgb);
-				
+
 				 rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
 				 return (rgb && rgb.length === 4) ? "#" +
 						 ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
@@ -868,7 +868,7 @@
 			-->
 			<div id="settingsContainer">
 				Grid Settings:<br>
-				<span class="toggle" style="margin-top:10px">					
+				<span class="toggle" style="margin-top:10px">
 					<input type="checkbox" id="gridCheckbox" onclick="toggleGrid(this)" checked>
 						<label data-off="Off" data-on="On"></label>
 					</input>
@@ -877,7 +877,7 @@
 					<br><input type="color"  id="gridColorPicker"       onchange="setGridColor(this)">Grid Color</input>
 					<br><input type="color"  id="backgroundColorPicker" onchange="setBackgroundColor(this)">Background</input>
 					<br><input type="checkbox"  id="gridSnap" onchange="setGridSnap(this)"> Snap</input>
-					<br><button id="resetGrid" 
+					<br><button id="resetGrid"
 							style="margin-bottom:1px; margin-left:20px; width:100px;"
 							onclick="resetToDefault()">Default Values</button>
 				</div>
@@ -887,4 +887,3 @@
 	</body>
 
 </html>
-

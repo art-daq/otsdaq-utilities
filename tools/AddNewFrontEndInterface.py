@@ -5,13 +5,13 @@
 
 import sys, getopt, os
 
-def main(argv): 
+def main(argv):
     inputFile= ''
     outputFile=''
     inputClassName= ''
     outputClassName=''
 
-    
+
     inputHeaderExtension=''
     extensionsToCheck=['.h', '.c', '.hh', '.cc', '.cpp']
     inputFileProvided =False
@@ -28,14 +28,14 @@ def main(argv):
         print 'importer.py <source path to .h or .c>'
 
     for option, arg in options:
-        if option == '-i':     
+        if option == '-i':
          #check if the input file is a valid extension
             if not any(extension in arg for extension in extensionsToCheck):# not in arg: #check if it points to a file
                 print "No .h, .hh, .c, .cc, .cpp file provided."
                 sys.exit(2)
             inputFile=arg
             inputFileProvided=True
-        elif option == '-h' or option == '--help':           
+        elif option == '-h' or option == '--help':
             print 'usage: ', sys.argv[0], ' -i <source path to .h or .c> -r '
             print ''
             print 'Optional Arguments:'
@@ -81,7 +81,7 @@ def main(argv):
     print 'input and output class names'
     print inputClassName #FIXME take off _interface if it has it
     print outputClassName
-    
+
 
     #check if the input file is valid
     if not os.path.exists(inputDirectory + "/" + inputFile):
@@ -115,7 +115,7 @@ def main(argv):
         with open(outputDirectory + '/' + outputClassName + inputHeaderExtension, "wt") as fout:
             for line in fin:
                 fout.write(line.replace(inputClassName, outputClassName))
-                
+
     #Grab CMake and make changes
     cMakeListsCopyBuffer=''
     foundCMakeListsEntry=False
@@ -151,13 +151,13 @@ def main(argv):
         cMakeListsCopyBuffer += "   )"
 
         print 'No previous entries in the CMake List were found'
-    
-    with open(inputDirectory + "/" + "CMakeLists.txt", "a") as cMakeLists:
-        cMakeLists.write(cMakeListsCopyBuffer)      
-    
-            
 
-            
+    with open(inputDirectory + "/" + "CMakeLists.txt", "a") as cMakeLists:
+        cMakeLists.write(cMakeListsCopyBuffer)
+
+
+
+
 
 if __name__ == "__main__":
    main(sys.argv[1:])

@@ -1,13 +1,13 @@
 (
- function() 
+ function()
  {
-  function getQueryParam(name, queryString) 
+  function getQueryParam(name, queryString)
   {
    var match = RegExp(name + '=([^&]*)').exec(queryString || location.search);
    return match && decodeURIComponent(match[1]);
   }
 
-  function hasOption(opt) 
+  function hasOption(opt)
   {
    var s = window.location.search;
    var re = new RegExp('(?:^|[&?])' + opt + '(?:[=]([^&]*))?(?:$|[&])', 'i');
@@ -44,19 +44,19 @@
                       'neptune-touch': 55,
                       'crisp-touch'  : 55
                      },
-      defaultQueryString, 
-      src, 
-      theme, 
-      rtl, 
+      defaultQueryString,
+      src,
+      theme,
+      rtl,
       toolbar;
 
-  while (i--) 
+  while (i--)
   {
    src = scriptTags[i].src;
-   if (src.indexOf('include-ext.js') !== -1) 
+   if (src.indexOf('include-ext.js') !== -1)
    {
     defaultQueryString = src.split('?')[1];
-    if (defaultQueryString) 
+    if (defaultQueryString)
     {
      defaultTheme = getQueryParam('theme', defaultQueryString) || defaultTheme;
      defaultRtl   = getQueryParam('rtl'  , defaultQueryString) || defaultRtl;
@@ -66,13 +66,13 @@
   }
 
   Ext.themeName = theme = getQueryParam('theme') || defaultTheme;
-  
+
   rtl = getQueryParam('rtl') || defaultRtl;
 
-  if (rtl.toString() === 'true') 
+  if (rtl.toString() === 'true')
   {
    requires.unshift('Ext.rtl.*');
-   Ext.define('Ext.examples.RtlComponent', 
+   Ext.define('Ext.examples.RtlComponent',
    {
        override: 'Ext.Component',
        rtl: true
@@ -81,19 +81,19 @@
 
   Ext.require(requires);
 
-  Ext.onReady(function() 
+  Ext.onReady(function()
   {
    var toolbar ;
    Ext.getBody().addCls(Ext.baseCSSPrefix + 'theme-' + Ext.themeName);
 
    // prevent touchmove from panning the viewport in mobile safari
-   if (Ext.supports.TouchEvents) 
+   if (Ext.supports.TouchEvents)
    {
     Ext.getDoc().on({
-                     touchmove: function(e) 
+                     touchmove: function(e)
                      {
                          // If within a scroller, don't let the document use it
-                         if (Ext.scroll.Scroller.isTouching) 
+                         if (Ext.scroll.Scroller.isTouching)
                          {
                              e.preventDefault();
                          }
@@ -103,18 +103,18 @@
                     });
    }
 
-   if (hasOption('nocss3')) 
+   if (hasOption('nocss3'))
    {
     Ext.supports.CSS3BorderRadius = false;
     Ext.getBody().addCls('x-nbr x-nlg');
    }
 
-   if (hasOption('nlg')) 
+   if (hasOption('nlg'))
    {
     Ext.getBody().addCls('x-nlg');
    }
 
-   function setParam(param) 
+   function setParam(param)
    {
     var queryString = Ext.Object.toQueryString(Ext.apply(Ext.Object.fromQueryString(location.search), param));
     console.log("queryString: "+queryString) ;
@@ -122,19 +122,19 @@
     console.log("Done ") ;
    }
 
-   function removeParam(paramName) 
+   function removeParam(paramName)
    {
     var params      = Ext.Object.fromQueryString(location.search);
     delete params[paramName];
     location.search = Ext.Object.toQueryString(params);
    }
-   
-   if (hasOption('no-toolbar') || /no-toolbar/.test(document.cookie)) 
+
+   if (hasOption('no-toolbar') || /no-toolbar/.test(document.cookie))
    {
     return;
    }
 
-   setTimeout(function() 
+   setTimeout(function()
               {
                toolbar = Ext.widget(
                                     {
@@ -163,8 +163,8 @@
                                                                labelStyle  : 'cursor:move;'           ,
                                                                margin      : '0 5 0 0'                ,
                                                                queryMode   : 'local'                  ,
-                                                               store       : Ext.create(              
-                                                                                        'Ext.data.Store', 
+                                                               store       : Ext.create(
+                                                                                        'Ext.data.Store',
                                                                                         {
                                                                                          fields: ['value', 'name'],
                                                                                          data  : [
@@ -181,11 +181,11 @@
                                                                                        ),
                                                                value       : theme,
                                                                listeners   : {
-                                                                              select: function(combo) 
+                                                                              select: function(combo)
                                                                                       {
                                                                                        var theme = combo.getValue();
                                                                                        console.log("Select") ;
-                                                                                       if (theme !== defaultTheme) 
+                                                                                       if (theme !== defaultTheme)
                                                                                        {
                                                                                         setParam({ theme: theme });
                                                                                        } else {
@@ -193,20 +193,20 @@
                                                                                        }
                                                                                       }
                                                                              }
-                                                              }, 
+                                                              },
                                                               {
                                                                /**
                                                                 * Only visible in repoDevMode and on QA sites
                                                                 */
                                                                xtype       : 'button',
-                                                               hidden      : !(Ext.devMode === 2 || 
+                                                               hidden      : !(Ext.devMode === 2 ||
                                                                                location.href.indexOf('qa.sencha.com') !== -1),
                                                                enableToggle: true,
                                                                pressed     : rtl,
                                                                text        : 'RTL',
                                                                margin      : '0 5 0 0',
                                                                listeners   : {
-                                                                              toggle: function(btn, pressed) 
+                                                                              toggle: function(btn, pressed)
                                                                                       {
                                                                                           if (pressed) {
                                                                                               setParam({ rtl: true });
@@ -215,11 +215,11 @@
                                                                                           }
                                                                                       }
                                                                              }
-                                                              }, 
+                                                              },
                                                               {
                                                                xtype  : 'tool',
                                                                type   : 'close',
-                                                               handler: function() 
+                                                               handler: function()
                                                                         {
                                                                             toolbar.destroy();
                                                                         }
@@ -228,7 +228,7 @@
                                     }
                                    );
                //toolbar.show();
-              }, 
+              },
               100
              );
   });

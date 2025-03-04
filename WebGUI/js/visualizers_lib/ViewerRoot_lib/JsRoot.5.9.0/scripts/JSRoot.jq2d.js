@@ -2442,4 +2442,3 @@ JSROOT.define(['d3', 'jquery', 'painter', 'hierarchy', 'jquery-ui', 'jqueryui-mo
 
    return JSROOT;
 });
-

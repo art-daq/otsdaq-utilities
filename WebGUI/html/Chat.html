@@ -2,60 +2,60 @@
 <html lang="en">
 	<head>
 		<title>Chat</title>
-		<style type="text/css">		
+		<style type="text/css">
 			body {
 				background-color: #CCB399;
 				font-family: 'Comfortaa', serif;
 			}
-			
+
 			#clearDiv {
 				clear: both;
 			}
-			
+
 			#chatInstructions {
 				float: left;
 				margin: 6px 0 0 6px;
 				font-size: 12px;
 				color: #4D2600;
 			}
-			
+
 			#userLink {
 				float: right;
 				margin: 2px;
 			}
-			
+
 			a {
 				text-decoration: none;
 				color: #4D2600;
 				font-weight: 800;
 			}
-			
+
 			a:hover {
 				text-decoration: underline;
 			}
-						
+
 			.userTitle {
 				color: #4D2600;
 				font-style: italic;
 				text-decoration: underline;
 			}
-			
+
 			.chatLink {
 				font-size: 12px;
-				font-face: arial;	
-				font-weight: 400;	
+				font-face: arial;
+				font-weight: 400;
 			}
-			
+
 			.chatEmoticon {
 				height: 25px;
 				margin: -5px 0 -7px 0;
 			}
-			
+
 			#muteSoundsText {
 				float: left;
 				margin-top: 5px;
 			}
-			
+
 			#muteSounds {
 				float: left;
 				margin-left: 40px;
@@ -65,157 +65,157 @@
 			/* ***************** CHAT HISTORY ******************************************/
 			#chatHistoryContainer {
 				position: absolute;
-			
+
 				padding: 15px 2px 15px 15px;
 				text-align: left;
 				color: #663300;
-			
+
 				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-						            inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-						            rgba(200, 200, 200,0.6) 0 .1em 3px,
-						            rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-						            rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 3px;	
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+				border-radius: 3px;
 			}
-			
+
 			#chatHistory {
-				overflow-x: auto;		
-				overflow-y: scroll;		
+				overflow-x: auto;
+				overflow-y: scroll;
 			}
-			
-			#chatHistory::-webkit-scrollbar 
+
+			#chatHistory::-webkit-scrollbar
 			{
-			    height: 12px;
+				height: 12px;
 				width: 12px;
 				background: rgba(0,0,0,0);
 			}
-			
+
 			#chatHistory::-webkit-scrollbar:hover {
-				background: rgba(0,0,0,0.3);	
+				background: rgba(0,0,0,0.3);
 			}
-			
+
 			#chatHistory::-webkit-scrollbar:vertical:hover {
-				border-top: 1px solid #4D2600;		
+				border-top: 1px solid #4D2600;
 				border-bottom: 1px solid #4D2600;
 			}
-			
+
 			#chatHistory::-webkit-scrollbar:horizontal:hover {
-				border-left: 1px solid #4D2600;		
+				border-left: 1px solid #4D2600;
 				border-right: 1px solid #4D2600;
 			}
-			
+
 			#chatHistory::-webkit-scrollbar-thumb {
-			    background: #4D2600;
-			    -webkit-border-radius: 1ex;
-			}			
-			
+				background: #4D2600;
+				-webkit-border-radius: 1ex;
+			}
+
 			#chatHistory::-webkit-scrollbar-corner {
-			    display: none;
+				display: none;
 			}
 
 			/* ***************** INPUT AREA ******************************************/
 			#inputArea {
 				border: 1px solid #9C774F;
 				font-weight: 400;
-				box-shadow: 
+				box-shadow:
 				  inset 0 0 8px  rgba(0,0,0,0.1),
-				        0 0 16px rgba(0,0,0,0.1); 
+						0 0 16px rgba(0,0,0,0.1);
 				padding: 5px;
 				background: rgba(255,255,255,0.75);
 				margin: 0 0 10px 0;
 				border-radius: 3px;
-				position: absolute;				
-			}		
+				position: absolute;
+			}
 
 			/* ***************** USER AREA ******************************************/
-					
+
 			#usersContainer {
 				position: absolute;
-			
+
 				padding: 15px 2px 15px 15px;
 				text-align: left;
 				color: #663300;
-			
+
 				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-						            inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-						            rgba(200, 200, 200,0.6) 0 .1em 3px,
-						            rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-						            rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 3px;	
-				
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+				border-radius: 3px;
+
 			}
 
 			#usersArea {
 				overflow-y: scroll;
-				overflow-x: hidden;					
+				overflow-x: hidden;
 			}
 
-			#usersArea::-webkit-scrollbar 
+			#usersArea::-webkit-scrollbar
 			{
-			    height: 12px;
+				height: 12px;
 				width: 12px;
 				background: rgba(0,0,0,0);
 			}
-			
+
 			#usersArea::-webkit-scrollbar:hover {
-				background: rgba(0,0,0,0.3);	
+				background: rgba(0,0,0,0.3);
 			}
-			
+
 			#usersArea::-webkit-scrollbar:vertical:hover {
-				border-top: 1px solid #4D2600;		
+				border-top: 1px solid #4D2600;
 				border-bottom: 1px solid #4D2600;
 			}
-			
+
 			#usersArea::-webkit-scrollbar:horizontal:hover {
-				border-left: 1px solid #4D2600;		
+				border-left: 1px solid #4D2600;
 				border-right: 1px solid #4D2600;
 			}
-			
+
 			#usersArea::-webkit-scrollbar-thumb {
-			    background: #4D2600;
-			    -webkit-border-radius: 1ex;
+				background: #4D2600;
+				-webkit-border-radius: 1ex;
 			}
 			#usersArea::-webkit-scrollbar-corner {
-			    background: rgba(0,0,0,0.0);
+				background: rgba(0,0,0,0.0);
 			}
-			
+
 
 			/* ***************** CONTROLS AREA ******************************************/
 			#controlsContainer {
 				position: absolute;
-			
+
 				padding: 15px 2px 15px 15px;
 				text-align: left;
 				color: #663300;
-			
+
 				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-						            inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-						            rgba(200, 200, 200,0.6) 0 .1em 3px,
-						            rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-						            rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 3px;	
-				
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+				border-radius: 3px;
+
 			}
-			
+
 			#controlsArea {
-				overflow: hidden;					
+				overflow: hidden;
 			}
-		
-			
+
+
 		</style>
-		
+
 
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
-		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>	
-		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>	
+		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-		
-		
-		<script>		
-			
-			
-			//functions:			
-				//init()	
+
+
+		<script>
+
+
+			//functions:
+				//init()
 				//redrawChatWindow()
 				//handleKeyInput(e)
 				//sendChat()
@@ -233,31 +233,31 @@
 				//handleActiveUsers(req)
 				//pageUser(u)
 				//toggleMuteSounds()
-			
+
 			var _inputEl, _linkEl, _chatEl, _historyEl, _historyContainerEl, _usersEl, _usersContainerEl;
 			var _controlsContainerEl, _controlsEl;
-			
+
 			var _MARGIN = 10;
 			var _INPUT_HEIGHT = 60;
 			var _OFFSET_Y = 20;
 			var _USERS_WIDTH = 200;
-			
+
 			var _REFRESH_INTERVAL = 2000; //milliseconds
 			var _chatUpdateTimer = 0;
 			var _displayName;
-			
-			var _chatHistoryArray; 
+
+			var _chatHistoryArray;
 			var _chatHistoryFields = ["chat_entry","chat_author","chat_time"];
 			var _CHAT_HISTORY_MAX_LENGTH = 10000;
 			var _lastReceivedChat = "", _lastTypedChat = "", _lastSentChat = ""; //keep last chats to prevent repeats
-			
-			var _chatUsersArray; 
+
+			var _chatUsersArray;
 			var _chatUsersFields = ["chat_user"];
-			
+
 			var _chatUsersTitle = "<div class='userTitle'>Chatting:</div>";
 			var _activeUsersTitle = "<div class='userTitle'>Logged In:</div>";
 			var _getActiveUsersStr = "<a class='chatLink' href='Javascript:getActiveUsers();' " +
-				"title='Refresh list of currently active ots users'>" + 
+				"title='Refresh list of currently active ots users'>" +
 				"&#187;Click to Refresh List&#171;</a><br>";
 			var _activeUsersStr = "";
 
@@ -266,20 +266,20 @@
 			var _userMouseInput = false; //use flag to determine if scrolling is due to user mouse input
 			var _lastUpdateIndex = 0; //0 is for initial request
 			var _nextUsersNum = 0; //0 is for initial request
-			
+
 			//sounds
 			var _soundsEnabled = true;
 			var _chatSound;
 			var _muteSoundsCheckbox;
-			var _SOUND_PATH = "/WebPath/sounds/fx-Chat-Message.wav"; // "http://www.soundjay.com/button/button-9.wav"; //must be .wav for firefox incompatibility	
-				
+			var _SOUND_PATH = "/WebPath/sounds/fx-Chat-Message.wav"; // "http://www.soundjay.com/button/button-9.wav"; //must be .wav for firefox incompatibility
+
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
-			
+
 			//============================================================
 			//init called once body has loaded
-			function init() 
-			{			
+			function init()
+			{
 				_inputEl = document.getElementById('inputArea');
 				_historyEl = document.getElementById('chatHistory');
 				_historyContainerEl = document.getElementById('chatHistoryContainer');
@@ -289,432 +289,432 @@
 				_linkEl = document.getElementById('userLinkText');
 				_controlsContainerEl = document.getElementById('controlsContainer');
 				_controlsEl = document.getElementById('controlsArea');
-		    	_muteSoundsCheckbox = document.getElementById('muteSounds');
-		    	_muteSoundsCheckbox.onmouseup = toggleMuteSounds;
-				
+				_muteSoundsCheckbox = document.getElementById('muteSounds');
+				_muteSoundsCheckbox.onmouseup = toggleMuteSounds;
+
 				_inputEl.onkeydown = handleKeyInput;
 				_inputEl.focus();
-				
+
 				_displayName = DesktopContent.getUsername();
-			    Debug.log("Chat Display Name: " + _displayName);
-				
-			    //init chat history
-			    _chatHistoryArray = new Array();
+				Debug.log("Chat Display Name: " + _displayName);
+
+				//init chat history
+				_chatHistoryArray = new Array();
 				for(var i=0;i<_chatHistoryFields.length;++i)
 					_chatHistoryArray.push(new Array());
 				_chatEl.innerHTML = "--- Chats will be displayed here. Old chats will scroll up as new chats are received. History is maintained for 30 mintues. ---";
-				
+
 				window.onresize = redrawChatWindow;
 				_historyEl.onmousewheel = handleUserInputScroll;
 				_historyEl.onmousedown = handleUserInputScroll;
 				_historyEl.onscroll = handleUserScroll;
 				_historyEl.onmousemove = handleMouseMoveScroll;
-				
+
 				redrawChatWindow(); //setup window divs
 
-			    getActiveUsers();
-			    getChatUpdates(); //get initial update
-			    
-			    if(!(new Audio()).canPlayType("audio/ogg; codecs=vorbis")) _soundsEnabled = false;
-			    Debug.log("Chat _soundsEnabled: " + _soundsEnabled);
-			    if(_soundsEnabled) {
-			    	_chatSound = new Audio(_SOUND_PATH); // buffers automatically when created
-			    	document.body.onfocus = handleChatFocus;
-			    	document.body.onblur = handleChatBlur;
-			    	
-			    	window.onfocus = handleChatFocus;//DesktopContent.handleFocus;
-			    	window.onmousedown = handleChatFocus;//DesktopContent.handleFocus;
-			    	window.onscroll = handleChatFocus;
-			    	window.onblur = handleChatBlur;//DesktopContent.handleBlur;
-			    	
-			    	_chatSound.play();
-			    	
-			    	handleChatFocus();
-			    }
-			    else
-			    	_muteSoundsCheckbox.disabled = true;
+				getActiveUsers();
+				getChatUpdates(); //get initial update
+
+				if(!(new Audio()).canPlayType("audio/ogg; codecs=vorbis")) _soundsEnabled = false;
+				Debug.log("Chat _soundsEnabled: " + _soundsEnabled);
+				if(_soundsEnabled) {
+					_chatSound = new Audio(_SOUND_PATH); // buffers automatically when created
+					document.body.onfocus = handleChatFocus;
+					document.body.onblur = handleChatBlur;
+
+					window.onfocus = handleChatFocus;//DesktopContent.handleFocus;
+					window.onmousedown = handleChatFocus;//DesktopContent.handleFocus;
+					window.onscroll = handleChatFocus;
+					window.onblur = handleChatBlur;//DesktopContent.handleBlur;
+
+					_chatSound.play();
+
+					handleChatFocus();
+				}
+				else
+					_muteSoundsCheckbox.disabled = true;
 			} //end init()
 
 			//============================================================
-			//handleChatFocus ~		
+			//handleChatFocus ~
 			function handleChatFocus(e)
-			{	
+			{
 				_soundsEnabled = false;
-			    //Debug.log("Chat handleChatFocus: " + _soundsEnabled);
-			    if(e) DesktopContent.handleFocus(e);				
+				//Debug.log("Chat handleChatFocus: " + _soundsEnabled);
+				if(e) DesktopContent.handleFocus(e);
 			} //end handleChatFocus()
-			
+
 			//============================================================
 			//handleChatBlur ~
-			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link		
-			function handleChatBlur(e) 
-			{	
+			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link
+			function handleChatBlur(e)
+			{
 				_soundsEnabled = true;
-			    //Debug.log("Chat handleChatBlur: " + _soundsEnabled);
-			    if(e) DesktopContent.handleBlur(e);				
+				//Debug.log("Chat handleChatBlur: " + _soundsEnabled);
+				if(e) DesktopContent.handleBlur(e);
 			} //end handleChatBlur()
-			
+
 			//============================================================
 			//toggleMuteSounds ~
-			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link	
+			// 	toggle sounds on/off. Use e to determine if function call came from checkbox or link
 			//	Note: when from checkbox, event gives stale value.
-			function toggleMuteSounds(e) 
-			{	 				
-			    Debug.log("Chat _soundsEnabled: " + _soundsEnabled);
+			function toggleMuteSounds(e)
+			{
+				Debug.log("Chat _soundsEnabled: " + _soundsEnabled);
 				if(_muteSoundsCheckbox.disabled) return; //do nothing if disabled in init
 
-			    Debug.log("Chat _soundsMuted1: " + _muteSoundsCheckbox.checked);	
-			    Debug.log("Chat _soundsMuted2: " + _muteSoundsCheckbox.checked);		
-			    
-			    if(_muteSoundsCheckbox.checked) { //replay sound if enabled
-				    _chatSound.src = _SOUND_PATH;
-				    _chatSound.play();
-			    }
+				Debug.log("Chat _soundsMuted1: " + _muteSoundsCheckbox.checked);
+				Debug.log("Chat _soundsMuted2: " + _muteSoundsCheckbox.checked);
 
-			    if(!e) _muteSoundsCheckbox.checked = !_muteSoundsCheckbox.checked; //do action if from link
+				if(_muteSoundsCheckbox.checked) { //replay sound if enabled
+					_chatSound.src = _SOUND_PATH;
+					_chatSound.play();
+				}
+
+				if(!e) _muteSoundsCheckbox.checked = !_muteSoundsCheckbox.checked; //do action if from link
 			} //end toggleMuteSounds()
-			
+
 			//============================================================
 			//redrawChatWindow ~
 			// 	refreshes chat window, called when window is resized
-			function redrawChatWindow() 
-			{			
+			function redrawChatWindow()
+			{
 
-			    Debug.log("Chat redrawChat to " + window.innerWidth + " - " + window.innerHeight);
-			    
-			    var w = window.innerWidth;
-			    var h = window.innerHeight;
-			    			     
-			    if(_displayUsers) 
-			    {
-			    	_usersContainerEl.style.display = "block";
-			    	_usersContainerEl.style.left = w - _MARGIN - _USERS_WIDTH  + "px";
-			    	_usersContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
-			    	_usersEl.style.width = (_USERS_WIDTH - 2 - 2 - 17) + "px";
-			    	_usersEl.style.height = (h - _MARGIN - _MARGIN - _MARGIN - _INPUT_HEIGHT - 30 - _OFFSET_Y) + "px";
-			    	
+				Debug.log("Chat redrawChat to " + window.innerWidth + " - " + window.innerHeight);
 
-			    	_controlsContainerEl.style.display = "block";
-			    	_controlsContainerEl.style.left = w - _MARGIN - _USERS_WIDTH  + "px";
-			    	_controlsContainerEl.style.top = (h - _MARGIN - _INPUT_HEIGHT) + "px";
-			    	_controlsEl.style.width = (_USERS_WIDTH - 2 - 2 - 17) + "px";
-			    	_controlsEl.style.height = _INPUT_HEIGHT - 30 - 4 + "px";
-			    	
-			    	w -= _USERS_WIDTH + _MARGIN + _MARGIN; //alter w for remaining elements
-			    	
-			    	_linkEl.innerHTML = "Hide Side Bar";			    	
-			    }
-			    else
-			    {
-			    	_usersContainerEl.style.display = "none";
-			    	_controlsContainerEl.style.display = "none";
-			    	_linkEl.innerHTML = "Show Side Bar";
-			    }
-			    
-			    _inputEl.style.left = _MARGIN + "px";
-			    _inputEl.style.top = (h - _MARGIN - _INPUT_HEIGHT) + "px";
-			    _inputEl.style.width = (w - _MARGIN - _MARGIN - 12) + "px";
-			    _inputEl.style.height = _INPUT_HEIGHT - 12 + "px";
-			    
-			    _historyContainerEl.style.left = _MARGIN + 2 + "px";
-			    _historyContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
-			    _historyEl.style.width = (w - _MARGIN - _MARGIN - 2 - 2 - 17) + "px";
-			    _historyEl.style.height = (h - _MARGIN - _MARGIN - _MARGIN - _INPUT_HEIGHT - 30 - _OFFSET_Y) + "px";
+				var w = window.innerWidth;
+				var h = window.innerHeight;
+
+				if(_displayUsers)
+				{
+					_usersContainerEl.style.display = "block";
+					_usersContainerEl.style.left = w - _MARGIN - _USERS_WIDTH  + "px";
+					_usersContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
+					_usersEl.style.width = (_USERS_WIDTH - 2 - 2 - 17) + "px";
+					_usersEl.style.height = (h - _MARGIN - _MARGIN - _MARGIN - _INPUT_HEIGHT - 30 - _OFFSET_Y) + "px";
+
+
+					_controlsContainerEl.style.display = "block";
+					_controlsContainerEl.style.left = w - _MARGIN - _USERS_WIDTH  + "px";
+					_controlsContainerEl.style.top = (h - _MARGIN - _INPUT_HEIGHT) + "px";
+					_controlsEl.style.width = (_USERS_WIDTH - 2 - 2 - 17) + "px";
+					_controlsEl.style.height = _INPUT_HEIGHT - 30 - 4 + "px";
+
+					w -= _USERS_WIDTH + _MARGIN + _MARGIN; //alter w for remaining elements
+
+					_linkEl.innerHTML = "Hide Side Bar";
+				}
+				else
+				{
+					_usersContainerEl.style.display = "none";
+					_controlsContainerEl.style.display = "none";
+					_linkEl.innerHTML = "Show Side Bar";
+				}
+
+				_inputEl.style.left = _MARGIN + "px";
+				_inputEl.style.top = (h - _MARGIN - _INPUT_HEIGHT) + "px";
+				_inputEl.style.width = (w - _MARGIN - _MARGIN - 12) + "px";
+				_inputEl.style.height = _INPUT_HEIGHT - 12 + "px";
+
+				_historyContainerEl.style.left = _MARGIN + 2 + "px";
+				_historyContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
+				_historyEl.style.width = (w - _MARGIN - _MARGIN - 2 - 2 - 17) + "px";
+				_historyEl.style.height = (h - _MARGIN - _MARGIN - _MARGIN - _INPUT_HEIGHT - 30 - _OFFSET_Y) + "px";
 
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
-			} //end redrawChatWindow()		
+			} //end redrawChatWindow()
 
 			//============================================================
 			//handleKeyInput ~
 			// 	handles chat input
-			function handleKeyInput(e) 
-			{	
+			function handleKeyInput(e)
+			{
 
-			    //Debug.log("Chat handleKeyInput  " + e.key);
-				if(!e.shiftKey && !e.ctrlKey && !e.altKey && e.key == "Enter") {sendChat(); return false;} //if enter, login				
+				//Debug.log("Chat handleKeyInput  " + e.key);
+				if(!e.shiftKey && !e.ctrlKey && !e.altKey && e.key == "Enter") {sendChat(); return false;} //if enter, login
 				else if(e.key == "ArrowUp") //up arrow brings back last chat
 				{
 					//swap current with last chat
 					var tmp = _inputEl.value;
-				    _inputEl.value = _lastTypedChat;
-				    _lastTypedChat = tmp;
+					_inputEl.value = _lastTypedChat;
+					_lastTypedChat = tmp;
 				}
 				else if(e.key == "Tab")
 					return false; //to stop tab from propagating to window
-				
+
 				return true;
 			} //end handleKeyInput()
 
 			//============================================================
 			//sendChat ~
 			// 	send chat to server
-			function sendChat() 
-			{	
-				if(_inputEl.value == "" || _lastSentChat == _inputEl.value) 
-				{ 
+			function sendChat()
+			{
+				if(_inputEl.value == "" || _lastSentChat == _inputEl.value)
+				{
 					_lastTypedChat = _inputEl.value; //restore to compensate for swaps
-					_inputEl.value = ""; 
+					_inputEl.value = "";
 					_chatEl.innerHTML += "<div>--- No empty or repeat messages are sent ---</div>";
-					return; 
-				}//do nothing for empty or repeat 
+					return;
+				}//do nothing for empty or repeat
 
-			    if(_chatUpdateTimer)
-			    	clearTimeout(_chatUpdateTimer);
-			    _chatUpdateTimer = window.setTimeout(getChatUpdates,5000); //schedule next update in case of error
+				if(_chatUpdateTimer)
+					clearTimeout(_chatUpdateTimer);
+				_chatUpdateTimer = window.setTimeout(getChatUpdates,5000); //schedule next update in case of error
 
 				//add place holder chat for immediate user feedback
 				_chatEl.innerHTML += "<div class='chatEntry newTemporarySelfChat' style='color:" + getColorForUser(_displayName) + "'>" +
 					"<b>(" + formatTime(0) + ") " +
-					_displayName + ":</b> " + 
+					_displayName + ":</b> " +
 					"..." + "</div>"; //important to only have one /div> per entry for truncate
-				
-								
+
+
 				var chat = convertForServer(_inputEl.value);
-			    Debug.log("Chat sendChat  ");
-			    
+				Debug.log("Chat sendChat  ");
+
 				//send chat to server
 				DesktopContent.XMLHttpRequest(
-					"Request?RequestType=SendChat", 
+					"Request?RequestType=SendChat",
 					"chat="+chat+"&user="+_displayName,
-					getChatUpdates /*returnHandler*/, 
-					0 /*reqParam*/, 
-					0 /*progressHandler*/, 
-					0 /*callHandlerOnErr*/, 
-					true /*doNoShowLoadingOverlay*/);		
-			    
+					getChatUpdates /*returnHandler*/,
+					0 /*reqParam*/,
+					0 /*progressHandler*/,
+					0 /*callHandlerOnErr*/,
+					true /*doNoShowLoadingOverlay*/);
+
 				_lastSentChat = _lastTypedChat = _inputEl.value;
-			    _inputEl.value = ""; 	//clear input 
+				_inputEl.value = ""; 	//clear input
 			} //end sendChat()
-			
+
 			//============================================================
 			//convertForServer ~
 			//	replace server reserved characters with %<hex> equivalents
 			//	reserved: ", ', &, <, >
-			function convertForServer(chat) 
+			function convertForServer(chat)
 			{
-			    return chat
-		         .replace(/&/g, "%26")
-		         .replace(/</g, "%3C")
-		         .replace(/>/g, "%3E")
-		         .replace(/"/g, "%22")
-		         .replace(/'/g, "%27")
+				return chat
+				 .replace(/&/g, "%26")
+				 .replace(/</g, "%3C")
+				 .replace(/>/g, "%3E")
+				 .replace(/"/g, "%22")
+				 .replace(/'/g, "%27")
 				 .replace(/\n/g,"%0A%0D")
-				 .replace(/  /g, "%20%20");				
-			}
+				 .replace(/  /g, "%20%20");
+			} //end convertForServer()
 
 			//============================================================
 			//convertForClient ~
 			//	replace html/xhtml reserved characters with equivalent for client display.
 			//	reserved: ", ', &, <, >, newline, space
 			//		also add special things: links
-			function convertForClient(chat) 
+			function convertForClient(chat)
 			{
-				
+
 				//insert links----------
 				var lappend = "";
-				var s = chat.indexOf("http://");				
+				var s = chat.indexOf("http://");
 				if(s < 0)
 				{
-					s = chat.indexOf("https://");			
+					s = chat.indexOf("https://");
 					if(s < 0) {
 						s = chat.indexOf("www.");
 						lappend = "http://";
 					}
-				}					
-					
+				}
+
 				if(s >= 0) //if link found
 				{
 					var e = chat.indexOf(" ",s); //search for end of continuous string
-					if(e < 0) e = chat.length;								
-					chat = chat.substr(0,s) + "<a class='chatLink' target='_blank' href='" + lappend + chat.substr(s,e-s) + "'>" + 
+					if(e < 0) e = chat.length;
+					chat = chat.substr(0,s) + "<a class='chatLink' target='_blank' href='" + lappend + chat.substr(s,e-s) + "'>" +
 						chat.substr(s,e-s) + "</a>" + chat.substr(e);
 				}
-				
+
 
 				//insert gifs----------
 				var needles = [
-				               	"HOLA",
-				               	"CIAO",
-				               	":-%3C",
-				               	"PIZZA",
-				               	"b-d",
-				               	"%3E-%3C",
-				               	":-o",
-				               	":-z",
-				               	"BONJOUR",
-				               	":\\)\\)",
-				               	":-\\)",
-				               	":\\)",
-				               	":-D",
-				               	"BYE",
-				               	"HI",
-				               	"EINSTEIN",
-				               	"BOHR"
-				               ];
+								"HOLA",
+								"CIAO",
+								":-%3C",
+								"PIZZA",
+								"b-d",
+								"%3E-%3C",
+								":-o",
+								":-z",
+								"BONJOUR",
+								":\\)\\)",
+								":-\\)",
+								":\\)",
+								":-D",
+								"BYE",
+								"HI",
+								"EINSTEIN",
+								"BOHR"
+							   ];
 				var emoticons = [
-				            	"http://www.sherv.net/cm/emoticons/hello/hola-text-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/hello/ciao-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/eating/eating-sandwich.gif",
-				            	"http://www.sherv.net/cm/emoticons/eating/slice-of-pizza-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/yes/huge-thumbs-up-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/hand-gestures/high-five-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/shocked/surprise-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/sleep/snoring.gif",
-				            	"http://www.sherv.net/cm/emoticons/hello/bonjour-glitter-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emo/happy/happy-dance-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/smile/happy-nodding-smiley-face-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/smile/happy-nodding-smiley-face-emoticon.gif",
-				            	"http://www.sherv.net/cm/emo/laughing/big-smile-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/bye/bye-smiley-emoticon.gif",
-				            	"http://www.sherv.net/cm/emoticons/hello/salute-smiley-emoticon.gif",
-				            	"http://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Albert_Einstein_%28Nobel%29.png/220px-Albert_Einstein_%28Nobel%29.png",
-				            	"http://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Niels_Bohr.jpg/220px-Niels_Bohr.jpg"
-				               ];
+								"http://www.sherv.net/cm/emoticons/hello/hola-text-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/hello/ciao-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/eating/eating-sandwich.gif",
+								"http://www.sherv.net/cm/emoticons/eating/slice-of-pizza-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/yes/huge-thumbs-up-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/hand-gestures/high-five-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/shocked/surprise-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/sleep/snoring.gif",
+								"http://www.sherv.net/cm/emoticons/hello/bonjour-glitter-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emo/happy/happy-dance-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/smile/happy-nodding-smiley-face-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/smile/happy-nodding-smiley-face-emoticon.gif",
+								"http://www.sherv.net/cm/emo/laughing/big-smile-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/bye/bye-smiley-emoticon.gif",
+								"http://www.sherv.net/cm/emoticons/hello/salute-smiley-emoticon.gif",
+								"http://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Albert_Einstein_%28Nobel%29.png/220px-Albert_Einstein_%28Nobel%29.png",
+								"http://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Niels_Bohr.jpg/220px-Niels_Bohr.jpg"
+							   ];
 				var ptrn;
 				for(var i=0;i<needles.length;++i) {
 					ptrn = new RegExp(needles[i],"g");
 					chat = chat.replace(ptrn,"<img class='chatEmoticon' src='" + emoticons[i] + "'>");
 				}
-				
+
 				//replace special HTML chars-----------
-			    return chat
-			         .replace(/%26/g, "&amp;")  			//&
-			         .replace(/%3C/g, "&lt;") 				//<
-			         .replace(/%3E/g, "&gt;")				//>
-			         .replace(/%22/g, "&quot;")				//"
-			         .replace(/%27/g, "&#039;")				//'
-			         .replace(/%0A%0D/g, "<br>")			//newline
-			         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space
-			    
+				return chat
+					 .replace(/%26/g, "&amp;")  			//&
+					 .replace(/%3C/g, "&lt;") 				//<
+					 .replace(/%3E/g, "&gt;")				//>
+					 .replace(/%22/g, "&quot;")				//"
+					 .replace(/%27/g, "&#039;")				//'
+					 .replace(/%0A%0D/g, "<br>")			//newline
+					 .replace(/%20%20/g, "&nbsp;&nbsp;");	//space
+
 			 } //end convertForClient()
-			
+
 			//============================================================
 			//toggleUsersPane ~
 			// 	send chat to server
-			function toggleUsersPane() 
-			{							
+			function toggleUsersPane()
+			{
 				_displayUsers = !_displayUsers;
-			    Debug.log("Chat toggleUsersPane now is " + _displayUsers);	
-			    redrawChatWindow();
+				Debug.log("Chat toggleUsersPane now is " + _displayUsers);
+				redrawChatWindow();
 			} //end toggleUsersPane()
-			
+
 			//============================================================
 			//getChatUpdates ~
 			// 	get chat updates from server
 			//	if _lastUpdateIndex doesn't match server, server will give all new info since
 			//	initially _lastUpdateIndex = 0
-			function getChatUpdates() 
-			{			
+			function getChatUpdates()
+			{
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=RefreshChat",
 					"lastUpdateIndex="+_lastUpdateIndex+"&user="+_displayName,
 					handleRefreshChat,
-					0 /*reqParam*/, 
-					0 /*progressHandler*/, 
-					0 /*callHandlerOnErr*/, 
+					0 /*reqParam*/,
+					0 /*progressHandler*/,
+					0 /*callHandlerOnErr*/,
 					true /*doNoShowLoadingOverlay*/);
 			} //end getChatUpdates()
 
 			//============================================================
 			//getActiveUsers ~
 			// 	get active users from server
-			function getActiveUsers() 
-			{	
+			function getActiveUsers()
+			{
 				DesktopContent.XMLHttpRequest(
 				"Request?RequestType=RefreshUsers",
 				"",
 				handleActiveUsers,
-				0 /*reqParam*/, 
-				0 /*progressHandler*/, 
-				0 /*callHandlerOnErr*/, 
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
 				true /*doNoShowLoadingOverlay*/);
 			} //end getActiveUsers()
-			
+
 			//============================================================
 			//handleActiveUsers ~
 			// 	handle server response
-			function handleActiveUsers(req) 
+			function handleActiveUsers(req)
 			{
 				if(!req) return;
 				Debug.log("Chat handleActiveUsers");
-				
+
 				var tmp = DesktopContent.getXMLValue(req,"active_users");
-			    if(!tmp) return; //did not find return string			    
-			    var uarr = tmp.split(",");
-				
+				if(!tmp) return; //did not find return string
+				var uarr = tmp.split(",");
+
 				_activeUsersStr = "";
-				for(var i=0;i<uarr.length;++i)	
-					_activeUsersStr += "<a class='activeUser' href='Javascript:pageUser(\"" + uarr[i] + "\");' title='Click here to page " + 
+				for(var i=0;i<uarr.length;++i)
+					_activeUsersStr += "<a class='activeUser' href='Javascript:pageUser(\"" + uarr[i] + "\");' title='Click here to page " +
 						uarr[i] + " to chat'>" + uarr[i] + "</a><br>";
-				updateChatUsers(); //display			    
+				updateChatUsers(); //display
 			} //end handleActiveUsers()
-			
+
 			//============================================================
 			//handleRefreshChat ~
 			// 	handle server response
-			function handleRefreshChat(req) 
+			function handleRefreshChat(req)
 			{
-			    //Debug.log("Chat checkUpdates" + req.responseText);
-				
-			    var tmp = DesktopContent.getXMLValue(req,"last_update_index");
-			    if(tmp) _lastUpdateIndex = tmp;
-			    
-			    //Debug.log("Chat _lastUpdateIndex now is " + _lastUpdateIndex);	
-			    
+				//Debug.log("Chat checkUpdates" + req.responseText);
 
-			    if(req.responseXML.getElementsByTagName("chat_users")[0]) //if users list is present in req
-			    {
+				var tmp = DesktopContent.getXMLValue(req,"last_update_index");
+				if(tmp) _lastUpdateIndex = tmp;
+
+				//Debug.log("Chat _lastUpdateIndex now is " + _lastUpdateIndex);
+
+
+				if(req.responseXML.getElementsByTagName("chat_users")[0]) //if users list is present in req
+				{
 					_chatUsersArray = new Array();
 					for(var i=0;i<_chatUsersFields.length;++i)
 						_chatUsersArray.push(req.responseXML.getElementsByTagName("chat_users")[0].getElementsByTagName(_chatUsersFields[i]));
-					
-					updateChatUsers();			    	
-			    }
-			    
-			    if(req.responseXML.getElementsByTagName("chat_history")[0]) //if chat history is present in req
-			    {
-			    	_chatHistoryArray = new Array();
+
+					updateChatUsers();
+				}
+
+				if(req.responseXML.getElementsByTagName("chat_history")[0]) //if chat history is present in req
+				{
+					_chatHistoryArray = new Array();
 					for(var i=0;i<_chatHistoryFields.length;++i)
 						_chatHistoryArray.push(req.responseXML.getElementsByTagName("chat_history")[0].getElementsByTagName(_chatHistoryFields[i]));
-					
-					updateChatHistory();	
-			    }
-			    
-			    if(_chatUpdateTimer)
-			    	clearTimeout(_chatUpdateTimer);
-			    _chatUpdateTimer = window.setTimeout(getChatUpdates,_REFRESH_INTERVAL); //schedule next update			    
+
+					updateChatHistory();
+				}
+
+				if(_chatUpdateTimer)
+					clearTimeout(_chatUpdateTimer);
+				_chatUpdateTimer = window.setTimeout(getChatUpdates,_REFRESH_INTERVAL); //schedule next update
 			} //end handleRefreshChat()
 
 
 			//============================================================
 			//updateChatUsers ~
 			// 	update chat users from _chatUsersArray
-			function updateChatUsers() 
+			function updateChatUsers()
 			{
 				if(!_chatUsersArray || !_chatUsersArray[0]) return;
-				
+
 				var str = ""; //chat users string
 				for(var i=0;i<_chatUsersArray[0].length;++i)
 				{
 					str += "<div class='chatEntry' style='color:" + getColorForIndex(i) + "'>" +
-						"<b>" + _chatUsersArray[0][i].getAttribute('value') + "</b></div>";					
+						"<b>" + _chatUsersArray[0][i].getAttribute('value') + "</b></div>";
 				}
-								
+
 				_usersEl.innerHTML = _chatUsersTitle + str + "<br><hr width='80%'>" + _activeUsersTitle + _getActiveUsersStr + _activeUsersStr;
-				
+
 				//update input text color
 				_inputEl.style.color = getColorForUser(_displayName);
 			} //end updateChatUsers()
-			
+
 			//============================================================
 			//updateChatHistory ~
 			// 	add chat history from _chatHistoryArray
-			function updateChatHistory() 
-			{				
+			function updateChatHistory()
+			{
 				if(!_chatHistoryArray || !_chatHistoryArray[0]) return;
-			    
-				//remove all self temporary 
+
+				//remove all self temporary
 				var els = document.getElementsByClassName("newTemporarySelfChat");
 				for(var i=0;i<els.length;++i)
 					els[i].parentNode.removeChild(els[i]);
@@ -726,123 +726,137 @@
 					if(_lastReceivedChat != _chatHistoryArray[0][i].getAttribute('value')) //avoid accidental request duplication (timer conflict)
 					{
 						str += "<div class='chatEntry' style='color:" + getColorForUser(_chatHistoryArray[1][i].getAttribute('value')) + "'>" +
-					 		"<b><label style='width:85px; display:inline-block; font-family:monospace; font-weight:normal;'>(" + 
-								formatTime(_chatHistoryArray[2][i].getAttribute('value')) + 
+							"<b><label style='width:85px; display:inline-block; font-family:monospace; font-weight:normal;'>(" +
+								formatTime(_chatHistoryArray[2][i].getAttribute('value')) +
 							")</label> " +
-						 	_chatHistoryArray[1][i].getAttribute('value') + ":</b> " + 
-						 	convertForClient(_chatHistoryArray[0][i].getAttribute('value')) + "</div>"; //important to only have one /div> per entry for truncate
-						
-						if(!newChatFound && _soundsEnabled && !_muteSoundsCheckbox.checked) { //only one sound per chat received	
-						    _chatSound.src = _SOUND_PATH;
-						    _chatSound.play();						
+							_chatHistoryArray[1][i].getAttribute('value') + ":</b> " +
+							convertForClient(_chatHistoryArray[0][i].getAttribute('value')) + "</div>"; //important to only have one /div> per entry for truncate
+
+						if(!newChatFound && _soundsEnabled && !_muteSoundsCheckbox.checked) { //only one sound per chat received
+							_chatSound.src = _SOUND_PATH;
+							_chatSound.play();
 							newChatFound = true;
-						}							
+						}
 					}
-					
+
 					 _lastReceivedChat = _chatHistoryArray[0][i].getAttribute('value');
 				}
-				
-				str = _chatEl.innerHTML + str;	
-				var lendiff = str.length - _CHAT_HISTORY_MAX_LENGTH;	
+
+				str = _chatEl.innerHTML + str;
+				var lendiff = str.length - _CHAT_HISTORY_MAX_LENGTH;
 				if(lendiff > 0) //truncate chat history at entry start
 					_chatEl.innerHTML = str.substr(str.indexOf("/div>",lendiff) + 5);
 				else
-					_chatEl.innerHTML = str; 
-				
+					_chatEl.innerHTML = str;
+
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
 			} //end updateChatHistory()
 
 			//============================================================
 			//formatTime ~
-			function formatTime(t) 
+			function formatTime(t)
 			{
 				var date = t?(new Date(t * 1000)):(new Date());
 				var mm = date.getMinutes() < 10?"0"+date.getMinutes():date.getMinutes();
-				var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();				
+				var ss = date.getSeconds() < 10?"0"+date.getSeconds():date.getSeconds();
 				return date.getHours() + ":" + mm + ":" + ss;
 			} //end formatTime()
-			
+
 			//============================================================
 			//getColorForUser ~
 			//	generate color based on user index in user list
-			function getColorForUser(u) 
-			{				
+			function getColorForUser(u)
+			{
 				if(!_chatUsersArray || !_chatUsersArray[0]) return "auto";
-			    
+
 				for(var i=0;i<_chatUsersArray[0].length;++i)
 					if(_chatUsersArray[0][i].getAttribute('value') == u)
 						return getColorForIndex(i);
-				return "auto";		
+				return "auto";
 			} //end getColorForUser()
 
 			//============================================================
 			//getColorForIndex ~
 			//	generate color based on user index in user list
-			function getColorForIndex(i) 
+			function getColorForIndex(i)
 			{
 				var r = ((i+1)%2 * 200) % 256;
 				var g = (i%4 * 200) % 256;
-				var b = (i%8 * 200) % 256; 
+				var b = (i%8 * 200) % 256;
 				if((r+b+g)/3 > 128) { r /= 2; g /= 2; b /= 2; } //dim colors if too bright
-					
+
 				return "RGB(" +	r + "," + g + "," + b + ")";
-			}
+			} //end getColorForIndex()
 
 			//============================================================
 			//handleUserScroll ~
 			//	identify when user wants to keep up with live chats
-			function handleUserScroll(e) 
-			{							    
+			function handleUserScroll(e)
+			{
 				if(_userMouseInput) //only mess with scroll if user did something with mouse recently
-					_scrollWithNewChats = (_historyEl.scrollTop >=_historyEl.scrollHeight - _historyEl.offsetHeight - 2);	
+					_scrollWithNewChats = (_historyEl.scrollTop >=_historyEl.scrollHeight - _historyEl.offsetHeight - 2);
 
 				DesktopContent.handleScroll(e);
-			}
-			
+			} //end handleUserScroll()
+
 			//============================================================
 			//handleUserInputScroll ~
 			//	identify when user used mouse and wants to keep up with live chats
-			function handleUserInputScroll(mouseEvent) 
+			function handleUserInputScroll(mouseEvent)
 			{
 				_userMouseInput = true;
-				
+
 				DesktopContent.handleScroll(mouseEvent);
-			}
+			} //end handleUserInputScroll()
 
 			//============================================================
 			//handleMouseMoveScroll ~
 			//	identify when user released the mouse, to be considerd by scroll handler
-			function handleMouseMoveScroll(mouseEvent) 
+			function handleMouseMoveScroll(mouseEvent)
 			{
 				if(_userMouseInput && mouseEvent.which == 0) //mouse button released
 					_userMouseInput = false;
-			}
-			
+			} //end handleMouseMoveScroll()
+
 			//============================================================
 			//pageUser ~
-			function pageUser(u) 
+			function pageUser(u)
 			{
-			    Debug.log("Chat pageUser now is " + u);	
+				Debug.log("Chat pageUser now is " + u);
+
 				DesktopContent.XMLHttpRequest("Request?RequestType=PageUser","topage="+u+"&user="+_displayName,handleRefreshChat);
-			}
-			
+
+				var chat = convertForServer("Paging " + u + " to come to chat!");
+				Debug.log("Chat sendChat page");
+
+				//send chat to server
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=SendChat",
+					"chat="+chat+"&user="+_displayName,
+					getChatUpdates /*returnHandler*/,
+					0 /*reqParam*/,
+					0 /*progressHandler*/,
+					0 /*callHandlerOnErr*/,
+					true /*doNoShowLoadingOverlay*/);
+			} //end pageUser()
+
 		</script>
-		
+
 	</head>
-	
-	
-	<body onload='//init() called by DesktopContent.js'>	
-			
+
+
+	<body onload='//init() called by DesktopContent.js'>
+
 
 		<div id='chatInstructions'>
 			Type your message and then press Enter to chat.
 		</div>
-		
+
 		<div id='userLink'>
-			<a href='Javascript:toggleUsersPane();' title='Toggle User Side Pane' class='chatLink' id='userLinkText'></a>		 
+			<a href='Javascript:toggleUsersPane();' title='Toggle User Side Pane' class='chatLink' id='userLinkText'></a>
 		</div>
-						
+
 			<div id='chatHistoryContainer'>
 			<div id='chatHistory'>
 			<table height='100%'><td height='100%' valign='bottom'>
@@ -853,18 +867,18 @@
 			<div id='usersContainer'>
 			<div id='usersArea'>
 			</div></div>
-			
+
 			<textarea id='inputArea'></textarea>
-			
+
 			<div id='controlsContainer'>
 			<div id='controlsArea'>
 			<input type="checkbox" id="muteSounds"><div id='muteSoundsText'>
 			<a class="chatLink"
-				href='Javascript:toggleMuteSounds();' 
+				href='Javascript:toggleMuteSounds();'
 				title='Toggle Muting Sounds' >Mute sounds</a>
 			</div>
 			</div></div>
-			
+
 	</body>
-	
+
 </html>

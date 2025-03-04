@@ -1,16 +1,16 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD
 HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  	<head>
-    	<meta http-equiv="content-type" content="text/html;charset=utf-8">
-    	<title>d3.js gauges</title>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>d3.js gauges</title>
 
 		<style>
 
 			body
 			{
-			  	font: 10px arial;
-			  	background-color:  rgb(255, 255, 255);
+				font: 10px arial;
+				background-color:  rgb(255, 255, 255);
 			}
 			.wrapper {
 				display: grid;
@@ -53,7 +53,7 @@ HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 				pv_settings_ = settings;
 			}
 
-			function drawWidget(widget, parameters) 
+			function drawWidget(widget, parameters)
 			{
 				widget_ = widget;
 				if (parameters) parameters_ = parameters;
@@ -88,7 +88,7 @@ HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 					divtemp.id = "gauge-div-" + pv_number;
 					divtemp.style.width = "100%";
 					divtemp.style.height = "100%";
-					
+
 					div.appendChild(divtemp);
 
 					var label = pv_settings_[pv] !== undefined ? pv_settings_[pv].Units : "";
@@ -153,7 +153,7 @@ HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 
 			function createGauge(name, container, label, min, max, size)
 			{
-				var config = 
+				var config =
 				{
 					size: (undefined != size && size > 0) ? size : 120,
 					label: label,
@@ -188,4 +188,3 @@ HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 	</body>
 
 </html>
-

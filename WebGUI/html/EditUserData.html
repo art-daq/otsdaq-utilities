@@ -32,26 +32,26 @@
 		var selectedTargetGreen;
 		var selectedtargetBlue;
 		//////////////////////////
-		
-		
+
+
 
 		//=====================================================================================
 		function init()
 		{
 			console.log("init()");
-		
-		
+
+
 			for(var index = 0; index < IDs_.length; index++)
 				selection_[index] = IDs_[index];
 			//Added all of the IDs into the selection_ array and position the selection at the end
-		
+
 			var inputs = document.querySelectorAll( '.inputfile' );
 			Array.prototype.forEach.call( inputs, function( input )
 			{
 				var label	 = input.nextElementSibling;
 				var	labelVal = label.innerHTML;
 				var exportBtn= document.getElementById("exportBtn");
-			
+
 				input.addEventListener( 'change', function( e )
 				{
 					var fileName = '';
@@ -59,7 +59,7 @@
 						fileName = ( this.getAttribute( 'data-multiple-caption' ) || '' ).replace( '{count}', this.files.length );
 					else
 						fileName = e.target.value.split( '\\' ).pop();
-			
+
 					if( fileName ) {
 						label.innerHTML = fileName;
 						exportBtn.innerHTML = "Upload";
@@ -72,107 +72,107 @@
 					}
 				});
 			});
-		
+
 			colorFade('grey', "all");
 			colorFade('red', "selected");
 			state_= document.getElementById("state");
 			state_.innerHTML = "Loading...";
-			
-			
-		
+
+
+
 			//var setSelection=setTimeout(makeServerRequest, 1000);
 		} //end init()
-		
+
 
 		//=====================================================================================
 		function colorFade(secondColor, which)
 		{
 			//Added all of the IDs into the selection_ array and position the selection at the end
-		
+
 			if(which == "selected" || which == "all")
-			{		
+			{
 				if(secondColor == 'orange')
 				{
 					selectedTargetRed = 255;
 					selectedTargetGreen = 188;
-					selectedTargetBlue = 18;				
+					selectedTargetBlue = 18;
 				}
 				else if(secondColor == 'blue')
 				{
 					nonSelectedTargetRed = 0;
 					nonSelectedTargetGreen = 210;
-					nonSelectedTargetBlue = 255;					
+					nonSelectedTargetBlue = 255;
 				}
 				else if(secondColor == 'grey')
 				{
 					nonSelectedTargetRed = 232;
 					nonSelectedTargetGreen = 232;
-					nonSelectedTargetBlue = 232;					
+					nonSelectedTargetBlue = 232;
 				}
 				else if(secondColor == 'red')
 				{
 					selectedTargetRed = 242;
 					selectedTargetGreen = 5;
-					selectedTargetBlue = 5;					
+					selectedTargetBlue = 5;
 				}
 				else if(secondColor == 'green')
 				{
 					selectedTargetRed = 56;
 					selectedTargetGreen = 224;
-					selectedTargetBlue = 56;					
+					selectedTargetBlue = 56;
 				}
 				else if(secondColor == 'current')
 				{
-		
+
 				}
-		
+
 			}
-			
+
 			if(which == "notSelected" || which == "all")
-			{		
+			{
 				if(secondColor == 'orange')
 				{
 					nonSelectedTargetRed = 255;
 					nonSelectedTargetGreen = 188;
-					nonSelectedTargetBlue = 18;				
+					nonSelectedTargetBlue = 18;
 				}
 				else if(secondColor == 'blue')
 				{
 					nonSelectedTargetRed = 0;
 					nonSelectedTargetGreen = 210;
-					nonSelectedTargetBlue = 255;					
+					nonSelectedTargetBlue = 255;
 				}
 				else if(secondColor == 'grey')
 				{
 					nonSelectedTargetRed = 232;
 					nonSelectedTargetGreen = 232;
-					nonSelectedTargetBlue = 232;					
+					nonSelectedTargetBlue = 232;
 				}
 				else if(secondColor == 'red')
 				{
 					nonSelectedTargetRed = 242;
 					nonSelectedTargetGreen = 5;
-					nonSelectedTargetBlue = 5;					
+					nonSelectedTargetBlue = 5;
 				}
 				else if(secondColor == 'green')
 				{
 					nonSelectedTargetRed = 56;
 					nonSelectedTargetGreen = 224;
-					nonSelectedTargetBlue = 56;					
+					nonSelectedTargetBlue = 56;
 				}
 				else if(secondColor == 'current')
 				{
-		
+
 				}
-			}    
-		
+			}
+
 			console.log(selectedRed, selectedGreen, selectedBlue, nonSelectedRed, nonSelectedGreen, nonSelectedBlue);
-		
+
 			var colorChanger=setTimeout(decreaseColor, INTERVAL_);
-		
-		
+
+
 		} //end colorFade()
-		
+
 
 		//=====================================================================================
 		function decreaseColor()
@@ -191,14 +191,14 @@
 				--nonSelectedBlue;
 			//console.log("Called");
 			setDivGlow();
-		
-			if((selectedRed + selectedGreen + selectedBlue + nonSelectedRed 
+
+			if((selectedRed + selectedGreen + selectedBlue + nonSelectedRed
 					+ nonSelectedGreen + nonSelectedBlue) > 0)
 				colorChanger = setTimeout(decreaseColor, INTERVAL_);
 			else
 			{
 				restructure();
-				colorChanger = setTimeout(increaseColor, INTERVAL_);		
+				colorChanger = setTimeout(increaseColor, INTERVAL_);
 			}
 		} //end decreaseColor()
 
@@ -216,22 +216,22 @@
 			if(nonSelectedGreen < nonSelectedTargetGreen)
 				++nonSelectedGreen;
 			if(nonSelectedBlue < nonSelectedTargetBlue)
-				++nonSelectedBlue;	
+				++nonSelectedBlue;
 			setDivGlow();
-		
-			if((selectedRed + selectedGreen + selectedBlue + nonSelectedRed + 
-					nonSelectedGreen + nonSelectedBlue) < (selectedTargetRed + 
+
+			if((selectedRed + selectedGreen + selectedBlue + nonSelectedRed +
+					nonSelectedGreen + nonSelectedBlue) < (selectedTargetRed +
 							selectedTargetGreen + selectedTargetBlue + nonSelectedTargetRed +
 							nonSelectedTargetGreen + nonSelectedTargetBlue))
 				colorChanger = setTimeout(increaseColor, INTERVAL_);
-		
+
 		} //end increaseColor()
-		
+
 
 		//=====================================================================================
 		function setDivGlow()
-		{		
-		
+		{
+
 			for(var index = 0; index < (selection_.length); index++)
 			{
 				try
@@ -247,7 +247,7 @@
 					{
 						div.style.boxShadow = "0px 0px 64px 20px rgba(" + selectedRed + "," + selectedGreen + "," + selectedBlue + ",1)";
 						div.style.webkitBoxShadow = "0px 0px 64px 20px rgba(" + selectedRed + "," + selectedGreen + "," + selectedBlue + ",1)";
-						div.style.mozBoxShadow = "0px 0px 64px 20px rgba(" + selectedRed + "," + selectedGreen + "," + selectedBlue + ",1)";	
+						div.style.mozBoxShadow = "0px 0px 64px 20px rgba(" + selectedRed + "," + selectedGreen + "," + selectedBlue + ",1)";
 					}
 				}
 				catch(e)
@@ -255,29 +255,29 @@
 					//ignore
 				}
 			}
-		
+
 		} //end setDivGlow()
-		
+
 
 		//=====================================================================================
 		function showVisualSelection(){
-		
-		
+
+
 			state_.innerHTML = "&nbsp";
-		
+
 			//set selected to green
 			colorFade('green', 'selected');
 			//set selected to green
 			colorFade('red', 'notSelected');
-		
+
 		} //end showVisualSelection()
-		
+
 
 		//=====================================================================================
 		function confirm()
 		{
 			var randomNumber = Math.floor(Math.random() * 99999999)
-			if(prompt("Are you sure? This will delete ALL user data. Type " + 
+			if(prompt("Are you sure? This will delete ALL user data. Type " +
 					randomNumber + " to continue:") == randomNumber)
 				if(prompt("I know exactly what I'm doing. Type 'I Do':") == "I Do")
 				{
@@ -285,7 +285,7 @@
 				}
 				else
 					alert("You did not type 'I Do.' Mission aborted!");
-		
+
 			else
 				alert("You did not type the correct number. Mission aborted!");
 		} //end confirm()
@@ -294,13 +294,13 @@
 		function confirmTooltip()
 		{
 			if(prompt("Are you sure? This will reset Tooltips for ALL users. " +
-					"Type 'YES' to continue:")=="YES")				
+					"Type 'YES' to continue:")=="YES")
 				select('ResetAllUserTooltips');
-		
+
 			else
 				alert("You did not type 'YES'. Tooltip reset canceled.");
 		} //end confirmTooltip()
-		
+
 
 		//=====================================================================================
 		function select(id)
@@ -318,7 +318,7 @@
 			}
 			else if(id = 'ImportExportUserData')
 			{
-				console.log("Importing/Exporting User Data selected.");		   
+				console.log("Importing/Exporting User Data selected.");
 			}
 			else
 			{
@@ -326,50 +326,50 @@
 				return;
 			}
 
-		
+
 			var serverRequest = "selection=" + selectedChoice_;
 			console.log(serverRequest);
 			makeServerRequest("editSecurity", serverRequest, editSecurityHandler);
 		} //end select()
-		
+
 
 		//=====================================================================================
-		function restructure() 
+		function restructure()
 		{
-		
+
 			for(var index = 0; index < IDs_.length; index++)
 			{
 				if(selectedChoice_ != "")
 				{
 					if(selectedChoice_ != IDs_[index])
-						selection_[index] = IDs_[index];	
-				}	
+						selection_[index] = IDs_[index];
+				}
 			}
 			if(selectedChoice_ != "")
 				selection_[selection_.length] = selectedChoice_;
-		
+
 		} //end restructure()
 
 
 		//=====================================================================================
 		function makeServerRequest(req, data, handler)
-		{		
-			DesktopContent.XMLHttpRequest(req, data, handler, 
-					undefined /*reqParam*/, 
+		{
+			DesktopContent.XMLHttpRequest(req, data, handler,
+					undefined /*reqParam*/,
 					undefined /*progressHandler*/,
 					true /*callHandlerOnErr*/);
-		} //end makeServerRequest()		
-		
+		} //end makeServerRequest()
+
 
 		//=====================================================================================
 		//handleFiles
-		function handleFiles() 
-		{ 
-		
+		function handleFiles()
+		{
+
 			var fileHolder = document.getElementById("fileToUpload");
 			var submitBtn  = document.getElementById("submitBtn");
 			var exportBtn  = document.getElementById("exportBtn");
-			
+
 			if(fileHolder.value != "")
 			{
 				console.log("File selected!");
@@ -382,7 +382,7 @@
 				submitBtn.style.display = "none !important";
 				exportBtn.style.display = "block !important";
 			}
-		
+
 		} //end handleFiles()
 
 
@@ -390,47 +390,47 @@
 		//uploadToServer ~~
 		//	upload logbook entry to server.
 		//	Used to upload as temporary previewable post
-		function uploadToServer(reqCmd, handler) 
+		function uploadToServer(reqCmd, handler)
 		{
-			
+
 			console.log();
-			
+
 			var xhr = new XMLHttpRequest();
-			
+
 			var fd = new FormData();
 			fd.append("RequestType", "Import");
 			fd.append("Entry",convertForServer("File Contents")); //add escaped user text
-            fd.append("Filename",convertForServer("Name of the file")); //add escaped user subject
-            fd.append("Imported_File", document.getElementById('fileToUpload').files[0]);
-            
-			var urnLid    = DesktopContent.getDesktopWindowParameter(0,"urn");				
+			fd.append("Filename",convertForServer("Name of the file")); //add escaped user subject
+			fd.append("Imported_File", document.getElementById('fileToUpload').files[0]);
+
+			var urnLid    = DesktopContent.getDesktopWindowParameter(0,"urn");
 			requestURL = "/urn:xdaq-application:lid="+urnLid+"/";
 			xhr.open("POST", requestURL + "UserSettings?sequence=" + DesktopContent._sequence);
-			
+
 			xhr.send(fd);
-			
-			
+
+
 			//'import_file',document.getElementById('fileToUpload').files[0]);
 			console.log(fd);
-			//makeServerRequest(reqCmd, fd, handler); 
+			//makeServerRequest(reqCmd, fd, handler);
 			Debug.log("User Data was uploaded successfully, you should launch OTS wizard again for the changes to be effective" , Debug.INFO_PRIORITY);
 		} //end uploadToServer()
-		
+
 
 		//=====================================================================================
 		//convertForServer ~
 		//	replace server reserved characters with %<hex> equivalents
 		//	reserved: ", ', &, <, >, newline, double-space
-		function convertForServer(entry) 
+		function convertForServer(entry)
 		{
-		    return entry
-	         .replace(/&/g, "%26")
-	         .replace(/</g, "%3C")
-	         .replace(/>/g, "%3E")
-	         .replace(/"/g, "%22")
-	         .replace(/'/g, "%27")
+			return entry
+			 .replace(/&/g, "%26")
+			 .replace(/</g, "%3C")
+			 .replace(/>/g, "%3E")
+			 .replace(/"/g, "%22")
+			 .replace(/'/g, "%27")
 			 .replace(/\n/g,"%0A%0D")
-			 .replace(/  /g, "%20%20");				
+			 .replace(/  /g, "%20%20");
 		} //end convertForServer()
 
 
@@ -440,19 +440,19 @@
 		//	reserved: ", ', &, <, >, newline, double-space
 		function convertForClient(entry) {
 			//replace special HTML chars-----------
-		    return entry
-		         .replace(/%26/g, "&amp;")  			//&
-		         .replace(/%3C/g, "&lt;") 				//<
-		         .replace(/%3E/g, "&gt;")				//>
-		         .replace(/%22/g, "&quot;")				//"
-		         .replace(/%27/g, "&#039;")				//'
-		         .replace(/%0A%0D/g, "<br>")			//newline
-		         .replace(/%20%20/g, "&nbsp;&nbsp;");	//space        
+			return entry
+				 .replace(/%26/g, "&amp;")  			//&
+				 .replace(/%3C/g, "&lt;") 				//<
+				 .replace(/%3E/g, "&gt;")				//>
+				 .replace(/%22/g, "&quot;")				//"
+				 .replace(/%27/g, "&#039;")				//'
+				 .replace(/%0A%0D/g, "<br>")			//newline
+				 .replace(/%20%20/g, "&nbsp;&nbsp;");	//space
 		} //end convertForClient()
 
 		//=====================================================================================
 		//uploadProgress ~~
-		function uploadProgress(evt) 
+		function uploadProgress(evt)
 		{
 			if (evt.lengthComputable)
 			{
@@ -460,7 +460,7 @@
 				document.getElementById('PreviewStatus').innerHTML = percentComplete.toString() + '%';
 				Debug.log("Edit User Data uploadProgress " +  percentComplete.toString() + '%');
 			}
-			else 
+			else
 			{
 				document.getElementById('PreviewStatus').innerHTML = 'unable to compute';
 				Debug.log("Edit User Data uploadProgress 'unable to compute'");
@@ -478,17 +478,17 @@
 
 		//=====================================================================================
 		//uploadFailed ~
-		function uploadFailed(evt) 
+		function uploadFailed(evt)
 		{
 			Debug.log("There was an error attempting to upload the file.");
 		}
 
 		//=====================================================================================
 		//uploadCanceled ~
-		function uploadCanceled(evt) 
+		function uploadCanceled(evt)
 		{
 			Debug.log("The upload has been canceled by the user or the browser dropped the connection.");
-		}  
+		}
 
 		//=====================================================================================
 		//fileSelected ~
@@ -500,39 +500,39 @@
 			var fileTypeConcat = "";
 			for(var i=0;i<el.files.length;++i)
 			{
-				var file = el.files[i];	
+				var file = el.files[i];
 				Debug.log("Edit User Data fileSelected " + file.name);
-				if (file) {					    
-				    totFileSize += file.size;
-				    fileNameConcat += file.name + ";";
-				    fileTypeConcat += file.type + ";";
+				if (file) {
+					totFileSize += file.size;
+					fileNameConcat += file.name + ";";
+					fileTypeConcat += file.type + ";";
 				}
 			}
 
 			var fileSize = 0;
 			var MAX = 100; //MB
-		    if (totFileSize > MAX * 1024 * 1024)
-		    {
-		    	//delete file input element and create same empty
-		    	clearFileInput();
-		    	document.getElementById('PreviewStatus').innerHTML = "File upload limit is " + MAX + " MB";
-		    	return;
-		    }
-		    else if (totFileSize > 1024 * 1024)
-		    	fileSize = (Math.round(totFileSize * 100 / (1024 * 1024)) / 100).toString() + ' MB';
-		    else	
-		    	fileSize = (Math.round(totFileSize * 100 / 1024) / 100).toString() + ' KB';
+			if (totFileSize > MAX * 1024 * 1024)
+			{
+				//delete file input element and create same empty
+				clearFileInput();
+				document.getElementById('PreviewStatus').innerHTML = "File upload limit is " + MAX + " MB";
+				return;
+			}
+			else if (totFileSize > 1024 * 1024)
+				fileSize = (Math.round(totFileSize * 100 / (1024 * 1024)) / 100).toString() + ' MB';
+			else
+				fileSize = (Math.round(totFileSize * 100 / 1024) / 100).toString() + ' KB';
 			//Debug.log("User Data was uploaded successfully 11111111" , Debug.INFO_PRIORITY);
-			/*document.getElementById('fileName').innerHTML = '<b>Name:</b> ' + 
+			/*document.getElementById('fileName').innerHTML = '<b>Name:</b> ' +
 				fileNameConcat.substr(0,60) + (fileNameConcat.length > 60?"...":"");
 			document.getElementById('fileSize').innerHTML = '<b>Size:</b>&nbsp;&nbsp;&nbsp; ' + fileSize;
-			document.getElementById('fileType').innerHTML = '<b>Type:</b>&nbsp;&nbsp; ' + 
+			document.getElementById('fileType').innerHTML = '<b>Type:</b>&nbsp;&nbsp; ' +
 				fileTypeConcat.substr(0,20) + (fileTypeConcat.length > 20?"...":"");*/
 		} //end fileSelected()
-  	
+
 
 		//=====================================================================================
-		function exportUserSettingsBtn() 
+		function exportUserSettingsBtn()
 		{
 			Debug.log("Making request to export settings!");
 			//makeServerRequest("");
@@ -545,8 +545,8 @@
 		//=====================================================================================
 		//Note: not an xml response, just text
 		function userSettingsHandler(req)
-		{		
-			if(!req || !req.responseText.length || 
+		{
+			if(!req || !req.responseText.length ||
 					req.responseText.indexOf("Error") >= 0)
 			{
 				Debug.log("Action Failed. Invalid Verify Code!", Debug.HIGH_PRIORITY);
@@ -555,19 +555,19 @@
 			}
 
 			console.log("req.responseText",req.responseText);
-			
+
 			if(selectedChoice_ == "ResetAllUserData")
 			{
 				Debug.log("User Data was RESET successfully!", Debug.INFO_PRIORITY);
 				Debug.log("Your wiz mode URL may have changed. Please refer to the console for the new link!", Debug.INFO_PRIORITY);
 
-			}	
-			
+			}
+
 			if(req.responseText.indexOf("Upload Success") >= 0)
 			{
 				Debug.log("User Settings successfully uploaded!", Debug.INFO_PRIORITY);
-			}		   
-	
+			}
+
 			Debug.log("Successfully handled User Settings.");
 			Debug.log(req);
 			//Debug.log("User Data was uploaded successfully 11111" , Debug.INFO_PRIORITY);
@@ -577,7 +577,7 @@
 		//=====================================================================================
 		//Note: not an xml response, just text
 		function editSecurityHandler(req)
-		{		
+		{
 			if(!req || !req.responseText.length || req.responseText.indexOf("Error") >= 0)
 			{
 				Debug.log("Action Failed. Invalid Verify Code!", Debug.HIGH_PRIORITY);
@@ -585,30 +585,30 @@
 				showVisualSelection();
 				return;
 			}
-			
+
 			console.log("req.responseText",req.responseText);
-		
+
 			if(selectedChoice_ == "ResetAllUserData")
-		    {
+			{
 				Debug.log("User Data was RESET successfully!", Debug.INFO_PRIORITY);
 				Debug.log("Your wiz mode URL may have changed. Please refer to the console for the new link!", Debug.INFO_PRIORITY);
-			}			   
+			}
 			else if(selectedChoice_ == "ResetAllUserTooltips")
-		    {
-				Debug.log("All User tooltips were RESET successfully!", Debug.INFO_PRIORITY);			
-			}		
-		
-			selectedSecurityChoice_ = req.responseText; 
+			{
+				Debug.log("All User tooltips were RESET successfully!", Debug.INFO_PRIORITY);
+			}
+
+			selectedSecurityChoice_ = req.responseText;
 			console.log(selectedSecurityChoice_);
 			showVisualSelection();
 			return;
 		} //end editSecurityHandler
-		
+
 
 		//=====================================================================================
 		//Note: not an xml response, just text
 		function handleImportSettings(req)
-		{					
+		{
 			if(!req || !req.responseText.length || req.responseText.indexOf("Error") >= 0)
 			{
 				Debug.log("Action Failed. Invalid Verify Code!", Debug.HIGH_PRIORITY);
@@ -616,10 +616,10 @@
 				return;
 			}
 			console.log("req.responseText",req.responseText);
-			
+
 			return;
 		} //end handleImportSettings
-		
+
 	</script>
 
 

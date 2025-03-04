@@ -8,8 +8,8 @@ namespace ots
 {
 // clang-format off
 
-// ConfigurationGUISupervisor
-//	This class handles the user requests to read and write the Configuration Tree.
+/// ConfigurationGUISupervisor
+///	This class handles the user requests to read and write the Configuration Tree.
 class ConfigurationGUISupervisor : public CoreSupervisorBase
 {
   public:
@@ -25,9 +25,9 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	virtual void 			request									(const std::string& requestType,cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, const WebUsers::RequestUserInfo& userInfo) override;
 
 	virtual void 			setSupervisorPropertyDefaults			(void) override;
-	virtual void 			forceSupervisorPropertyValues			(void) override;  // override to force supervisor property values (and ignore user settings)
+	virtual void 			forceSupervisorPropertyValues			(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
-  private:	
+  private:
 	void					handleSaveTableInfoXML					(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
 																	std::string&            tableName,
@@ -82,7 +82,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      modifiedTables,
 																	bool                    refreshAll      = true,
 																	bool                    getGroupInfo    = false,
-																	std::map<std::string /*name*/, 
+																	std::map<std::string /*name*/,
 																		TableVersion /*version*/>* returnMemberMap = 0,
 																	bool         			outputActiveTables = true,
 																	std::string* 			accumulatedErrors  = 0);
@@ -113,13 +113,13 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      recordList,
 																	const std::string&      fieldList);
 	void         			handleFillUniqueFieldValuesForRecordsXML(HttpXmlDocument&       xmldoc,
-																 	ConfigurationManagerRW* cfgMgr,
-																 	const std::string&      groupName,
-																 	const TableGroupKey&    groupKey,
-																 	const std::string&      startPath,
-																 	const std::string&      modifiedTables,
-																 	const std::string&      recordList,
-																 	const std::string&      fieldList);
+																	ConfigurationManagerRW* cfgMgr,
+																	const std::string&      groupName,
+																	const TableGroupKey&    groupKey,
+																	const std::string&      startPath,
+																	const std::string&      modifiedTables,
+																	const std::string&      recordList,
+																	const std::string&      fieldList);
 	void        			handleFillGetTreeNodeFieldValuesXML		(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string&      groupName,
@@ -249,14 +249,14 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const TableVersion&     vA,
 																	const TableVersion&     vB);
 
-	
+
 
 	void  					testXDAQContext							(void);
 
 	enum
 	{
-		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 1,  // 1 hour, in seconds
-		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 15,      // 15 minutes, in seconds
+		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 1,  ///< 1 hour, in seconds
+		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 15,      ///< 15 minutes, in seconds
 	};
 
 	ConfigurationManagerRW* refreshUserSession						(std::string username,
