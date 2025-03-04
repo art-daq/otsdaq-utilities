@@ -58,4 +58,3 @@
       echo "Github CI detected format errors!"
   fi
 #   exit $rc
-
