@@ -153,7 +153,8 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	if(result != CURLE_OK)
 	{
 		_safe_url = "";  //clear on error
-		__SS__ << "Error ECL request not OK, check URL - here was the error: [" << result << "] - " << errorBuffer << std::endl;
+		__SS__ << "Error ECL request not OK, check URL - here was the error: [" << result
+		       << "] - " << errorBuffer << std::endl;
 
 		__COUTS__(20) << "ECL Cleanup" << std::endl;
 		// cleanup curl stuff
@@ -169,7 +170,8 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	// curl_slist_free_all(headers);
 	curl_global_cleanup();
 
-	if(responseBuffer.find("Error") < 60 || //assume 'Error' not in content if early in response
+	if(responseBuffer.find("Error") <
+	       60 ||  //assume 'Error' not in content if early in response
 	   responseBuffer.find("301 Moved Permanently") < 1000)
 	{
 		_safe_url = "";  //clear on error

@@ -682,8 +682,8 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 
 				if(!found)
 				{
-					__COUTS__(10) << "Skipping unaccepted category: " << category
-					    << __E__;
+					__COUTS__(10)
+					    << "Skipping unaccepted category: " << category << __E__;
 					lastBefore = before;
 					--before;  //move back to prepare for next search
 					continue;

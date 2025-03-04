@@ -134,7 +134,7 @@ void ConfigurationGUISupervisor::setSupervisorPropertyDefaults(void)
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 	    "*=10 | deleteTreeNodeRecords=255 | saveTableInfo=255 | "
 	    "deleteTableInfo=255");  // experienced users to edit, admins to delete
-		
+
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
 	    "*");  // all
@@ -152,7 +152,7 @@ void ConfigurationGUISupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::addSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "getActiveTableGroups");
-	
+
 	//Allow get* to not require lock to enable read-only access to the Configuration Tree:
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.CheckUserLockRequestTypes,
@@ -3531,7 +3531,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 					continue;
 
 				__COUTS__(30) << "Table " << tableInfo.first
-				    << " col: " << view.getColumnInfo(col).getName() << __E__;
+				              << " col: " << view.getColumnInfo(col).getName() << __E__;
 
 				for(unsigned int r = 0; r < view.getNumberOfRows(); ++r)
 				{
@@ -3807,8 +3807,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 	if(t.isValueNode())
 	{
-		__COUTS__(30) << "\t" << t.getValueName() << ": "
-		                               << t.getValueAsString() << __E__;
+		__COUTS__(30) << "\t" << t.getValueName() << ": " << t.getValueAsString()
+		              << __E__;
 
 		parentEl = xmlOut.addTextElementToParent("node", t.getValueName(), parentEl);
 		if(diffTree.has_value() &&
@@ -3816,16 +3816,15 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 		   t.getValueName() != TableViewColumnInfo::COL_NAME_AUTHOR &&
 		   t.getValueName() != TableViewColumnInfo::COL_NAME_CREATION)
 		{
-			__COUTS__(30) << "\t\t diff type "
-			                               << diffTree->get().getNodeType() << __E__;
+			__COUTS__(30) << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
 
 			if(diffTree->get().isValueNode())
 			{
 				__COUTS__(30) << "\t" << diffTree->get().getValueAsString() << " ? "
-				    << t.getValueAsString() << __E__;
+				              << t.getValueAsString() << __E__;
 				__COUTS__(30) << "\t" << diffTree->get().getTableName() << "-v"
-				    << diffTree->get().getTableVersion() << " ? " << t.getTableName()
-				    << "-v" << t.getTableVersion() << __E__;
+				              << diffTree->get().getTableVersion() << " ? "
+				              << t.getTableName() << "-v" << t.getTableVersion() << __E__;
 
 				if(t.getValueAsString() != diffTree->get().getValueAsString())
 				{
@@ -3851,8 +3850,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				xmlOut.addTextElementToParent("nodeDiff", missingSs.str(), parentEl);
 			}
 
-			__COUTS__(30) << "\t" << t.getValueName()
-			                               << ": " << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t" << t.getValueName() << ": " << t.getValueAsString()
+			              << __E__;
 
 		}  //end diff tree handling
 
@@ -3877,8 +3876,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 		if(t.isLinkNode())
 		{
-			__COUTS__(30) << "\t\t" << t.getValueName()
-			                               << ": " << t.getValueAsString() << __E__;
+			__COUTS__(30) << "\t\t" << t.getValueName() << ": " << t.getValueAsString()
+			              << __E__;
 
 			// Note: The order of xml fields is required by JavaScript, so do NOT change
 			// order.
@@ -3886,8 +3885,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 			if(diffTree.has_value())
 			{
-				__COUTS__(30) << "\t\t diff type "
-				                               << diffTree->get().getNodeType() << __E__;
+				__COUTS__(30) << "\t\t diff type " << diffTree->get().getNodeType()
+				              << __E__;
 
 				if(diffTree->get()
 				       .isRootNode())  //then diff group does not have this uid!
@@ -3905,7 +3904,7 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				else if(t.isDisconnected() != diffTree->get().isDisconnected())
 				{
 					__COUTS__(30) << "\t\t diff isDisconnected "
-					    << diffTree->get().isDisconnected() << __E__;
+					              << diffTree->get().isDisconnected() << __E__;
 
 					std::stringstream missingSs;  //assume only one group loaded for diff
 					//lookup group name in diffManager based on current node's parent's table (best proxy info for diff node at this point)
@@ -4062,8 +4061,8 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 
 				if(diffTree.has_value())
 				{
-					__COUTS__(30) << "\t\t diff type "
-					    << diffTree->get().getNodeType() << __E__;
+					__COUTS__(30)
+					    << "\t\t diff type " << diffTree->get().getNodeType() << __E__;
 
 					if(diffTree->get()
 					       .isRootNode())  //then diff group does not have this uid!

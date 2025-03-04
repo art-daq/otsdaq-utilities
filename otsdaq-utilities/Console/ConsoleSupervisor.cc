@@ -499,9 +499,10 @@ try
 		if(triggeredAction.action.size())
 		{
 			__COUTS__(2) << "Handling action '" << triggeredAction.action
-			    << "' on custom count search string: "
-			    << StringMacros::vectorToString(triggeredAction.needleSubstrings, {'*'})
-			    << __E__;
+			             << "' on custom count search string: "
+			             << StringMacros::vectorToString(triggeredAction.needleSubstrings,
+			                                             {'*'})
+			             << __E__;
 			cs->doTriggeredAction(triggeredAction);
 		}
 
