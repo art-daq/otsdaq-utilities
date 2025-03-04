@@ -159,11 +159,11 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			loadFEMacroSequences					(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			saveFEMacroSequence						(cgicc::Cgicc& cgi, const std::string& username);
 	void 			getFEMacroSequence						(HttpXmlDocument&   xmldoc,
-	     			                  						 cgicc::Cgicc&      cgi,
-	     			                  						 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			runFEMacroSequence						(HttpXmlDocument&   xmldoc,
-	     			                  						 cgicc::Cgicc&      cgi,
-	     			                  						 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			deleteFEMacroSequence					(cgicc::Cgicc& cgi, const std::string& username);
 	void 			makeSequencePublic						(cgicc::Cgicc& cgi, const std::string& username);	
 	void 			loadHistory								(HttpXmlDocument& xmldoc, const std::string& username);
@@ -201,11 +201,11 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	std::string 	generateHexArray						(const std::string& sourceHexString, int& numOfBytes);
 	bool        	isArgumentVariable						(const std::string& argumentString);
 	void        	createCode								(std::ostream&                   out,
-	            	          								 const std::vector<std::string>& commands,
-	            	          								 const std::string&              tabOffset   = "",
-	            	          								 bool                            forFeMacro  = false,
-	            	          								 std::set<std::string>*          inArgNames  = 0,
-	            	          								 std::set<std::string>*          outArgNames = 0);
+															 const std::vector<std::string>& commands,
+															 const std::string&              tabOffset   = "",
+															 bool                            forFeMacro  = false,
+															 std::set<std::string>*          inArgNames  = 0,
+															 std::set<std::string>*          outArgNames = 0);
 
 	SupervisorInfoMap 														allFESupervisorInfo_;
 	std::map<std::string /*FE UID*/, unsigned int /*superivisor index*/>	FEtoSupervisorMap_;
