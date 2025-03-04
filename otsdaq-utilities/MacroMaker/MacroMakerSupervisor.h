@@ -72,7 +72,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 		runFEMacroStruct& operator=(const runFEMacroStruct&) = delete;
 
 		/// Allow move constructor because std::atomic is not copyable
-    	runFEMacroStruct(runFEMacroStruct&& other) noexcept
+		runFEMacroStruct(runFEMacroStruct&& other) noexcept
 		:
 		parameters_(other.parameters_)
 		, feMacroRunDone_(other.feMacroRunDone_.load())
@@ -116,9 +116,9 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	static void 	RemoteControlWorkLoop					(MacroMakerSupervisor* supervisorPtr);
 
 	void 			handleRequest							(const std::string               Command,
-					   										HttpXmlDocument&                 xmldoc,
-					   										cgicc::Cgicc&                    cgi,
-					   										const WebUsers::RequestUserInfo& userInfo);
+															HttpXmlDocument&                 xmldoc,
+															cgicc::Cgicc&                    cgi,
+															const WebUsers::RequestUserInfo& userInfo);
 
 	xoap::MessageReference frontEndCommunicationRequest		(xoap::MessageReference message);
 	xoap::MessageReference supervisorSequenceCheck			(xoap::MessageReference message);
@@ -127,17 +127,17 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void 			getFEMacroList							(HttpXmlDocument& xmldoc, const std::string& username);
 
 	void 			writeData								(HttpXmlDocument&   xmldoc,
-		 					 								 cgicc::Cgicc&      cgi,
-		 					 								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			readData								(HttpXmlDocument&   xmldoc,
-	     			        								 cgicc::Cgicc&      cgi,
-	     			        								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			createMacro								(HttpXmlDocument&   xmldoc,
 															 cgicc::Cgicc&      cgi,
 															 const std::string& username);
 	void 			loadMacro								(const std::string& macroName,
-	     			         								 std::string&       macroString,
-	     			         								 const std::string& username = "");
+															 std::string&       macroString,
+															 const std::string& username = "");
 	void 			loadMacros								(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			loadMacroNames							(
 															const std::string&                                      username,
@@ -172,29 +172,29 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 															 cgicc::Cgicc&      cgi,
 															 const std::string& username);
 	void 			editMacro								(HttpXmlDocument&   xmldoc,
-	     			         								 cgicc::Cgicc&      cgi,
-	     			         								 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			clearHistory							(const std::string& username);
 	void 			clearFEHistory							(const std::string& username);
 	void 			exportMacro								(HttpXmlDocument&   xmldoc,
 															 cgicc::Cgicc&      cgi,
 															 const std::string& username);
 	void 			exportFEMacro							(HttpXmlDocument&   xmldoc,
-	     			             							 cgicc::Cgicc&      cgi,
-	     			             							 const std::string& username);
+															 cgicc::Cgicc&      cgi,
+															 const std::string& username);
 	void 			runFEMacro								(HttpXmlDocument&                 xmldoc,
-	     			          								 cgicc::Cgicc&                    cgi,
-	     			          								 const WebUsers::RequestUserInfo& userInfo);
+															 cgicc::Cgicc&                    cgi,
+															 const WebUsers::RequestUserInfo& userInfo);
 	void 			runFEMacro								(HttpXmlDocument&   xmldoc,
-	     			          								 std::string        feClassSelected,
-	     			          								 std::string        feUIDSelected,
-	     			          								 const std::string& macroType,
-	     			          								 const std::string& macroName,
-	     			          								 const std::string& inputArgs,
-	     			          								 const std::string  outputArgs,
-	     			          								 bool               saveOutputs,
-	     			          								 const std::string& username,
-	     			          								 const std::string& userGroupPermissions);
+															 std::string        feClassSelected,
+															 std::string        feUIDSelected,
+															 const std::string& macroType,
+															 const std::string& macroName,
+															 const std::string& inputArgs,
+															 const std::string  outputArgs,
+															 bool               saveOutputs,
+															 const std::string& username,
+															 const std::string& userGroupPermissions);
 	static void 	runFEMacroThread						(runFEMacroStruct*  feMacroRunThreadStruct,
 															 MacroMakerSupervisor* mmSupervisor);
 
