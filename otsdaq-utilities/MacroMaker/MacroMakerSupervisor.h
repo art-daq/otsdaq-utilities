@@ -165,7 +165,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 															 cgicc::Cgicc&      cgi,
 															 const std::string& username);
 	void 			deleteFEMacroSequence					(cgicc::Cgicc& cgi, const std::string& username);
-	void 			makeSequencePublic						(cgicc::Cgicc& cgi, const std::string& username);	
+	void 			makeSequencePublic						(cgicc::Cgicc& cgi, const std::string& username);
 	void 			loadHistory								(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			loadFEHistory							(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			deleteMacro								(HttpXmlDocument&   xmldoc,
@@ -215,7 +215,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	std::string 															securityCode_;
 	bool        															defaultSequence_;
 
-	std::map<std::string /* username */, 
+	std::map<std::string /* username */,
 		std::vector<std::string> /* last command */>					    lastFeCommandToHistory_;  ///<prevent repeats to history
 
 
