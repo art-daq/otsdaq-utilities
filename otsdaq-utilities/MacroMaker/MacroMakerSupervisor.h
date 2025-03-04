@@ -144,18 +144,18 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 															std::pair<std::vector<std::string> /*public macros*/,
 																	std::vector<std::string> /*private macros*/>& returnMacroNames);
 	void 			appendCommandToHistory					(std::string        command,
-	     			                      					 std::string        Format,
-	     			                      					 std::string        time,
-	     			                      					 std::string        interfaces,
-	     			                      					 const std::string& username);
+															 std::string        Format,
+															 std::string        time,
+															 std::string        interfaces,
+															 const std::string& username);
 	void 			appendCommandToHistory					(std::string        feClass,
-	     			                      					 std::string        feUID,
-	     			                      					 std::string        macroType,
-	     			                      					 std::string        macroName,
-	     			                      					 std::string        inputArgs,
-	     			                      					 std::string        outputArgs,
-	     			                      					 bool               saveOutputs,
-	     			                      					 const std::string& username);
+															 std::string        feUID,
+															 std::string        macroType,
+															 std::string        macroName,
+															 std::string        inputArgs,
+															 std::string        outputArgs,
+															 bool               saveOutputs,
+															 const std::string& username);
 	void 			loadFEMacroSequences					(HttpXmlDocument& xmldoc, const std::string& username);
 	void 			saveFEMacroSequence						(cgicc::Cgicc& cgi, const std::string& username);
 	void 			getFEMacroSequence						(HttpXmlDocument&   xmldoc,
