@@ -51,7 +51,7 @@ cet_make_library( LIBRARY_NAME ECLWriter SOURCE ECLSupervisor.cc
 	otsdaq-utilities::ECLWriterCore
 	)
 
-	cet_make_exec(NAME ECLTest LIBRARIES PRIVATE otsdaq_utilities::ECLWriterCore TRACE::TRACE Boost::program_options)
+	cet_make_exec(NAME ECLTest LIBRARIES PRIVATE otsdaq-utilities::ECLWriterCore TRACE::TRACE Boost::program_options)
 endif(CURL_FOUND)
 
 endif(XSD_FOUND)
