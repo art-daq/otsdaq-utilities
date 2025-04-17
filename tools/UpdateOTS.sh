@@ -466,6 +466,7 @@ echo -e "UpdateOTS.sh:${LINENO}  \t =================="
 echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
 echo -e "UpdateOTS.sh:${LINENO}  \t Status will be logged here: $CHECKIN_LOG_PATH"
 
+echo "List of srcs repos:" > $CURRENT_AWESOME_BASE/list_of_repos.txt
 
 echo
 echo -e "UpdateOTS.sh:${LINENO}  \t =================="
@@ -487,6 +488,8 @@ for p in ${REPO_DIR[@]}; do
 
 	if [ $SHARE_ONLY = 1 ]; then
 		echo -e "UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) $p"
+		
+		git remote -v | grep fetch | sed -E 's/^origin[[:space:]]+([^[:space:]]+).*/\1/' >> $CURRENT_AWESOME_BASE/list_of_repos.txt
 		git config --global --add safe.directory $p
 	elif [ $DEVELOP_ONLY = 1 ]; then
 		echo -e "UpdateOTS.sh:${LINENO}  \t Doing checkout develop from $p"
