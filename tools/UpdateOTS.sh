@@ -488,7 +488,7 @@ for p in ${REPO_DIR[@]}; do
 
 	if [ $SHARE_ONLY = 1 ]; then
 		echo -e "UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) $p"
-		
+
 		git remote -v | grep fetch | sed -E 's/^origin[[:space:]]+([^[:space:]]+).*/\1/' >> $CURRENT_AWESOME_BASE/list_of_repos.txt
 		git config --global --add safe.directory $p
 	elif [ $DEVELOP_ONLY = 1 ]; then
