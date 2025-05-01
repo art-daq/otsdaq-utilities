@@ -3212,7 +3212,7 @@
 				//setup _advancedEditBitMask based on preset
 				var val64 = [_advancedEditBitMask[0] /*msb*/,_advancedEditBitMask[1] /*lsb*/];
 				if(_advancedMaskPreset == _advancedPreset_DEBUG)
-					val64 = [0,0xFF];
+					val64 = [0,0x1FF];
 				else if(_advancedMaskPreset == _advancedPreset_INFO)
 					val64 = [0,0x7F];
 				else if(_advancedMaskPreset == _advancedPreset_WARN)
