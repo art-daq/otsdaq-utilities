@@ -578,9 +578,16 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 ///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
-                                                 uint32_t           priority /* = -1 */)
+												 uint32_t           priority, /* = -1 */
+												 uint32_t  			triggerOnCount,
+												 bool  				doLoop)
 {
+	__SUP_COUTV__("Adding custom triggered action");
 	__SUP_COUTV__(triggerNeedle);
+	__SUP_COUTV__(triggerAction);
+	__SUP_COUTV__(priority);
+	__SUP_COUTV__(triggerOnCount);
+	__SUP_COUTV__(doLoop);
 
 	bool allAsterisks = true;
 	for(const auto& c : triggerNeedle)
@@ -614,8 +621,6 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 		}
 	}  //end check if already exists
 
-	__SUP_COUTV__(triggerAction);
-	__SUP_COUTV__(priority);
 	if(priority >= priorityCustomTriggerList_.size())
 		priority = priorityCustomTriggerList_.size();  //place at end
 	if(priority == 0 && triggerNeedle != CONSOLE_MISSED_NEEDLE)
@@ -658,11 +663,19 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	    {'*'} /* delimiter */,
 	    {} /* do not ignore whitespace */);
 	priorityCustomTriggerList_[priority].action = triggerAction;
+	priorityCustomTriggerList_[priority].triggerOnCount = triggerOnCount;
+	priorityCustomTriggerList_[priority].doLoop = doLoop;
 
 	__SUP_COUT__ << "Added custom count: "
 	             << (StringMacros::vectorToString(
 	                    priorityCustomTriggerList_[priority].needleSubstrings))
-	             << " at priority: " << priority << __E__;
+	             << " at priority: " << priority
+				 << " triggered every: " << triggerOnCount << " occurrences";
+	if(doLoop)
+		__SUP_COUT__ << " and will loop.";
+	else
+		__SUP_COUT__ << " and will not loop.";
+	__SUP_COUT__ << __E__;
 
 }  // end addCustomTriggeredAction()
 
@@ -674,13 +687,17 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
                                                         const std::string& modifyType,
                                                         const std::string& setNeedle,
                                                         const std::string& setAction,
-                                                        uint32_t           setPriority)
+                                                        uint32_t           setPriority,
+														uint32_t setTriggerOnCount,
+														bool   setDoLoop)
 {
 	__SUP_COUTV__(currentNeedle);
 	__SUP_COUTV__(modifyType);
 	__SUP_COUTV__(setNeedle);
 	__SUP_COUTV__(setAction);
 	__SUP_COUTV__(setPriority);
+	__SUP_COUTV__(setTriggerOnCount);
+	__SUP_COUTV__(setDoLoop);
 
 	//find current priority position of currentNeedle
 	uint32_t currentPriority = -1;
@@ -778,6 +795,17 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
 		    {} /* do not ignore whitespace */);
 	}
 
+	if(modifyType == "Trigger on Count" || modifyType == "All")
+	{
+		//modify existing action
+		priorityCustomTriggerList_[currentPriority].triggerOnCount = setTriggerOnCount;
+	}
+	if(modifyType == "Do Loop" || modifyType == "All")
+	{
+		//modify existing action
+		priorityCustomTriggerList_[currentPriority].doLoop = setDoLoop;
+	}
+
 	if(currentPriority != setPriority)  //then need to copy
 	{
 		//insert new custom count at priority position
@@ -808,6 +836,7 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
 //==============================================================================
 void ConsoleSupervisor::loadCustomCountList()
 {
+	// TODO: Migrate to json read/write
 	__SUP_COUT__ << "loadCustomCountList() from "
 	             << USER_CONSOLE_PREF_PATH + CUSTOM_COUNT_LIST_FILENAME << __E__;
 
@@ -823,26 +852,45 @@ void ConsoleSupervisor::loadCustomCountList()
 	char        line[1000];  //do not allow larger than 1000 chars!
 	uint32_t    i = 0;
 	std::string needle;
+	std::string action;
+	size_t 	priority = 0;
+	size_t 	triggerOnCount = 0;
+	bool 	doLoop = false;
 	while(fgets(line, 1000, fp))
 	{
+		++i;
+
 		//ignore new line
 		if(strlen(line))
 			line[strlen(line) - 1] = '\0';
+		
+		__SUP_COUTV__(i);
+		__SUP_COUTV__(line);
 
-		if(i % 2 == 0)  //needle
+		if(i == 1)  //needle
 			needle = line;
-		else  //action (so have all info)
+		else if(i == 2)
+			action = line;
+		else if(i == 3)
+			priority = std::stoi(line);
+		else if(i == 4)
+			triggerOnCount = std::stoi(line);
+		else if(i == 5) // last line
 		{
+			doLoop = std::stoi(line) > 0 ? true : false;
 			__SUP_COUTTV__(needle);
-			__SUP_COUTTV__(line);
+			__SUP_COUTTV__(priority);
+			__SUP_COUTTV__(action);
+			__SUP_COUTTV__(triggerOnCount);
+			__SUP_COUTTV__(doLoop);
 			if(i == 1 &&
 			   needle !=
 			       CONSOLE_MISSED_NEEDLE)  //then force missed Console message as priority 0
-				addCustomTriggeredAction(CONSOLE_MISSED_NEEDLE, "System Message");
-			addCustomTriggeredAction(needle, line);
+				addCustomTriggeredAction(CONSOLE_MISSED_NEEDLE, "System Message", 0, 1, false);
+			addCustomTriggeredAction(needle, action, priority, triggerOnCount, doLoop);
+			i = 0;  //reset for next entry
 		}
 
-		++i;
 	}
 	fclose(fp);
 
@@ -860,12 +908,17 @@ void ConsoleSupervisor::saveCustomCountList()
 		           << (USER_CONSOLE_PREF_PATH + CUSTOM_COUNT_LIST_FILENAME) << __E__;
 		__SUP_SS_THROW__;
 	}
+	unsigned int priority = 0;
 	for(auto& customCount : priorityCustomTriggerList_)
 	{
 		fprintf(fp,
 		        (StringMacros::vectorToString(customCount.needleSubstrings, {'*'}) + "\n")
 		            .c_str());
-		fprintf(fp, (customCount.action + "\n").c_str());
+		fprintf(fp, "%d\n", priority);
+		fprintf(fp, "%s\n", customCount.action.c_str());
+		fprintf(fp, "%zu\n", customCount.triggerOnCount);
+		fprintf(fp, "%s\n", customCount.doLoop ? "true" : "false");
+		++priority;
 	}
 	fclose(fp);
 }  // end saveCustomCountList()
@@ -1764,11 +1817,16 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			uint32_t    priority = CgiDataUtilities::postDataAsInt(cgiIn, "priority");
 			std::string action   = StringMacros::decodeURIComponent(
                 CgiDataUtilities::postData(cgiIn, "action"));
+			uint32_t triggerOnCount = CgiDataUtilities::postDataAsInt( cgiIn, "triggerOnCount");
+			bool doLoop = CgiDataUtilities::postDataAsInt( cgiIn, "doLoop") > 0 ? true : false;
 
 			__SUP_COUTV__(needle);
 			__SUP_COUTV__(priority);
 			__SUP_COUTV__(action);
+			__SUP_COUTV__(triggerOnCount);
+			__SUP_COUTV__(doLoop);
 
+			// TODO: Modify triggerOnCount and doLoop
 			if(requestType == "ModifyCustomCountsAndAction")
 			{
 				std::string buttonDo = StringMacros::decodeURIComponent(
@@ -1789,11 +1847,13 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 					    buttonDo,
 					    needle,
 					    action,
-					    priority);
+					    priority,
+						triggerOnCount,
+						doLoop);
 				}  //end csv needle list handling
 			}
 			else
-				addCustomTriggeredAction(needle, action, priority);
+				addCustomTriggeredAction(needle, action, priority, triggerOnCount, doLoop);
 
 			saveCustomCountList();
 		}  // end AddCustomCountsAndAction
@@ -1827,6 +1887,10 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			    "count", std::to_string(customCount.occurrences), customCountParent);
 			xmlOut.addTextElementToParent(
 			    "action", customCount.action, customCountParent);
+			xmlOut.addTextElementToParent(
+			    "triggerOnCount", std::to_string(customCount.triggerOnCount), customCountParent);
+			xmlOut.addTextElementToParent(
+			    "doLoop", std::to_string(customCount.doLoop), customCountParent);
 		}  //end adding custom counts to response xml loop
 
 		//add untriggered always last
@@ -1836,6 +1900,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		xmlOut.addTextElementToParent(
 		    "count", std::to_string(untriggeredCount), customCountParent);
 		xmlOut.addTextElementToParent("action", "Count Only", customCountParent);
+		xmlOut.addTextElementToParent("triggerOnCount", "1", customCountParent);
+		xmlOut.addTextElementToParent("doLoop", "1", customCountParent);
 
 	}  // end GetCustomCountsAndActions or AddCustomCountsAndAction
 	else
