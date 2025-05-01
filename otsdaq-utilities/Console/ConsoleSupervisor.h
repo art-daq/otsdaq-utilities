@@ -321,8 +321,8 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	/// members for the refresh handler, ConsoleSupervisor::insertMessageRefresh
 	xercesc::DOMElement* 					refreshParent_;
 
-	std::vector<CustomTriggeredAction_t>  		priorityCustomTriggerList_;
-	std::queue<CustomTriggeredAction_t>	 		customTriggerActionQueue_;
+	std::vector<CustomTriggeredAction_t>  		priorityCustomTriggerList_; // list of custom trigger actions
+	std::queue<CustomTriggeredAction_t>	 		customTriggerActionQueue_; // queue of pending actions upon custom needle match
 
 	///for system status:
 	size_t 			errorCount_ = 0, warnCount_ = 0, infoCount_ = 0;
