@@ -578,9 +578,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 ///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
-												 uint32_t           priority, /* = -1 */
-												 uint32_t  			triggerOnCount,
-												 bool  				doLoop)
+                                                 uint32_t           priority /* = -1 */)
 {
 	__SUP_COUTV__(triggerNeedle);
 
@@ -660,19 +658,11 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	    {'*'} /* delimiter */,
 	    {} /* do not ignore whitespace */);
 	priorityCustomTriggerList_[priority].action = triggerAction;
-	priorityCustomTriggerList_[priority].triggerOnCount = triggerOnCount;
-	priorityCustomTriggerList_[priority].doLoop = doLoop;
 
 	__SUP_COUT__ << "Added custom count: "
 	             << (StringMacros::vectorToString(
 	                    priorityCustomTriggerList_[priority].needleSubstrings))
-	             << " at priority: " << priority
-				 << " triggered every: " << triggerOnCount << " occurrences";
-	if(doLoop)
-		__SUP_COUT__ << " and will loop.";
-	else
-		__SUP_COUT__ << " and will not loop.";
-	__SUP_COUT__ << __E__;
+	             << " at priority: " << priority << __E__;
 
 }  // end addCustomTriggeredAction()
 
@@ -684,17 +674,13 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
                                                         const std::string& modifyType,
                                                         const std::string& setNeedle,
                                                         const std::string& setAction,
-                                                        uint32_t           setPriority,
-														uint32_t setTriggerOnCount,
-														bool   setDoLoop)
+                                                        uint32_t           setPriority)
 {
 	__SUP_COUTV__(currentNeedle);
 	__SUP_COUTV__(modifyType);
 	__SUP_COUTV__(setNeedle);
 	__SUP_COUTV__(setAction);
 	__SUP_COUTV__(setPriority);
-	__SUP_COUTV__(setTriggerOnCount);
-	__SUP_COUTV__(setDoLoop);
 
 	//find current priority position of currentNeedle
 	uint32_t currentPriority = -1;
@@ -790,17 +776,6 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
 		    priorityCustomTriggerList_[currentPriority].needleSubstrings,
 		    {'*'} /* delimiter */,
 		    {} /* do not ignore whitespace */);
-	}
-
-	if(modifyType == "Trigger on Count" || modifyType == "All")
-	{
-		//modify existing action
-		priorityCustomTriggerList_[currentPriority].triggerOnCount = setTriggerOnCount;
-	}
-	if(modifyType == "Do Loop" || modifyType == "All")
-	{
-		//modify existing action
-		priorityCustomTriggerList_[currentPriority].doLoop = setDoLoop;
 	}
 
 	if(currentPriority != setPriority)  //then need to copy
@@ -1789,16 +1764,11 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			uint32_t    priority = CgiDataUtilities::postDataAsInt(cgiIn, "priority");
 			std::string action   = StringMacros::decodeURIComponent(
                 CgiDataUtilities::postData(cgiIn, "action"));
-			uint32_t triggerOnCount = CgiDataUtilities::postDataAsInt( cgiIn, "triggerOnCount");
-			bool doLoop = CgiDataUtilities::postDataAsInt( cgiIn, "doLoop") > 0 ? true : false;
 
 			__SUP_COUTV__(needle);
 			__SUP_COUTV__(priority);
 			__SUP_COUTV__(action);
-			__SUP_COUTV__(triggerOnCount);
-			__SUP_COUTV__(doLoop);
 
-			// TODO: Modify triggerOnCount and doLoop
 			if(requestType == "ModifyCustomCountsAndAction")
 			{
 				std::string buttonDo = StringMacros::decodeURIComponent(
@@ -1819,9 +1789,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 					    buttonDo,
 					    needle,
 					    action,
-					    priority,
-						triggerOnCount,
-						doLoop);
+					    priority);
 				}  //end csv needle list handling
 			}
 			else
