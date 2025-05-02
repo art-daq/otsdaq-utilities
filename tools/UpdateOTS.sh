@@ -18,13 +18,15 @@ CURRENT_AWESOME_BASE=$PWD
 CHECKIN_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_pull.log
 UPDATE_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_push.log
 
-echo -e "UpdateOTS.sh:${LINENO}  "
-echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
-echo -e "UpdateOTS.sh:${LINENO}  "
-echo -e "UpdateOTS.sh:${LINENO}  "
 
 
-if [ "x$1" == "x" ] || [[ "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
+if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
+	
+	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
+	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "UpdateOTS.sh:${LINENO}  "
+	
 	echo -e "UpdateOTS.sh:${LINENO}  \t Usage: Parameter 1 is the operation and, for pushes, Parameter 2 is the comment for git commit"
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t Note: git status will be logged here: $CHECKIN_LOG_PATH"
@@ -43,7 +45,7 @@ if [ "x$1" == "x" ] || [[ "$1" != "--share" && "$1" != "--develop" && "$1" != "-
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pullall             \t #will pull  all    repositories in srcs/ (i.e. not just otsdaq)."
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pushall \"comment\" \t #will push  all    repositories in srcs/ (i.e. not just otsdaq)."
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables."
-
+	# --warn is used by ots script to warn users that there are uncommitted changes in srcs/
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	exit
 fi
@@ -323,6 +325,18 @@ SHARE_ONLY=0
 
 DEVELOP_ONLY=0
 MAIN_ONLY=0
+WARN_ONLY=0
+
+echo -e "UpdateOTS.sh:${LINENO}  1= $1"
+
+if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there are uncommitted changes, then output to stderr for capture
+	WARN_ONLY=1
+else
+	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
+	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "UpdateOTS.sh:${LINENO}  "
+fi
 
 if [ "$1"  == "--tables" ]; then
 	echo -e "UpdateOTS.sh:${LINENO}  \t Updating tables only!"
@@ -405,6 +419,7 @@ if [ "$1"  == "--fetch" ]; then
 	echo -e "UpdateOTS.sh:${LINENO}  \t Fetching otsdaq repositories!"
 fi
 
+
 echo -e "UpdateOTS.sh:${LINENO}  \t REPO_FILTER = ${REPO_FILTER}"
 echo
 echo
@@ -421,7 +436,6 @@ echo -e "UpdateOTS.sh:${LINENO}  \t Finding target repositories..."
 #if not done with compile setup, then OTS_SOURCE may not be defined
 DEREFENCED_OTS_SOURCE="$SCRIPT_DIR/../../../srcs"
 if [ "x$OTS_SOURCE" == "x" ]; then
-	echo -e "UpdateOTS.sh:${LINENO}  \t Script directory found as: $SCRIPT_DIR"
 	OTS_SOURCE="$SCRIPT_DIR/../../../srcs"
 fi
 if [ $SHARE_ONLY = 1 ]; then
@@ -509,6 +523,15 @@ for p in ${REPO_DIR[@]}; do
 	echo -e "UpdateOTS.sh:${LINENO}  \t ==================" >> $CHECKIN_LOG_PATH
 	pwd >> $CHECKIN_LOG_PATH
 	git status &>> $CHECKIN_LOG_PATH
+
+
+	if [ $WARN_ONLY = 1 ]; then
+		if ! git diff --quiet || ! git diff --cached --quiet; then
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
+		# else
+		# 	echo "Working tree is clean."
+		fi		
+	fi
 
 	if [ "x$GIT_COMMENT" != "x" ]; then
 
