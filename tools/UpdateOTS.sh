@@ -26,7 +26,6 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--de
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  "
-	
 	echo -e "UpdateOTS.sh:${LINENO}  \t Usage: Parameter 1 is the operation and, for pushes, Parameter 2 is the comment for git commit"
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t Note: git status will be logged here: $CHECKIN_LOG_PATH"
@@ -530,7 +529,7 @@ for p in ${REPO_DIR[@]}; do
 			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
 		# else
 		# 	echo "Working tree is clean."
-		fi		
+		fi
 	fi
 
 	if [ "x$GIT_COMMENT" != "x" ]; then
