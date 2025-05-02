@@ -261,6 +261,45 @@
 				font-size:			13px;
 			}
 
+			#ac_traceModeSelect {
+				height: 30px;
+				border: none;
+				overflow: hidden;
+				background-color: transparent;
+			}
+
+			#ac_traceModeSelect:focus {
+				outline: none;
+			}
+
+			#ac_traceModeSelect option{
+				display: inline-block;
+				background-color: transparent;
+				width: 60px;
+				padding: 5px 0;
+				font-weight: bold;
+				text-align: center;
+				margin-right: 20px;
+				border:solid 1px #4D2600;
+				color: rgb(35, 108, 176);
+				border-radius: 5px;
+				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+			}
+
+			#ac_traceModeSelect option:hover{
+				background-color: #706f97;
+				color: white;
+			}
+
+			#ac_traceModeSelect option:checked{
+				background-color: #4D2600;
+				color: white;
+			}
+
 			#advancedArea table {
 				border-spacing: 0;
 			}
@@ -575,6 +614,12 @@
 				_advancedPage_SNAPSHOT = _PAGE_OPTIONS.indexOf("Trigger &amp; Snapshot"),
 				_advancedPage_CUSTOM_COUNTS = _PAGE_OPTIONS.indexOf("Custom Counts &amp; Actions");
 			var _advancedPage = _advancedPage_SLOW; //default to slow view
+
+			var TRACE_SLOW = 0;
+			var TRACE_FAST = 1;
+			var TRACE_TRIGGER = 2;
+			var _advancedTraceMode = TRACE_SLOW;
+
 			var _advancedLabelSelectSave = []; //remember selections as leaving page
 			var _advancedPopup = undefined;
 			var _advancedContextMenuBlock = false;
@@ -2131,15 +2176,18 @@
 				switch(tabName)
 				{
 					case "host filter":
+						_advancedPage = _advancedPage_HOST;
 						localCreateHostSelectPage(_advancedPage);
 						break;
 					case "trace snapshot":
+						_advancedPage = _advancedPage_SNAPSHOT;
 						localCreateSnapshotPage(_advancedPage);
 						break;
 					case "trace masks":
-						localCreateMaskPage(_advancedPage);
+						localCreateMaskPage(TRACE_SLOW);
 						break;
 					case "custom counts":
+						_advancedPage = _advancedPage_CUSTOM_COUNTS;
 						localCreateCustomCountsPage(_advancedPage);
 						break;
 					default:
@@ -2163,9 +2211,9 @@
 			} //end advancedHandleTabs()
 
 				//=======================
-				function localCreateCustomCountsPage(page)
+				function localCreateCustomCountsPage()
 				{
-					Debug.log("localCreateCustomCountsPage()",_advancedPage);
+					Debug.log("localCreateCustomCountsPage()");
 
 					//Page shows prioritized list of custom counts and their associated actions
 					//	- shows server-side count for each
@@ -2179,16 +2227,6 @@
 
 					str = "";
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2348,9 +2386,9 @@
 				} //end localCreateCustomCountsPage()
 
 				//=======================
-				function localCreateHostSelectPage(page)
+				function localCreateHostSelectPage()
 				{
-					Debug.log("localCreateHostSelectPage()",_advancedPage);
+					Debug.log("localCreateHostSelectPage()");
 
 					//Page shows status of _traceHostSelect
 					//	{mode: 0, hosts: [], sortBy: _traceHostSelect_SORT_BYLABEL};
@@ -2362,16 +2400,6 @@
 					str = "";
 
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2523,9 +2551,9 @@
 				} //end localCreateHostSelectPage()
 
 				//=======================
-				function localCreateSnapshotPage(page)
+				function localCreateSnapshotPage()
 				{
-					Debug.log("localCreateSnapshotPage()",_advancedPage,_advancedLabelSelectSave.length);
+					Debug.log("localCreateSnapshotPage()",_advancedLabelSelectSave.length);
 
 					//Page shows
 					//	[Reset Trace]
@@ -2535,17 +2563,6 @@
 
 					str = "";
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2633,9 +2650,10 @@
 				} //end localCreateSnapshotPage()
 
 				//=======================
-				function localCreateMaskPage(page)
+				function localCreateMaskPage(traceMode)
 				{
-					Debug.log("localCreateMaskPage()",_advancedPage);
+					_advancedTraceMode = traceMode|0;
+					Debug.log("localCreateMaskPage()", _advancedTraceMode);
 
 					//Page is menu at top
 					//	Search box | View: [Slow/Cout]
@@ -2653,6 +2671,18 @@
 					str = "";
 
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
+
+					// Trace mode selector
+					str += " TRACE Mode:  ";
+					str += "<select id='ac_traceModeSelect' onchange='console.log(this.selectedIndex); localCreateMaskPage(this.selectedIndex);' multiple>";
+
+					str += "<option " + ((_advancedTraceMode == 0)?"selected":"") + ">Slow</option>";
+					str += "<option " + ((_advancedTraceMode == 1)?"selected":"") + ">Fast</option>";
+					str += "<option " + ((_advancedTraceMode == 2)?"selected":"") + ">Trigger</option>";
+
+					str += "</select> &nbsp;";
+					// ------------------
+
 					str += DesktopContent.htmlOpen("img",
 							{
 									"src" : 	"/WebPath/images/windowContentImages/magnifying-glass.png",
@@ -2682,15 +2712,6 @@
 									"value" :	filterStr,
 							},"",true);
 
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2906,11 +2927,11 @@
 								str += "<input type='checkbox' class='ac_checkboxSelect' onclick='advancedUpdateSelectedCheckboxesText();' />";
 							else if(i == 2)
 							{
-								if(_advancedPage == _advancedPage_SLOW)
+								if(_advancedTraceMode == TRACE_SLOW)
 									var val64 = _traceLevels[hostPresence[0]][label].S;
-								else if(_advancedPage == _advancedPage_FAST)
+								else if(_advancedTraceMode == TRACE_FAST)
 									var val64 = _traceLevels[hostPresence[0]][label].M;
-								else if(_advancedPage == _advancedPage_TRIGGER)
+								else if(_advancedTraceMode == TRACE_TRIGGER)
 									var val64 = _traceLevels[hostPresence[0]][label].T;
 								else
 								{
@@ -3025,14 +3046,14 @@
 			//=====================================================================================
 			function advancedSetBitMask()
 			{
-				Debug.log("advancedSetBitMask()",_advancedPage);
+				Debug.log("advancedSetBitMask()",_advancedTraceMode);
 
 				var modeStr = "";
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					modeStr = "SLOW";
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					modeStr = "FAST";
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					modeStr = "TRIGGER";
 				else
 				{
@@ -3217,11 +3238,11 @@
 				Debug.log("setStr",setStr);
 
 				var modeStr = "";
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					modeStr = "SLOW";
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					modeStr = "FAST";
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					modeStr = "TRIGGER";
 				else
 				{
@@ -4022,11 +4043,11 @@
 						Debug.err("Missing host/label label index! Notify admins.");
 						return;
 					}
-					if(_advancedPage == _advancedPage_SLOW)
+					if(_advancedTraceMode == TRACE_SLOW)
 						var val64 = _traceLevels[hosts[0]][label].S;
-					else if(_advancedPage == _advancedPage_FAST)
+					else if(_advancedTraceMode == TRACE_FAST)
 						var val64 = _traceLevels[hosts[0]][label].M;
-					else if(_advancedPage == _advancedPage_TRIGGER)
+					else if(_advancedTraceMode == TRACE_TRIGGER)
 						var val64 = _traceLevels[hosts[0]][label].T;
 					else
 					{
@@ -4131,11 +4152,11 @@
 								rows.length + " rows! Notify admins.");
 						return;
 					}
-					if(_advancedPage == _advancedPage_SLOW)
+					if(_advancedTraceMode == TRACE_SLOW)
 						var val64 = [_traceLevels[hosts[0]][label].S[0],_traceLevels[hosts[0]][label].S[1]];
-					else if(_advancedPage == _advancedPage_FAST)
+					else if(_advancedTraceMode == TRACE_FAST)
 						var val64 = [_traceLevels[hosts[0]][label].M[0],_traceLevels[hosts[0]][label].M[1]];
-					else if(_advancedPage == _advancedPage_TRIGGER)
+					else if(_advancedTraceMode == TRACE_TRIGGER)
 						var val64 = [_traceLevels[hosts[0]][label].T[0],_traceLevels[hosts[0]][label].T[1]];
 					else
 					{
@@ -4188,11 +4209,11 @@
 									return;
 								}
 
-								if(_advancedPage == _advancedPage_SLOW)
+								if(_advancedTraceMode == TRACE_SLOW)
 									_traceLevels[hh][label].S = [val64[0] /*msb*/,val64[1] /*lsb*/];
-								else if(_advancedPage == _advancedPage_FAST)
+								else if(_advancedTraceMode == TRACE_FAST)
 									_traceLevels[hh][label].M = [val64[0] /*msb*/,val64[1] /*lsb*/];
-								else if(_advancedPage == _advancedPage_TRIGGER)
+								else if(_advancedTraceMode == TRACE_TRIGGER)
 									_traceLevels[hh][label].T = [val64[0] /*msb*/,val64[1] /*lsb*/];
 
 								//add host/label to modified set
@@ -4209,11 +4230,11 @@
 							return;
 						}
 
-						if(_advancedPage == _advancedPage_SLOW)
+						if(_advancedTraceMode == TRACE_SLOW)
 							_traceLevels[hosts[h]][label].S = [val64[0] /*msb*/,val64[1] /*lsb*/];
-						else if(_advancedPage == _advancedPage_FAST)
+						else if(_advancedTraceMode == TRACE_FAST)
 							_traceLevels[hosts[h]][label].M = [val64[0] /*msb*/,val64[1] /*lsb*/];
-						else if(_advancedPage == _advancedPage_TRIGGER)
+						else if(_advancedTraceMode == TRACE_TRIGGER)
 							_traceLevels[hosts[h]][label].T = [val64[0] /*msb*/,val64[1] /*lsb*/];
 
 						//add host/label to modified set
@@ -4267,11 +4288,11 @@
 					return;
 				}
 
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					var val64 = _traceLevels[hosts[0]][label].S;
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					var val64 = _traceLevels[hosts[0]][label].M;
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					var val64 = _traceLevels[hosts[0]][label].T;
 				else
 				{
