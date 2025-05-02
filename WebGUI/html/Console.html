@@ -5,6 +5,7 @@
 
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+		<link href='/WebPath/css/tabs.css' rel='stylesheet' type='text/css'>
 
 		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
@@ -205,10 +206,10 @@
 
 
 			/* ***************** CONTROLS AREA ******************************************/
-			#controlsContainer, #advancedContainer {
+			#controlsContainer, #advancedArea {
 				position: 			absolute;
 
-				padding: 			13px 2px 17px 8px;
+				padding: 			13px 13px 17px 8px;
 				text-align: 		left;
 				color: 				#4D2600;
 
@@ -219,6 +220,16 @@
 									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
 				border-radius: 		3px;
 
+			}
+
+			.advancedTabButton {
+				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+				border-radius: 		3px;
+				background-color: #010101;
 			}
 
 			#advancedControlsLink {
@@ -235,11 +246,12 @@
 			#advancedContainer {
 				display:			none;
 				z-index:			1000;
-				padding: 			15px 2px 15px 15px;
+				padding: 			15px 0px 15px 15px;
 
 				-webkit-user-select:none; /* to stop text highlights */
 				-moz-user-select: 	none;
 				user-select: 		none;
+				background-color: #c4cec6;
 			}
 
 			#advancedArea {
@@ -249,6 +261,10 @@
 
 			#advancedArea table {
 				border-spacing: 0;
+			}
+
+			#advancedControlsTabs {
+				margin-top: 20px;
 			}
 
 			#advancedControlsCloseButton {
@@ -263,9 +279,8 @@
 			#advancedControlsTable {
 				overflow-x:			auto;
 				overflow-y:			hidden;
-				width:				calc(100% + 9px);
-				height:				calc(100% - 53px);
-				margin: 			0 0 0 -12px;
+				width:				100%;
+				height:				90%;
 
 				background-color: 	rgba(0,0,0,0.1);
 				border: 			1px solid rgba(0,0,0,0.2);
@@ -619,6 +634,7 @@
 				_controlsContainerEl = document.getElementById('controlsContainer');
 				_controlsEl = document.getElementById('controlsArea');
 
+				_consoleContainerEl = document.getElementById('consoleHistoryContainer');
 				_advancedContainerEl = document.getElementById('advancedContainer');
 				_advancedContainerEl.style.backgroundColor = DesktopContent.getDefaultWindowColor();
 				_advancedEl = document.getElementById('advancedArea');
@@ -899,7 +915,7 @@
 				_advancedContainerEl.style.left = _MARGIN + 2 + "px";
 				_advancedContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
 				_advancedEl.style.width = (w - _MARGIN - _MARGIN - 2 - 2 - 17) + "px";
-				_advancedEl.style.height = (h - _MARGIN - _MARGIN - 30 - _OFFSET_Y) + "px";
+				_advancedEl.style.height = (h - _MARGIN - _MARGIN - 100 - _OFFSET_Y) + "px";
 
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
@@ -1861,6 +1877,7 @@
 					return;
 				}
 
+				_consoleContainerEl.style.display = "none";
 				_advancedContainerEl.style.display = "block";
 
 				DesktopContent.XMLHttpRequest(
@@ -2005,6 +2022,7 @@
 			{
 				Debug.log("closeAdvancedControls()");
 
+				_consoleContainerEl.style.display = "block";
 				_advancedContainerEl.style.display = "none";
 			} //end closeAdvancedControls()
 
@@ -2066,6 +2084,7 @@
 				var str = "";
 				str += "<div id='advancedControlsCloseButton' onclick='closeAdvancedControls()'>X</div>";
 
+				/*
 				if(_advancedPage == _advancedPage_HOST)
 					localCreateHostSelectPage();
 				else if(_advancedPage == _advancedPage_SNAPSHOT)
@@ -2079,12 +2098,68 @@
 				else
 					Debug.err("Unknown advanced page mode " +
 						_advancedPage + "! Notify admins.");
+						*/
+
+				el = document.getElementById("advancedArea");
+				el.innerHTML = str;
+
 
 				return;
 
+			} //end drawAdvancedControls()
+
+
+			function advancedHandleTabs(evt)
+			{
+				var theButton = evt.currentTarget;
+				tabName = theButton.innerText.toLowerCase();
+				Debug.log("advancedHandleTabs()",evt,tabName);
+
+				// Change active state
+				document.querySelectorAll(".advancedTabButton").forEach((el) => {
+					el.classList.remove("active");
+				});
+				theButton.classList.add("active");
+
+				// Declare all variables
+				var i, tabcontent, tablinks;
+
+				switch(tabName)
+				{
+					case "host":
+						localCreateHostSelectPage(_advancedPage);
+						break;
+					case "snapshot":
+						localCreateSnapshotPage(_advancedPage);
+						break;
+					case "mask":
+						localCreateMaskPage(_advancedPage);
+						break;
+					case "custom counts":
+						localCreateCustomCountsPage(_advancedPage);
+						break;
+					default:
+						Debug.err("Unknown advanced tab name " + tabName + "! Notify admins.");
+						return;
+				}
+
+				// Get all elements with class="tabcontent" and hide them
+				/*
+				tabcontent = document.getElementsByClassName("tabcontent");
+				for (i = 0; i < tabcontent.length; i++)
+					tabcontent[i].style.display = "none";
+				// Get all elements with class="tablinks" and remove the class "active"
+				tablinks = document.getElementsByClassName("tablinks");
+				for (i = 0; i < tablinks.length; i++)
+					tablinks[i].className = tablinks[i].className.replace(" active", "");
+				// Show the current tab, and add an "active" class to the button that opened the tab
+				document.getElementById(tabName).style.display = "block";
+				evt.currentTarget.className += " active";
+				*/
+			} //end advancedHandleTabs()
 
 				//=======================
-				function localCreateCustomCountsPage()
+				function localCreateCustomCountsPage(page)
 				{
 					Debug.log("localCreateCustomCountsPage()",_advancedPage);
 
@@ -2098,8 +2173,8 @@
 					//Allow delete or change action of all selected
 
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
+					str = "";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += " View: ";
 					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
@@ -2269,7 +2344,7 @@
 				} //end localCreateCustomCountsPage()
 
 				//=======================
-				function localCreateHostSelectPage()
+				function localCreateHostSelectPage(page)
 				{
 					Debug.log("localCreateHostSelectPage()",_advancedPage);
 
@@ -2280,9 +2355,9 @@
 										//mode: 2 is require 1 host and set to 1 host
 					// Label-by-Host Mode [select box of mode]
 					//	Table of hosts to select
+					str = "";
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += " View: ";
 					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
@@ -2439,12 +2514,12 @@
 						str += "</div>";
 					} //end column headers loop
 
-					hel.innerHTML = str;
+					el.innerHTML = str;
 
 				} //end localCreateHostSelectPage()
 
 				//=======================
-				function localCreateSnapshotPage()
+				function localCreateSnapshotPage(page)
 				{
 					Debug.log("localCreateSnapshotPage()",_advancedPage,_advancedLabelSelectSave.length);
 
@@ -2454,8 +2529,8 @@
 					//	[Set Trigger]  [entries text box]
 					//	[Get Trigger status]
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
+					str = "";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += " View: ";
 					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
@@ -2554,7 +2629,7 @@
 				} //end localCreateSnapshotPage()
 
 				//=======================
-				function localCreateMaskPage()
+				function localCreateMaskPage(page)
 				{
 					Debug.log("localCreateMaskPage()",_advancedPage);
 
@@ -2571,6 +2646,7 @@
 					else
 						filterStr = _advancedFilterINIT_VAL;
 
+					str = "";
 
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 					str += DesktopContent.htmlOpen("img",
@@ -2702,7 +2778,6 @@
 
 				} //end localCreateMaskPage()
 
-			} //end drawAdvancedControls()
 
 			//=====================================================================================
 			//applyAdvancedControlsFilter ~
@@ -4362,6 +4437,12 @@
 		</div>
 
 		<div id='advancedContainer'>
+		<div class="tab" id="advancedControlsTabs" style="overflow: auto; height: 100%;">
+			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Host </button>
+			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Snapshot </button>
+			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Mask </button>
+			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Custom Counts</button>
+		</div>
 			<div id='advancedArea'>
 			</div>
 		</div>
