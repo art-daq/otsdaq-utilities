@@ -2128,13 +2128,13 @@
 
 				switch(tabName)
 				{
-					case "host":
+					case "host filter":
 						localCreateHostSelectPage(_advancedPage);
 						break;
-					case "snapshot":
+					case "trace snapshot":
 						localCreateSnapshotPage(_advancedPage);
 						break;
-					case "mask":
+					case "trace masks":
 						localCreateMaskPage(_advancedPage);
 						break;
 					case "custom counts":
@@ -4439,13 +4439,13 @@
 		</div>
 
 		<div id='advancedContainer'>
-		<div class="tab" id="advancedControlsTabs" style="overflow: auto; height: 100%;">
-			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Host </button>
-			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Snapshot </button>
-			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Mask </button>
-			<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Custom Counts</button>
-		</div>
-			<div id='advancedArea'>
+			<div class="tab" id="advancedControlsTabs" style="overflow: auto; height: 100%;">
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> TRACE Masks </button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> TRACE Snapshot </button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Custom Counts</button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'> Host Filter</button>
+			</div>
+				<div id='advancedArea'>
 			</div>
 		</div>
 
