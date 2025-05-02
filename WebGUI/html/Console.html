@@ -222,15 +222,6 @@
 
 			}
 
-			.advancedTabButton {
-				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 		3px;
-				background-color: #010101;
-			}
 
 			#advancedControlsLink {
 				margin-left: 		25px;
@@ -243,6 +234,16 @@
 				white-space: 		nowrap;
 			}
 
+			.advancedTabButton {
+				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+				border-radius: 		3px;
+				background-color: #010101;
+			}
+
 			#advancedContainer {
 				display:			none;
 				z-index:			1000;
@@ -251,10 +252,11 @@
 				-webkit-user-select:none; /* to stop text highlights */
 				-moz-user-select: 	none;
 				user-select: 		none;
-				background-color: #c4cec6;
+				/* background-color: #c4cec6; */
 			}
 
 			#advancedArea {
+				background-color: #efd8d8;
 				overflow:			none;
 				font-size:			13px;
 			}

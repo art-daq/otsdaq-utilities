@@ -8,14 +8,16 @@
 
 	/* Style the buttons that are used to open the tab content */
 	.tab button {
-	background-color: #c4cec6;
+	background-color: #cadae8;
+	color: gray;
+
 	float: left;
 	height: 40px;
 	border: none;
 	outline: none;
 	cursor: pointer;
 	padding: 13px 16px;
-	padding-bottom: 0px;
+	padding-bottom: 4px;
 	transition: -1.3s;
 	font-weight: bold;
 	}
@@ -27,8 +29,8 @@
 
 	/* Create an active/current tablink class */
 	.tab button.active {
-		background-color: #0c47aa;
-		color: white;
+		background-color: #efd8d8;
+		color: black;
 	}
 
 	/* Style the tab content */
