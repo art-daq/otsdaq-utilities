@@ -514,6 +514,12 @@ for p in ${REPO_DIR[@]}; do
 	elif [ $FETCH_ONLY = 1 ]; then
 		echo -e "UpdateOTS.sh:${LINENO}  \t Fetching updates from $p"
 		git fetch
+	elif [ $WARN_ONLY = 1 ]; then
+		if ! git diff --quiet || ! git diff --cached --quiet; then
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
+		# else
+		# 	echo "Working tree is clean."
+		fi
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull
@@ -525,13 +531,6 @@ for p in ${REPO_DIR[@]}; do
 	git status &>> $CHECKIN_LOG_PATH
 
 
-	if [ $WARN_ONLY = 1 ]; then
-		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
-		# else
-		# 	echo "Working tree is clean."
-		fi
-	fi
 
 	if [ "x$GIT_COMMENT" != "x" ]; then
 
