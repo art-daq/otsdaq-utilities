@@ -20,6 +20,9 @@
 	padding-bottom: 4px;
 	transition: -1.3s;
 	font-weight: bold;
+	border-radius: 5px 5px 0 0;
+	border-style: 	groove;
+	border-bottom-style: none;
 	}
 
 	/* Change background color of buttons on hover */

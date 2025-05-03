@@ -39,7 +39,9 @@
 				margin: 2px 2px 2px 20px;
 			}
 
-			button, select, input {
+
+			button, select, input, option {
+				font-family: 'Comfortaa', serif;
 				cursor:				pointer;
 			}
 			a {
@@ -213,13 +215,18 @@
 				text-align: 		left;
 				color: 				#4D2600;
 
+				border-style: groove;
+				border-top-style: none;
+				border-radius: 		0 5px 5px 5px;
+
+			}
+
+			#controlsContainer {
 				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 		3px;
-
 			}
 
 
@@ -235,12 +242,6 @@
 			}
 
 			.advancedTabButton {
-				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 		3px;
 				background-color: #010101;
 			}
 
@@ -261,11 +262,25 @@
 				font-size:			13px;
 			}
 
+			#advancedControlsMenu {
+				display: flex;
+				gap: 10px;
+				flex-direction: row;
+				flex-wrap: wrap;
+			}
+
+			#ac_traceModeSelectDiv, ac_traceModeSelectDivButtons {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
 			#ac_traceModeSelect {
 				height: 30px;
 				border: none;
 				overflow: hidden;
 				background-color: transparent;
+				cursor: default;
 			}
 
 			#ac_traceModeSelect:focus {
@@ -2650,6 +2665,7 @@
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					// Trace mode selector
+					str += "<div id='ac_traceModeSelectDiv'>"
 					str += " TRACE Mode:  ";
 					str += "<select id='ac_traceModeSelect' onchange='console.log(this.selectedIndex); localCreateMaskPage(this.selectedIndex);' multiple>";
 
@@ -2658,12 +2674,13 @@
 					str += "<option " + ((_advancedTraceMode == 2)?"selected":"") + ">Trigger</option>";
 
 					str += "</select> &nbsp;";
+					str += "</div>"
 					// ------------------
 
 					str += DesktopContent.htmlOpen("img",
 							{
 									"src" : 	"/WebPath/images/windowContentImages/magnifying-glass.png",
-									"style": 	"margin: -7px 0 -10px -14px; width: 30px;",
+									"style": 	"height: 100%; width: 30px;",
 							});
 
 					str += DesktopContent.htmlOpen("input",
@@ -2690,8 +2707,11 @@
 							},"",true);
 
 
-					str += DesktopContent.htmlClearDiv();
+					str += "</div>"; //end search box
+					// ------------------
 
+					// Mask controls ---------------------
+					str += "<div>";
 					str += DesktopContent.htmlOpen("button",
 							{
 									"style" : 	"margin: 4px 10px 3px -2px; float:left;",
@@ -2722,7 +2742,7 @@
 									"id"	: 	"ac_selectedCaption",
 									"style" : 	"margin: 8px 0 0 -2px;" +
 										"white-space: nowrap; float: left;" +
-										"width: calc(100% - 163px); overflow: hidden;",
+										"overflow: hidden;",
 									"title" : 	"Click a label to include, and right-click to exclued from the selected labels.",
 							},"for no checkboxes selected.",true);
 
@@ -2733,6 +2753,9 @@
 							undefined /*label*/);
 
 					str += "</div>"; //close ac_bitstring
+
+					str += "</div>";
+					// ------------------
 
 					str += "</div>"; //end advancedControlsMenu tag
 
