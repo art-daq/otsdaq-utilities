@@ -710,6 +710,8 @@
 			window.onmouseup = bodyMouseHandler;
 			//be careful to not override the window.onmousemove DesktopContent action
 			DesktopContent.mouseMoveSubscriber(bodyMouseMoveHandler);
+			//be careful to not override the body.keydown DesktopContent/Debug action
+			document.body.addEventListener("keydown",bodyKeyHandler, true /* flag for capture priority */ );
 
 
 			//============================
@@ -5342,6 +5344,12 @@
 		var waitForPrevOpsTimer_ = 0;
 		function handleTreeNodeClick(depth, uid, editClick, type, waitForOpsToComplete)
 		{
+			if(DesktopContent.isLoading())
+			{
+				Debug.warn("Please wait for Loading... to complete.");
+				return;
+			}
+
 			var idString = depth + "-" + uid;
 			treeEditingNodeDepth_ = depth;
 			treeEditingNodeIdString_ = idString;
@@ -5945,6 +5953,8 @@
 			Debug.log("deepestDepth " + deepestDepth);
 			if (deepestDepth < 0) //secondDeepestDepth < 0)
 			{
+				Debug.log("AllNodes ",treeEditingEditIconShownEl_,"size",
+					allNodes.length); 
 				Debug.log("The tree has been collapsed as far as possible" +
 					(treeEditingEditIconShownEl_ ? (" with respect to the highlighted node " +
 						"'" + nameOfTargetNode + "'") : "") + "!", Debug.INFO_PRIORITY);
@@ -9890,6 +9900,8 @@
 		//bodyKeyHandler ~~
 		function bodyKeyHandler(e)
 		{
+			Debug.log("key " + e.keyCode);
+
 			//detect proper views
 			var el = document.getElementById("treeView-ConfigGroupLink");
 			var popUpEl = document.getElementById("popUpDialog");
@@ -9909,6 +9921,10 @@
 						//handle expand
 						Debug.log("treeView bodyKey expand " + e.key);
 						expandTreeChildrenDepth();
+
+						event.stopImmediatePropagation(); // Prevents further listeners on the same element
+						if (e.preventDefault)
+							e.preventDefault();	
 						break;
 					}
 
@@ -9918,6 +9934,10 @@
 						//handle hide
 						Debug.log("treeView bodyKey hide " + e.key);
 						hideTreeChildrenDepth();
+
+						event.stopImmediatePropagation(); // Prevents further listeners on the same element
+						if (e.preventDefault)
+							e.preventDefault();	
 						break;
 					}
 
@@ -9934,9 +9954,23 @@
 							"value":treeEditingNodeType_,
 						true /* waitForOpsToComplete */
 					);
+					
+					event.stopImmediatePropagation(); // Prevents further listeners on the same element
+						if (e.preventDefault)
+							e.preventDefault();	
 				}
 			}
-			//else no handler
+			else if (e.key == "Escape" && _editingCellEl)
+			{
+				Debug.log(e.key);
+				event.stopImmediatePropagation(); // Prevents further listeners on the same element
+				if (e.preventDefault)
+					e.preventDefault();				
+				editCellCancel();
+				return false;
+			}
+			//else no handler, so allow infrastructure DesktopContent/Debug action
+
 		} //end bodyKeyHandler()
 
 		//==============================================================================
@@ -9948,7 +9982,7 @@
 			// var UPKEY = 38;
 			// var DNKEY = 40;
 			// var ESCKEY = 27;
-			//Debug.log("key " + e.keyCode);
+			Debug.log("key " + e.keyCode);
 			//keyCode is deprecated, switching to key
 
 			var shiftIsDown;
@@ -10302,6 +10336,7 @@
 			}
 			else if (e.key == "Escape")
 			{
+				Debug.log(e.key);
 				if (e.preventDefault)
 					e.preventDefault();
 				editCellCancel();
