@@ -4441,7 +4441,8 @@
 				{
 					--childrenLength;
 					comment = value.getAttribute("value");
-					if(comment == "No Comment" || comment == "DEFAULT") comment = "";
+					if(comment.indexOf("No Comment") >= 0 || comment.indexOf("DEFAULT") >= 0)
+						comment = "";
 					else
 						Debug.logv({comment});
 					++offset; //skip to next child
@@ -9954,7 +9955,7 @@
 							"value":treeEditingNodeType_,
 						true /* waitForOpsToComplete */
 					);
-					
+
 					event.stopImmediatePropagation(); // Prevents further listeners on the same element
 						if (e.preventDefault)
 							e.preventDefault();	
