@@ -530,8 +530,6 @@ for p in ${REPO_DIR[@]}; do
 	pwd >> $CHECKIN_LOG_PATH
 	git status &>> $CHECKIN_LOG_PATH
 
-
-
 	if [ "x$GIT_COMMENT" != "x" ]; then
 
 		echo -e "UpdateOTS.sh:${LINENO}  \t Checking in $p"
