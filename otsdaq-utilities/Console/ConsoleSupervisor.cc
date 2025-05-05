@@ -567,16 +567,19 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	if(triggeredAction.action == "Halt")
 	{
 		//TODO
+		theStateMachine_.tryTransition("Halt");
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Stop")
 	{
+        theStateMachine_.tryTransition("Stop");
 		//TODO
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Pause")
 	{
 		//TODO
+        theStateMachine_.tryTransition("Pause");
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 
