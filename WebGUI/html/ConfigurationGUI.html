@@ -8057,7 +8057,7 @@
 					el = document.getElementById("treeNode-TableComment-" + idString);
 					_editingCellElOldValue = el.textContent;
 					var i = _editingCellElOldValue.indexOf(": ");
-					if(i < 0) i = -2;
+					if(i < 0) i = 0; //allow +2 to skip past // start value
 					var initVal = _editingCellElOldValue.substr(i+2).trim(); //skip past "//author" + ": ", and remove whitespace
 					treeEditingNodeInitValue_ = initVal;
 
@@ -13897,52 +13897,71 @@
 
 		//==============================================================================
 		//tableLinkTooltip
+		var allTableNames_forTooltip_ = [];
 		function tableLinkTooltip(prependString)
 		{
 			//get all tables to give option to add table now.
 
+			if(allTableNames_forTooltip_.length)
+			{
+				Debug.log("Using cached table names");
+				localShowLinkTooltip();
+				return;
+			}
+
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables", "",
 				function(req)
 				{
-
-			var tableNames = req.responseXML.getElementsByTagName("TableName");
-			var selectStr = "";
-
-			selectStr += "<select id='tableLinkTooltipTableSelect' " +
-					"style='width:300px; color:black !important;' " +
-					">";
-
-			for (var i = 0; i < tableNames.length; ++i)
-			{
-				tableName = tableNames[i].getAttribute("value");
-				selectStr += "<option value='" + tableName + "'>" +
-						tableName + "</option>";
-			}
-			selectStr += "</select>";
-
-			DesktopContent.tooltip("FAQ: Where is the Table I want to link to?!",
-				prependString + " " +
-				"Were you looking for a table name that was NOT in the drop-down list?\n\n" +
-				"It is important to note that, when editing links, only currently active " +
-				"tables are available to be linked to. If you do not see the table " +
-				"name you are looking for, it is probably because that table is not a member " +
-				"of the currently active group. To resolve this issue, you must go to the group view and edit " +
-				"the group to include the new table as a member." +
-				//Important! similar to ConfigurationGUISupervisor.cc L:4559
-				//Important! similar to ConfigurationGUI.html: editTreeNodeOK(): L:9972
-				// CHANGES MUST BE PROPAGATED
-				"\n\n" +
-				"OR!!! Select the missing table and add it now" +
-				" to the Configuration Group: " +
-				selectStr + " " +
-				"<input type='button' style='color:black !important;' " +
-				"title='Click to add table to the active Configuration Group' " +
-				"onclick='addTableToConfigurationGroup(" +
-				"document.getElementById(\"tableLinkTooltipTableSelect\").value); " +
-				" Debug.closeErrorPop();event.stopPropagation(); ' value='Add Table'>" +
-				"</input>");
-
+					allTableNames_forTooltip_ = req.responseXML.getElementsByTagName("TableName");			
+					localShowLinkTooltip();
 				}); //end getTables request
+
+			return;
+
+			//////////////////////////
+			//localShowLinkTooltip
+			function localShowLinkTooltip()
+			{
+				Debug.log("localShowLinkTooltip()");
+
+				var selectStr = "";
+
+				selectStr += "<select id='tableLinkTooltipTableSelect' " +
+						"style='width:300px; color:black !important; padding: 4px' " +
+						">";
+
+				for (var i = 0; i < allTableNames_forTooltip_.length; ++i)
+				{
+					tableName = allTableNames_forTooltip_[i].getAttribute("value");
+					selectStr += "<option value='" + tableName + "'>" +
+							tableName + "</option>";
+				}
+				selectStr += "</select>";
+
+				DesktopContent.tooltip("FAQ: Where is the Table I want to link to?!",
+					prependString + " " +
+					"Were you looking for a table name that was NOT in the drop-down list?\n\n" +
+					"It is important to note that, when editing links, only currently active " +
+					"tables are available to be linked to. If you do not see the table " +
+					"name you are looking for, it is probably because that table is not a member " +
+					"of the currently active group. To resolve this issue, you must go to the group view and edit " +
+					"the group to include the new table as a member." +
+					//Important! similar to ConfigurationGUISupervisor.cc L:4559
+					//Important! similar to ConfigurationGUI.html: editTreeNodeOK(): L:9972
+					// CHANGES MUST BE PROPAGATED
+					"\n\n" +
+					"OR!!! Select the missing table and add it now" +
+					" to the Configuration Group: " +
+					selectStr + " " +
+					"<input type='button' style='color:black !important; padding: 4px 20px;' " +
+					"title='Click to add table to the active Configuration Group' " +
+					"onclick='addTableToConfigurationGroup(" +
+					"document.getElementById(\"tableLinkTooltipTableSelect\").value); " +
+					" Debug.closeErrorPop();event.stopPropagation(); ' value='Add Table'>" +
+					"</input>");
+
+			} //end localShowLinkTooltip()
+
 
 		} //end tableLinkTooltip()
 

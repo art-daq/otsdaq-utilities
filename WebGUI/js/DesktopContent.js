@@ -1170,7 +1170,7 @@ DesktopContent.hideLoading = function()
 } //end hideLoading()
 //=====================================================================================
 //returns true if loading box is up/unresolved
-DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack; } 
+DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack > 0; } //end isLoading()
 
 //=====================================================================================
 //DesktopContent.XMLHttpRequest
