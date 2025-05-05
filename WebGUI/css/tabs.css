@@ -12,12 +12,10 @@
 	color: gray;
 
 	float: left;
-	height: 40px;
 	border: none;
 	outline: none;
 	cursor: pointer;
-	padding: 13px 16px;
-	padding-bottom: 4px;
+	padding: 8px 10px;
 	transition: -1.3s;
 	font-weight: bold;
 	border-radius: 5px 5px 0 0;
