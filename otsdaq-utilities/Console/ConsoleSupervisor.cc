@@ -406,8 +406,8 @@ try
 
 				c += strlen(&(buffer.c_str()[c])) + 1;
 			}  // end handle message stacking in packet
-		}      // end received packet handling
-		else   // idle network handling
+		}  // end received packet handling
+		else  // idle network handling
 		{
 			if(i < 120)  // if nothing received for 120 seconds, then something is wrong
 			             // with Console configuration
@@ -572,14 +572,14 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	else if(triggeredAction.action == "Stop")
 	{
-        theStateMachine_.tryTransition("Stop");
+		theStateMachine_.tryTransition("Stop");
 		//TODO
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Pause")
 	{
 		//TODO
-        theStateMachine_.tryTransition("Pause");
+		theStateMachine_.tryTransition("Pause");
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 
@@ -589,10 +589,10 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 ///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
-												 uint32_t           priority, /* = -1 */
-												 uint32_t  			triggerOnCount,
-												 bool  				doLoop,
-												 bool 				isArmed)
+                                                 uint32_t           priority, /* = -1 */
+                                                 uint32_t           triggerOnCount,
+                                                 bool               doLoop,
+                                                 bool               isArmed)
 {
 	__SUP_COUTV__("Adding custom triggered action");
 	__SUP_COUTV__(triggerNeedle);
@@ -675,16 +675,16 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	    priorityCustomTriggerList_[priority].needleSubstrings,
 	    {'*'} /* delimiter */,
 	    {} /* do not ignore whitespace */);
-	priorityCustomTriggerList_[priority].action = triggerAction;
+	priorityCustomTriggerList_[priority].action         = triggerAction;
 	priorityCustomTriggerList_[priority].triggerOnCount = triggerOnCount;
-	priorityCustomTriggerList_[priority].doLoop = doLoop;
-	priorityCustomTriggerList_[priority].isArmed = isArmed;
+	priorityCustomTriggerList_[priority].doLoop         = doLoop;
+	priorityCustomTriggerList_[priority].isArmed        = isArmed;
 
 	__SUP_COUT__ << "Added custom count: "
 	             << (StringMacros::vectorToString(
 	                    priorityCustomTriggerList_[priority].needleSubstrings))
-	             << " at priority: " << priority
-				 << " triggered every: " << triggerOnCount << " occurrences";
+	             << " at priority: " << priority << " triggered every: " << triggerOnCount
+	             << " occurrences";
 	if(doLoop)
 		__SUP_COUT__ << " and will loop.";
 	else
@@ -702,9 +702,9 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
                                                         const std::string& setNeedle,
                                                         const std::string& setAction,
                                                         uint32_t           setPriority,
-														uint32_t setTriggerOnCount,
-														bool   setDoLoop,
-														bool   setIsArmed)
+                                                        uint32_t setTriggerOnCount,
+                                                        bool     setDoLoop,
+                                                        bool     setIsArmed)
 {
 	__SUP_COUTV__(currentNeedle);
 	__SUP_COUTV__(modifyType);
@@ -874,10 +874,10 @@ void ConsoleSupervisor::loadCustomCountList()
 	uint32_t    i = 0;
 	std::string needle;
 	std::string action;
-	size_t 	priority = 0;
-	size_t 	triggerOnCount = 0;
-	bool 	doLoop = false;
-	bool 	isArmed = false;
+	size_t      priority       = 0;
+	size_t      triggerOnCount = 0;
+	bool        doLoop         = false;
+	bool        isArmed        = false;
 	while(fgets(line, 1000, fp))
 	{
 		++i;
@@ -885,7 +885,7 @@ void ConsoleSupervisor::loadCustomCountList()
 		//ignore new line
 		if(strlen(line))
 			line[strlen(line) - 1] = '\0';
-		
+
 		__SUP_COUTV__(i);
 		__SUP_COUTV__(line);
 
@@ -899,7 +899,7 @@ void ConsoleSupervisor::loadCustomCountList()
 			triggerOnCount = std::stoi(line);
 		else if(i == 5)
 			doLoop = std::stoi(line) > 0 ? true : false;
-		else if(i == 6) // last line
+		else if(i == 6)  // last line
 		{
 			isArmed = std::stoi(line) > 0 ? true : false;
 			__SUP_COUTTV__(needle);
@@ -911,11 +911,12 @@ void ConsoleSupervisor::loadCustomCountList()
 			if(i == 1 &&
 			   needle !=
 			       CONSOLE_MISSED_NEEDLE)  //then force missed Console message as priority 0
-				addCustomTriggeredAction(CONSOLE_MISSED_NEEDLE, "System Message", 0, 1, false, true);
-			addCustomTriggeredAction(needle, action, priority, triggerOnCount, doLoop, isArmed);
+				addCustomTriggeredAction(
+				    CONSOLE_MISSED_NEEDLE, "System Message", 0, 1, false, true);
+			addCustomTriggeredAction(
+			    needle, action, priority, triggerOnCount, doLoop, isArmed);
 			i = 0;  //reset for next entry
 		}
-
 	}
 	fclose(fp);
 
@@ -1843,9 +1844,12 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			uint32_t    priority = CgiDataUtilities::postDataAsInt(cgiIn, "priority");
 			std::string action   = StringMacros::decodeURIComponent(
                 CgiDataUtilities::postData(cgiIn, "action"));
-			uint32_t triggerOnCount = CgiDataUtilities::postDataAsInt( cgiIn, "triggerOnCount");
-			bool doLoop = CgiDataUtilities::postDataAsInt( cgiIn, "doLoop") > 0 ? true : false;
-			bool isArmed = CgiDataUtilities::postDataAsInt( cgiIn, "isArmed") > 0 ? true : false;
+			uint32_t triggerOnCount =
+			    CgiDataUtilities::postDataAsInt(cgiIn, "triggerOnCount");
+			bool doLoop =
+			    CgiDataUtilities::postDataAsInt(cgiIn, "doLoop") > 0 ? true : false;
+			bool isArmed =
+			    CgiDataUtilities::postDataAsInt(cgiIn, "isArmed") > 0 ? true : false;
 
 			__SUP_COUTV__(needle);
 			__SUP_COUTV__(priority);
@@ -1875,13 +1879,14 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 					    needle,
 					    action,
 					    priority,
-						triggerOnCount,
-						doLoop,
-						isArmed);
+					    triggerOnCount,
+					    doLoop,
+					    isArmed);
 				}  //end csv needle list handling
 			}
 			else
-				addCustomTriggeredAction(needle, action, priority, triggerOnCount, doLoop, isArmed);
+				addCustomTriggeredAction(
+				    needle, action, priority, triggerOnCount, doLoop, isArmed);
 
 			saveCustomCountList();
 		}  // end AddCustomCountsAndAction
@@ -1915,8 +1920,9 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			    "count", std::to_string(customCount.occurrences), customCountParent);
 			xmlOut.addTextElementToParent(
 			    "action", customCount.action, customCountParent);
-			xmlOut.addTextElementToParent(
-			    "triggerOnCount", std::to_string(customCount.triggerOnCount), customCountParent);
+			xmlOut.addTextElementToParent("triggerOnCount",
+			                              std::to_string(customCount.triggerOnCount),
+			                              customCountParent);
 			xmlOut.addTextElementToParent(
 			    "doLoop", std::to_string(customCount.doLoop), customCountParent);
 			xmlOut.addTextElementToParent(
