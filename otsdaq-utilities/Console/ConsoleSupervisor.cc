@@ -566,21 +566,27 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	if(triggeredAction.action == "Halt")
 	{
-		//TODO
-		theStateMachine_.tryTransition("Halt");
-		__SUP_COUTV__("FSM Halt triggered");
-	}
-	else if(triggeredAction.action == "Stop")
-	{
-		theStateMachine_.tryTransition("Stop");
-		//TODO
+		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+		              "Console-triggered FSM Halt",
+		              0, 0);
+		t.detach();
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Pause")
 	{
-		//TODO
-		theStateMachine_.tryTransition("Pause");
-		__SUP_COUTV__("FSM Halt triggered");
+		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+		              "Console-triggered FSM Pause",
+		              1, 0);
+		t.detach();
+		__SUP_COUTV__("FSM Pause triggered");
+	}
+	else if(triggeredAction.action == "Stop")
+	{
+		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+		              "Console-triggered FSM Stop",
+		              0, 1);
+		t.detach();
+		__SUP_COUTV__("FSM Stop triggered");
 	}
 
 }  // end doTriggeredAction()
