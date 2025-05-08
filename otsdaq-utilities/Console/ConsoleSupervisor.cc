@@ -1026,6 +1026,35 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		insertMessageRefresh(&xmlOut, lastUpdateCount);
 	}
+	else if(requestType == "DebugFSM")
+
+	{
+		// make a thread and run sendAsyncExceptionToGateway from it
+		std::string fsmState = CgiDataUtilities::postData(cgiIn, "fsmState");
+		__SUP_COUT__ << "DebugFSM" << __E__;
+		__SUP_COUTV__(fsmState);
+		if(fsmState == "Halt")
+		{
+			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+			"Fault DebugFSM Halt", 0, 0);
+			t.detach();
+			__SUP_COUT__ << "Sent Halt" << __E__;
+		}
+		if(fsmState == "Pause")
+		{
+			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+			"Fault DebugFSM Pause", 1, 0);
+			t.detach();
+			__SUP_COUT__ << "Sent Pause" << __E__;
+		}
+		if(fsmState == "Stop")
+		{
+			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
+			"Fault DebugFSM Stop", 0, 1);
+			t.detach();
+			__SUP_COUT__ << "Sent Stop" << __E__;
+		}
+	}
 	else if(requestType == "PrependHistoricMessages")
 	{
 		size_t earliestOnhandMessageCount =
