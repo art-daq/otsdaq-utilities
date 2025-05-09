@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Replace tooltip lines</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div>
+        <div id="histogram_draw" style="display: inline-block; width: 600px; height: 600px;"></div>
+        <div id="graph_draw" style="display: inline-block; width: 600px; height: 600px;"></div>
+      </div>
+   </body>
+
+   <script type='module'>
+
+      import { createHistogram, createTGraph, draw, TH2Painter } from 'jsroot';
+
+      // replace tooltips in all TH2
+      TH2Painter.prototype.originalgetBinTooltips = TH2Painter.prototype.getBinTooltips;
+      TH2Painter.prototype.getBinTooltips = function(i, j) {
+         const res = this.originalgetBinTooltips(i, j);
+         res.shift(); // remove first line
+         res.push(`Custom info for bin ${i+1} ${j+1}`); // show bin index, +1 for underflow
+         return res;
+      }
+
+      // this is just generation of histogram
+      const histo = createHistogram('TH2F', 20, 20);
+      for (let iy = 0; iy < 20; iy++)
+         for (let ix = 0; ix < 20; ix++) {
+            const bin = histo.getBin(ix+1, iy+1);
+            histo.setBinContent(bin, 1 + (ix-10)**2 + (iy-10)**2);
+         }
+
+      histo.fName = 'generated';
+      histo.fTitle = 'Modified TH2 tootltips';
+
+      // this is just generation of TGraph
+      const npoints = 20, xpts = [], ypts = [];
+      for (let i = 0; i < npoints; i++) {
+         xpts.push(i + 2);
+         ypts.push(50 * Math.sin((i + 2) / npoints * Math.PI));
+      }
+      const graph = createTGraph(npoints, xpts, ypts);
+      graph.fMarkerColor = 3;
+      graph.fMarkerStyle = 22;
+      graph.fMarkerSize = 3;
+      graph.fTitle = 'Modified TGraph tooltips';
+
+      draw('histogram_draw', histo);
+      const painter = await draw('graph_draw', graph, 'P');
+
+      // replace tooltips only in this painter
+      painter.originalgetTooltips = painter.getTooltips;
+      painter.getTooltips = function(d) {
+         const res = this.originalgetTooltips(d);
+         res.shift(); // remove first line
+         res.push(`Custom info for graph index ${d.indx}`); // show point index
+         return res;
+      }
+   </script>
+</html>

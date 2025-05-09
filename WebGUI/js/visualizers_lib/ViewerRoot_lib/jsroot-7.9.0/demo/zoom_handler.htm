@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Automatic zooming in second histogram</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+     <div id="drawth2" style="position: relative; width: 600px; height: 400px;"></div>
+     <div id="drawth1" style="position: relative; width: 600px; height: 400px;"></div>
+   </body>
+
+   <script type='module'>
+      import { openFile, draw } from 'jsroot';
+
+      const file = await openFile('../../files/hsimple.root');
+
+      const obj1 = await file.readObject('hpx;1');
+
+      const h1painter = await draw('drawth1', obj1, 'hist');
+
+      const obj2 = await file.readObject('hpxpy;1');
+
+      const h2painter = await draw('drawth2', obj2, 'col');
+
+      // zooming handled in the frame painter now
+      const fp = h2painter.getFramePainter();
+
+      // keep old function to be able invoke it again
+      fp.oldZoom = fp.zoom;
+
+      // redefine zoom function of TH2 painter to make synchronous zooming of TH1 object
+      fp.zoom = function(xmin,xmax,ymin,ymax,zmin,zmax) {
+          h1painter.getFramePainter().zoom(xmin, xmax);
+          return this.oldZoom(xmin,xmax,ymin,ymax,zmin,zmax);
+      }
+   </script>
+</html>
