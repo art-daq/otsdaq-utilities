@@ -691,7 +691,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 									<< "' of class '" << tObject->ClassName() << __E__;
 
 						__SUP_COUTV__(json.Data());
-					}					
+					}
 				}
 				rootFile->Close();
 			}
