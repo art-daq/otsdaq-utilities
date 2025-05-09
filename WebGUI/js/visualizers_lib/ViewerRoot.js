@@ -1,6 +1,6 @@
 //=====================================================================================
 //
-//	Created Aug, 2013
+//	Created Aug, 2013, Updated to jsroot 7.9.0 in May 2025
 //	by Ryan Rivera ((rrivera at fnal.gov))
 //
 //	ViewerRoot.js
@@ -23,7 +23,11 @@
 //	public function list:
 //		ViewerRoot.launch()
 //
-//	from web: 	http://root.cern.ch/js/
+//  2025 from web, updating to 7.9.0 from 5.8.0: 
+//				https://root.cern/js/latest/api.htm#custom_html_th2_src
+//				https://github.com/root-project/jsroot/blob/master/docs/JSROOT.md#migration-v6---v7
+//
+//	2013 from web: 	http://root.cern.ch/js/
 //				http://root.cern.ch/drupal/content/trevolutionjs
 //				currently using v3.5: https://root.cern.ch/js/3.5/demo/demo.htm
 //					-- to change versions, hopefully just replace folder here:
@@ -63,10 +67,11 @@ ViewerRoot.launch = function() {
 	//allow window splitting and comparing and contrasting with transparent histos
 	////////uncomment for initial ROOT example end//////////////////////
 
-		loadScript(source_dir+'ViewerRootHud.js',function(){
-			loadScript(source_dir+'JsRoot/scripts/JSRootCore.js',function(){
-					JSROOT.AssertPrerequisites('2d;io;3d;',ViewerRoot.init);
-			}); });
+	loadScript(source_dir+'ViewerRootHud.js',function(){
+		loadScript(source_dir+'jsroot-7.9.0/scripts/JSRoot.core.js',function(){
+				// JSROOT.AssertPrerequisites('2d;io;3d;',ViewerRoot.init);
+				ViewerRoot.init();
+		}); });
 
 	///	Drawing Strategy
 	//		- if rootCanvas not created, clear omni and create, full window
@@ -565,7 +570,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 	var rootw = h/w < rootAspect?h/rootAspect:w;
 
 	//position all reports properly
-	for(var i=0;i<ViewerRoot.rootElArr.length;++i)
+	for(let i=0;i<ViewerRoot.rootElArr.length;++i) //use let instead of var, so that Promise captures correct i (i.e. scope does not exist outside of loop scope)
 	{
 		ViewerRoot.rootElArr[i].style.width = rootw + "px";
 		ViewerRoot.rootElArr[i].style.height = (h - ViewerRoot.ROOT_HEADER_HEIGHT) + "px";
@@ -583,16 +588,55 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 
 			try
 			{
-				JSROOT.redraw('histogram'+
-						ViewerRoot.rootObjIndexArr[i],
-						ViewerRoot.rootObjArr[i], "colz"); //last arg, root draw option
+				// TTree NTuples should be handled special
+				// _typename
+				// fBranches
+				// : arr: Array(5)0: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'px', fTitle: 'px', …}
+				// 1: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'py', fTitle: 'py', …}
+				// 2: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'pz', fTitle: 'pz', …}
+				// 3: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'random', fTitle: 'random', …}
+				// 4: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'i', fTitle: 'i', …}
+
+				Debug.log("ROOT type",ViewerRoot.rootObjArr[i]._typename);
+				if(ViewerRoot.rootObjArr[i]._typename == "TNtuple")
+				{
+					var ret = JSROOT.redraw('histogram'+
+							ViewerRoot.rootObjIndexArr[i],
+							ViewerRoot.rootObjArr[i], "px:py::pz>5"); //last arg, root draw option
+					Debug.logv({ret});
+					ret.catch(err => 
+						{
+							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
+								"' failed to draw: " + err);
+							document.getElementById("histogram" +
+								ViewerRoot.rootObjIndexArr[i]).textContent =
+										ViewerRoot.rootObjArr[i].JSON;
+										//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
+						});
+				}
+				else
+				{
+					var ret = JSROOT.redraw('histogram'+
+							ViewerRoot.rootObjIndexArr[i],
+							ViewerRoot.rootObjArr[i], "colz"); //last arg, root draw option
+					Debug.logv({ret});
+					ret.catch(err => 
+						{
+							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
+								"' failed to draw: " + err);
+							document.getElementById("histogram" +
+								ViewerRoot.rootObjIndexArr[i]).textContent =
+										ViewerRoot.rootObjArr[i].JSON;
+										//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
+						});
+				}
 			}
 			catch(e)
 			{
 				Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
 						"' failed to draw: " + e);//, Debug.HIGH_PRIORITY);
 				document.getElementById("histogram" +
-						ViewerRoot.rootObjIndexArr[i],).textContent =
+						ViewerRoot.rootObjIndexArr[i]).textContent =
 								ViewerRoot.rootObjArr[i].JSON;
 								//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 			}
@@ -1034,15 +1078,49 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 		//draw based on refresh index
 		try
 		{
-			JSROOT.redraw('histogram'+
-					(refreshIndex<0?ViewerRoot.objIndex:
-					ViewerRoot.rootObjIndexArr[refreshIndex]),
-					object, "colz"); //last arg, root draw option
+			Debug.log("ROOT type",object._typename,
+				"refreshIndex", refreshIndex,
+				"ViewerRoot.objIndex", ViewerRoot.objIndex
+				);
+			var objectIndex = refreshIndex < 0 ? ViewerRoot.objIndex:
+				ViewerRoot.rootObjIndexArr[refreshIndex];
+			if(object._typename == "TNtuple")
+			{
+				var ret = JSROOT.redraw('histogram' + objectIndex,
+					object, "px:py::pz>5"); //last arg, root draw option
+				Debug.logv({ret});
+				ret.catch(err => 
+					{
+						Debug.log("ROOT Object type '" + object._typename +
+							"' failed to draw: " + err, "objectIndex",objectIndex);
+						document.getElementById("histogram" + objectIndex).textContent =
+								object.JSON;
+									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
+					});
+			}
+			else
+			{
+				var ret = JSROOT.redraw('histogram'+
+						(refreshIndex<0?ViewerRoot.objIndex:
+						ViewerRoot.rootObjIndexArr[refreshIndex]),
+						object, "colz"); //last arg, root draw option
+				Debug.logv({ret});
+				ret.catch(err => 
+					{
+						Debug.log("ROOT Object type '" + object._typename +
+							"' failed to draw: " + err, "objectIndex",objectIndex);
+						document.getElementById("histogram" + objectIndex).textContent =
+								object.JSON;
+									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
+					});
+			}			
 		}
 		catch(e)
 		{
-			Debug.log("ROOT Object type '" + object._typename +
-					"' failed to draw: " + e, Debug.HIGH_PRIORITY);
+			Debug.err("ROOT Object type '" + object._typename +
+					"' failed to draw: " + e, "objectIndex",objectIndex);
+					document.getElementById("histogram" + objectIndex).textContent =
+							object.JSON;
 		}
 
 		if(refreshIndex < 0)
