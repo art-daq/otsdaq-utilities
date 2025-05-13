@@ -582,11 +582,14 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	else if(triggeredAction.action == "Stop")
 	{
+		__SUP_COUT__ << "FSM Stop Not Implemented yet" << __E__;
+		/*
 		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
 		              "Console-triggered FSM Stop",
 		              0, 1);
 		t.detach();
 		__SUP_COUTV__("FSM Stop triggered");
+		*/
 	}
 
 }  // end doTriggeredAction()
@@ -1049,10 +1052,12 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		}
 		if(fsmState == "Stop")
 		{
+			/*
 			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
 			"Fault DebugFSM Stop", 0, 1);
 			t.detach();
 			__SUP_COUT__ << "Sent Stop" << __E__;
+			*/
 		}
 	}
 	else if(requestType == "PrependHistoricMessages")
