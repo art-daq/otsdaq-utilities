@@ -714,6 +714,7 @@
 		_COMMAND_TYPES.MODIFY_ACTIVE_GROUP 		= "MODIFY_ACTIVE_GROUP";
 		_COMMAND_TYPES.REPEAT_LABEL 			= "REPEAT_LABEL";
 		_COMMAND_TYPES.RUN 						= "RUN";
+		_COMMAND_TYPES.WAIT 					= "WAIT";
 		_COMMAND_TYPES.START 					= "START";
 		_COMMAND_TYPES.STOP 					= "STOP";
 		_COMMAND_TYPES.PAUSE 					= "PAUSE";
@@ -745,6 +746,7 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.WAIT] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.START] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.STOP] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.PAUSE] 	= [];
@@ -1016,6 +1018,11 @@
 				"type" : _COMMAND_TYPES.RUN,
 				"param" : {"WaitForAllFrontEndsRunningThread":0,
 					"DurationInSeconds": 5*60},
+				});
+				commands.push({		//WAIT 1 minutes
+				"type" : _COMMAND_TYPES.WAIT,
+				"param" : {"WaitForAllFrontEndsRunningThread":0,
+					"DurationInSeconds": 60},
 				});
 				commands.push({ 	//REPEAT_LABEL
 				"type" : _COMMAND_TYPES.REPEAT_LABEL,
