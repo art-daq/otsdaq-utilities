@@ -566,18 +566,34 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	if(triggeredAction.action == "Halt")
 	{
-		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
-		              "Console-triggered FSM Halt",
-		              0, 0);
-		t.detach();
+			try
+			{
+				ConsoleSupervisor::sendAsyncExceptionToGateway(
+					"Console-triggered FSM Halt", 0, 0);
+			}
+			catch (...)
+			{
+				theRemoteWebUsers_.sendSystemMessage(
+					"*" /* to all users*/,
+					"FSM Halt has failed" );
+
+			}
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Pause")
 	{
-		std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
-		              "Console-triggered FSM Pause",
-		              1, 0);
-		t.detach();
+		try
+		{
+			ConsoleSupervisor::sendAsyncExceptionToGateway(
+				"Console-triggered FSM Pause", 1, 0);
+		}
+		catch (...)
+		{
+			theRemoteWebUsers_.sendSystemMessage(
+				"*" /* to all users*/,
+				"FSM Pause has failed" );
+
+		}
 		__SUP_COUTV__("FSM Pause triggered");
 	}
 	else if(triggeredAction.action == "Stop")
@@ -1041,19 +1057,37 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		std::string fsmState = CgiDataUtilities::postData(cgiIn, "fsmState");
 		__SUP_COUT__ << "DebugFSM" << __E__;
 		__SUP_COUTV__(fsmState);
-		if(fsmState == "Halt")
-		{
-			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
-			"Fault DebugFSM Halt", 0, 0);
-			t.detach();
-			__SUP_COUT__ << "Sent Halt" << __E__;
-		}
 		if(fsmState == "Pause")
 		{
-			std::thread t(&ConsoleSupervisor::sendAsyncExceptionToGateway, this,
-			"Fault DebugFSM Pause", 1, 0);
-			t.detach();
-			__SUP_COUT__ << "Sent Pause" << __E__;
+			try
+			{
+				ConsoleSupervisor::sendAsyncExceptionToGateway(
+					"Console-triggered FSM Pause", 1, 0);
+			}
+			catch (...)
+			{
+				theRemoteWebUsers_.sendSystemMessage(
+					"*" /* to all users*/,
+					"FSM Pause has failed" );
+
+			}
+			__SUP_COUTV__("FSM Pause triggered");
+		}
+		if(fsmState == "Halt")
+		{
+			try
+			{
+				ConsoleSupervisor::sendAsyncExceptionToGateway(
+					"Console-triggered FSM Halt", 0, 0);
+			}
+			catch (...)
+			{
+				theRemoteWebUsers_.sendSystemMessage(
+					"*" /* to all users*/,
+					"FSM Halt has failed" );
+
+			}
+			__SUP_COUTV__("FSM Halt triggered");
 		}
 		if(fsmState == "Stop")
 		{
