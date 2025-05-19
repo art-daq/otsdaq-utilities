@@ -566,18 +566,16 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	if(triggeredAction.action == "Halt")
 	{
-			try
-			{
-				ConsoleSupervisor::sendAsyncExceptionToGateway(
-					"Console-triggered FSM Halt", 0, 0);
-			}
-			catch (...)
-			{
-				theRemoteWebUsers_.sendSystemMessage(
-					"*" /* to all users*/,
-					"FSM Halt has failed" );
-
-			}
+		try
+		{
+			ConsoleSupervisor::sendAsyncExceptionToGateway(
+			    "Console-triggered FSM Halt", 0, 0);
+		}
+		catch(...)
+		{
+			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+			                                     "FSM Halt has failed");
+		}
 		__SUP_COUTV__("FSM Halt triggered");
 	}
 	else if(triggeredAction.action == "Pause")
@@ -585,14 +583,12 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		try
 		{
 			ConsoleSupervisor::sendAsyncExceptionToGateway(
-				"Console-triggered FSM Pause", 1, 0);
+			    "Console-triggered FSM Pause", 1, 0);
 		}
-		catch (...)
+		catch(...)
 		{
-			theRemoteWebUsers_.sendSystemMessage(
-				"*" /* to all users*/,
-				"FSM Pause has failed" );
-
+			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+			                                     "FSM Pause has failed");
 		}
 		__SUP_COUTV__("FSM Pause triggered");
 	}
@@ -601,14 +597,12 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		try
 		{
 			ConsoleSupervisor::sendAsyncExceptionToGateway(
-				"Console-triggered FSM Stop", 0, 1);
+			    "Console-triggered FSM Stop", 0, 1);
 		}
-		catch (const std::exception& e)
+		catch(const std::exception& e)
 		{
-			theRemoteWebUsers_.sendSystemMessage(
-				"*" /* to all users*/,
-				"FSM Stop has failed" );
-
+			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+			                                     "FSM Stop has failed");
 		}
 		__SUP_COUTV__("FSM Stop triggered");
 	}
@@ -1062,14 +1056,12 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			try
 			{
 				ConsoleSupervisor::sendAsyncExceptionToGateway(
-					"Console-triggered FSM Pause", 1, 0);
+				    "Console-triggered FSM Pause", 1, 0);
 			}
-			catch (...)
+			catch(...)
 			{
-				theRemoteWebUsers_.sendSystemMessage(
-					"*" /* to all users*/,
-					"FSM Pause has failed" );
-
+				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+				                                     "FSM Pause has failed");
 			}
 			__SUP_COUTV__("FSM Pause triggered");
 		}
@@ -1078,14 +1070,12 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			try
 			{
 				ConsoleSupervisor::sendAsyncExceptionToGateway(
-					"Console-triggered FSM Halt", 0, 0);
+				    "Console-triggered FSM Halt", 0, 0);
 			}
-			catch (...)
+			catch(...)
 			{
-				theRemoteWebUsers_.sendSystemMessage(
-					"*" /* to all users*/,
-					"FSM Halt has failed" );
-
+				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+				                                     "FSM Halt has failed");
 			}
 			__SUP_COUTV__("FSM Halt triggered");
 		}
@@ -1094,14 +1084,12 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			try
 			{
 				ConsoleSupervisor::sendAsyncExceptionToGateway(
-					"Console-triggered FSM Stop", 0, 1);
+				    "Console-triggered FSM Stop", 0, 1);
 			}
-			catch (...)
+			catch(...)
 			{
-				theRemoteWebUsers_.sendSystemMessage(
-					"*" /* to all users*/,
-					"FSM Stop has failed" );
-
+				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
+				                                     "FSM Stop has failed");
 			}
 			__SUP_COUTV__("FSM Stop triggered");
 		}
