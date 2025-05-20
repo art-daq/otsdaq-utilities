@@ -573,10 +573,11 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(...)
 		{
-			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-			                                     "FSM Halt has failed");
+			theRemoteWebUsers_.sendSystemMessage(
+			    "*" /* to all users*/,
+			    "FSM Halt from Console Supervisor Triggered Action has failed!");
 		}
-		__SUP_COUTV__("FSM Halt triggered");
+		__SUP_COUTV__("FSM Halt triggered from console");
 	}
 	else if(triggeredAction.action == "Pause")
 	{
@@ -587,10 +588,11 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(...)
 		{
-			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-			                                     "FSM Pause has failed");
+			theRemoteWebUsers_.sendSystemMessage(
+			    "*" /* to all users*/,
+			    "FSM Pause from Console Supervisor Triggered Action has failed!");
 		}
-		__SUP_COUTV__("FSM Pause triggered");
+		__SUP_COUTV__("FSM Pause triggered from console");
 	}
 	else if(triggeredAction.action == "Stop")
 	{
@@ -601,10 +603,11 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(const std::exception& e)
 		{
-			theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-			                                     "FSM Stop has failed");
+			theRemoteWebUsers_.sendSystemMessage(
+			    "*" /* to all users*/,
+			    "FSM Stop from Console Supervisor Triggered Action has failed!");
 		}
-		__SUP_COUTV__("FSM Stop triggered");
+		__SUP_COUTV__("FSM Stop triggered from console");
 	}
 
 }  // end doTriggeredAction()
