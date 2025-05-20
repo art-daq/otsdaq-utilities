@@ -1047,56 +1047,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		insertMessageRefresh(&xmlOut, lastUpdateCount);
 	}
-	else if(requestType == "DebugFSM")
-
-	{
-		// make a thread and run sendAsyncExceptionToGateway from it
-		std::string fsmState = CgiDataUtilities::postData(cgiIn, "fsmState");
-		__SUP_COUT__ << "DebugFSM" << __E__;
-		__SUP_COUTV__(fsmState);
-		if(fsmState == "Pause")
-		{
-			try
-			{
-				ConsoleSupervisor::sendAsyncExceptionToGateway(
-				    "Console-triggered FSM Pause", 1, 0);
-			}
-			catch(...)
-			{
-				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-				                                     "FSM Pause has failed");
-			}
-			__SUP_COUTV__("FSM Pause triggered");
-		}
-		if(fsmState == "Halt")
-		{
-			try
-			{
-				ConsoleSupervisor::sendAsyncExceptionToGateway(
-				    "Console-triggered FSM Halt", 0, 0);
-			}
-			catch(...)
-			{
-				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-				                                     "FSM Halt has failed");
-			}
-			__SUP_COUTV__("FSM Halt triggered");
-		}
-		if(fsmState == "Stop")
-		{
-			try
-			{
-				ConsoleSupervisor::sendAsyncExceptionToGateway(
-				    "Console-triggered FSM Stop", 0, 1);
-			}
-			catch(...)
-			{
-				theRemoteWebUsers_.sendSystemMessage("*" /* to all users*/,
-				                                     "FSM Stop has failed");
-			}
-			__SUP_COUTV__("FSM Stop triggered");
-		}
-	}
 	else if(requestType == "PrependHistoricMessages")
 	{
 		size_t earliestOnhandMessageCount =

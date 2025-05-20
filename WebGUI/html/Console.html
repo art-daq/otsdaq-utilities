@@ -4387,22 +4387,6 @@
 			</div>
 		</div>
 
-		<div id="debug" hidden>
-			<script>
-				var fsmTemplate = function(e, fsmState) {
-					console.log('Debugging FSM');
-					DesktopContent.XMLHttpRequest('Request?RequestType=DebugFSM',
-						'fsmState=' + fsmState,
-						(e) => {console.log(e)});
-				}
-				var fsmPause = (e) => fsmTemplate(e, 'Pause');
-				var fsmStop = (e) => fsmTemplate(e, 'Stop');
-				var fsmHalt = (e) => fsmTemplate(e, 'Halt');
-			</script>
-			<button onclick="fsmTemplate(this.event, 'Pause')">Pause FSM</button>
-			<button onclick="fsmTemplate(this.event, 'Halt')">Halt FSM</button>
-			<button onclick="fsmTemplate(this.event, 'Stop')">Stop FSM</button>
-		</div>
 
 		<div id='advancedContainer'>
 			<div id='advancedArea'>
