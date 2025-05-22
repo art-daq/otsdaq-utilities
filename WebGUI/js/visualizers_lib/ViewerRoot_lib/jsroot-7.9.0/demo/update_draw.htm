@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Demonstrator of online usage of JSROOT</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <style>
+         html {
+            height: 100%;
+         }
+         body {
+            min-height: 100%;
+            margin: 0px;
+            overflow: hidden;
+         }
+      </style>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div id="drawing" style="position: absolute; inset: 1px;"></div>
+   </body>
+
+   <script type='module'>
+      import { httpRequest, redraw, decodeUrl, registerForResize, GridDisplay } from 'jsroot';
+
+      let mdi = null, cnt = 0, drawopt = null, addr = null;
+
+      function updateGUI() {
+
+         // here set of generated json files are used
+         // One could specify addres of running THttpServer like http://localhost:8080/Canvases/c1/root.json.gz?compact=23
+         // Or one can create root.json file in the application and place it on the webserver
+         // To run demo, one should generate rootXX.json files using demo.C macro
+
+         let request_addr = addr || `root${cnt % 20}.json`,
+             request_count = cnt++;
+
+         httpRequest(request_addr, 'object').then(histo => {
+            // when use grid layout, use counter value stored in request itself
+            let frame = mdi ? mdi.findFrame(`item${request_count % mdi.numGridFrames()}`, true) : 'drawing';
+
+            // redraw histogram at specified frame
+            redraw(frame, histo, drawopt).then(() => {
+               // let adjust drawing when browser will be resized
+               if (!request_count) registerForResize('drawing');
+            });
+         }).catch(() => { document.getElementById('drawing').innerHTML = `"<h3>Can not get ${request_addr} from the server</h3>`;});
+      }
+
+      let d = decodeUrl();
+      let monitor = parseInt(d.get('monitoring') || '1000');
+
+      drawopt = d.get('opt');
+      addr = d.get('addr');
+
+      let layout = d.get('layout');
+
+      if (layout)
+          mdi = new GridDisplay('drawing', layout);
+
+      setInterval(updateGUI, monitor);
+   </script>
+</html>

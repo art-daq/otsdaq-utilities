@@ -629,7 +629,12 @@ void VisualSupervisor::request(const std::string&               requestType,
 			}
 			// First I check if I can find the object to return directly. If not an object
 			// it is a directory
-			if((tObject = rootFile->Get(rootDirectoryName.c_str())) != nullptr)
+			if((tObject = rootFile->Get(rootDirectoryName.c_str())) !=
+			       nullptr ||  //for backwards compatibility
+			   (rootDirectoryName.size() &&
+			    rootDirectoryName[0] == '/' &&  //for newer root, remove leading '/'
+			    (tObject = rootFile->Get(rootDirectoryName.substr(1).c_str())) !=
+			        nullptr))
 			{
 				if(tObject->IsA() == TCanvas::Class())
 				{
@@ -672,6 +677,26 @@ void VisualSupervisor::request(const std::string&               requestType,
 					        ? "dir"
 					        : "file",
 					    key->GetName());
+
+					if(TTEST(
+					       50))  //enable to view json content of each object in directory
+					{
+						tObject = key->ReadObj();
+						__SUP_COUT__ << "JSON : " << key->GetClassName() << __E__;
+
+						TString     json = TBufferJSON::ConvertToJSON(tObject);
+						TBufferFile tBuffer(TBuffer::kWrite);
+						tObject->Streamer(tBuffer);
+						std::string hexString =
+						    BinaryStringMacros::binaryStringToHexString(tBuffer.Buffer(),
+						                                                tBuffer.Length());
+
+						__SUP_COUT__ << "Returning directory object from file '"
+						             << tObject->GetName() << "' of class '"
+						             << tObject->ClassName() << __E__;
+
+						__SUP_COUTV__(json.Data());
+					}
 				}
 				rootFile->Close();
 			}
