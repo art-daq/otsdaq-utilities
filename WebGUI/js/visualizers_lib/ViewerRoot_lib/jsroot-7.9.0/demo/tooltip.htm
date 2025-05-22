@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Use of tooltip callback in JSROOT</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div id="user_tooltip">Place for info</div>
+
+      <form action="">
+         <input type="radio" name="kind" id="btn1" value="Tooltip" checked/> Tooltip
+         <input type="radio" name="kind" id="btn2" value="Click"/> Click
+         <input type="radio" name="kind" id="btn3" value="Dblclick"/> Doubleclick
+         <input type="radio" name="kind" id="btn4" value="All"/> All
+      </form>
+
+      <div id="object_draw" style="position: relative; width: 800px; height: 600px;"></div>
+
+      <div id="tooltip_draw" style="position: relative; width: 400px; height: 300px;"></div>
+   </body>
+
+   <script type='module'>
+
+      import { createHistogram, redraw } from 'jsroot';
+
+      let cnt = 0, toggle_flag = true, last_hbin = -1;
+
+      function UserHandler(kind, info) {
+         if (!info) {
+            document.getElementById('user_tooltip').innerHTML = 'No info';
+            last_hbin = -1;
+            return false;
+         }
+
+         last_hbin = info.bin;
+
+         // show info
+         document.getElementById('user_tooltip').innerHTML = `Handler: ${kind} Name: ${info.name} Bin: ${info.bin} Content: ${info.cont}`;
+
+         let h1 = createHistogram('TH1I', 20);
+         // copy content from TH2 to TH1
+         for (let n = 0; n < 20; n++)
+            h1.setBinContent(n+1, info.obj.getBinContent(n+1, info.biny));
+         h1.fName = 'tooltip';
+         h1.fTitle = `Projection of biny=${info.biny-1}`;
+         redraw('tooltip_draw', h1);
+         return true; // means event is handled and can be ignored
+      }
+
+      function DoExecMenu(arg) {
+         switch (arg) {
+            case 'something':
+               console.log('Execute something');
+               break;
+            case 'toggle':
+               console.log('Toggle something');
+               toggle_flag = !toggle_flag;
+               break;
+            default:
+               console.log(`Process histogram bin ${arg}`);
+         }
+      }
+
+      /** Fill context menu, call_back must be invoked to show menu
+        * kind argument may indicate special element like 'x' or 'y' axis */
+      function CustomContextMenu(menu, kind) {
+         // optional separator
+         menu.separator();
+
+         // menu item which execute function when selected
+         if (last_hbin > 0)
+            menu.add(`Process bin ${last_hbin}`, last_hbin, DoExecMenu);
+         else
+            menu.add('Do something', 'something', DoExecMenu);
+
+         // checked menu item
+         menu.addchk(toggle_flag, 'Toggle something', 'toggle', DoExecMenu);
+
+         // return promise
+         return Promise.resolve(menu);
+      }
+
+      function updateGUI() {
+         // if getting histogram from THttpServer as JSON string, one should parse it like:
+         // let histo = parse(your_json_string);
+
+         // this is just generation of histogram
+         let histo = createHistogram('TH2I', 20, 20);
+         for (let iy = 0; iy < 20; iy++)
+            for (let ix = 0; ix < 20; ix++) {
+               let bin = histo.getBin(ix+1, iy+1), val = 0;
+               switch (cnt % 4) {
+                  case 1: val = ix + 19 - iy; break;
+                  case 2: val = 38 - ix - iy; break;
+                  case 3: val = 19 - ix + iy; break;
+                  default: val = ix + iy; break;
+               }
+               histo.setBinContent(bin, val);
+            }
+
+         histo.fName = 'generated';
+         histo.fTitle = `Drawing ${cnt++}`;
+
+         redraw('object_draw', histo, 'col').then(painter => {
+            const chkd1 = document.getElementById('btn1').checked,
+                  chkd2 = document.getElementById('btn2').checked,
+                  chkd3 = document.getElementById('btn3').checked,
+                  all = document.getElementById('btn4').checked;
+
+            painter.configureUserTooltipHandler(chkd1 || all ? info => UserHandler('tooltip', info) : null);
+            painter.configureUserClickHandler(chkd2 || all ? info => UserHandler('click', info) : null);
+            painter.configureUserDblclickHandler(chkd3 || all ? info => UserHandler('dblclick', info) : null);
+            painter.configureUserContextMenu(CustomContextMenu);
+         });
+      }
+
+      updateGUI();
+
+      // update drawing every 3 sec
+      setInterval(updateGUI, 3000);
+   </script>
+</html>

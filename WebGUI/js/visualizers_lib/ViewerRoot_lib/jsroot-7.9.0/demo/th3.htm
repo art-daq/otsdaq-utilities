@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Create, draw and update TH3 object</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div id="object_draw" style="position: relative; width: 1200px; height: 800px;"></div>
+   </body>
+
+   <script type='module'>
+
+      import { createHistogram, redraw } from 'jsroot';
+
+      const histo = createHistogram('TH3I', 20, 20, 20);
+      histo.fXaxis.fXmin = -10;
+      histo.fXaxis.fXmax = 10;
+      histo.fYaxis.fXmin = -10;
+      histo.fYaxis.fXmax = 10;
+      histo.fZaxis.fXmin = -10;
+      histo.fZaxis.fXmax = 10;
+      histo.fName = 'generated';
+      histo.fFillColor = 3;
+
+      let cnt = 0;
+
+      function updateGUI() {
+         histo.fTitle = `Drawing ${cnt++}`;
+         const angle1 = cnt*Math.PI/70, angle2 = cnt*Math.PI/10;
+         histo.Fill(9*Math.sin(angle1), 9*Math.cos(angle2), 9*Math.sin(angle2));
+         redraw('object_draw', histo, 'box2');
+      }
+
+      updateGUI();
+      setInterval(updateGUI, 300);
+   </script>
+</html>
