@@ -1987,9 +1987,11 @@ DesktopContent.tooltipSetAlwaysShow = function(srcFunc,srcFile,id,neverShow,temp
 
 //=====================================================================================
 //popUpVerification ~~
-//	asks user if sure
-//	replace REPLACE in prompt with value passed as replaceVal (e.g. pass document.getElementById("myElementId").value)
-//	calls continueFunc (if exists) when user selects "Yes"
+//	Asks user if sure with custom prompt.
+//	Will replace REPLACE in prompt with value passed as replaceVal (e.g. pass document.getElementById("myElementId").value).
+//	Calls continueFunc (if exists) when user selects "Yes."
+//
+//	Use justDisplayAndTimeoutPopup to show a temporary popup with no user input.
 //
 //	Can change background color and text color with strings bgColor and textColor (e.g. "rgb(255,0,0)" or "red")
 //		Default is yellow bg with black text if nothing passed.
@@ -2140,52 +2142,6 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	el.style.left = "-1000px"; //set off page so actual dimensions can be determined, and then div relocated
 	body.appendChild(el);
 
-	if(getUserInput) //place cursor
-	{
-		var tel = document.getElementById('DesktopContent_popUpUserInput');
-		tel.focus();
-		tel.setSelectionRange(0,tel.value.length);
-
-		//accept enter to close if not multiline input
-		if(!wantMultilineInput)
-		{
-			tel.onkeydown =
-					function(event)
-					{
-				if(event.key == "Enter") // ENTER
-				{
-					Debug.log("Accepting enter key");
-					event.preventDefault();
-					event.stopPropagation();
-					DesktopContent.clearPopUpVerification(continueFunc);
-				}
-				else if(event.key == "Escape") // ESC
-				{
-					Debug.log("Accepting escape key");
-					event.preventDefault();
-					event.stopPropagation();
-					DesktopContent.clearPopUpVerification(cancelFunc);
-				}
-					}; //end keydown handler
-		}
-		else //allow newlinie behavior for multiline input
-		{
-			tel.onkeydown =
-					function(event)
-					{
-				if(event.key == "Enter") // ENTER
-				{
-					Debug.log("Accepting enter key");
-					// event.preventDefault();
-					event.stopPropagation();
-				}
-					};
-		}
-
-	}
-	else if(!justDisplayAndTimeoutPopup) //focus on button, since no text
-		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].focus();
-
 	//add key handler to body too for enter & esc
 	if(!justDisplayAndTimeoutPopup)
 		el.onkeydown =
@@ -2241,6 +2197,54 @@ DesktopContent.popUpVerification = function(prompt, continueFunc, replaceVal, bg
 	el.style.left = (DesktopContent.getWindowScrollLeft() + x) + "px";
 	el.style.top = (DesktopContent.getWindowScrollTop() + y) + "px";
 	if(zIndex) el.style.zIndex = zIndex;
+
+	//control cursor and key input focus (after el position is set!)
+	if(getUserInput) //place cursor
+	{
+		var tel = document.getElementById('DesktopContent_popUpUserInput');
+		tel.focus();
+		tel.setSelectionRange(0,tel.value.length);
+
+		//accept enter to close if not multiline input
+		if(!wantMultilineInput)
+		{
+			tel.onkeydown =
+					function(event)
+					{
+				if(event.key == "Enter") // ENTER
+				{
+					Debug.log("Accepting enter key");
+					event.preventDefault();
+					event.stopPropagation();
+					DesktopContent.clearPopUpVerification(continueFunc);
+				}
+				else if(event.key == "Escape") // ESC
+				{
+					Debug.log("Accepting escape key");
+					event.preventDefault();
+					event.stopPropagation();
+					DesktopContent.clearPopUpVerification(cancelFunc);
+				}
+					}; //end keydown handler
+		}
+		else //allow newlinie behavior for multiline input
+		{
+			tel.onkeydown =
+					function(event)
+					{
+				if(event.key == "Enter") // ENTER
+				{
+					Debug.log("Accepting enter key");
+					// event.preventDefault();
+					event.stopPropagation();
+				}
+					};
+		}
+
+	}
+	else if(!justDisplayAndTimeoutPopup) //focus on button, since no text
+		el.getElementsByClassName('DesktopContent_popUpUserInputButton')[0].focus();
+
 } //end popUpVerification()
 //=====================================================================================
 //clearPopUpVerification ~~

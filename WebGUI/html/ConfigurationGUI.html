@@ -11088,6 +11088,7 @@
 			var numberOfRequests = 0;
 			var numberOfReturns = 0;
 			var allRequestsSent = false;
+			var treeMemberVersionIsNew = []; //maintain tables with a new persistent version (so group save can be faster)
 
 			//go through each tree member
 			//	if modified table
@@ -11140,6 +11141,7 @@
 
 							//update tree member table version based on result
 							treeMemberVersions_[treeMemberIndex] = savedVersion;
+							treeMemberVersionIsNew[treeMemberIndex] = foundEquivalentVersion?0:1;							
 
 							++numberOfReturns;
 
@@ -11192,6 +11194,7 @@
 
 				var affectedGroupNames = []; //to be populated for use by alias setting
 				var affectedGroupKeys = []; //to be populated for use by alias setting
+				var affectedGroupIsNew = []; //to be populated for use by alias setting (for faster saving!)
 				var affectedGroupEls =
 					document.getElementsByClassName("popUpDialog-affectedGroups");
 				var affectedGroupCommentEls =
@@ -11213,7 +11216,7 @@
 					Debug.log("group comment: " + affectedGroupCommentEls[i].textContent);
 
 					var affectedArr = affectedGroupEls[i].textContent.split(',');
-
+					var groupIsNew = false;
 					//build member config map
 					var tableMap = "tableList=";
 					//member map starts after group name/key (i.e. [2])
@@ -11228,6 +11231,12 @@
 									Debug.log("found " + treeMemberNames_[k] + "-v" + treeMemberVersions_[k]);
 									tableMap += affectedArr[a] + "," +
 										treeMemberVersions_[k] + ",";
+
+									if(treeMemberVersionIsNew[k])									
+									{
+										Debug.log("Found a new persistent table version in group, so group must be new!");
+										groupIsNew = true;
+									}
 									break;
 								}
 						}
@@ -11236,6 +11245,7 @@
 
 					affectedGroupNames.push(affectedArr[0]);
 					affectedGroupMemberMaps.push(tableMap);
+					affectedGroupIsNew.push(groupIsNew?1:0);
 
 					reqStr = ""; //reuse
 					reqStr = "Request?RequestType=getTableGroupType";
@@ -11414,12 +11424,15 @@
 							Debug.log("group comment: " + affectedGroupCommentEls[i].textContent);
 
 							var tableMap = affectedGroupMemberMaps[i];
+							if(affectedGroupIsNew[i])
+								Debug.log("Group must be new, so do not look for equivalent and save faster!");
 
 							reqStr = ""; //reuse
 							reqStr = "Request?RequestType=saveNewTableGroup" +
 								"&groupName=" + affectedGroupNames[i] +
-								"&allowDuplicates=0" +
-								"&lookForEquivalent=1" +
+								//avoid checks for speed if we know affectedGroupIsNew!
+								"&allowDuplicates=" + + (affectedGroupIsNew[i]?1:0) + //0
+								"&lookForEquivalent=" + (affectedGroupIsNew[i]?0:1) + //1
 								"&ignoreWarnings=" + (ignoreWarnings ? 1 : 0) +
 								"&groupComment=" + encodeURIComponent(affectedGroupCommentEls[i].textContent);
 							Debug.log("reqStr = " + reqStr);
@@ -12206,22 +12219,33 @@
 						//reset parent children is enough
 						//	correct response should come from server
 
-
-
 						//var el = document.getElementById("treeNode-" + treeEditingNodeIdString_);
 						var pel = document.getElementById("treeNode-ChildrenOf-" +
 							treeEditingNodeParentIdString_);
-
 						//pel.removeChild(el);
 
-						//reset parent children
-						toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
-							treeEditingNodeParentIdString_.split('-')[1], false);
-						pel.innerHTML = "";
+						if(0) //old way, but loses expansion settings
+						{
+							//reset parent children
+							toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
+								treeEditingNodeParentIdString_.split('-')[1], false);
+							pel.innerHTML = "";
 
-						//check if parent is now empty in the handler treeViewHandler()
-						toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
-							treeEditingNodeParentIdString_.split('-')[1], true);
+							//check if parent is now empty in the handler treeViewHandler()
+							toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
+								treeEditingNodeParentIdString_.split('-')[1], true);
+						}
+						else //new way, keep expansion settings
+						{
+							doCaptureTreeViewExpand();
+
+							//reset parent children
+							toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
+								treeEditingNodeParentIdString_.split('-')[1], false);
+							pel.innerHTML = "";
+
+							doRestoreNextTreeViewExpand();
+						}
 
 						Debug.log("treeEditingNodeParentIdString_ " + treeEditingNodeParentIdString_);
 					}
@@ -12566,6 +12590,11 @@
 			//change link table name
 			el = document.getElementById("treeNode-linkTableName-" +
 				idString);
+			if(!el)
+			{
+				Debug.log("Cannot refresh table link with missing elements! Perhaps user clicked too fast?");
+				return;
+			}
 			el.innerHTML = "";
 			el.appendChild(document.createTextNode(linkTable));
 
@@ -13165,7 +13194,7 @@
 							{
 								pel = document.getElementById("treeNode-linkTableName-" +
 									(document.getElementById("treeNode-ParentId-" +
-										parentIdString).textContent));
+									idString).textContent));
 							}
 							catch (e)
 							{
@@ -13178,11 +13207,11 @@
 								pel = document.getElementById("treeNode-linkTableName-" +
 									(document.getElementById("treeNode-ParentId-" +
 										(document.getElementById("treeNode-ParentId-" +
-											parentIdString).textContent)).textContent));
+										idString).textContent)).textContent));
 							if (!pel)
 							{
 								Debug.log("Big problem with locating table name through ancestry! " +
-									"Please notify developers as to how you got here.",
+									"Can you repeat this error? Please notify developers as to how you got here.",
 									Debug.HIGH_PRIORITY);
 								return;
 							}

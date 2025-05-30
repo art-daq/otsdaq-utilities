@@ -1042,8 +1042,6 @@
 								"'" + groups[i] + "' Filter:",
 								vals,keys,types,groupFilterSelectionHandler,noMultiSelect);
 
-						MultiSelectBox.initMySelectBoxes();
-
 						el = document.createElement("div");
 						el.setAttribute("id", "clearDiv");
 						filterBoxesEl.appendChild(el);
@@ -1089,6 +1087,7 @@
 			} localCreateRecordsSelector ();
 
 			document.body.appendChild(_leftPane);
+			MultiSelectBox.initMySelectBoxes(); //can only init select boxes once available in document structure (i.e., after appended to body)
 
 		}	//end createLeftPaneContent()
 

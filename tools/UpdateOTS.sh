@@ -331,6 +331,28 @@ echo -e "UpdateOTS.sh:${LINENO}  1= $1"
 
 if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there are uncommitted changes, then output to stderr for capture
 	WARN_ONLY=1
+	echo -e  "\n" >&2 #take stderr for warn result
+
+	#check otsdaq-mu2e-config outside of srcs
+	if [ -d "${OTS_SOURCE}/../otsdaq-mu2e-config" ]; then
+		cd ${OTS_SOURCE}/../otsdaq-mu2e-config
+		if ! git diff --quiet || ! git diff --cached --quiet; then
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${OTS_SOURCE}/../otsdaq-mu2e-config" >&2 #take stderr for warn result
+		# else
+		# 	echo "Working tree is clean."
+		fi
+		cd -
+	fi
+	#check daq-operations outside of srcs
+	if [ -d "${OTS_SOURCE}/../daq-operations" ]; then
+		cd ${OTS_SOURCE}/../daq-operations
+		if ! git diff --quiet || ! git diff --cached --quiet; then
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${OTS_SOURCE}/../daq-operations" >&2 #take stderr for warn result
+		# else
+		# 	echo "Working tree is clean."
+		fi
+		cd -
+	fi
 else
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
@@ -516,7 +538,7 @@ for p in ${REPO_DIR[@]}; do
 		git fetch
 	elif [ $WARN_ONLY = 1 ]; then
 		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p" >&2 #take stderr for warn result
 		# else
 		# 	echo "Working tree is clean."
 		fi
