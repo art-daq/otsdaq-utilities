@@ -9917,7 +9917,7 @@
 				//Debug.log("treeView bodyKey " + e.key);
 
 				for (var i = 0; i < expandKeys.length; ++i)
-					if (expandKeys[i] == e.key)
+					if (expandKeys[i] == e.key.toLowerCase())
 					{
 						//handle expand
 						Debug.log("treeView bodyKey expand " + e.key);
@@ -9930,7 +9930,7 @@
 					}
 
 				for (var i = 0; i < hideKeys.length; ++i)
-					if (hideKeys[i] == e.key)
+					if (hideKeys[i] == e.key.toLowerCase())
 					{
 						//handle hide
 						Debug.log("treeView bodyKey hide " + e.key);
