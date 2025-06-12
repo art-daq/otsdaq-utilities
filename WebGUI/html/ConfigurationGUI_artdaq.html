@@ -585,7 +585,7 @@
 						if(nodeVectorIndexReverseMap[index])
 						{
 							Debug.log("Illegal Node Indices for node '" +
-									node.name + "' - repeat indices (i.e. '" +
+									nodeNameTemplate + "' - repeat indices (i.e. '" +
 									index + "') are not allowed.",
 									Debug.HIGH_PRIORITY);
 							return false;
@@ -600,7 +600,7 @@
 						if(hi <= lo)
 						{
 							Debug.log("Illegal Node Indices for node '" +
-									node.name + "' - please use printer page syntax (e.g. '0,4-6').",
+									nodeNameTemplate + "' - please use printer page syntax (e.g. '0,4-6').",
 									Debug.HIGH_PRIORITY);
 							return false;
 						}
@@ -610,7 +610,7 @@
 							if(nodeVectorIndexReverseMap[k])
 							{
 								Debug.log("Illegal Node Indices for node '" +
-									node.name + "' - repeat indices (i.e. '" +
+									nodeNameTemplate + "' - repeat indices (i.e. '" +
 										k + "') are not allowed.",
 										Debug.HIGH_PRIORITY);
 								return false;
@@ -622,7 +622,7 @@
 					else
 					{
 						Debug.log("Illegal Node Indices for node '" +
-									node.name + "' - please use printer page syntax (e.g. '0,4-6').",
+								nodeNameTemplate + "' - please use printer page syntax (e.g. '0,4-6').",
 								Debug.HIGH_PRIORITY);
 						return false;
 					}
@@ -635,7 +635,8 @@
 						nodeNameTemplate.indexOf('*') < 0)
 				{
 					Debug.log("Illegal Node Name for multi-node for node '" +
-									node.name + "' - please use * to indicate where the instance index should be (e.g. 'reader*' to make reader0, reader1, etc..).",
+							nodeNameTemplate + "' - please use * to indicate where the instance index should be " +
+							" (e.g. 'reader*' wither printer syntax '0,1' to make reader0, reader1, etc..).",
 							Debug.HIGH_PRIORITY);
 					return false;
 				}
@@ -643,7 +644,7 @@
 			else if(nodeNameTemplate.indexOf('*') >= 0)
 			{
 				Debug.log("Illegal Node Name for multi-node for node '" +
-								node.name + "' - * found without printer syntax indices.",
+							nodeNameTemplate + "' - * found without printer syntax indices.",
 						Debug.HIGH_PRIORITY);
 				return false;
 			}
@@ -677,7 +678,7 @@
 						if(hi <= lo)
 						{
 							Debug.log("Illegal Hostname Indices for node '" +
-									node.name + "' - please use printer page syntax (e.g. '0,4-6').",
+									nodeNameTemplate + "' - please use printer page syntax (e.g. '0,4-6').",
 									Debug.HIGH_PRIORITY);
 							return false;
 						}
@@ -694,7 +695,7 @@
 					else
 					{
 						Debug.log("Illegal Hostname Indices for node '" +
-								node.name + "' - please use printer page syntax (e.g. '0,4-6').",
+								nodeNameTemplate + "' - please use printer page syntax (e.g. '0,4-6').",
 								Debug.HIGH_PRIORITY);
 						return false;
 					}
@@ -707,7 +708,7 @@
 						hostname.indexOf('*') < 0)
 				{
 					Debug.log("Illegal Hostname for node '" +
-							node.name + "' for associating an array of hostnames to multiple " +
+							nodeNameTemplate + "' for associating an array of hostnames to multiple " +
 							"node instances - please use * in the hostname (click the pencil to type in the hostname field) to indicate where the hostname index should be (e.g. 'host*' to make host0, host1, etc..).",
 							Debug.HIGH_PRIORITY);
 					return false;
@@ -716,7 +717,7 @@
 						hostnameCount != nodeCount)
 				{
 					Debug.log("Illegal array of hostnames for node '" +
-							node.name + ".' Size " + hostnameCount +
+							nodeNameTemplate + ".' Size " + hostnameCount +
 							" is not equal to the number of node instances which is " +
 							nodeCount + " - there must be a one-to-one correspondence " +
 							"between hostname and node, or else all nodes must be placed on the same host.",
@@ -727,7 +728,7 @@
 			else if(hostname.indexOf('*') >= 0)
 			{
 				Debug.log("Illegal Host Name for multi-node for node '" +
-								node.name + "' - * found without printer syntax indices.",
+								nodeNameTemplate + "' - * found without printer syntax indices.",
 						Debug.HIGH_PRIORITY);
 				return false;
 			}
@@ -755,7 +756,6 @@
 				_hostnames[hostname] = 1;
 				node.hostname = hostname;
 			}
-
 
 			return true;
 		} //end handleOptionalNodeParameters()
@@ -2459,7 +2459,7 @@
 			el.style.left = ((- (_grid.xstep*1.8-_NODE_SIZE)/2 - (count?(count-1)*2:0) - 5)|0) + "px"; //-5 because grid/arrow left is biased to 0 position
 			el.style.fontSize = ((fontSz)|0) + "px";
 
-			el.style.height = ((fontSz*3)|0) + "px";
+			el.style.height = ((fontSz*3 + 5)|0) + "px";
 			el.style.width = ((_grid.xstep*1.8 )|0) + "px";
 		} //end doNodeHover()
 

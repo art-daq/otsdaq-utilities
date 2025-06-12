@@ -443,8 +443,14 @@ ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject,
 			"modifiedTables=" + modifiedTablesListStr +
 			"&nodeString=" + nodeString +
 			"&subsystemString=" + subsystemString, //end post data,
-			function(req)
+			function(req, reqParam, errStr)
 			{
+		if(errStr)
+		{
+			Debug.log(errStr,Debug.HIGH_PRIORITY);
+			if(responseHandler) responseHandler();
+			return;
+		}
 		console.log("response",req);
 
 		var errArr = DesktopContent.getXMLRequestErrors(req);
