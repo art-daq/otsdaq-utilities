@@ -4169,7 +4169,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 			var link = document.createElement("a");
 			link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
 			link.setAttribute("style", "display:none");
-			link.setAttribute("download", _currentConfigName + "_" +
+			link.setAttribute("download", ConfigurationAPI._activeGroups?.Configuration?.groupName + "_" + //this is the fix. changed from _currentConfigName
 					fieldName + "_download.csv");
 			document.body.appendChild(link); // Required for FF
 
