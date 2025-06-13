@@ -2990,7 +2990,7 @@ ConfigurationAPI.getGroupTypeMemberNames = function(groupType,responseHandler)
 //
 //	<bitMapParams> is an array olf size 6:
 //		rows,cols,cellFieldSize,minColor,midColor,maxColor
-ConfigurationAPI.bitMapDialog = function(fieldNameRaw,fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
+ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
 {
 	Debug.log("ConfigurationAPI bitMapDialog");
 
@@ -4167,10 +4167,9 @@ ConfigurationAPI.bitMapDialog = function(fieldNameRaw,fieldName,bitMapParams,ini
 			Debug.log("ConfigurationAPI.bitMapDialog.localDownloadCSV dataStr=" + dataStr);
 
 			var link = document.createElement("a");
-			var groupName = ConfigurationAPI._activeGroups?.Configuration?.groupName;
 			link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
 			link.setAttribute("style", "display:none");
-			link.setAttribute("download", groupName + "_" + //this is the fix. changed from _currentConfigName -> ConfigurationAPI._activeGroups?.Configuration?.groupName
+			link.setAttribute("download", tableName + "_" + UIDName + "_" +
 					fieldNameRaw + "_download.csv");
 			document.body.appendChild(link); // Required for FF
 

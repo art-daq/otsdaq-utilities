@@ -8306,7 +8306,8 @@
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
-							treeEditingTargetUID_ + "/" +
+							_currentTableName,
+							treeEditingTargetUID_,
 							treeEditingTargetColumn_,
 							"Target UID/Field: &quot;" +
 							treeEditingTargetUID_ + "/" +
@@ -9708,7 +9709,8 @@
 				//let API bitmap dialog handle it
 				var bitMapCellEl = _editingCellEl; //save for close
 				ConfigurationAPI.bitMapDialog(
-					_editingCellElOldTitle.split('\n')[1].split(" : ")[1] + "/" +
+					_currentTableName,
+					_editingCellElOldTitle.split('\n')[1].split(" : ")[1],
 					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0],
 					"Target UID/Field: &quot;" +
 					_editingCellElOldTitle.split('\n')[1].split(" : ")[1] + "/" +
