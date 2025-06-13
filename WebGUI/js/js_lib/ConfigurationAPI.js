@@ -4044,18 +4044,37 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldNam
 		str += "</div>";
 
 		//add download upload buttons
-		str += "<div style='float:left; margin: 5px 0 0 40px;'>";
-		str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-bitmap-btnCsv' style='float:left;' " +
-				"type='button' value='Download as CSV' " +
-				"onclick='ConfigurationAPI.bitMapDialog.localDownloadCSV()' " +
-				"/> ";
-		str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-bitmap-btnCsv' style='float:left; margin: 0 0 0 10px;' " +
-				"type='button' value='Upload CSV' " +
-				"onclick='ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()' " +
-				"/> ";
-		str += "</div>";
+        str += "<div style='float:left; margin: 5px 0 0 40px; display: flex; flex-direction: row; align-items: center;'>";
+        str += "<select id='bitmap-download-dropdown'" + 
+			   "onChange='ConfigurationAPI.bitMapDialog.localDownloadDropdownHandler()'" + 
+			   "class='" + ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-download-dropdown'" +
+			   "style='background-color: rgb(239, 239, 239); outline: 1px solid rgb(118, 118, 118); border-radius: 1px; border: none; width: auto; height:22px'>";
+        str += "<option value=''>Download as..</option>";
+        str += "<option value='csv'>CSV</option>";
+        str += "<option value='bmp'>BMP</option>";
+		str += "</select>";
+        // str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
+        //      "-bitmap-btnCsv' style='float:left;' " +
+        //      "type='button' value='Download as CSV' " +
+        //      "onclick='ConfigurationAPI.bitMapDialog.localDownloadCSV()' " +
+        //      "/> ";
+		
+        str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
+                "-bitmap-btnCsv' style='float:left; margin: 0 0 0 10px;' " +
+                "type='button' value='Upload CSV' " +
+                "onclick='ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()' " +
+                "/> ";
+        str += "</div>";
+
+		// document.getElementById("download-dropdown").addEventListener("change", function() {
+		// 	var selectedValue = this.value;
+		// 	if (selectedValue === "csv") {
+		// 		ConfigurationAPI.bitMapDialog.localDownloadCSV();
+		// 	} else if (selectedValue === "bmp") {
+		// 		alert("Download as BMP is not implemented yet.");
+		// 	}
+		// 	this.value = "";
+		// });
 
 		hdr.innerHTML = str;
 		hdr.style.overflowY = "auto";
@@ -4065,6 +4084,18 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldNam
 		var textInputEls = hdr.getElementsByClassName(ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-textInput");
 		var colorSampleEls = hdr.getElementsByClassName(ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-colorSample");
 
+
+		//::::::::::
+		//localDownloadDropdownHandler ~~
+		ConfigurationAPI.bitMapDialog.localDownloadDropdownHandler = function() {
+			var selectedValue = document.getElementById("bitmap-download-dropdown").value;
+			if (selectedValue === "csv") {
+				ConfigurationAPI.bitMapDialog.localDownloadCSV();
+			} else if (selectedValue === "bmp") {
+				ConfigurationAPI.bitMapDialog.localDownloadBMP();
+			}
+			document.getElementById("bitmap-download-dropdown").value = "";
+		}
 
 		//::::::::::
 		//localUpdateScroll ~~
@@ -4178,6 +4209,50 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldNam
 			link.parentNode.removeChild(link);
 		}; //end localDownloadCSV
 
+		//::::::::::
+		//localDownloadBMP ~~
+		ConfigurationAPI.bitMapDialog.localDownloadBMP = function() {
+			var transGrid = localConvertFullGridToRowCol();
+
+			var height = transGrid.length;
+			var width = transGrid[0].length;
+
+			let maxVal = Math.max(...transGrid.flat());
+			if (maxVal === 0) maxVal = 1;
+
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+
+			const ctx = canvas.getContext('2d');
+			const imageData = ctx.createImageData(width, height);
+
+			for (let i = 0; i < height; i++) {
+				for (let j = 0; j < width; j++) {
+					const normalized = transGrid[i][j] / maxVal;
+
+					const r = Math.round(255 * (1 - normalized));
+					const g = Math.round(255 * normalized);
+					const b = 0;
+
+					const index = (i * width + j) * 4;
+					imageData.data[index + 0] = r;
+					imageData.data[index + 1] = g;
+					imageData.data[index + 2] = b;
+					imageData.data[index + 3] = 255;
+				}
+			}
+
+			ctx.putImageData(imageData, 0, 0);
+
+			const link = document.createElement('a');
+			link.href = canvas.toDataURL('image/bmp'); // BMP is not supported in browsers; use PNG
+			link.download = tableName + "_" + UIDName + "_" + fieldNameRaw + "_download.bmp";
+
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		};
 
 
 		//::::::::::
