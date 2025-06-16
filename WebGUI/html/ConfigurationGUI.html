@@ -18827,6 +18827,55 @@
 						str += val;
 						str += "</a>";
 					}
+					else if (
+						r >= _CONFIG_DATA_ROW_OFFSET &&
+						c >= _CONFIG_DATA_COL_OFFSET &&
+						colTypes[c] === "BitMap" &&
+						uidVal !== "DEFAULT"
+					) {
+						if (val && val.trim().startsWith("[") && val.trim().endsWith("]")) {
+							try {
+								const bitmapMatrix = JSON.parse(val);
+								const height = bitmapMatrix.length;
+								const width = bitmapMatrix[0].length;
+
+								let maxVal = Math.max(...bitmapMatrix.flat());
+								if (maxVal === 0) maxVal = 1;
+
+								const canvas = document.createElement("canvas");
+								canvas.width = width;
+								canvas.height = height;
+
+								const ctx = canvas.getContext("2d");
+								const imageData = ctx.createImageData(width, height);
+
+								for (let i = 0; i < height; i++) {
+									for (let j = 0; j < width; j++) {
+										const normalized = bitmapMatrix[i][j] / maxVal;
+										const r = Math.round(255 * (1 - normalized));
+										const g = Math.round(255 * normalized);
+										const b = 0;
+
+										const index = (i * width + j) * 4;
+										imageData.data[index + 0] = r;
+										imageData.data[index + 1] = g;
+										imageData.data[index + 2] = b;
+										imageData.data[index + 3] = 255;
+									}
+								}
+
+								ctx.putImageData(imageData, 0, 0);
+								const dataUrl = canvas.toDataURL("image/png");
+
+								str += `<img src="${dataUrl}" alt="Bitmap" style="width:100px; height:100px; image-rendering:pixelated;" />`;
+							} catch (e) {
+								console.warn("Bitmap parse error:", val);
+								str += "(Invalid Bitmap)";
+							}
+						} else {
+							str += val;
+						}
+					}
 					else
 						str += val;
 
