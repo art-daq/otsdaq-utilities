@@ -8306,12 +8306,9 @@
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
-							_currentTableName,
-							treeEditingTargetUID_,
-							treeEditingTargetColumn_,
-							"Target UID/Field: &quot;" +
-							treeEditingTargetUID_ + "/" +
-							treeEditingTargetColumn_ + "&quot;",
+							_currentTableName, //table name
+							treeEditingTargetUID_, //uid name
+							treeEditingTargetColumn_, //field name raw
 							document.getElementById("treeNode-BitMap-Params-" +
 								idString).textContent.split(';'),
 							_editingCellElOldValue,
@@ -9709,12 +9706,9 @@
 				//let API bitmap dialog handle it
 				var bitMapCellEl = _editingCellEl; //save for close
 				ConfigurationAPI.bitMapDialog(
-					_currentTableName,
-					_editingCellElOldTitle.split('\n')[1].split(" : ")[1],
-					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0],
-					"Target UID/Field: &quot;" +
-					_editingCellElOldTitle.split('\n')[1].split(" : ")[1] + "/" +
-					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0] + "&quot;",
+					_currentTableName, //table name
+					_editingCellElOldTitle.split('\n')[1].split(" : ")[1], //uid name
+					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0],//field name raw
 					_tableFixedChoiceData[c],
 					_editingCellElOldValue,
 					function (val) {

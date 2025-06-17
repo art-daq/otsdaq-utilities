@@ -2990,7 +2990,7 @@ ConfigurationAPI.getGroupTypeMemberNames = function(groupType,responseHandler)
 //
 //	<bitMapParams> is an array olf size 6:
 //		rows,cols,cellFieldSize,minColor,midColor,maxColor
-ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
+ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
 {
 	Debug.log("ConfigurationAPI bitMapDialog");
 
@@ -3977,7 +3977,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldNam
 
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
-		str += fieldName;
+		str+="Target UID/Field: &quot;" + UIDName + "/" + fieldName + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
