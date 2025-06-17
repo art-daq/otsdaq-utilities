@@ -8308,10 +8308,10 @@
 						ConfigurationAPI.bitMapDialog(
 							_currentTableName, //table name
 							treeEditingTargetUID_, //uid name
-							treeEditingTargetColumn_, //field name raw
+							treeEditingTargetColumn_, //field name
 							document.getElementById("treeNode-BitMap-Params-" +
-								idString).textContent.split(';'),
-							_editingCellElOldValue,
+								idString).textContent.split(';'),//bitmap params
+							_editingCellElOldValue, //init bit map value
 							function (val)
 							{
 								Debug.log("yes " + val);

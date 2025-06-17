@@ -4186,9 +4186,9 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 			var dataStr = "data:text/csv;charset=utf-8,";
 
-			for(var r=0;r<transGrid.length;++r)
+			for(var r=transGrid.length-1;r>=0;--r)
 			{
-				if(r) dataStr += encodeURI("\n"); //encoded \n
+				if(r !== transGrid.length - 1) dataStr += encodeURI("\n"); //encoded \n
 				for(var c=0;c<transGrid[0].length;++c)
 				{
 					if(c) dataStr += ",";
@@ -4202,7 +4202,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
 			link.setAttribute("style", "display:none");
 			link.setAttribute("download", tableName + "_" + UIDName + "_" +
-					fieldNameRaw + "_download.csv");
+					fieldName + "_download.csv");
 			document.body.appendChild(link); // Required for FF
 
 			link.click(); // This will download the data file named "my_data.csv"
@@ -4236,7 +4236,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					const g = Math.round(255 * normalized);
 					const b = 0;
 
-					const index = (i * width + j) * 4;
+					const flippedI = height - 1 - i;
+					const index = (flippedI * width + j) * 4;
 					imageData.data[index + 0] = r;
 					imageData.data[index + 1] = g;
 					imageData.data[index + 2] = b;
@@ -4248,7 +4249,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 			const link = document.createElement('a');
 			link.href = canvas.toDataURL('image/bmp'); // BMP is not supported in browsers; use PNG
-			link.download = tableName + "_" + UIDName + "_" + fieldNameRaw + "_download.bmp";
+			link.download = tableName + "_" + UIDName + "_" + fieldName + "_download.bmp";
 
 			document.body.appendChild(link);
 			link.click();
