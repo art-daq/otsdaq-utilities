@@ -1070,7 +1070,13 @@
 			for(i=0;i<3;++i)
 				if(rgb[i] > 230) ++j;
 			if(j == 3)
-				rgb[subsystemId%3] = 150;
+				rgb[subsystemId%3] = 160;
+			//do not let the color get too gray
+			j=0;
+			for(i=0;i<3;++i)
+				if(rgb[i] < 220) ++j;
+			if(j == 3)
+				rgb[subsystemId%3] = 130;
 
 			//console.log("color sub",subsystemId,rgb);
 
@@ -2459,7 +2465,8 @@
 			el.style.left = ((- (_grid.xstep*1.8-_NODE_SIZE)/2 - (count?(count-1)*2:0) - 5)|0) + "px"; //-5 because grid/arrow left is biased to 0 position
 			el.style.fontSize = ((fontSz)|0) + "px";
 
-			el.style.height = ((fontSz*3 + 5)|0) + "px";
+			var padding = 5;
+			el.style.height = ((fontSz*3 + padding*2)|0) + "px";
 			el.style.width = ((_grid.xstep*1.8 )|0) + "px";
 		} //end doNodeHover()
 
@@ -4007,9 +4014,9 @@
 			document.getElementById("multiNodeSettings").style.display =
 					obj.checked?"block":"none";
 
-			if(!obj.checked)
+			if(!obj.checked) //remove all *'s if not multinode
 			{
-				var nodeNameValue = _nodes[i].originalName;
+				var nodeNameValue = document.getElementById("ediNode-" + "nodeName").value;
 				if(nodeNameValue.indexOf('*') >= 0) //remove all *
 					nodeNameValue = nodeNameValue.replace(new RegExp("\\*",'g'),
 													'0');
@@ -4047,7 +4054,7 @@
 
 			//else try to place * for user
 
-			var nodeNameValue = _nodes[i].name;
+			var nodeNameValue = document.getElementById("ediNode-" + "nodeName").value;
 			if(nodeNameValue.indexOf('*') < 0)
 			{
 				//check for a number in the name to help with default wildcard placement

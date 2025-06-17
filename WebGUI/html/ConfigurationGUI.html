@@ -7886,12 +7886,16 @@
 						(_version !== undefined && _version >= 0))
 				{
 					var backLinkStr = _tableViewBackLinkStr;
-					//Note: be careful with the source of backLinkStr.. don't use both quote styles!
-					if (backLinkStr.indexOf("'") >= 0)
-						backLinkStr = backLinkStr.replace(/'/g, "\\\"");
-					else
-						backLinkStr = backLinkStr.replace(/"/g, "\\\"");
-					Debug.log("Back-link = " + backLinkStr);
+					if(backLinkStr)
+					{
+						//Note: be careful with the source of backLinkStr.. don't use both quote styles!
+						if (backLinkStr.indexOf("'") >= 0)
+							backLinkStr = backLinkStr.replace(/'/g, "\\\"");
+						else
+							backLinkStr = backLinkStr.replace(/"/g, "\\\"");
+						Debug.log("Back-link = " + backLinkStr);
+					}
+					else backLinkStr = "";
 
 					str += "&nbsp;&nbsp;&nbsp;";
 					str += "<a onclick='setupSpecificTable(\"" +
