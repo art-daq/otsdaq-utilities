@@ -3647,7 +3647,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldNameRaw,fieldNam
 
 		if(useDefault)
 		{
-			Debug.warn("Defaulting to initial bitmap with min-value fill.");
+			//Debug.warn("Defaulting to initial bitmap with min-value fill.");
 
 			//min-value fill
 			var color;
