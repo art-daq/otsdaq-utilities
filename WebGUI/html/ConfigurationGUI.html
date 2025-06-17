@@ -18831,7 +18831,7 @@
 						r >= _CONFIG_DATA_ROW_OFFSET &&
 						c >= _CONFIG_DATA_COL_OFFSET &&
 						colTypes[c] === "BitMap" &&
-						uidVal !== "DEFAULT"
+						val !== "DEFAULT"
 					) {
 						if (val && val.trim().startsWith("[") && val.trim().endsWith("]")) {
 							try {
@@ -18856,7 +18856,7 @@
 										const g = Math.round(255 * normalized);
 										const b = 0;
 
-										const index = (i * width + j) * 4;
+										const index = ((height - 1 - i) * width + j) * 4;
 										imageData.data[index + 0] = r;
 										imageData.data[index + 1] = g;
 										imageData.data[index + 2] = b;
@@ -18891,6 +18891,10 @@
 			return str;
 
 		} //end createTableViewOutputStr()
+
+		function createBmpString(){
+
+		}
 
 		//==============================================================================
 		//transposeTableView ~~
