@@ -4630,6 +4630,10 @@
 					}
 					else if (valueType == "Timestamp")
 						treeViewHandlerStr_ += ConfigurationAPI.getDateString(new Date((value | 0) * 1000));
+					else if (valueType == "BitMap")
+					{
+						treeViewHandlerStr_ += createBmpString(value);
+					}
 					else
 						treeViewHandlerStr_ += value;
 
@@ -8315,9 +8319,7 @@
 							function (val)
 							{
 								Debug.log("yes " + val);
-								el.innerHTML = "";
-								el.appendChild(document.createTextNode(val));
-								_editingCellEl = el;
+								el.innerHTML = createBmpString(val);
 
 								treeEditingNodeType_ += "-bitmap";
 								editTreeNodeOK();
@@ -8959,9 +8961,23 @@
 						return; //already same value
 
 					Debug.log(r,c,"paint mode",event.buttons);
-					el.innerHTML = "";
-					el.appendChild(document.createTextNode(_editingCellElOldValue));
+					var tableEl = document.getElementById("SubSystemTable");
+					var rows = tableEl.getElementsByTagName("tr");
+					var colType;
+					if (_tableViewIsTransposed) 	//type is at col 0
+						colType = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+					else						//type is at row 0
+						colType = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c].childNodes[0].childNodes[0].innerText; //type text is in a div for smaller font, then label for bold
 
+					if(colType == "BitMap")
+					{
+						el.innerHTML = createBmpString(_editingCellElOldValue);
+					}
+					else
+					{
+						el.innerHTML = "";
+						el.appendChild(document.createTextNode(_editingCellElOldValue));
+					}
 					var selVal = _editingCellElOldValue;
 
 					if(_doCopyAndPaintIncrementally)
@@ -9028,9 +9044,21 @@
 					return; //already same value
 				//do painting
 				Debug.log("Painting value",_editingCellElOldValue);
+				var tableEl = document.getElementById("SubSystemTable");
+				var rows = tableEl.getElementsByTagName("tr");
+				var colType;
+				if (_tableViewIsTransposed) 	//type is at col 0
+					colType = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+				else						//type is at row 0
+					colType = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c].childNodes[0].childNodes[0].innerText; //type text is in a div for smaller font, then label for bold
 
-				el.innerHTML = "";
-				el.appendChild(document.createTextNode(_editingCellElOldValue));
+				if(colType == "BitMap"){
+					el.innerHTML = createBmpString(_editingCellElOldValue);
+
+				} else {
+					el.innerHTML = "";
+					el.appendChild(document.createTextNode(_editingCellElOldValue));
+				}
 				var selVal = _editingCellElOldValue;
 				if(_doCopyAndPaintIncrementally)
 					_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
@@ -9714,8 +9742,9 @@
 					_editingCellElOldValue,
 					function (val) {
 						Debug.log("yes " + val);
-						bitMapCellEl.innerHTML = "";
-						bitMapCellEl.appendChild(document.createTextNode(val));
+						//bitMapCellEl.innerHTML = "";
+						bitMapCellEl.innerHTML = createBmpString(val);
+						//bitMapCellEl.appendChild(document.createTextNode(val));
 						//stop editing if editing
 						_editingCell = false;
 						_editingCellEl = 0;
@@ -18822,55 +18851,13 @@
 						str += val;
 						str += "</a>";
 					}
-					// else if (
-					// 	r >= _CONFIG_DATA_ROW_OFFSET &&
-					// 	c >= _CONFIG_DATA_COL_OFFSET &&
-					// 	colTypes[c] === "BitMap" &&
-					// 	val !== "DEFAULT"
-					// ) {
-					// 	if (val && val.trim().startsWith("[") && val.trim().endsWith("]")) {
-					// 		try {
-					// 			const bitmapMatrix = JSON.parse(val);
-					// 			const height = bitmapMatrix.length;
-					// 			const width = bitmapMatrix[0].length;
-
-					// 			let maxVal = Math.max(...bitmapMatrix.flat());
-					// 			if (maxVal === 0) maxVal = 1;
-
-					// 			const canvas = document.createElement("canvas");
-					// 			canvas.width = width;
-					// 			canvas.height = height;
-
-					// 			const ctx = canvas.getContext("2d");
-					// 			const imageData = ctx.createImageData(width, height);
-
-					// 			for (let i = 0; i < height; i++) {
-					// 				for (let j = 0; j < width; j++) {
-					// 					const normalized = bitmapMatrix[i][j] / maxVal;
-					// 					const r = Math.round(255 * (1 - normalized));
-					// 					const g = Math.round(255 * normalized);
-					// 					const b = 0;
-
-					// 					const index = (i * width + j) * 4;
-					// 					imageData.data[index + 0] = r;
-					// 					imageData.data[index + 1] = g;
-					// 					imageData.data[index + 2] = b;
-					// 					imageData.data[index + 3] = 255;
-					// 				}
-					// 			}
-
-					// 			ctx.putImageData(imageData, 0, 0);
-					// 			const dataUrl = canvas.toDataURL("image/png");
-
-					// 			str += `<img src="${dataUrl}" alt="Bitmap" style="width:100px; height:100px; image-rendering:pixelated;" />`;
-					// 		} catch (e) {
-					// 			console.warn("Bitmap parse error:", val);
-					// 			str += "(Invalid Bitmap)";
-					// 		}
-					// 	} else {
-					// 		str += val;
-					// 	}
-					// }
+					else if (
+						r >= _CONFIG_DATA_ROW_OFFSET &&
+						c >= _CONFIG_DATA_COL_OFFSET &&
+						colTypes[c] === "BitMap"
+					) {
+						str += createBmpString(val);
+					}
 					else
 						str += val;
 
@@ -18887,8 +18874,55 @@
 
 		} //end createTableViewOutputStr()
 
-		function createBmpString(){
+		function createBmpString(val) {
+			if (!val || val.trim() === "" || val.trim().toUpperCase() === "DEFAULT")
+			{
+				return `<div style="display:flex; justify-content:center"><div style="width:100px;height:100px; background:#ff0000; image-rendering:pixelated;"></div>` +
+					`<div id='matrix' style='display: none'>${val}</div></div>`;
+			}
+			if (val && val.trim().startsWith("[") && val.trim().endsWith("]")) {
+				try {
+					const bitmapMatrix = JSON.parse(val);
+					const height = bitmapMatrix.length;
+					const width = bitmapMatrix[0].length;
 
+					let maxVal = Math.max(...bitmapMatrix.flat());
+					if (maxVal === 0) maxVal = 1;
+
+					const canvas = document.createElement("canvas");
+					canvas.width = width;
+					canvas.height = height;
+
+					const ctx = canvas.getContext("2d");
+					const imageData = ctx.createImageData(width, height);
+
+					for (let i = 0; i < height; i++) {
+						for (let j = 0; j < width; j++) {
+							const normalized = bitmapMatrix[i][j] / maxVal;
+							const r = Math.round(255 * (1 - normalized));
+							const g = Math.round(255 * normalized);
+							const b = 0;
+
+							const index = (i * width + j) * 4;
+							imageData.data[index + 0] = r;
+							imageData.data[index + 1] = g;
+							imageData.data[index + 2] = b;
+							imageData.data[index + 3] = 255;
+						}
+					}
+
+					ctx.putImageData(imageData, 0, 0);
+					const dataUrl = canvas.toDataURL("image/png");
+
+					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="width:100px; height:100px; image-rendering:pixelated; display:flex; justify-content:center" />` +
+						`<div id='matrix' style='display: none'>${val}</div></div>`;
+				} catch (e) {
+					console.warn("Bitmap parse error:", val);
+					return "(Invalid Bitmap)";
+				}
+			} else {
+				return val;
+			}
 		}
 
 		//==============================================================================
