@@ -3647,7 +3647,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		if(useDefault)
 		{
-			//Debug.warn("Defaulting to initial bitmap with min-value fill.");
+			Debug.log("Defaulting to initial bitmap with min-value fill.");
 
 			//min-value fill
 			var color;
@@ -3660,10 +3660,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					bmpData[r][c] = minValue; //min-value entry in column
 
 					color = localConvertValueToRGBA(bmpData[r][c]);
-					bmpDataImage.data[(r*cols + c)*4+0]=color[0];
-					bmpDataImage.data[(r*cols + c)*4+1]=color[1];
-					bmpDataImage.data[(r*cols + c)*4+2]=color[2];
-					bmpDataImage.data[(r*cols + c)*4+3]=color[3];
+					bmpDataImage.data[(r*cols+c)*4+0]=color[0];
+					bmpDataImage.data[(r*cols+c)*4+1]=color[1];
+					bmpDataImage.data[(r*cols+c)*4+2]=color[2];
+					bmpDataImage.data[(r*cols+c)*4+3]=color[3];
 				}
 			}
 
@@ -3976,7 +3976,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
-		str += "Target UID/Field: &quot;" + UIDName + "/" + fieldName + "&quot;";
+		str += "Target Table/UID/Field: &quot;" + tableName + "/" + UIDName + "/" + fieldName + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
@@ -4053,11 +4053,6 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
         str += "<option value='csv'>CSV</option>";
         str += "<option value='bmp'>BMP</option>";
 		str += "</select>";
-        // str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
-        //      "-bitmap-btnCsv' style='float:left;' " +
-        //      "type='button' value='Download as CSV' " +
-        //      "onclick='ConfigurationAPI.bitMapDialog.localDownloadCSV()' " +
-        //      "/> ";
 		
         str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
                 "-bitmap-btnCsv' style='float:left; margin: 0 0 0 10px;' " +
@@ -4065,16 +4060,6 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
                 "onclick='ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()' " +
                 "/> ";
         str += "</div>";
-
-		// document.getElementById("download-dropdown").addEventListener("change", function() {
-		// 	var selectedValue = this.value;
-		// 	if (selectedValue === "csv") {
-		// 		ConfigurationAPI.bitMapDialog.localDownloadCSV();
-		// 	} else if (selectedValue === "bmp") {
-		// 		alert("Download as BMP is not implemented yet.");
-		// 	}
-		// 	this.value = "";
-		// });
 
 		hdr.innerHTML = str;
 		hdr.style.overflowY = "auto";
@@ -4089,11 +4074,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		//localDownloadDropdownHandler ~~
 		ConfigurationAPI.bitMapDialog.localDownloadDropdownHandler = function() {
 			var selectedValue = document.getElementById("bitmap-download-dropdown").value;
-			if (selectedValue === "csv") {
+			if (selectedValue === "csv")
 				ConfigurationAPI.bitMapDialog.localDownloadCSV();
-			} else if (selectedValue === "bmp") {
+			else if (selectedValue === "bmp")
 				ConfigurationAPI.bitMapDialog.localDownloadBMP();
-			}
 			document.getElementById("bitmap-download-dropdown").value = "";
 		}
 
@@ -4211,7 +4195,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		//::::::::::
 		//localDownloadBMP ~~
-		ConfigurationAPI.bitMapDialog.localDownloadBMP = function() {
+		ConfigurationAPI.bitMapDialog.localDownloadBMP = function()
+		{
 			var transGrid = localConvertFullGridToRowCol();
 
 			var height = transGrid.length;
@@ -4227,8 +4212,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			const ctx = canvas.getContext('2d');
 			const imageData = ctx.createImageData(width, height);
 
-			for (let i = 0; i < height; i++) {
-				for (let j = 0; j < width; j++) {
+			for (let i = 0; i < height; i++)
+			{
+				for (let j = 0; j < width; j++)
+				{
 					const normalized = transGrid[i][j] / maxVal;
 
 					const r = Math.round(255 * (1 - normalized));
