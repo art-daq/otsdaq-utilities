@@ -9718,7 +9718,11 @@
 					function (val) {
 						Debug.log("yes " + val);
 						bitMapCellEl.innerHTML = "";
-						bitMapCellEl.appendChild(document.createTextNode(val));
+						var str = "";
+						str += "you made <img"; 
+						str += "<div >" + val + "</div>"
+						bitMapCellEl.innerHTML = str;
+						// bitMapCellEl.appendChild(document.createTextNode(val));
 						//stop editing if editing
 						_editingCell = false;
 						_editingCellEl = 0;

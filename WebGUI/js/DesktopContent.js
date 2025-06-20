@@ -1466,8 +1466,7 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 //				Debug.log("Status=0. Likely this means a window was closed, or the server crashed, in the middle of a request. " +
 //						"\n(It also could mean 'potential security risk' like a cross-domain request) ",Debug.HIGH_PRIORITY);
 				errStr = "Request was interrupted. " +
-						"Likely this means the server crashed or connection was lost (or the desktop window making the request was closed), " +
-						" in the middle of a request.";
+						"Likely this means the server crashed or connection was lost (or the desktop window making the request was closed; or did your ssh tunnel close?).";
 				//return;
 			}
 			else //bad address response
