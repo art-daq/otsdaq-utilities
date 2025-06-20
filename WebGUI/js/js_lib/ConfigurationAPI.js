@@ -3976,7 +3976,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
-		str+="Target UID/Field: &quot;" + UIDName + "/" + fieldName + "&quot;";
+		str += "Target UID/Field: &quot;" + UIDName + "/" + fieldName + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
@@ -4185,7 +4185,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 			var dataStr = "data:text/csv;charset=utf-8,";
 
-			for(var r=transGrid.length-1;r>=0;--r)
+			for(var r=0;r<transGrid.length;++r)
 			{
 				if(r !== transGrid.length - 1) dataStr += encodeURI("\n"); //encoded \n
 				for(var c=0;c<transGrid[0].length;++c)
@@ -4247,7 +4247,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			ctx.putImageData(imageData, 0, 0);
 
 			const link = document.createElement('a');
-			link.href = canvas.toDataURL('image/bmp'); // BMP is not supported in browsers; use PNG
+			link.href = canvas.toDataURL('image/bmp');
 			link.download = tableName + "_" + UIDName + "_" + fieldName + "_download.bmp";
 
 			document.body.appendChild(link);

@@ -4631,9 +4631,7 @@
 					else if (valueType == "Timestamp")
 						treeViewHandlerStr_ += ConfigurationAPI.getDateString(new Date((value | 0) * 1000));
 					else if (valueType == "BitMap")
-					{
 						treeViewHandlerStr_ += createBmpString(value);
-					}
 					else
 						treeViewHandlerStr_ += value;
 
@@ -8310,22 +8308,20 @@
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
-							_currentTableName, //table name
-							treeEditingTargetUID_, //uid name
-							treeEditingTargetColumn_, //field name
+							_currentTableName,
+							treeEditingTargetUID_,
+							treeEditingTargetColumn_,
 							document.getElementById("treeNode-BitMap-Params-" +
-								idString).textContent.split(';'),//bitmap params
-							_editingCellElOldValue, //init bit map value
+								idString).textContent.split(';'),
+							_editingCellElOldValue,
 							function (val)
 							{
 								Debug.log("yes " + val);
 								el.innerHTML = createBmpString(val);
-
 								treeEditingNodeType_ += "-bitmap";
 								editTreeNodeOK();
 								//_editingCell = false;
 								//_editingCellEl = 0;
-
 								//treeHasChanged();
 							},
 							function () //cancel handler
@@ -8335,7 +8331,6 @@
 								_editingCell = false;
 								_editingCellEl = 0;
 							});
-							console.log(_editingCellElOldValue);
 						return true;
 					}
 					else if (colType == "MultilineData")
@@ -8970,9 +8965,7 @@
 						colType = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c].childNodes[0].childNodes[0].innerText; //type text is in a div for smaller font, then label for bold
 
 					if(colType == "BitMap")
-					{
 						el.innerHTML = createBmpString(_editingCellElOldValue);
-					}
 					else
 					{
 						el.innerHTML = "";
@@ -9735,9 +9728,9 @@
 				//let API bitmap dialog handle it
 				var bitMapCellEl = _editingCellEl; //save for close
 				ConfigurationAPI.bitMapDialog(
-					_currentTableName, //table name
-					_editingCellElOldTitle.split('\n')[1].split(" : ")[1], //uid name
-					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0],//field name raw
+					_currentTableName,
+					_editingCellElOldTitle.split('\n')[1].split(" : ")[1],
+					_editingCellElOldTitle.split('\n')[2].split(" : ")[0].split(' ')[0],
 					_tableFixedChoiceData[c],
 					_editingCellElOldValue,
 					function (val) {
@@ -18855,9 +18848,8 @@
 						r >= _CONFIG_DATA_ROW_OFFSET &&
 						c >= _CONFIG_DATA_COL_OFFSET &&
 						colTypes[c] === "BitMap"
-					) {
+					)
 						str += createBmpString(val);
-					}
 					else
 						str += val;
 
@@ -18874,12 +18866,13 @@
 
 		} //end createTableViewOutputStr()
 
-		function createBmpString(val) {
+		//==============================================================================
+		//createBmpString ~~
+		function createBmpString(val)
+		{
 			if (!val || val.trim() === "" || val.trim().toUpperCase() === "DEFAULT")
-			{
 				return `<div style="display:flex; justify-content:center"><div style="width:100px;height:100px; background:#ff0000; image-rendering:pixelated;"></div>` +
 					`<div id='matrix' style='display: none'>${val}</div></div>`;
-			}
 			if (val && val.trim().startsWith("[") && val.trim().endsWith("]")) {
 				try {
 					const bitmapMatrix = JSON.parse(val);
@@ -18887,7 +18880,8 @@
 					const width = bitmapMatrix[0].length;
 
 					let maxVal = Math.max(...bitmapMatrix.flat());
-					if (maxVal === 0) maxVal = 1;
+					if (maxVal === 0)
+						maxVal = 1;
 
 					const canvas = document.createElement("canvas");
 					canvas.width = width;
