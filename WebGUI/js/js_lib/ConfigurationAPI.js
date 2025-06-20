@@ -3073,6 +3073,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 	//			ConfigurationAPI.bitMapDialog.localUpdateTextInput(i)
 	//			ConfigurationAPI.bitMapDialog.localUpdateButtonInput(i,dir)
 	//			ConfigurationAPI.bitMapDialog.localDownloadCSV()
+	//			ConfigurationAPI.bitMapDialog.localDownloadBMP()
 	//			ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()
 	//			ConfigurationAPI.bitMapDialog.locaUploadCSV()
 	//		localPaint()
@@ -4171,7 +4172,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 			for(var r=0;r<transGrid.length;++r)
 			{
-				if(r !== transGrid.length - 1) dataStr += encodeURI("\n"); //encoded \n
+				if(r) dataStr += encodeURI("\n"); //encoded \n
 				for(var c=0;c<transGrid[0].length;++c)
 				{
 					if(c) dataStr += ",";
@@ -4251,8 +4252,51 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			Debug.log("locaUploadCSV ConfigurationAPI.bitMapDialog._csvUploadDataStr = " + ConfigurationAPI.bitMapDialog._csvUploadDataStr);
 			var srcDataStr = ConfigurationAPI.bitMapDialog._csvUploadDataStr.split('\n');
 			var src = []; //src = [r][c]
-			for(var i=0;i<srcDataStr.length;++i)
-				src.push(srcDataStr[i].split(','));
+			var expectedCols = null;
+			
+			for (var i=0; i<srcDataStr.length;++i)
+			{
+				var row = srcDataStr[i].split(',');
+
+				if (expectedCols === null)
+					expectedCols = row.length;
+
+				if (row.length !== expectedCols)
+				{
+					Debug.warn("Row " + i + " has " + row.length +
+						" columns, but expected " + expectedCols + " columns. " +
+						"Row will be ignored in upload.", Debug.HIGH_PRIORITY);
+					continue;
+				}
+
+				for (var j = 0; j < row.length; ++j)
+				{
+					if (row[j].trim() === "")
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" is empty. This will be interpreted as 0 in upload.", Debug.HIGH_PRIORITY);
+						row[j] = "0";
+					}
+
+					var cellValue = Number(row[j]);
+					if(isNaN(cellValue))
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" has non-numeric value '" + row[j] +
+							"'. This will be interpreted as 0 in upload.", Debug.HIGH_PRIORITY);
+						row[j] = "0";
+					}
+					else if (cellValue > maxValue)
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" has value " + cellValue +
+							" which is greater than maxValue " + maxValue +
+							". This will be interpreted as " + maxValue + " in upload.", Debug.HIGH_PRIORITY);
+						row[j] = String(maxValue);
+					}
+				}
+				src.push(row);
+			}
 			console.log(src);
 
 			try
