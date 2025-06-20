@@ -3660,10 +3660,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					bmpData[r][c] = minValue; //min-value entry in column
 
 					color = localConvertValueToRGBA(bmpData[r][c]);
-					bmpDataImage.data[(r*cols+c)*4+0]=color[0];
-					bmpDataImage.data[(r*cols+c)*4+1]=color[1];
-					bmpDataImage.data[(r*cols+c)*4+2]=color[2];
-					bmpDataImage.data[(r*cols+c)*4+3]=color[3];
+					bmpDataImage.data[(r*cols + c)*4+0]=color[0];
+					bmpDataImage.data[(r*cols + c)*4+1]=color[1];
+					bmpDataImage.data[(r*cols + c)*4+2]=color[2];
+					bmpDataImage.data[(r*cols + c)*4+3]=color[3];
 				}
 			}
 
