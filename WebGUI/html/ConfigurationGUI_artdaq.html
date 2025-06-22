@@ -1910,7 +1910,7 @@
 				x = DesktopContent.getMouseX();
 				y = DesktopContent.getMouseY();
 			}
-			//console.log("mousemove x,y",x,y);
+			// console.log("mousemove x,y",x,y);
 
 			//debug visually
 			//_context.fillRect((x)|0,(y)|0,3,3 );
@@ -1988,8 +1988,8 @@
 			else yg |= 0;
 
 
-			//console.log("mousemove x,y",x,y,
-			//		"mousemove xg,yg",xg,yg);
+			// console.log("mousemove x,y",x,y,
+			// 		"mousemove xg,yg",xg,yg);
 
 			if(xg >= 0 && yg >= 0 &&
 					xg < _grid.cols &&
@@ -2053,19 +2053,21 @@
 			}
 			else
 			{
+				// console.log("NOT Node over " + xg + "," + yg);
+
 				//if not handled, remove +
 				_addNodeEl.style.left = "-1000px"; //off screen
 
 				var pxy = getGridPointXY(xg,yg);
 
 				//add +/- row column icons
-				if(yg == -1 && y < pxy[1] - _NODE_SIZE/2)
+				if(yg == -1)// && y < pxy[1] - _NODE_SIZE/2)
 					doNodeHover(-10); //show top icons
-				else if(xg >= _grid.cols && x >= pxy[0] + _NODE_SIZE/2)
+				else if(xg >= _grid.cols)// && x >= pxy[0] + _NODE_SIZE/2)
 					doNodeHover(-11); //show right icons
-				else if(yg >= _grid.rows && y >= pxy[1] + _NODE_SIZE/2)
+				else if(yg >= _grid.rows)// && y >= pxy[1] + _NODE_SIZE/2)
 					doNodeHover(-12); //show top icons
-				else if(xg == -1 && x < pxy[0] - _NODE_SIZE/2)
+				else if(xg == -1)// && x < pxy[0] - _NODE_SIZE/2)
 					doNodeHover(-13); //show left icons
 
 				return;
