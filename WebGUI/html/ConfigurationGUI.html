@@ -4441,7 +4441,8 @@
 				{
 					--childrenLength;
 					comment = value.getAttribute("value");
-					if(comment.indexOf("No Comment") >= 0 || comment.indexOf("DEFAULT") >= 0)
+					if(comment.length < ("No comment.").length &&
+						(comment.toLowerCase.indexOf("no comment") >= 0 || comment.indexOf("DEFAULT") >= 0))
 						comment = "";
 					else
 						Debug.logv({comment});
@@ -8062,6 +8063,17 @@
 					_editingCellElOldValue = el.textContent;
 					var i = _editingCellElOldValue.indexOf(": ");
 					if(i < 0) i = 0; //allow +2 to skip past // start value
+					else //if repeated author names, also skip past
+					{
+						var commentAuthorSubstr = _editingCellElOldValue.substr(2,i); //2 start for leading "//" (and include +2 in size for ": ")
+						var j = _editingCellElOldValue.lastIndexOf(commentAuthorSubstr);	
+						if(j > 0)
+						{		
+							j += commentAuthorSubstr.length - 2; //-2 because +2 will be added next
+							i = j;
+						}
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);		
+					}
 					var initVal = _editingCellElOldValue.substr(i+2).trim(); //skip past "//author" + ": ", and remove whitespace
 					treeEditingNodeInitValue_ = initVal;
 
@@ -15545,6 +15557,19 @@
 					_currentTableName + "</b>:<br>";
 				str += "<textarea id='popUpDialog-comment' rows='4' cols='50' style='width:417px;height:68px;'>";
 				var comment = _cachedTableComment == "" ? ConfigurationAPI._DEFAULT_COMMENT : _cachedTableComment;
+				var i = comment.indexOf(": ");
+				if(i > 2)
+				{ //skip past repeated author
+					var commentAuthorSubstr = comment.substr(0,i+2); //include +2 in size for ": "
+					var j = comment.lastIndexOf(commentAuthorSubstr);		
+					if(j > 0)
+					{		
+						j += commentAuthorSubstr.length;
+						i = j;
+					}
+					Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);		
+					comment = comment.substr(i);
+				}
 				str += comment;
 				str += "</textarea>";
 				str += "</div>";
