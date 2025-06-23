@@ -4307,7 +4307,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 				Debug.log("Successfully uploaded CSV file to bitmap!", Debug.INFO_PRIORITY);
 
 				//on succes remove popup
-				el = document.getElementById("popUpDialog");
+				var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 				if(el) el.parentNode.removeChild(el);
 			}
 			catch(err)
@@ -4324,17 +4324,16 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		//locaPopupUploadCSV ~~
 		ConfigurationAPI.bitMapDialog.locaPopupUploadCSV = function()
 		{
-			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			Debug.log("ConfigurationAPI.bitMapDialog.locaPopupUploadCSV");
 			ConfigurationAPI.bitMapDialog._csvUploadDataStr = ""; //clear previous upload
 
 			var str = "";
 
-			var pel = document.getElementById("popUpDialog");
+			var pel = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			if(!pel)
 			{
 				pel = document.createElement("div");
-				pel.setAttribute("id", "popUpDialog");
+				pel.setAttribute("id", ConfigurationAPI._POP_UP_DIALOG_ID);
 			}
 			pel.style.display = "none";
 
@@ -4373,7 +4372,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					"'/>";
 
 			pel.innerHTML = str;
-			el.appendChild(pel); //add element to bitmap div
+			document.body.appendChild(pel); //add element to body
 			pel.style.display = "block";
 
 			document.getElementById('popUpDialog-fileUpload').addEventListener(
