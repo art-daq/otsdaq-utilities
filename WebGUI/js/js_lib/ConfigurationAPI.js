@@ -4249,6 +4249,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		ConfigurationAPI.bitMapDialog._csvUploadDataStr; //uploaded csv table ends up here
 		ConfigurationAPI.bitMapDialog.locaUploadCSV = function()
 		{
+			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			Debug.log("locaUploadCSV ConfigurationAPI.bitMapDialog._csvUploadDataStr = " + ConfigurationAPI.bitMapDialog._csvUploadDataStr);
 			var srcDataStr = ConfigurationAPI.bitMapDialog._csvUploadDataStr.split('\n');
 			var src = []; //src = [r][c]
@@ -4323,6 +4324,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		//locaPopupUploadCSV ~~
 		ConfigurationAPI.bitMapDialog.locaPopupUploadCSV = function()
 		{
+			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			Debug.log("ConfigurationAPI.bitMapDialog.locaPopupUploadCSV");
 			ConfigurationAPI.bitMapDialog._csvUploadDataStr = ""; //clear previous upload
 
