@@ -278,7 +278,7 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 					var subsystemIds = artdaqSupervisor.getElementsByTagName(
 							types[i] + "-subsystem");
 
-
+					//node name and hostname are URI encoded at this point from XML
 					for(j=0;j<nodes.length;++j)
 					{
 						var multiNodeString = nodes[j].getElementsByTagName(types[i] + "-multinode");
@@ -289,7 +289,7 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 						console.log("parameters",multiNodeString,
 								nodeFixedWidth,hostArrayString,hostFixedWidth);
 
-						var nodeName = nodes[j].getAttribute('value');
+						var nodeName = decodeURIComponent(nodes[j].getAttribute('value'));
 						retObj[types[i]][nodeName] =
 							{
 								"status": 		statuses[j].getAttribute('value') | 0, //integer 0 or 1
@@ -443,8 +443,14 @@ ARTDAQConfigurationAPI.saveArtdaqNodes = function(nodesObject, subsystemsObject,
 			"modifiedTables=" + modifiedTablesListStr +
 			"&nodeString=" + nodeString +
 			"&subsystemString=" + subsystemString, //end post data,
-			function(req)
+			function(req, reqParam, errStr)
 			{
+		if(errStr)
+		{
+			Debug.log(errStr,Debug.HIGH_PRIORITY);
+			if(responseHandler) responseHandler();
+			return;
+		}
 		console.log("response",req);
 
 		var errArr = DesktopContent.getXMLRequestErrors(req);

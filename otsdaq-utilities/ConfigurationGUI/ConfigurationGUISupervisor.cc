@@ -26,9 +26,6 @@ using namespace ots;
 #define TABLE_INFO_PATH std::string(__ENV__("TABLE_INFO_PATH")) + "/"
 #define TABLE_INFO_EXT std::string("Info.xml")
 
-#define ARTDAQ_CONFIG_LAYOUTS_PATH \
-	std::string(__ENV__("SERVICE_DATA_PATH")) + "/ConfigurationGUI_artdaqLayouts/"
-
 /*! the XDAQ_INSTANTIATOR_IMPL(ns1::ns2::...) macro needs to be put into the
  * implementation file (.cc) of the XDAQ application */
 xdaq::Application* ConfigurationGUISupervisor::instantiate(xdaq::ApplicationStub* stub)
@@ -48,7 +45,7 @@ ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* st
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);
 
 	// make macro directories in case they don't exist
-	mkdir(((std::string)ARTDAQ_CONFIG_LAYOUTS_PATH).c_str(), 0755);
+	mkdir(((std::string)ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH).c_str(), 0755);
 
 	init();
 	__SUP_COUT__ << "Constructor complete." << __E__;
@@ -7873,25 +7870,49 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 
 			paramIndex = 3;  // start at 3 after subsystem parameter
 			if(artdaqNode.second.size() > paramIndex)
+			{
+				__SUP_COUTT__ << "\t\t\t"
+				              << "-multinode: " << artdaqNode.second[paramIndex] << __E__;
 				xmlOut.addTextElementToParent(
 				    typeString + "-multinode", artdaqNode.second[paramIndex++], nodeEl);
+			}
 			if(artdaqNode.second.size() > paramIndex)
+			{
+				__SUP_COUTT__ << "\t\t\t"
+				              << "-nodefixedwidth: " << artdaqNode.second[paramIndex]
+				              << __E__;
 				xmlOut.addTextElementToParent(typeString + "-nodefixedwidth",
 				                              artdaqNode.second[paramIndex++],
 				                              nodeEl);
+			}
 			if(artdaqNode.second.size() > paramIndex)
+			{
+				__SUP_COUTT__ << "\t\t\t"
+				              << "-hostarray: " << artdaqNode.second[paramIndex] << __E__;
 				xmlOut.addTextElementToParent(
 				    typeString + "-hostarray", artdaqNode.second[paramIndex++], nodeEl);
+			}
 			if(artdaqNode.second.size() > paramIndex)
+			{
+				__SUP_COUTT__ << "\t\t\t"
+				              << "-hostfixedwidth: " << artdaqNode.second[paramIndex]
+				              << __E__;
 				xmlOut.addTextElementToParent(typeString + "-hostfixedwidth",
 				                              artdaqNode.second[paramIndex++],
 				                              nodeEl);
+			}
 
 			paramIndex = 0;  // return to starting parameter
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-status: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-status", artdaqNode.second[paramIndex++], parentEl);
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-hostname: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-hostname", artdaqNode.second[paramIndex++], parentEl);
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-subsystem: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-subsystem", artdaqNode.second[paramIndex], parentEl);
 		}
@@ -8046,8 +8067,8 @@ void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
 	        : contextGroupKey;
 
 	std::stringstream layoutPath;
-	layoutPath << ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName << "_"
-	           << finalContextGroupKey << ".dat";
+	layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
+	           << "_" << finalContextGroupKey << ".dat";
 	__SUP_COUTV__(layoutPath.str());
 
 	FILE* fp = fopen(layoutPath.str().c_str(), "r");
@@ -8129,8 +8150,8 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
 	__SUP_COUTV__(layoutString);
 
 	std::stringstream layoutPath;
-	layoutPath << ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName << "_"
-	           << finalContextGroupKey << ".dat";
+	layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
+	           << "_" << finalContextGroupKey << ".dat";
 	__SUP_COUTV__(layoutPath.str());
 
 	std::vector<std::string> fields = StringMacros::getVectorFromString(layoutString);
@@ -8696,10 +8717,10 @@ void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
 ///		test activation of context group
 void ConfigurationGUISupervisor::testXDAQContext()
 {
-	// ConfigurationManagerRW cfgMgrInst("ExampleUser");
-	// ConfigurationManagerRW* cfgMgr =& cfgMgrInst;
-	// cfgMgr->testXDAQContext();
-	// return;
+	ConfigurationManagerRW  cfgMgrInst("ExampleUser");
+	ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
+	cfgMgr->testXDAQContext();
+	return;
 
 	try
 	{

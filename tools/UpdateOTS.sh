@@ -331,6 +331,38 @@ echo -e "UpdateOTS.sh:${LINENO}  1= $1"
 
 if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there are uncommitted changes, then output to stderr for capture
 	WARN_ONLY=1
+	echo -e  "\n" >&2 #take stderr for warn result
+
+	#scan for top-level git repos and check those
+	scan_dir="${OTS_SOURCE}/../"
+
+	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
+	while IFS= read -r gitdir; do
+		repo_dir="$(dirname "$gitdir")"
+		# echo "check found: $repo_dir"
+		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
+		if [[ "$remote_url" == *github.com* ]]; then
+			echo "GitHub repo found: $repo_dir"
+			echo "  → $remote_url"
+			cd $repo_dir
+			if ! git diff --quiet || ! git diff --cached --quiet; then
+				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
+			# else
+			# 	echo "Working tree is clean."
+			fi
+			branch="$(git rev-parse --abbrev-ref HEAD)"
+			if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
+				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+			# else
+			# 	echo "You are on main or develop"
+			fi
+			cd -
+		else
+			echo "NOT GitHub repo found: $repo_dir"
+			echo "  → $remote_url"
+		fi
+	done
+
 else
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
@@ -480,7 +512,9 @@ echo -e "UpdateOTS.sh:${LINENO}  \t =================="
 echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
 echo -e "UpdateOTS.sh:${LINENO}  \t Status will be logged here: $CHECKIN_LOG_PATH"
 
-echo "List of srcs repos:" > $CURRENT_AWESOME_BASE/list_of_repos.txt
+if [ $SHARE_ONLY = 1 ]; then
+	echo "List of srcs repos:" > $CURRENT_AWESOME_BASE/list_of_repos.txt
+fi
 
 echo
 echo -e "UpdateOTS.sh:${LINENO}  \t =================="
@@ -516,9 +550,15 @@ for p in ${REPO_DIR[@]}; do
 		git fetch
 	elif [ $WARN_ONLY = 1 ]; then
 		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p." >&2 #take stderr for warn result
+			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p" >&2 #take stderr for warn result
 		# else
 		# 	echo "Working tree is clean."
+		fi
+		branch="$(git rev-parse --abbrev-ref HEAD)"
+		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
+			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
+		# else
+		# 	echo "You are on main or develop"
 		fi
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
@@ -571,8 +611,8 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 ]]; then
 	timeout 1 rm $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
 	# echo -e "UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
 	#cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh
-	wget -T 5 https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
-	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh
+	wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
+	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh #for safety, prevent accidental execution by users
 
 	rm $OTS_SOURCE/../reset_ots_artdaq_tutorial.sh &>/dev/null 2>&1 #hide output
 	#now there is only one reset_tutorial script (that includes the artdaq tutorial), so cleanup old systems and do not download script

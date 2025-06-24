@@ -364,6 +364,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 				var returnStr;
 				var fileStr;
 				var labelStr;
+				var numOfIndents = 0; //indent for each Error decoration
 				try
 				{
 					while((k = str.indexOf(" |",i)) > 0)
@@ -455,6 +456,16 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 							//previous chunk
 							returnStr += str.substr(i,l-i);
 
+							//if "Error: " is immediate previous chunk, then indent
+							if(returnStr.length > ("Error:").length && 
+								returnStr.indexOf("Error:", 
+									returnStr.length - ("Error:").length) > 0)
+							{
+								console.log("Found 'Error:' decoration");
+								returnStr += "<div style='margin-left:60px;margin-top:-30px;'>"; //open indent
+								++numOfIndents;
+							}
+
 							if(i > 10 && returnStr[returnStr.length-1] != '\n')
 								returnStr += "<br>"; //make sure there is new line before label
 
@@ -539,6 +550,9 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
 				if(returnStr) //finish last chunk
 					returnStr += str.substr(i);
+
+				for(var i=0; i < numOfIndents; ++i)
+					returnStr += "</div>"; //close indents
 
 				return returnStr; //if untouched, undefined return
 			}
