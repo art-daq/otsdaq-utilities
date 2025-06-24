@@ -2990,7 +2990,7 @@ ConfigurationAPI.getGroupTypeMemberNames = function(groupType,responseHandler)
 //
 //	<bitMapParams> is an array olf size 6:
 //		rows,cols,cellFieldSize,minColor,midColor,maxColor
-ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
+ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParams,initBitMapValue,okHandler,cancelHandler)
 {
 	Debug.log("ConfigurationAPI bitMapDialog");
 
@@ -3073,6 +3073,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 	//			ConfigurationAPI.bitMapDialog.localUpdateTextInput(i)
 	//			ConfigurationAPI.bitMapDialog.localUpdateButtonInput(i,dir)
 	//			ConfigurationAPI.bitMapDialog.localDownloadCSV()
+	//			ConfigurationAPI.bitMapDialog.localDownloadBMP()
 	//			ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()
 	//			ConfigurationAPI.bitMapDialog.locaUploadCSV()
 	//		localPaint()
@@ -3647,7 +3648,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 
 		if(useDefault)
 		{
-			Debug.warn("Defaulting to initial bitmap with min-value fill.");
+			Debug.log("Defaulting to initial bitmap with min-value fill.");
 
 			//min-value fill
 			var color;
@@ -3976,7 +3977,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
-		str += fieldName;
+		str += "Target Table/UID/Field: &quot;" + tableName + "/" + UIDName + "/" + fieldName + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
@@ -4044,18 +4045,22 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 		str += "</div>";
 
 		//add download upload buttons
-		str += "<div style='float:left; margin: 5px 0 0 40px;'>";
-		str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-bitmap-btnCsv' style='float:left;' " +
-				"type='button' value='Download as CSV' " +
-				"onclick='ConfigurationAPI.bitMapDialog.localDownloadCSV()' " +
-				"/> ";
-		str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-bitmap-btnCsv' style='float:left; margin: 0 0 0 10px;' " +
-				"type='button' value='Upload CSV' " +
-				"onclick='ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()' " +
-				"/> ";
-		str += "</div>";
+        str += "<div style='float:left; margin: 5px 0 0 40px; display: flex; flex-direction: row; align-items: center;'>";
+        str += "<select id='bitmap-download-dropdown'" + 
+			   "onChange='ConfigurationAPI.bitMapDialog.localDownloadDropdownHandler()'" + 
+			   "class='" + ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-download-dropdown'" +
+			   "style='background-color: rgb(239, 239, 239); outline: 1px solid rgb(118, 118, 118); border-radius: 1px; border: none; width: auto; height:22px'>";
+        str += "<option value=''>Download as..</option>";
+        str += "<option value='csv'>CSV</option>";
+        str += "<option value='bmp'>BMP</option>";
+		str += "</select>";
+		
+        str += "<input class='" + ConfigurationAPI._POP_UP_DIALOG_ID +
+                "-bitmap-btnCsv' style='float:left; margin: 0 0 0 10px;' " +
+                "type='button' value='Upload CSV' " +
+                "onclick='ConfigurationAPI.bitMapDialog.locaPopupUploadCSV()' " +
+                "/> ";
+        str += "</div>";
 
 		hdr.innerHTML = str;
 		hdr.style.overflowY = "auto";
@@ -4065,6 +4070,17 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 		var textInputEls = hdr.getElementsByClassName(ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-textInput");
 		var colorSampleEls = hdr.getElementsByClassName(ConfigurationAPI._POP_UP_DIALOG_ID + "-bitmap-colorSample");
 
+
+		//::::::::::
+		//localDownloadDropdownHandler ~~
+		ConfigurationAPI.bitMapDialog.localDownloadDropdownHandler = function() {
+			var selectedValue = document.getElementById("bitmap-download-dropdown").value;
+			if (selectedValue === "csv")
+				ConfigurationAPI.bitMapDialog.localDownloadCSV();
+			else if (selectedValue === "bmp")
+				ConfigurationAPI.bitMapDialog.localDownloadBMP();
+			document.getElementById("bitmap-download-dropdown").value = "";
+		}
 
 		//::::::::::
 		//localUpdateScroll ~~
@@ -4169,7 +4185,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 			var link = document.createElement("a");
 			link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
 			link.setAttribute("style", "display:none");
-			link.setAttribute("download", _currentConfigName + "_" +
+			link.setAttribute("download", tableName + "_" + UIDName + "_" +
 					fieldName + "_download.csv");
 			document.body.appendChild(link); // Required for FF
 
@@ -4178,6 +4194,54 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 			link.parentNode.removeChild(link);
 		}; //end localDownloadCSV
 
+		//::::::::::
+		//localDownloadBMP ~~
+		ConfigurationAPI.bitMapDialog.localDownloadBMP = function()
+		{
+			var transGrid = localConvertFullGridToRowCol();
+
+			var height = transGrid.length;
+			var width = transGrid[0].length;
+
+			let maxVal = Math.max(...transGrid.flat());
+			if (maxVal === 0) maxVal = 1;
+
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+
+			const ctx = canvas.getContext('2d');
+			const imageData = ctx.createImageData(width, height);
+
+			for (let i = 0; i < height; i++)
+			{
+				for (let j = 0; j < width; j++)
+				{
+					const normalized = transGrid[i][j] / maxVal;
+
+					const r = Math.round(255 * (1 - normalized));
+					const g = Math.round(255 * normalized);
+					const b = 0;
+
+					const flippedI = height - 1 - i;
+					const index = (flippedI * width + j) * 4;
+					imageData.data[index + 0] = r;
+					imageData.data[index + 1] = g;
+					imageData.data[index + 2] = b;
+					imageData.data[index + 3] = 255;
+				}
+			}
+
+			ctx.putImageData(imageData, 0, 0);
+
+			const link = document.createElement('a');
+			link.href = canvas.toDataURL('image/bmp');
+			link.download = tableName + "_" + UIDName + "_" + fieldName + "_download.bmp";
+
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		};
 
 
 		//::::::::::
@@ -4185,11 +4249,55 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 		ConfigurationAPI.bitMapDialog._csvUploadDataStr; //uploaded csv table ends up here
 		ConfigurationAPI.bitMapDialog.locaUploadCSV = function()
 		{
+			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			Debug.log("locaUploadCSV ConfigurationAPI.bitMapDialog._csvUploadDataStr = " + ConfigurationAPI.bitMapDialog._csvUploadDataStr);
 			var srcDataStr = ConfigurationAPI.bitMapDialog._csvUploadDataStr.split('\n');
 			var src = []; //src = [r][c]
-			for(var i=0;i<srcDataStr.length;++i)
-				src.push(srcDataStr[i].split(','));
+			var expectedCols = null;
+			
+			for (var i=0; i<srcDataStr.length;++i)
+			{
+				var row = srcDataStr[i].split(',');
+
+				if (expectedCols === null)
+					expectedCols = row.length;
+
+				if (row.length !== expectedCols)
+				{
+					Debug.warn("Row " + i + " has " + row.length +
+						" columns, but expected " + expectedCols + " columns. " +
+						"Row will be ignored in upload.", Debug.HIGH_PRIORITY);
+					continue;
+				}
+
+				for (var j = 0; j < row.length; ++j)
+				{
+					if (row[j].trim() === "")
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" is empty. This will be interpreted as 0 in upload.", Debug.HIGH_PRIORITY);
+						row[j] = "0";
+					}
+
+					var cellValue = Number(row[j]);
+					if(isNaN(cellValue))
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" has non-numeric value '" + row[j] +
+							"'. This will be interpreted as 0 in upload.", Debug.HIGH_PRIORITY);
+						row[j] = "0";
+					}
+					else if (cellValue > maxValue)
+					{
+						Debug.warn("Row " + i + ", Col " + j +
+							" has value " + cellValue +
+							" which is greater than maxValue " + maxValue +
+							". This will be interpreted as " + maxValue + " in upload.", Debug.HIGH_PRIORITY);
+						row[j] = String(maxValue);
+					}
+				}
+				src.push(row);
+			}
 			console.log(src);
 
 			try
@@ -4200,7 +4308,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 
 				//on succes remove popup
 				el = document.getElementById("popUpDialog");
-				if(el) el.parentNode.removeChild(el);
+				if(el) el.parentNode.removeChild(el); //removes from parent bitmap dialog
 			}
 			catch(err)
 			{
@@ -4210,7 +4318,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 				//enable button so upload can be tried again
 				document.getElementById('popUpDialog-submitButton').disabled = false;
 			}
-		}
+		} //end locaUploadCSV()
 
 		//::::::::::
 		//locaPopupUploadCSV ~~
@@ -4221,7 +4329,8 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 
 			var str = "";
 
-			var pel = document.getElementById("popUpDialog");
+			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID); //this is the parent bitmap dialog box
+			var pel = document.getElementById("popUpDialog"); //this is the local child upload dialog box (attached to parent dialog)
 			if(!pel)
 			{
 				pel = document.createElement("div");
@@ -4281,7 +4390,7 @@ ConfigurationAPI.bitMapDialog = function(fieldName,bitMapParams,initBitMapValue,
 				reader.readAsText(file);
 			}, false);
 
-		}; //end locaUploadCSV
+		}; //end locaUploadCSV()
 
 
 		el.appendChild(hdr);
