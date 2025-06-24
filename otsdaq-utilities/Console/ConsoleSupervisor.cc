@@ -406,8 +406,8 @@ try
 
 				c += strlen(&(buffer.c_str()[c])) + 1;
 			}  // end handle message stacking in packet
-		}  // end received packet handling
-		else  // idle network handling
+		}      // end received packet handling
+		else   // idle network handling
 		{
 			if(i < 120)  // if nothing received for 120 seconds, then something is wrong
 			             // with Console configuration
