@@ -333,38 +333,36 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	WARN_ONLY=1
 	echo -e  "\n" >&2 #take stderr for warn result
 
-	#check otsdaq-mu2e-config outside of srcs
-	if [ -d "${OTS_SOURCE}/../otsdaq-mu2e-config" ]; then
-		cd ${OTS_SOURCE}/../otsdaq-mu2e-config
-		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${OTS_SOURCE}/../otsdaq-mu2e-config" >&2 #take stderr for warn result
-		# else
-		# 	echo "Working tree is clean."
+	#scan for top-level git repos and check those
+	scan_dir="${OTS_SOURCE}/../"  
+
+	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
+	while IFS= read -r gitdir; do
+		repo_dir="$(dirname "$gitdir")"
+		# echo "check found: $repo_dir"
+		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
+		if [[ "$remote_url" == *github.com* ]]; then
+			echo "GitHub repo found: $repo_dir"
+			echo "  → $remote_url"
+			cd $repo_dir
+			if ! git diff --quiet || ! git diff --cached --quiet; then
+				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
+			# else
+			# 	echo "Working tree is clean."
+			fi
+			branch="$(git rev-parse --abbrev-ref HEAD)"
+			if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
+				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+			# else
+			# 	echo "You are on main or develop"
+			fi
+			cd -
+		else
+			echo "NOT GitHub repo found: $repo_dir"
+			echo "  → $remote_url"
 		fi
-		branch="$(git rev-parse --abbrev-ref HEAD)"
-		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
-			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${OTS_SOURCE}/../otsdaq-mu2e-config ==> ${branch}" >&2 #take stderr for warn result
-		# else
-		# 	echo "You are on main or develop"
-		fi
-		cd -
-	fi
-	#check daq-operations outside of srcs
-	if [ -d "${OTS_SOURCE}/../daq-operations" ]; then
-		cd ${OTS_SOURCE}/../daq-operations
-		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${OTS_SOURCE}/../daq-operations" >&2 #take stderr for warn result
-		# else
-		# 	echo "Working tree is clean."
-		fi
-		branch="$(git rev-parse --abbrev-ref HEAD)"
-		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
-			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${OTS_SOURCE}/../daq-operations ==> ${branch}" >&2 #take stderr for warn result
-		# else
-		# 	echo "You are on main or develop"
-		fi
-		cd -
-	fi
+	done
+
 else
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
