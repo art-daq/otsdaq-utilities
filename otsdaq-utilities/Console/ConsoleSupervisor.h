@@ -28,6 +28,10 @@ class ConsoleSupervisor : public CoreSupervisorBase
 		std::string 				action; /* action */
 		size_t						triggeredMessageCountIndex = -1; /* message arrival count that fired the trigger */
 		size_t						occurrences = 0;
+		size_t					    triggerOnCount = 1; /* number of times event occurs before triggering action */
+		bool 						doLoop = 0; /* Wether to keep triggering on further occurrences */
+		bool						isArmed = 0; /* Wether to count occurrences towards trigger*/
+
 	}; //end CustomTriggeredAction_t struct
 
 
@@ -62,8 +66,20 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	void 						insertMessageRefresh				(HttpXmlDocument* xmldoc, const size_t lastUpdateCount);
 	void 						prependHistoricMessages				(HttpXmlDocument* xmlOut, const size_t earliestOnhandMessageCount);
 
-	void 						addCustomTriggeredAction			(const std::string& triggerNeedle, const std::string& triggerAction, uint32_t priority = -1);
-	uint32_t					modifyCustomTriggeredAction			(const std::string& currentNeedle, const std::string& modifyType, const std::string& setNeedle, const std::string& setAction, uint32_t setPriority);
+	void 						addCustomTriggeredAction			(const std::string& triggerNeedle,
+																	 const std::string& triggerAction,
+																	 uint32_t priority = -1,
+																	 uint32_t triggerOnCount = 1,
+																	 bool doLoop = false,
+																	 bool isArmed = false);
+	uint32_t					modifyCustomTriggeredAction			(const std::string& currentNeedle,
+																	 const std::string& modifyType,
+																	 const std::string& setNeedle,
+																	 const std::string& setAction,
+																	 uint32_t setPriority,
+																	 uint32_t setTriggerOnCount,
+																	 bool setDoLoop,
+																	 bool setIsArmed);
 
 	void						loadCustomCountList					(void);
 	void						saveCustomCountList					(void);
@@ -213,9 +229,25 @@ class ConsoleSupervisor : public CoreSupervisorBase
 				{
 					//FOR DEBUGGING std::cout << "Full match of custom trigger! Message: " <<
 					// 	getSourceIDAsNumber() << ":" << getMsg().substr(0,100) << __E__;
-					triggeredAction.occurrences++; ///<increment occurrences
-					customTriggerMatch = triggeredAction;
-					customTriggerMatch.triggeredMessageCountIndex = getCount();
+
+					// Always count occurrences
+					triggeredAction.occurrences++;
+
+					// Don't count towards action if not armed
+					if(!triggeredAction.isArmed)
+						continue;
+
+					// Trigger only if the count is a multiple of the triggerOnCount
+					if(triggeredAction.occurrences % triggeredAction.triggerOnCount == 0)
+					{
+						customTriggerMatch = triggeredAction;
+						customTriggerMatch.triggeredMessageCountIndex = getCount();
+					}
+
+					// Disarm if not looping
+					if(!triggeredAction.doLoop)
+						triggeredAction.isArmed = false;
+
 					break;
 				}
 			} //end custom trigger search
@@ -308,8 +340,8 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	/// members for the refresh handler, ConsoleSupervisor::insertMessageRefresh
 	xercesc::DOMElement* 					refreshParent_;
 
-	std::vector<CustomTriggeredAction_t>  		priorityCustomTriggerList_;
-	std::queue<CustomTriggeredAction_t>	 		customTriggerActionQueue_;
+	std::vector<CustomTriggeredAction_t>  		priorityCustomTriggerList_; // list of custom trigger actions
+	std::queue<CustomTriggeredAction_t>	 		customTriggerActionQueue_; // queue of pending actions upon custom needle match
 
 	///for system status:
 	size_t 			errorCount_ = 0, warnCount_ = 0, infoCount_ = 0;
