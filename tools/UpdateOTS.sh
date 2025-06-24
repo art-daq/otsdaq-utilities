@@ -334,7 +334,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	echo -e  "\n" >&2 #take stderr for warn result
 
 	#scan for top-level git repos and check those
-	scan_dir="${OTS_SOURCE}/../"  
+	scan_dir="${OTS_SOURCE}/../"
 
 	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
 	while IFS= read -r gitdir; do
