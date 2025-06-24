@@ -5,6 +5,7 @@
 
 		<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
 		<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+		<link href='/WebPath/css/ConsoleTabs.css' rel='stylesheet' type='text/css'>
 
 		<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
 		<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
@@ -38,7 +39,9 @@
 				margin: 2px 2px 2px 20px;
 			}
 
-			button, select, input {
+
+			button, select, input, option {
+				font-family: 'Comfortaa', serif;
 				cursor:				pointer;
 			}
 			a {
@@ -205,21 +208,32 @@
 
 
 			/* ***************** CONTROLS AREA ******************************************/
-			#controlsContainer, #advancedContainer {
+
+			#consoleMenuBar {
+				display: flex;
+			}
+
+			#controlsContainer, #advancedArea {
 				position: 			absolute;
 
-				padding: 			13px 2px 17px 8px;
+				padding: 			13px 13px 17px 8px;
 				text-align: 		left;
 				color: 				#4D2600;
 
+				border-style: groove;
+				border-top-style: none;
+				border-radius: 		0 5px 5px 5px;
+
+			}
+
+			#controlsContainer {
 				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
 									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
 									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-				border-radius: 		3px;
-
 			}
+
 
 			#advancedControlsLink {
 				margin-left: 		25px;
@@ -232,23 +246,89 @@
 				white-space: 		nowrap;
 			}
 
+			.advancedTabButton {
+				background-color: #010101;
+			}
+
 			#advancedContainer {
 				display:			none;
 				z-index:			1000;
-				padding: 			15px 2px 15px 15px;
+				padding: 			15px 0px 15px 15px;
+				width: 				60%; /* Workaround for absolute placement of usersContainer */
 
 				-webkit-user-select:none; /* to stop text highlights */
 				-moz-user-select: 	none;
 				user-select: 		none;
+				/* background-color: #c4cec6; */
 			}
 
 			#advancedArea {
+				background-color: #efd8d8;
 				overflow:			none;
 				font-size:			13px;
 			}
 
+			#advancedControlsMenu {
+				display: flex;
+				gap: 10px;
+				flex-direction: row;
+				flex-wrap: wrap;
+			}
+
+			#ac_traceModeSelectDiv, ac_traceModeSelectDivButtons {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			#ac_traceModeSelect {
+				height: 30px;
+				border: none;
+				overflow: hidden;
+				background-color: transparent;
+				cursor: default;
+			}
+
+			#ac_traceModeSelect:focus {
+				outline: none;
+			}
+
+			#ac_traceModeSelect option{
+				display: inline-block;
+				background-color: transparent;
+				width: 60px;
+				padding: 5px 0;
+				font-weight: bold;
+				text-align: center;
+				margin-right: 20px;
+				border:solid 1px #4D2600;
+				color: rgb(35, 108, 176);
+				border-radius: 5px;
+				box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em,
+									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+									rgba(200, 200, 200,0.6) 0 .1em 3px,
+									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
+									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
+			}
+
+			#ac_traceModeSelect option:hover{
+				background-color: #706f97;
+				color: white;
+			}
+
+			#ac_traceModeSelect option:checked{
+				background-color: #4D2600;
+				color: white;
+			}
+
 			#advancedArea table {
 				border-spacing: 0;
+			}
+
+			#advancedControlsTabs {
+				margin-top: 20px;
+				display: flex;
+				flex-flow: row wrap-reverse;
 			}
 
 			#advancedControlsCloseButton {
@@ -263,9 +343,8 @@
 			#advancedControlsTable {
 				overflow-x:			auto;
 				overflow-y:			hidden;
-				width:				calc(100% + 9px);
-				height:				calc(100% - 53px);
-				margin: 			0 0 0 -12px;
+				width:				100%;
+				height:				90%;
 
 				background-color: 	rgba(0,0,0,0.1);
 				border: 			1px solid rgba(0,0,0,0.2);
@@ -558,6 +637,12 @@
 				_advancedPage_SNAPSHOT = _PAGE_OPTIONS.indexOf("Trigger &amp; Snapshot"),
 				_advancedPage_CUSTOM_COUNTS = _PAGE_OPTIONS.indexOf("Custom Counts &amp; Actions");
 			var _advancedPage = _advancedPage_SLOW; //default to slow view
+
+			var TRACE_SLOW = 0;
+			var TRACE_FAST = 1;
+			var TRACE_TRIGGER = 2;
+			var _advancedTraceMode = TRACE_SLOW;
+
 			var _advancedLabelSelectSave = []; //remember selections as leaving page
 			var _advancedPopup = undefined;
 			var _advancedContextMenuBlock = false;
@@ -619,6 +704,7 @@
 				_controlsContainerEl = document.getElementById('controlsContainer');
 				_controlsEl = document.getElementById('controlsArea');
 
+				_consoleContainerEl = document.getElementById('consoleHistoryContainer');
 				_advancedContainerEl = document.getElementById('advancedContainer');
 				_advancedContainerEl.style.backgroundColor = DesktopContent.getDefaultWindowColor();
 				_advancedEl = document.getElementById('advancedArea');
@@ -899,7 +985,7 @@
 				_advancedContainerEl.style.left = _MARGIN + 2 + "px";
 				_advancedContainerEl.style.top = _MARGIN + _OFFSET_Y + "px";
 				_advancedEl.style.width = (w - _MARGIN - _MARGIN - 2 - 2 - 17) + "px";
-				_advancedEl.style.height = (h - _MARGIN - _MARGIN - 30 - _OFFSET_Y) + "px";
+				_advancedEl.style.height = (h - _MARGIN - _MARGIN - 100 - _OFFSET_Y) + "px";
 
 				if(_scrollWithNewChats)
 					_historyEl.scrollTop = _historyEl.scrollHeight;
@@ -1861,6 +1947,7 @@
 					return;
 				}
 
+				_consoleContainerEl.style.display = "none";
 				_advancedContainerEl.style.display = "block";
 
 				DesktopContent.XMLHttpRequest(
@@ -2005,6 +2092,7 @@
 			{
 				Debug.log("closeAdvancedControls()");
 
+				_consoleContainerEl.style.display = "block";
 				_advancedContainerEl.style.display = "none";
 			} //end closeAdvancedControls()
 
@@ -2066,6 +2154,7 @@
 				var str = "";
 				str += "<div id='advancedControlsCloseButton' onclick='closeAdvancedControls()'>X</div>";
 
+				/*
 				if(_advancedPage == _advancedPage_HOST)
 					localCreateHostSelectPage();
 				else if(_advancedPage == _advancedPage_SNAPSHOT)
@@ -2079,14 +2168,75 @@
 				else
 					Debug.err("Unknown advanced page mode " +
 						_advancedPage + "! Notify admins.");
+						*/
+
+				el = document.getElementById("advancedArea");
+				el.innerHTML = str;
+
+				// Initialize first tab
+				document.getElementsByClassName("advancedTabButton")[0].click();
 
 				return;
 
+			} //end drawAdvancedControls()
+
+
+			function advancedHandleTabs(evt)
+			{
+				var theButton = evt.currentTarget;
+				tabName = theButton.innerText.toLowerCase();
+				Debug.log("advancedHandleTabs()",evt,tabName);
+
+				// Change active state
+				document.querySelectorAll(".advancedTabButton").forEach((el) => {
+					el.classList.remove("active");
+				});
+				theButton.classList.add("active");
+
+				// Declare all variables
+				var i, tabcontent, tablinks;
+
+				switch(tabName)
+				{
+					case "host filter":
+						_advancedPage = _advancedPage_HOST;
+						localCreateHostSelectPage(_advancedPage);
+						break;
+					case "trace snapshot":
+						_advancedPage = _advancedPage_SNAPSHOT;
+						localCreateSnapshotPage(_advancedPage);
+						break;
+					case "trace masks":
+						localCreateMaskPage(TRACE_SLOW);
+						break;
+					case "custom counts":
+						_advancedPage = _advancedPage_CUSTOM_COUNTS;
+						localCreateCustomCountsPage(_advancedPage);
+						break;
+					default:
+						Debug.err("Unknown advanced tab name " + tabName + "! Notify admins.");
+						return;
+				}
+
+				// Get all elements with class="tabcontent" and hide them
+				/*
+				tabcontent = document.getElementsByClassName("tabcontent");
+				for (i = 0; i < tabcontent.length; i++)
+					tabcontent[i].style.display = "none";
+				// Get all elements with class="tablinks" and remove the class "active"
+				tablinks = document.getElementsByClassName("tablinks");
+				for (i = 0; i < tablinks.length; i++)
+					tablinks[i].className = tablinks[i].className.replace(" active", "");
+				// Show the current tab, and add an "active" class to the button that opened the tab
+				document.getElementById(tabName).style.display = "block";
+				evt.currentTarget.className += " active";
+				*/
+			} //end advancedHandleTabs()
 
 				//=======================
 				function localCreateCustomCountsPage()
 				{
-					Debug.log("localCreateCustomCountsPage()",_advancedPage);
+					Debug.log("localCreateCustomCountsPage()");
 
 					//Page shows prioritized list of custom counts and their associated actions
 					//	- shows server-side count for each
@@ -2098,18 +2248,8 @@
 					//Allow delete or change action of all selected
 
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
+					str = "";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2269,7 +2409,7 @@
 				//=======================
 				function localCreateHostSelectPage()
 				{
-					Debug.log("localCreateHostSelectPage()",_advancedPage);
+					Debug.log("localCreateHostSelectPage()");
 
 					//Page shows status of _traceHostSelect
 					//	{mode: 0, hosts: [], sortBy: _traceHostSelect_SORT_BYLABEL};
@@ -2278,19 +2418,9 @@
 										//mode: 2 is require 1 host and set to 1 host
 					// Label-by-Host Mode [select box of mode]
 					//	Table of hosts to select
+					str = "";
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2444,7 +2574,7 @@
 				//=======================
 				function localCreateSnapshotPage()
 				{
-					Debug.log("localCreateSnapshotPage()",_advancedPage,_advancedLabelSelectSave.length);
+					Debug.log("localCreateSnapshotPage()",_advancedLabelSelectSave.length);
 
 					//Page shows
 					//	[Reset Trace]
@@ -2452,19 +2582,8 @@
 					//	[Set Trigger]  [entries text box]
 					//	[Get Trigger status]
 
-					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'" +
-							" style='margin-left:-9px'>";
-
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
-
-
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
-
-					str += "</select>";
+					str = "";
+					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
 
 					str += DesktopContent.htmlClearDiv();
 
@@ -2552,9 +2671,10 @@
 				} //end localCreateSnapshotPage()
 
 				//=======================
-				function localCreateMaskPage()
+				function localCreateMaskPage(traceMode)
 				{
-					Debug.log("localCreateMaskPage()",_advancedPage);
+					_advancedTraceMode = traceMode|0;
+					Debug.log("localCreateMaskPage()", _advancedTraceMode);
 
 					//Page is menu at top
 					//	Search box | View: [Slow/Cout]
@@ -2569,12 +2689,27 @@
 					else
 						filterStr = _advancedFilterINIT_VAL;
 
+					str = "";
 
 					str += "<div id='advancedControlsMenu' oncontextmenu='_advancedContextMenuBlock=true;'>";
+
+					// Trace mode selector
+					str += "<div id='ac_traceModeSelectDiv'>"
+					str += " TRACE Mode:  ";
+					str += "<select id='ac_traceModeSelect' onchange='console.log(this.selectedIndex); localCreateMaskPage(this.selectedIndex);' multiple>";
+
+					str += "<option " + ((_advancedTraceMode == 0)?"selected":"") + ">Slow</option>";
+					str += "<option " + ((_advancedTraceMode == 1)?"selected":"") + ">Fast</option>";
+					str += "<option " + ((_advancedTraceMode == 2)?"selected":"") + ">Trigger</option>";
+
+					str += "</select> &nbsp;";
+					str += "</div>"
+					// ------------------
+
 					str += DesktopContent.htmlOpen("img",
 							{
 									"src" : 	"/WebPath/images/windowContentImages/magnifying-glass.png",
-									"style": 	"margin: -7px 0 -10px -14px; width: 30px;",
+									"style": 	"height: 100%; width: 30px;",
 							});
 
 					str += DesktopContent.htmlOpen("input",
@@ -2600,18 +2735,12 @@
 									"value" :	filterStr,
 							},"",true);
 
-					str += " View: ";
-					str += "<select id='ac_viewSelect' onchange='drawAdvancedControls(this.selectedIndex);'>";
 
-					for(var i=0;i<_PAGE_OPTIONS.length;++i)
-						str += "<option " +
-						(((!i && !page) || (page == i))?"selected":"") +
-						">" + _PAGE_OPTIONS[i] + "</option>";
+					str += "</div>"; //end search box
+					// ------------------
 
-					str += "</select>";
-
-					str += DesktopContent.htmlClearDiv();
-
+					// Mask controls ---------------------
+					str += "<div>";
 					str += DesktopContent.htmlOpen("button",
 							{
 									"style" : 	"margin: 4px 10px 3px -2px; float:left;",
@@ -2642,7 +2771,7 @@
 									"id"	: 	"ac_selectedCaption",
 									"style" : 	"margin: 8px 0 0 -2px;" +
 										"white-space: nowrap; float: left;" +
-										"width: calc(100% - 163px); overflow: hidden;",
+										"overflow: hidden;",
 									"title" : 	"Click a label to include, and right-click to exclued from the selected labels.",
 							},"for no checkboxes selected.",true);
 
@@ -2653,6 +2782,9 @@
 							undefined /*label*/);
 
 					str += "</div>"; //close ac_bitstring
+
+					str += "</div>";
+					// ------------------
 
 					str += "</div>"; //end advancedControlsMenu tag
 
@@ -2700,7 +2832,6 @@
 
 				} //end localCreateMaskPage()
 
-			} //end drawAdvancedControls()
 
 			//=====================================================================================
 			//applyAdvancedControlsFilter ~
@@ -2825,11 +2956,11 @@
 								str += "<input type='checkbox' class='ac_checkboxSelect' onclick='advancedUpdateSelectedCheckboxesText();' />";
 							else if(i == 2)
 							{
-								if(_advancedPage == _advancedPage_SLOW)
+								if(_advancedTraceMode == TRACE_SLOW)
 									var val64 = _traceLevels[hostPresence[0]][label].S;
-								else if(_advancedPage == _advancedPage_FAST)
+								else if(_advancedTraceMode == TRACE_FAST)
 									var val64 = _traceLevels[hostPresence[0]][label].M;
-								else if(_advancedPage == _advancedPage_TRIGGER)
+								else if(_advancedTraceMode == TRACE_TRIGGER)
 									var val64 = _traceLevels[hostPresence[0]][label].T;
 								else
 								{
@@ -2944,14 +3075,14 @@
 			//=====================================================================================
 			function advancedSetBitMask()
 			{
-				Debug.log("advancedSetBitMask()",_advancedPage);
+				Debug.log("advancedSetBitMask()",_advancedTraceMode);
 
 				var modeStr = "";
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					modeStr = "SLOW";
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					modeStr = "FAST";
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					modeStr = "TRIGGER";
 				else
 				{
@@ -3136,11 +3267,11 @@
 				Debug.log("setStr",setStr);
 
 				var modeStr = "";
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					modeStr = "SLOW";
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					modeStr = "FAST";
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					modeStr = "TRIGGER";
 				else
 				{
@@ -3641,7 +3772,6 @@
 						}
 						else if(i == ac_cc_COL_NAMES_Armed) //Armed
 						{
-							// TODO: Ensure proper row is sent
 							str += "<div style='margin-right:50px;";
 							if(armed == "1") str += "color: green'> ARMED";
 							else str += "color: red'> UNARMED";
@@ -3969,11 +4099,11 @@
 						Debug.err("Missing host/label label index! Notify admins.");
 						return;
 					}
-					if(_advancedPage == _advancedPage_SLOW)
+					if(_advancedTraceMode == TRACE_SLOW)
 						var val64 = _traceLevels[hosts[0]][label].S;
-					else if(_advancedPage == _advancedPage_FAST)
+					else if(_advancedTraceMode == TRACE_FAST)
 						var val64 = _traceLevels[hosts[0]][label].M;
-					else if(_advancedPage == _advancedPage_TRIGGER)
+					else if(_advancedTraceMode == TRACE_TRIGGER)
 						var val64 = _traceLevels[hosts[0]][label].T;
 					else
 					{
@@ -4078,11 +4208,11 @@
 								rows.length + " rows! Notify admins.");
 						return;
 					}
-					if(_advancedPage == _advancedPage_SLOW)
+					if(_advancedTraceMode == TRACE_SLOW)
 						var val64 = [_traceLevels[hosts[0]][label].S[0],_traceLevels[hosts[0]][label].S[1]];
-					else if(_advancedPage == _advancedPage_FAST)
+					else if(_advancedTraceMode == TRACE_FAST)
 						var val64 = [_traceLevels[hosts[0]][label].M[0],_traceLevels[hosts[0]][label].M[1]];
-					else if(_advancedPage == _advancedPage_TRIGGER)
+					else if(_advancedTraceMode == TRACE_TRIGGER)
 						var val64 = [_traceLevels[hosts[0]][label].T[0],_traceLevels[hosts[0]][label].T[1]];
 					else
 					{
@@ -4135,11 +4265,11 @@
 									return;
 								}
 
-								if(_advancedPage == _advancedPage_SLOW)
+								if(_advancedTraceMode == TRACE_SLOW)
 									_traceLevels[hh][label].S = [val64[0] /*msb*/,val64[1] /*lsb*/];
-								else if(_advancedPage == _advancedPage_FAST)
+								else if(_advancedTraceMode == TRACE_FAST)
 									_traceLevels[hh][label].M = [val64[0] /*msb*/,val64[1] /*lsb*/];
-								else if(_advancedPage == _advancedPage_TRIGGER)
+								else if(_advancedTraceMode == TRACE_TRIGGER)
 									_traceLevels[hh][label].T = [val64[0] /*msb*/,val64[1] /*lsb*/];
 
 								//add host/label to modified set
@@ -4156,11 +4286,11 @@
 							return;
 						}
 
-						if(_advancedPage == _advancedPage_SLOW)
+						if(_advancedTraceMode == TRACE_SLOW)
 							_traceLevels[hosts[h]][label].S = [val64[0] /*msb*/,val64[1] /*lsb*/];
-						else if(_advancedPage == _advancedPage_FAST)
+						else if(_advancedTraceMode == TRACE_FAST)
 							_traceLevels[hosts[h]][label].M = [val64[0] /*msb*/,val64[1] /*lsb*/];
-						else if(_advancedPage == _advancedPage_TRIGGER)
+						else if(_advancedTraceMode == TRACE_TRIGGER)
 							_traceLevels[hosts[h]][label].T = [val64[0] /*msb*/,val64[1] /*lsb*/];
 
 						//add host/label to modified set
@@ -4214,11 +4344,11 @@
 					return;
 				}
 
-				if(_advancedPage == _advancedPage_SLOW)
+				if(_advancedTraceMode == TRACE_SLOW)
 					var val64 = _traceLevels[hosts[0]][label].S;
-				else if(_advancedPage == _advancedPage_FAST)
+				else if(_advancedTraceMode == TRACE_FAST)
 					var val64 = _traceLevels[hosts[0]][label].M;
-				else if(_advancedPage == _advancedPage_TRIGGER)
+				else if(_advancedTraceMode == TRACE_TRIGGER)
 					var val64 = _traceLevels[hosts[0]][label].T;
 				else
 				{
@@ -4312,34 +4442,38 @@
 	<body style='display:none;' onload='//init() called by DesktopContent.js'>
 
 
-		<div id='downloadIconDiv' onmouseup='downloadMessages()' title='Download console messages to text file.' style='float: left; margin: -1px 10px 0px 10px; cursor: pointer;'>
-			<div style='display: block; margin-left: 3px; height:7px; width: 6px; background-color: rgb(15,34,105);'></div>
-			<div style='display: block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid rgb(15,34,105);'></div>
-			<div style='position: relative; top: 2px; width: 12px; height: 2px; display: block; background-color: rgb(15,34,105);'></div>
-		</div>
+		<div id="consoleMenuBar">
+			<div id='downloadIconDiv' onmouseup='downloadMessages()' title='Download console messages to text file.' style='float: left; margin: -1px 10px 0px 10px; cursor: pointer;'>
+				<div style='display: block; margin-left: 3px; height:7px; width: 6px; background-color: rgb(15,34,105);'></div>
+				<div style='display: block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid rgb(15,34,105);'></div>
+				<div style='position: relative; top: 2px; width: 12px; height: 2px; display: block; background-color: rgb(15,34,105);'></div>
+			</div>
 
-		<div id='consoleInstructions'>
-			<a onclick='toggleColorScheme();' title='Toggle Color Scheme' class='consoleLink' id='userLinkColor'>Toggle Color Scheme</a>
-		</div>
+			<div id='consoleInstructions'>
+				<a onclick='toggleColorScheme();' title='Toggle Color Scheme' class='consoleLink' id='userLinkColor'>Toggle Color Scheme</a>
+			</div>
 
-		<div id='consoleConnectionStatus'>
-			<a onclick='reconnectConsole();' title='Attempt to Reconnect Console' class='consoleLink'>*** DISCONNECTED ***</a>
-		</div>
+			<div id='consoleConnectionStatus'>
+				<a onclick='reconnectConsole();' title='Attempt to Reconnect Console' class='consoleLink'>*** DISCONNECTED ***</a>
+			</div>
 
-		<div id='userLink'>
-			<a onclick='toggleSideBar();' title='Toggle User Side Pane' class='consoleLink' id='userLinkText'></a>
-		</div>
+			<div style="flex-grow:1;"></div> <!-- fill space -->
 
-		<div id='clearConsoleLink'>
-			<a onclick='clearConsoleMessages();' title='Clear Console Messages' class='consoleLink' id='userLinkText'>Clear Console</a>
-		</div>
+			<div id='userLink'>
+				<a onclick='toggleSideBar();' title='Toggle User Side Pane' class='consoleLink' id='userLinkText'></a>
+			</div>
 
-		<div id='pauseControlsLink'>
-			<a onclick='togglePauseControls();' title='Pause and Resume getting new messages.' class='consoleLink' id='pauseControlsLinkText'>Pause</a>
-		</div>
+			<div id='clearConsoleLink'>
+				<a onclick='clearConsoleMessages();' title='Clear Console Messages' class='consoleLink' id='userLinkText'>Clear Console</a>
+			</div>
 
-		<div id='navLatestControlsLink'>
-			<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
+			<div id='pauseControlsLink'>
+				<a onclick='togglePauseControls();' title='Pause and Resume getting new messages.' class='consoleLink' id='pauseControlsLinkText'>Pause</a>
+			</div>
+
+			<div id='navLatestControlsLink'>
+				<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
+			</div>
 		</div>
 
 
@@ -4389,7 +4523,13 @@
 
 
 		<div id='advancedContainer'>
-			<div id='advancedArea'>
+			<div class="tab" id="advancedControlsTabs" style="overflow: auto; height: 100%;">
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'>TRACE Masks</button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'>TRACE Snapshot</button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'>Custom Counts</button>
+				<button class='advancedTabButton' onclick='advancedHandleTabs(event)'>Host Filter</button>
+			</div>
+				<div id='advancedArea'>
 			</div>
 		</div>
 

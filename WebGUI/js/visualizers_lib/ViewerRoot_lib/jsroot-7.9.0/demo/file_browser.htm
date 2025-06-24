@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Example of hierarchy painter</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div id="simpleGUI" style="inset: 0px; position: absolute;"></div>
+   </body>
+
+   <script type='module'>
+      import { HierarchyPainter } from 'jsroot';
+
+      const h = new HierarchyPainter('example');
+
+      // suppress selection elements
+      h.no_select = true;
+
+      // let enable scrollbars for hierarchy content, otherwise only HTML resize can be use to see elements
+      h.show_overflow = true;
+
+      // configure 'simple' layout for drawings
+      // one also can specify "grid2x2" or "flex"
+      h.prepareGuiDiv('simpleGUI', 'simple');
+
+      // open file and display element
+      await h.createBrowser('fix');
+      await h.openRootFile('https://root.cern/files/lhcb2.root');
+      await h.expandItem('E;1//Event/Gen/Header');
+      h.display('E;1//Event/Gen/Header/m_evtNumber', '');
+   </script>
+
+</html>

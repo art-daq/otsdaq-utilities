@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>TMultiGraph with TLegend and custom labels</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+
+   <body>
+      <div id="object_draw" style="position: relative; width: 1200px; height: 800px;"></div>
+   </body>
+
+   <script type='module'>
+
+      import { create, createTGraph, createTMultiGraph, createHistogram, redraw } from 'jsroot';
+
+      let cnt = 0;
+
+      function createLegendEntry(obj, lbl) {
+         let entry = create('TLegendEntry');
+         entry.fObject = obj;
+         entry.fLabel = lbl;
+         entry.fOption = 'l';
+         return entry;
+      }
+
+      function updateGUI() {
+        // this is just generation of graph
+         const npoints = 20, period = 0.1*Math.PI;
+         let xpts = [], ypts1 = [], ypts2 = [];
+         for (let i = 0; i < npoints; i++) {
+            let x = (i + cnt) * period;
+            xpts.push(i);
+            ypts1.push(50 * Math.sin(x));
+            ypts2.push(50 * Math.cos(x));
+         }
+         let graph1 = createTGraph(npoints, xpts, ypts1);
+         graph1.fLineColor = 2;
+         let graph2 = createTGraph(npoints, xpts, ypts2);
+         graph2.fLineColor = 3;
+
+         let mgraph = createTMultiGraph(graph1, graph2);
+         mgraph.fTitle = `Drawing ${cnt++}`;
+
+         let h1 = createHistogram('TH1I', 20);
+         h1.fName = 'axis_draw';
+         h1.fTitle = mgraph.fTitle;
+         h1.fXaxis.fTitle = `xaxis${cnt}`;
+         h1.fYaxis.fTitle = `yaxis${cnt}`;
+         h1.fXaxis.fLabelSize = 0.02;
+         h1.fXaxis.fLabels = create('THashList');
+         for (let i = 0; i < npoints; i++) {
+            let lbl = create('TObjString');
+            lbl.fString = `pnt${(i+cnt)%20}`;
+            lbl.fUniqueID = i + 1;
+            h1.fXaxis.fLabels.Add(lbl, '');
+         }
+         h1.fYaxis.fXmin = -60;
+         h1.fYaxis.fXmax = +60;
+         mgraph.fHistogram = h1;
+
+         let leg = create('TLegend');
+         Object.assign(leg, { fX1NDC: 0.2, fY1NDC: 0.75, fX2NDC: 0.6, fY2NDC: 0.9 });
+
+         leg.fPrimitives.Add(createLegendEntry(graph1, `Math.sin ${cnt}`));
+         leg.fPrimitives.Add(createLegendEntry(graph2, `Math.cos ${cnt}`));
+
+         // specify 'autoplace' for legend to automatically find best suitable position
+         // if default option is provided, position will be set from fX1NDC, fX2NDC, ... values
+         mgraph.fFunctions.Add(leg, (cnt % 10 < 5) ?  'autoplace' : '');
+
+         // set fixed Y-range if required
+         // mgraph.fMinimum = 0;
+         // mgraph.fMaximum = 400;
+
+         redraw('object_draw', mgraph, '').then(() => setTimeout(updateGUI, 500));
+      }
+
+      updateGUI();
+  </script>
+
+</html>

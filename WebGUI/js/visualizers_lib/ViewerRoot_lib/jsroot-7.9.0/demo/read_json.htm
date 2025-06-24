@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>Reading object from the JSON file</title>
+      <link rel="shortcut icon" href="../img/RootIcon.ico"/>
+      <script type="importmap">
+         { "imports": { "jsroot": "../modules/main.js" } }
+      </script>
+   </head>
+   <body>
+      <div id="drawing" style="position: relative; width: 800px; height: 600px;"></div>
+   </body>
+   <script type='module'>
+      import { draw, httpRequest } from 'jsroot';
+      const obj = await httpRequest('https://jsroot.gsi.de/files/hpx.json', 'object');
+      draw('drawing', obj, 'hist');
+   </script>
+</html>
