@@ -559,11 +559,6 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		        StringMacros::vectorToString(triggeredAction.needleSubstrings, {'*'}) +
 		        "'");
 
-	if(triggeredAction.action == "Beep")
-	{
-		//TODO
-		__SUP_COUTV__("BEEP");
-	}
 	if(triggeredAction.action == "Halt")
 	{
 		try
@@ -884,7 +879,7 @@ uint32_t ConsoleSupervisor::modifyCustomTriggeredAction(const std::string& curre
 //==============================================================================
 void ConsoleSupervisor::loadCustomCountList()
 {
-	// TODO: Migrate to json read/write
+	// TODO: Migrate to a more robust read/write method
 	__SUP_COUT__ << "loadCustomCountList() from "
 	             << USER_CONSOLE_PREF_PATH + CUSTOM_COUNT_LIST_FILENAME << __E__;
 
