@@ -917,7 +917,7 @@
 					{
 						str += "<input type='text' id='bitmapFieldInput-" + c + "-" + i +
 								"' value='" +
-								(i<bitMapFieldValues.length?bitMapFieldValues[i]:"DEFAULT") +
+								(i<bitMapFieldValues.length?bitMapFieldValues[i]: (i < 3 ? "1" : "DEFAULT")) +
 								"' " +
 								"onmouseup='event.stopPropagation();' " +
 								"onclick='event.stopPropagation();" +
