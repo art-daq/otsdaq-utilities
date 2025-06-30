@@ -236,6 +236,11 @@ try
 	ConfigurationManagerRW* cfgMgr =
 	    refreshUserSession(userInfo.username_, (refresh == "1"));
 
+	
+	const GroupInfo&               groupInfo  = cfgMgr->getGroupInfo("MC2TriggerContext");
+	const std::set<TableGroupKey>& sortedKeys = groupInfo.keys_;  // rename
+	__COUTTV__(sortedKeys.size());
+
 	if(requestType == "saveTableInfo")
 	{
 		std::string tableName =
@@ -5211,7 +5216,7 @@ try
 		// editing comment, so check if comment is different
 		if(table->getView().isURIEncodedCommentTheSame(newValue))
 		{
-			__SUP_SS__ << "Comment '" << newValue
+			__SUP_SS__ << "Comment '" << StringMacros::decodeURIComponent(newValue)
 			           << "' is the same as the current comment. No need to save change."
 			           << __E__;
 			__SS_THROW__;
@@ -6198,7 +6203,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	std::string mapKey = ssMapKey.str();
 	__SUP_COUTT__ << "Using Config Session " << mapKey
 	              << " ... Total Session Count: " << userConfigurationManagers_.size()
-	              << __E__;
+	              << " refresh=" << refresh << __E__;
 
 	time_t now = time(0);
 

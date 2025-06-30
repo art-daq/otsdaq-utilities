@@ -17,7 +17,7 @@
 		//groupAliasesRequestHandler(req,anchorTarget)
 
 		//setupGroupViewMode(anchorTarget)							//gets all table groups
-		//tableGroupsRequestHandler(req,anchorTarget)
+		//tableGroupsRequestHandler(req,anchorTarget,errStr)
 		//groupSearchSelectionHandler(el)
 		//makeGroupInfoDisplayString(groupName,allKeys,latestKey,latestMembersHdr,backLinkToList)
 		//gotoSelectedMSGroup()
@@ -28,7 +28,7 @@
 		//showTableTooltip(tableName)
 
 		//setupSpecificTableGroup(groupName,groupKey,backLinkStr,anchorTarget)	//setup editor for specific table group
-		//specificGroupRequestHandler(req,param)
+		//specificGroupRequestHandler(req,param,errStr)
 
 		//setupSpecificTable(tableName,version,backLinkStr,allowIllegalColumns)			//setup editor for specific table
 		//setupSpecificTableInRight(tableName,version)
@@ -1019,8 +1019,14 @@
 				"&tableName=" + tableName +
 				v,
 				"",
-				function(req)
+				function(req, param, errStr)
 				{
+					if(errStr && errStr != "")
+					{
+						Debug.err(errStr);
+						return;
+					}
+					
 					//call with attemptedVersion parameter
 					specificTableRequestHandler(req, backLinkStr,
 							(version !== undefined && version != "")?version:undefined);
@@ -1730,8 +1736,14 @@
 
 		//==============================================================================
 		//tableGroupsRequestHandler ~
-		function tableGroupsRequestHandler(req, anchorTarget)
+		function tableGroupsRequestHandler(req, anchorTarget, errStr)
 		{
+			if(errStr && errStr != "")
+			{
+				Debug.err(errStr);
+				return;
+			}
+
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err) {
 				Debug.err(err);
@@ -2297,8 +2309,14 @@
 		//==============================================================================
 		//specificGroupRequestHandler ~~
 		//	backLinkStr is defined to call functions one after the other
-		function specificGroupRequestHandler(req, param)
+		function specificGroupRequestHandler(req, param, errStr)
 		{
+			if(errStr && errStr != "")
+			{
+				Debug.err(errStr);
+				return;
+			}
+
 			Debug.log("specificGroupRequestHandler()",param);
 
 			//remove all previous buttons
@@ -6651,78 +6669,6 @@
 				});	//end of getTables handler
 		} //end wizToLatestTableGroup()
 
-		// //==============================================================================
-		// //saveGroupAndActivate  ... as of Dec 18, 2021 .. RAR replaced with ConfigurationAPI.saveGroupAndActivate
-		// function saveGroupAndActivate(groupName, tableMap, doneHandler, doReturnParams)
-		// {
-		// 	DesktopContent.XMLHttpRequest("Request?RequestType=saveNewTableGroup" +
-		// 		"&groupName=" + groupName +
-		// 		"&allowDuplicates=0" +
-		// 		"&lookForEquivalent=1" +
-		// 		"", //end get data
-		// 		tableMap, //end post data
-		// 		function (req)
-		// 		{
-		// 			var err = DesktopContent.getXMLValue(req, "Error");
-		// 			var name = DesktopContent.getXMLValue(req, "TableGroupName");
-		// 			var key = DesktopContent.getXMLValue(req, "TableGroupKey");
-		// 			var newBackbone = true;
-		// 			if (err)
-		// 			{
-		// 				if (!name || !key)
-		// 				{
-		// 					Debug.err(err);
-		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
-		// 						" Please see details below.",
-		// 						Debug.HIGH_PRIORITY);
-
-		// 					if (doneHandler)
-		// 						doneHandler(); //error so call done handler
-		// 					return;
-		// 				}
-		// 				else
-		// 				{
-		// 					Debug.warn(err);
-		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
-		// 						" (Likely the currently active Backbone already represents what is being requested)\n\n" +
-		// 						"Going on with existing backbone group, name=" + name + " & key=" + key,
-		// 						Debug.WARN_PRIORITY);
-		// 					newBackbone = false;
-		// 				}
-		// 			}
-
-		// 			//now activate the new backbone group
-
-		// 			DesktopContent.XMLHttpRequest("Request?RequestType=activateTableGroup" +
-		// 				"&groupName=" + name +
-		// 				"&groupKey=" + key, "",
-		// 				function (req)
-		// 				{
-
-		// 					activateTableGroupHandler(req);
-
-		// 					if (doneHandler)
-		// 					{
-		// 						//done so call done handler (and indicate success)
-		// 						if (!doReturnParams)
-		// 							doneHandler(); //done so call done handler
-		// 						else
-		// 						{
-		// 							var retParams = {
-		// 								"groupName": name,
-		// 								"groupKey": key,
-		// 								"newBackbone": newBackbone
-		// 							}
-		// 							doneHandler(retParams); 	 //(and indicate success)
-		// 						}
-		// 					}
-
-		// 				});	//end of activate new backbone handler
-
-		// 		}, 0, 0, true  //reqParam, progressHandler, callHandlerOnErr
-		// 	); //end of backbone saveNewTableGroup handler
-		// } //end saveGroupAndActivate()
-
 		//==============================================================================
 		//setupGroupCreator ~
 		function setupGroupCreator(preSelectStr)
@@ -11041,7 +10987,7 @@
 					{
 						if (retParams)
 						{
-							if (retParams.newGroupCreated)
+							if (!retParams.foundEquivalentKey)
 								Debug.log("Successfully modified the active Backbone group " +
 									" to set the System Alias '" + groupAlias + "' to " +
 									" refer to the current group '" + groupName +

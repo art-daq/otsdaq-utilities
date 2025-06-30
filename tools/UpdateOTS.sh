@@ -339,11 +339,11 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
 	while IFS= read -r gitdir; do
 		repo_dir="$(dirname "$gitdir")"
-		# echo "check found: $repo_dir"
+		echo -e "UpdateOTS.sh:${LINENO}  check found: $repo_dir"
 		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
 		if [[ "$remote_url" == *github.com* ]]; then
-			echo "GitHub repo found: $repo_dir"
-			echo "  → $remote_url"
+			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
+			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
 				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
@@ -358,8 +358,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 			cd -
 		else
-			echo "NOT GitHub repo found: $repo_dir"
-			echo "  → $remote_url"
+			echo -e "UpdateOTS.sh:${LINENO}  NOT GitHub repo found: $repo_dir"
+			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
 		fi
 	done
 

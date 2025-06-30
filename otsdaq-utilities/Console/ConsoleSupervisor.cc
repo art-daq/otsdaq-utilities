@@ -668,6 +668,7 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 		           << __E__;
 		__SUP_SS_THROW__;
 	}
+	__SUP_COUTV__(priority);
 
 	//valid actions:
 	//		Halt
@@ -702,10 +703,10 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	priorityCustomTriggerList_[priority].doLoop         = doLoop;
 	priorityCustomTriggerList_[priority].isArmed        = isArmed;
 
-	__SUP_COUT__ << "Added custom count: "
-	             << (StringMacros::vectorToString(
-	                    priorityCustomTriggerList_[priority].needleSubstrings))
-	             << " at priority: " << priority << " triggered every: " << triggerOnCount
+	__SUP_COUT__ << "Added custom count: '"
+	             << StringMacros::vectorToString(
+	                    priorityCustomTriggerList_[priority].needleSubstrings,"*")
+	             << "' at priority: " << priority << " triggered every: " << triggerOnCount
 	             << " occurrences";
 	if(doLoop)
 		__SUP_COUT__ << " and will loop.";
