@@ -2132,29 +2132,35 @@ CodeEditor.create = function(standAlone) {
 			localDoIt();
 		}
 
-		function openGitLink(path, extension, line) {
+		function openGitLink(path, extension, line)
+		{
 			const gitPath = path.includes("/include/")
 				? path.substr(path.indexOf("/include/") + 9)
 				: path;
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath + "&ext=" + extension + "&line=" + line,
+				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath
+				+ "&ext=" + extension
+				+ "&line=" + line,
 				"",
-				function (req, reqParam, errStr) {
+				function (req, reqParam, errStr)
+				{
 					if(errStr != "")
 						return;
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if(err)
 						Debug.log(err, Debug.HIGH_PRIORITY);
-
 					const xml = DesktopContent.getXMLValue(req, "gitPath");
-					if (xml) window.open(xml, '_blank');
+
+					if (xml)
+						window.open(xml, '_blank');
 				}
 			);
 		}
 
 		function localDoIt()
 		{
-			if (path && path.includes("spack")) {
+			if (path && path.includes("spack"))
+			{
 				Debug.warn("File is not in sources. Opening in repo...")
 				openGitLink(path, extension, gotoLine);
 				window.close();
