@@ -83,7 +83,6 @@ class ConsoleSupervisor : public CoreSupervisorBase
 
 	void						loadCustomCountList					(void);
 	void						saveCustomCountList					(void);
-	std::string					getGithubURL						(std::string path);
 
   public:
 	/// UDP Message Format:

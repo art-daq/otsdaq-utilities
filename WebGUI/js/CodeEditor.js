@@ -2131,8 +2131,28 @@ CodeEditor.create = function(standAlone) {
 			localDoIt();
 		}
 
+		function openGitLink(path, extension, gotoLine) {
+			const gitPath = path.includes("/include/")
+				? path.substr(path.indexOf("/include/") + 9)
+				: path;
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath + "&ext=" + extension,
+				"",
+				function (req) {
+					const xml = DesktopContent.getXMLValue(req, "gitPath");
+					if (xml) window.open(xml, '_blank');
+				}
+			);
+		}
+
 		function localDoIt()
 		{
+			if (path && path.includes("spack")) {
+				Debug.warn("File is not in sources. Opening in repo...")
+				openGitLink(path, extension);
+				window.close();
+				return;
+			}
 			CodeEditor.editor.toggleDirectoryNav(forPrimary,false /*set val*/);
 
 			DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +

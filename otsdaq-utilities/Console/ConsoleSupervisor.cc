@@ -5,7 +5,6 @@
 #include "otsdaq/MessageFacility/MessageFacility.h"
 #include "otsdaq/NetworkUtilities/ReceiverSocket.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
-#include "otsdaq/CodeEditor/CodeEditor.h"
 
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for mkdir
@@ -13,7 +12,6 @@
 #include <iostream>
 #include <string>
 #include <thread>  //for std::thread
-#include <regex>  //for std::regex
 
 using namespace ots;
 
@@ -1020,7 +1018,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 	// GetCustomCountsAndActions
 	// AddCustomCountsAndAction
 	// ModifyCustomCountsAndAction
-	// GetGithubURL
 
 	// Note: to report to logbook admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,refreshTempStr_);
@@ -1965,13 +1962,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		xmlOut.addTextElementToParent("doLoop", "1", customCountParent);
 
 	}  // end GetCustomCountsAndActions or AddCustomCountsAndAction
-	else if (requestType == "GetGithubURL")
-	{
-		auto pathElement = cgiIn.getElement("path");
-		std::string path = (pathElement != cgiIn.getElements().end()) ? pathElement->getValue() : "";
-
-		xmlOut.addTextElementToData("gitPath", getGithubURL(path));
-	}
 	else
 	{
 		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized."
@@ -1979,50 +1969,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		__SUP_SS_THROW__;
 	}
 }  // end request()
-
-std::string ConsoleSupervisor::getGithubURL(std::string path)
-{
-	std::string package = path.substr(0, path.find("/"));
-
-	std::string::size_type colonPos = path.find(":");
-	std::string lineAnchor = "";
-	if (colonPos != std::string::npos)
-	{
-		std::string lineStr = path.substr(colonPos + 1);
-		if (!lineStr.empty())
-			lineAnchor = "#L" + lineStr;
-		path = path.substr(0, colonPos);
-	}
-
-	std::string cmd = "spack info " + package;
-	FILE* pipe = popen(cmd.c_str(), "r");
-	if (!pipe) return "";
-
-	std::stringstream result;
-	char buffer[256];
-	while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-		result << buffer;
-	pclose(pipe);
-
-	std::string outStr = result.str();
-
-	std::regex urlRegex(R"(https:\/\/github\.com\/[^\s]+)");
-	std::smatch urlMatch;
-	if (!std::regex_search(outStr, urlMatch, urlRegex))
-		return "";
-
-	std::string gitUrl = urlMatch[0];
-	if (gitUrl.size() > 4 && gitUrl.substr(gitUrl.size() - 4) == ".git")
-		gitUrl = gitUrl.substr(0, gitUrl.size() - 4);
-
-	std::regex branchRegex(R"(\[git\]\s+https:\/\/github\.com\/[^\s]+ on branch (\w+))");
-	std::smatch branchMatch;
-	std::string branch = "develop";
-	if (std::regex_search(outStr, branchMatch, branchRegex))
-		branch = branchMatch[1];
-
-	return gitUrl + "/blob/" + branch + "/" + path + lineAnchor;
-}
 
 //==============================================================================
 /// virtual progress string that can be overridden with more info
