@@ -1517,11 +1517,11 @@
 								{
 									"title":"Open file in a new browser tab: \n" + firstMsg,
 									"style":"color:inherit;",
-									"onclick": "DesktopContent.openNewBrowserTab(" +
-												  "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
-												  "\"?" +
-												  "startFilePrimary=" +
-												  firstMsg + "\",undefined /*unique undefined for LID lookup*/);" //end onclick
+									"onclick":"DesktopContent.openNewBrowserTab(" +
+									"\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
+									"\"?" +
+									"startFilePrimary=" +
+									firstMsg + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
 								},
 								firstMsg,
 								true /*doCloseTag*/) + "\t" +
@@ -1584,7 +1584,6 @@
 				}
 
 			} //end updateConsoleHistory()
-
 
 			//=====================================================================================
 			//clearConsoleMessages ~
