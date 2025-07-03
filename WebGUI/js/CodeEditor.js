@@ -2132,6 +2132,11 @@ CodeEditor.create = function(standAlone) {
 			localDoIt();
 		}
 
+		//=====================================================================================
+		//openGitLink ~~
+		//	Open the github link to the file in a new tab
+		//
+		//	Done when file is not in srcs/
 		function openGitLink(path, extension, line)
 		{
 			const gitPath = path.includes("/include/")
