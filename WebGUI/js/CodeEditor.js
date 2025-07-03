@@ -2138,7 +2138,13 @@ CodeEditor.create = function(standAlone) {
 			DesktopContent.XMLHttpRequest(
 				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath + "&ext=" + extension + "&line=" + line,
 				"",
-				function (req) {
+				function (req, reqParam, errStr) {
+					if(errStr != "")
+						return;
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if(err)
+						Debug.log(err, Debug.HIGH_PRIORITY);
+
 					const xml = DesktopContent.getXMLValue(req, "gitPath");
 					if (xml) window.open(xml, '_blank');
 				}
