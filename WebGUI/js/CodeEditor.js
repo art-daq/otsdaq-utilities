@@ -253,6 +253,7 @@ CodeEditor.create = function(standAlone) {
 	//	download(forPrimary)
 	//	upload(forPrimary)
 	//	uploadTextFromFile(forPrimary)
+	//  openGitLink(path, extension, line)
 
 
 	//for display
