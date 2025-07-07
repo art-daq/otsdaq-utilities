@@ -2139,8 +2139,8 @@ CodeEditor.create = function(standAlone) {
 		//	Done when file is not in srcs/
 		function openGitLink(path, extension, line)
 		{
-			const gitPath = path.includes("/include/")
-				? path.substr(path.indexOf("/include/") + 9)
+			const gitPath = path.includes("/.spack-env/")
+				? path.substr(path.indexOf("/.spack-env/") + 25)
 				: path;
 			DesktopContent.XMLHttpRequest(
 				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath
@@ -2150,21 +2150,24 @@ CodeEditor.create = function(standAlone) {
 				function (req, reqParam, errStr)
 				{
 					if(errStr != "")
+					{
+						Debug.err("Error finding GitHub repo: " + errStr, Debug.HIGH_PRIORITY);
 						return;
+					}
 					var err = DesktopContent.getXMLValue(req, "Error");
 					if(err)
 						Debug.log(err, Debug.HIGH_PRIORITY);
-					const xml = DesktopContent.getXMLValue(req, "gitPath");
+					const gitPath = DesktopContent.getXMLValue(req, "gitPath");
 
-					if (xml)
-						window.open(xml, '_blank');
+					if (gitPath)
+						window.open(gitPath + "#L" + line, '_blank');
 				}
 			);
 		}
 
 		function localDoIt()
 		{
-			if (path && path.includes("spack"))
+			if (path && path.includes(".spack-env"))
 			{
 				Debug.warn("File is not in sources. Opening in repo...")
 				openGitLink(path, extension, gotoLine);
