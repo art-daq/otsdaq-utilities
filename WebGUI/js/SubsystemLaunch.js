@@ -1809,9 +1809,11 @@ SubsystemLaunch.create = function() {
 				//target plan = Iterator::RESERVED_GEN_PLAN_NAME = "---GENERATED_PLAN---"
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
 							"&StateMachine=iteratePlayGenerated" +
-							"&fsmName=" + _fsmName +
-							"&fsmWindowName=" + encodeURIComponent(parameters), //end get data
-							"", //end post data
+							// "&fsmName=" + _fsmName +
+							// "&fsmWindowName=" + encodeURIComponent(parameters), //end get data
+							// "", //end post data
+							"&fsmName=" + _fsmName, //end get data
+							"&fsmWindowName=" + encodeURIComponent(parameters), //end post data
 							function(req) //start handler
 							{
 						Debug.log("startTargetIterationPlan handler ");
