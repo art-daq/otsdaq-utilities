@@ -407,15 +407,14 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
-						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
-					str += "<option selected>Select an FSM action:</option>";
-					str += "<option >Configure</option>";
-					// str += "<option >Start</option>";
-					str += "<option >Stop</option>";
-					str += "<option >Halt</option>";
-					str += "</select>";
-
+					str += "<div style='display: flex; justify-content: space-evenly; gap: 4px; padding: 4px;'>";
+					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #4dafff; cursor: pointer'" +
+						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Configure'}, -1)\">Configure</button>";
+					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #f52727; cursor: pointer'" +
+						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Stop'}, -1)\">Stop</button>";
+					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: orange; cursor: pointer'" +
+						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Halt'}, -1)\">Halt</button>";
+					str += "</div>"
 					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
@@ -636,18 +635,16 @@ SubsystemLaunch.create = function() {
 						}
 						else if(fieldIds[i] == "action")
 						{
-							str += "<select id='subsystem_" + fieldIds[i] +
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+
-								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
+							str += "<div title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
 								SubsystemLaunch.subsystems[s].name + "&apos;' " +
-								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
-							str += "<option selected>Select an action for &apos;" +
-								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
-							str += "<option >Configure</option>";
-							// str += "<option >Start</option>";
-							str += "<option >Stop</option>";
-							str += "<option >Halt</option>";
-							str += "</select>";
+								"style='display: flex; justify-content: space-evenly; gap: 4px; padding: 4px;'>";
+							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #4dafff; cursor: pointer'" +
+								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Configure' }, " + s + ")\">Configure</button>";
+							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #f52727; cursor: pointer'" +
+								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Stop' }, " + s + ")\">Stop</button>";
+							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: orange; cursor: pointer'" +
+								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Halt' }, " + s + ")\">Halt</button>";
+							str += "</div>";
 						}
 						else if(fieldIds[i] == "configAlias")
 						{
