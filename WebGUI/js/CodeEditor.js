@@ -2162,7 +2162,7 @@ CodeEditor.create = function(standAlone) {
 					if (!gitPath)
 						window.top.location.replace(gitPath + "#L" + line);
 					else
-						Debug.err("Github repository: " + gitPath + "#L" + line + " not found.");
+						Debug.err("Github repository not found.");
 				}
 			);
 		}
