@@ -2173,7 +2173,6 @@ CodeEditor.create = function(standAlone) {
 			{
 				Debug.warn("File is not in sources. Opening in repo...")
 				openGitLink(path, extension, gotoLine);
-				window.close();
 				return;
 			}
 			CodeEditor.editor.toggleDirectoryNav(forPrimary,false /*set val*/);
