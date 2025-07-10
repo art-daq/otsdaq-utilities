@@ -407,12 +407,12 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<div style='display: flex; justify-content: space-evenly; gap: 4px; padding: 4px;'>";
-					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #4dafff; cursor: pointer'" +
+					str += "<div class='controlButtonContainer'>";
+					str += "<button class='controlButtons' style='background-color: #4dafff'" +
 						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Configure'}, -1)\">Configure</button>";
-					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #f52727; cursor: pointer'" +
+					str += "<button class='controlButtons' style='background-color: #f52727'" +
 						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Stop'}, -1)\">Stop</button>";
-					str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: orange; cursor: pointer'" +
+					str += "<button class='controlButtons' style='background-color: orange'" +
 						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Halt'}, -1)\">Halt</button>";
 					str += "</div>"
 					str += "</td></tr>";
@@ -637,12 +637,12 @@ SubsystemLaunch.create = function() {
 						{
 							str += "<div title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
 								SubsystemLaunch.subsystems[s].name + "&apos;' " +
-								"style='display: flex; justify-content: space-evenly; gap: 4px; padding: 4px;'>";
-							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #4dafff; cursor: pointer'" +
+								"class='controlButtonContainer'>";
+							str += "<button class='controlButtons' style='background-color: #4dafff;'" +
 								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Configure' }, " + s + ")\">Configure</button>";
-							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: #f52727; cursor: pointer'" +
+							str += "<button class='controlButtons' style='background-color: #f52727'" +
 								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Stop' }, " + s + ")\">Stop</button>";
-							str += "<button style='border-radius: 8px; padding: 6px 12px; font-size: 14px; background-color: orange; cursor: pointer'" +
+							str += "<button class='controlButtons' style='background-color: orange'" +
 								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Halt' }, " + s + ")\">Halt</button>";
 							str += "</div>";
 						}

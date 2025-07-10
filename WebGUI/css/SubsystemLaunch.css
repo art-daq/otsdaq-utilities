@@ -109,6 +109,24 @@
 			text-shadow: 0px 1px 0px rgba(255,255,255,.3), 0px -1px 0px rgba(0,0,0,.7);
 		}
 
+		.controlButtonContainer {
+			display: flex;
+			flex: 1;
+			justify-content: space-between;
+			gap: 8px;
+			padding: 8px;
+			width: 100%;
+			box-sizing: border-box;
+		}
+
+		.controlButtons {
+			flex: 1;
+			border-radius: 8px;
+			padding: 6px 12px;
+			font-size: 14px;
+			cursor: pointer;
+		}
+
 		#startButtonDiv:active {
 			margin-top:	10px;
 			margin-bottom: -10px;
