@@ -2159,7 +2159,7 @@ CodeEditor.create = function(standAlone) {
 						Debug.log(err, Debug.HIGH_PRIORITY);
 					const gitPath = DesktopContent.getXMLValue(req, "gitPath");
 
-					if (!gitPath)
+					if (gitPath)
 						window.top.location.replace(gitPath + "#L" + line);
 					else
 						Debug.err("Github repository not found.");
