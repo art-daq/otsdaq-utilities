@@ -648,7 +648,6 @@ SubsystemLaunch.create = function() {
 							str += "<option >Stop</option>";
 							str += "<option >Halt</option>";
 							str += "</select>";
-							;
 						}
 						else if(fieldIds[i] == "configAlias")
 						{
