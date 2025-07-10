@@ -406,16 +406,17 @@ SubsystemLaunch.create = function() {
 					else
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
-					str += "</td><td  >";
-					str += "<div class='controlButtonContainer'>";
-					str += "<button class='controlButtons' style='background-color: #4dafff'" +
-						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Configure'}, -1)\">Configure</button>";
-					str += "<button class='controlButtons' style='background-color: #f52727'" +
-						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Stop'}, -1)\">Stop</button>";
-					str += "<button class='controlButtons' style='background-color: orange'" +
-						   "onClick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({value: 'Halt'}, -1)\">Halt</button>";
-					str += "</div>"
-					str += "</td></tr>";
+						str += "</td><td  >";
+						str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' " +
+							"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
+						str += "<option selected>Select an FSM action:</option>";
+						str += "<option >Configure</option>";
+						// str += "<option >Start</option>";
+						str += "<option >Stop</option>";
+						str += "<option >Halt</option>";
+						str += "</select>";
+
+						str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
 				{
@@ -635,16 +636,18 @@ SubsystemLaunch.create = function() {
 						}
 						else if(fieldIds[i] == "action")
 						{
-							str += "<div title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
+							str += "<select id='subsystem_" + fieldIds[i] +
+								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' " +
+								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
 								SubsystemLaunch.subsystems[s].name + "&apos;' " +
-								"class='controlButtonContainer'>";
-							str += "<button class='controlButtons' style='background-color: #4dafff;'" +
-								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Configure' }, " + s + ")\">Configure</button>";
-							str += "<button class='controlButtons' style='background-color: #f52727'" +
-								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Stop' }, " + s + ")\">Stop</button>";
-							str += "<button class='controlButtons' style='background-color: orange'" +
-								"onclick=\"SubsystemLaunch.launcher.handleSubsystemActionSelect({ value: 'Halt' }, " + s + ")\">Halt</button>";
-							str += "</div>";
+								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
+							str += "<option selected>Select an action for &apos;" +
+								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
+							str += "<option >Configure</option>";
+							// str += "<option >Start</option>";
+							str += "<option >Stop</option>";
+							str += "<option >Halt</option>";
+							str += "</select>";
 						}
 						else if(fieldIds[i] == "configAlias")
 						{
