@@ -2160,7 +2160,9 @@ CodeEditor.create = function(standAlone) {
 					const gitPath = DesktopContent.getXMLValue(req, "gitPath");
 
 					if (gitPath)
-						window.open(gitPath + "#L" + line, '_blank');
+						window.top.location.replace(gitPath + "#L" + line);
+					else
+						Debug.err("Github repository: " + gitPath + "#L" + line + " not found.", Debug.HIGH_PRIORITY);
 				}
 			);
 		}
