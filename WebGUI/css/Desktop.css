@@ -19,6 +19,8 @@
 		outline: 				none;  /* to stop firefox selection*/
 		font-family: 			'Comfortaa', serif; /*'Donegal One', serif;*/
 		font-size: 				20px;
+
+		scroll-padding: 150px;
 	}
 
 
