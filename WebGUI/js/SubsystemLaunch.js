@@ -406,17 +406,17 @@ SubsystemLaunch.create = function() {
 					else
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
-						str += "</td><td  >";
-						str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' " +
-							"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
-						str += "<option selected>Select an FSM action:</option>";
-						str += "<option >Configure</option>";
-						// str += "<option >Start</option>";
-						str += "<option >Stop</option>";
-						str += "<option >Halt</option>";
-						str += "</select>";
+					str += "</td><td  >";
+					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' " +
+						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
+					str += "<option selected>Select an FSM action:</option>";
+					str += "<option >Configure</option>";
+					// str += "<option >Start</option>";
+					str += "<option >Stop</option>";
+					str += "<option >Halt</option>";
+					str += "</select>";
 
-						str += "</td></tr>";
+					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
 				{
