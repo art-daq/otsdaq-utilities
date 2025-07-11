@@ -6,8 +6,8 @@
 using namespace ots;
 
 const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
-	                                  ? getenv("RUNDBVIEWER_DATA_PATH")
-	                                  : "." + std::string("/");
+                                         ? getenv("RUNDBVIEWER_DATA_PATH")
+                                         : "." + std::string("/");
 #define RUNDBVIEWER_CATEGORY_LIST_PATH RUNDBVIEWER_PATH + "category_list.xml"
 
 #define XML_ADMIN_STATUS "rundbviewer_admin_status"
@@ -17,19 +17,20 @@ const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
 #define XML_CATEGORY "category"
 #define XML_ACTIVE_CATEGORY "active_category"
 
-#define XML_RUNDBVIEWER_ENTRY 								"rundbviewer_entry"
-#define XML_RUNDBVIEWER_ENTRY_RUN_NUMBER 					"rundbviewer_entry_run_number"
-#define XML_RUNDBVIEWER_ENTRY_RUN_TIME						"rundbviewer_entry_run_time"
-#define XML_RUNDBVIEWER_ENTRY_RUN_TYPE 						"rundbviewer_entry_run_type"
-#define XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION 			"rundbviewer_entry_run_artdaq_partition"
-#define XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME 				"rundbviewer_entry_run_host_name"
-#define XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID				"condition_id"
-#define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME		"configuration_name"
-#define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION		"configuration_version"
-#define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME	 			"context_name"
-#define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION	 		"context_version"
-#define XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION	"online_software_version"
-#define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE				"shifter_note"
+#define XML_RUNDBVIEWER_ENTRY "rundbviewer_entry"
+#define XML_RUNDBVIEWER_ENTRY_RUN_NUMBER "rundbviewer_entry_run_number"
+#define XML_RUNDBVIEWER_ENTRY_RUN_TIME "rundbviewer_entry_run_time"
+#define XML_RUNDBVIEWER_ENTRY_RUN_TYPE "rundbviewer_entry_run_type"
+#define XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION \
+	"rundbviewer_entry_run_artdaq_partition"
+#define XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME "rundbviewer_entry_run_host_name"
+#define XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID "condition_id"
+#define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME "configuration_name"
+#define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION "configuration_version"
+#define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME "context_name"
+#define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION "context_version"
+#define XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION "online_software_version"
+#define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE "shifter_note"
 
 XDAQ_INSTANTIATOR_IMPL(RunDbViewerSupervisor)
 
@@ -104,9 +105,9 @@ void RunDbViewerSupervisor::forceSupervisorPropertyValues()
 ///		Handles Web Interface requests to RunDbViewer supervisor.
 ///		Does not refresh cookie for automatic update checks.
 void RunDbViewerSupervisor::request(const std::string&               requestType,
-                                cgicc::Cgicc&                    cgiIn,
-                                HttpXmlDocument&                 xmlOut,
-                                const WebUsers::RequestUserInfo& userInfo)
+                                    cgicc::Cgicc&                    cgiIn,
+                                    HttpXmlDocument&                 xmlOut,
+                                    const WebUsers::RequestUserInfo& userInfo)
 {
 	__COUTTV__(requestType);
 
@@ -158,9 +159,9 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 ///		Handles Web Interface requests to RunDbViewer supervisor.
 ///		Does not refresh cookie for automatic update checks.
 void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
-                                      cgicc::Cgicc&      cgiIn,
-                                      std::ostream&      out,
-                                      const WebUsers::RequestUserInfo& /*userInfo*/)
+                                          cgicc::Cgicc&      cgiIn,
+                                          std::ostream&      out,
+                                          const WebUsers::RequestUserInfo& /*userInfo*/)
 {
 	// Commands
 	//	LogImage
@@ -195,7 +196,8 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 /// getCategories
 ///		if xmlOut, then output categories to xml
 ///		if out, then output to stream
-void RunDbViewerSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostringstream* out)
+void RunDbViewerSupervisor::getCategories(HttpXmlDocument*    xmlOut,
+                                          std::ostringstream* out)
 {
 	// check that category listing doesn't already exist
 	HttpXmlDocument expXml;
@@ -230,33 +232,34 @@ void RunDbViewerSupervisor::getCategories(HttpXmlDocument* xmlOut, std::ostrings
 /// time for 			duration total number of days.
 ///		e.g. date = today, and duration = 1 returns rundbviewer for today from active
 /// category 		The entries are returns from oldest to newest
-void RunDbViewerSupervisor::refreshRunDbViewer(time_t      date,
-                                       uint32_t            duration,
-                                       HttpXmlDocument*    xmlOut,
-                                       std::ostringstream* out,
-                                       std::string         category)
+void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
+                                               uint32_t            duration,
+                                               HttpXmlDocument*    xmlOut,
+                                               std::ostringstream* out,
+                                               std::string         category)
 {
 	if(category == "")
 		category = activeCategory_;  // default to active category
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
 
-	char        dayIndexStr[20];
+	char dayIndexStr[20];
 
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_STATUS, "1");  // for success
 	if(out)
 		*out << __COUT_HDR_FL__ << "Today: " << date << std::endl;
 
-	if(date == 0)date = time(NULL);
+	if(date == 0)
+		date = time(NULL);
 	unsigned int startTime = date;
-	unsigned int endTime = startTime - (60 * 60 * 24) * duration;
+	unsigned int endTime   = startTime - (60 * 60 * 24) * duration;
 	__COUT__ << "Start time " << startTime << " End time " << endTime << __E__;
 
-	sprintf(dayIndexStr, "%lu", date*0);
+	sprintf(dayIndexStr, "%lu", date * 0);
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_MOST_RECENT_DAY,
-	 	                             dayIndexStr);  // send most recent day index
+		                             dayIndexStr);  // send most recent day index
 
 	std::string pluginName = "DBRunInfo";
 	std::string runInfoUID = "runInfoDbViewerUID1";
@@ -264,8 +267,7 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t      date,
 	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
 	try
 	{
-		runInfoInterface.reset(makeRunInfo(
-			pluginName, runInfoUID));
+		runInfoInterface.reset(makeRunInfo(pluginName, runInfoUID));
 	}
 	catch(...)
 	{
@@ -274,33 +276,47 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t      date,
 
 	if(runInfoInterface == nullptr)
 	{
-		__SS__ << "runInfo Db interface plugin construction failed of "
-		       << pluginName << __E__;
+		__SS__ << "runInfo Db interface plugin construction failed of " << pluginName
+		       << __E__;
 		__SS_THROW__;
 	}
 
-	std::vector<std::vector<std::string>> runRecords = runInfoInterface->getRunRecords(startTime, endTime, "");
+	std::vector<std::vector<std::string>> runRecords =
+	    runInfoInterface->getRunRecords(startTime, endTime, "");
 
 	if(xmlOut)
 	{
 		int i = 0;
 		for(auto runData : runRecords)
 		{
-			auto entryEl = 
-			xmlOut->addTextElementToData(XML_RUNDBVIEWER_ENTRY									, runData[0]);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_NUMBER						, runData[0], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_TIME						, runData[1], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_TYPE						, runData[2], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION			, runData[3], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME					, runData[4], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID				, runData[5], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME			, runData[6], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION		, runData[7], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME				, runData[8], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION			, runData[9], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION	, runData[10], entryEl);
-			xmlOut->addTextElementToParent(XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE				, runData[11], entryEl);
-			__COUT__ << "xmlOut getMatchingValue " << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
+			auto entryEl =
+			    xmlOut->addTextElementToData(XML_RUNDBVIEWER_ENTRY, runData[0]);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_NUMBER, runData[0], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_TIME, runData[1], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_TYPE, runData[2], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION, runData[3], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME, runData[4], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID, runData[5], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME, runData[6], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION, runData[7], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME, runData[8], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION, runData[9], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION, runData[10], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE, runData[11], entryEl);
+			__COUT__ << "xmlOut getMatchingValue "
+			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
 			i++;
 		}
 	}
