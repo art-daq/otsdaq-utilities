@@ -193,7 +193,7 @@ function updateUserData
 	echo
 
 	echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/TableInfo.xsd $USER_DATA/TableInfo/"
-	mkdir $USER_DATA/TableInfo >/dev/null 2>&1 #make table directory in case of startup clean slate
+	mkdir -p $USER_DATA/TableInfo >/dev/null 2>&1 #make table directory in case of startup clean slate
 	cp $LOC_OTS_DIR/data-core/TableInfo/TableInfo.xsd $USER_DATA/TableInfo/
 
 	if [ -e "$USER_DATA/ServiceData/CoreTableInfoNames.dat" ]; then

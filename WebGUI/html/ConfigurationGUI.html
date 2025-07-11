@@ -476,14 +476,15 @@
 		}
 
 		#searchbar {
-			float: right;
 			width: 200px;
-			display: flex;
+			display: inline-flex;
 			text-align: center;
 			border-radius: 3px;
 			background-color: white;
 			padding: 4px;
-			margin-top: -12px;
+			margin-top: -22px;
+			margin-left: 100px;
+			border: 1px solid gray;
 		}
 
 		#searchbar input:focus {
@@ -2518,19 +2519,34 @@
 				str += "<div id='clearDiv'></div>";
 			}
 
-			if (historicalKeys.length) {
+			if (historicalKeys.length)
+			{
 				str += "Existing &quot;" + groupName + "&quot; group keys: <label id='existingGroupKeys'>";
 				//str += " " + groupKey;
 
-				for (var i = 0; i < historicalKeys.length; ++i) {
+				var keyHi;
+				for (var i = 0; i < historicalKeys.length; ++i)
+				{
 					key = historicalKeys[i].getAttribute("value");
-					if (groupKey == key) { str += " " + key; continue; }
+					if(key && key.length && key[0] == '_')
+					{
+						var splitArr = key.split('_');
+						key = splitArr[1] | 0;
+						keyHi = splitArr[2] | 0;
+					}
+					else
+						keyHi = key; //just to run once
 
-					str += " <a href='#' onclick='setupSpecificTableGroup(\"" +
-						groupName + "\",\"" + key + "\",\"" + backLinkStr + "\"); return false;'>";
-					str += key;
-					str += "</a>";
-				}
+					for(;key <= keyHi; ++key)
+					{
+						if (groupKey == key) { str += " " + key; continue; } //no link for self-key
+
+						str += " <a href='#' onclick='setupSpecificTableGroup(\"" +
+							groupName + "\",\"" + key + "\",\"" + backLinkStr + "\"); return false;'>";
+						str += key;
+						str += "</a>";
+					} //end key value loop
+				} //end key field/span loop
 				str += "</label>";
 			}
 			else
@@ -2748,34 +2764,47 @@
 				cfgVersionStr = ""; //keep CSV list of versions for use by changeMemberVersionForTableGroup
 
 				tableExistingVersions = tableVersions[i].getElementsByTagName("TableExistingVersion");
-				var existingVersion;
+				var existingVersion, existingVersionIt, existingVersionHi;
 				for (var j = 0; j < tableExistingVersions.length; ++j)
 				{
 					existingVersion = tableExistingVersions[j].getAttribute("value");
-					if ((existingVersion | 0) < 0 || //skip temporary versions and scratch version
-						(existingVersion | 0) == ConfigurationAPI._SCRATCH_VERSION) //scratch version will be shown as an alias
-						continue;
-
-					if (existingVersion == version || //skip link for current version
-						(existingVersion == 		//including if it's the scratch alias
-							ConfigurationAPI._VERSION_ALIAS_PREPEND +
-							ConfigurationAPI._SCRATCH_ALIAS &&
-							version == ConfigurationAPI._SCRATCH_VERSION))
+					if(existingVersion && existingVersion.length && existingVersion[0] == '_')
 					{
-						cfgVersionStr += existingVersion + ",";
-						str += " " + existingVersion; continue;
+						var splitArr = existingVersion.split('_');
+						existingVersion = existingVersionIt = splitArr[1] | 0;
+						existingVersionHi = splitArr[2] | 0;
 					}
-					str += " ";
-					str += "<a href='#' onclick='changeMemberVersionForTableGroup(\"" +
-						groupName + "\",\"" + groupKey + "\",\"" + tableName + "\"," +
-						"\"" + existingVersion + "\"";
-					str += "); return false;' " +
-						"title='Select v" + existingVersion + " of table &apos;" +
-						tableName + "&apos; to be a member of the &apos;" + groupName + "&apos; group.' " +
-						">" + existingVersion;
-					str += "</a>";
-					cfgVersionStr += existingVersion + ",";
-				}
+					else
+						existingVersionIt = existingVersionHi = 0; //just to run once
+
+					for(;
+						existingVersionIt <= existingVersionHi; ++existingVersionIt, ++existingVersion)
+					{
+						if ((existingVersion | 0) < 0 || //skip temporary versions and scratch version
+								(existingVersion | 0) == ConfigurationAPI._SCRATCH_VERSION) //scratch version will be shown as an alias
+							continue;
+
+						if (existingVersion == version || //skip link for current version
+							(existingVersion == 		//including if it's the scratch alias
+								ConfigurationAPI._VERSION_ALIAS_PREPEND +
+								ConfigurationAPI._SCRATCH_ALIAS &&
+								version == ConfigurationAPI._SCRATCH_VERSION))
+						{
+							cfgVersionStr += existingVersion + ",";
+							str += " " + existingVersion; continue;
+						}
+						str += " ";
+						str += "<a href='#' onclick='changeMemberVersionForTableGroup(\"" +
+							groupName + "\",\"" + groupKey + "\",\"" + tableName + "\"," +
+							"\"" + existingVersion + "\"";
+						str += "); return false;' " +
+							"title='Select v" + existingVersion + " of table &apos;" +
+							tableName + "&apos; to be a member of the &apos;" + groupName + "&apos; group.' " +
+							">" + existingVersion;
+						str += "</a>";
+						cfgVersionStr += existingVersion + ",";
+					} //end existing version value loop
+				} //end existing version field/span loop
 				str += "</label>";
 				str += "</div>";
 
@@ -3061,28 +3090,40 @@
 
 			//display all other version links
 			{
-				var tableVersion;
+				var tableVersion, tableVersionHi;
 				var aliasString;
 				var versionAliases;
 				for (var j = 0; j < tableVersions.length; ++j)
 				{
 					tableVersion = tableVersions[j].getAttribute("value");
+					if(tableVersion && tableVersion.length && tableVersion[0] == '_')
+					{
+						var splitArr = tableVersion.split('_');
+						tableVersion = existingVersionIt = splitArr[1] | 0;
+						tableVersionHi = splitArr[2] | 0;
+					}
+					else 
+						tableVersionHi = tableVersion; //just to run once
 
+					//Note: aliased version are always stanadlone
 					aliasString = "";
 					versionAliases = tableVersions[j].getElementsByTagName("VersionAlias");
 					for (var k = 0; k < versionAliases.length; ++k)
 						aliasString += (k == 0 ? "==>" : ",") + versionAliases[k].getAttribute("value");
 
-					str += " ";
-					if (tableVersion != version)
-						str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
-							"\",\"" + tableVersion +
-							"\", \"" + backLinkStr + "\"); return false;'>";
-					str += ((tableVersion | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : tableVersion);
-					//add alias string
-					str += aliasString;
-					if (tableVersion != version)
-						str += "</a>";
+					for(;tableVersion <= tableVersionHi; ++tableVersion)
+					{
+						str += " ";
+						if (tableVersion != version)
+							str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
+								"\",\"" + tableVersion +
+								"\", \"" + backLinkStr + "\"); return false;'>";
+						str += ((tableVersion | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : tableVersion);
+						//add alias string
+						str += aliasString;
+						if (tableVersion != version)
+							str += "</a>";
+					} //end version field/span loop
 				}
 			}
 
@@ -3268,7 +3309,6 @@
 				el = _displayTargetEl;
 			else
 				el = document.getElementById("display");
-
 			el.innerHTML = str;
 
 			if (isTemporary(version)) //if temporary
@@ -3813,11 +3853,11 @@
 				treeMemberComments_.push(activeTableComments[i].getAttribute("value"));
 			}
 
-
 			if (!parentId &&
 				treeViewHandlerStr_ && treeViewHandlerStr_ != "" &&
 				treeGroupName_ == tableGroupName &&
-				treeGroupKey_ == tableGroupKey) {
+				treeGroupKey_ == tableGroupKey)
+			{
 				Debug.log("Re-using tree handler string that we already have!");
 				var el = document.getElementById("display");
 				el.innerHTML = treeViewHandlerStr_;
@@ -3983,7 +4023,8 @@
 											"<input id='tree-view-searchbar' " +
 											"title='Type to highlight and seek any matching records. Hit the UP-arrow and DOWN-arrow to scroll the tree-view to the matching records.' " +
 											"placeholder='Search...' " +
-											"onkeydown='applySearchNode(event)' autocomplete='off'></input>" +
+											"onkeydown='applySearchNode(event)'" + 
+											" autocomplete='off'></input>" +
 										"</div>";
 
 
@@ -4409,9 +4450,6 @@
 		//recursiveDrawTree ~
 		function recursiveDrawTree(parent, depth, path, parentIdString)
 		{
-			document.getElementById("display").style.width = (30 * depth + 740) + "px";
-			document.getElementById("tempTree").style.width = (30 * depth + 740) + "px";
-
 			var uid;
 			var nodes = parent.children;
 			var nodeName;
@@ -9884,6 +9922,12 @@
 		//bodyKeyHandler ~~
 		function bodyKeyHandler(e)
 		{
+			if(document.activeElement.id == "tree-view-searchbar")
+			{
+				Debug.log("Ignoring key press and giving searchbar priority...");
+				return;
+			}
+
 			Debug.log("key " + e.keyCode);
 
 			//detect proper views
@@ -19253,7 +19297,6 @@
 	<div id='activeConfig'></div>
 	<div id='activateConfigWithWarnings'></div>
 	<hr>
-	<div id='tempTree'></div>
 	<div id='display'></div>
 	<div class='preloadImage' id='preloadImage-treeEditIconHover'></div>
 	<div class='preloadImage' id='preloadImage-treeEditTrashIcon'></div>
