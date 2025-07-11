@@ -81,7 +81,7 @@ void ConfigurationGUISupervisor::init(void)
 	}
 
 	//initialize first config manager (pre-load for first user)
-	refreshUserSession("" /* userInfo.username_ */, 1);// (refresh == "1"));
+	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
 	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
 
 }  // end init()
@@ -241,9 +241,9 @@ try
 	ConfigurationManagerRW* cfgMgr =
 	    refreshUserSession(userInfo.username_, (refresh == "1"));
 
-	if(0) //for debugging/optimizing cache resets!
+	if(0)  //for debugging/optimizing cache resets!
 	{
-		const GroupInfo&               groupInfo  = cfgMgr->getGroupInfo("MC2TriggerContext");
+		const GroupInfo& groupInfo = cfgMgr->getGroupInfo("MC2TriggerContext");
 		const std::set<TableGroupKey>& sortedKeys = groupInfo.keys_;  // rename
 		__COUTTV__(sortedKeys.size());
 	}
@@ -3505,7 +3505,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	    groupName,
 	    groupKey,
 	    modifiedTables,
-	    false, //changed to not refresh all, assume no partially loaded tables (startPath == "/"),  // refreshAll, if at root node, reload all tables so that partially loaded tables are not allowed
+	    false,  //changed to not refresh all, assume no partially loaded tables (startPath == "/"),  // refreshAll, if at root node, reload all tables so that partially loaded tables are not allowed
 	    (startPath == "/"),  // get group info
 	    &memberMap,          // get group member map
 	    true,                // output active tables (default)
@@ -5953,16 +5953,16 @@ try
 			}
 			//now have version aliases or not
 
-			if(aliases.size()) //keep versions with aliases standalone
+			if(aliases.size())  //keep versions with aliases standalone
 			{
 				__SUP_COUT__ << "Handling version w/aliases" << __E__;
 			}
-			else if(lo == size_t(-1)) //establish start of potential span
+			else if(lo == size_t(-1))  //establish start of potential span
 			{
 				hi = lo = v.version();
 				continue;
 			}
-			else if(hi + 1 == v.version()) //span is growing
+			else if(hi + 1 == v.version())  //span is growing
 			{
 				hi = v.version();
 				continue;
@@ -5971,35 +5971,38 @@ try
 
 			if(lo != size_t(-1))
 			{
-				if(lo == hi) //single value
+				if(lo == hi)  //single value
 					xmlOut.addNumberElementToParent("Version", lo, parentEl);
-				else //span
-					xmlOut.addTextElementToParent("Version",
-						"_" + std::to_string(lo) + "_" + std::to_string(hi), parentEl);
+				else  //span
+					xmlOut.addTextElementToParent(
+					    "Version",
+					    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+					    parentEl);
 			}
 			hi = lo = v.version();
-	
-			if(versionAliases.size()) //keep versions with aliases standalone
+
+			if(versionAliases.size())  //keep versions with aliases standalone
 			{
 				subparentEl =
-					xmlOut.addTextElementToParent("Version", v.toString(), parentEl);
+				    xmlOut.addTextElementToParent("Version", v.toString(), parentEl);
 				for(const auto& alias : aliases)
-				xmlOut.addTextElementToParent(
-					"VersionAlias", alias, subparentEl);
-				hi = lo = size_t(-1); //invalidate for fresh start
-			} //end version alias handling
+					xmlOut.addTextElementToParent("VersionAlias", alias, subparentEl);
+				hi = lo = size_t(-1);  //invalidate for fresh start
+			}                          //end version alias handling
 
-		} //end version loop
+		}  //end version loop
 
-		if(lo != size_t(-1)) //check if last one to do!
+		if(lo != size_t(-1))  //check if last one to do!
 		{
-			if(lo == hi) //single value
+			if(lo == hi)  //single value
 				xmlOut.addNumberElementToParent("Version", lo, parentEl);
-			else //span
-				xmlOut.addTextElementToParent("Version",
-					"_" + std::to_string(lo) + "_" + std::to_string(hi), parentEl);
+			else  //span
+				xmlOut.addTextElementToParent(
+				    "Version",
+				    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+				    parentEl);
 		}
-	} //end existing table version handling
+	}  //end existing table version handling
 
 	// table columns and then rows (from table view)
 
@@ -6272,11 +6275,14 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	}
 
 	const std::string preLoadCfgMgrName = ":0";
-	if(userConfigurationManagers_.size() == 1 && userConfigurationManagers_.find(preLoadCfgMgrName) != userConfigurationManagers_.end())
+	if(userConfigurationManagers_.size() == 1 &&
+	   userConfigurationManagers_.find(preLoadCfgMgrName) !=
+	       userConfigurationManagers_.end())
 	{
 		__SUP_COUT__ << "Using pre-loaded Configuration Manager. time=" << time(0) << " "
 		             << clock() << __E__;
-		userConfigurationManagers_[mapKey] = userConfigurationManagers_.at(preLoadCfgMgrName);
+		userConfigurationManagers_[mapKey] =
+		    userConfigurationManagers_.at(preLoadCfgMgrName);
 		userLastUseTime_[mapKey] = userLastUseTime_.at(preLoadCfgMgrName);
 	}
 

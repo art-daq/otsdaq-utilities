@@ -705,9 +705,9 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 
 	__SUP_COUT__ << "Added custom count: '"
 	             << StringMacros::vectorToString(
-	                    priorityCustomTriggerList_[priority].needleSubstrings,"*")
-	             << "' at priority: " << priority << " triggered every: " << triggerOnCount
-	             << " occurrences";
+	                    priorityCustomTriggerList_[priority].needleSubstrings, "*")
+	             << "' at priority: " << priority
+	             << " triggered every: " << triggerOnCount << " occurrences";
 	if(doLoop)
 		__SUP_COUT__ << " and will loop.";
 	else
