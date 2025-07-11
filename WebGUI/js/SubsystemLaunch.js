@@ -407,7 +407,7 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' " +
+					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
 						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
 					str += "<option selected>Select an FSM action:</option>";
 					str += "<option >Configure</option>";
@@ -637,7 +637,7 @@ SubsystemLaunch.create = function() {
 						else if(fieldIds[i] == "action")
 						{
 							str += "<select id='subsystem_" + fieldIds[i] +
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' " +
+								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+
 								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
 								SubsystemLaunch.subsystems[s].name + "&apos;' " +
 								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
