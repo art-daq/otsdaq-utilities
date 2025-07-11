@@ -1165,8 +1165,7 @@
 				str += "<a id='filterControlsLink' class='consoleLink' " +
 						"href='Javascript:toggleFilterControls();' " +
 						"title='Toggle Filter Controls' >Hide Filters</a>";
-			//	if(_advancedContainerEl.style.display = "block"){
-			//		 Debug.warm("writing exit");
+			
 					str += "<a id='advancedControlsLink' class='consoleLink' " +
 						"onclick=\"toggleAdvancedControls(); " +
                   		"this.textContent = (this.textContent === 'Exit Adv.') ? 'Advanced' : 'Exit Adv.';\" " +
@@ -1946,8 +1945,8 @@
 					_consoleUpdateTimer = 0;
 				}
 				Debug.log("toggleAdvancedControls()");			
-				isAdvanced =  !isAdvanced;
-				//Debug.warn(isAdvanced);
+				
+				
 
 				if(_advancedContainerEl.style.display == "block") //then close
 				{
