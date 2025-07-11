@@ -17,7 +17,7 @@
 		//groupAliasesRequestHandler(req,anchorTarget)
 
 		//setupGroupViewMode(anchorTarget)							//gets all table groups
-		//tableGroupsRequestHandler(req,anchorTarget)
+		//tableGroupsRequestHandler(req,anchorTarget,errStr)
 		//groupSearchSelectionHandler(el)
 		//makeGroupInfoDisplayString(groupName,allKeys,latestKey,latestMembersHdr,backLinkToList)
 		//gotoSelectedMSGroup()
@@ -28,7 +28,7 @@
 		//showTableTooltip(tableName)
 
 		//setupSpecificTableGroup(groupName,groupKey,backLinkStr,anchorTarget)	//setup editor for specific table group
-		//specificGroupRequestHandler(req,param)
+		//specificGroupRequestHandler(req,param,errStr)
 
 		//setupSpecificTable(tableName,version,backLinkStr,allowIllegalColumns)			//setup editor for specific table
 		//setupSpecificTableInRight(tableName,version)
@@ -476,14 +476,15 @@
 		}
 
 		#searchbar {
-			float: right;
 			width: 200px;
-			display: flex;
+			display: inline-flex;
 			text-align: center;
 			border-radius: 3px;
 			background-color: white;
 			padding: 4px;
-			margin-top: -12px;
+			margin-top: -22px;
+			margin-left: 100px;
+			border: 1px solid gray;
 		}
 
 		#searchbar input:focus {
@@ -1019,8 +1020,14 @@
 				"&tableName=" + tableName +
 				v,
 				"",
-				function(req)
+				function(req, param, errStr)
 				{
+					if(errStr && errStr != "")
+					{
+						Debug.err(errStr);
+						return;
+					}
+					
 					//call with attemptedVersion parameter
 					specificTableRequestHandler(req, backLinkStr,
 							(version !== undefined && version != "")?version:undefined);
@@ -1730,8 +1737,14 @@
 
 		//==============================================================================
 		//tableGroupsRequestHandler ~
-		function tableGroupsRequestHandler(req, anchorTarget)
+		function tableGroupsRequestHandler(req, anchorTarget, errStr)
 		{
+			if(errStr && errStr != "")
+			{
+				Debug.err(errStr);
+				return;
+			}
+
 			var err = DesktopContent.getXMLValue(req, "Error");
 			if (err) {
 				Debug.err(err);
@@ -2297,8 +2310,14 @@
 		//==============================================================================
 		//specificGroupRequestHandler ~~
 		//	backLinkStr is defined to call functions one after the other
-		function specificGroupRequestHandler(req, param)
+		function specificGroupRequestHandler(req, param, errStr)
 		{
+			if(errStr && errStr != "")
+			{
+				Debug.err(errStr);
+				return;
+			}
+
 			Debug.log("specificGroupRequestHandler()",param);
 
 			//remove all previous buttons
@@ -2500,19 +2519,34 @@
 				str += "<div id='clearDiv'></div>";
 			}
 
-			if (historicalKeys.length) {
+			if (historicalKeys.length)
+			{
 				str += "Existing &quot;" + groupName + "&quot; group keys: <label id='existingGroupKeys'>";
 				//str += " " + groupKey;
 
-				for (var i = 0; i < historicalKeys.length; ++i) {
+				var keyHi;
+				for (var i = 0; i < historicalKeys.length; ++i)
+				{
 					key = historicalKeys[i].getAttribute("value");
-					if (groupKey == key) { str += " " + key; continue; }
+					if(key && key.length && key[0] == '_')
+					{
+						var splitArr = key.split('_');
+						key = splitArr[1] | 0;
+						keyHi = splitArr[2] | 0;
+					}
+					else
+						keyHi = key; //just to run once
 
-					str += " <a href='#' onclick='setupSpecificTableGroup(\"" +
-						groupName + "\",\"" + key + "\",\"" + backLinkStr + "\"); return false;'>";
-					str += key;
-					str += "</a>";
-				}
+					for(;key <= keyHi; ++key)
+					{
+						if (groupKey == key) { str += " " + key; continue; } //no link for self-key
+
+						str += " <a href='#' onclick='setupSpecificTableGroup(\"" +
+							groupName + "\",\"" + key + "\",\"" + backLinkStr + "\"); return false;'>";
+						str += key;
+						str += "</a>";
+					} //end key value loop
+				} //end key field/span loop
 				str += "</label>";
 			}
 			else
@@ -2730,34 +2764,47 @@
 				cfgVersionStr = ""; //keep CSV list of versions for use by changeMemberVersionForTableGroup
 
 				tableExistingVersions = tableVersions[i].getElementsByTagName("TableExistingVersion");
-				var existingVersion;
+				var existingVersion, existingVersionIt, existingVersionHi;
 				for (var j = 0; j < tableExistingVersions.length; ++j)
 				{
 					existingVersion = tableExistingVersions[j].getAttribute("value");
-					if ((existingVersion | 0) < 0 || //skip temporary versions and scratch version
-						(existingVersion | 0) == ConfigurationAPI._SCRATCH_VERSION) //scratch version will be shown as an alias
-						continue;
-
-					if (existingVersion == version || //skip link for current version
-						(existingVersion == 		//including if it's the scratch alias
-							ConfigurationAPI._VERSION_ALIAS_PREPEND +
-							ConfigurationAPI._SCRATCH_ALIAS &&
-							version == ConfigurationAPI._SCRATCH_VERSION))
+					if(existingVersion && existingVersion.length && existingVersion[0] == '_')
 					{
-						cfgVersionStr += existingVersion + ",";
-						str += " " + existingVersion; continue;
+						var splitArr = existingVersion.split('_');
+						existingVersion = existingVersionIt = splitArr[1] | 0;
+						existingVersionHi = splitArr[2] | 0;
 					}
-					str += " ";
-					str += "<a href='#' onclick='changeMemberVersionForTableGroup(\"" +
-						groupName + "\",\"" + groupKey + "\",\"" + tableName + "\"," +
-						"\"" + existingVersion + "\"";
-					str += "); return false;' " +
-						"title='Select v" + existingVersion + " of table &apos;" +
-						tableName + "&apos; to be a member of the &apos;" + groupName + "&apos; group.' " +
-						">" + existingVersion;
-					str += "</a>";
-					cfgVersionStr += existingVersion + ",";
-				}
+					else
+						existingVersionIt = existingVersionHi = 0; //just to run once
+
+					for(;
+						existingVersionIt <= existingVersionHi; ++existingVersionIt, ++existingVersion)
+					{
+						if ((existingVersion | 0) < 0 || //skip temporary versions and scratch version
+								(existingVersion | 0) == ConfigurationAPI._SCRATCH_VERSION) //scratch version will be shown as an alias
+							continue;
+
+						if (existingVersion == version || //skip link for current version
+							(existingVersion == 		//including if it's the scratch alias
+								ConfigurationAPI._VERSION_ALIAS_PREPEND +
+								ConfigurationAPI._SCRATCH_ALIAS &&
+								version == ConfigurationAPI._SCRATCH_VERSION))
+						{
+							cfgVersionStr += existingVersion + ",";
+							str += " " + existingVersion; continue;
+						}
+						str += " ";
+						str += "<a href='#' onclick='changeMemberVersionForTableGroup(\"" +
+							groupName + "\",\"" + groupKey + "\",\"" + tableName + "\"," +
+							"\"" + existingVersion + "\"";
+						str += "); return false;' " +
+							"title='Select v" + existingVersion + " of table &apos;" +
+							tableName + "&apos; to be a member of the &apos;" + groupName + "&apos; group.' " +
+							">" + existingVersion;
+						str += "</a>";
+						cfgVersionStr += existingVersion + ",";
+					} //end existing version value loop
+				} //end existing version field/span loop
 				str += "</label>";
 				str += "</div>";
 
@@ -3043,28 +3090,40 @@
 
 			//display all other version links
 			{
-				var tableVersion;
+				var tableVersion, tableVersionHi;
 				var aliasString;
 				var versionAliases;
 				for (var j = 0; j < tableVersions.length; ++j)
 				{
 					tableVersion = tableVersions[j].getAttribute("value");
+					if(tableVersion && tableVersion.length && tableVersion[0] == '_')
+					{
+						var splitArr = tableVersion.split('_');
+						tableVersion = existingVersionIt = splitArr[1] | 0;
+						tableVersionHi = splitArr[2] | 0;
+					}
+					else 
+						tableVersionHi = tableVersion; //just to run once
 
+					//Note: aliased version are always stanadlone
 					aliasString = "";
 					versionAliases = tableVersions[j].getElementsByTagName("VersionAlias");
 					for (var k = 0; k < versionAliases.length; ++k)
 						aliasString += (k == 0 ? "==>" : ",") + versionAliases[k].getAttribute("value");
 
-					str += " ";
-					if (tableVersion != version)
-						str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
-							"\",\"" + tableVersion +
-							"\", \"" + backLinkStr + "\"); return false;'>";
-					str += ((tableVersion | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : tableVersion);
-					//add alias string
-					str += aliasString;
-					if (tableVersion != version)
-						str += "</a>";
+					for(;tableVersion <= tableVersionHi; ++tableVersion)
+					{
+						str += " ";
+						if (tableVersion != version)
+							str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
+								"\",\"" + tableVersion +
+								"\", \"" + backLinkStr + "\"); return false;'>";
+						str += ((tableVersion | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : tableVersion);
+						//add alias string
+						str += aliasString;
+						if (tableVersion != version)
+							str += "</a>";
+					} //end version field/span loop
 				}
 			}
 
@@ -3250,7 +3309,6 @@
 				el = _displayTargetEl;
 			else
 				el = document.getElementById("display");
-
 			el.innerHTML = str;
 
 			if (isTemporary(version)) //if temporary
@@ -3795,11 +3853,11 @@
 				treeMemberComments_.push(activeTableComments[i].getAttribute("value"));
 			}
 
-
 			if (!parentId &&
 				treeViewHandlerStr_ && treeViewHandlerStr_ != "" &&
 				treeGroupName_ == tableGroupName &&
-				treeGroupKey_ == tableGroupKey) {
+				treeGroupKey_ == tableGroupKey)
+			{
 				Debug.log("Re-using tree handler string that we already have!");
 				var el = document.getElementById("display");
 				el.innerHTML = treeViewHandlerStr_;
@@ -3965,7 +4023,8 @@
 											"<input id='tree-view-searchbar' " +
 											"title='Type to highlight and seek any matching records. Hit the UP-arrow and DOWN-arrow to scroll the tree-view to the matching records.' " +
 											"placeholder='Search...' " +
-											"onkeydown='applySearchNode(event)' autocomplete='off'></input>" +
+											"onkeydown='applySearchNode(event)'" + 
+											" autocomplete='off'></input>" +
 										"</div>";
 
 
@@ -4391,9 +4450,6 @@
 		//recursiveDrawTree ~
 		function recursiveDrawTree(parent, depth, path, parentIdString)
 		{
-			document.getElementById("display").style.width = (30 * depth + 740) + "px";
-			document.getElementById("tempTree").style.width = (30 * depth + 740) + "px";
-
 			var uid;
 			var nodes = parent.children;
 			var nodeName;
@@ -6650,78 +6706,6 @@
 
 				});	//end of getTables handler
 		} //end wizToLatestTableGroup()
-
-		// //==============================================================================
-		// //saveGroupAndActivate  ... as of Dec 18, 2021 .. RAR replaced with ConfigurationAPI.saveGroupAndActivate
-		// function saveGroupAndActivate(groupName, tableMap, doneHandler, doReturnParams)
-		// {
-		// 	DesktopContent.XMLHttpRequest("Request?RequestType=saveNewTableGroup" +
-		// 		"&groupName=" + groupName +
-		// 		"&allowDuplicates=0" +
-		// 		"&lookForEquivalent=1" +
-		// 		"", //end get data
-		// 		tableMap, //end post data
-		// 		function (req)
-		// 		{
-		// 			var err = DesktopContent.getXMLValue(req, "Error");
-		// 			var name = DesktopContent.getXMLValue(req, "TableGroupName");
-		// 			var key = DesktopContent.getXMLValue(req, "TableGroupKey");
-		// 			var newBackbone = true;
-		// 			if (err)
-		// 			{
-		// 				if (!name || !key)
-		// 				{
-		// 					Debug.err(err);
-		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
-		// 						" Please see details below.",
-		// 						Debug.HIGH_PRIORITY);
-
-		// 					if (doneHandler)
-		// 						doneHandler(); //error so call done handler
-		// 					return;
-		// 				}
-		// 				else
-		// 				{
-		// 					Debug.warn(err);
-		// 					Debug.log("Process interrupted. Failed to create a new Backbone group!" +
-		// 						" (Likely the currently active Backbone already represents what is being requested)\n\n" +
-		// 						"Going on with existing backbone group, name=" + name + " & key=" + key,
-		// 						Debug.WARN_PRIORITY);
-		// 					newBackbone = false;
-		// 				}
-		// 			}
-
-		// 			//now activate the new backbone group
-
-		// 			DesktopContent.XMLHttpRequest("Request?RequestType=activateTableGroup" +
-		// 				"&groupName=" + name +
-		// 				"&groupKey=" + key, "",
-		// 				function (req)
-		// 				{
-
-		// 					activateTableGroupHandler(req);
-
-		// 					if (doneHandler)
-		// 					{
-		// 						//done so call done handler (and indicate success)
-		// 						if (!doReturnParams)
-		// 							doneHandler(); //done so call done handler
-		// 						else
-		// 						{
-		// 							var retParams = {
-		// 								"groupName": name,
-		// 								"groupKey": key,
-		// 								"newBackbone": newBackbone
-		// 							}
-		// 							doneHandler(retParams); 	 //(and indicate success)
-		// 						}
-		// 					}
-
-		// 				});	//end of activate new backbone handler
-
-		// 		}, 0, 0, true  //reqParam, progressHandler, callHandlerOnErr
-		// 	); //end of backbone saveNewTableGroup handler
-		// } //end saveGroupAndActivate()
 
 		//==============================================================================
 		//setupGroupCreator ~
@@ -9938,6 +9922,12 @@
 		//bodyKeyHandler ~~
 		function bodyKeyHandler(e)
 		{
+			if(document.activeElement.id == "tree-view-searchbar")
+			{
+				Debug.log("Ignoring key press and giving searchbar priority...");
+				return;
+			}
+
 			Debug.log("key " + e.keyCode);
 
 			//detect proper views
@@ -11041,7 +11031,7 @@
 					{
 						if (retParams)
 						{
-							if (retParams.newGroupCreated)
+							if (!retParams.foundEquivalentKey)
 								Debug.log("Successfully modified the active Backbone group " +
 									" to set the System Alias '" + groupAlias + "' to " +
 									" refer to the current group '" + groupName +
@@ -19307,7 +19297,6 @@
 	<div id='activeConfig'></div>
 	<div id='activateConfigWithWarnings'></div>
 	<hr>
-	<div id='tempTree'></div>
 	<div id='display'></div>
 	<div class='preloadImage' id='preloadImage-treeEditIconHover'></div>
 	<div class='preloadImage' id='preloadImage-treeEditTrashIcon'></div>

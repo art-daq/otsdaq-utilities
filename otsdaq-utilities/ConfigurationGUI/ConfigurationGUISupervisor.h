@@ -255,8 +255,8 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	enum
 	{
-		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 1,  ///< 1 hour, in seconds
-		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 15,      ///< 15 minutes, in seconds
+		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 24 * 2, ///< 2 days, in seconds
+		CONFIGURATION_MANAGER_REFRESH_THRESHOLD = 60 * 60 * 24, 	///< 1 day, in seconds
 	};
 
 	ConfigurationManagerRW* refreshUserSession						(std::string username,
