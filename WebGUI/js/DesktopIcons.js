@@ -156,7 +156,7 @@ else {
 				if((err = Desktop.getXMLValue(req,"Error")) && err != "")
 				{
 					if(err.indexOf("Remote Gateway desktop icons") > 0) //demote to log
-						Debug.log("Warning: " + err);
+						Debug.err("Warning: " + err);
 					else
 						Debug.err("Error: " + err, Debug.HIGH_PRIORITY);
 					//try to power through error //return;
