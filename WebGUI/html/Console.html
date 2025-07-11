@@ -624,7 +624,7 @@
 			var _advancedPreset_NONE = 6;
 			var _advancedPreset_ALL = 7;
 			var _advancedMaskPreset = _advancedPreset_MASK;
-			var isAdvanced = false;
+			
 
 
 			var _traceBIT_STANDARDS = {0: "Fatal", 1: "Alert", 2: "Critical", 3: "Error",
@@ -2098,8 +2098,8 @@
 			function closeAdvancedControls()
 			{
 				Debug.log("closeAdvancedControls()");
-				isAdvanced = !isAdvanced;
-				//Debug.warn("closing ");
+				
+				
 				_consoleContainerEl.style.display = "block";
 				_advancedContainerEl.style.display = "none";
 			} //end closeAdvancedControls()
