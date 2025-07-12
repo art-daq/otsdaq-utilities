@@ -79,6 +79,11 @@ void ConfigurationGUISupervisor::init(void)
 		              << "Check the active context group from within Wizard Mode."
 		              << __E__;
 	}
+
+	//initialize first config manager (pre-load for first user)
+	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
+	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
+
 }  // end init()
 
 //==============================================================================
@@ -235,6 +240,13 @@ try
 	// refresh to reload from info files and db (maintains temporary views!)
 	ConfigurationManagerRW* cfgMgr =
 	    refreshUserSession(userInfo.username_, (refresh == "1"));
+
+	if(0)  //for debugging/optimizing cache resets!
+	{
+		const GroupInfo& groupInfo = cfgMgr->getGroupInfo("MC2TriggerContext");
+		const std::set<TableGroupKey>& sortedKeys = groupInfo.keys_;  // rename
+		__COUTTV__(sortedKeys.size());
+	}
 
 	if(requestType == "saveTableInfo")
 	{
@@ -3493,8 +3505,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	    groupName,
 	    groupKey,
 	    modifiedTables,
-	    (startPath ==
-	     "/"),  // refreshAll, if at root node, reload all tables so that partially loaded tables are not allowed
+	    false,  //changed to not refresh all, assume no partially loaded tables (startPath == "/"),  // refreshAll, if at root node, reload all tables so that partially loaded tables are not allowed
 	    (startPath == "/"),  // get group info
 	    &memberMap,          // get group member map
 	    true,                // output active tables (default)
@@ -5211,7 +5222,7 @@ try
 		// editing comment, so check if comment is different
 		if(table->getView().isURIEncodedCommentTheSame(newValue))
 		{
-			__SUP_SS__ << "Comment '" << newValue
+			__SUP_SS__ << "Comment '" << StringMacros::decodeURIComponent(newValue)
 			           << "' is the same as the current comment. No need to save change."
 			           << __E__;
 			__SS_THROW__;
@@ -5918,11 +5929,15 @@ try
 		auto tableIterator = versionAliases.find(tableName);
 
 		parentEl = xmlOut.addTextElementToData("TableVersions", "");
+		//add lo and hi spans, instead of each individual value
+		size_t lo = -1, hi = -1;
 		for(const TableVersion& v : allTableInfo.at(tableName).versions_)
 		{
-			subparentEl =
-			    xmlOut.addTextElementToParent("Version", v.toString(), parentEl);
-
+			//Steps:
+			// 1. check for version aliases
+			// 2. if version aliases, leave as standalone version
+			//	else stack spans of versions for faster xml transfer
+			std::vector<std::string> aliases;
 			if(tableIterator != versionAliases.end())
 			{
 				// check if this version has one or many aliases
@@ -5932,13 +5947,62 @@ try
 					{
 						__SUP_COUT__ << "Found Alias " << aliasPair.second << " --> "
 						             << aliasPair.first << __E__;
-						xmlOut.addTextElementToParent(
-						    "VersionAlias", aliasPair.first, subparentEl);
+						aliases.push_back(aliasPair.first);
 					}
 				}
 			}
+			//now have version aliases or not
+
+			if(aliases.size())  //keep versions with aliases standalone
+			{
+				__SUP_COUT__ << "Handling version w/aliases" << __E__;
+			}
+			else if(lo == size_t(-1))  //establish start of potential span
+			{
+				hi = lo = v.version();
+				continue;
+			}
+			else if(hi + 1 == v.version())  //span is growing
+			{
+				hi = v.version();
+				continue;
+			}
+			//else jump by more than one, so close out span
+
+			if(lo != size_t(-1))
+			{
+				if(lo == hi)  //single value
+					xmlOut.addNumberElementToParent("Version", lo, parentEl);
+				else  //span
+					xmlOut.addTextElementToParent(
+					    "Version",
+					    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+					    parentEl);
+			}
+			hi = lo = v.version();
+
+			if(versionAliases.size())  //keep versions with aliases standalone
+			{
+				subparentEl =
+				    xmlOut.addTextElementToParent("Version", v.toString(), parentEl);
+				for(const auto& alias : aliases)
+					xmlOut.addTextElementToParent("VersionAlias", alias, subparentEl);
+				hi = lo = size_t(-1);  //invalidate for fresh start
+			}                          //end version alias handling
+
+		}  //end version loop
+
+		if(lo != size_t(-1))  //check if last one to do!
+		{
+			if(lo == hi)  //single value
+				xmlOut.addNumberElementToParent("Version", lo, parentEl);
+			else  //span
+				xmlOut.addTextElementToParent(
+				    "Version",
+				    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+				    parentEl);
 		}
-	}
+	}  //end existing table version handling
 
 	// table columns and then rows (from table view)
 
@@ -6198,11 +6262,30 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	std::string mapKey = ssMapKey.str();
 	__SUP_COUTT__ << "Using Config Session " << mapKey
 	              << " ... Total Session Count: " << userConfigurationManagers_.size()
-	              << __E__;
+	              << " refresh=" << refresh << __E__;
 
 	time_t now = time(0);
 
 	// create new table mgr if not one for active session index
+
+	if(TTEST(1))
+	{
+		for(auto& pair : userConfigurationManagers_)
+			__SUP_COUTTV__(pair.first);
+	}
+
+	const std::string preLoadCfgMgrName = ":0";
+	if(userConfigurationManagers_.size() == 1 &&
+	   userConfigurationManagers_.find(preLoadCfgMgrName) !=
+	       userConfigurationManagers_.end())
+	{
+		__SUP_COUT__ << "Using pre-loaded Configuration Manager. time=" << time(0) << " "
+		             << clock() << __E__;
+		userConfigurationManagers_[mapKey] =
+		    userConfigurationManagers_.at(preLoadCfgMgrName);
+		userLastUseTime_[mapKey] = userLastUseTime_.at(preLoadCfgMgrName);
+	}
+
 	if(userConfigurationManagers_.find(mapKey) == userConfigurationManagers_.end())
 	{
 		__SUP_COUT__ << "Creating new Configuration Manager. time=" << time(0) << " "
@@ -6216,7 +6299,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		    true /* refresh */,  // load empty instance of everything important
 		    0 /* accumulatedWarnings */,
 		    "" /* errorFilterName */,
-		    false /* getGroupKeys */,
+		    true /* getGroupKeys */,
 		    false /* getGroupInfo */,
 		    true /* initializeActiveGroups */);
 	}
