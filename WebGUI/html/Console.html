@@ -626,7 +626,6 @@
 			var _advancedMaskPreset = _advancedPreset_MASK;
 			
 
-
 			var _traceBIT_STANDARDS = {0: "Fatal", 1: "Alert", 2: "Critical", 3: "Error",
 									   4: "Warning", 5: "Notice", 6: "Info", 7: "Log", 8: "Debug", 9: "Trace"};
 
@@ -1115,7 +1114,7 @@
 				{
 					_consoleMessageArray = new Array();
 
-					//fill _consoleMessageArray for each field	
+					//fill _consoleMessageArray for each field
 					var lengthVerify = -1;
 					for(var f in _consoleMessageFields)
 					{
@@ -1158,8 +1157,7 @@
 			//=====================================================================================
 			//initSideBar ~
 			function initSideBar()
-			{
-				
+			{				
 				var str = "";
 
 				str += "<a id='filterControlsLink' class='consoleLink' " +
@@ -1944,7 +1942,7 @@
 					clearTimeout(_consoleUpdateTimer);
 					_consoleUpdateTimer = 0;
 				}
-				Debug.log("toggleAdvancedControls()");			
+				Debug.log("toggleAdvancedControls()");
 				
 				
 
@@ -2098,8 +2096,6 @@
 			function closeAdvancedControls()
 			{
 				Debug.log("closeAdvancedControls()");
-				
-				
 				_consoleContainerEl.style.display = "block";
 				_advancedContainerEl.style.display = "none";
 			} //end closeAdvancedControls()
