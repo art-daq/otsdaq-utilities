@@ -1172,6 +1172,19 @@ DesktopContent.hideLoading = function()
 //returns true if loading box is up/unresolved
 DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack > 0; } //end isLoading()
 
+DesktopContent.doScroll = function(targetID) 
+{
+	const el = document.getElementById(targetID);
+
+	if(!el)
+	{
+		Debug.err('Link contents not in scope');
+		return;
+	}
+
+	el.scrollIntoView({block: 'nearest', inline: 'start'});
+}
+
 //=====================================================================================
 //DesktopContent.XMLHttpRequest
 // forms request properly for ots server, POSTs data
