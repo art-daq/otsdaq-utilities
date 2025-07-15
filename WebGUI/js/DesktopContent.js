@@ -170,6 +170,7 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.showLoading()
 //	DesktopContent.hideLoading()
 //	DesktopContent.isLoading()
+//	DesktopContent.doScroll(targetID)
 
 //"private" function list:
 //	DesktopContent.init()
@@ -1172,7 +1173,12 @@ DesktopContent.hideLoading = function()
 //returns true if loading box is up/unresolved
 DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack > 0; } //end isLoading()
 
-DesktopContent.doScroll = function(targetID) 
+//=====================================================================================
+//DesktopContent.doScroll
+// is a function that allows for buttons to not scroll the main
+// ots window. To use, wrap your button/link/anchor with a div
+// and pass its id to doScroll
+DesktopContent.doScroll = function(targetID)
 {
 	const el = document.getElementById(targetID);
 
@@ -1182,7 +1188,9 @@ DesktopContent.doScroll = function(targetID)
 		return;
 	}
 
-	el.scrollIntoView({block: 'nearest', inline: 'start'});
+	el.scrollIntoView({ block: 'nearest', inline: 'start' });
+	if(window.scrollX != 0)
+		window.scroll({ left: 0 });
 }
 
 //=====================================================================================
