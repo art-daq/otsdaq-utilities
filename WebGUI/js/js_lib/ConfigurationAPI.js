@@ -2364,7 +2364,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 							{
 								if(retParams)
 								{
-									if(retParams.newGroupCreated)
+									if(!retParams.foundEquivalentKey)
 									{
 										Debug.log("Successfully modified the active Backbone group " +
 												" to set the System Alias '" + groupAlias + "' to " +
@@ -2636,7 +2636,7 @@ ConfigurationAPI.activateGroup = function(groupName, groupKey,
 //      if doReturnParms
 //          then the handler is called with an object
 //          describing the new backbone group object:
-//                 retParams.newGroupCreated //true if successfully created
+//                 retParams.foundEquivalentKey //true if did not have to create new group, equivalent already existed
 //                 retParams.groupName   //backbone group name
 //                 retParams.groupKey    //backbone group key
 //
@@ -2716,7 +2716,7 @@ ConfigurationAPI.setGroupAliasInActiveBackbone = function(groupAlias,groupName,g
 //      if doReturnParms
 //          then the handler is called with an object
 //          describing the new backbone group object:
-//                 retParams.newGroupCreated //true if successfully created
+//                 retParams.foundEquivalentKey //true if did not have to create new group, equivalent already existed
 //                 retParams.groupName   //backbone group name
 //                 retParams.groupKey    //backbone group key
 //
@@ -2880,7 +2880,10 @@ ConfigurationAPI.saveGroupAndActivate = function(groupName,tableMap,
 		var err = DesktopContent.getXMLValue(req,"Error");
 		var name = DesktopContent.getXMLValue(req,"TableGroupName");
 		var key = DesktopContent.getXMLValue(req,"TableGroupKey");
-		var newGroupCreated = true;
+		var foundEquivalentKey = DesktopContent.getXMLValue(req,"foundEquivalentKey") == "1"?true:false;
+		
+		Debug.logv({foundEquivalentKey});
+
 		if(err)
 		{
 			if(!name || !key)
@@ -2895,12 +2898,12 @@ ConfigurationAPI.saveGroupAndActivate = function(groupName,tableMap,
 			}
 			else
 			{
+				//treat as warning and try to power through with activation
 				Debug.log(err,Debug.WARN_PRIORITY);
 				Debug.log("Process interrupted. Failed to create a new group!" +
 						" (Likely the currently active group already represents what is being requested)\n\n" +
 						"Going on with existing backbone group, name=" + name + " & key=" + key,
-						Debug.WARN_PRIORITY);
-				newGroupCreated = false;
+						Debug.WARN_PRIORITY);				
 			}
 		}
 
@@ -2927,7 +2930,7 @@ ConfigurationAPI.saveGroupAndActivate = function(groupName,tableMap,
 					var retParams = {
 							"groupName" : name,
 							"groupKey" : key,
-							"newGroupCreated" : newGroupCreated
+							"foundEquivalentKey" : foundEquivalentKey
 					}
 					doneHandler(retParams); 	 //(and indicate success)
 				}

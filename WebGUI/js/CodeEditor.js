@@ -253,6 +253,7 @@ CodeEditor.create = function(standAlone) {
 	//	download(forPrimary)
 	//	upload(forPrimary)
 	//	uploadTextFromFile(forPrimary)
+	//  openGitLink(path, extension, line)
 
 
 	//for display
@@ -2131,8 +2132,49 @@ CodeEditor.create = function(standAlone) {
 			localDoIt();
 		}
 
+		//=====================================================================================
+		//openGitLink ~~
+		//	Open the github link to the file in a new tab
+		//
+		//	Done when file is not in srcs/
+		function openGitLink(path, extension, line)
+		{
+			const gitPath = path.includes("/.spack-env/")
+				? path.substr(path.indexOf("/.spack-env/") + 25)
+				: path;
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=readOnlycodeEditor&option=getFileGitURL&path=" + gitPath
+				+ "&ext=" + extension
+				+ "&line=" + line,
+				"",
+				function (req, reqParam, errStr)
+				{
+					if(errStr != "")
+					{
+						Debug.err("Error finding GitHub repo: " + errStr);
+						return;
+					}
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if(err)
+						Debug.log(err, Debug.HIGH_PRIORITY);
+					const gitPath = DesktopContent.getXMLValue(req, "gitPath");
+
+					if (gitPath)
+						window.top.location.replace(gitPath + "#L" + line);
+					else
+						Debug.err("Github repository not found.");
+				}
+			);
+		}
+
 		function localDoIt()
 		{
+			if (path && path.includes(".spack-env"))
+			{
+				Debug.warn("File is not in sources. Opening in repo...")
+				openGitLink(path, extension, gotoLine);
+				return;
+			}
 			CodeEditor.editor.toggleDirectoryNav(forPrimary,false /*set val*/);
 
 			DesktopContent.XMLHttpRequest("Request?RequestType=" + _requestPreamble +

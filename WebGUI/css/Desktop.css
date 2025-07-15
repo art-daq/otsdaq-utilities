@@ -434,6 +434,23 @@
 		margin: 				-5px -5px -7px -5px;
 	}
 
+	#scroll-reset-container {
+		position: absolute;
+		top: 100vh;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 9999;
+		pointer-events: auto;
+	}
+
+	#scroll-reset-button {
+		width: 100vw;
+		background-color: red;
+		color: black;
+		cursor: pointer;
+		font-weight: bold;
+	}
+
 	/*firefox seems to put an extra pixel of letter-spacing in bold words*/
 	@-moz-document url-prefix() {  /*target firefox*/
 		b, th {
