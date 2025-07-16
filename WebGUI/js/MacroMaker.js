@@ -59,6 +59,7 @@
 		//dealWithVariables
 
 		//exportFEMacro(macroName,macroSequence)
+		//copyHistory()
 
 	var ADMIN_PERMISSION_THRESHOLD = 255;
 	var userPermission = 10;
@@ -2185,4 +2186,23 @@
 				return;
 			}
 		};
+	}
+
+	//=====================================================================================
+	function copyHistory()
+	{
+		navigator.clipboard.writeText("ali is not so awesome")
+		.then(() => {
+			const el = document.getElementById("copybtn");
+			const original = el.src;
+
+			el.src = "/WebPath/images/windowContentImages/loader-Settings.gif";
+
+			setTimeout(()=>{
+				el.src = original;
+			}, 500);
+		})
+		.catch(e => {
+			Debug.err("Error in copying history", e)
+		});
 	}
