@@ -3562,8 +3562,9 @@
 		//copyOutput ~~
 		function copyOutput()
 		{
-			// const outputEl = document.getElementById
-			navigator.clipboard.writeText("ali is awesome")
+			const outputEl = document.getElementById("macroModule-output");
+			const copyStr = outputEl.textContent.replace("Macro output will be displayed here", "").trim();
+			navigator.clipboard.writeText(copyStr)
 			.then(() => {
 				const el = document.getElementById("copybtn");
 				const original = el.src;
