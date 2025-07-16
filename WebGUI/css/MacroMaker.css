@@ -248,11 +248,6 @@ button {
     position:absolute;
 } */
 
-.export-btns {
-    cursor: pointer;
-    margin-left: 15px;
-}
-
 .innerClass1{
     background: #cfe2f4;
     padding: 0.2em 0.2em 0.2em 0.1em;
