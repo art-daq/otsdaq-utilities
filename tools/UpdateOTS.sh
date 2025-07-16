@@ -167,7 +167,16 @@ function updateUserData
 
 	LOC_OTS_DIR=$OTSDAQ_DIR
 	if [ ! -d $LOC_OTS_DIR/data-core ]; then
-		LOC_OTS_DIR="$OTSDAQ_LIB/../"
+		if [[ "x${OTSDAQ_LIB}" != "x" ]]; then
+			LOC_OTS_DIR="$OTSDAQ_LIB/../"
+		fi
+		# If still not found, try spack location
+		if [ ! -d $LOC_OTS_DIR/data-core ]; then
+			SPACK_OTSDAQ=$(spack location -i otsdaq 2>/dev/null)
+			if [ -d "$SPACK_OTSDAQ/data-core" ]; then
+				LOC_OTS_DIR="$SPACK_OTSDAQ"
+			fi
+		fi
 	fi
 
 	echo
