@@ -65,11 +65,6 @@ void ConfigurationGUISupervisor::init(void)
 		             << __E__;
 
 		testXDAQContext();  // test context group activation
-		// theRemoteWebUsers_.sendSystemMessage("tracker:10","My Subject","This is my
-		// body",false /*doEmail*/); theRemoteWebUsers_.sendSystemMessage("Ryan","My
-		// Subject Dude","This is my body",false /*doEmail*/);
-		// theRemoteWebUsers_.sendSystemMessage("*","My Rad Subject","This is my
-		// body",false /*doEmail*/);
 
 		__SUP_COUT__ << "Done with test context." << __E__;
 	}

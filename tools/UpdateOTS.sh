@@ -358,7 +358,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
 			# else
 			# 	echo "Working tree is clean."
-			fi			
+			fi
 			branch="$(git rev-parse --abbrev-ref HEAD)"
 			if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
 				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
@@ -371,7 +371,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 				| paste -sd', ' -)
 			if [ -n "$missing" ]; then
-				echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result				
+				echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
 			# else
 				# echo "All local branches are represented on origin."
 			fi
@@ -585,7 +585,7 @@ for p in ${REPO_DIR[@]}; do
 			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 			| paste -sd', ' -)
 		if [ -n "$missing" ]; then
-			echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result				
+			echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
 		# else
 			# echo "All local branches are represented on origin."
 		fi
