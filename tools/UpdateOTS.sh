@@ -365,6 +365,16 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			# else
 			# 	echo "You are on main or develop"
 			fi
+			#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
+			missing=$(comm -23 \
+				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
+				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
+				| paste -sd', ' -)
+			if [ -n "$missing" ]; then
+				echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
+			# else
+				# echo "All local branches are represented on origin."
+			fi
 			cd -
 		else
 			echo -e "UpdateOTS.sh:${LINENO}  NOT GitHub repo found: $repo_dir"
@@ -568,6 +578,16 @@ for p in ${REPO_DIR[@]}; do
 			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
 		# else
 		# 	echo "You are on main or develop"
+		fi
+		#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
+		missing=$(comm -23 \
+			<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
+			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
+			| paste -sd', ' -)
+		if [ -n "$missing" ]; then
+			echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
+		# else
+			# echo "All local branches are represented on origin."
 		fi
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
