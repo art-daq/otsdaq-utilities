@@ -170,7 +170,7 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.showLoading()
 //	DesktopContent.hideLoading()
 //	DesktopContent.isLoading()
-//	DesktopContent.doScroll(targetID)
+//	DesktopContent.scrollToSection(targetID, doHighlight)
 
 //"private" function list:
 //	DesktopContent.init()
@@ -1174,11 +1174,11 @@ DesktopContent.hideLoading = function()
 DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack > 0; } //end isLoading()
 
 //=====================================================================================
-//DesktopContent.doScroll
+//DesktopContent.scrollToSection
 // is a function that allows for buttons to not scroll the main
 // ots window. To use, wrap your button/link/anchor with a div
-// and pass its id to doScroll
-DesktopContent.doScroll = function(targetID)
+// and pass its id to scrollToSection
+DesktopContent.scrollToSection = function(targetID, doHighlight)
 {
 	const el = document.getElementById(targetID);
 
@@ -1189,8 +1189,25 @@ DesktopContent.doScroll = function(targetID)
 	}
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
+
 	if(window.scrollX != 0)
 		window.scroll({ left: 0 });
+
+	if(doHighlight)
+	{
+		const bg = el.style.backgroundColor;
+		el.style.transition = 'background-color 0.5s ease-in-out';
+		el.style.backgroundColor = 'yellow';
+		setTimeout(() => {
+			el.style.backgroundColor = bg;
+		}, 500);
+		setTimeout(() => {
+			el.style.backgroundColor = 'yellow';
+		}, 1000);
+		setTimeout(() => {
+			el.style.backgroundColor = bg;
+		}, 1500);
+	}
 }
 
 //=====================================================================================
