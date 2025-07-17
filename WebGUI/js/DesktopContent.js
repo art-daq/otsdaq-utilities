@@ -170,7 +170,8 @@ if (typeof Globals == 'undefined')
 //	DesktopContent.showLoading()
 //	DesktopContent.hideLoading()
 //	DesktopContent.isLoading()
-//	DesktopContent.scrollToSection(targetID, doHighlight)
+//	DesktopContent.scrollIntoViewY(targetID, doHighlight)
+//	DesktopContent.scrollIntoViewX(targetID, doHighlight)
 
 //"private" function list:
 //	DesktopContent.init()
@@ -1174,11 +1175,11 @@ DesktopContent.hideLoading = function()
 DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestStack > 0; } //end isLoading()
 
 //=====================================================================================
-//DesktopContent.scrollToSection
+//DesktopContent.scrollIntoViewX / scrollIntoViewY
 // is a function that allows for buttons to not scroll the main
 // ots window. To use, wrap your button/link/anchor with a div
-// and pass its id to scrollToSection
-DesktopContent.scrollToSection = function(targetID, doHighlight)
+// and pass its id to scrollIntoView
+DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 {
 	const el = document.getElementById(targetID);
 
@@ -1195,6 +1196,35 @@ DesktopContent.scrollToSection = function(targetID, doHighlight)
 
 	if(doHighlight)
 	{
+		const bg = el.style.backgroundColor;
+		el.style.transition = 'background-color 0.5s ease-in-out';
+		el.style.backgroundColor = 'yellow';
+		setTimeout(() => {
+			el.style.backgroundColor = bg;
+		}, 500);
+		setTimeout(() => {
+			el.style.backgroundColor = 'yellow';
+		}, 1000);
+		setTimeout(() => {
+			el.style.backgroundColor = bg;
+		}, 1500);
+	}
+}
+
+DesktopContent.scrollIntoViewX = function (targetID, doHighlight) {
+	const el = document.getElementById(targetID);
+
+	if (!el) {
+		Debug.err('Link contents not in scope');
+		return;
+	}
+
+	el.scrollIntoView({ block: 'nearest', inline: 'start' });
+
+	if (window.scrollY != 0)
+		window.scroll({ top: 0 });
+
+	if (doHighlight) {
 		const bg = el.style.backgroundColor;
 		el.style.transition = 'background-color 0.5s ease-in-out';
 		el.style.backgroundColor = 'yellow';
