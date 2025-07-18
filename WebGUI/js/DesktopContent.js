@@ -1181,13 +1181,10 @@ DesktopContent.isLoading = function() { return DesktopContent._loadBoxRequestSta
 // and pass its id to scrollIntoView
 DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 {
-	const el = document.getElementById(targetID);
-
+	const el = document.getElementById(targetID) || document.getElementsByName(targetID)[0];
+	
 	if(!el)
-	{
-		Debug.err('Link contents not in scope');
-		return;
-	}
+		Debug.err("Link contents not in scope");
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
 
@@ -1211,13 +1208,12 @@ DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 	}
 }
 
-DesktopContent.scrollIntoViewX = function (targetID, doHighlight) {
-	const el = document.getElementById(targetID);
+DesktopContent.scrollIntoViewX = function (targetID, doHighlight)
+{
+	const el = document.getElementById(targetID) || document.getElementsByName(targetID)[0];
 
-	if (!el) {
-		Debug.err('Link contents not in scope');
-		return;
-	}
+	if (!el)
+		Debug.err("Link contents not in scope");
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
 
