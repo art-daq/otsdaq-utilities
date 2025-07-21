@@ -622,7 +622,7 @@ echo -e "UpdateOTS.sh:${LINENO}  \t =================="
 
 #######################################################################################################################
 #handle manual updates that should take place ONLY if it is UPDATING not committing
-if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 ]]; then
+if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 
 	echo -e "UpdateOTS.sh:${LINENO}  \t Update status will be logged here: $UPDATE_LOG_PATH"
 	echo -e "UpdateOTS.sh:${LINENO}  \t Update log start:" > $UPDATE_LOG_PATH
@@ -774,9 +774,11 @@ echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
 echo -e "UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
 echo -e "UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
-sleep 2s
-echo
+if [ "$WARN_ONLY" = 0 ]; then
+	echo -e "UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
+	sleep 2s
+	echo
+fi
 #print checkin log but hide gratuitous Data_ and databases_ lines
 
 
