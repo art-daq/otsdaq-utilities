@@ -622,8 +622,8 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
        {
             __SS__ << "Trigger script path not defined! Please use environment variable 'OTS_CUSTOM_TRIGGER_SCRIPT' or contact admins." << __E__;
             __SS_THROW__;
-        }  
-	} 
+        }
+	}
 
 }  // end doTriggeredAction()
 
@@ -668,7 +668,7 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 		if(StringMacros::vectorToString(customTrigger.needleSubstrings, {'*'}) ==
 		   triggerNeedle)
 		{
-			__SUP_SS__ << "Failure! Can not add Custom Count Search String that already "
+			__SUP_SS__ << "Failure! Can not add Custom Count Se/hoarch String that already "
 			              "exists. Found '"
 			           << triggerNeedle
 			           << "' already existing at priority = " << currentPriority << __E__;
@@ -1391,7 +1391,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			             << appInfo.second.getId()
 			             << " name = " << appInfo.second.getName()
 			             << " class = " << appInfo.second.getClass()
-			             << " hostname = " << appInfo.second.getHostname() << __E__;
+			             << " h/hoostname = " << appInfo.second.getHostname() << __E__;
 			try
 			{
 				xoap::MessageReference retMsg =
