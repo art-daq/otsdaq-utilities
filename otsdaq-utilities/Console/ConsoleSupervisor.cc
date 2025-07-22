@@ -55,7 +55,8 @@ const std::set<std::string> ConsoleSupervisor::CUSTOM_TRIGGER_ACTIONS({"Count On
                                                                        "Stop",
                                                                        "Pause",
                                                                        "Soft Error",
-                                                                       "Hard Error"});
+                                                                       "Hard Error",
+																	   "Run Script"});
 
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE      = "TRACE";
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE_PLUS = "TRACE+";
@@ -540,6 +541,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	//		Soft Error
 	//		Hard Error
 	//		System Message
+	//      Run Script
 
 	if(CUSTOM_TRIGGER_ACTIONS.find(triggeredAction.action) ==
 	   CUSTOM_TRIGGER_ACTIONS.end())
@@ -604,6 +606,25 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		__SUP_COUTV__("FSM Stop triggered from console");
 	}
+	else if(triggeredAction.action == "Run Script")
+	{
+		__COUT_INFO__<< "testing" ;
+		std::string triggerScriptPath = "";
+		std::string scriptResult = "";
+		try
+        {
+           triggerScriptPath = __ENV__("OTS_CUSTOM_TRIGGER_SCRIPT");
+		   triggerScriptPath = "source " + triggerScriptPath;
+		   scriptResult = StringMacros::exec(triggerScriptPath.c_str()); 
+		   __COUT_INFO__<< scriptResult ;
+        }
+        catch(...)
+       {
+            __SS__ << "Trigger script path not defined! Please use environment variable 'OTS_CUSTOM_TRIGGER_SCRIPT' or contact admins." << __E__;
+            __SS_THROW__;
+        }  
+	} 
+	//this is where the elif needs to go to run the custom script i belive 
 
 }  // end doTriggeredAction()
 
@@ -680,11 +701,13 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 
 	if(CUSTOM_TRIGGER_ACTIONS.find(triggerAction) == CUSTOM_TRIGGER_ACTIONS.end())
 	{
+
 		__SUP_SS__ << "Unrecognized triggered action '" << triggerAction
 		           << ",' valid actions are "
 		           << StringMacros::setToString(CUSTOM_TRIGGER_ACTIONS) << __E__;
 		__SUP_SS_THROW__;
 	}
+	
 
 	//insert new custom count at priority position
 	priorityCustomTriggerList_.insert(priorityCustomTriggerList_.begin() + priority,
@@ -1427,7 +1450,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
-		SOAPParameters rxParameters;  // params for xoap to recv
+		SOAPParameters rxParameters;  // pModifyCustomCountsAndActionarams for xoap to recv
 		rxParameters.addParameter("Command");
 		rxParameters.addParameter("Error");
 		rxParameters.addParameter("TRACETriggerStatus");

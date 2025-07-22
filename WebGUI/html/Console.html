@@ -2297,7 +2297,7 @@
 							});
 					str += "</input>";
 
-					var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+					var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message", "Run Script"];
 					str += "with action: ";
 					str += DesktopContent.htmlOpen("select",
 							{
@@ -3313,7 +3313,7 @@
 					}
 					else if(preset == "Action")
 					{
-						var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+						var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message", "Run Script"];
 						str += DesktopContent.htmlOpen("select",
 								{
 										"class" : 	"ac_menuLink",
@@ -3679,7 +3679,7 @@
 					var doLoop = DesktopContent.getXMLValue(customCountList[a],"doLoop");
 					var action = DesktopContent.getXMLValue(customCountList[a],"action");
 					var armed = DesktopContent.getXMLValue(customCountList[a],"isArmed");
-
+					
 					//Note: A valid class name should start with an underscore (_), a hyphen (-) or a letter (a-z)/(A-Z) which is followed by any numbers, hyphens, underscores, letters.
 					//so for custom filter span, must clean and place leading underscore for leading numbers
 					// It escapes all characters except: A–Z a–z 0–9 - _ . ! ~ * ' ( )
@@ -3855,6 +3855,7 @@
 				if(action == "Pause FSM + System Message") action = "Pause";
 				else if(action == "Stop FSM + System Message") action = "Stop";
 				else if(action == "Halt FSM + System Message") action = "Halt";
+				else if(action == "Run Script") action = "Run Script";
 
 				DesktopContent.XMLHttpRequest(
 						"Request?RequestType=AddCustomCountsAndAction",
@@ -3877,7 +3878,8 @@
 
 				var buttonDo = document.getElementById("ac_modifyCustomButtonDoSelect").value;
 				Debug.log("Modifying Custom Count & Action",buttonDo);
-
+				//Debug.warn("theh thi not working or maybe it is ");
+				Debug.warn(buttonDo);
 				var rows = document.getElementsByClassName("ac_row");
 
 				var currentNeedleCSV = "";
@@ -3922,11 +3924,12 @@
 				else if(buttonDo == "Action")
 				{
 					var action = document.getElementById("ac_modifyCustomActionSelect").value.trim();
-
+					Debug.warn("test test test");
 					//translate action for server
 					if(action == "Pause FSM + System Message") action = "Pause";
 					else if(action == "Stop FSM + System Message") action = "Stop";
 					else if(action == "Halt FSM + System Message") action = "Halt";
+					
 
 					postParam += "&action=" + encodeURIComponent(action);
 				}
