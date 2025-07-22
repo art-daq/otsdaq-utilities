@@ -624,7 +624,6 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
             __SS_THROW__;
         }  
 	} 
-	//this is where the elif needs to go to run the custom script i belive 
 
 }  // end doTriggeredAction()
 
@@ -698,16 +697,15 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	//		Soft Error
 	//		Hard Error
 	//		System Message
+	//		Run Script
 
 	if(CUSTOM_TRIGGER_ACTIONS.find(triggerAction) == CUSTOM_TRIGGER_ACTIONS.end())
 	{
-
 		__SUP_SS__ << "Unrecognized triggered action '" << triggerAction
 		           << ",' valid actions are "
 		           << StringMacros::setToString(CUSTOM_TRIGGER_ACTIONS) << __E__;
 		__SUP_SS_THROW__;
 	}
-	
 
 	//insert new custom count at priority position
 	priorityCustomTriggerList_.insert(priorityCustomTriggerList_.begin() + priority,
@@ -1450,7 +1448,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
-		SOAPParameters rxParameters;  // pModifyCustomCountsAndActionarams for xoap to recv
+		SOAPParameters rxParameters;  // prams for xoap to recv
 		rxParameters.addParameter("Command");
 		rxParameters.addParameter("Error");
 		rxParameters.addParameter("TRACETriggerStatus");

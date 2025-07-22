@@ -3679,7 +3679,6 @@
 					var doLoop = DesktopContent.getXMLValue(customCountList[a],"doLoop");
 					var action = DesktopContent.getXMLValue(customCountList[a],"action");
 					var armed = DesktopContent.getXMLValue(customCountList[a],"isArmed");
-					
 					//Note: A valid class name should start with an underscore (_), a hyphen (-) or a letter (a-z)/(A-Z) which is followed by any numbers, hyphens, underscores, letters.
 					//so for custom filter span, must clean and place leading underscore for leading numbers
 					// It escapes all characters except: A–Z a–z 0–9 - _ . ! ~ * ' ( )
@@ -3878,8 +3877,6 @@
 
 				var buttonDo = document.getElementById("ac_modifyCustomButtonDoSelect").value;
 				Debug.log("Modifying Custom Count & Action",buttonDo);
-				//Debug.warn("theh thi not working or maybe it is ");
-				Debug.warn(buttonDo);
 				var rows = document.getElementsByClassName("ac_row");
 
 				var currentNeedleCSV = "";
@@ -3924,16 +3921,14 @@
 				else if(buttonDo == "Action")
 				{
 					var action = document.getElementById("ac_modifyCustomActionSelect").value.trim();
-					Debug.warn("test test test");
 					//translate action for server
 					if(action == "Pause FSM + System Message") action = "Pause";
 					else if(action == "Stop FSM + System Message") action = "Stop";
 					else if(action == "Halt FSM + System Message") action = "Halt";
-					
 
 					postParam += "&action=" + encodeURIComponent(action);
 				}
-				else if(buttonDo == "Search String")
+				else if(buttonDo and security== "Search String")
 				{
 					var needle = document.getElementById("ac_modifyCustomCountEntry").value.trim();
 					postParam += "&needle=" + encodeURIComponent(needle);
