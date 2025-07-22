@@ -1448,7 +1448,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
-		SOAPParameters rxParameters;  // prams for xoap to recv
+		SOAPParameters rxParameters;  // params for xoap to recv
 		rxParameters.addParameter("Command");
 		rxParameters.addParameter("Error");
 		rxParameters.addParameter("TRACETriggerStatus");
