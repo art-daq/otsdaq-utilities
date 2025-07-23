@@ -615,7 +615,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
            triggerScriptPath = __ENV__("OTS_CUSTOM_TRIGGER_SCRIPT");
 		   triggerScriptPath = "source " + triggerScriptPath;
 		   scriptResult = StringMacros::exec(triggerScriptPath.c_str());
-		   __COUT_INFO__<< scriptResult ;
+		   __COUT_INFO__<< "The Script " << triggerScriptPath << " Was launched, here is the result " << scriptResult ;
         }
         catch(...)
        {
