@@ -167,7 +167,16 @@ function updateUserData
 
 	LOC_OTS_DIR=$OTSDAQ_DIR
 	if [ ! -d $LOC_OTS_DIR/data-core ]; then
-		LOC_OTS_DIR="$OTSDAQ_LIB/../"
+		if [[ "x${OTSDAQ_LIB}" != "x" ]]; then
+			LOC_OTS_DIR="$OTSDAQ_LIB/../"
+		fi
+		# If still not found, try spack location
+		if [ ! -d $LOC_OTS_DIR/data-core ]; then
+			SPACK_OTSDAQ=$(spack location -i otsdaq 2>/dev/null)
+			if [ -d "$SPACK_OTSDAQ/data-core" ]; then
+				LOC_OTS_DIR="$SPACK_OTSDAQ"
+			fi
+		fi
 	fi
 
 	echo
@@ -355,6 +364,16 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
 			# else
 			# 	echo "You are on main or develop"
+			fi
+			#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
+			missing=$(comm -23 \
+				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
+				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
+				| paste -sd', ' -)
+			if [ -n "$missing" ]; then
+				echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
+			# else
+				# echo "All local branches are represented on origin."
 			fi
 			cd -
 		else
@@ -560,6 +579,16 @@ for p in ${REPO_DIR[@]}; do
 		# else
 		# 	echo "You are on main or develop"
 		fi
+		#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
+		missing=$(comm -23 \
+			<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
+			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
+			| paste -sd', ' -)
+		if [ -n "$missing" ]; then
+			echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
+		# else
+			# echo "All local branches are represented on origin."
+		fi
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull
@@ -593,7 +622,7 @@ echo -e "UpdateOTS.sh:${LINENO}  \t =================="
 
 #######################################################################################################################
 #handle manual updates that should take place ONLY if it is UPDATING not committing
-if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 ]]; then
+if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 
 	echo -e "UpdateOTS.sh:${LINENO}  \t Update status will be logged here: $UPDATE_LOG_PATH"
 	echo -e "UpdateOTS.sh:${LINENO}  \t Update log start:" > $UPDATE_LOG_PATH
@@ -745,9 +774,11 @@ echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
 echo -e "UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
 echo -e "UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
-sleep 2s
-echo
+if [ "$WARN_ONLY" = 0 ]; then
+	echo -e "UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
+	sleep 2s
+	echo
+fi
 #print checkin log but hide gratuitous Data_ and databases_ lines
 
 
