@@ -192,6 +192,11 @@
 			width: 650px;
 		}
 
+		.export-btns {
+			cursor: pointer;
+			margin-left: 15px;
+		}
+
 	</style>
 
 
@@ -246,6 +251,7 @@
 			//toggleSequenceMode()
 			//loadSequnces()
 			//makeSequencePublic()
+			//copyOutput()
 
 		var verticalOrientation_ = true;
 		var sequenceMode_ = false;
@@ -1226,7 +1232,12 @@
 								"rowspan": maxRow,
 								"width":"400px",
 							},
-						"<h3>Macro output will be displayed here.</h3>"
+						"<h3 style='display: flex; align-items: center;justify-content: center;'>" +
+						"Macro output will be displayed here" +
+							"<div class='export-btns' onclick='copyOutput()'>" +
+								"<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png' alt='Copy History' title='Copy History'>" +
+							"</div>" +
+						"</h3>"
 						/*innerHTML*/,true /*doCloseTag*/);
 
 					// add the history
@@ -3547,6 +3558,27 @@
 			}
 		} //end getOperatorSymbol()
 
+		//=====================================================================================
+		//copyOutput ~~
+		function copyOutput()
+		{
+			const outputEl = document.getElementById("macroModule-output");
+			const copyStr = outputEl.textContent;
+			navigator.clipboard.writeText(copyStr)
+			.then(() => {
+				const el = document.getElementById("copybtn");
+				const original = el.src;
+
+				el.src = "/WebPath/images/windowContentImages/loader-Settings.gif";
+
+				setTimeout(()=>{
+					el.src = original;
+				}, 500);
+			})
+			.catch(e => {
+				Debug.err("Error in copying history", e)
+			});
+		}
 
 		// END SEQUENCE CONTROL
 		//=====================================================================================
