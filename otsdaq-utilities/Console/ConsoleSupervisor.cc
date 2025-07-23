@@ -608,7 +608,6 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	}
 	else if(triggeredAction.action == "Run Script")
 	{
-		__COUT_INFO__<< "testing" ;
 		std::string triggerScriptPath = "";
 		std::string scriptResult = "";
 		try
@@ -1177,10 +1176,26 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		SOAPParameters rxParameters;  // params for xoap to recv
 		rxParameters.addParameter("Command");
 		rxParameters.addParameter("Error");
+		traceMapToXDAQHostname_.clear();  // reset
+
+		std::string traceList = "";
+		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
+		for(const auto& appInfo : allTraceApps)
+		{
+			__SUP_COUT__ << "Supervisor hostname = " << appInfo.first << "/"
+			             << appInfo.second.getId()
 		rxParameters.addParameter("TRACEHostnameList");
 		rxParameters.addParameter("TRACEList");
 
 		traceMapToXDAQHostname_.clear();  // reset
+		traceMapToXDAQHostname_.clear();  // reset
+
+		std::string traceList = "";
+		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
+		for(const auto& appInfo : allTraceApps)
+		{
+			__SUP_COUT__ << "Supervisor hostname = " << appInfo.first << "/"
+			             << appInfo.second.getId()
 
 		std::string traceList = "";
 		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
@@ -1206,7 +1221,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 				{
 					__SUP_SS__ << "Unrecognized command at destination TRACE Supervisor "
 					              "hostname = "
-					           << appInfo.first << "/" << appInfo.second.getId()
+					           << appInfo.first << "/				else if(action == "Run Script") action = "Run Script";" << appInfo.second.getId()
 					           << " name = " << appInfo.second.getName()
 					           << " class = " << appInfo.second.getClass()
 					           << " hostname = " << appInfo.second.getHostname() << __E__;
