@@ -1188,14 +1188,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		rxParameters.addParameter("TRACEList");
 
 		traceMapToXDAQHostname_.clear();  // reset
-		traceMapToXDAQHostname_.clear();  // reset
-
-		std::string traceList = "";
-		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
-		for(const auto& appInfo : allTraceApps)
-		{
-			__SUP_COUT__ << "Supervisor hostname = " << appInfo.first << "/"
-			             << appInfo.second.getId()
 
 		std::string traceList = "";
 		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
