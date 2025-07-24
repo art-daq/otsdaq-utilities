@@ -625,7 +625,6 @@
 			var _advancedPreset_ALL = 7;
 			var _advancedMaskPreset = _advancedPreset_MASK;
 
-
 			var _traceBIT_STANDARDS = {0: "Fatal", 1: "Alert", 2: "Critical", 3: "Error",
 									   4: "Warning", 5: "Notice", 6: "Info", 7: "Log", 8: "Debug", 9: "Trace"};
 
@@ -1157,16 +1156,17 @@
 			//=====================================================================================
 			//initSideBar ~
 			function initSideBar()
-			{
-
+			{				
 				var str = "";
 
 				str += "<a id='filterControlsLink' class='consoleLink' " +
 						"href='Javascript:toggleFilterControls();' " +
 						"title='Toggle Filter Controls' >Hide Filters</a>";
+			
 				str += "<a id='advancedControlsLink' class='consoleLink' " +
-						"onclick='toggleAdvancedControls();' " +
-						"title='Toggle advanced controls' >Advanced</a>";
+						"onclick=\"toggleAdvancedControls(); " +
+                  		"this.textContent = (this.textContent === 'Exit Adv.') ? 'Advanced' : 'Exit Adv.';\" " +
+      					"title='Toggle advanced controls'>Advanced</a>"; 
 
 				str += "<div id='filterContainer'>";
 				for(var f in _FIELDS_TO_OBSERVE) //create filter divs for each field's multiselect box
@@ -1940,7 +1940,7 @@
 					_consoleUpdateTimer = 0;
 				}
 				Debug.log("toggleAdvancedControls()");
-
+				
 				if(_advancedContainerEl.style.display == "block") //then close
 				{
 					closeAdvancedControls();
@@ -2091,7 +2091,6 @@
 			function closeAdvancedControls()
 			{
 				Debug.log("closeAdvancedControls()");
-
 				_consoleContainerEl.style.display = "block";
 				_advancedContainerEl.style.display = "none";
 			} //end closeAdvancedControls()
@@ -2298,7 +2297,7 @@
 							});
 					str += "</input>";
 
-					var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+					var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message", "Run Script"];
 					str += "with action: ";
 					str += DesktopContent.htmlOpen("select",
 							{
@@ -3314,7 +3313,7 @@
 					}
 					else if(preset == "Action")
 					{
-						var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message"];
+						var options = ["Count Only", "System Message", "Pause FSM + System Message", "Stop FSM + System Message", "Halt FSM + System Message", "Run Script"];
 						str += DesktopContent.htmlOpen("select",
 								{
 										"class" : 	"ac_menuLink",
@@ -3680,7 +3679,6 @@
 					var doLoop = DesktopContent.getXMLValue(customCountList[a],"doLoop");
 					var action = DesktopContent.getXMLValue(customCountList[a],"action");
 					var armed = DesktopContent.getXMLValue(customCountList[a],"isArmed");
-
 					//Note: A valid class name should start with an underscore (_), a hyphen (-) or a letter (a-z)/(A-Z) which is followed by any numbers, hyphens, underscores, letters.
 					//so for custom filter span, must clean and place leading underscore for leading numbers
 					// It escapes all characters except: A–Z a–z 0–9 - _ . ! ~ * ' ( )

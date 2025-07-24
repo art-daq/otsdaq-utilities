@@ -150,7 +150,11 @@ MultiSelectBox.getSelectionArray = function(el)
 	if(el.parentElement.id.indexOf("selbox-") == 0)
 		return MultiSelectBox.mySelects_[el.parentElement.id];
 	else
-		return MultiSelectBox.mySelects_[el.getElementsByClassName("mySelect")[0].id];
+	{
+		var els = el.getElementsByClassName("mySelect");
+		if(!els.length || !els[0].id) return [];
+		return MultiSelectBox.mySelects_[els[0].id];
+	}
 } //end getSelectionArray()
 
 
