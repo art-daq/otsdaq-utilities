@@ -59,16 +59,12 @@ void ConfigurationGUISupervisor::init(void)
 {
 	__SUP_COUT__ << "Initializing..." << __E__;
 
-	__SUP_COUT__ << "Activating saved context, which may prepare for normal mode..."
-	             << __E__;
 	try
 	{
+		__SUP_COUT__ << "Activating saved context, which may prepare for normal mode..."
+		             << __E__;
+
 		testXDAQContext();  // test context group activation
-		// theRemoteWebUsers_.sendSystemMessage("tracker:10","My Subject","This is my
-		// body",false /*doEmail*/); theRemoteWebUsers_.sendSystemMessage("Ryan","My
-		// Subject Dude","This is my body",false /*doEmail*/);
-		// theRemoteWebUsers_.sendSystemMessage("*","My Rad Subject","This is my
-		// body",false /*doEmail*/);
 
 		__SUP_COUT__ << "Done with test context." << __E__;
 	}
@@ -8140,6 +8136,7 @@ void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
 {
 	bool usingActiveGroups = (contextGroupName == "" || contextGroupKey.isInvalid());
 
+	//NOTE: must be same/similar code as otsdaq/otsdaq/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.cc:2332
 	const std::string& finalContextGroupName =
 	    usingActiveGroups
 	        ? cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONTEXT_TYPE)
@@ -8148,18 +8145,47 @@ void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
 	    usingActiveGroups
 	        ? cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONTEXT_TYPE)
 	        : contextGroupKey;
+	const std::string& finalConfigGroupName =
+	    cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONFIGURATION_TYPE);
+	const TableGroupKey& finalConfigGroupKey =
+	    cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONFIGURATION_TYPE);
 
-	std::stringstream layoutPath;
-	layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
-	           << "_" << finalContextGroupKey << ".dat";
-	__SUP_COUTV__(layoutPath.str());
+	FILE* fp = nullptr;
+	//first try context+config name only
+	{
+		std::stringstream layoutPath;
+		layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
+		           << "_" << finalContextGroupKey << "." << finalConfigGroupName << "_"
+		           << finalConfigGroupKey << ".dat";
 
-	FILE* fp = fopen(layoutPath.str().c_str(), "r");
+		fp = fopen(layoutPath.str().c_str(), "r");
+		if(!fp)
+		{
+			__SUP_COUT__ << "Layout file not found for '" << finalContextGroupName << "("
+			             << finalContextGroupKey << ") + " << finalConfigGroupName << "("
+			             << finalConfigGroupKey << ")': " << layoutPath.str() << __E__;
+			// return; //try context only!
+		}
+		else
+			__SUP_COUTV__(layoutPath.str());
+	}
+	//last try context name only
 	if(!fp)
 	{
-		__SUP_COUT__ << "Layout file not found for '" << finalContextGroupName << "("
-		             << finalContextGroupKey << ")'" << __E__;
-		return;
+		std::stringstream layoutPath;
+		layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
+		           << "_" << finalContextGroupKey << ".dat";
+		__SUP_COUTV__(layoutPath.str());
+
+		fp = fopen(layoutPath.str().c_str(), "r");
+		if(!fp)
+		{
+			__SUP_COUT__ << "Layout file not found for '" << finalContextGroupName << "("
+			             << finalContextGroupKey << ")': " << layoutPath.str() << __E__;
+			return;
+		}
+		else
+			__SUP_COUTV__(layoutPath.str());
 	}
 
 	// file format is line by line
@@ -8229,12 +8255,17 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
 	    usingActiveGroups
 	        ? cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONTEXT_TYPE)
 	        : contextGroupKey;
+	const std::string& finalConfigGroupName =
+	    cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONFIGURATION_TYPE);
+	const TableGroupKey& finalConfigGroupKey =
+	    cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONFIGURATION_TYPE);
 
 	__SUP_COUTV__(layoutString);
 
 	std::stringstream layoutPath;
 	layoutPath << ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH << finalContextGroupName
-	           << "_" << finalContextGroupKey << ".dat";
+	           << "_" << finalContextGroupKey << "." << finalConfigGroupName << "_"
+	           << finalConfigGroupKey << ".dat";
 	__SUP_COUTV__(layoutPath.str());
 
 	std::vector<std::string> fields = StringMacros::getVectorFromString(layoutString);
@@ -8250,8 +8281,9 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
 	if(!fp)
 	{
 		__SUP_SS__ << "Could not open layout file for writing for '"
-		           << finalContextGroupName << "(" << finalContextGroupKey << ")'"
-		           << __E__;
+		           << finalContextGroupName << "(" << finalContextGroupKey << ") + "
+		           << finalConfigGroupName << "(" << finalConfigGroupKey
+		           << ")': " << layoutPath.str() << __E__;
 		__SUP_SS_THROW__;
 	}
 
@@ -8800,11 +8832,6 @@ void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
 ///		test activation of context group
 void ConfigurationGUISupervisor::testXDAQContext()
 {
-	ConfigurationManagerRW  cfgMgrInst("ExampleUser");
-	ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
-	cfgMgr->testXDAQContext();
-	return;
-
 	try
 	{
 		__SUP_COUT__ << "Attempting test activation of the context group." << __E__;
@@ -8826,6 +8853,14 @@ void ConfigurationGUISupervisor::testXDAQContext()
 
 	/////////////////////////////////
 	// below has been used for debugging.
+
+	// ConfigurationManagerRW  cfgMgrInst("ExampleUser");
+	// __COUT_INFO__ << "Hello1!";
+	// ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
+	// __COUT_INFO__ << "Hello2!";
+	// cfgMgr->testXDAQContext();
+	// __COUT_INFO__ << "Hello3!";
+	// return;
 
 	// behave like a user
 	// start with top level xdaq context
