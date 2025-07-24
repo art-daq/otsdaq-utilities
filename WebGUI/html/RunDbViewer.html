@@ -229,8 +229,8 @@
 
 			.RunDbViewer-entryHeader {
 				clear: both;
-				border-top: 1px solid rgb(255,183,74);
-				border-left: 1px solid rgb(255,183,74);
+				border-top: 2px solid rgb(255,183,74);
+				border-left: 2px solid rgb(255,183,74);
 				border-radius: 17px;
 				height: 34px;
 			}
@@ -268,6 +268,25 @@
 				padding: 20px;
 
 				font-size: 18px;
+			}
+
+			.RunDbViewer-entryTable {
+				clear: right;
+				float: right;
+				height: 15px;
+				/*padding: 2px 10px 0 0;*/
+				width: 100%;
+				border: 1px solid rgb(245, 198, 127);
+				border-radius: 10px;			
+			}
+			.RunDbViewer-entryTable tr td:nth-child(1) {
+				text-align: left;
+				font-weight: bold;
+				color: rgb(255,183,74);
+			}
+			.RunDbViewer-entryTable tr td:nth-child(2) {
+				text-align: center;
+				color: rgb(212, 172, 111);
 			}
 
 			.RunDbViewer-entryUploads {
@@ -351,6 +370,9 @@
 
 			var _isAreaExpanded = [false, true];
 
+			var _runInfoPluginName = "";
+			var _runInfoPluginUID = "";
+
 			var _activeCategory = "";
 			var _categoryFilter = ""; //* for all, if "" go with active category
 			var _categorysArray;
@@ -411,6 +433,9 @@
 				setActiveCategory(DesktopContent.getParameter(1));
 
 				window.onresize = redrawRunDbViewer;
+
+				_runInfoPluginName = DesktopContent.getDesktopWindowParameter(0,"runInfoPluginName");
+				_runInfoPluginUID = DesktopContent.getDesktopWindowParameter(0,"runInfoPluginUID");
 
 				//check for category preselects:
 				var preselects = DesktopContent.getDesktopWindowParameter(0,"categories");
@@ -602,6 +627,8 @@
 						DesktopContent.XMLHttpRequest("Request?RequestType=RefreshRunDbViewer", 		//update category list
 								"Date=" + reqDate +
 								"&Duration=" + _refreshDuration +
+								"&runInfoPluginName=" + _runInfoPluginName +
+								"&runInfoPluginUID=" + _runInfoPluginUID +
 								"&CategoryFilter=" + encodeURIComponent(_categoryFilter),  //* for all, if "" go with active category
 								handleRefreshRunDbViewer);
 
@@ -707,6 +734,7 @@
 				el.setAttribute("style", "overflow-x: auto; width: " +
 					(condensedWidth-130) + "px;" +
 					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
+				el.style.display = "none";
 			} //end restoreBr()
 
 			//=====================================================================================
@@ -770,7 +798,7 @@
 				var artdaqPartition = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION)[0].getAttribute("value");
 				var hostName = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME)[0].getAttribute("value");
 
-				var entryText = ""; //convertForClient(
+				//var entryText = //convertForClient(
 				//	entry.getElementsByTagName("rundbviewer_entry_text")[0].getAttribute("value"));
 
 				var header = document.createElement("div");
@@ -799,6 +827,7 @@
 					else
 						replaceBrWithSpace(el);
 				}
+				//tmp.appendChild(body);
 				header.appendChild(tmp);
 				//time
 				tmp = document.createElement("div");
@@ -816,13 +845,60 @@
 				tmp.innerHTML = "Artdaq partition: " + artdaqPartition;
 				header.appendChild(tmp);
 				//body text
-				body.innerHTML = entryText;
-
+				var table = document.createElement("table");
+				table.setAttribute("class", "RunDbViewer-entryTable");
+				var entryText = document.createElement("tr");
+				entryText.setAttribute("title", "Click to load run conditions");
+				entryText.innerHTML = "<td>Condiotion ID</td><td><a href=\"#\" onclick=\"getRunConditionByID(this); return false;\">" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID)[0].getAttribute("value")) + "</a></td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Configuration name</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Configuration version</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Context name</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Context version</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Online software version</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Notes</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				body.appendChild(table);
 				//condition for condensed-view single line by removing <br>
-				replaceBrWithSpace(body); //to toggle call restoreBr(el)
+				restoreBr(body); //to toggle call restoreBr(el)
 
 				divEl.appendChild(omni);			    //add entry to div element
 			} //end displayRunDbViewerEntry()
+
+			//=====================================================================================
+			//getRunConditionByID ~~
+			function getRunConditionByID(e)
+			{
+				DesktopContent.XMLHttpRequest("Request?RequestType=getRunConditionByID", 		//update category list
+						"condition_ID=" + e.innerText,
+						handlegetRunConditionByID);
+			} //end getRunConditionByID()
+
+			//=====================================================================================
+			//handlegetRunConditionByID ~~
+			function handlegetRunConditionByID(req)
+			{
+				Debug.log("RunDbViewer handlegetRunConditionByID", req.responseText.length);
+
+			} //end handlegetRunConditionByID()
 
 			//=====================================================================================
 			//showCalendar ~~
@@ -937,7 +1013,7 @@
 				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>
 			</div>
 			<div id='generateReport' style='float:left'
-			><a id='autoRefreshLink' href="#" onclick="toggleAutoRefresh();" title='Click to toggle auto-refresh enable/disable.'>Auto-refresh is off</a></div>
+			><a id='autoRefreshLink' href="javascript:toggleAutoRefresh();" title='Click to toggle auto-refresh enable/disable.'>Auto-refresh is off</a></div>
 			<div id='generateReport' style='float:right' onmouseup='refreshRunDbViewer();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>
