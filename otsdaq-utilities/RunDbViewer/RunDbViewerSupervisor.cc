@@ -148,16 +148,23 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 		__COUT__ << "date " << date << " duration " << Duration << std::endl;
 
 		std::stringstream str;
-		std::string category   = "";
+		std::string       category = "";
 		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
 		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
-		refreshRunDbViewer(date, Duration, &xmlOut, (std::ostringstream*)&str, category, pluginName, runInfoUID);
+		refreshRunDbViewer(date,
+		                   Duration,
+		                   &xmlOut,
+		                   (std::ostringstream*)&str,
+		                   category,
+		                   pluginName,
+		                   runInfoUID);
 		__COUT__ << str.str() << std::endl;
 	}
 	else if(requestType == "getRunConditionByID")
 	{
 		// returns Run conditions for currently condition_ID
-		uint64_t    condition_ID = CgiDataUtilities::postDataAsUint64_t(cgiIn, "condition_ID");
+		uint64_t condition_ID =
+		    CgiDataUtilities::postDataAsUint64_t(cgiIn, "condition_ID");
 		getRunConditionByID(condition_ID, &xmlOut);
 	}
 	else
@@ -246,9 +253,9 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
                                                uint32_t            duration,
                                                HttpXmlDocument*    xmlOut,
                                                std::ostringstream* out,
-                                               std::string		   category,
-											   const std::string&  pluginName,
-											   const std::string&  runInfoUID)
+                                               std::string         category,
+                                               const std::string&  pluginName,
+                                               const std::string&  runInfoUID)
 {
 	if(category == "")
 		category = activeCategory_;  // default to active category
@@ -334,8 +341,8 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 //==============================================================================
 ///	getRunConditionByID
 ///		returns run conditions by condition_ID
-void RunDbViewerSupervisor::getRunConditionByID(uint64_t            condition_ID,
-                                               HttpXmlDocument*    xmlOut)
+void RunDbViewerSupervisor::getRunConditionByID(uint64_t         condition_ID,
+                                                HttpXmlDocument* xmlOut)
 {
 	std::string JSONMessage = "{ ";
 	JSONMessage += "\"condition_ID\": \"" + std::to_string(condition_ID) + "\"";
