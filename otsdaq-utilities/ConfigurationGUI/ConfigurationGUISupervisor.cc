@@ -1640,8 +1640,8 @@ void ConfigurationGUISupervisor::handleGetAffectedGroupsXML(
     const std::string&      modifiedTables)
 try
 {
-	__SUP_COUT__ << "rootGroupName " << rootGroupName << "(" << rootGroupKey << 
-		"). modifiedTables = " << modifiedTables << __E__;
+	__SUP_COUT__ << "rootGroupName " << rootGroupName << "(" << rootGroupKey
+	             << "). modifiedTables = " << modifiedTables << __E__;
 
 	std::map<std::string, std::pair<std::string, TableGroupKey>> consideredGroups =
 	    cfgMgr->getActiveTableGroups();
@@ -1817,12 +1817,13 @@ try
 			{
 				__SUP_COUT__ << "Affected by " << (*modifiedTablesMapIt).first << ":"
 				             << (*modifiedTablesMapIt).second.second << __E__;
-				
+
 				memberMap[table.first] = (*modifiedTablesMapIt).second.second;
 				(*modifiedTablesMapIt).second.first = true;  // found affected group
 
-				affected               = true;
-				if(!parentEl) parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
+				affected = true;
+				if(!parentEl)
+					parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
 			}
 		}
 
@@ -1842,20 +1843,23 @@ try
 					             << "' for Configuration Group." << __E__;
 					memberMap[table.first] = table.second.second;
 
-					if(!parentEl) parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");			
+					if(!parentEl)
+						parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
 					//indicate to client this table needs to be added to group!
 					xmlOut.addTextElementToParent("AddMemberName", table.first, parentEl);
-					xmlOut.addTextElementToParent("AddMemberVersion", table.second.second.toString(), parentEl);
+					xmlOut.addTextElementToParent(
+					    "AddMemberVersion", table.second.second.toString(), parentEl);
 
-					affected               = true;
+					affected = true;
 				}
 			}
 		}
 
 		__SUP_COUTV__(affected);
 		if(affected)
-		{		
-			if(!parentEl) parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");	
+		{
+			if(!parentEl)
+				parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
 			xmlOut.addTextElementToParent("GroupName", group.first, parentEl);
 			xmlOut.addTextElementToParent("GroupKey", group.second.toString(), parentEl);
 			xmlOut.addTextElementToParent("GroupComment", groupComment, parentEl);
