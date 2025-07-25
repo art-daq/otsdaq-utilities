@@ -2513,6 +2513,18 @@
 				str += "<tr><th>Type:</th><td class='underlineRow'>" + groupType + " Group</td></tr>";
 				str += "<tr><th>Author:</th><td class='underlineRow'>" + groupAuthor + "</td></tr>";
 				str += "<tr><th>Created:</th><td class='underlineRow'>" + groupCreationTime + "</td></tr>";
+
+				var ci = groupComment.indexOf(": ");
+				if(ci > 2)
+				{ //skip past repeated author
+					Debug.logv({groupComment});
+					var commentAuthorSubstr = groupComment.substr(0,ci+2); //include +2 in size for ": "
+					ci = groupComment.lastIndexOf(commentAuthorSubstr);		
+					if(ci < 0) ci = 0; //if not found again, keep single author name
+					Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+					groupComment = groupComment.substr(ci);
+				}
+				
 				str += "<tr><th>Comment:</th><td>" +
 					groupComment.replace(/\n/g, "<br>") + "</td></tr>";
 				str += "</table>";
@@ -3166,6 +3178,17 @@
 			str += "<tr><th>Author:</th><td class='underlineRow'>" + tableAuthor + "</td></tr>";
 			str += "<tr><th>Created:</th><td class='underlineRow'>" + tableCreationTime + "</td></tr>";
 			str += "<tr><th>Last Load:</th><td class='underlineRow'>" + tableLastAccessTime + "</td></tr>";
+
+			var ci = tableComment.indexOf(": ");
+			if(ci > 2)
+			{ //skip past repeated author
+				Debug.logv({tableComment});
+				var commentAuthorSubstr = tableComment.substr(0,ci+2); //include +2 in size for ": "
+				ci = tableComment.lastIndexOf(commentAuthorSubstr);		
+				if(ci < 0) ci = 0; //if not found again, keep single author name
+				Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+				tableComment = tableComment.substr(ci);
+			}
 			str += "<tr><th>Comment:</th><td class='underlineRow'>" +
 				tableComment.replace(/\n/g, "<br>") + "</td></tr>";
 			str += "<tr><th>Description:</th><td>";
@@ -5120,10 +5143,34 @@
 					">";
 
 				if (tableComment != "")
+				{
+					var ci = tableComment.indexOf(": ");
+					if(ci > 2)
+					{ //skip past repeated author
+						Debug.logv({tableComment});
+						var commentAuthorSubstr = tableComment.substr(0,ci+2); //include +2 in size for ": "
+						ci = tableComment.lastIndexOf(commentAuthorSubstr);		
+						if(ci < 0) ci = 0; //if not found again, keep single author name
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+						tableComment = tableComment.substr(ci);
+					}
 					treeViewHandlerStr_ += //"<td style='font-size:14px; white-space: nowrap;'>" +
 						"//" + tableComment;
+				}
 				else if (comment && comment != "")
+				{
+					var ci = comment.indexOf(": ");
+					if(ci > 2)
+					{ //skip past repeated author
+						Debug.logv({comment});
+						var commentAuthorSubstr = comment.substr(0,ci+2); //include +2 in size for ": "
+						ci = comment.lastIndexOf(commentAuthorSubstr);		
+						if(ci < 0) ci = 0; //if not found again, keep single author name
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+						comment = comment.substr(ci);
+					}
 					treeViewHandlerStr_ += "//" + comment;
+				}
 				else
 					treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; //for mouse over area
 				treeViewHandlerStr_ += "</td>";
