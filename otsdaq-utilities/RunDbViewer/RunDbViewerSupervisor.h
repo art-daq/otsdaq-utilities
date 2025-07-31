@@ -45,7 +45,7 @@ class RunDbViewerSupervisor : public CoreSupervisorBase
 	void								getRunConditionByID				(uint64_t		     condition_ID,
 																		 HttpXmlDocument*    xmldoc     = 0,
 																		 const std::string&  pluginName = "",
-																		 const std::string&  runInfoUID = "");																		 
+																		 const std::string&  runInfoUID = "");
 	enum
 	{
 		CATEGORY_NAME_MIN_LENTH       = 3,
