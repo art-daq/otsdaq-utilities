@@ -165,7 +165,9 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 		// returns Run conditions for currently condition_ID
 		uint64_t condition_ID =
 		    CgiDataUtilities::postDataAsUint64_t(cgiIn, "condition_ID");
-		getRunConditionByID(condition_ID, &xmlOut);
+		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
+		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
+		getRunConditionByID(condition_ID, &xmlOut, pluginName, runInfoUID);
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
@@ -341,13 +343,42 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 //==============================================================================
 ///	getRunConditionByID
 ///		returns run conditions by condition_ID
-void RunDbViewerSupervisor::getRunConditionByID(uint64_t         condition_ID,
-                                                HttpXmlDocument* xmlOut)
+void RunDbViewerSupervisor::getRunConditionByID(uint64_t           condition_ID,
+                                                HttpXmlDocument*   xmlOut,
+                                                const std::string& pluginName,
+                                                const std::string& runInfoUID)
 {
-	std::string JSONMessage = "{ ";
-	JSONMessage += "\"condition_ID\": \"" + std::to_string(condition_ID) + "\"";
-	JSONMessage += "}";
+	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
+	try
+	{
+		runInfoInterface.reset(makeRunInfo(pluginName, runInfoUID));
+	}
+	catch(...)
+	{
+		;
+	}
 
-	xmlOut->addTextElementToData("JSON", JSONMessage);
-	__COUT__ << "getRunConditionByID - JSONMessage: " << JSONMessage << __E__;
+	if(runInfoInterface == nullptr)
+	{
+		__SS__ << "runInfo Db interface plugin construction failed of " << pluginName
+		       << __E__;
+		__SS_THROW__;
+	}
+
+	if(xmlOut)
+	{
+		xmlOut->addTextElementToData("condition_id", std::to_string(condition_ID));
+
+		std::vector<std::vector<std::string>> conditionRecords =
+		    runInfoInterface->getRunConditionByID(condition_ID);
+		int i = 0;
+		for(auto conditionRecord : conditionRecords)
+		{
+			xmlOut->addTextElementToData("blob", conditionRecord[0]);
+			xmlOut->addTextElementToData("commit_time", conditionRecord[1]);
+			i++;
+		}
+
+		__COUT__ << "getRunConditionByID - records = " << i << __E__;
+	}
 }  //end getRunConditionByID()

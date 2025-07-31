@@ -888,7 +888,9 @@
 			function getRunConditionByID(e)
 			{
 				DesktopContent.XMLHttpRequest("Request?RequestType=getRunConditionByID", 		//update category list
-						"condition_ID=" + e.innerText,
+						"condition_ID=" 		+ e.innerText +
+						"&runInfoPluginName="	+ _runInfoPluginName +
+						"&runInfoPluginUID="	+ _runInfoPluginUID,
 						handlegetRunConditionByID);
 			} //end getRunConditionByID()
 
@@ -898,6 +900,67 @@
 			{
 				Debug.log("RunDbViewer handlegetRunConditionByID", req.responseText.length);
 
+
+				var condition_id = convertForClient(req.responseXML.getElementsByTagName("condition_id")[0].getAttribute("value"));
+				var blob = convertForClient(req.responseXML.getElementsByTagName("blob")[0].getAttribute("value"));
+				var commitTime = convertForClient(req.responseXML.getElementsByTagName("commit_time")[0].getAttribute("value"));
+
+				// var url = location.origin + "/WebPath/html/RunDbViewer.html?urn=" + DesktopContent._localUrnLid + "&innerHTML=" + encodeURIComponent(blob);
+				var url =
+						"<html>\
+						<head>\
+						<title>Nuova Finestra</title>\
+						<style type=\"text/css\">\
+							.custom-alert {\
+								position: fixed;\
+								top: 50%;\
+								left: 50%;\
+								transform: translate(-50%, -50%);\
+								background-color: #333;\
+								color: white;\
+								padding: 20px 30px;\
+								border-radius: 10px;\
+								box-shadow: 0 0 10px rgba(0,0,0,0.5);\
+								z-index: 1000;\
+								font-size: 16px;\
+								display: none;\
+								opacity: 0;\
+								transition: opacity 0.3s ease;\
+							}\
+						</style>\
+						</head>\
+						<body style=\"background-color:white;\">\
+						<button style=\"margin-bottom: 20px;\"\
+						onclick=\"(async () => {\
+							try {\
+							const text = document.body.innerText;\
+							await navigator.clipboard.writeText(text);\
+							let alert = document.getElementById('inlineCustomAlert');\
+							if (!alert) {\
+								alert = document.createElement('div');\
+								alert.id = 'inlineCustomAlert';\
+								alert.className = 'custom-alert';\
+								document.body.appendChild(alert);\
+							}\
+							alert.textContent = 'Text copied to clipboard!';\
+							alert.style.display = 'block';\
+							setTimeout(() => { alert.style.opacity = 1; }, 10);\
+							setTimeout(() => {\
+								alert.style.opacity = 0;\
+								setTimeout(() => { alert.style.display = 'none'; }, 300);\
+							}, 2000);\
+							} catch (err) {\
+							console.error('Copy failed:', err);\
+							}\
+						})()\">Copy Page Text</button>\
+						<div>" + blob + "</div>\
+						<!-- Custom alert box -->\
+						<div id=\"customAlert\"></div>\
+						</body>\
+						</html>\
+					";
+				Debug.log({url});
+				DesktopContent.openNewWindow("Run condition ID", condition_id, url, false /*unique*/);
 			} //end handlegetRunConditionByID()
 
 			//=====================================================================================
