@@ -55,7 +55,8 @@ const std::set<std::string> ConsoleSupervisor::CUSTOM_TRIGGER_ACTIONS({"Count On
                                                                        "Stop",
                                                                        "Pause",
                                                                        "Soft Error",
-                                                                       "Hard Error"});
+                                                                       "Hard Error",
+                                                                       "Run Script"});
 
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE      = "TRACE";
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE_PLUS = "TRACE+";
@@ -540,6 +541,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 	//		Soft Error
 	//		Hard Error
 	//		System Message
+	//      Run Script
 
 	if(CUSTOM_TRIGGER_ACTIONS.find(triggeredAction.action) ==
 	   CUSTOM_TRIGGER_ACTIONS.end())
@@ -603,6 +605,26 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 			    "FSM Stop from Console Supervisor Triggered Action has failed!");
 		}
 		__SUP_COUTV__("FSM Stop triggered from console");
+	}
+	else if(triggeredAction.action == "Run Script")
+	{
+		std::string triggerScriptPath = "";
+		std::string scriptResult      = "";
+		try
+		{
+			triggerScriptPath = __ENV__("OTS_CUSTOM_TRIGGER_SCRIPT");
+			triggerScriptPath = "source " + triggerScriptPath;
+			scriptResult      = StringMacros::exec(triggerScriptPath.c_str());
+			__COUT_INFO__ << "The Script " << triggerScriptPath
+			              << " Was launched, here is the result " << scriptResult;
+		}
+		catch(...)
+		{
+			__SS__ << "Trigger script path not defined! Please use environment variable "
+			          "'OTS_CUSTOM_TRIGGER_SCRIPT' or contact admins."
+			       << __E__;
+			__SS_THROW__;
+		}
 	}
 
 }  // end doTriggeredAction()
@@ -677,6 +699,7 @@ void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedl
 	//		Soft Error
 	//		Hard Error
 	//		System Message
+	//		Run Script
 
 	if(CUSTOM_TRIGGER_ACTIONS.find(triggerAction) == CUSTOM_TRIGGER_ACTIONS.end())
 	{

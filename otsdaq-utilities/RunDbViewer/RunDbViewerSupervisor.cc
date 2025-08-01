@@ -91,7 +91,7 @@ void RunDbViewerSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "RefreshRunDbViewer");
+	    "RefreshRunDbViewer | getRunConditionByID");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
 	    "LogImage | LogReport");
@@ -146,9 +146,28 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 		sscanf(Date.c_str(), "%li", &date);  // scan for unsigned long
 
 		__COUT__ << "date " << date << " duration " << Duration << std::endl;
+
 		std::stringstream str;
-		refreshRunDbViewer(date, Duration, &xmlOut, (std::ostringstream*)&str);
+		std::string       category = "";
+		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
+		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
+		refreshRunDbViewer(date,
+		                   Duration,
+		                   &xmlOut,
+		                   (std::ostringstream*)&str,
+		                   category,
+		                   pluginName,
+		                   runInfoUID);
 		__COUT__ << str.str() << std::endl;
+	}
+	else if(requestType == "getRunConditionByID")
+	{
+		// returns Run conditions for currently condition_ID
+		uint64_t condition_ID =
+		    CgiDataUtilities::postDataAsUint64_t(cgiIn, "condition_ID");
+		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
+		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
+		getRunConditionByID(condition_ID, &xmlOut, pluginName, runInfoUID);
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
@@ -164,8 +183,8 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
                                           const WebUsers::RequestUserInfo& /*userInfo*/)
 {
 	// Commands
-	//	LogImage
-	//	LogReport
+	// LogImage
+	// LogReport
 
 	if(requestType == "LogImage")
 	{
@@ -236,7 +255,9 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
                                                uint32_t            duration,
                                                HttpXmlDocument*    xmlOut,
                                                std::ostringstream* out,
-                                               std::string         category)
+                                               std::string         category,
+                                               const std::string&  pluginName,
+                                               const std::string&  runInfoUID)
 {
 	if(category == "")
 		category = activeCategory_;  // default to active category
@@ -260,9 +281,6 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 	if(xmlOut)
 		xmlOut->addTextElementToData(XML_MOST_RECENT_DAY,
 		                             dayIndexStr);  // send most recent day index
-
-	std::string pluginName = "DBRunInfo";
-	std::string runInfoUID = "runInfoDbViewerUID1";
 
 	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
 	try
@@ -321,3 +339,46 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		}
 	}
 }  //end refreshRunDbViewer()
+
+//==============================================================================
+///	getRunConditionByID
+///		returns run conditions by condition_ID
+void RunDbViewerSupervisor::getRunConditionByID(uint64_t           condition_ID,
+                                                HttpXmlDocument*   xmlOut,
+                                                const std::string& pluginName,
+                                                const std::string& runInfoUID)
+{
+	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
+	try
+	{
+		runInfoInterface.reset(makeRunInfo(pluginName, runInfoUID));
+	}
+	catch(...)
+	{
+		;
+	}
+
+	if(runInfoInterface == nullptr)
+	{
+		__SS__ << "runInfo Db interface plugin construction failed of " << pluginName
+		       << __E__;
+		__SS_THROW__;
+	}
+
+	if(xmlOut)
+	{
+		xmlOut->addTextElementToData("condition_id", std::to_string(condition_ID));
+
+		std::vector<std::vector<std::string>> conditionRecords =
+		    runInfoInterface->getRunConditionByID(condition_ID);
+		int i = 0;
+		for(auto conditionRecord : conditionRecords)
+		{
+			xmlOut->addTextElementToData("blob", conditionRecord[0]);
+			xmlOut->addTextElementToData("commit_time", conditionRecord[1]);
+			i++;
+		}
+
+		__COUT__ << "getRunConditionByID - records = " << i << __E__;
+	}
+}  //end getRunConditionByID()
