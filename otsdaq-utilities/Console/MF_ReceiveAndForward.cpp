@@ -152,8 +152,7 @@ int main(int argc, char** argv)
 			fclose(fp);
 		}
 		else  // else use defaults
-			__COUT__ << "port parameter file failed to open: " << argv[1]
-			         << __E__;
+			__COUT__ << "port parameter file failed to open: " << argv[1] << __E__;
 	}
 	__COUT__ << "Forwarding from: " << myPort_ << " to: " << myFwdIP_ << ":" << myFwdPort_
 	         << __E__;
@@ -382,12 +381,12 @@ int main(int argc, char** argv)
 				// 	&buff[buffi + mf_i] << " ==> " << newSequenceId << __E__;
 				// avoid startup sequencing problem with MF
 				if(enablePrintouts &&
-				    sourceLastSequenceID.find(processId) !=
-				        sourceLastSequenceID.end() &&  // ensure not first packet received
-				    ((newSequenceId == 0 && sourceLastSequenceID[processId] !=
-				                                (unsigned int)-1) ||  // wrap around case
-				     newSequenceId !=
-				         sourceLastSequenceID[processId] + 1))  // normal sequence case
+				   sourceLastSequenceID.find(processId) !=
+				       sourceLastSequenceID.end() &&  // ensure not first packet received
+				   ((newSequenceId == 0 && sourceLastSequenceID[processId] !=
+				                               (unsigned int)-1) ||  // wrap around case
+				    newSequenceId !=
+				        sourceLastSequenceID[processId] + 1))  // normal sequence case
 				{
 					// missed some messages!
 					std::cout << "MFfwd missed " << newSequenceId << " vs "
@@ -460,7 +459,7 @@ int main(int argc, char** argv)
 			{
 				if(enablePrintouts)
 					__COUT__ << "Pack count ==> " << packCount
-							<< " sz=" << buffi - buffStarti - 1 << __E__;
+					         << " sz=" << buffi - buffStarti - 1 << __E__;
 				// send buffer without closing null character
 				if((sentBytes = sendto(sendSockfd,
 				                       &buff[buffStarti],
@@ -486,7 +485,7 @@ int main(int argc, char** argv)
 				{
 					if(enablePrintouts)
 						__COUT__ << "Wrap Pack count ==> " << packCount
-								<< " sz=" << buffi - buffStarti - 1 << __E__;
+						         << " sz=" << buffi - buffStarti - 1 << __E__;
 					if((sentBytes = sendto(sendSockfd,
 					                       &buff[buffStarti],
 					                       buffi - buffStarti - 1,
@@ -514,7 +513,7 @@ int main(int argc, char** argv)
 				{
 					if(enablePrintouts)
 						__COUT__ << "WrapAvoid Pack count ==> " << packCount
-								<< " sz=" << buffi - buffStarti - 1 << __E__;
+						         << " sz=" << buffi - buffStarti - 1 << __E__;
 					if((sentBytes = sendto(sendSockfd,
 					                       &buff[buffStarti],
 					                       buffi - buffStarti - 1,
@@ -554,7 +553,7 @@ int main(int argc, char** argv)
 				// forward partial packet while idle
 				if(enablePrintouts)
 					__COUT__ << "Partial Pack count ==> " << packCount - 1
-							<< " sz=" << buffi - buffStarti - 1 << __E__;
+					         << " sz=" << buffi - buffStarti - 1 << __E__;
 
 				if((sentBytes = sendto(sendSockfd,
 				                       &buff[buffStarti],
