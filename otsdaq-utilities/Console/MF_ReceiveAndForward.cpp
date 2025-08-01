@@ -48,7 +48,7 @@
 	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
 	     : __FILE__)
 #define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
-#define __COUT_HDR_FL__ __SHORTFILE__ << " " << __COUT_HDR_L__
+#define __COUT_HDR_FL__ __SHORTFILE__ << "" << __COUT_HDR_L__
 
 #define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ": "
 #define __COUT_ERR__ __COUT_TYPE__(LogError) << __COUT_HDR_FL__
