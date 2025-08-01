@@ -2289,8 +2289,13 @@
 		{
 			Debug.log("setupSpecificTableGroup",groupName, groupKey, backLinkStr, anchorTarget, modifiedTables);
 
+			//cancel any existing popups
+			{ var el = document.getElementById("popUpDialog"); if(el) el.parentNode.removeChild(el); }
+
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
+			
+
 			var param = "";
 			if (backLinkStr && backLinkStr != "")
 				param += "&backLinkStr=" + backLinkStr;
@@ -14074,6 +14079,9 @@
 		{
 			Debug.log("editCellCancel");
 
+			//cancel any existing popups
+			{ var el = document.getElementById("popUpDialog"); if(el) el.parentNode.removeChild(el); }
+
 			if (_editingCellEl) //return old value, convert from text to html
 			{
 				var isTreeView = document.getElementById("treeView-ConfigGroupLink") ? true : false;
@@ -15728,8 +15736,10 @@
 						str += "<a onclick='" +
 							"var el = document.getElementById(\"popUpDialog-bumpGroupVersions\");" +
 							"var forFirefox = (el.checked = !el.checked);" +
-							" handlePopUpHeightToggle(" + h + "," + gh + "); return false;'>";
-						str += "Save Affected Groups as New Keys";
+							" handlePopUpHeightToggle(" + h + "," + gh + "); return false;' " +
+							" title='Save or add modified tables to the affected groups to create a new group key.' " +
+							">";
+						str += "Save/Add Modified Tables to Affected Groups";
 						str += "</a>";
 						str += "</input><br>";
 

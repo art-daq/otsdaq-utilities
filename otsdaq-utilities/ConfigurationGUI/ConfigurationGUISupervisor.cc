@@ -1623,8 +1623,15 @@ catch(...)
 ///		by the tables changing in the modified tables list.
 ///
 ///	returns for each group affected:
-///		the group name/key affected
-///			and modified member map
+///		- the group name/key affected
+///		- and modified member map
+///
+/// determine type of rootGroup
+/// replace the matching type in considered groups
+/// for each considered table group
+///
+///	check if there is a modified table that is also a member of that group
+///	if so, make xml entry pair
 void ConfigurationGUISupervisor::handleGetAffectedGroupsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
@@ -1633,13 +1640,8 @@ void ConfigurationGUISupervisor::handleGetAffectedGroupsXML(
     const std::string&      modifiedTables)
 try
 {
-	// determine type of rootGroup
-	// replace the matching type in considered groups
-	// for each considered table group
-	//
-	//	check if there is a modified table that is also a member of that group
-	//	if so,
-	//		make xml entry pair
+	__SUP_COUT__ << "rootGroupName " << rootGroupName << "(" << rootGroupKey
+	             << "). modifiedTables = " << modifiedTables << __E__;
 
 	std::map<std::string, std::pair<std::string, TableGroupKey>> consideredGroups =
 	    cfgMgr->getActiveTableGroups();
@@ -1769,7 +1771,7 @@ try
 	}
 
 	bool                     affected;
-	xercesc::DOMElement*     parentEl;
+	xercesc::DOMElement*     parentEl = nullptr;
 	std::string              groupComment;
 	std::vector<std::string> orderedGroupTypes(
 	    {ConfigurationManager::GROUP_TYPE_NAME_CONTEXT,
@@ -1803,6 +1805,7 @@ try
 		                       0,  // mostly defaults
 		                       true /*doNotLoadMember*/);
 
+		__SUP_COUTV__(StringMacros::mapToString(memberMap));
 		__SUP_COUT__ << "groupComment = " << groupComment << __E__;
 
 		for(auto& table : memberMap)
@@ -1814,9 +1817,13 @@ try
 			{
 				__SUP_COUT__ << "Affected by " << (*modifiedTablesMapIt).first << ":"
 				             << (*modifiedTablesMapIt).second.second << __E__;
-				affected               = true;
+
 				memberMap[table.first] = (*modifiedTablesMapIt).second.second;
 				(*modifiedTablesMapIt).second.first = true;  // found affected group
+
+				affected = true;
+				if(!parentEl)
+					parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
 			}
 		}
 
@@ -1835,14 +1842,24 @@ try
 					__SUP_COUT__ << "Found mockup table '" << table.first
 					             << "' for Configuration Group." << __E__;
 					memberMap[table.first] = table.second.second;
-					affected               = true;
+
+					if(!parentEl)
+						parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
+					//indicate to client this table needs to be added to group!
+					xmlOut.addTextElementToParent("AddMemberName", table.first, parentEl);
+					xmlOut.addTextElementToParent(
+					    "AddMemberVersion", table.second.second.toString(), parentEl);
+
+					affected = true;
 				}
 			}
 		}
 
+		__SUP_COUTV__(affected);
 		if(affected)
 		{
-			parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
+			if(!parentEl)
+				parentEl = xmlOut.addTextElementToData("AffectedActiveGroup", "");
 			xmlOut.addTextElementToParent("GroupName", group.first, parentEl);
 			xmlOut.addTextElementToParent("GroupKey", group.second.toString(), parentEl);
 			xmlOut.addTextElementToParent("GroupComment", groupComment, parentEl);
