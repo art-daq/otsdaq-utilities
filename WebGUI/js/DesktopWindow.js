@@ -142,8 +142,18 @@ else {
 					"windowFrameColor": Desktop.desktop.defaultWindowFrameColor
 			};
 
-			_winfrm.contentWindow.postMessage(
+			if(_winfrm.contentWindow)
+				_winfrm.contentWindow.postMessage(
 					initObject,"*");
+
+			if(_winfrm.src == "about:blank")
+			{
+				Debug.log("Custom html content found!");
+				var doc = _winfrm.contentDocument || _winfrm.contentWindow.document;
+				doc.open();
+				doc.write(_url);
+				doc.close();
+			}
 		} //end _handleWindowContentLoading()
 
 
@@ -553,7 +563,19 @@ else {
 		_winfrm.setAttribute("allow", "autoplay"); //allow sounds without user clicking page first
 		_winfrm.onload = _handleWindowContentLoading; //event to delete "Loading"
 		_winfrm.onerror = _handleWindowContentLoading; //event to delete "Loading"
-		_winfrm.setAttribute("src", _url);
+		
+		//allow custom html content (instead of url)
+		if(_url.length > 10 && _url[0] == '<' &&
+			_url[1] == 'h' && 
+			_url[2] == 't' &&
+			_url[3] == 'm' &&
+			_url[4] == 'l') 
+		{			
+			_winfrm.setAttribute("src", "about:blank");
+		}
+		else
+			_winfrm.setAttribute("src", _url);
+
 		_winfrmHolder.appendChild(_winfrm); //add frame to holder
 		this.windiv.appendChild(_winfrmHolder); //add holder to window
 
