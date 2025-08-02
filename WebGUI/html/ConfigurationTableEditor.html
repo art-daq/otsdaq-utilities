@@ -590,7 +590,7 @@
 				"&tableDescription=" + tableDescription +
 				"&columnChoicesCSV=" + colChoicesData,
 				specificTableRequestHandler,
-				1 /*handler param*/,
+				(allowOverwrite?2:1) /*handler param*/,
 				0 /*progressHandler*/,
 				true /*callHandlerOnErr*/);
 		} //end saveTable()
@@ -729,7 +729,27 @@
 			document.getElementById("overwriteButton").style.display = "none";
 
 			if(isFromSaveReq && !err)
+			{
 				Debug.log("Successful response to save request of Info for '" + tableName + "'",Debug.INFO_PRIORITY);
+
+				if(isFromSaveReq == 1) //then save was not an overwrite, so this is a new table! Provide a tooltip to remind users how to use their new table.
+				{
+					DesktopContent.tooltip(
+						"New Table",
+						"You have created a new table named '" + tableName + "!'" +
+						"<br><br>" +
+						"To use your table in <i>otsdaq</i>, it must be added to a <b>Configuration Group</b>. " +
+						"Once that new Configuration Group is given an alias (a.k.a. <b>System Alias</b> or Group Alias), it can be selected for the configure transition of the state machine." +
+						"<br><br>" +
+						"To add your table to a group, open the <b>Configuration Editor</b>, select an existing group or create a new group (e.g. from Group View). " +
+						"From an existing group, click <b>Rename Group or Add/Remove/Modify Member Tables</b>.  When choosing the tables in the group, select the checkbox next to the table name '" + 
+						tableName + "' and then save the new group." +
+						"<br><br>" +
+						"If you are new to configuring <i>otsdaq</i>, take a look at the " +
+						"<a href='https://otsdaq.fnal.gov/tutorials/first_demo/topics/configuration_primer.html' target='_blank'>otsdaq Configuration Primer</a>."
+						);
+				}
+			}
 
 			if(!req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0])
 				return;

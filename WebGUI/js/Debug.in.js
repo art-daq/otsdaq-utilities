@@ -365,6 +365,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 				var fileStr;
 				var labelStr;
 				var numOfIndents = 0; //indent for each Error decoration
+				var numOfLabels = 0; 
 				try
 				{
 					while((k = str.indexOf(" |",i)) > 0)
@@ -471,7 +472,16 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
 							//add start label
 							if(labelStr)
-								returnStr += (i > 10?"<br><b>":"") + labelStr + "</b>";
+							{
+								++numOfLabels;
+
+								if(numOfLabels % 2 == 0 && numOfIndents < 3) //every other, indent
+								{
+									returnStr += "<div style='margin-left:60px;margin-top:15px;'>"; //open indent
+									++numOfIndents;
+								}
+								returnStr += (i > 10?"<b>":"") + labelStr + "</b>";
+							}
 
 							returnStr += //if filename, add link to CodeEditor
 								DesktopContent.htmlOpen("a", //start macro module table
