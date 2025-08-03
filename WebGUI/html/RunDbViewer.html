@@ -396,6 +396,8 @@
 			var _XML_RUNDBVIEWER_ENTRY_RUN_TYPE 					= "rundbviewer_entry_run_type";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION 		= "rundbviewer_entry_run_artdaq_partition";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME			 	= "rundbviewer_entry_run_host_name";
+			var _XML_RUNDBVIEWER_ENTRY_RUN_START_TIME				= "start_time"
+			var _XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME				= "stop_time"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID			= "condition_id"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME		= "configuration_name"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION	= "configuration_version"
@@ -848,6 +850,16 @@
 				var table = document.createElement("table");
 				table.setAttribute("class", "RunDbViewer-entryTable");
 				var entryText = document.createElement("tr");
+				var dateTime = new Date(entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_START_TIME)[0].getAttribute("value"));
+				entryText.innerHTML = "<td>Start time</td><td>" + convertForClient(
+				dateTime.toDateString() + " " + dateTime.toLocaleTimeString()) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				dateTime = new Date(entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME)[0].getAttribute("value"));
+				entryText.innerHTML = "<td>Stop time</td><td>" + convertForClient(
+				dateTime.toDateString() + " " + dateTime.toLocaleTimeString()) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
 				entryText.setAttribute("title", "Click to load run conditions");
 				entryText.innerHTML = "<td>Condiotion ID</td><td><a href=\"#\" onclick=\"getRunConditionByID(this); return false;\">" + convertForClient(
 				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID)[0].getAttribute("value")) + "</a></td>";
@@ -900,63 +912,80 @@
 			{
 				Debug.log("RunDbViewer handlegetRunConditionByID", req.responseText.length);
 
-
 				var condition_id = convertForClient(req.responseXML.getElementsByTagName("condition_id")[0].getAttribute("value"));
 				var blob = convertForClient(req.responseXML.getElementsByTagName("blob")[0].getAttribute("value"));
 				var commitTime = convertForClient(req.responseXML.getElementsByTagName("commit_time")[0].getAttribute("value"));
 
-				// var url = location.origin + "/WebPath/html/RunDbViewer.html?urn=" + DesktopContent._localUrnLid + "&innerHTML=" + encodeURIComponent(blob);
 				var url =
 						"<html>\
-						<head>\
-						<title>Nuova Finestra</title>\
-						<style type=\"text/css\">\
-							.custom-alert {\
-								position: fixed;\
-								top: 50%;\
-								left: 50%;\
-								transform: translate(-50%, -50%);\
-								background-color: #333;\
-								color: white;\
-								padding: 20px 30px;\
-								border-radius: 10px;\
-								box-shadow: 0 0 10px rgba(0,0,0,0.5);\
-								z-index: 1000;\
-								font-size: 16px;\
-								display: none;\
-								opacity: 0;\
-								transition: opacity 0.3s ease;\
-							}\
-						</style>\
-						</head>\
-						<body style=\"background-color:white;\">\
-						<button style=\"margin-bottom: 20px;\"\
-						onclick=\"(async () => {\
-							try {\
-							const text = document.body.innerText;\
-							await navigator.clipboard.writeText(text);\
-							let alert = document.getElementById('inlineCustomAlert');\
-							if (!alert) {\
-								alert = document.createElement('div');\
-								alert.id = 'inlineCustomAlert';\
-								alert.className = 'custom-alert';\
-								document.body.appendChild(alert);\
-							}\
-							alert.textContent = 'Text copied to clipboard!';\
-							alert.style.display = 'block';\
-							setTimeout(() => { alert.style.opacity = 1; }, 10);\
-							setTimeout(() => {\
-								alert.style.opacity = 0;\
-								setTimeout(() => { alert.style.display = 'none'; }, 300);\
-							}, 2000);\
-							} catch (err) {\
-							console.error('Copy failed:', err);\
-							}\
-						})()\">Copy Page Text</button>\
-						<div>" + blob + "</div>\
-						<!-- Custom alert box -->\
-						<div id=\"customAlert\"></div>\
-						</body>\
+							<head>\
+								<title>Nuova Finestra</title>\
+								<style type=\"text/css\">\
+									body  {\
+										background-color:#5a4d3f;\
+										color: rgb(255,230,204);\
+										text-shadow: 0.1em 0.1em 0.2em black;\
+									}\
+									button {\
+										background-color: orange;\
+										color: white;\
+										border: 2px solid darkorange;\
+										padding: 10px 20px;\
+										border-radius: 8px;\
+										font-size: 16px;\
+										cursor: pointer;\
+										margin-bottom: 20px;\
+										transition: background-color 0.3s;\
+									}\
+									button:hover {\
+										background-color: darkorange;\
+									}\
+									.custom-alert {\
+										position: fixed;\
+										top: 50%;\
+										left: 50%;\
+										transform: translate(-50%, -50%);\
+										background-color: #333;\
+										color: white;\
+										padding: 20px 30px;\
+										border-radius: 10px;\
+										box-shadow: 0 0 10px rgba(0,0,0,0.5);\
+										z-index: 1000;\
+										font-size: 16px;\
+										display: none;\
+										opacity: 0;\
+										transition: opacity 0.3s ease;\
+									}\
+								</style>\
+							</head>\
+							<body>\
+								<button \
+								onclick=\"(async () => {\
+									try {\
+									const text = document.body.innerText;\
+									await navigator.clipboard.writeText(text);\
+									let alert = document.getElementById('inlineCustomAlert');\
+									if (!alert) {\
+										alert = document.createElement('div');\
+										alert.id = 'inlineCustomAlert';\
+										alert.className = 'custom-alert';\
+										document.body.appendChild(alert);\
+									}\
+									alert.textContent = 'Text copied to clipboard!';\
+									alert.style.display = 'block';\
+									setTimeout(() => { alert.style.opacity = 1; }, 10);\
+									setTimeout(() => {\
+										alert.style.opacity = 0;\
+										setTimeout(() => { alert.style.display = 'none'; }, 300);\
+									}, 2000);\
+									} catch (err) {\
+									console.error('Copy failed:', err);\
+									}\
+								})()\">Copy Page Text</button>\
+								<div>" + blob + "</div>\
+								<!-- Custom alert box -->\
+								<div id=\"customAlert\"></div>\
+							</body>\
 						</html>\
 					";
 				Debug.log({url});

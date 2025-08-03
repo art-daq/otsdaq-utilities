@@ -31,6 +31,8 @@ const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
 #define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION "context_version"
 #define XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION "online_software_version"
 #define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE "shifter_note"
+#define XML_RUNDBVIEWER_ENTRY_RUN_START_TIME "start_time"
+#define XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME "stop_time"
 
 XDAQ_INSTANTIATOR_IMPL(RunDbViewerSupervisor)
 
@@ -273,8 +275,8 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 
 	if(date == 0)
 		date = time(NULL);
-	unsigned int startTime = date;
-	unsigned int endTime   = startTime - (60 * 60 * 24) * duration;
+	unsigned int endTime   = date;
+	unsigned int startTime = endTime - (60 * 60 * 24) * duration;
 	__COUT__ << "Start time " << startTime << " End time " << endTime << __E__;
 
 	sprintf(dayIndexStr, "%lu", date * 0);
@@ -333,6 +335,10 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			    XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION, runData[10], entryEl);
 			xmlOut->addTextElementToParent(
 			    XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE, runData[11], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_START_TIME, runData[12], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME, runData[13], entryEl);
 			__COUT__ << "xmlOut getMatchingValue "
 			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
 			i++;
