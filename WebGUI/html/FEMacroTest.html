@@ -3668,7 +3668,7 @@ Here is the json string received:
 			Debug.log("copyOutput()");
 
 			const outputEl = document.getElementById("macroModule-output");
-			const copyStr = outputEl.innerText; //textContent;
+			const copyStr = outputEl.innerText; //use innerText to maintain new lines instead of textContent;
 			navigator.clipboard.writeText(copyStr)
 				.then(() => {
 					const el = document.getElementById("copybtn");
