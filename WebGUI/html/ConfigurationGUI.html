@@ -16792,7 +16792,20 @@
 							function ()
 							{
 						//store uploaded file and enable button
-						_tableUploadStr = this.result;
+						_tableUploadStr = this //filter out 
+										  .result
+										  .split('\n')
+										  .map(row => {
+											const cells = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+											if(!cells) return '';
+											return cells.map(cell => {
+												cell = cell.trim();
+												return (cell.startsWith("\"") && cell.endsWith("\""))
+													? cell.slice(1, -1)
+													: cell;
+											}).join(',')
+										  })
+										  .join('\n');
 						Debug.log("_tableUploadStr = " + _tableUploadStr);
 						document.getElementById('popUpDialog-submitButton').disabled = false;
 							}
@@ -16912,11 +16925,13 @@
 							//assume one th column so minus 1
 							if (c)
 								dataStr += encodeURI(colDel);
+							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(
 									cells[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim().
 									replace(new RegExp(rowDel,'g'),"${OTS_RECORD_DELIMETER}").
 									replace(new RegExp(colDel,'g'),"${OTS_FIELD_DELIMETER}")
 							); //replaces all special characters
+							dataStr += encodeURI("\"");
 						}
 					}
 				}
@@ -16934,10 +16949,12 @@
 							if (c - _CONFIG_DATA_COL_OFFSET)
 								dataStr += encodeURI(colDel);
 
+							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(cells[c].textContent.trim().
-									replace(new RegExp(rowDel,'g'),"${OTS_RECORD_DELIMETER}").
-									replace(new RegExp(colDel,'g'),"${OTS_FIELD_DELIMETER}")
+									replace(new RegExp(rowDel,'g'),"|").
+									replace(new RegExp(colDel,'g'),"$$")
 							); //replaces all special characters
+							dataStr += encodeURI("\"");
 						}
 					}
 				}
