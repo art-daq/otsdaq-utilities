@@ -2654,23 +2654,18 @@ Desktop.handleWindowHelp = function (mouseEvent)
 //==============================================================================
 Desktop.handleDashboardHelp = function (mouseEvent)
 {
-	// Check if window exists
-	if(Desktop.desktop.getForeWindow() == 0)
-	{
-		// window.open("https://github.com/art-daq/otsdaq#readme", "_blank");
-		// window.open("https://otsdaq.fnal.gov", "_blank");
-		Desktop.desktopTooltip();
-	}
-	else if(Desktop.desktop.getForeWindow().isMaximized())
+	// Check if window exists and is maximized, then show its tooltip
+	if(Desktop.desktop.getForeWindow() && 
+		Desktop.desktop.getForeWindow().isMaximized())
 	{
 		Debug.log("Help " + Desktop.desktop.getForeWindow());
 		Desktop.desktop.windowHelpById(Desktop.desktop.getForeWindow().getWindowId());
 	}
-	else
+	else //show main desktop tooltip
 	{
 		// window.open("https://github.com/art-daq/otsdaq#readme", "_blank");
 		// window.open("https://otsdaq.fnal.gov", "_blank");
-		Desktop.desktopTooltip();
+		Desktop.desktopTooltip(true /* alwaysShow */);
 	}
 	return false;
 } //end handleWindowHelp()
@@ -3136,7 +3131,7 @@ Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 //==============================================================================
 //call to show desktop tooltip
 //	shown for wiz mode and normal mode, e.g.
-Desktop.desktopTooltip = function()
+Desktop.desktopTooltip = function(alwaysShow)
 {
 
 	DesktopContent.tooltip("Desktop Introduction",
@@ -3220,5 +3215,5 @@ Desktop.desktopTooltip = function()
 
 			"\n\nNote, if you would like to take a look at the available online documentation, " +
 			"click the question mark at the top-right of the Desktop."
-	);
+	, alwaysShow);
 } //end desktopTooltip()
