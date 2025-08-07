@@ -82,23 +82,13 @@
 				padding: 5px;
 			}
 
-			#adminArea {
-				border: 0px solid red;
-			}
-
-
-			#rundbviewerArea /*.areaContentDiv*/ {
+			#selectionArea /*.areaContentDiv*/ {
 					margin-bottom: 50px; /*to provide margin at bottom of page for scrolling nicely*/
 			}
 
-			.expandBtn {
-			}
-
-			.expandBtnImg {
-				width: 25px;
-				border-radius: 5px;
-				box-shadow: 0.1em 0.1em 0.2em black;
-				margin: 5px;
+			#rundbviewerArea /*.areaContentDiv*/ {
+					margin-top: 80px; /*to provide margin at bottom of page for scrolling nicely*/
+					margin-bottom: 50px; /*to provide margin at bottom of page for scrolling nicely*/
 			}
 
 			.sectionHeader {
@@ -107,13 +97,13 @@
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 
-			#categoryHeaderLabel {
+			#selectionHeaderLabel {
 				white-space: nowrap;
 				overflow-x: auto;
 				font-size: 22px;
 			}
 
-			#currentCategoryHeader {
+			#currentSelectionHeader {
 				font-weight: 800;
 				font-size: 22px;
 				color: rgb(255,183,74);
@@ -122,52 +112,12 @@
 				text-shadow: 0.1em 0.1em 0.2em black;
 			}
 
-			#categoryList {
-				overflow-y: scroll;
-				text-align: right;
-				padding: 5px;
-				background-color: rgba(0,0,0,0.3);
-				border-radius: 5px;
-				height: 155px;
-				margin: 10px 0 5px 0;
-			}
-
-			#clearActiveCategoryDiv a {
-				color: rgb(180,207,237);
-				font-weight: 800;
-
-			}
-
-			#categoryList a {
-				font-family: arial;
-				color: rgb(180,207,237);
-			}
-
-			#adminStatusDiv {
-				margin: 15px 0 -20px 0;
-				text-align: center;
-				width: 220px;
-				color: rgb(255,183,74);
-			}
-
-			#loaderGif {
-				margin: 60px 50px 0 0;
-			}
-
-			#categoryTextBox {
-				width: 200px;
-			}
-
-			#categoryClearIcon {
-				margin: 6px 0 -6px -30px;
-			}
-
 			#rundbviewerHeader {
 				margin: 0 0 20px 0;
 				font-weight: 800;
 			}
 
-			#rundbviewerHeader a, #currentCategoryHeader a {
+			#rundbviewerHeader a, #currentSelectionHeader a {
 				color: rgb(180, 207, 237);
 				font-weight: 800;
 			}
@@ -181,7 +131,7 @@
 				background-color: rgba(0,0,0,0.4);
 			}
 
-			#generateReport {
+			#refreshRecords {
 				float: left;
 				margin: -38px 0 0 5px;
 				cursor: pointer;
@@ -189,12 +139,8 @@
 				font-weight: 800;
 			}
 
-			#generateReport:hover {
+			#refreshRecords:hover {
 				text-decoration: underline;
-			}
-
-			#postFormDiv {
-				font-size: 16px;
 			}
 
 
@@ -345,9 +291,10 @@
 			//functions:
 				//init()
 
-				//setActiveCategory(category)
-				//setResponseCategory(category)
-				//handleGetCategoryListRequest(req)
+				//makeRunTypeSelect()
+				//performRunTypeSelection()
+				//setActiveSelection()
+				//handleRunTypeListRequest(req)
 
 				//redrawRunDbViewer()
 				//convertForClient(entry)
@@ -359,13 +306,12 @@
 				//showCalendar(e)
 				//calendarHandler(userDate)
 				//advanceByDays(i)
-				//generateReport()
 
-			var _AREAS = ['admin','rundbviewer'];
+			var _AREAS = ['selection','rundbviewer'];
 			var _areaEls = [0,0];
 
 			var _MARGIN = 20;
-			var _CATEGORY_FILTER_HEIGHT = 338;
+			var _SELCTION_FILTER_HEIGHT = 338;
 			var _AREA_HEIGHTS = [270,500];
 
 			var _isAreaExpanded = [false, true];
@@ -373,11 +319,9 @@
 			var _runInfoPluginName = "";
 			var _runInfoPluginUID = "";
 
-			var _activeCategory = "";
-			var _categoryFilter = ""; //* for all, if "" go with active category
-			var _categorysArray;
-
-			var _isAdmin = false;
+			var _activeRunType = "";
+			var _defaultRunType = "";//if "" goes with default run type
+			var _runTypeArray = [];
 
 			//refreshing rundbviewer
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
@@ -389,15 +333,16 @@
 			var _TIMEZONE_OFFSET_HOURS = (new Date().getTimezoneOffset())/60;
 
 			var _XML_STATUS 										= "rundbviewer_status";
+			var _XML_RUNTYPE_LIST 									= "run_type_list";
 			var _XML_MOST_RECENT_DAY 								= "most_recent_day";
 			var _XML_RUNDBVIEWER_ENTRY 								= "rundbviewer_entry";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_NUMBER				 	= "rundbviewer_entry_run_number";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_TIME 					= "rundbviewer_entry_run_time";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_TYPE 					= "rundbviewer_entry_run_type";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION 		= "rundbviewer_entry_run_artdaq_partition";
-			var _XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME			 	= "rundbviewer_entry_run_host_name";
 			var _XML_RUNDBVIEWER_ENTRY_RUN_START_TIME				= "start_time"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME				= "stop_time"
+			var _XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME				= "host_name"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID			= "condition_id"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME		= "configuration_name"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION	= "configuration_version"
@@ -431,99 +376,138 @@
 				for(var i=0;i<_AREAS.length;++i)
 					_areaEls[i] = document.getElementById(_AREAS[i] + 'Area');
 
-				//get active category from url
-				setActiveCategory(DesktopContent.getParameter(1));
+				//get default run type from url
+				//setActiveSelection(DesktopContent.getParameter(1));
+				_defaultRunType = DesktopContent.getDesktopWindowParameter(0,"runType");
+				if (_defaultRunType == "DEFAULT") _defaultRunType = "";
+				setActiveSelection(_defaultRunType);
 
 				window.onresize = redrawRunDbViewer;
 
 				_runInfoPluginName = DesktopContent.getDesktopWindowParameter(0,"runInfoPluginName");
 				_runInfoPluginUID = DesktopContent.getDesktopWindowParameter(0,"runInfoPluginUID");
 
-				//check for category preselects:
-				var preselects = DesktopContent.getDesktopWindowParameter(0,"categories");
-				var preselectsArr = [];
-				if(preselects)
-				{
-					preselectsArr = preselects.split(',');
-					Debug.log("preselectsArr",preselectsArr);
-				}
+				//Retrive run type list from database:
+				DesktopContent.XMLHttpRequest("Request?RequestType=GetRunTypeList", //update category list
+						"", handleRunTypeListRequest, _runTypeArray);
 
-				DesktopContent.XMLHttpRequest("Request?RequestType=GetCategoryList", 		//update category list
-						"", handleGetCategoryListRequest, preselectsArr);
-
-				redrawRunDbViewer();		
+				makeRunTypeSelect();
+				redrawRunDbViewer();
 			} //end init()
 
 			//=====================================================================================
-			//setActiveCategory ~
-			function setActiveCategory(category)
+			//makeRunTypeSelect ~
+			function makeRunTypeSelect()
 			{
-				Debug.log("RunDbViewer setActiveCategory to " + category);
+				// 1. Create label
+				const label = document.createElement("label");
+				label.setAttribute("for", "runType");
+				label.textContent = "Select or enter a run type ";
 
-				_activeCategory = category;
-				var str = "";
+				// 2. Create input with datalist
+				const input = document.createElement("input");
+				input.setAttribute("list", "runTypes");
+				input.setAttribute("id", "runType");
+				input.setAttribute("name", "runType");
 
-				str += "<center>";
-				str += "<div id='categoryHeaderLabel'>";
-				if(!_activeCategory || _activeCategory == "")
-				{	_activeCategory = ""; str += "No run type filter Set"; 	}
-				else
-					str += "<font color='white'>Active run type filter is</font> " + _activeCategory;
-				str += "</div>";
+				// 3. Create datalist
+				const datalist = document.createElement("datalist");
+				datalist.id = "runTypes";
 
-				var el = document.getElementById("categoryFilterMultiselect");
-				var display = el && (categoryFilterMultiselect.style.display != "none");
-				//if displayed, toggle height to revert to hidden
-				if(display)
-					_AREA_HEIGHTS[0] -= _CATEGORY_FILTER_HEIGHT;
+				const runTypes = [
+					  "production"
+					, "calo"
+					, "tracker"
+					, "crv"
+					, "VST"
+					, "tracker VST"
+					, "calorimeter VST"
+					, "crv VST"
+					, "stm VST"
+					, "EXT VST"
+					, "DAQ debugging"
+					, "tracker & calorimeter VST"
+					, "tracker & crv VST"
+					, "calo VST"
+					, "tracker VST"
+					, "crv VST"];
 
-				str += "<div id='categoryFilterMultiselect' style='display:none" +
-					"; height:300px; margin-bottom:0px; margin-top:30px;'></div>";
+				runTypes.forEach(type => {
+					const option = document.createElement("option");
+					option.value = type;
+					datalist.appendChild(option);
+				});
 
-				str += "</center>";
+				// 4. Event listeners
+				input.addEventListener("change", () => {
+					const value = input.value.trim();
+					if (runTypes.includes(value)) {
+						Debug.log("Selected:", value);
+						performRunTypeSelection(value);
+					}
+				});
 
-				currentCategoryHeader.innerHTML = str;
-			} //end setActiveCategory()
+				input.addEventListener("keydown", (event) => {
+				if (event.key === "Enter") {
+					const value = input.value.trim();
+					if (value !== "") {
+						Debug.log("ENTER pressed on:", value);
+						performRunTypeSelection(value);
+					}
+					else {
+						Debug.log("ENTER pressed on empty: run type has default value");
+						performRunTypeSelection(_defaultRunType);
+					}
+				}
+				});
+
+				// 5. Append everything to the page
+				const container = document.getElementById("selectionArea");
+				container.appendChild(label);
+				container.appendChild(input);
+				container.appendChild(datalist);
+			} //end makeRunTypeSelect()
 
 			//=====================================================================================
-			//setResponseCategory ~
-			function setResponseCategory(category)
+			//performRunTypeSelection ~
+			function performRunTypeSelection(runType) {
+				console.log("Action triggered for run type: " + runType);
+				setActiveSelection(runType);
+				refreshRunDbViewer(); //and refresh now!
+			} //end performRunTypeSelection()
+
+			//=====================================================================================
+			//setActiveSelection ~
+			function setActiveSelection(runType)
 			{
-				Debug.log("RunDbViewer setResponseCategory to " + category);
+				Debug.log("RunDbViewer setActiveSelection to " + runType);
 
-				if(category.length && category[0] == '!') //improve inverted wording
-					category = "all wo/" + category.substr(1);
-
+				_activeRunType = runType;
 
 				var str = "";
-				str += "<font color='white'>Showing Log Entries for </font> " + category;
-				categoryHeaderLabel.innerHTML = str;
+				str += "<center>";
+				str += "<div id='runTypeHeaderLabel'>";
+				if(!_activeRunType || _activeRunType == "")
+				{	_activeRunType = ""; str += "No run type filter Set"; 	}
+				else
+					str += "<font color='white'>Active run type filter is </font><font style='color:orange'>" + _activeRunType + "</font>";
+				str += "</div>";
+				str += "</center>";
 
-				window.parent.document.title = "ots ECL - " + category;
-			} //end setResponseCategory()
+				currentSelectionHeader.innerHTML = str;
+			} //end setActiveSelection()
 
 			//=====================================================================================
 			//redrawRunDbViewer ~
 			function redrawRunDbViewer()
 			{
-				Debug.log("RunDbViewer redrawRunDbViewer to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
+				Debug.log("RunDbViewer redrawRunDbViewer to  " + window.innerWidth + " - " + window.innerHeight);
 
 				var w = DesktopContent.getWindowWidth();
-				if(w < 600) w=600; //prevent super squeeze
+				if(w < 600) w = 600; //prevent super squeeze
 
 				for(var i=0;i<_AREAS.length;++i)
 				{
-					//only show admin area if have privileges
-					if(i == 0 && !_isAdmin)
-					{
-						_areaEls[i].style.display = "none";
-						_isAreaExpanded[i] = true;
-
-						var el = document.getElementById("categoryFilterMultiselect");
-						var display = el && (categoryFilterMultiselect.style.display != "none");
-						_AREA_HEIGHTS[i] = display?_CATEGORY_FILTER_HEIGHT:0;
-						continue;
-					}
 					_areaEls[i].style.display = "block";
 
 					_areaEls[i].style.left = _MARGIN + "px";
@@ -552,17 +536,14 @@
 			} //end convertForClient()
 
 			//=====================================================================================
-			//handleGetCategoryListRequest ~~
-			function handleGetCategoryListRequest(req, preselectsArr)
+			//handleRunTypeListRequest ~~
+			function handleRunTypeListRequest(req, preselectsArr)
 			{
-				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
-
-				_categorysArray = req.responseXML.getElementsByTagName("category");
+				_runTypeArray = req.responseXML.getElementsByTagName(_XML_RUNTYPE_LIST);
 
 				redrawRunDbViewer(); //setup window divs based on admin
 				refreshRunDbViewer(); //refresh rundbviewer, by default start with today for one day
-								//NOTE: call refresh rundbviewer here so that _isAdmin is gauranteed to be set
-			} //end handleGetCategoryListRequest()
+			} //end handleRunTypeListRequest()
 
 			//=====================================================================================
 			//toggleAutoRefresh ~~
@@ -598,12 +579,6 @@
 			function refreshRunDbViewer(dayIndex,duration)
 			{
 				Debug.log("RunDbViewer refreshRunDbViewer " + dayIndex + " - " + duration);
-				if(_activeCategory == "")	{
-					Debug.log("RunDbViewer refreshRunDbViewer active category not set");
-					document.getElementById("rundbviewerDiv").innerHTML = "<div style='color:rgb(255,183,74)'>" +
-						"Currently there is no active category selected. Contact an admin if you think this is an error." + "</div>";
-					return;
-				}
 
 				if(typeof dayIndex != "undefined")
 					_refreshDayIndex = dayIndex; //get day index integer
@@ -614,7 +589,7 @@
 				if(_mostRecentDayIndex < 0) //most recent day request
 					reqDate = 0; //to indicate get most recent day
 
-				Debug.logv({_categoryFilter});
+				Debug.logv({_activeRunType});
 
 				//always show date
 				refreshDateDisplay();
@@ -631,7 +606,7 @@
 								"&Duration=" + _refreshDuration +
 								"&runInfoPluginName=" + _runInfoPluginName +
 								"&runInfoPluginUID=" + _runInfoPluginUID +
-								"&CategoryFilter=" + encodeURIComponent(_categoryFilter),  //* for all, if "" go with active category
+								"&runTypeFilter=" + encodeURIComponent(_activeRunType),  //* for all, if "" go with active run type
 								handleRefreshRunDbViewer);
 
 					}, 500 /* ms */ ); //end delay handler
@@ -674,8 +649,6 @@
 
 					//extract rundbviewer display
 					var entries = req.responseXML.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY);
-					var response_category = DesktopContent.getXMLValue(req,"response_category")
-					if (response_category != undefined) setResponseCategory(response_category,1 /* isResponse */);
 
 					var rundbviewerEl = document.getElementById("rundbviewerDiv");
 					rundbviewerEl.innerHTML = "";
@@ -683,7 +656,6 @@
 					//display from newest to oldest
 					for(var i=entries.length-1;i>=0;--i)
 						displayRunDbViewerEntry(rundbviewerEl,entries[i]);
-
 
 					//add helper to move starting date back
 					var tmp = document.createElement("div");
@@ -714,7 +686,7 @@
 					br.replaceWith(space);
 				});
 
-				var condensedWidth = currentCategoryHeader.offsetWidth;
+				var condensedWidth = currentSelectionHeader.offsetWidth;
 				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " +
 					(condensedWidth-130) + "px;" +
 					"padding-top: 2px; padding-bottom: 10px; color: rgb(216 189 139);");
@@ -732,7 +704,7 @@
 						node.replaceWith(br);
 					}
 				});
-				var condensedWidth = currentCategoryHeader.offsetWidth;
+				var condensedWidth = currentSelectionHeader.offsetWidth;
 				el.setAttribute("style", "overflow-x: auto; width: " +
 					(condensedWidth-130) + "px;" +
 					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
@@ -839,12 +811,12 @@
 				//run type
 				tmp = document.createElement("div");
 				tmp.setAttribute("class", "RunDbViewer-entryCreator");
-				tmp.innerHTML = "Run type: " + runType;
+				tmp.innerHTML = "run type: " + runType;
 				header.appendChild(tmp);
 				//artdaqPartition
 				tmp = document.createElement("div");
 				tmp.setAttribute("class", "RunDbViewer-entryCreator");
-				tmp.innerHTML = "Artdaq partition: " + artdaqPartition;
+				tmp.innerHTML = "artdaq partition: " + artdaqPartition;
 				header.appendChild(tmp);
 				//body text
 				var table = document.createElement("table");
@@ -858,6 +830,10 @@
 				dateTime = new Date(entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME)[0].getAttribute("value"));
 				entryText.innerHTML = "<td>Stop time</td><td>" + convertForClient(
 				dateTime.toDateString() + " " + dateTime.toLocaleTimeString()) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.innerHTML = "<td>Host name</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME)[0].getAttribute("value")) + "</td>";
 				table.appendChild(entryText);
 				entryText = document.createElement("tr");
 				entryText.setAttribute("title", "Click to load run conditions");
@@ -1036,22 +1012,6 @@
 				refreshRunDbViewer(_refreshDayIndex - i); //positive is back in time
 			} //end advanceByDays()
 
-			//=====================================================================================
-			//generateReport ~~
-			//	opens up separate window to generate reports
-			function generateReport()
-			{
-				if(!_activeCategory || _activeCategory == "")
-				{
-					alert("Error! There must be an active category selected.");
-					return;
-				}
-
-				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
-				var requestURL = "/urn:xdaq-application:lid="+urn+"/Request?RequestType=LogReport&activeCategory=";
-				window.open(requestURL + _activeCategory,	'_blank');	//open in new window
-			} //end generateReport()
-
 		</script>
 
 	</head>
@@ -1059,20 +1019,28 @@
 
 	<body onload='//init() called by DesktopContent.js'>
 
-	<center><div class='areaContent' id='currentCategoryHeader'></div></center>
+	<center><div class='areaContent' id='currentSelectionHeader'></div></center>
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
-	<div class='area' id='adminArea'>
-		<!-- area where admins control -->
+	<div class='area' id='selectionArea'>
+		<!-- area where show query selections -->
+		<table width='100%'>
+			<td width='105px'>
+				<div class='sectionHeader'>Run type </div>
+			</td>
+			<td>
+				<div class='sectionLine'><hr width='100%'></div>
+			</td>
+		</table>
 	</div>
 
 	<!------------------------------------------------------------------------------>
 	<!------------------------------------------------------------------------------>
 	<div class='area' id='rundbviewerArea'>
-		<!-- area where rundbviewer for active category is shown -->
+		<!-- area where rundbviewer for active run type is shown -->
 		<table width='100%'>
 			<td width='105px'>
-				<div class='sectionHeader'>RunDbViewer</div>
+				<div class='sectionHeader'>Run Viewer</div>
 			</td>
 			<td>
 				<div class='sectionLine'><hr width='100%'></div>
@@ -1086,7 +1054,7 @@
 		<td align='center'>
 
 			<div id='rundbviewerHeader'>
-				Showing RunDbViewer for
+				Showing run records for
 				<a href='Javascript:;' onmouseup='_mostRecentDayIndex = -1; refreshRunDbViewer();'>Most Recent Day</a>
 				<a href='Javascript:;' onmouseup='showCalendar(event);'
 					><img style='margin:5px 0 -5px 0'
@@ -1104,9 +1072,9 @@
 				<a href='Javascript:;' onmouseup='advanceByDays(-1);'>Previous Day</a> |
 				<a href='Javascript:;' onmouseup='advanceByDays(1);'>Next Day</a>
 			</div>
-			<div id='generateReport' style='float:left'
+			<div id='refreshRecords' style='float:left'
 			><a id='autoRefreshLink' href="javascript:toggleAutoRefresh();" title='Click to toggle auto-refresh enable/disable.'>Auto-refresh is off</a></div>
-			<div id='generateReport' style='float:right' onmouseup='refreshRunDbViewer();' title='Refresh'
+			<div id='refreshRecords' style='float:right' onmouseup='refreshRunDbViewer();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>
 
