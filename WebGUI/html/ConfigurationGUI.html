@@ -16951,8 +16951,8 @@
 
 							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(cells[c].textContent.trim().
-									replace(new RegExp(rowDel,'g'),"|").
-									replace(new RegExp(colDel,'g'),"$$")
+									replace(new RegExp(rowDel,'g'),"\n").
+									replace(new RegExp(colDel,'g'),",")
 							); //replaces all special characters
 							dataStr += encodeURI("\"");
 						}
