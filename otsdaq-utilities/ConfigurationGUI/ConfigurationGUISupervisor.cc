@@ -1792,6 +1792,7 @@ try
 		             << group.second << ")" << __E__;
 
 		affected = false;
+		parentEl = nullptr;
 
 		std::map<std::string /*name*/, TableVersion /*version*/> memberMap;
 		cfgMgr->loadTableGroup(group.first,
