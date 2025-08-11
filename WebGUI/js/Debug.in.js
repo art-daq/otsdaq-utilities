@@ -1027,14 +1027,24 @@ Debug.closeErrorPop = function()
 	var el = document.getElementById(Debug._errBoxId);
 	if(!el) return;
 	el.style.display = "none";
-	Debug._errBoxLastContent = document.getElementById(Debug._errBoxId + "-err").innerHTML;
+
+	var tmpLast = document.getElementById(Debug._errBoxId + "-err").innerHTML;
+	if(tmpLast != "" || !Debug._errBoxLastContent) //do not double clear
+		Debug._errBoxLastContent = tmpLast;
+	Debug.log("Debug._errBoxLastContent size",Debug._errBoxLastContent.length);
 	document.getElementById(Debug._errBoxId + "-err").innerHTML = ""; //clear string
 } //end closeErrorPop()
 //=====================================================================================
 //Bring the error popup back
 Debug.bringBackErrorPop = function()
 {
-	document.getElementById(Debug._errBoxId + "-err").innerHTML = Debug._errBoxLastContent; //bring back string
+	if(!Debug._errBoxLastContent || Debug._errBoxLastContent == "" )
+		Debug._errBoxLastContent = "No previous pop-up content to recall.";
+
+	var el = document.getElementById(Debug._errBoxId + "-err");
+	if(!el) { Debug.log("No debug element found."); return; }
+
+	el.innerHTML = Debug._errBoxLastContent; //bring back string
 	document.getElementById(Debug._errBoxId).style.display = "block";
 } //end bringBackErrorPop()
 
