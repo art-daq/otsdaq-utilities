@@ -34,12 +34,12 @@ class RunDbViewerSupervisor : public CoreSupervisorBase
 	virtual void 						forceSupervisorPropertyValues	(void) override;  ///< override to force supervisor property values (and ignore user settings)
 
   private:
-	void        						getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void        						getRunTypeList					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
 	void 								refreshRunDbViewer				(time_t              date,
 																		 uint32_t		     duration,
 																		 HttpXmlDocument*    xmldoc     = 0,
 																		 std::ostringstream* out        = 0,
-																		 std::string  		 category  	= "",
+																		 std::string  		 runType  	= "",
 																		 const std::string&  pluginName = "",
 																		 const std::string&  runInfoUID = "");
 	void								getRunConditionByID				(uint64_t		     condition_ID,
@@ -53,7 +53,7 @@ class RunDbViewerSupervisor : public CoreSupervisorBase
 		RUNDBVIEWER_PREVIEW_EXPIRATION_TIME = 60 * 20,  ///< 20 minutes
 	};
 
-	std::string  activeCategory_;
+	std::string  activeRunType_;
 	unsigned int mostRecentDayIndex_;
 };
 }  // namespace ots
