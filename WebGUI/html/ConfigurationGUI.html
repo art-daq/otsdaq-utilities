@@ -4716,7 +4716,14 @@
 					else if (valueType == "Timestamp")
 						treeViewHandlerStr_ += ConfigurationAPI.getDateString(new Date((value | 0) * 1000));
 					else if (valueType == "BitMap")
-						treeViewHandlerStr_ += createBmpString(value);
+					{
+						//pass parameters
+						let bmpParams = [];
+						for (var j = 1; j < choices.length; ++j) //skip the first DEFAULT param
+							bmpParams.push(choices[j].getAttribute("value"));
+						
+						treeViewHandlerStr_ += createBmpString(value,bmpParams);
+					}
 					else
 						treeViewHandlerStr_ += value;
 
@@ -8369,7 +8376,9 @@
 							function (val)
 							{
 								Debug.log("yes " + val);
-								el.innerHTML = createBmpString(val);
+								el.innerHTML = createBmpString(val,
+									document.getElementById("treeNode-BitMap-Params-" +
+										idString).textContent.split(';'));
 								treeEditingNodeType_ += "-bitmap";
 								editTreeNodeOK();
 								//_editingCell = false;
@@ -9017,7 +9026,8 @@
 						colType = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c].childNodes[0].childNodes[0].innerText; //type text is in a div for smaller font, then label for bold
 
 					if(colType == "BitMap")
-						el.innerHTML = createBmpString(_editingCellElOldValue);
+						el.innerHTML = createBmpString(_editingCellElOldValue,
+							_tableFixedChoiceData[c]);
 					else
 					{
 						el.innerHTML = "";
@@ -9098,7 +9108,8 @@
 					colType = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c].childNodes[0].childNodes[0].innerText; //type text is in a div for smaller font, then label for bold
 
 				if(colType == "BitMap")
-					el.innerHTML = createBmpString(_editingCellElOldValue);
+					el.innerHTML = createBmpString(_editingCellElOldValue,
+						_tableFixedChoiceData[c]);
 				else
 				{
 					el.innerHTML = "";
@@ -9788,7 +9799,8 @@
 					function (val)
 					{
 						Debug.log("yes " + val);
-						bitMapCellEl.innerHTML = createBmpString(val);
+						bitMapCellEl.innerHTML = createBmpString(val,
+							_tableFixedChoiceData[c]);
 						_editingCell = false;
 						_editingCellEl = 0;
 
@@ -13847,10 +13859,10 @@
 
 			//avoid doing anything while popup is open
 			el = document.getElementById("popUpDialog");
-			if (el) //config gui popup
+			if (el && el.style.display != "none") //config gui popup
 				return;
 			el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-			if (el) //config API popup
+			if (el && el.style.display != "none") //config API popup
 				return;
 
 			//else table view
@@ -14761,7 +14773,7 @@
 									reader.onload =
 											function ()
 											{
-										//store uploaded file and enable button
+										//store uploaded files
 										uploadedFiles[tableName] = this.result;
 										console.log("uploadedFiles", uploadedFiles);
 
@@ -14796,7 +14808,7 @@
 										reader.onload =
 												function ()
 												{
-											//store uploaded file and enable button
+											//store uploaded files
 											uploadedFiles[tableName] = this.result;
 											console.log("uploadedFiles", uploadedFiles);
 										} //end onload handler
@@ -16364,15 +16376,11 @@
 			for (var i = _tableUploadStr.length-1;i >= 0; --i)
 			{
 				if (_tableUploadStr[i] == ',')
-				{
 					colDel = ',';
-					break;
-				}
 				else if (_tableUploadStr[i] == ';')
-				{
 					colDel = ';';
-					break;
-				}
+				else if (_tableUploadStr[i] == rowDel)
+					break; //done auto-detecting column delimeter
 			}
 
 			console.log("_tableUploadStr",
@@ -16381,11 +16389,12 @@
 			console.log("record rowDel",rowDel);
 			console.log("field colDel",colDel);
 
-			var srcRows = _tableUploadStr.length? //if no data, make no rows
-					_tableUploadStr.split(rowDel):[];
-			var src = []; //src = [r][c]
-			for (var i = 0; i < srcRows.length; ++i)
-				src.push(srcRows[i].split(colDel));
+			src = DesktopContent.parseCSV(_tableUploadStr);
+			// var srcRows = _tableUploadStr.length? //if no data, make no rows
+			// 		_tableUploadStr.split(rowDel):[];
+			// var src = []; //src = [r][c]
+			// for (var i = 0; i < srcRows.length; ++i)
+			// 	src.push(srcRows[i].split(colDel));
 			console.log("src",src);
 
 			//Note: similar to addRow
@@ -16791,21 +16800,8 @@
 					reader.onload =
 							function ()
 							{
-						//store uploaded file and enable button
-						_tableUploadStr = this //filter out 
-										  .result
-										  .split('\n')
-										  .map(row => {
-											const cells = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-											if(!cells) return '';
-											return cells.map(cell => {
-												cell = cell.trim();
-												return (cell.startsWith("\"") && cell.endsWith("\""))
-													? cell.slice(1, -1)
-													: cell;
-											}).join(',')
-										  })
-										  .join('\n');
+						//store uploaded file and disable button
+						_tableUploadStr = this.result.replace('\r',''); 
 						Debug.log("_tableUploadStr = " + _tableUploadStr);
 						document.getElementById('popUpDialog-submitButton').disabled = false;
 							}
@@ -16874,9 +16870,6 @@
 			// done with special handling
 			// continue with pop-up prompt
 			str += "</center></div><br><br>"; //close main popup div
-			var onmouseupJS = "";
-			onmouseupJS += "document.getElementById(\"delimiterSubmit\").disabled = true;";
-			onmouseupJS += "uploadTableFromCSV();";
 
 			str += "<button id='downloadCSV' class='downloadCSV' title='Download current table values with your chosen delimiter'>Download current table values</button>";
 
@@ -16964,18 +16957,21 @@
 				var link = document.createElement("a");
 				link.setAttribute("href", dataStr); //double encode, so encoding remains in CSV
 				link.setAttribute("style", "display:none");
-				link.setAttribute("download", _currentTableName + "-v" +
-					_version + "_download.csv");
+				let filename =  (_versionIsChanged?"Modified_":"") +
+					_currentTableName + "-v" +
+					_version + "_download.csv";
+				link.setAttribute("download", filename);
 				document.body.appendChild(link); // Required for FF
 
 				link.click(); // This will download the data file with filename *_download.csv
 
 				link.parentNode.removeChild(link);
 
-				document.getElementById("popUpDialog").style.display = "none";
-
-				Debug.info("File '" + "download", _currentTableName + "-v" +
-					_version + "_download.csv" + "' was successfully downloaded");
+				//kill popup dialog
+				var el = document.getElementById("popUpDialog");		
+				if (el) el.parentNode.removeChild(el);
+				
+				Debug.info("File '" + filename + "' was successfully downloaded!");
 
 			}; //end downloadCSV handler
 
@@ -18964,13 +18960,10 @@
 						str += val;
 						str += "</a>";
 					}
-					else if
-					(
-						r >= _CONFIG_DATA_ROW_OFFSET &&
-						c >= _CONFIG_DATA_COL_OFFSET &&
-						colTypes[c] === "BitMap"
-					)
-						str += createBmpString(val);
+					else if(r >= _CONFIG_DATA_ROW_OFFSET &&
+							c >= _CONFIG_DATA_COL_OFFSET &&
+							colTypes[c] === "BitMap")
+						str += createBmpString(val, _tableFixedChoiceData[co]);
 					else
 						str += val;
 
@@ -18989,10 +18982,104 @@
 
 		//==============================================================================
 		//createBmpString ~~
-		function createBmpString(val)
+		function createBmpString(val, bitMapParams)
 		{
-			if (!val || val.trim() === "" || val.trim().toUpperCase() === "DEFAULT")
-				return `<div style="display:flex; justify-content:center"><div style="width:100px;height:100px; background:#ff0000; image-rendering:pixelated;"></div>` +
+			// extract bitMapInfo parameters:
+			//	must match TableEditor js handling:
+
+			//		[ //types => 0:string, 1:bool (default no),
+			//		  //2:bool (default yes), 3:color
+			//
+			// 0		  0,//"Number of Rows",
+			// 1		  0,//"Number of Columns",
+			// 2		  0,//"Cell Bit-field Size",
+			// 3		  0,//"Min-value Allowed",
+			// 4		  0,//"Max-value Allowed",
+			// 5		  0,//"Value step-size Allowed",
+			// 6		  0,//"Display Aspect H:W",
+			// 7		  3,//"Min-value Cell Color",
+			// 8		  3,//"Mid-value Cell Color",
+			// 9		  3,//"Max-value Cell Color",
+			// 10		  3,//"Absolute Min-value Cell Color",
+			// 11		  3,//"Absolute Max-value Cell Color",
+			// 12		  1,//"Display Rows in Ascending Order",
+			// 13		  2,//"Display Columns in Ascending Order",
+			// 14		  1,//"Snake Double Rows",
+			// 15		  1,//"Snake Double Columns",
+			// 16		  1,// "Allow Floating Point",
+			// 17		  0// "Value Map to Strings"
+			// 	  ];
+
+
+			const DEFAULT = "DEFAULT";
+
+			let numOfRows = bitMapParams[0]|0;
+			let numOfCols = bitMapParams[1]|0;
+			let bitFieldSize = bitMapParams[2]|0;
+			let bitMask = 0;
+			if(bitFieldSize > 30)
+			{
+				bitMask = 0;
+				for(var i=0;i<bitFieldSize;++i)
+					bitMask |= 1 << i;
+			}
+			else
+				bitMask = (1<<bitFieldSize) - 1; //wont work for 31 bits (JS is always signed)
+
+			let minValue = bitMapParams[3] == DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
+			let maxValue = bitMapParams[4] == DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
+			if(maxValue < minValue)
+				maxValue = bitMask;
+			let midValue = (maxValue + minValue)/2; //used for color calcs
+			
+			let forcedAspectW = 1, forcedAspectH = 1; //by cell
+			if(bitMapParams[6] != "" &&
+						bitMapParams[6] != DEFAULT)
+			{
+				forcedAspectH = bitMapParams[6].split(':');
+				if(forcedAspectH.length != 2)
+				{
+					Debug.log("Illegal input parameter, expecting ':' in string defining cell display aspect ratio " +
+							"Height:Width (e.g. 100:150)." +
+							"\nInput aspect ratio string '" + bitMapParams[6] + "' is invalid.",Debug.HIGH_PRIORITY);
+					return false;
+				}
+				forcedAspectW = forcedAspectH[1].trim()|0;
+				forcedAspectH = forcedAspectH[0].trim()|0;
+			}
+			//forcedAspectW/H are by cell, so multiply by rows/cols to get image level aspect ratio
+			forcedAspectW *= numOfCols;
+			forcedAspectH *= numOfRows;
+			let imgH = 100; // reduce H if too wide
+			while(imgH > 9 && imgH * forcedAspectW / forcedAspectH > 500)
+				imgH /= 2;
+
+			//colors
+			let minValueColorStr = bitMapParams[7] == DEFAULT || bitMapParams[7] == ""?"red":bitMapParams[7];
+			let midValueColor = bitMapParams[8] == DEFAULT || bitMapParams[8] == ""?"yellow":bitMapParams[8];
+			let maxValueColor = bitMapParams[9] == DEFAULT || bitMapParams[9] == ""?"green":bitMapParams[9];
+			let floorValueColor = bitMapParams[10] == DEFAULT || bitMapParams[10] == ""?minValueColorStr:bitMapParams[10];
+			let ceilValueColor = bitMapParams[11] == DEFAULT || bitMapParams[11] == ""?maxValueColor:bitMapParams[11];
+
+			//convert to arrays
+			let minValueColor = DesktopContent.getColorAsRGBA(minValueColorStr).split("(")[1].split(")")[0].split(",");
+			midValueColor = DesktopContent.getColorAsRGBA(midValueColor).split("(")[1].split(")")[0].split(",");
+			maxValueColor = DesktopContent.getColorAsRGBA(maxValueColor).split("(")[1].split(")")[0].split(",");
+			ceilValueColor = DesktopContent.getColorAsRGBA(ceilValueColor).split("(")[1].split(")")[0].split(",");
+			floorValueColor = DesktopContent.getColorAsRGBA(floorValueColor).split("(")[1].split(")")[0].split(",");
+
+			//load bools
+			let doDisplayRowsAscending = bitMapParams[12] == "Yes"?1:0;
+			let doDisplayColsAscending = bitMapParams[13] == "Yes"?1:0;
+			let doSnakeColumns = bitMapParams[14] == "Yes"?1:0;
+			let doSnakeRows = bitMapParams[15] == "Yes"?1:0;
+			
+			if (!val || val.trim() === "" || val.trim().toUpperCase() === DEFAULT) //if empty value
+				return `<div style="display:flex; justify-content:center"><div style="height:` + 
+					imgH + `px; aspect-ratio: ` +
+					forcedAspectW + "/" + forcedAspectH +
+					`; background: ` + 
+					minValueColorStr + `; image-rendering:pixelated;"></div>` +
 					`<div id='matrix' style='display: none'>${val}</div></div>`;
 			if (val && val.trim().startsWith("[") && val.trim().endsWith("]"))
 			{
@@ -19002,9 +19089,9 @@
 					const height = bitmapMatrix.length;
 					const width = bitmapMatrix[0].length;
 
-					let maxVal = Math.max(...bitmapMatrix.flat());
-					if (maxVal === 0)
-						maxVal = 1;
+					// let maxVal = Math.max(...bitmapMatrix.flat());
+					// if (maxVal === 0)
+					// 	maxVal = 1;
 
 					const canvas = document.createElement("canvas");
 					canvas.width = width;
@@ -19012,29 +19099,37 @@
 
 					const ctx = canvas.getContext("2d");
 					const imageData = ctx.createImageData(width, height);
-
+						
 					for (let i = 0; i < height; i++)
 					{
 						for (let j = 0; j < width; j++)
 						{
-							const normalized = bitmapMatrix[i][j] / maxVal;
-							const r = Math.round(255 * (1 - normalized));
-							const g = Math.round(255 * normalized);
-							const b = 0;
+							const rgb = ConfigurationAPI.bitMapDialogConvertValueToRGBA(
+								bitmapMatrix[i][j],
+								minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+								floorValueColor, ceilValueColor);
+							// const normalized = bitmapMatrix[i][j] / maxVal;
+							// const r = Math.round(255 * (1 - normalized));
+							// const g = Math.round(255 * normalized);
+							// const b = 0;
 
-							const index = (i * width + j) * 4;
-							imageData.data[index + 0] = r;
-							imageData.data[index + 1] = g;
-							imageData.data[index + 2] = b;
+							const index = ((height - 1 - i) * width + j) * 4;
+							imageData.data[index + 0] = rgb[0]; //r;
+							imageData.data[index + 1] = rgb[1]; //g;
+							imageData.data[index + 2] = rgb[2]; //b;
 							imageData.data[index + 3] = 255;
 						}
 					}
+					Debug.log("imageData.data",imageData.data);
 
 					ctx.putImageData(imageData, 0, 0);
 					const dataUrl = canvas.toDataURL("image/png");
 
-					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="width:100px; height:100px; image-rendering:pixelated; display:flex; justify-content:center" />` +
-						`<div id='matrix' style='display: none'>${val}</div></div>`;
+					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="height:` + 
+						imgH + `px; aspect-ratio: ` +
+						forcedAspectW + "/" + forcedAspectH + 
+						`; image-rendering:pixelated; display:flex; justify-content:center" />` +
+							`<div id='matrix' style='display: none'>${val}</div></div>`;
 				}
 				catch (e)
 				{
@@ -19046,7 +19141,7 @@
 			{
 				return val;
 			}
-		}
+		} //end createBmpString()
 
 		//==============================================================================
 		//transposeTableView ~~

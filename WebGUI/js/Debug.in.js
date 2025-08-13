@@ -336,7 +336,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 						line = line.substr(line.lastIndexOf(':'));
 						//get line number, not col number
 						source += line;
-						source = "|At client: " + source + " | \t";
+						source = "|At client: " + source + " |";
 						console.log("source:",source);
 					}
 					else source = "";
@@ -463,11 +463,15 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 									returnStr.length - ("Error:").length) > 0)
 							{
 								console.log("Found 'Error:' decoration");
-								returnStr += "<div style='margin-left:60px;margin-top:-30px;'>"; //open indent
+								returnStr += "<div style='margin-left:60px;margin-top:-5px;'>"; //open indent
 								++numOfIndents;
 							}
 
-							if(i > 10 && returnStr[returnStr.length-1] != '\n')
+							if(i > 10 && returnStr[returnStr.length-1] != '\n'
+								&& !(	returnStr[returnStr.length-4] == '<' &&
+										returnStr[returnStr.length-3] == 'b' &&
+										returnStr[returnStr.length-2] == 'r' &&
+										returnStr[returnStr.length-1] == '>'))
 								returnStr += "<br>"; //make sure there is new line before label
 
 							//add start label

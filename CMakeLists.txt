@@ -144,8 +144,8 @@ INSTALL(DIRECTORY WebGUI DESTINATION . FILE_PERMISSIONS USE_SOURCE_PERMISSIONS P
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js DESTINATION WebGUI/js)
 
 
-message("otsdaq_utilities WebGUI created Debug.js at ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js}")
-message("otsdaq_utilities WebGUI created Debug.js at ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js}")
+message("otsdaq_utilities WebGUI installed Debug.js at ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js")
+message("otsdaq_utilities WebGUI installed Debug.js at ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js")
 
 # tools
 FILE(COPY tools DESTINATION .)

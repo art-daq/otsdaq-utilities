@@ -118,6 +118,7 @@
 //		DesktopContent.addDesktopIcon(iconName)
 //		DesktopContent.htmlOpen(tag,attObj,innerHTML,doCloseTag)
 //		DesktopContent.htmlClearDiv()
+//		DesktopContent.parseCSV(text)
 //
 //=====================================================================================
 
@@ -2883,3 +2884,64 @@ DesktopContent.htmlClearDiv = function()
 {
 	return "<div id='clearDiv'></div>";
 } //end htmlClearDiv()
+
+//=====================================================================================
+DesktopContent.parseCSV = function(text) 
+{
+	const rows = [];
+	let currentRow = [];
+	let currentValue = '';
+	let insideQuotes = false;
+	let prevChar = '';
+
+	for (let i = 0; i < text.length; i++) 
+	{
+		const char = text[i];
+		const nextChar = text[i + 1];
+
+		if (char === '"') 
+		{
+			if (prevChar === '\\') 
+			{
+				// Escaped double-quote
+				currentValue = currentValue.substr(0,currentValue.length-1) +
+					'"'; //replace last char
+				i++;
+			} else 
+			{
+				// Toggle quote mode
+				insideQuotes = !insideQuotes;
+			}
+		} 
+		else if (char === ',' && !insideQuotes) 
+		{
+			currentRow.push(currentValue);
+			currentValue = '';
+		} 
+		else if ((char === '\n' || char === '\r') && !insideQuotes) 
+		{
+			if (currentValue || currentRow.length > 0) 
+			{
+				currentRow.push(currentValue);
+				rows.push(currentRow);
+				currentRow = [];
+				currentValue = '';
+				prevChar = '';
+			}
+		} 
+		else 
+		{
+			currentValue += char;
+		}
+		prevChar = char;
+	} //end text loop
+
+	// Add last value if any
+	if (currentValue || currentRow.length > 0) 
+	{
+		currentRow.push(currentValue);
+		rows.push(currentRow);
+	}
+
+	return rows;
+} //end parseCSV()
