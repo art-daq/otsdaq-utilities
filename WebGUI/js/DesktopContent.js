@@ -2897,16 +2897,15 @@ DesktopContent.parseCSV = function(text)
 	for (let i = 0; i < text.length; i++) 
 	{
 		const char = text[i];
-		const nextChar = text[i + 1];
+		const nextChar = (i+1 < text.length?text[i + 1]:'');
 
 		if (char === '"') 
 		{
-			if (prevChar === '\\') 
+			if (nextChar === '"') // "" will escape a double-quote in CSV
 			{
 				// Escaped double-quote
-				currentValue = currentValue.substr(0,currentValue.length-1) +
-					'"'; //replace last char
-				i++;
+				currentValue += '"';
+				i++; //skip next quote
 			} else 
 			{
 				// Toggle quote mode

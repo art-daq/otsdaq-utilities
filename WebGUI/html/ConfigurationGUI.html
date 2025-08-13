@@ -16390,11 +16390,6 @@
 			console.log("field colDel",colDel);
 
 			src = DesktopContent.parseCSV(_tableUploadStr);
-			// var srcRows = _tableUploadStr.length? //if no data, make no rows
-			// 		_tableUploadStr.split(rowDel):[];
-			// var src = []; //src = [r][c]
-			// for (var i = 0; i < srcRows.length; ++i)
-			// 	src.push(srcRows[i].split(colDel));
 			console.log("src",src);
 
 			//Note: similar to addRow
@@ -16921,8 +16916,7 @@
 							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(
 									cells[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim().
-									replace(new RegExp(rowDel,'g'),"${OTS_RECORD_DELIMETER}").
-									replace(new RegExp(colDel,'g'),"${OTS_FIELD_DELIMETER}")
+									replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
 							); //replaces all special characters
 							dataStr += encodeURI("\"");
 						}
@@ -16944,8 +16938,7 @@
 
 							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(cells[c].textContent.trim().
-									replace(new RegExp(rowDel,'g'),"\n").
-									replace(new RegExp(colDel,'g'),",")
+								replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
 							); //replaces all special characters
 							dataStr += encodeURI("\"");
 						}

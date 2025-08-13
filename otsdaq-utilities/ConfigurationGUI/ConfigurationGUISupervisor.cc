@@ -6485,7 +6485,7 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 			__COUT__ << "\t Parameter #" << p << ": " << columnParameters[p] << __E__;
 		}
 		__COUT__ << "\t creating the new xml" << __E__;
-		
+
 		std::string& columnType     = columnParameters[0];
 		std::string& columnName = columnParameters[1];
 		std::string& columnDataType = columnParameters[2];
@@ -6623,7 +6623,7 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 	fprintf(fp, "%s", outss.str().c_str());
 	fclose(fp);
 
-	__SUP_COUT_INFO__ << "Finished saving Table Info for '" << tableName << 
+	__SUP_COUT_INFO__ << "Finished saving Table Info for '" << tableName <<
 		".' Looking for errors in all table column info..." << __E__;
 
 	// reload all table info with refresh AND reset to pick up possibly new table
