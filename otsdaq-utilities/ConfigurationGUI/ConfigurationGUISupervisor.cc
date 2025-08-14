@@ -1792,6 +1792,7 @@ try
 		             << group.second << ")" << __E__;
 
 		affected = false;
+		parentEl = nullptr;
 
 		std::map<std::string /*name*/, TableVersion /*version*/> memberMap;
 		cfgMgr->loadTableGroup(group.first,
@@ -6485,23 +6486,26 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 		}
 		__COUT__ << "\t creating the new xml" << __E__;
 
-		std::string& columnType     = columnParameters[0];
-		std::string& columnDataType = columnParameters[2];
+		std::string&      columnType     = columnParameters[0];
+		std::string&      columnName     = columnParameters[1];
+		std::string&      columnDataType = columnParameters[2];
+		const std::string columnStorageName =
+		    TableBase::convertToCaps(columnName);  // now caps;
 
 		outss << "\t\t\t\t<COLUMN Type=\"";
 		outss << columnType;
 		outss << "\" \t Name=\"";
-		outss << columnParameters[1];
+		outss << columnName;
 		outss << "\" \t StorageName=\"";
 		try
 		{
-			outss << TableBase::convertToCaps(columnParameters[1]);  // now caps
+			outss << columnStorageName;
 		}
 		catch(std::runtime_error& e)
 		{  // error! non-alpha
-			xmlOut.addTextElementToData("Error",
-			                            std::string("For column name '") +
-			                                columnParameters[1] + "' - " + e.what());
+			xmlOut.addTextElementToData(
+			    "Error",
+			    std::string("For column name '") + columnName + "' - " + e.what());
 			return;
 		}
 		outss << "\" \t	DataType=\"";
@@ -6509,6 +6513,7 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 
 		columnDefaultValue = StringMacros::decodeURIComponent(columnParameters[3]);
 
+		std::string* columnDefaultValuePtr = nullptr;
 		if(columnDefaultValue !=
 		   TableViewColumnInfo::getDefaultDefaultValue(columnType, columnDataType))
 		{
@@ -6516,10 +6521,14 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 			             << "'" << __E__;
 			outss << "\" \t	DefaultValue=\"";
 			outss << columnParameters[3];
+			columnDefaultValuePtr = &columnParameters[3];
 		}
 		getline(columnChoicesISS, columnChoicesString, ';');
 		outss << "\" \t	DataChoices=\"";
 		outss << columnChoicesString;
+
+		std::string* columnMinValuePtr = nullptr;
+		std::string* columnMaxValuePtr = nullptr;
 
 		if(columnParameters.size() > 4 &&
 		   columnDataType == TableViewColumnInfo::DATATYPE_NUMBER)
@@ -6544,6 +6553,7 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 						__SS_THROW__;
 					}
 					outss << "\" \t	MinValue=\"" << columnParameters[4];
+					columnMinValuePtr = &columnParameters[4];
 				}
 			}
 
@@ -6567,9 +6577,31 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 						__SS_THROW__;
 					}
 					outss << "\" \t	MaxValue=\"" << columnParameters[5];
+					columnMaxValuePtr = &columnParameters[5];
 				}
 			}
 		}
+
+		//validate each column before saving a bad table file
+		try
+		{
+			TableViewColumnInfo testCol(columnType,
+			                            columnName,
+			                            columnStorageName,
+			                            columnDataType,
+			                            columnDefaultValuePtr,
+			                            columnChoicesString,
+			                            columnMinValuePtr,
+			                            columnMaxValuePtr,
+			                            nullptr  //capturedExceptionString
+			);
+		}
+		catch(const std::runtime_error& e)
+		{
+			__SS__ << "Error identified with Column #" << c << ": \n" << e.what();
+			__SS_THROW__;
+		}
+
 		outss << "\"/>\n";
 	}
 
@@ -6590,6 +6622,9 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 
 	fprintf(fp, "%s", outss.str().c_str());
 	fclose(fp);
+
+	__SUP_COUT_INFO__ << "Finished saving Table Info for '" << tableName
+	                  << ".' Looking for errors in all table column info..." << __E__;
 
 	// reload all table info with refresh AND reset to pick up possibly new table
 	// check for errors related to this tableName
@@ -6618,7 +6653,6 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
 
 	// give a print out of currently illegal table column info
-	__SUP_COUT_INFO__ << "Looking for errors in all table column info..." << __E__;
 	for(const auto& cfgInfo : allTableInfo)
 	{
 		try

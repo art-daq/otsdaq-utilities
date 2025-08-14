@@ -336,7 +336,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 						line = line.substr(line.lastIndexOf(':'));
 						//get line number, not col number
 						source += line;
-						source = "|At client: " + source + " | \t";
+						source = "|At client: " + source + " |";
 						console.log("source:",source);
 					}
 					else source = "";
@@ -463,11 +463,15 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 									returnStr.length - ("Error:").length) > 0)
 							{
 								console.log("Found 'Error:' decoration");
-								returnStr += "<div style='margin-left:60px;margin-top:-30px;'>"; //open indent
+								returnStr += "<div style='margin-left:60px;margin-top:-5px;'>"; //open indent
 								++numOfIndents;
 							}
 
-							if(i > 10 && returnStr[returnStr.length-1] != '\n')
+							if(i > 10 && returnStr[returnStr.length-1] != '\n'
+								&& !(	returnStr[returnStr.length-4] == '<' &&
+										returnStr[returnStr.length-3] == 'b' &&
+										returnStr[returnStr.length-2] == 'r' &&
+										returnStr[returnStr.length-1] == '>'))
 								returnStr += "<br>"; //make sure there is new line before label
 
 							//add start label
@@ -1027,14 +1031,24 @@ Debug.closeErrorPop = function()
 	var el = document.getElementById(Debug._errBoxId);
 	if(!el) return;
 	el.style.display = "none";
-	Debug._errBoxLastContent = document.getElementById(Debug._errBoxId + "-err").innerHTML;
+
+	var tmpLast = document.getElementById(Debug._errBoxId + "-err").innerHTML;
+	if(tmpLast != "" || !Debug._errBoxLastContent) //do not double clear
+		Debug._errBoxLastContent = tmpLast;
+	Debug.log("Debug._errBoxLastContent size",Debug._errBoxLastContent.length);
 	document.getElementById(Debug._errBoxId + "-err").innerHTML = ""; //clear string
 } //end closeErrorPop()
 //=====================================================================================
 //Bring the error popup back
 Debug.bringBackErrorPop = function()
 {
-	document.getElementById(Debug._errBoxId + "-err").innerHTML = Debug._errBoxLastContent; //bring back string
+	if(!Debug._errBoxLastContent || Debug._errBoxLastContent == "" )
+		Debug._errBoxLastContent = "No previous pop-up content to recall.";
+
+	var el = document.getElementById(Debug._errBoxId + "-err");
+	if(!el) { Debug.log("No debug element found."); return; }
+
+	el.innerHTML = Debug._errBoxLastContent; //bring back string
 	document.getElementById(Debug._errBoxId).style.display = "block";
 } //end bringBackErrorPop()
 
