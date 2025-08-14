@@ -16866,14 +16866,14 @@
 			// continue with pop-up prompt
 			str += "</center></div><br><br>"; //close main popup div
 
-			str += "<button id='downloadCSV' class='downloadCSV' title='Download current table values with your chosen delimiter'>Download current table values</button>";
+			str += "<button id='downloadCSV' class='downloadCSV' title='Download current table values-only (which is the uploadable format) with your chosen delimiter'>Download current table values (upload format)</button>";
 
 			str += "<br><br>Or select a table version to download:<br>" +
 				"<input style='margin: 5px;' type='text' " +
 				"id='downloadCSVtableVersion' value='" +
 				_version + "'><br>";
 
-			str += "<button id='downloadVersionedCSV' class='downloadCSV' title='Download versioned tabled with your chosen delimiter'>Download versioned table</button>";
+			str += "<button id='downloadVersionedCSV' class='downloadCSV' title='Download versioned table, with column names, with your chosen delimiter'>Download versioned table w/Column Names</button>";
 
 			el.innerHTML = str;
 			document.getElementById("display").appendChild(el); //add element to display div
@@ -16904,20 +16904,18 @@
 					//have to locate each cell individually
 					for (var r = 0; r < numOfRows; ++r)
 					{
-						if (r)
-							dataStr += encodeURI(rowDel); //encoded \n
+						if(r) dataStr += encodeURI(rowDel); //encoded \n
 
 						for (var c = 0; c < numOfCols; ++c) //skip row index column
 						{
 							cells = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td");
 							//assume one th column so minus 1
-							if (c)
-								dataStr += encodeURI(colDel);
+							if(c) dataStr += encodeURI(colDel);
 							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(
 									cells[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim().
 									replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
-							); //replaces all special characters
+								); //replaces all special characters
 							dataStr += encodeURI("\"");
 						}
 					}
@@ -16926,20 +16924,20 @@
 				{
 					for (var r = _CONFIG_DATA_ROW_OFFSET; r < rows.length; ++r) //skip header rows
 					{
-						if (r - _CONFIG_DATA_ROW_OFFSET)
+						if(r - _CONFIG_DATA_ROW_OFFSET)
 							dataStr += encodeURI(rowDel); //encoded \n
 
 						cells = rows[r].getElementsByTagName("td");
 
 						for (var c = _CONFIG_DATA_COL_OFFSET; c < cells.length; ++c) //skip row index column
 						{
-							if (c - _CONFIG_DATA_COL_OFFSET)
+							if(c - _CONFIG_DATA_COL_OFFSET)
 								dataStr += encodeURI(colDel);
 
 							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(cells[c].textContent.trim().
-								replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
-							); //replaces all special characters
+									replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
+								); //replaces all special characters
 							dataStr += encodeURI("\"");
 						}
 					}
@@ -17014,7 +17012,9 @@
 							}
 							colNames[decodedColumnName] = i; //set column in table
 							if(i) dataStr += encodeURI(colDel);
+							dataStr += encodeURI("\"");
 							dataStr += decodedColumnName;
+							dataStr += encodeURI("\"");
 						} //end leading column name in data loop
 						dataStr += encodeURI(rowDel); //encoded \n
 
@@ -17037,9 +17037,11 @@
 							}
 
 							if(colCount) dataStr += encodeURI(colDel);
+							dataStr += encodeURI("\"");
 							dataStr += encodeURIComponent(decodeURIComponent(dataArr[i+1]).
-									replace(new RegExp(rowDel,'g'),"${OTS_RECORD_DELIMETER}").
-									replace(new RegExp(colDel,'g'),"${OTS_FIELD_DELIMETER}")); //comes from server already encoded
+									replace(new RegExp('"','g'),"\"\"") //escape double quotes as ""
+								); //comes from server already encoded
+							dataStr += encodeURI("\"");
 
 							if(++colCount == columns.length)
 							{
