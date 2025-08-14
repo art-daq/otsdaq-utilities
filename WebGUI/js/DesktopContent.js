@@ -2901,7 +2901,7 @@ DesktopContent.parseCSV = function(text)
 
 		if (char === '"') 
 		{
-			if (nextChar === '"') // "" will escape a double-quote in CSV
+			if (insideQuotes && nextChar === '"') // "" will escape a double-quote in CSV
 			{
 				// Escaped double-quote
 				currentValue += '"';
