@@ -8362,8 +8362,8 @@
 					{
 						Debug.log("Handling bitmap select");
 
-						_editingCellElOldValue = el.textContent;
-						treeEditingNodeInitValue_ = _editingCellElOldValue;
+						_editingCellElOldValue = el.innerHTML;
+						treeEditingNodeInitValue_ = el.textContent;
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
@@ -8372,7 +8372,7 @@
 							treeEditingTargetColumn_,
 							document.getElementById("treeNode-BitMap-Params-" +
 								idString).textContent.split(';'),
-							_editingCellElOldValue,
+							treeEditingNodeInitValue_,
 							function (val)
 							{
 								Debug.log("yes " + val);
@@ -8381,9 +8381,6 @@
 										idString).textContent.split(';'));
 								treeEditingNodeType_ += "-bitmap";
 								editTreeNodeOK();
-								//_editingCell = false;
-								//_editingCellEl = 0;
-								//treeHasChanged();
 							},
 							function () //cancel handler
 							{
@@ -8392,6 +8389,11 @@
 								_editingCell = false;
 								_editingCellEl = 0;
 							});
+
+						_editingCell = true;
+						_editingCellEl = el;
+						_editingCellElOldTitle = el.title;
+						el.title = "";
 						return true;
 					}
 					else if (colType == "MultilineData")
@@ -9997,9 +9999,13 @@
 			//detect proper views
 			var el = document.getElementById("treeView-ConfigGroupLink");
 			var popUpEl = document.getElementById("popUpDialog");
+			if(!popUpEl)
+				popUpEl = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
+
+			if(popUpEl && popUpEl.style.display != "none") return; //allow popup to get keys
 
 			//tree view key handler and no popup and no editing cell
-			if (el && !popUpEl && !_editingCellEl)
+			if (el && !_editingCellEl)
 			{
 				//NOTE: Firefox and Chrome have different keycodes for +/-
 				var expandKeys = ['a', 'e', '>', '.', '}', ']', '+', '='];
@@ -12239,6 +12245,15 @@
 							newValue);
 						return;
 					}
+					else if(treeEditingNodeType_ == "value-bitmap")
+					{
+						//bitmap data (do nothing is ok, value already set)
+
+						//requests are done, so end editing
+						_editingCell = false;
+						_editingCellEl = 0;
+						return;
+					}
 
 
 					// all other types are clearing the cell
@@ -12360,13 +12375,11 @@
 							tableLinkTooltip("We noticed you have a disconnected link.");
 						}
 					}
-					else if (treeEditingNodeType_ == "value" ||
-						treeEditingNodeType_ == "value-bitmap")
+					else if (treeEditingNodeType_ == "value")
 					{
 						//if(treeEditingNodeType_ == "MultilineData")
 						//MultilineData and normal
 						//normal data
-						//bitmap data (do nothing would be ok, value already set)
 						_editingCellEl.appendChild(document.createTextNode(decodeURIComponent(newValue)));
 						_editingCellEl.style.color = treeDiff_COLOR_;
 					}
@@ -13556,9 +13569,20 @@
 						}
 
 						Debug.log("value-table " + table);
-						uid = document.getElementById("treeNode-Value-" +
-							parentIdString).textContent;
-						Debug.log("value-uid " + table);
+						if (depth == 2)
+							uid = document.getElementById("treeNode-Value-" +
+								parentIdString).textContent;
+						else 
+						{
+							let uidSplit = document.getElementById("treeNode-Value-" +
+								parentIdString).textContent.split('=');
+							if(uidSplit.length > 1)
+								uid = uidSplit[1].split(')')[0].trim();
+							else 
+								uid = uidSplit[0];
+						}
+
+						Debug.log("value-uid " + uid);
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_)
@@ -13588,6 +13612,12 @@
 									"margin: 2px 0 0 6px;" +
 									"'></div>";
 								els[i].innerHTML = str;
+							}
+							else if (treeEditingNodeType_ == "value-bitmap")
+							{
+								els[i].innerHTML = createBmpString(decodeURIComponent(newValue),
+									document.getElementById("treeNode-BitMap-Params-" +
+										idString).textContent.split(';'));
 							}
 							else
 								els[i].appendChild(document.createTextNode(decodeURIComponent(newValue)));
@@ -14108,6 +14138,7 @@
 					}
 
 					if (treeEditingNodeType_ == "value-bool" ||
+						treeEditingNodeType_ == "value-bitmap" ||
 						treeEditingNodeType_.indexOf("link") == 0 ||
 						treeEditingNodeType_ == "table-newGroupRow" ||
 						treeEditingNodeType_ == "table-newUIDRow")
@@ -19001,7 +19032,7 @@
 			// 13		  2,//"Display Columns in Ascending Order",
 			// 14		  1,//"Snake Double Rows",
 			// 15		  1,//"Snake Double Columns",
-			// 16		  1,// "Allow Floating Point",
+			// 16		  1,//"Allow Floating Point",
 			// 17		  0// "Value Map to Strings"
 			// 	  ];
 
