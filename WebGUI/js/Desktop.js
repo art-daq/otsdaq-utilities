@@ -2654,6 +2654,8 @@ Desktop.handleWindowHelp = function (mouseEvent)
 //==============================================================================
 Desktop.handleDashboardHelp = function (mouseEvent)
 {
+	Debug.closeErrorPop();
+	
 	// Check if window exists and is maximized, then show its tooltip
 	if(Desktop.desktop.getForeWindow() && 
 		Desktop.desktop.getForeWindow().isMaximized())
