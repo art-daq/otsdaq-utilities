@@ -3633,7 +3633,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		doDisplayColsAscending = bitMapParams[13] == "Yes"?1:0;
 		doSnakeColumns = bitMapParams[14] == "Yes"?1:0;
 		doSnakeRows = bitMapParams[15] == "Yes"?1:0;
-		if(bitMapParams > 16)
+		if(bitMapParams.length > 16)
 		{
 			allowFloatingPoint = bitMapParams[16] == "Yes"?1:0;
 			valueMapToStrings = bitMapParams[17];
@@ -4152,7 +4152,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			let tmpNumber = textInputEls[i].value;
 			if(isNaN(parseFloat(textInputEls[i].value)))
 			{
-				Debug.err("Input value",textInputEls[i].value,"is not a valid number!");
+				if(finalChange) //show error for final change
+					Debug.err("Input value",textInputEls[i].value,"is not a valid number!");
 				return;
 			}
 
