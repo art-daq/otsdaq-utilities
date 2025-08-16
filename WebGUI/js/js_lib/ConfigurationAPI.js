@@ -3587,7 +3587,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					"(stepValue possible values are from 1 to " + (maxValue - minValue) + ".)");
 			return false;
 		}
-		if((((maxValue-minValue)/stepValue)|0) != (maxValue-minValue)/stepValue)
+		if((((maxValue-minValue)/stepValue) >>> 0 /* force 32-bit integer */) != 
+			(maxValue-minValue)/stepValue)
 		{
 			Debug.err("Illegal input parameters, maxValue of " + maxValue +
 					" must be an integer number of stepValue (stepValue=" + stepValue +
