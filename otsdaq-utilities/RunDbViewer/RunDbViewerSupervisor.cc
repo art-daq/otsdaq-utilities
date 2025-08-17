@@ -5,17 +5,11 @@
 
 using namespace ots;
 
-const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
-                                         ? getenv("RUNDBVIEWER_DATA_PATH")
-                                         : "." + std::string("/");
-#define RUNDBVIEWER_CATEGORY_LIST_PATH RUNDBVIEWER_PATH + "category_list.xml"
-
 #define XML_ADMIN_STATUS "rundbviewer_admin_status"
 #define XML_STATUS "rundbviewer_status"
 #define XML_MOST_RECENT_DAY "most_recent_day"
-#define XML_CATEGORY_ROOT "categories"
-#define XML_CATEGORY "category"
-#define XML_ACTIVE_CATEGORY "active_category"
+#define XML_RUNTYPE_LIST "run_type_list"
+#define XML_ACTIVE_RUNTYPE "active_runtype"
 
 #define XML_RUNDBVIEWER_ENTRY "rundbviewer_entry"
 #define XML_RUNDBVIEWER_ENTRY_RUN_NUMBER "rundbviewer_entry_run_number"
@@ -23,7 +17,7 @@ const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
 #define XML_RUNDBVIEWER_ENTRY_RUN_TYPE "rundbviewer_entry_run_type"
 #define XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION \
 	"rundbviewer_entry_run_artdaq_partition"
-#define XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME "rundbviewer_entry_run_host_name"
+#define XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME "host_name"
 #define XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID "condition_id"
 #define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME "configuration_name"
 #define XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION "configuration_version"
@@ -31,6 +25,8 @@ const std::string RUNDBVIEWER_PATH = getenv("RUNDBVIEWER_DATA_PATH")
 #define XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION "context_version"
 #define XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION "online_software_version"
 #define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE "shifter_note"
+#define XML_RUNDBVIEWER_ENTRY_RUN_START_TIME "start_time"
+#define XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME "stop_time"
 
 XDAQ_INSTANTIATOR_IMPL(RunDbViewerSupervisor)
 
@@ -112,27 +108,15 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 	__COUTTV__(requestType);
 
 	// Commands
-	//	GetCategoryList
+	//	getRunTypeList
 	//	RefreshRunDbViewer
 
 	// to report to RunDbViewer admin status use
 	// xmlOut.addTextElementToData(XML_ADMIN_STATUS,tempStr);
 
-	if(requestType == "GetCategoryList")
+	if(requestType == "GetRunTypeList")
 	{
-		// remove from xml list, but do not remove directory (requires manual delete so
-		// mistakes aren't made)
-		if(userInfo.permissionLevel_ >=
-		   CoreSupervisorBase::getSupervisorPropertyUserPermissionsThreshold(
-		       "GetCategoryListAdmin"))
-		{
-			xmlOut.addTextElementToData("is_admin", "0");  // indicate not an admin
-			return;
-		}
-		// else
-
-		xmlOut.addTextElementToData("is_admin", "1");  // indicate an admin
-		getCategories(&xmlOut);
+		getRunTypeList(&xmlOut);
 	}
 	else if(requestType == "RefreshRunDbViewer")
 	{
@@ -145,17 +129,19 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 		time_t date;
 		sscanf(Date.c_str(), "%li", &date);  // scan for unsigned long
 
-		__COUT__ << "date " << date << " duration " << Duration << std::endl;
+		__COUT__ << "User name " << userInfo.username_ << " date " << date << " duration "
+		         << Duration << std::endl;
 
 		std::stringstream str;
-		std::string       category = "";
+		std::string       runType = StringMacros::decodeURIComponent(
+            CgiDataUtilities::postData(cgiIn, "runTypeFilter"));
 		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
 		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
 		refreshRunDbViewer(date,
 		                   Duration,
 		                   &xmlOut,
 		                   (std::ostringstream*)&str,
-		                   category,
+		                   runType,
 		                   pluginName,
 		                   runInfoUID);
 		__COUT__ << str.str() << std::endl;
@@ -165,7 +151,9 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 		// returns Run conditions for currently condition_ID
 		uint64_t condition_ID =
 		    CgiDataUtilities::postDataAsUint64_t(cgiIn, "condition_ID");
-		getRunConditionByID(condition_ID, &xmlOut);
+		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
+		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
+		getRunConditionByID(condition_ID, &xmlOut, pluginName, runInfoUID);
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
@@ -194,54 +182,30 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 		    << this->getApplicationDescriptor()->getLocalId() << "&src=" << src
 		    << "'></frameset></html>";
 	}
-	else if(requestType == "LogReport")
-	{
-		std::string activeCategory = CgiDataUtilities::getData(cgiIn, "activeCategory");
-		__COUT__ << " Start Log Report for " << activeCategory << std::endl;
-
-		out << "<!DOCTYPE HTML><html lang='en'><header><title>ots RunDbViewer "
-		       "Reports</title></header><frameset col='100%' row='100%'><frame "
-		       "src='/WebPath/html/RunDbViewerReport.html?urn="
-		    << this->getApplicationDescriptor()->getLocalId()
-		    << "&activeCategory=" << activeCategory << "'></frameset></html>";
-	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
 }  //end request()
 
 //==============================================================================
-/// getCategories
+/// getRunTypeList
 ///		if xmlOut, then output categories to xml
 ///		if out, then output to stream
-void RunDbViewerSupervisor::getCategories(HttpXmlDocument*    xmlOut,
-                                          std::ostringstream* out)
+void RunDbViewerSupervisor::getRunTypeList(HttpXmlDocument*    xmlOut,
+                                           std::ostringstream* out)
 {
-	// check that category listing doesn't already exist
-	HttpXmlDocument expXml;
-	if(!expXml.loadXmlDocument((std::string)RUNDBVIEWER_CATEGORY_LIST_PATH))
-	{
-		__COUT__ << "Fatal Error - Category database." << std::endl;
-		__COUT__ << "Creating empty category database." << std::endl;
-
-		expXml.addTextElementToData((std::string)XML_CATEGORY_ROOT);
-		expXml.saveXmlDocument((std::string)RUNDBVIEWER_CATEGORY_LIST_PATH);
-		return;
-	}
-
 	std::vector<std::string> exps;
-	expXml.getAllMatchingValues(XML_CATEGORY, exps);
 
 	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, activeCategory_);
+		xmlOut->addTextElementToData(XML_ACTIVE_RUNTYPE, activeRunType_);
 
 	for(unsigned int i = 0; i < exps.size(); ++i)  // loop categories
 	{
 		if(xmlOut)
-			xmlOut->addTextElementToData(XML_CATEGORY, exps[i]);
+			xmlOut->addTextElementToData(XML_RUNTYPE_LIST, exps[i]);
 		if(out)
 			*out << exps[i] << std::endl;
 	}
-}  //end getCategories()
+}  //end getRunTypeList()
 
 //==============================================================================
 ///	refreshRunDbViewer
@@ -253,14 +217,12 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
                                                uint32_t            duration,
                                                HttpXmlDocument*    xmlOut,
                                                std::ostringstream* out,
-                                               std::string         category,
+                                               std::string         runType,
                                                const std::string&  pluginName,
                                                const std::string&  runInfoUID)
 {
-	if(category == "")
-		category = activeCategory_;  // default to active category
 	if(xmlOut)
-		xmlOut->addTextElementToData(XML_ACTIVE_CATEGORY, category);  // for success
+		xmlOut->addTextElementToData(XML_ACTIVE_RUNTYPE, runType);  // for success
 
 	char dayIndexStr[20];
 
@@ -271,8 +233,8 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 
 	if(date == 0)
 		date = time(NULL);
-	unsigned int startTime = date;
-	unsigned int endTime   = startTime - (60 * 60 * 24) * duration;
+	unsigned int endTime   = date;
+	unsigned int startTime = endTime - (60 * 60 * 24) * duration;
 	__COUT__ << "Start time " << startTime << " End time " << endTime << __E__;
 
 	sprintf(dayIndexStr, "%lu", date * 0);
@@ -297,8 +259,9 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		__SS_THROW__;
 	}
 
+	std::string filter = "AND run_type.run_type_description like '%" + runType + "%'";
 	std::vector<std::vector<std::string>> runRecords =
-	    runInfoInterface->getRunRecords(startTime, endTime, "");
+	    runInfoInterface->getRunRecords(startTime, endTime, filter);
 
 	if(xmlOut)
 	{
@@ -331,6 +294,10 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			    XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION, runData[10], entryEl);
 			xmlOut->addTextElementToParent(
 			    XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE, runData[11], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_START_TIME, runData[12], entryEl);
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME, runData[13], entryEl);
 			__COUT__ << "xmlOut getMatchingValue "
 			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
 			i++;
@@ -341,13 +308,42 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 //==============================================================================
 ///	getRunConditionByID
 ///		returns run conditions by condition_ID
-void RunDbViewerSupervisor::getRunConditionByID(uint64_t         condition_ID,
-                                                HttpXmlDocument* xmlOut)
+void RunDbViewerSupervisor::getRunConditionByID(uint64_t           condition_ID,
+                                                HttpXmlDocument*   xmlOut,
+                                                const std::string& pluginName,
+                                                const std::string& runInfoUID)
 {
-	std::string JSONMessage = "{ ";
-	JSONMessage += "\"condition_ID\": \"" + std::to_string(condition_ID) + "\"";
-	JSONMessage += "}";
+	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
+	try
+	{
+		runInfoInterface.reset(makeRunInfo(pluginName, runInfoUID));
+	}
+	catch(...)
+	{
+		;
+	}
 
-	xmlOut->addTextElementToData("JSON", JSONMessage);
-	__COUT__ << "getRunConditionByID - JSONMessage: " << JSONMessage << __E__;
+	if(runInfoInterface == nullptr)
+	{
+		__SS__ << "runInfo Db interface plugin construction failed of " << pluginName
+		       << __E__;
+		__SS_THROW__;
+	}
+
+	if(xmlOut)
+	{
+		xmlOut->addTextElementToData("condition_id", std::to_string(condition_ID));
+
+		std::vector<std::vector<std::string>> conditionRecords =
+		    runInfoInterface->getRunConditionByID(condition_ID);
+		int i = 0;
+		for(auto conditionRecord : conditionRecords)
+		{
+			xmlOut->addTextElementToData("blob", conditionRecord[0]);
+			xmlOut->addTextElementToData("commit_time", conditionRecord[1]);
+			i++;
+		}
+
+		__COUT__ << "getRunConditionByID - records = " << i << __E__;
+	}
 }  //end getRunConditionByID()

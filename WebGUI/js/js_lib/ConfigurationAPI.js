@@ -3066,7 +3066,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 	//		localValidateInputs()
 	//		localInitBitmapData()
 	//		localConvertGridToRowCol(r,c)
-	//		localConvertValueToRGBA(val)
+	//		localConvertValueToRGBA(val) --> ConfigurationAPI.bitMapDialogConvertValueToRGBA(val, minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+	//					floorValueColor, ceilValueColor)
 	//		localConvertFullGridToRowCol()
 	//		localConvertFullRowColToGrid(srcMatrix)
 	//		localCreateBitmap()
@@ -3482,11 +3483,36 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 	//	else true.
 	function localValidateInputs()
 	{
+		// extract bitMapInfo parameters:
+		//	must match TableEditor js handling:
+
+		//		[ //types => 0:string, 1:bool (default no),
+		//		  //2:bool (default yes), 3:color
+		//
+		// 0		  0,//"Number of Rows",
+		// 1		  0,//"Number of Columns",
+		// 2		  0,//"Cell Bit-field Size",
+		// 3		  0,//"Min-value Allowed",
+		// 4		  0,//"Max-value Allowed",
+		// 5		  0,//"Value step-size Allowed",
+		// 6		  0,//"Display Aspect H:W",
+		// 7		  3,//"Min-value Cell Color",
+		// 8		  3,//"Mid-value Cell Color",
+		// 9		  3,//"Max-value Cell Color",
+		// 10		  3,//"Absolute Min-value Cell Color",
+		// 11		  3,//"Absolute Max-value Cell Color",
+		// 12		  1,//"Display Rows in Ascending Order",
+		// 13		  2,//"Display Columns in Ascending Order",
+		// 14		  1,//"Snake Double Rows",
+		// 15		  1,//"Snake Double Columns",
+		// 16		  1,// "Allow Floating Point",
+		// 17		  0// "Value Map to Strings"
+		// 	  ];
 
 		//veryify bitmap params is expected size
-		if(bitMapParams.length != 16)
+		if(bitMapParams.length != 16 && bitMapParams.length != 18)
 		{
-			Debug.log("Illegal input parameters, expecting 16 parameters and count is " + bitMapParams.length + ". There is a mismatch in Table Editor handling of BitMap fields (contact an admin to fix)." +
+			Debug.log("Illegal input parameters, expecting 18 parameters and count is " + bitMapParams.length + ". There is a mismatch in Table Editor handling of BitMap fields (contact an admin to fix)." +
 					"\nHere is a printout of the input parameters: " + bitMapParams,Debug.HIGH_PRIORITY);
 			return false;
 		}
@@ -3526,12 +3552,12 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		else
 			bitMask = (1<<bitFieldSize) - 1; //wont work for 31 bits (JS is always signed)
 
-		minValue = bitMapParams[3] == "DEFAULT" || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
-		maxValue = bitMapParams[4] == "DEFAULT" || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
+		minValue = bitMapParams[3] == DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
+		maxValue = bitMapParams[4] == DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
 		if(maxValue < minValue)
 			maxValue = bitMask;
 		midValue = (maxValue + minValue)/2; //used for color calcs
-		stepValue = bitMapParams[5] == "DEFAULT" || bitMapParams[5] == ""?1:(bitMapParams[5]|0);
+		stepValue = bitMapParams[5] == DEFAULT || bitMapParams[5] == ""?1:(bitMapParams[5]|0);
 
 		if(minValue < 0 || minValue > bitMask)
 		{
@@ -3604,13 +3630,12 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		if(doSnakeColumns && doSnakeRows)
 		{
-			Debug.log("Can not have a bitmap that snakes both rows and columns, please choose one or the other (or neither).",Debug.HIGH_PRIORITY);
+			Debug.err("Can not have a bitmap that snakes both rows and columns, please choose one or the other (or neither).");
 			return false;
 		}
 
-
 		return true;
-	}
+	} //end localValidateInputs()
 
 	//:::::::::::::::::::::::::::::::::::::::::
 	//localInitBitmapData ~~
@@ -3663,7 +3688,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 				{
 					bmpData[r][c] = minValue; //min-value entry in column
 
-					color = localConvertValueToRGBA(bmpData[r][c]);
+					color = //localConvertValueToRGBA(bmpData[r][c]);
+						ConfigurationAPI.bitMapDialogConvertValueToRGBA(bmpData[r][c],
+							minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+							floorValueColor, ceilValueColor);
 					bmpDataImage.data[(r*cols + c)*4+0]=color[0];
 					bmpDataImage.data[(r*cols + c)*4+1]=color[1];
 					bmpDataImage.data[(r*cols + c)*4+2]=color[2];
@@ -3696,51 +3724,51 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			retVal[0] = rows + (rows - 1 - retVal[0]);
 
 		return retVal;
-	}
+	} //end localConvertGridToRowCol()
 
-	//:::::::::::::::::::::::::::::::::::::::::
-	//localConvertValueToRGBA ~~
-	//	conver bitfield value to RGBA based on input parameters
-	function localConvertValueToRGBA(val)
-	{
-		if(val >= maxValue)
-			return [ceilValueColor[0],
-					ceilValueColor[1],
-					ceilValueColor[2],
-					  255]; //always max alpha
+	// //:::::::::::::::::::::::::::::::::::::::::
+	// //localConvertValueToRGBA ~~
+	// //	conver bitfield value to RGBA based on input parameters
+	// function localConvertValueToRGBA(val)
+	// {
+	// 	if(val >= maxValue)
+	// 		return [ceilValueColor[0],
+	// 				ceilValueColor[1],
+	// 				ceilValueColor[2],
+	// 				  255]; //always max alpha
 
-		if(val <= minValue)
-			return [floorValueColor[0],
-					floorValueColor[1],
-					floorValueColor[2],
-					  255]; //always max alpha
+	// 	if(val <= minValue)
+	// 		return [floorValueColor[0],
+	// 				floorValueColor[1],
+	// 				floorValueColor[2],
+	// 				  255]; //always max alpha
 
-		if(val == midValue)	//avoid dividing by 0 in blend
-			return [midValueColor[0],
-					midValueColor[1],
-					midValueColor[2],
-					  255]; //always max alpha
+	// 	if(val == midValue)	//avoid dividing by 0 in blend
+	// 		return [midValueColor[0],
+	// 				midValueColor[1],
+	// 				midValueColor[2],
+	// 				  255]; //always max alpha
 
-		//blend lower half
-		var t;
-		if(val <= midValue)
-		{
-			t = (val - minValue)/(midValue - minValue);
-			return [minValueColor[0]*(1-t) + t*midValueColor[0],
-					minValueColor[1]*(1-t) + t*midValueColor[1],
-					minValueColor[2]*(1-t) + t*midValueColor[2],
-					  255]; //always max alpha
-		}
-		//blend upper half
-		//if(val >= midValue)
-		{
-			t = (val - midValue)/(maxValue - midValue);
-			return [midValueColor[0]*(1-t) + t*maxValueColor[0],
-					midValueColor[1]*(1-t) + t*maxValueColor[1],
-					midValueColor[2]*(1-t) + t*maxValueColor[2],
-					  255]; //always max alpha
-		}
-	}
+	// 	//blend lower half
+	// 	var t;
+	// 	if(val <= midValue)
+	// 	{
+	// 		t = (val - minValue)/(midValue - minValue);
+	// 		return [minValueColor[0]*(1-t) + t*midValueColor[0],
+	// 				minValueColor[1]*(1-t) + t*midValueColor[1],
+	// 				minValueColor[2]*(1-t) + t*midValueColor[2],
+	// 				  255]; //always max alpha
+	// 	}
+	// 	//blend upper half
+	// 	//if(val >= midValue)
+	// 	{
+	// 		t = (val - midValue)/(maxValue - midValue);
+	// 		return [midValueColor[0]*(1-t) + t*maxValueColor[0],
+	// 				midValueColor[1]*(1-t) + t*maxValueColor[1],
+	// 				midValueColor[2]*(1-t) + t*maxValueColor[2],
+	// 				  255]; //always max alpha
+	// 	}
+	// }
 
 
 	//:::::::::::::::::::::::::::::::::::::::::
@@ -3805,7 +3833,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 								(stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
 								" @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
-					color = localConvertValueToRGBA(bmpData[r][c]);
+					color = //localConvertValueToRGBA(bmpData[r][c]);
+						ConfigurationAPI.bitMapDialogConvertValueToRGBA(bmpData[r][c],
+							minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+							floorValueColor, ceilValueColor);
 					bmpDataImage.data[(r*cols + c)*4+0]=color[0];
 					bmpDataImage.data[(r*cols + c)*4+1]=color[1];
 					bmpDataImage.data[(r*cols + c)*4+2]=color[2];
@@ -4092,7 +4123,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			Debug.log("localUpdateScroll " + i);
 
 			clickValues[i] = scrollEls[i].value|0;
-			clickColors[i] = localConvertValueToRGBA(clickValues[i]);
+			clickColors[i] = //localConvertValueToRGBA(clickValues[i]);
+				ConfigurationAPI.bitMapDialogConvertValueToRGBA(clickValues[i],
+					minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+					floorValueColor, ceilValueColor);
 
 			textInputEls[i].value = clickValues[i];
 			colorSampleEls[i].src = ConfigurationAPI.getOnePixelPngData(clickColors[i]);
@@ -4121,7 +4155,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					return; //no locked to step value
 				Debug.log("displaying change");
 			}
-			clickColors[i] = localConvertValueToRGBA(clickValues[i]);
+			clickColors[i] = //localConvertValueToRGBA(clickValues[i]);
+				ConfigurationAPI.bitMapDialogConvertValueToRGBA(clickValues[i],
+					minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+					floorValueColor, ceilValueColor);
 
 			scrollEls[i].value = clickValues[i];
 			colorSampleEls[i].src = ConfigurationAPI.getOnePixelPngData(clickColors[i]);
@@ -4152,7 +4189,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			if(clickValues[i] < minValue) clickValues[i] = minValue;
 			if(clickValues[i] > maxValue) clickValues[i] = maxValue;
 
-			clickColors[i] = localConvertValueToRGBA(clickValues[i]);
+			clickColors[i] = //localConvertValueToRGBA(clickValues[i]);
+				ConfigurationAPI.bitMapDialogConvertValueToRGBA(clickValues[i],
+					minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+					floorValueColor, ceilValueColor);
 
 			textInputEls[i].value = clickValues[i];
 			scrollEls[i].value = clickValues[i];
@@ -4677,8 +4717,55 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		bmpY = bmpY + (popSz.h-bmpY-bmpH)/2;
 		hdrY = bmpY - padding - hdrH;
 	} //end localOptimizeAspectRatio()
-}
+} //end ConfigurationAPI.bitMapDialog()
 
+//=====================================================================================
+//bitMapDialogConvertValueToRGBA ~~
+//	convert bitfield value to RGBA based on input parameters
+ConfigurationAPI.bitMapDialogConvertValueToRGBA = function(
+	val, minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+	floorValueColor, ceilValueColor)
+{
+	if(val >= maxValue)
+		return [ceilValueColor[0],
+				ceilValueColor[1],
+				ceilValueColor[2],
+				255]; //always max alpha
+
+	if(val <= minValue)
+		return [floorValueColor[0],
+				floorValueColor[1],
+				floorValueColor[2],
+				255]; //always max alpha
+	
+	let midValue = (maxValue + minValue)/2; //used for color calcs
+
+	if(val == midValue)	//avoid dividing by 0 in blend
+		return [midValueColor[0],
+				midValueColor[1],
+				midValueColor[2],
+				255]; //always max alpha
+
+	//blend lower half
+	var t;
+	if(val <= midValue)
+	{
+		t = (val - minValue)/(midValue - minValue);
+		return [minValueColor[0]*(1-t) + t*midValueColor[0],
+				minValueColor[1]*(1-t) + t*midValueColor[1],
+				minValueColor[2]*(1-t) + t*midValueColor[2],
+				255]; //always max alpha
+	}
+	//blend upper half
+	//if(val >= midValue)
+	{
+		t = (val - midValue)/(maxValue - midValue);
+		return [midValueColor[0]*(1-t) + t*maxValueColor[0],
+				midValueColor[1]*(1-t) + t*maxValueColor[1],
+				midValueColor[2]*(1-t) + t*maxValueColor[2],
+				255]; //always max alpha
+	}
+} //end ConfigurationAPI.bitMapDialogConvertValueToRGBA()
 
 //=====================================================================================
 //getDateString ~~
@@ -4709,7 +4796,7 @@ ConfigurationAPI.getDateString = function(date)
 	dateStr += date.toLocaleTimeString([],{timeZoneName: "short"}).split(" ")[2];
 	return dateStr;
 }
-}
+} //end ConfigurationAPI.getDateString()
 
 //=====================================================================================
 //setCaretPosition ~~
@@ -4717,7 +4804,7 @@ ConfigurationAPI.setCaretPosition = function(elem, caretPos, endPos)
 {
 	elem.focus();
 	elem.setSelectionRange(caretPos, endPos);
-}
+} //end ConfigurationAPI.setCaretPosition()
 
 //=====================================================================================
 //ConfigurationAPI.removeAllPopUps()
@@ -4753,7 +4840,7 @@ ConfigurationAPI.setPopUpPosition = function(el,w,h,padding,border,margin,doNotR
 	//popupResize ~~
 	//	set position and size
 	ConfigurationAPI.setPopUpPosition.stopPropagation = function(event) {
-		//Debug.log("stop propagation");
+		// Debug.log("stop propagation");
 		event.stopPropagation();
 	}
 
@@ -4821,6 +4908,9 @@ ConfigurationAPI.setPopUpPosition = function(el,w,h,padding,border,margin,doNotR
 	el.addEventListener("keydown",ConfigurationAPI.setPopUpPosition.stopPropagation);
 	el.addEventListener("mousemove",ConfigurationAPI.setPopUpPosition.stopPropagation);
 	el.addEventListener("mousemove",DesktopContent.mouseMove);
+	el.addEventListener("mousedown",ConfigurationAPI.setPopUpPosition.stopPropagation);
+	el.addEventListener("mouseup",ConfigurationAPI.setPopUpPosition.stopPropagation);
+	el.addEventListener("click",ConfigurationAPI.setPopUpPosition.stopPropagation);
 
 	el.style.overflow = "auto";
 
