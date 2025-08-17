@@ -1184,7 +1184,10 @@ DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 	const el = document.getElementById(targetID) || document.getElementsByName(targetID)[0];
 	
 	if(!el)
-		Debug.err("Link contents not in scope");
+	{
+		Debug.err("Scroll-into-view target element '" + targetID + "' not found!");
+		return;
+	}
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
 
@@ -1197,44 +1200,53 @@ DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 		el.style.transition = 'background-color 0.5s ease-in-out';
 		el.style.backgroundColor = 'yellow';
 		setTimeout(() => {
-			el.style.backgroundColor = bg;
-		}, 500);
+				el.style.backgroundColor = bg;
+			}, 500);
 		setTimeout(() => {
-			el.style.backgroundColor = 'yellow';
-		}, 1000);
+				el.style.backgroundColor = 'yellow';
+			}, 1000);
 		setTimeout(() => {
-			el.style.backgroundColor = bg;
-		}, 1500);
+				el.style.backgroundColor = bg;
+			}, 1500);
 	}
-}
+} //end scrollIntoViewY()
 
+//=====================================================================================
+//DesktopContent.scrollIntoViewX / scrollIntoViewY
+// is a function that allows for buttons to not scroll the main
+// ots window. To use, wrap your button/link/anchor with a div
+// and pass its id to scrollIntoView
 DesktopContent.scrollIntoViewX = function (targetID, doHighlight)
 {
 	const el = document.getElementById(targetID) || document.getElementsByName(targetID)[0];
 
 	if (!el)
-		Debug.err("Link contents not in scope");
+	{
+		Debug.err("Scroll-into-view target element '" + targetID + "' not found!");
+		return;
+	}
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
 
 	if (window.scrollY != 0)
 		window.scroll({ top: 0 });
 
-	if (doHighlight) {
+	if (doHighlight) 
+	{
 		const bg = el.style.backgroundColor;
 		el.style.transition = 'background-color 0.5s ease-in-out';
 		el.style.backgroundColor = 'yellow';
 		setTimeout(() => {
-			el.style.backgroundColor = bg;
-		}, 500);
+				el.style.backgroundColor = bg;
+			}, 500);
 		setTimeout(() => {
-			el.style.backgroundColor = 'yellow';
-		}, 1000);
+				el.style.backgroundColor = 'yellow';
+			}, 1000);
 		setTimeout(() => {
-			el.style.backgroundColor = bg;
-		}, 1500);
+				el.style.backgroundColor = bg;
+			}, 1500);
 	}
-}
+} //end scrollIntoViewX()
 
 //=====================================================================================
 //DesktopContent.XMLHttpRequest

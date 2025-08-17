@@ -621,7 +621,7 @@
 					{
 						if(_mailbox) //only add jump link if there is a large Preferences section
 							htmlStr += "<div id='prefs'><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
-							// htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";
+
 						el.innerHTML = htmlStr;
 					}
 					else
@@ -634,7 +634,6 @@
 				htmlStr += "<br>";
 				if(!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
 				htmlStr += "<hr width='75%'><center><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
-				//htmlStr += "<hr width='75%'><center><a href='#' style='color:#880000'>Jump to Preferences Section</a></center><h1>Accounts</h1>";
 
 				htmlStr += "<div id='accountsSearchDiv'>Search: " +
 					"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
