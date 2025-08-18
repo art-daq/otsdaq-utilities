@@ -562,10 +562,10 @@
 						} //end public macro loop
 
 
-						console.log("feClassToFEsMap_",feClassToFEsMap_);
-						console.log("feToMacrosMap_",feToMacrosMap_);
-						console.log("privateMacros_",privateMacros_);
-						console.log("publicMacros_",publicMacros_);
+						Debug.log("feClassToFEsMap_",feClassToFEsMap_);
+						Debug.log("feToMacrosMap_",feToMacrosMap_);
+						Debug.log("privateMacros_",privateMacros_);
+						Debug.log("publicMacros_",publicMacros_);
 
 
 						if(Object.keys(feClassToFEsMap_).length == 0)
@@ -576,7 +576,7 @@
 						}
 
 						//construct macro module layout
-						console.log("macroModuleLayoutString_",macroModuleLayoutString_);
+						Debug.log("macroModuleLayoutString_",macroModuleLayoutString_);
 
 						macroModules_ = {}; //reset
 						layoutMaxRow_ = 0;
@@ -587,7 +587,7 @@
 							var layoutArgs = layoutModules[i].split(',');
 							if(layoutArgs.length != 6)
 								continue;
-							console.log(i,":","layoutArgs",layoutArgs);
+							Debug.log(i,":","layoutArgs",layoutArgs);
 
 							//layout args:
 							//			row,
@@ -621,7 +621,7 @@
 						} //end macro module extraction loop
 
 
-						console.log("macroModules_",macroModules_);
+						Debug.log("macroModules_",macroModules_);
 
 						redraw();
 						return;
@@ -664,14 +664,14 @@
 			{
 				Debug.log("Invalid row " + r + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(!macroModules_[r][c])
 			{
 				Debug.log("Invalid column " + c + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 
@@ -685,7 +685,7 @@
 			{
 				Debug.log("Invalid Macro Name '" + macroName + "' - please select a valid Macro Name.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 
@@ -725,7 +725,7 @@
 			}
 			postData += outputData;
 
-			console.log("postData",postData);
+			Debug.log("postData",postData);
 
 			var str = "";
 			str += "Launched '" + macroName + 
@@ -974,9 +974,13 @@
 								},
 								value /*innerHTML*/,
 								true /*doCloseTag*/) + "<br>";
-					else if(name == "Plotly_Plot")
+					else if(name.includes("Plotly_Plot"))
 					{
 						Debug.log("Found Plotly_Plot",value);
+						// Remove "DEFAULT, " prefix if it exists
+						if (value.startsWith("DEFAULT, ")) {
+							value = value.substring("DEFAULT, ".length);
+						}
 						var plotlyJson;
 						try
 						{
@@ -1024,18 +1028,24 @@ Here is the json string received:
 								`,value);
 							continue;
 						}
+
+						Debug.log("Plotly data",plotlyJson.data);
+						Debug.log("Plotly layout",plotlyJson.layout);
+
+						Debug.log("feExecJson",feExecJson);
+						Debug.log("feMacroName_feTargetUID",feMacroName + "_" + feTargetUID);
 						
-						feExecJson[feMacroName + "_" + feTargetUID] = {}; //create object to hold plotly json results
-						feExecJson[feMacroName + "_" + feTargetUID].data = plotlyJson.data;
-						feExecJson[feMacroName + "_" + feTargetUID].layout = plotlyJson.layout;
-						str += "<div id='" + feMacroName + "_" + feTargetUID + 
+						feExecJson[feMacroName + "_" + feTargetUID + "_" + name] = {}; //create object to hold plotly json results
+						feExecJson[feMacroName + "_" + feTargetUID + "_" + name].data = plotlyJson.data;
+						feExecJson[feMacroName + "_" + feTargetUID + "_" + name].layout = plotlyJson.layout;
+						str += "<div id='" + feMacroName + "_" + feTargetUID + "_" + name + 
 							"_plotly_container' style='" + `
 								resize: both;
 								overflow: auto;
 								border: 1px solid #ccc;
 								width: 600px;
 								height: 400px;` + "'>"; 
-						str += "<div id='" + feMacroName + "_" + feTargetUID + 
+						str += "<div id='" + feMacroName + "_" + feTargetUID + "_" + name + 
 							"_plotly' style='width:100%;height:100%;'></div>"; 
 						str += "</div>";
 					}
@@ -1144,9 +1154,9 @@ Here is the json string received:
 			//handle flag/trigger actions
 			if (isFlagActive)
 			{
-				console.log("Entering flagging section, isFlagActive:", isFlagActive);  // Log #1
+				Debug.log("Entering flagging section, isFlagActive:", isFlagActive);  // Log #1
 				var comparisonOperator = document.getElementById('comparisonOperator').value;
-				console.log("Comparison Operator:", comparisonOperator);  // Log #2
+				Debug.log("Comparison Operator:", comparisonOperator);  // Log #2
 				var triggeredNumber = null;
 
 				if (comparisonOperator === 'none')
@@ -1165,10 +1175,10 @@ Here is the json string received:
 				}
 				else
 				{
-					console.log("HTML Content:", el.innerHTML);
+					Debug.log("HTML Content:", el.innerHTML);
 					// Extract label and comparison value from flagKeyword
 					var keywordParts = flagKeyword.split('<');
-					console.log("Flag Keyword:", flagKeyword);  // Log #2
+					Debug.log("Flag Keyword:", flagKeyword);  // Log #2
 					if (keywordParts.length === 2)
 					{
 						var searchText = keywordParts[0].trim().replace(/\|$/, '');
@@ -1176,25 +1186,25 @@ Here is the json string received:
 
 						// Update regex pattern to match full label text
 						var regexPattern = '([^|]+)\\s*\\|\\s*(\\d+(\\.\\d+)?)\\s*[VC]';
-						console.log("Running regex, pattern:", regexPattern);  // Log #3
+						Debug.log("Running regex, pattern:", regexPattern);  // Log #3
 						var regex = new RegExp(regexPattern, 'g');
 						var conditionMet = false;
 
 						var match;
 						while ((match = regex.exec(el.innerHTML)) !== null)
 						{
-							console.log("Match found:", match);  // Log #3
-							console.log("Matched String:", match[0]);
+							Debug.log("Match found:", match);  // Log #3
+							Debug.log("Matched String:", match[0]);
 							var labelFound = match[1].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().replace(/\s+/g, ' ');
 							var foundNumber = parseFloat(match[2]); // match[2] is the captured group (numeric value)
-							console.log("Label Found:", labelFound, "Search Text:", searchText, "Found Number:", foundNumber, "Number To Compare:", numberToCompare);
+							Debug.log("Label Found:", labelFound, "Search Text:", searchText, "Found Number:", foundNumber, "Number To Compare:", numberToCompare);
 
 							if (labelFound === searchText)
 							{
 								switch (comparisonOperator)
 								{
 									case "gt":
-										console.log("Checking condition for operator gt");
+										Debug.log("Checking condition for operator gt");
 										if (foundNumber > numberToCompare)
 										{
 											conditionMet = true;
@@ -1228,7 +1238,7 @@ Here is the json string received:
 							if (conditionMet)
 							{
 								break;
-								console.log("Condition met, triggering flag");
+								Debug.log("Condition met, triggering flag");
 							}
 						}
 
@@ -1236,7 +1246,7 @@ Here is the json string received:
 						{
 							var message;
 							var operatorSymbol = getOperatorSymbol(comparisonOperator);
-							console.log("Operator Symbol for", comparisonOperator, ":", operatorSymbol);  // Log #10
+							Debug.log("Operator Symbol for", comparisonOperator, ":", operatorSymbol);  // Log #10
 							if (flagIfPresent)
 								message = "ALERT: Condition met for: " + searchText + " " + operatorSymbol + " " + numberToCompare + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
 							else
@@ -1304,8 +1314,8 @@ Here is the json string received:
 			var maxRow = layoutMaxRow_;
 			var maxCol = layoutMaxCol_;
 
-			console.log("maxRow",maxRow);
-			console.log("maxCol",maxCol);
+			Debug.log("maxRow",maxRow);
+			Debug.log("maxCol",maxCol);
 
 			//make module grid
 			var str = "";
@@ -1446,7 +1456,7 @@ Here is the json string received:
 									"*" /*innerHTML*/,true /*doCloseTag*/);
 							for(var feClass in feClassToFEsMap_) //go through class keys
 							{
-								console.log(feClass);
+								Debug.log(feClass);
 								str +=  DesktopContent.htmlOpen(
 										"option" + (feClass==feClassSelected?" selected":""),
 										{},
@@ -1522,7 +1532,7 @@ Here is the json string received:
 
 							for(var macroType in MACRO_TYPES_) //go through class keys
 							{
-								console.log(macroType);
+								Debug.log(macroType);
 								str +=  DesktopContent.htmlOpen(
 										"option" + (MACRO_TYPES_[macroType]==
 												feMacroTypeSelected?" selected":""),
@@ -1597,27 +1607,27 @@ Here is the json string received:
 
 			var feClassSelected = document.getElementById("feClassSelect-row-" +
 					r + "-col-" + c).value;
-			console.log("feClassSelected",feClassSelected);
+			Debug.log("feClassSelected",feClassSelected);
 
 			if(!macroModules_[r])
 			{
 				Debug.log("Invalid row " + r + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(!macroModules_[r][c])
 			{
 				Debug.log("Invalid column " + c + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(feClassSelected != "*" && !feClassToFEsMap_[feClassSelected])
 			{
 				Debug.log("Invalid FE Class '" + feClassSelected + "' specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("feClassToFEsMap_",feClassToFEsMap_);
+				Debug.log("feClassToFEsMap_",feClassToFEsMap_);
 				return;
 			}
 
@@ -1626,7 +1636,7 @@ Here is the json string received:
 			var feMacroTypeSelected = macroModules_[r][c].feMacroTypeSelected;
 			var feMacroNameSelected = macroModules_[r][c].feMacroNameSelected;
 
-			console.log("feUIDSelected",feUIDSelected);
+			Debug.log("feUIDSelected",feUIDSelected);
 
 			var str = "";
 
@@ -1663,7 +1673,7 @@ Here is the json string received:
 			// {
 			// 	Debug.log("Invalid FE UID '" + feUIDSelected + "' specified for layout module.",
 			// 			Debug.WARN_PRIORITY);
-			// 	console.log("feUIDObject",feUIDObject);
+			// 	Debug.log("feUIDObject",feUIDObject);
 			// }
 
 			el = document.getElementById("feUIDSelect-row-" +
@@ -1703,7 +1713,7 @@ Here is the json string received:
 			// 		" value:",el.textContent,
 			// 		" key:",el.getAttribute("key-value"),
 			// 		" type:",el.getAttribute("type-value"));
-			console.log(selArr);
+			Debug.log(selArr);
 
 			var uidSelStr = "";
 			for(var s in selArr)
@@ -1786,20 +1796,20 @@ Here is the json string received:
 					r + "-col-" + c).value;
 			else
 				feUIDSelected = multiSelectCSV;
-			console.log("feUIDSelected",feUIDSelected);
+			Debug.log("feUIDSelected",feUIDSelected);
 
 			if(!macroModules_[r])
 			{
 				Debug.log("Invalid row " + r + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(!macroModules_[r][c])
 			{
 				Debug.log("Invalid column " + c + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(feUIDSelected != "*")
@@ -1813,7 +1823,7 @@ Here is the json string received:
 					{
 						Debug.log("Invalid FE UID '" + feUIDSelected + "' specified for layout module.",
 								Debug.HIGH_PRIORITY);
-						console.log("feToMacrosMap_",feToMacrosMap_);
+						Debug.log("feToMacrosMap_",feToMacrosMap_);
 						return;
 					}
 				}
@@ -1826,14 +1836,14 @@ Here is the json string received:
 			Debug.log("feUID target",macroModules_[r][c].feUIDSelected);
 
 
-			console.log("feMacroTypeSelected",feMacroTypeSelected);
-			console.log("feMacroNameSelected",feMacroNameSelected);
+			Debug.log("feMacroTypeSelected",feMacroTypeSelected);
+			Debug.log("feMacroNameSelected",feMacroNameSelected);
 
 			if(MAP_FROM_LAYOUT_TO_MACRO_TYPES_[feMacroTypeSelected] === undefined)
 			{
 				Debug.log("Invalid Macro Type '" + feMacroTypeSelected + "' specified for layout module.",
 						Debug.WARN_PRIORITY);
-				console.log("MAP_FROM_LAYOUT_TO_MACRO_TYPES_",MAP_FROM_LAYOUT_TO_MACRO_TYPES_);
+				Debug.log("MAP_FROM_LAYOUT_TO_MACRO_TYPES_",MAP_FROM_LAYOUT_TO_MACRO_TYPES_);
 			}
 
 			var selectedIndex =
@@ -1863,26 +1873,26 @@ Here is the json string received:
 			{
 				Debug.log("Invalid row " + r + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(!macroModules_[r][c])
 			{
 				Debug.log("Invalid column " + c + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 
 			var feMacroTypeSelected = document.getElementById("macroTypeSelect-row-" +
 					r + "-col-" + c).value;
 			feMacroTypeSelected = MACRO_TYPES_[feMacroTypeSelected]; //convert from readable to encoded macro type
-			console.log("feMacroTypeSelected",feMacroTypeSelected);
+			Debug.log("feMacroTypeSelected",feMacroTypeSelected);
 			if(MAP_FROM_LAYOUT_TO_MACRO_TYPES_[feMacroTypeSelected] === undefined)
 			{
 				Debug.log("Invalid Macro Type '" + feMacroTypeSelected + "' specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("MAP_FROM_LAYOUT_TO_MACRO_TYPES_",MAP_FROM_LAYOUT_TO_MACRO_TYPES_);
+				Debug.log("MAP_FROM_LAYOUT_TO_MACRO_TYPES_",MAP_FROM_LAYOUT_TO_MACRO_TYPES_);
 				return;
 			}
 
@@ -1891,7 +1901,7 @@ Here is the json string received:
 			var feUIDSelected = macroModules_[r][c].feUIDSelected;
 			var feMacroNameSelected = macroModules_[r][c].feMacroNameSelected;
 
-			console.log("feMacroNameSelected",feMacroNameSelected);
+			Debug.log("feMacroNameSelected",feMacroNameSelected);
 
 			var str = "";
 
@@ -1927,7 +1937,7 @@ Here is the json string received:
 									"macroObj":feToMacrosMap_[feUIDarr[i]][macroName]
 							};
 
-					console.log("macroNameCounter",macroNameCounter);
+					Debug.log("macroNameCounter",macroNameCounter);
 					++countToMatch;
 				}
 
@@ -1961,7 +1971,7 @@ Here is the json string received:
 									feClassToFEsMap_[feClassSelected][fe]][macroName]
 							};
 
-					console.log("macroNameCounter",macroNameCounter);
+					Debug.log("macroNameCounter",macroNameCounter);
 					++countToMatch;
 				}
 
@@ -1993,7 +2003,7 @@ Here is the json string received:
 										feClassToFEsMap_[feClass][fe]][macroName]
 								};
 
-						console.log("macroNameCounter",macroNameCounter);
+						Debug.log("macroNameCounter",macroNameCounter);
 						++countToMatch;
 					}
 
@@ -2008,7 +2018,7 @@ Here is the json string received:
 			}
 			macroModules_[r][c].feMacroNameObject = macroNameObject;
 
-			console.log("macroNameObject",macroNameObject);
+			Debug.log("macroNameObject",macroNameObject);
 
 			var i = 0;
 			for(var macroName in macroNameObject) //go through Macro Names
@@ -2018,7 +2028,7 @@ Here is the json string received:
 //						(feMacroTypeSelected == MACRO_TYPE_PUBLIC_?
 //								macroNamePtr:macroNamePtr);
 
-				console.log(macroName);
+				Debug.log(macroName);
 				str +=  DesktopContent.htmlOpen(
 						"option" ,
 						{},
@@ -2033,7 +2043,7 @@ Here is the json string received:
 			{
 				Debug.log("Invalid Macro Name '" + feMacroNameSelected + "' specified for layout module.",
 						Debug.WARN_PRIORITY);
-				console.log("macroNameObject",macroNameObject);
+				Debug.log("macroNameObject",macroNameObject);
 				selectedIndex = 0;
 			}
 
@@ -2066,14 +2076,14 @@ Here is the json string received:
 			{
 				Debug.log("Invalid row " + r + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 			if(!macroModules_[r][c])
 			{
 				Debug.log("Invalid column " + c + " specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroModules_",macroModules_);
+				Debug.log("macroModules_",macroModules_);
 				return;
 			}
 
@@ -2084,7 +2094,7 @@ Here is the json string received:
 			var feMacroNameSelected = document.getElementById("macroNameSelect-row-" +
 					r + "-col-" + c).value;
 			macroModules_[r][c].feMacroNameSelected = feMacroNameSelected;
-			console.log("feMacroNameSelected",feMacroNameSelected);
+			Debug.log("feMacroNameSelected",feMacroNameSelected);
 
 			var macroNameObject = macroModules_[r][c].feMacroNameObject;
 
@@ -2101,7 +2111,7 @@ Here is the json string received:
 			{
 				Debug.log("Invalid Macro Name '" + feMacroNameSelected + "' specified for layout module.",
 						Debug.HIGH_PRIORITY);
-				console.log("macroNameObject",macroNameObject);
+				Debug.log("macroNameObject",macroNameObject);
 				return;
 			}
 
@@ -2700,7 +2710,7 @@ Here is the json string received:
 		//showSequence ~~
 		function showSequence(target, seq)
 		{
-			console.log(target, seq);
+			Debug.log(target, seq);
 			var container = document.getElementById(target);
 			container.innerHTML = "";
 			var GUIIndex = 0;
@@ -3059,7 +3069,7 @@ Here is the json string received:
 		//newSequence ~~
 		function newSequence()
 		{
-			console.log("newSequence called");
+			Debug.log("newSequence called");
 			// disable action buttons
 			statusActionButtons(false);
 			// clean selected sequence
@@ -3201,7 +3211,7 @@ Here is the json string received:
 						Debug.log("Sequence is empty!");
 						return;
 					}
-					console.log(sequenceString);
+					Debug.log(sequenceString);
 					selectedSequence_ = JSON.parse(decodeURI(sequenceString));
 
 					updateCurrentMacroDisplay("No Macro Running", 0, 0);
@@ -3255,8 +3265,8 @@ Here is the json string received:
 						   "&sequenceName=" + sequenceName.value;
 
 
-			console.log(JSON.stringify(tempSequence_));
-			console.log("Sequence Name:", sequenceName.value);
+			Debug.log(JSON.stringify(tempSequence_));
+			Debug.log("Sequence Name:", sequenceName.value);
 
 			// API call
 			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence",
@@ -3324,7 +3334,7 @@ Here is the json string received:
 
 			if (!selectedSequence_ || Object.keys(selectedSequence_).length === 0)
 			{
-				console.log("No sequence selected");
+				Debug.log("No sequence selected");
 				updateCurrentMacroDisplay("");
 				return;
 			}
