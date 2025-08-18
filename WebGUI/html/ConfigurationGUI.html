@@ -12222,7 +12222,7 @@
 						let ti = titleStr.indexOf("Value: ");
 						if(ti > 0)
 							titleStr = titleStr.substr(0,ti) + 
-								"Value: \t" + newValue + "\n";
+								"Value: \t" + decodeURIComponent(newValue) + "\n";
 					}
 
 					//some types should be handled before cell is cleared
@@ -13614,7 +13614,7 @@
 							uid == treeEditingTargetUID_)
 						{
 							//modify display with new value
-							//Debug.log("link-idString " + idString + " " + uid);
+							Debug.log("link-idString " + idString + " " + uid);
 							Debug.log("value-idString CHANGE to " + newValue);
 
 							els[i].innerHTML = ""; //clear target el
@@ -13648,7 +13648,27 @@
 							else
 								els[i].appendChild(document.createTextNode(decodeURIComponent(newValue)));
 
-						}
+							// update mouseover titles
+							var el = document.getElementById("treeNode-Field-title-" + idString);
+							if(el)
+							{
+								var titleStr = el.title;
+								// 	titleStr was originally created like this, now insert newValue:
+								// titleStr =  "~ Leaf Value Node ~\n";
+								// titleStr += "Path: \t" + path + nodeName + "\n";
+								// titleStr += "Value: \t" + newValue + "\n";
+								if(titleStr) //could be undefined
+								{
+									let ti = titleStr.indexOf("Value: ");
+									if(ti > 0)
+										titleStr = titleStr.substr(0,ti) + 
+											"Value: \t" + decodeURIComponent(newValue) + "\n";
+									el.title = titleStr; //title node title (e.g. at field)
+									els[i].title = titleStr; //value node title
+								}								
+							}							
+
+						} //end propagate changes to value node
 					}
 				}
 			}
