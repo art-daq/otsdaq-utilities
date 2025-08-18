@@ -3100,7 +3100,9 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 	var doDisplayRowsAscending, doDisplayColsAscending;
 	var doSnakeColumns, doSnakeRows, allowFloatingPoint;
-	var valueMapToStrings;
+	var valueMapToStrings, valueMapToStringsArr = [];
+
+	var MAP_UNDEFINED = "UNDEFINED";
 
 	//validate and load input params
 	if(!localValidateInputs())
@@ -3206,8 +3208,18 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			dataJsonStr += "\t[";
 			for(var c=0;c<transGrid[0].length;++c)
 			{
-				if(c) dataJsonStr += ",";
-				dataJsonStr += transGrid[r][c];
+				if(c) dataJsonStr += ",";				
+
+				//convert strings to integers at start, then back to strings on OK
+				if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+				{
+					if(valueMapToStringsArr[(transGrid[r][c]|0) - minValue] !== undefined) 
+						dataJsonStr += '"' + valueMapToStringsArr[(transGrid[r][c]|0) - minValue].trim() + '"';
+					else 
+						dataJsonStr += '"' + MAP_UNDEFINED + '"';
+				}
+				else 
+					dataJsonStr += transGrid[r][c];
 			}
 			dataJsonStr += "]";
 		}
@@ -3268,7 +3280,10 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		//::::::::
 		//el.onmousemove ~~
-		el.onmousemove = function(event) {
+		el.onmousemove = localHandleMouseMove;	
+		//::::::::
+		function localHandleMouseMove(event) 
+		{
 			var cell = localGetRowCol(event.pageX,event.pageY);
 			var r = cell.r, c = cell.c;
 
@@ -3391,7 +3406,15 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 				}
 
 				//position cursor info
-				infoStr = "Value = " + bmpData[r][c]  + " @ (Row,Col) = (" +
+				infoStr = "Value = " + bmpData[r][c];
+				if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+				{
+					if(valueMapToStringsArr[(bmpData[r][c]|0) - minValue]) //minValue maps to index 0
+						infoStr += "/" + valueMapToStringsArr[(bmpData[r][c]|0) - minValue].trim();
+					else 
+						infoStr += "/" + MAP_UNDEFINED;
+				}
+				infoStr += " @ (Row,Col) = (" +
 						transRC[0] + "," + transRC[1] + ")";
 			}
 			cursorInfo.innerHTML = infoStr;
@@ -3432,6 +3455,9 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 			stopProp = true;
 			event.stopPropagation();
+
+			rLast = -1; cLast = -1; //reset for mouse move
+			localHandleMouseMove(event); //display change
 
 		} //end mouse down
 
@@ -3637,6 +3663,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		{
 			allowFloatingPoint = bitMapParams[16] == "Yes"?1:0;
 			valueMapToStrings = bitMapParams[17];
+			valueMapToStringsArr = valueMapToStrings.split(',');
+			//remove all white space
+			for(let i=0; i<valueMapToStringsArr.length; ++i)
+				valueMapToStringsArr[i] = valueMapToStringsArr[i].trim();		
+			Debug.log("valueMapToStringsArr",valueMapToStringsArr);
 		}
 
 		if(doSnakeColumns && doSnakeRows)
@@ -3673,15 +3704,20 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					bmpData.push([]); //create empty row array
 
 					for(var c=0;c<cols;++c)
-						bmpData[r][c] = 0;
+					{
+						if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+							bmpData[r][c] = MAP_UNDEFINED;
+						else
+							bmpData[r][c] = 0;
+					}
 				}
 				localConvertFullRowColToGrid(jsonMatrix); //also sets bmpDataImage
 			}
 			catch(err)
 			{
-				Debug.log("The input initial value of the bitmap is illegal JSON format. " +
+				Debug.log("The input initial value of the bitmap is illegal JSON format - forcing values to legal values. " +
 						"See error below: \n\n" + err,Debug.HIGH_PRIORITY);
-				useDefault = true;
+				// useDefault = true;
 			}
 		}
 
@@ -3830,23 +3866,52 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					convertedRC[0] = (convertedRC[0]/2)|0;
 				try
 				{
-					bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
+					//convert strings to integers at start, then back to strings on OK
+					if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+					{
+						if((srcMatrix[convertedRC[0]][convertedRC[1]]|0) == srcMatrix[convertedRC[0]][convertedRC[1]])
+						{
+							Debug.log("Interpreting as number.. so leaving as number. Perhaps map to string is newly setup.");
+							bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
+						}
+						else 
+						{
+							bmpData[r][c] = valueMapToStringsArr.indexOf(srcMatrix[convertedRC[0]][convertedRC[1]]);
+							if(bmpData[r][c] < 0) 
+								bmpData[r][c] = maxValue; //default to maxValue (more likely to map to UNDEFINED)
+							else 
+								bmpData[r][c] += minValue; //add offset
+						}
+					}
+					else
+						bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
+
 					if(bmpData[r][c] < minValue)
+					{
+						bmpData[r][c] = minValue; //force to legal value
 						throw("There was an illegal value less than minValue: " +
 								bmpData[r][c] + " < " + minValue + " @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
+					}
 					if(bmpData[r][c] > maxValue)
+					{
+						bmpData[r][c] = maxValue; //force to legal value
 						throw("There was an illegal value greater than maxValue: " +
 								bmpData[r][c] + " > " + maxValue + " @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
+					}
 					if((!allowFloatingPoint || stepValue != 1) &&
 							(((bmpData[r][c]-minValue)/stepValue)|0) != (bmpData[r][c]-minValue)/stepValue)
+					{
+						let tmpVal = bmpData[r][c];
+						bmpData[r][c] = (minValue + stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)); //force to legal value
 						throw("There was an illegal value not following stepValue from minValue: " +
-								bmpData[r][c] + " != " +
-								(minValue + stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
+								tmpVal + " != " +
+								(minValue + stepValue*(((tmpVal-minValue)/stepValue)|0)) +
 								" @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
-					color = //localConvertValueToRGBA(bmpData[r][c]);
+					}
+					color = 
 						ConfigurationAPI.bitMapDialogConvertValueToRGBA(bmpData[r][c],
 							minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
 							floorValueColor, ceilValueColor);
@@ -4025,11 +4090,15 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		str += "<div style='float:left; margin: 0 0 20px 0;'>"; //field name and info container
 		str += "<div style='float:left; '>";
-		str += "Target Table/UID/Field: &quot;" + tableName + "/" + UIDName + "/" + fieldName + "&quot;";
+		str += "<b>Target Table/UID/Field:</b> &quot;" + tableName + "/" + UIDName + "/" + fieldName + "&quot;";
 		str += "</div>";
 
 		str += "<div style='float:left; margin-left: 50px;'>";
-		str += "Number of [Rows,Cols]: " + "[" + rows + "," + cols + "]";
+		str += "<b>Number of [Rows,Cols]:</b> " + "[" + rows + "," + cols + "]";
+		if(allowFloatingPoint)
+			str += "<br>Allowing Floating point!";
+		if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+			str += "<br><b>Integer-to-String Map (starting at min-value):</b> " + valueMapToStrings;
 		str += "</div>";
 		str += "</div>";//end field name and info container
 
