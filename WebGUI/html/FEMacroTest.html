@@ -977,7 +977,6 @@
 					else if(name.includes("Plotly_Plot"))
 					{
 						Debug.log("Found Plotly_Plot",value);
-						Debug.log("Found Plotly_Plot",value);
 						// Remove "DEFAULT, " prefix if it exists
 						if (value.startsWith("DEFAULT, ")) {
 							value = value.substring("DEFAULT, ".length);
@@ -3707,8 +3706,8 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-		<a href="#" onclick="toggleView()">Toggle View</a>
-		<a href="#macroModule-sequence" onclick="toggleSequenceMode()">Sequence Mode</a><br>
+		<a onclick="toggleView()">Toggle View</a>
+			<a id="#macroModule-sequence" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Sequence Mode</a><br>
 		<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>
