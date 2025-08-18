@@ -85,6 +85,9 @@
 		#SubSystemTable th {
 			background-color: 	rgb(210, 193, 193);
 		}
+		#SubSystemTable td {
+			cursor: crosshair;
+		}
 
 		.tableAddRowButton, .tableDeleteRowButton {
 			background-color: rgb(210, 193, 193);

@@ -3594,7 +3594,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 			   << groupKey
 			   << ")' were identified as possibly orphaned (i.e. no active tables link "
 			      "to these tables, and these tables have no links to other tables):\n\n"
-			   << missingTables << "." << __E__;
+			   << missingTables << ".\n"
+			   << __E__;
 			xmlOut.addTextElementToData("NoTreeLinkWarning", ss.str());
 		}
 	}  //end orphaned table check

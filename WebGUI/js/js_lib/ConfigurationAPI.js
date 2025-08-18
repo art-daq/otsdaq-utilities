@@ -96,6 +96,7 @@ ConfigurationAPI._backboneMemberNames 	= [];
 ConfigurationAPI._iterateMemberNames 	= [];
 
 //"public" constants:
+ConfigurationAPI._DEFAULT = "DEFAULT";
 ConfigurationAPI._DEFAULT_COMMENT = "No comment.";
 ConfigurationAPI._POP_UP_DIALOG_ID = "ConfigurationAPI-popUpDialog";
 
@@ -2396,7 +2397,7 @@ ConfigurationAPI.saveModifiedTables = function(modifiedTables,responseHandler,
 								}
 								else
 								{
-									Debug.log("Process interrupted. Failed to modify the currently active Backbone!",Debug.HIGH_PRIORITY);
+									Debug.err("Process interrupted. Failed to modify the currently active Backbone!");
 
 									//kill popup dialog
 									var el = document.getElementById("" + ConfigurationAPI._POP_UP_DIALOG_ID + "");
@@ -2649,14 +2650,14 @@ ConfigurationAPI.setGroupAliasInActiveBackbone = function(groupAlias,groupName,g
 
 	if(!groupAlias || groupAlias.trim() == "")
 	{
-		Debug.log("Process interrupted. Invalid empty alias given!",Debug.HIGH_PRIORITY);
+		Debug.err("Process interrupted. Invalid empty alias given!");
 		if(doneHandler) doneHandler(); //error so call done handler
 		return;
 	}
 
 	if(!groupName || groupName.trim() == "" || !groupKey || groupKey.trim() == "")
 	{
-		Debug.log("Process interrupted. Invalid group name and key given!",Debug.HIGH_PRIORITY);
+		Debug.err("Process interrupted. Invalid group name and key given!");
 		if(doneHandler) doneHandler(); //error so call done handler
 		return;
 	}
@@ -2729,7 +2730,7 @@ ConfigurationAPI.setTableAliasInActiveBackbone = function(tableAlias, tableName,
 
 	if(!tableAlias || tableAlias.trim() == "")
 	{
-		Debug.log("Process interrupted. Invalid empty alias given!",Debug.HIGH_PRIORITY);
+		Debug.err("Process interrupted. Invalid empty alias given!");
 		if(doneHandler) doneHandler(); //error so call done handler
 		return;
 	}
@@ -2798,8 +2799,8 @@ ConfigurationAPI.newWizBackboneMemberHandler = function(req,params,errStr)
 	var err = DesktopContent.getXMLValue(req,"Error");
 	if(err)
 	{
-		Debug.log(err,Debug.HIGH_PRIORITY);
-		Debug.log("Process interrupted. Failed to modify the currently active Backbone!",Debug.HIGH_PRIORITY);
+		Debug.err(err);
+		Debug.err("Process interrupted. Failed to modify the currently active Backbone!");
 
 		if(params[1])
 			params[1](); //error so call done handler
@@ -2807,8 +2808,8 @@ ConfigurationAPI.newWizBackboneMemberHandler = function(req,params,errStr)
 	}
 	if(errStr)
 	{
-		Debug.log(errStr,Debug.HIGH_PRIORITY);
-		Debug.log("Process interrupted. Failed to modify the currently active Backbone!",Debug.HIGH_PRIORITY);
+		Debug.err(errStr);
+		Debug.err("Process interrupted. Failed to modify the currently active Backbone!");
 
 		if(params[1])
 			params[1](); //error so call done handler
@@ -3098,7 +3099,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 	var ceilValueColor, floorValueColor;
 
 	var doDisplayRowsAscending, doDisplayColsAscending;
-	var doSnakeColumns, doSnakeRows;
+	var doSnakeColumns, doSnakeRows, allowFloatingPoint;
+	var valueMapToStrings;
 
 	//validate and load input params
 	if(!localValidateInputs())
@@ -3161,55 +3163,64 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 	document.body.appendChild(el); //add element to body
 	el.style.display = "block";
+	
+	//:::::::::::::::::::::::::::::::::::::::::
+	el.addEventListener("keydown",function(e) {		
+		Debug.log("bitmap stop propagation");
+		e.stopPropagation();
+		
+		Debug.log("key " + e.keyCode);
 
+		if(e.key == "Escape")
+			localCancelClickHandler();
+		else if(e.key == "Enter")
+			localOkClickHandler();
+	}); //end bitmap onkey handler
 
 	//:::::::::::::::::::::::::::::::::::::::::
 	//localCreateCancelClickHandler ~~
-	//	create cancel onclick handler
-	function localCreateCancelClickHandler()
-	{
-		document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-cancel").onclick = function(event) {
-			Debug.log("Cancel click");
-			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-			if(el) el.parentNode.removeChild(el); //close popup
-			window.removeEventListener("resize",localPaint); //remove paint listener
-			cancelHandler(); //empty array indicates nothing done
-			return false;
-		}; //end submit onmouseup handler
-	} localCreateCancelClickHandler();
+	//	cancel onclick handler
+	var localCancelClickHandler = function(event) {
+		Debug.log("Cancel click");
+		var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
+		if(el) el.parentNode.removeChild(el); //close popup
+		window.removeEventListener("resize",localPaint); //remove paint listener
+		cancelHandler(); //empty array indicates nothing done
+		return false;
+	} //end localCancelClickHandler()
 
 	//:::::::::::::::::::::::::::::::::::::::::
-	//localCreateOkClickHandler ~~
+	//localOkClickHandler ~~
 	//	create OK onclick handler
-	function localCreateOkClickHandler()
-	{
-		var convertFunc = localConvertFullGridToRowCol;
-		document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
-				"-ok").onclick = function(event) {
-			Debug.log("OK click");
-			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
-			if(el) el.parentNode.removeChild(el); //close popup
-			window.removeEventListener("resize",localPaint); //remove paint listener
+	var localOkClickHandler = function(event) {
+		Debug.log("OK click");
+		var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
+		if(el) el.parentNode.removeChild(el); //close popup
+		window.removeEventListener("resize",localPaint); //remove paint listener
 
-			var transGrid = convertFunc();
-			var dataJsonStr = "[\n";
-			for(var r=0;r<transGrid.length;++r)
+		var transGrid = localConvertFullGridToRowCol();
+		var dataJsonStr = "[\n";
+		for(var r=0;r<transGrid.length;++r)
+		{
+			if(r) dataJsonStr += ",\n";
+			dataJsonStr += "\t[";
+			for(var c=0;c<transGrid[0].length;++c)
 			{
-				if(r) dataJsonStr += ",\n";
-				dataJsonStr += "\t[";
-				for(var c=0;c<transGrid[0].length;++c)
-				{
-					if(c) dataJsonStr += ",";
-					dataJsonStr += transGrid[r][c];
-				}
-				dataJsonStr += "]";
+				if(c) dataJsonStr += ",";
+				dataJsonStr += transGrid[r][c];
 			}
-			dataJsonStr += "\n]";
-			okHandler(dataJsonStr); //empty array indicates nothing done
-			return false;
-		}; //end submit onmouseup handler
-	} localCreateOkClickHandler();
+			dataJsonStr += "]";
+		}
+		dataJsonStr += "\n]";
+		okHandler(dataJsonStr); //empty array indicates nothing done
+		return false;
+	} //end localOkClickHandler()
+
+	document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
+				"-cancel").onclick = localCancelClickHandler;
+
+	document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID +
+				"-ok").onclick = localOkClickHandler;
 
 	//:::::::::::::::::::::::::::::::::::::::::
 	//localCreateMouseHandler ~~
@@ -3505,7 +3516,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		// 13		  2,//"Display Columns in Ascending Order",
 		// 14		  1,//"Snake Double Rows",
 		// 15		  1,//"Snake Double Columns",
-		// 16		  1,// "Allow Floating Point",
+		// 16		  1,//"Allow Floating Point",
 		// 17		  0// "Value Map to Strings"
 		// 	  ];
 
@@ -3516,7 +3527,6 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					"\nHere is a printout of the input parameters: " + bitMapParams,Debug.HIGH_PRIORITY);
 			return false;
 		}
-		var DEFAULT = "DEFAULT";
 
 		rows = bitMapParams[0]|0;
 		cols = bitMapParams[1]|0;
@@ -3526,79 +3536,75 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 		if(rows < 1 || rows >= 1<<30)
 		{
-			Debug.log("Illegal input parameters, rows of " + rows + " is illegal. " +
-					"(rows possible values are from 1 to " + ((1<<30)-1) + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, rows of " + rows + " is illegal. " +
+					"(rows possible values are from 1 to " + ((1<<30)-1) + ".)");
 			return false;
 		}
 		if(cols < 1 || cols >= 1<<30)
 		{
-			Debug.log("Illegal input parameters, cols of " + cols + " is illegal. " +
-					"(cols possible values are from 1 to " + ((1<<30)-1) + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, cols of " + cols + " is illegal. " +
+					"(cols possible values are from 1 to " + ((1<<30)-1) + ".)");
 			return false;
 		}
-		if(bitFieldSize < 1 || bitFieldSize > 31)
+		if(bitFieldSize < 1 || bitFieldSize > 32)
 		{
-			Debug.log("Illegal input parameters, bitFieldSize of " + bitFieldSize + " is illegal. " +
-					"(bitFieldSize possible values are from 1 to " + (31) + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, bitFieldSize of " + bitFieldSize + " is illegal. " +
+					"(bitFieldSize possible values are from 1 to " + (32) + ".)");
 			return false;
 		}
+		bitMask = 0;
+		for(var i=0;i<bitFieldSize;++i)
+			bitMask |= 1 << i;
+		bitMask = bitMask >>> 0; // >>> 0 converts to unsigned 32-bit integer
 
-		if(bitFieldSize > 30)
-		{
-			bitMask = 0;
-			for(var i=0;i<bitFieldSize;++i)
-				bitMask |= 1 << i;
-		}
-		else
-			bitMask = (1<<bitFieldSize) - 1; //wont work for 31 bits (JS is always signed)
-
-		minValue = bitMapParams[3] == DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
-		maxValue = bitMapParams[4] == DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
+		minValue = bitMapParams[3] == ConfigurationAPI._DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
+		maxValue = bitMapParams[4] == ConfigurationAPI._DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
 		if(maxValue < minValue)
 			maxValue = bitMask;
 		midValue = (maxValue + minValue)/2; //used for color calcs
-		stepValue = bitMapParams[5] == DEFAULT || bitMapParams[5] == ""?1:(bitMapParams[5]|0);
+		stepValue = bitMapParams[5] == ConfigurationAPI._DEFAULT || bitMapParams[5] == ""?1:(bitMapParams[5]|0);
 
 		if(minValue < 0 || minValue > bitMask)
 		{
-			Debug.log("Illegal input parameters, minValue of " + minValue + " is illegal. " +
-					"(minValue possible values are from 0 to " + bitMask + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, minValue of " + minValue + " is illegal. " +
+					"(minValue possible values are from 0 to " + bitMask + ".)");
 			return false;
 		}
 		if(maxValue < 0 || maxValue > bitMask)
 		{
-			Debug.log("Illegal input parameters, maxValue of " + maxValue + " is illegal. " +
-					"(maxValue possible values are from 0 to " + bitMask + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, maxValue of " + maxValue + " is illegal. " +
+					"(maxValue possible values are from 0 to " + bitMask + ".)");
 			return false;
 		}
 		if(minValue > maxValue)
 		{
-			Debug.log("Illegal input parameters, minValue > maxValue is illegal.",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, minValue > maxValue is illegal.");
 			return false;
 		}
 		if(stepValue < 1 || stepValue > maxValue - minValue)
 		{
-			Debug.log("Illegal input parameters, stepValue of " + stepValue + " is illegal. " +
-					"(stepValue possible values are from 1 to " + (maxValue - minValue) + ".)",Debug.HIGH_PRIORITY);
+			Debug.err("Illegal input parameters, stepValue of " + stepValue + " is illegal. " +
+					"(stepValue possible values are from 1 to " + (maxValue - minValue) + ".)");
 			return false;
 		}
-		if((((maxValue-minValue)/stepValue)|0) != (maxValue-minValue)/stepValue)
+		if((((maxValue-minValue)/stepValue) >>> 0 /* force 32-bit integer */) != 
+			(maxValue-minValue)/stepValue)
 		{
-			Debug.log("Illegal input parameters, maxValue of " + maxValue +
+			Debug.err("Illegal input parameters, maxValue of " + maxValue +
 					" must be an integer number of stepValue (stepValue=" + stepValue +
-					") steps away from minValue (minValue=" + minValue + ").",Debug.HIGH_PRIORITY);
+					") steps away from minValue (minValue=" + minValue + ").");
 			return false;
 		}
 
 		if(bitMapParams[6] != "" &&
-				bitMapParams[6] != DEFAULT)
+				bitMapParams[6] != ConfigurationAPI._DEFAULT)
 		{
 			forcedAspectH = bitMapParams[6].split(':');
 			if(forcedAspectH.length != 2)
 			{
-				Debug.log("Illegal input parameter, expecting ':' in string defining cell display aspect ratio " +
+				Debug.err("Illegal input parameter, expecting ':' in string defining cell display aspect ratio " +
 						"Height:Width (e.g. 100:150)." +
-						"\nInput aspect ratio string '" + bitMapParams[6] + "' is invalid.",Debug.HIGH_PRIORITY);
+						"\nInput aspect ratio string '" + bitMapParams[6] + "' is invalid.");
 				return false;
 			}
 			forcedAspectW = forcedAspectH[1].trim()|0;
@@ -3609,11 +3615,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 
 
 		//colors
-		minValueColor = bitMapParams[7] == DEFAULT || bitMapParams[7] == ""?"red":bitMapParams[7];
-		midValueColor = bitMapParams[8] == DEFAULT || bitMapParams[8] == ""?"yellow":bitMapParams[8];
-		maxValueColor = bitMapParams[9] == DEFAULT || bitMapParams[9] == ""?"green":bitMapParams[9];
-		floorValueColor = bitMapParams[10] == DEFAULT || bitMapParams[10] == ""?minValueColor:bitMapParams[10];
-		ceilValueColor = bitMapParams[11] == DEFAULT || bitMapParams[11] == ""?maxValueColor:bitMapParams[11];
+		minValueColor = bitMapParams[7] == ConfigurationAPI._DEFAULT || bitMapParams[7] == ""?"red":bitMapParams[7];
+		midValueColor = bitMapParams[8] == ConfigurationAPI._DEFAULT || bitMapParams[8] == ""?"yellow":bitMapParams[8];
+		maxValueColor = bitMapParams[9] == ConfigurationAPI._DEFAULT || bitMapParams[9] == ""?"green":bitMapParams[9];
+		floorValueColor = bitMapParams[10] == ConfigurationAPI._DEFAULT || bitMapParams[10] == ""?minValueColor:bitMapParams[10];
+		ceilValueColor = bitMapParams[11] == ConfigurationAPI._DEFAULT || bitMapParams[11] == ""?maxValueColor:bitMapParams[11];
 
 		//convert to arrays
 		minValueColor = DesktopContent.getColorAsRGBA(minValueColor).split("(")[1].split(")")[0].split(",");
@@ -3627,6 +3633,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		doDisplayColsAscending = bitMapParams[13] == "Yes"?1:0;
 		doSnakeColumns = bitMapParams[14] == "Yes"?1:0;
 		doSnakeRows = bitMapParams[15] == "Yes"?1:0;
+		if(bitMapParams.length > 16)
+		{
+			allowFloatingPoint = bitMapParams[16] == "Yes"?1:0;
+			valueMapToStrings = bitMapParams[17];
+		}
 
 		if(doSnakeColumns && doSnakeRows)
 		{
@@ -3805,6 +3816,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		var convertedRC;
 		var color;
 		var noErrors = true;
+		var errStr = "";
 		for(var r=0;r<rows;++r)
 			for(var c=0;c<cols;++c)
 			{
@@ -3818,7 +3830,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					convertedRC[0] = (convertedRC[0]/2)|0;
 				try
 				{
-					bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]]|0;
+					bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
 					if(bmpData[r][c] < minValue)
 						throw("There was an illegal value less than minValue: " +
 								bmpData[r][c] + " < " + minValue + " @ (row,col) = (" +
@@ -3827,10 +3839,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 						throw("There was an illegal value greater than maxValue: " +
 								bmpData[r][c] + " > " + maxValue + " @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
-					if((((bmpData[r][c]-minValue)/stepValue)|0) != (bmpData[r][c]-minValue)/stepValue)
+					if((!allowFloatingPoint || stepValue != 1) &&
+							(((bmpData[r][c]-minValue)/stepValue)|0) != (bmpData[r][c]-minValue)/stepValue)
 						throw("There was an illegal value not following stepValue from minValue: " +
 								bmpData[r][c] + " != " +
-								(stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
+								(minValue + stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
 								" @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
 					color = //localConvertValueToRGBA(bmpData[r][c]);
@@ -3843,15 +3856,16 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					bmpDataImage.data[(r*cols + c)*4+3]=color[3];
 				}
 				catch(err)
-				{noErrors = false;} //ignore errors
+				{noErrors = false; errStr += "\n" + err;} //ignore errors
 			}
 		bmpContext.putImageData(bmpDataImage,0,0);
 		bmp.src = bmpCanvas.toDataURL();
 
 		if(!noErrors)
-			throw("There was a mismatch in row/col dimensions. Input matrix was " +
+			throw("Input matrix was " +
 					"dimension [row,col] = [" + srcMatrix.length + "," +
-					(srcMatrix.length?srcMatrix[0].length:0) + "]");
+					(srcMatrix.length?srcMatrix[0].length:0) + "].\n\n" + 
+					errStr);
 	}
 
 	//:::::::::::::::::::::::::::::::::::::::::
@@ -3961,7 +3975,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		el.appendChild(rowRightNums);
 		el.appendChild(colTopNums);
 		el.appendChild(colBottomNums);
-	}
+	} //end localCreateBitmap()
 
 	//:::::::::::::::::::::::::::::::::::::::::
 	//localCreateGridButtons ~~
@@ -4137,21 +4151,34 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		ConfigurationAPI.bitMapDialog.localUpdateTextInput = function(i,finalChange)
 		{
 			Debug.log("localUpdateTextInput " + textInputEls[i].value + " " + finalChange);
+			
+			let tmpNumber = textInputEls[i].value;
+			if(isNaN(parseFloat(textInputEls[i].value)))
+			{
+				if(finalChange) //show error for final change
+					Debug.err("Input value",textInputEls[i].value,"is not a valid number!");
+				return;
+			}
 
-			clickValues[i] = textInputEls[i].value|0;
+			if(allowFloatingPoint)
+				clickValues[i] = tmpNumber;
+			else //force int
+				clickValues[i] = tmpNumber|0;
 
 			if(finalChange)
 			{
 				if(clickValues[i] < minValue) clickValues[i] = minValue;
 				if(clickValues[i] > maxValue) clickValues[i] = maxValue;
-				clickValues[i] = (((clickValues[i]-minValue)/stepValue)|0)*stepValue + minValue; //lock to step
+				if(!allowFloatingPoint || stepValue != 1)
+					clickValues[i] = (((clickValues[i]-minValue)/stepValue)|0)*stepValue + minValue; //lock to step
 				textInputEls[i].value = clickValues[i]; //fix value
 			}
 			else //try to continue with change, but if invalid just return
 			{
 				if(clickValues[i] < minValue) return;
 				if(clickValues[i] > maxValue) return;
-				if((((clickValues[i]-minValue)/stepValue)|0) != (clickValues[i]-minValue)/stepValue)
+				if((!allowFloatingPoint || stepValue != 1) &&
+					(((clickValues[i]-minValue)/stepValue)|0) != (clickValues[i]-minValue)/stepValue)
 					return; //no locked to step value
 				Debug.log("displaying change");
 			}
@@ -4837,10 +4864,11 @@ ConfigurationAPI.setPopUpPosition = function(el,w,h,padding,border,margin,doNotR
 	var x,y;
 
 	//:::::::::::::::::::::::::::::::::::::::::
-	//popupResize ~~
-	//	set position and size
+	//stopPropagation ~~
+	//	stop event propagation below the popup
 	ConfigurationAPI.setPopUpPosition.stopPropagation = function(event) {
-		// Debug.log("stop propagation");
+		if(event.type != "mousemove")
+			Debug.log("stop propagation");
 		event.stopPropagation();
 	}
 
@@ -4913,6 +4941,11 @@ ConfigurationAPI.setPopUpPosition = function(el,w,h,padding,border,margin,doNotR
 	el.addEventListener("click",ConfigurationAPI.setPopUpPosition.stopPropagation);
 
 	el.style.overflow = "auto";
+
+	{ //gives div focus to handle keydown events first
+		el.setAttribute("tabindex", "0");
+		el.focus(); 
+	}
 
 	return {"w" : w, "h" : h, "x" : x, "y" : y};
 } //end setPopUpPosition()
@@ -7099,8 +7132,20 @@ ConfigurationAPI.createNewRecordName = function(startingName,existingArr)
 
 //=====================================================================================
 //createTableColumnHeaderHTML ~~
-ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colChoices,colDefaultValue,colMinValue,colMaxValue)
+ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colChoices,
+	colDefaultValue,colMinValue,colMaxValue)
 {
+	var colChoicesArr; //condition col choices
+	if(colChoices)
+	{
+		if(Array.isArray(colChoices)) //if input is an array
+			colChoicesArr = colChoices;
+		else //else create the array from string
+			colChoicesArr = colChoices.split(',');
+	}
+	else //no column choices, so create empty array
+		colChoicesArr = [];
+
 	var str = "";
 	str += "<div style='font-size:12px' title='";
 	str += colType;
@@ -7116,7 +7161,74 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 			str += "\nMaximum: " + colMaxValue;
 
 	}
-	str += "]";
+	// if bitmap, show non-default params
+	if (colType == ConfigurationAPI._BITMAP_DATA_TYPE)
+	{
+		// extract bitMapInfo parameters:
+		//	must match TableEditor js handling:
+
+		//		[ //types => 0:string, 1:bool (default no),
+		//		  //2:bool (default yes), 3:color
+		//
+		// 0		  0,//"Number of Rows",
+		// 1		  0,//"Number of Columns",
+		// 2		  0,//"Cell Bit-field Size",
+		// 3		  0,//"Min-value Allowed",
+		// 4		  0,//"Max-value Allowed",
+		// 5		  0,//"Value step-size Allowed",
+		// 6		  0,//"Display Aspect H:W",
+		// 7		  3,//"Min-value Cell Color",
+		// 8		  3,//"Mid-value Cell Color",
+		// 9		  3,//"Max-value Cell Color",
+		// 10		  3,//"Absolute Min-value Cell Color",
+		// 11		  3,//"Absolute Max-value Cell Color",
+		// 12		  1,//"Display Rows in Ascending Order",
+		// 13		  2,//"Display Columns in Ascending Order",
+		// 14		  1,//"Snake Double Rows",
+		// 15		  1,//"Snake Double Columns",
+		// 16		  1,//"Allow Floating Point",
+		// 17		  0// "Value Map to Strings"
+		
+
+		Debug.log("Bitmap colChoicesArr",colChoicesArr);
+		if(colChoicesArr.length > 3)
+		{
+			str += "\nRow, Cols, Bits: " + colChoicesArr[0];
+			str += ", " + colChoicesArr[1];
+			str += ", " + colChoicesArr[2];
+		}
+
+		for(let i=3; i < colChoicesArr.length; ++i)
+			if(colChoices[i] != ConfigurationAPI._DEFAULT)
+			{
+				switch(i)
+				{
+					case 3: 
+						str += "\n" + "Min-value: " + colChoices[i]; 
+						break;
+					case 4: 
+						str += "\n" + "Max-value: " + colChoices[i]; 
+						break;
+					case 5: 
+						str += "\n" + "Step-size: " + colChoices[i]; 
+						break;
+					case 6: 
+						str += "\n" + "Cell Aspect Ratio: " + colChoices[i]; 
+						break;
+					case 16:
+						if(colChoices[i] == "Yes")
+							str += "\n" + "Allow Floating Point: " + colChoices[i]; 
+						break;
+					case 17:						
+						str += "\n" + "Value-Map: " + colChoices[i]; 
+						break;
+					default: //do not show some params
+				}
+			}
+
+	}
+
+	str += "]"; //end title
 	str += "'><label style='font-weight:bold;color:black;font-size:12px;'>";
 	str += colType;
 	str += "</label><br>&#60;" + colDataType + "&#62;<br>";
@@ -7127,18 +7239,6 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 		//if fixed choice, then show that Default= the first choice
 		if(colType == ConfigurationAPI._FIXED_CHOICE_DATA_TYPE)
 		{
-			var colChoicesArr;
-
-			if(colChoices)
-			{
-				if(Array.isArray(colChoices)) //if input is an array
-					colChoicesArr = colChoices;
-				else //else create the array from string
-					colChoicesArr = colChoices.split(',');
-			}
-			else //no column choices, so create empty array
-				colChoicesArr = [];
-
 			//colChoices is an array (not a map)..
 			if(colChoicesArr.length > 1)
 				str += " = " + decodeURIComponent(colChoicesArr[1]); //skip arbitrary bool entry [0]
@@ -7150,6 +7250,33 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 				str += "<br>Minimum: " + colMinValue;
 			if (colMaxValue && colMaxValue != "")
 				str += "<br>Maximum: " + colMaxValue;
+		}
+
+		// if bitmap, show non-default key params
+		if (colType == ConfigurationAPI._BITMAP_DATA_TYPE)
+		{
+			if(colChoicesArr.length > 3)
+			{
+				str += "<br>Row, Cols, Bits: " + colChoicesArr[0];
+				str += ", " + colChoicesArr[1];
+				str += ", " + colChoicesArr[2];
+
+				for(let i=3; i < colChoicesArr.length; ++i)
+					if(colChoices[i] != ConfigurationAPI._DEFAULT)
+					{
+						switch(i)
+						{
+							case 16:
+								if(colChoices[i] == "Yes")
+									str += ", " + "Float"; 
+								break;
+							case 17:						
+								str += ", " + "Value-Map"; 
+								break;
+							default: //do not show some params
+						}
+					}
+			}
 		}
 		str += "]";
 	}

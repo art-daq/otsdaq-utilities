@@ -4649,10 +4649,12 @@
 
 						titleStr = "~ Leaf Value Node ~\n";
 						titleStr += "Path: \t" + path + nodeName + "\n";
+						titleStr += "Value: \t" + value + "\n";
 
 						//left side of value
 						treeViewHandlerStr_ +=
-							"<div style='float:left' title='" + titleStr + "'>" +
+							"<div style='float:left' id='treeNode-Field-title-" +
+							(depth + "-" + uid) + "' title='" + titleStr + "'>" +
 							"<b class='treeNode-Value-leafNode-fieldName bold-header'>" +
 							nodeName + "</b>" +
 							"</div><div style='float:left'>&nbsp;:</div>";
@@ -8364,8 +8366,8 @@
 					{
 						Debug.log("Handling bitmap select");
 
-						_editingCellElOldValue = el.textContent;
-						treeEditingNodeInitValue_ = _editingCellElOldValue;
+						_editingCellElOldValue = el.innerHTML;
+						treeEditingNodeInitValue_ = el.textContent;		
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
@@ -8374,18 +8376,14 @@
 							treeEditingTargetColumn_,
 							document.getElementById("treeNode-BitMap-Params-" +
 								idString).textContent.split(';'),
-							_editingCellElOldValue,
+							treeEditingNodeInitValue_,
 							function (val)
 							{
 								Debug.log("yes " + val);
 								el.innerHTML = createBmpString(val,
 									document.getElementById("treeNode-BitMap-Params-" +
-										idString).textContent.split(';'));
-								treeEditingNodeType_ += "-bitmap";
+										idString).textContent.split(';'));								
 								editTreeNodeOK();
-								//_editingCell = false;
-								//_editingCellEl = 0;
-								//treeHasChanged();
 							},
 							function () //cancel handler
 							{
@@ -8394,6 +8392,12 @@
 								_editingCell = false;
 								_editingCellEl = 0;
 							});
+					
+						treeEditingNodeType_ += "-bitmap";
+						_editingCell = true;
+						_editingCellEl = el;
+						_editingCellElOldTitle = el.title;
+						el.title = "";
 						return true;
 					}
 					else if (colType == "MultilineData")
@@ -9803,6 +9807,22 @@
 						Debug.log("yes " + val);
 						bitMapCellEl.innerHTML = createBmpString(val,
 							_tableFixedChoiceData[c]);
+						var titleStr = _editingCellElOldTitle;
+						// 	titleStr was originally created like this in createTavleViewOutputStr(), now insert newValue:
+						// " title='" +
+						// "[row,col] = [" + ro + "," + co +
+						// "]\nUID : " + uidVal + "\n" +
+						// colHdr +
+						// " value: " +
+						// titleVal;
+						if(titleStr) //could be undefined
+						{
+							let ti = titleStr.indexOf(" value: ");
+							if(ti > 0)
+								titleStr = titleStr.substr(0,ti) + 
+									" value: " + val;
+							bitMapCellEl.title = titleStr;
+						}
 						_editingCell = false;
 						_editingCellEl = 0;
 
@@ -9999,9 +10019,13 @@
 			//detect proper views
 			var el = document.getElementById("treeView-ConfigGroupLink");
 			var popUpEl = document.getElementById("popUpDialog");
+			if(!popUpEl)
+				popUpEl = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
+
+			if(popUpEl && popUpEl.style.display != "none") return; //allow popup to get keys
 
 			//tree view key handler and no popup and no editing cell
-			if (el && !popUpEl && !_editingCellEl)
+			if (el && !_editingCellEl)
 			{
 				//NOTE: Firefox and Chrome have different keycodes for +/-
 				var expandKeys = ['a', 'e', '>', '.', '}', ']', '+', '='];
@@ -12206,6 +12230,19 @@
 				{
 					Debug.log("localEditTreeNodeOKRequestsComplete " + newValue);
 
+					var titleStr = _editingCellElOldTitle;
+					// 	titleStr was originally created like this, now insert newValue:
+					// titleStr =  "~ Leaf Value Node ~\n";
+					// titleStr += "Path: \t" + path + nodeName + "\n";
+					// titleStr += "Value: \t" + newValue + "\n";
+					if(titleStr) //could be undefined
+					{
+						let ti = titleStr.indexOf("Value: ");
+						if(ti > 0)
+							titleStr = titleStr.substr(0,ti) + 
+								"Value: \t" + decodeURIComponent(newValue) + "\n";
+					}
+
 					//some types should be handled before cell is cleared
 					//	e.g. for continuation of editing, like "table-newGroupRow"
 					//	and "table-newUIDRow"
@@ -12241,6 +12278,20 @@
 							newValue);
 						return;
 					}
+					else if(treeEditingNodeType_ == "value-bitmap")
+					{
+						//bitmap data (do nothing is ok, value already set)						
+						//requests are done, so end editing, update mouseover titles
+						if(titleStr)
+						{
+							_editingCellEl.title = titleStr;
+							var el = document.getElementById("treeNode-Field-title-" + treeEditingNodeIdString_);
+							if(el) el.title = titleStr;
+						}
+						_editingCell = false;
+						_editingCellEl = 0;
+						return;
+					}
 
 
 					// all other types are clearing the cell
@@ -12259,7 +12310,7 @@
 						if(treeEditingNodeType_ == "link-comment")
 							treeMemberComments_[tableIndex] = newValue;
 
-						var el = el = document.getElementById("treeNode-TableComment-" + treeEditingNodeIdString_);
+						var el = document.getElementById("treeNode-TableComment-" + treeEditingNodeIdString_);
 						el.innerHTML = "";
 						el.appendChild(document.createTextNode("//" + decodeURIComponent(newValue)));
 						el.style.color = treeDiff_COLOR_;
@@ -12362,13 +12413,11 @@
 							tableLinkTooltip("We noticed you have a disconnected link.");
 						}
 					}
-					else if (treeEditingNodeType_ == "value" ||
-						treeEditingNodeType_ == "value-bitmap")
+					else if (treeEditingNodeType_ == "value")
 					{
 						//if(treeEditingNodeType_ == "MultilineData")
 						//MultilineData and normal
 						//normal data
-						//bitmap data (do nothing would be ok, value already set)
 						_editingCellEl.appendChild(document.createTextNode(decodeURIComponent(newValue)));
 						_editingCellEl.style.color = treeDiff_COLOR_;
 					}
@@ -12518,7 +12567,13 @@
 						return;
 					}
 
-					//requests are done, so end editing
+					//requests are done, so end editing, update mouseover titles
+					if(titleStr)
+					{
+						_editingCellEl.title = titleStr;
+						var el = document.getElementById("treeNode-Field-title-" + treeEditingNodeIdString_);
+						if(el) el.title = titleStr;
+					}
 					_editingCell = false;
 					_editingCellEl = 0;
 				} //end localEditTreeNodeOKRequestsComplete
@@ -13558,15 +13613,26 @@
 						}
 
 						Debug.log("value-table " + table);
-						uid = document.getElementById("treeNode-Value-" +
-							parentIdString).textContent;
-						Debug.log("value-uid " + table);
+						if (depth == 2)
+							uid = document.getElementById("treeNode-Value-" +
+								parentIdString).textContent;
+						else 
+						{
+							let uidSplit = document.getElementById("treeNode-Value-" +
+								parentIdString).textContent.split('=');
+							if(uidSplit.length > 1)
+								uid = uidSplit[1].split(')')[0].trim();
+							else 
+								uid = uidSplit[0];
+						}
+
+						Debug.log("value-uid " + uid);
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_)
 						{
 							//modify display with new value
-							//Debug.log("link-idString " + idString + " " + uid);
+							Debug.log("link-idString " + idString + " " + uid);
 							Debug.log("value-idString CHANGE to " + newValue);
 
 							els[i].innerHTML = ""; //clear target el
@@ -13591,10 +13657,36 @@
 									"'></div>";
 								els[i].innerHTML = str;
 							}
+							else if (treeEditingNodeType_ == "value-bitmap")
+							{
+								els[i].innerHTML = createBmpString(decodeURIComponent(newValue),
+									document.getElementById("treeNode-BitMap-Params-" +
+										idString).textContent.split(';'));
+							}
 							else
 								els[i].appendChild(document.createTextNode(decodeURIComponent(newValue)));
 
-						}
+							// update mouseover titles
+							var el = document.getElementById("treeNode-Field-title-" + idString);
+							if(el)
+							{
+								var titleStr = el.title;
+								// 	titleStr was originally created like this, now insert newValue:
+								// titleStr =  "~ Leaf Value Node ~\n";
+								// titleStr += "Path: \t" + path + nodeName + "\n";
+								// titleStr += "Value: \t" + newValue + "\n";
+								if(titleStr) //could be undefined
+								{
+									let ti = titleStr.indexOf("Value: ");
+									if(ti > 0)
+										titleStr = titleStr.substr(0,ti) + 
+											"Value: \t" + decodeURIComponent(newValue) + "\n";
+									el.title = titleStr; //title node title (e.g. at field)
+									els[i].title = titleStr; //value node title
+								}								
+							}							
+
+						} //end propagate changes to value node
 					}
 				}
 			}
@@ -14110,6 +14202,7 @@
 					}
 
 					if (treeEditingNodeType_ == "value-bool" ||
+						treeEditingNodeType_ == "value-bitmap" ||
 						treeEditingNodeType_.indexOf("link") == 0 ||
 						treeEditingNodeType_ == "table-newGroupRow" ||
 						treeEditingNodeType_ == "table-newUIDRow")
@@ -18979,6 +19072,7 @@
 		//createBmpString ~~
 		function createBmpString(val, bitMapParams)
 		{
+			Debug.log("createBmpString()");
 			// extract bitMapInfo parameters:
 			//	must match TableEditor js handling:
 
@@ -19001,7 +19095,7 @@
 			// 13		  2,//"Display Columns in Ascending Order",
 			// 14		  1,//"Snake Double Rows",
 			// 15		  1,//"Snake Double Columns",
-			// 16		  1,// "Allow Floating Point",
+			// 16		  1,//"Allow Floating Point",
 			// 17		  0// "Value Map to Strings"
 			// 	  ];
 
