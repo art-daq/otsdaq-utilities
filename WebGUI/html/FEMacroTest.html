@@ -10,6 +10,7 @@
 	<!-- MultiSelectBox: Must include .css style sheet and .js functionality -->
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/plotly.min.js"></script> <!-- tested with plotly-3.0.1.min.js -->
 
 	<style type="text/css">
 
@@ -329,6 +330,28 @@
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
+		// Resize observer to trigger Plotly resize
+		const resizeObserver = new ResizeObserver(
+				entries => {
+					for (let entry of entries) 
+					{
+						Debug.log("Entry id",entry.target.id);
+						var i = entry.target.id.indexOf("_plotly_container");
+						if(i > 0) //treat as plotly resize handler
+						{
+							Debug.log("Plotly resize");
+							try
+							{
+								Plotly.Plots.resize(entry.target.id.substr(0,i + 7));
+							}
+							catch(e)
+							{
+								Debug.log("Ignoring plotly error, likey during element transition:",e);
+							}
+						} 
+					}			
+				});
+				
 		//=====================================================================================
 		//toggleView ~~
 		//toggleView called when user clicks to change view style
@@ -771,6 +794,10 @@
 
 			var str = "";
 
+			str += "<div class='export-btns' onclick='copyOutput()' style='float:right'>" +
+						"<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png' alt='Copy Macro Output' title='Copy macro execution text output to clipboard.'>" +
+					"</div>";
+
 			if(!errStr)
 				errStr = "";
 			var err = DesktopContent.getXMLValue(req,"Error");
@@ -882,6 +909,7 @@
 				}
 			} //end high-level fe macro run arguments
 
+			var feExecJson = {};
 			for(var f=0;f == 0 || f<feExecs.length;++f)
 			{
 				if(feExecs.length)
@@ -928,9 +956,8 @@
 				{
 					var name = outputArgNames[i].getAttribute("value");
 					//first decode URI, then convert html entities
-					var value = Debug.errorPopConditionString(decodeURIComponent(
-							outputArgValues[i].getAttribute("value")),
-							-1 /* allow max strings before truncation */);
+					var value = decodeURIComponent(
+							outputArgValues[i].getAttribute("value"));
 
 					if(name == "Filename" || name == "filename")
 						str += name + " = " +
@@ -947,8 +974,75 @@
 								},
 								value /*innerHTML*/,
 								true /*doCloseTag*/) + "<br>";
+					else if(name == "Plotly_Plot")
+					{
+						Debug.log("Found Plotly_Plot",value);
+						var plotlyJson;
+						try
+						{
+							plotlyJson = JSON.parse(value);
+						}
+						catch(e)
+						{
+							Debug.err("Error found while parsing response arg <b>'" + name + 
+								"'</b> as a JSON object - here is the error:\n\n", e, 
+								"\n\nHere is the <b>'" + name + 
+								"'</b> argument value as a string:\n\n", value);
+							continue;
+						}
+						Debug.log("Parsed Plotly json",plotlyJson);
+						
+						if(!plotlyJson.data || !plotlyJson.layout)
+						{
+							Debug.err("Error with json output arg - looking for <b>data</b> and <b>layout</b> object. Use a json object string in the <i>otsdaq</i> built-in output argument <b>'" + name + 
+								"'</b> to setup the Plotly plot - any Plotly features should be available. For example, in your C++ FE Macro: " + 
+								`
+__SET_ARG_OUT__(PLOTLY_PLOT,  //use built-in auto plotting using plotly
+	R"({
+		"data" : [{
+					"x": [1, 2, 3],
+					"y": [4, 5, 6],
+					"mode": "lines+markers",
+					"type": "scatter",
+					"name": "Line 1"
+				},
+				{
+					"x": [1, 2, 3],
+					"y": [8, 3, 4],
+					"mode": "lines+markers",
+					"type": "scatter",
+					"name": "Line 2"
+				}],
+			"layout" : {
+					"title" : { "text" : "Awesome plot"},
+					"xaxis" : { "title" : {"text" : "time"}, "titlefont": { "size" : 10 }, "showticklabels" : true },
+					"yaxis" : { "title" : {"text" : "amplitude"}, "titlefont": { "size" : 10 }, "zeroline" : true }
+				}
+	})");
+
+Here is the json string received: 
+								`,value);
+							continue;
+						}
+						
+						feExecJson[feMacroName + "_" + feTargetUID] = {}; //create object to hold plotly json results
+						feExecJson[feMacroName + "_" + feTargetUID].data = plotlyJson.data;
+						feExecJson[feMacroName + "_" + feTargetUID].layout = plotlyJson.layout;
+						str += "<div id='" + feMacroName + "_" + feTargetUID + 
+							"_plotly_container' style='" + `
+								resize: both;
+								overflow: auto;
+								border: 1px solid #ccc;
+								width: 600px;
+								height: 400px;` + "'>"; 
+						str += "<div id='" + feMacroName + "_" + feTargetUID + 
+							"_plotly' style='width:100%;height:100%;'></div>"; 
+						str += "</div>";
+					}
 					else
 					{
+						value = Debug.errorPopConditionString(value, //convert html entities
+							-1 /* allow max strings before truncation */);
 						value = value.replace(/OK/g,"<label class='goodValue'>OK</label>")
 							.replace(/DONE/g,"<label class='goodValue'>DONE</label>")
 							.replace(/GOOD/g,"<label class='goodValue'>GOOD</label>")
@@ -982,6 +1076,19 @@
 				}
 			}
 			el.innerHTML = str;
+
+			for(var feExecJsonKey in feExecJson)
+			{ //add built in plot(s)
+				Debug.logv({feExecJsonKey});
+				Plotly.newPlot(feExecJsonKey + "_plotly", 
+					feExecJson[feExecJsonKey].data, 
+					feExecJson[feExecJsonKey].layout,
+					{ responsive: true } /* allow dynamic resizing */ );
+
+				resizeObserver.observe(document.getElementById(
+						feExecJsonKey + "_plotly_container"
+					));
+			} //end built in plot(s)
 
 			Debug.log("Returning page scroll position",
 				DesktopContent.getWindowScrollTop(),"to",scrollTop);
@@ -1232,13 +1339,9 @@
 								"rowspan": maxRow,
 								"width":"400px",
 							},
-						"<h3 style='display: flex; align-items: center;justify-content: center;'>" +
-						"Macro output will be displayed here" +
-							"<div class='export-btns' onclick='copyOutput()'>" +
-								"<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png' alt='Copy History' title='Copy History'>" +
-							"</div>" +
-						"</h3>"
-						/*innerHTML*/,true /*doCloseTag*/);
+							"<h3 style='display: flex; align-items: center;justify-content: center;'>" +
+							"Macro output will be displayed here" +							
+							"</h3>"/*innerHTML*/,true /*doCloseTag*/);
 
 					// add the history
 					str += DesktopContent.htmlOpen(
@@ -3562,23 +3665,25 @@
 		//copyOutput ~~
 		function copyOutput()
 		{
+			Debug.log("copyOutput()");
+
 			const outputEl = document.getElementById("macroModule-output");
-			const copyStr = outputEl.textContent;
+			const copyStr = outputEl.innerText; //use innerText to maintain new lines instead of textContent;
 			navigator.clipboard.writeText(copyStr)
-			.then(() => {
-				const el = document.getElementById("copybtn");
-				const original = el.src;
+				.then(() => {
+					const el = document.getElementById("copybtn");
+					const original = el.src;
 
-				el.src = "/WebPath/images/windowContentImages/loader-Settings.gif";
+					el.src = "/WebPath/images/windowContentImages/loader-Settings.gif";
 
-				setTimeout(()=>{
-					el.src = original;
-				}, 500);
-			})
-			.catch(e => {
-				Debug.err("Error in copying history", e)
-			});
-		}
+					setTimeout(()=>{
+						el.src = original;
+					}, 500);
+				})
+				.catch(e => {
+					Debug.err("Error in copying FE Macro output", e)
+				});
+		} //end copyOutput()
 
 		// END SEQUENCE CONTROL
 		//=====================================================================================
@@ -3591,8 +3696,8 @@
 
 	<!-- <center> -->
 
-		<a href="#" onclick="toggleView()">Toggle View</a>
-		<a href="#macroModule-sequence" onclick="toggleSequenceMode()">Sequence Mode</a><br>
+		<a onclick="toggleView()">Toggle View</a>
+			<a id="#macroModule-sequence" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Sequence Mode</a><br>
 		<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>

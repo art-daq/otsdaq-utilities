@@ -167,7 +167,8 @@ function calendarPopupAddHeader(initDate)
 
 	el = document.createElement("option");
 
-	var yDate = parseInt(thisDate.getFullYear()); //init to this year
+	var selectedDate = parseInt(thisDate.getFullYear()); //init to this year
+	var yDate = parseInt(new Date().getFullYear()); //init to this year
 
 	var yMin = parseInt(calendarPopup_MIN_YEAR)?parseInt(calendarPopup_MIN_YEAR):yDate;
 	var yMax = parseInt(calendarPopup_MAX_YEAR)?parseInt(calendarPopup_MAX_YEAR):yDate;
@@ -177,7 +178,7 @@ function calendarPopupAddHeader(initDate)
 		el.style.color = "black";
 		el.text = i;
 		subCalEl.add(el,null); //insert at end of list
-		if(yDate == i) el.defaultSelected = true;
+		if(selectedDate == i) el.defaultSelected = true;
 	}
 
 	//add cancel -------------
@@ -434,11 +435,11 @@ function redrawDates(initDate)
 	var style = document.createElement('style');
 	var declarations = document.createTextNode("." + calendarPopup_CALID + "-day:hover { background-color: #A10 }");
 	style.type = 'text/css';
-	if (style.styleSheet) {
-	  style.styleSheet.cssText = declarations.nodeValue;
-	} else {
-	  style.appendChild(declarations);
-	}
+	if (style.styleSheet)
+		style.styleSheet.cssText = declarations.nodeValue;
+	else
+		style.appendChild(declarations);
+	
 
 	head.appendChild(style);
 } //end redrawDates()

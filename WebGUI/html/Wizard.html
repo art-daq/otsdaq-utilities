@@ -56,44 +56,55 @@
 
 
 				if (notSecure)
-				{
-					var msg = "<b>Note: Your Wiz-mode is not as secure as it could be!</b>\n" +
-							"\nWe see that you are using the default security sequence for accessing your otsdaq Wiz mode." +
-							"\n\nIn Wiz-mode, many sensitive paramters for your DAQ system can be changed, so you may want it to be more secure. " +
-							"This page is secured by an authentication sequence to help avoid unauthorized access. " +
-							"The sequence is only displayed at the Linux console and is never transmitted by your otsdaq server for security." +
-							'\n\n <p style="color:red;">Warning: This will change the current URL for the wiz mode immediately.</p>' +
-							"\n If you would like to make your Wiz mode more secure, you can click " +
-							"<a href='#' onclick='DesktopContent.setSecurityOn(true)'>here</a>" +
-							" to enable a longer, randomly generated sequence generated at each runtime or you can set up this feature any time by " +
-							"visiting the 'Edit Security' app on the Wiz-mode desktop.";
-					//Debug.log(msg, Debug.INFO_PRIORITY);
-					DesktopContent.tooltip("Security Alert",msg);
+				{ 
+					//put this tooltip last always with a timeout
+					window.setTimeout(function() {
+						var msg = "<b>Note: Your Wiz-mode is not as secure as it could be!</b>\n" +
+								"\nWe see that you are using the default security sequence for accessing your otsdaq Wiz mode." +
+								"\n\nIn Wiz-mode, many sensitive paramters for your DAQ system can be changed, so you may want it to be more secure. " +
+								"This page is secured by an authentication sequence to help avoid unauthorized access. " +
+								"The sequence is only displayed at the Linux console and is never transmitted by your otsdaq server for security." +
+								'\n\n <p style="color:#ff6b6b; font-weight: bold;">Warning: This will change the current URL for the wiz mode immediately.</p>' +
+								"\n If you would like to make your Wiz mode more secure, you can click " +
+								"<a href='#' onclick='DesktopContent.setSecurityOn(true)'>here</a>" +
+								" to enable a longer, randomly generated sequence generated at each runtime or you can set up this feature any time by " +
+								"visiting the 'Edit Security' app on the Wiz-mode desktop.";						
+						DesktopContent.tooltip("Security Alert",msg);
+					}, 200);
 				}
 
 				DesktopContent.tooltip("Wiz-mode Introduction",
 						"Welcome to the otsdaq Wiz-mode Desktop. Wiz-mode is like safe mode " +
 						"when everything is broken and crashing down around you, you can come here to " +
-						"revive your system. If you are here, you are considered an otsdaq system " +
+						"revive your system. If you are here, you are considered an <i>otsdaq</i> system " +
 						"administrator.\n\n" +
 						"The Wiz-mode desktop environment behaves the same as in normal mode, but there are a few " +
 						"special apps available in Wiz-mode:\n" +
 
-						"\n\t- <b>Edit Security:</b> " +
+						"\n\t- <b>User Settings:</b>" +
 						"<INDENT>" +
-						"You can choose the type of security and user access " +
-						"you would like for your system." +
+						
+						"\n\t- <b>Edit User Accounts:</b> " +
+						"<INDENT>" +
+						"Create, edit, or delete user accounts and set access permissions." +
+						"</INDENT>" +
+
+						"\n\t- <b>Security Settings:</b> " +
+						"<INDENT>" +
+						"Turn on and off security which requires users to authenticate." +
 						"</INDENT>" +
 
 						"\n\t- <b>Edit User Data:</b> " +
 						"<INDENT>" +
-						"You can reset user data for all accounts here. " +
+						"Reset tooltips or user data for all accounts. " +
 						"(be careful!) " +
+						"</INDENT>" +
+
 						"</INDENT>" +
 
 						"\n\t- <b>Configure:</b> " +
 						"<INDENT>" +
-						"You can edit the full configuration of the system. This is " +
+						"Edit the full configuration of the system. This is " +
 						"the same Configuration GUI app that is accessible through normal " +
 						"mode, however, if your Context group (or anything else) is preventing you " +
 						"from accessing normal mode, the Wiz-mode Configuration GUI app is your " +
@@ -102,13 +113,19 @@
 
 						"\n\t- <b>Table Editor:</b> " +
 						"<INDENT>" +
-						"You can create new tables and modify the column information of existing " +
+						"Create new tables and modify the column information of existing " +
 						"tables - thus, fundamentally altering the configuration possibilities of " +
 						"your system." +
 						"</INDENT>" +
 
+						"\n\t- <b>Desktop Icon Editor:</b> " +
+						"<INDENT>" +
+						"Create, edit, or delete desktop icons through this Configuration Subset Editor which focuses " +
+						"only on desktop icon records." +
+						"</INDENT>" +
 
-						"\n\nRemember, if you would like to take a look at the available online documentation, " +
+
+						"\n\nRemember, if you are looking for more documentation, " +
 						"click the question mark at the top-right of the Desktop."
 				);
 

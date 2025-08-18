@@ -603,7 +603,6 @@
 				applyAccountsSearch(el.value);
 				displayAccounts();
 			} //end handleTimeoutSearchKeyUp()
-
 			//=====================================================================================
 			function displayAccounts()
 			{
@@ -621,7 +620,8 @@
 					if(_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 					{
 						if(_mailbox) //only add jump link if there is a large Preferences section
-							htmlStr += "<a href='#ACCOUNTS_LABEL' style='color:#880000'>Jump to Accounts Section</a>";
+							htmlStr += "<div id='prefs'><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
+
 						el.innerHTML = htmlStr;
 					}
 					else
@@ -633,7 +633,7 @@
 				htmlStr = "";
 				htmlStr += "<br>";
 				if(!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
-					htmlStr += "<hr width='75%'><center><a href='#' style='color:#880000'>Jump to Preferences Section</a></center><h1>Accounts</h1>";
+				htmlStr += "<hr width='75%'><center><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
 
 				htmlStr += "<div id='accountsSearchDiv'>Search: " +
 					"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";

@@ -47,10 +47,10 @@
 	(__builtin_strstr(&__FILE__[0], "/srcs/")           \
 	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
 	     : __FILE__)
-#define __COUT_HDR_L__ "[" << std::dec << __LINE__ << " |\t"
-#define __COUT_HDR_FL__ __SHORTFILE__ << " " << __COUT_HDR_L__
+#define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
+#define __COUT_HDR_FL__ __SHORTFILE__ << "" << __COUT_HDR_L__
 
-#define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ":"
+#define __COUT_TYPE__(X) std::cout << QUOTE(X) << ":" << __MF_SUBJECT__ << ": "
 #define __COUT_ERR__ __COUT_TYPE__(LogError) << __COUT_HDR_FL__
 #define __COUT_WARN__ __COUT_TYPE__(LogWarning) << __COUT_HDR_FL__
 #define __COUT_INFO__ __COUT_TYPE__(LogInfo) << __COUT_HDR_FL__
@@ -123,7 +123,7 @@ int makeSocket(const char* ip, int port, struct addrinfo*& p)
 
 int main(int argc, char** argv)
 {
-	__COUT__ << "Starting...\n\n" << __E__;
+	__COUT__ << "Starting..." << __E__;
 
 	std::string myPort_("3000");             // set default
 	std::string myFwdPort_("3001");          // set default
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 	std::string enablePrintouts_("do not");  // set default
 	if(argc >= 2)
 	{
-		__COUT__ << "port parameter file:" << argv[1] << "\n\n" << __E__;
+		__COUT__ << "port parameter file:" << argv[1] << __E__;
 		FILE* fp = fopen(argv[1], "r");
 		if(fp)
 		{
@@ -152,17 +152,16 @@ int main(int argc, char** argv)
 			fclose(fp);
 		}
 		else  // else use defaults
-			__COUT__ << "port parameter file failed to open: " << argv[1] << "\n\n"
-			         << __E__;
+			__COUT__ << "port parameter file failed to open: " << argv[1] << __E__;
 	}
 	__COUT__ << "Forwarding from: " << myPort_ << " to: " << myFwdIP_ << ":" << myFwdPort_
-	         << "\n\n"
 	         << __E__;
 
 	int myFwdPort;
 	sscanf(myFwdPort_.c_str(), "%d", &myFwdPort);
 
 	bool enablePrintouts = enablePrintouts_ == "enablePrintouts";
+	__COUTV__(enablePrintouts);
 
 	int sockfd;
 	int sendSockfd = 0;
@@ -381,14 +380,13 @@ int main(int argc, char** argv)
 				// std::cout << processId << ": " <<
 				// 	&buff[buffi + mf_i] << " ==> " << newSequenceId << __E__;
 				// avoid startup sequencing problem with MF
-				if(  //(newSequenceId == 1 && sourceLastSequenceID[processId] == 5) &&
-				     //!(newSequenceId == 5 && sourceLastSequenceID[processId] == 2) &&
-				    sourceLastSequenceID.find(processId) !=
-				        sourceLastSequenceID.end() &&  // ensure not first packet received
-				    ((newSequenceId == 0 && sourceLastSequenceID[processId] !=
-				                                (unsigned int)-1) ||  // wrap around case
-				     newSequenceId !=
-				         sourceLastSequenceID[processId] + 1))  // normal sequence case
+				if(enablePrintouts &&
+				   sourceLastSequenceID.find(processId) !=
+				       sourceLastSequenceID.end() &&  // ensure not first packet received
+				   ((newSequenceId == 0 && sourceLastSequenceID[processId] !=
+				                               (unsigned int)-1) ||  // wrap around case
+				    newSequenceId !=
+				        sourceLastSequenceID[processId] + 1))  // normal sequence case
 				{
 					// missed some messages!
 					std::cout << "MFfwd missed " << newSequenceId << " vs "
@@ -459,8 +457,9 @@ int main(int argc, char** argv)
 			// forward when we have a full packet
 			if(buffi + recvBytes - buffStarti > MAXBUFLEN)
 			{
-				__COUT__ << "Pack count ==> " << packCount
-				         << " sz=" << buffi - buffStarti - 1 << __E__;
+				if(enablePrintouts)
+					__COUT__ << "Pack count ==> " << packCount
+					         << " sz=" << buffi - buffStarti - 1 << __E__;
 				// send buffer without closing null character
 				if((sentBytes = sendto(sendSockfd,
 				                       &buff[buffStarti],
@@ -484,8 +483,9 @@ int main(int argc, char** argv)
 				// and send
 				if(buffi > MAXBUFLEN * 2)
 				{
-					__COUT__ << "Wrap Pack count ==> " << packCount
-					         << " sz=" << buffi - buffStarti - 1 << __E__;
+					if(enablePrintouts)
+						__COUT__ << "Wrap Pack count ==> " << packCount
+						         << " sz=" << buffi - buffStarti - 1 << __E__;
 					if((sentBytes = sendto(sendSockfd,
 					                       &buff[buffStarti],
 					                       buffi - buffStarti - 1,
@@ -511,8 +511,9 @@ int main(int argc, char** argv)
 				// bail on decent sized packet, so buffer can return to start efficiently
 				if(buffi > MAXBUFLEN && packCount > 12)
 				{
-					__COUT__ << "WrapAvoid Pack count ==> " << packCount
-					         << " sz=" << buffi - buffStarti - 1 << __E__;
+					if(enablePrintouts)
+						__COUT__ << "WrapAvoid Pack count ==> " << packCount
+						         << " sz=" << buffi - buffStarti - 1 << __E__;
 					if((sentBytes = sendto(sendSockfd,
 					                       &buff[buffStarti],
 					                       buffi - buffStarti - 1,
@@ -550,8 +551,9 @@ int main(int argc, char** argv)
 			else if(pingCounter > 1 && packCount > 1)
 			{
 				// forward partial packet while idle
-				__COUT__ << "Partial Pack count ==> " << packCount - 1
-				         << " sz=" << buffi - buffStarti - 1 << __E__;
+				if(enablePrintouts)
+					__COUT__ << "Partial Pack count ==> " << packCount - 1
+					         << " sz=" << buffi - buffStarti - 1 << __E__;
 
 				if((sentBytes = sendto(sendSockfd,
 				                       &buff[buffStarti],

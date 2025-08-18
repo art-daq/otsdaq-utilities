@@ -108,7 +108,10 @@
 								"Display Rows in Ascending Order",
 								"Display Columns in Ascending Order",
 								"Snake Double Rows",
-								"Snake Double Columns"];
+								"Snake Double Columns",
+								"Allow Floating Point",
+								"Value Map to Strings"
+							];
 		var _bitMapFieldTypesArr = [ //types => 0:string, 1:bool (default no),
 										 //2:bool (default yes), 3:color
 									 0,//"Number of Rows",
@@ -126,7 +129,10 @@
 									 1,//"Display Rows in Ascending Order",
 									 2,//"Display Columns in Ascending Order",
 									 1,//"Snake Double Rows",
-									 1];//"Snake Double Columns"];
+									 1,//"Snake Double Columns",
+									 1,// "Allow Floating Point",
+									 0// "Value Map to Strings"
+									 ];
 
 		var _tableName; //an array
 		var _lastTableNameUsed;
@@ -590,7 +596,7 @@
 				"&tableDescription=" + tableDescription +
 				"&columnChoicesCSV=" + colChoicesData,
 				specificTableRequestHandler,
-				1 /*handler param*/,
+				(allowOverwrite?2:1) /*handler param*/,
 				0 /*progressHandler*/,
 				true /*callHandlerOnErr*/);
 		} //end saveTable()
@@ -728,8 +734,33 @@
 
 			document.getElementById("overwriteButton").style.display = "none";
 
-			if(isFromSaveReq && !err)
-				Debug.log("Successful response to save request of Info for '" + tableName + "'",Debug.INFO_PRIORITY);
+			if(isFromSaveReq)
+			{
+				if(tableName && tableName != "" && !err)
+				{
+					Debug.log("Successful response to save request of Info for '" + tableName + "'",Debug.INFO_PRIORITY);
+
+					if(isFromSaveReq == 1) //then save was not an overwrite, so this is a new table! Provide a tooltip to remind users how to use their new table.
+					{
+						DesktopContent.tooltip(
+							"New Table",
+							"You have created a new table named '" + tableName + "!'" +
+							"<br><br>" +
+							"To use your table in <i>otsdaq</i>, it must be added to a <b>Configuration Group</b>. " +
+							"Once that new Configuration Group is given an alias (a.k.a. <b>System Alias</b> or Group Alias), it can be selected for the configure transition of the state machine." +
+							"<br><br>" +
+							"To add your table to a group, open the <b>Configuration Editor</b>, select an existing group or create a new group (e.g. from Group View). " +
+							"From an existing group, click <b>Rename Group or Add/Remove/Modify Member Tables</b>.  When choosing the tables in the group, select the checkbox next to the table name '" + 
+							tableName + "' and then save the new group." +
+							"<br><br>" +
+							"If you are new to configuring <i>otsdaq</i>, take a look at the " +
+							"<a href='https://otsdaq.fnal.gov/tutorials/first_demo/topics/configuration_primer.html' target='_blank'>otsdaq Configuration Primer</a>."
+							);
+					}
+				}
+				else if(!err && (!tableName || tableName == ""))
+					Debug.err("Unknown problem occurred - returned tableName was '" + tableName + "'");
+			}
 
 			if(!req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0])
 				return;
@@ -1900,11 +1931,17 @@
 								"The BitMap type represents a 2-dimensional array of cells, " +
 								"where each cell has a bit-field. The aspect ratio is optional. " +
 								"The color fields are optional. " +
-								"Optional fields you can leave as DEFAULT. \n\n" +
+								"Optional fields should be left as DEFAULT if unused. \n\n" +
 
 								"The aspect ratio should be entered as &lt;Height&gt;:&lt;Width&gt;; for example, " +
 								"if you have a pixel chip with pixel size 100 microns by 150 microns you " +
-								"may want your display to reflect that - you should enter &quot;100:150&quot (without the quotes)."
+								"may want your display to reflect that - you should enter &quot;100:150&quot (without the quotes)." +
+								`\n\n
+								If <b>Allow Floating Poin</b> is enabled, then the <b>Cell Bit-field Size</b> must be 32.
+								\n\n
+								<b>Value Map to Strings</b> is used to associate a CSV list of aliases with the integer values starting with 0.
+								For example &quot;Apple, Banana, Cookie&quot; will associate 0 with Apple, 1 with Banana, and 2 with Cookie.
+								`
 								);
 					else if(colType == "FixedChoiceData")
 						DesktopContent.tooltip("FixedChoiceData Field Type",
@@ -2012,6 +2049,32 @@
 		{
 			Debug.log("CfgTBL addColumn " + c);
 
+			//in case of user changes, first capture custom field values (e.g. Bitmap col choices), copied from line 536: function saveTable(allowOverwrite)
+			{
+				for(var i=0;i<_colChoicesArr.length;++i)
+				{
+					var colChoicesData = "";
+					if(_colTypeArr[i] == "BitMap")
+					{
+						Debug.log("BitMap capture " + i);
+						//extract fields into col choice array
+						for(var j=0;j<_bitMapFieldsArr.length;++j)
+						{
+							var el = document.getElementById("bitmapFieldInput-" + i + "-" + j);
+							if(j) colChoicesData += ",";
+							colChoicesData += encodeURIComponent(el.value);
+						}
+						// colChoicesData += ";";
+						_colChoicesArr[i] = colChoicesData;
+						Debug.log("BitMap capture " + i, _colChoicesArr[i]);
+					}
+					// else
+					// {
+					// 	colChoicesData += _colChoicesArr[i] + ";";
+					// }
+				}
+			} //end in case of user changes, first capture custom field values
+
 			_colHdrArr.splice(c,0,"DefaultColumnName");
 			_colTypeArr.splice(c,0,"Data");
 			_colDataTypeArr.splice(c,0, ConfigurationAPI._STRING_TYPE);
@@ -2037,6 +2100,32 @@
 		function deleteColumn(c)
 		{
 			Debug.log("CfgTBL deleteColumn " + c);
+
+			//in case of user changes, first capture custom field values (e.g. Bitmap col choices), copied from line 536: function saveTable(allowOverwrite)
+			{
+				for(var i=0;i<_colChoicesArr.length;++i)
+				{
+					var colChoicesData = "";
+					if(_colTypeArr[i] == "BitMap")
+					{
+						Debug.log("BitMap capture " + i);
+						//extract fields into col choice array
+						for(var j=0;j<_bitMapFieldsArr.length;++j)
+						{
+							var el = document.getElementById("bitmapFieldInput-" + i + "-" + j);
+							if(j) colChoicesData += ",";
+							colChoicesData += encodeURIComponent(el.value);
+						}
+						// colChoicesData += ";";
+						_colChoicesArr[i] = colChoicesData;
+						Debug.log("BitMap capture " + i, _colChoicesArr[i]);
+					}
+					// else
+					// {
+					// 	colChoicesData += _colChoicesArr[i] + ";";
+					// }
+				}
+			} //end in case of user changes, first capture custom field values
 
 			_colHdrArr.splice(c,1);
 			_colTypeArr.splice(c,1);
