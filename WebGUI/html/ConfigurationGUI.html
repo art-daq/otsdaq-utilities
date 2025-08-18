@@ -9805,6 +9805,22 @@
 						Debug.log("yes " + val);
 						bitMapCellEl.innerHTML = createBmpString(val,
 							_tableFixedChoiceData[c]);
+						var titleStr = _editingCellElOldTitle;
+						// 	titleStr was originally created like this in createTavleViewOutputStr(), now insert newValue:
+						// " title='" +
+						// "[row,col] = [" + ro + "," + co +
+						// "]\nUID : " + uidVal + "\n" +
+						// colHdr +
+						// " value: " +
+						// titleVal;
+						if(titleStr) //could be undefined
+						{
+							let ti = titleStr.indexOf(" value: ");
+							if(ti > 0)
+								titleStr = titleStr.substr(0,ti) + 
+									" value: " + val;
+							bitMapCellEl.title = titleStr;
+						}
 						_editingCell = false;
 						_editingCellEl = 0;
 

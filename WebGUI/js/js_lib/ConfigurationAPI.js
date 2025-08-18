@@ -3816,6 +3816,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		var convertedRC;
 		var color;
 		var noErrors = true;
+		var errStr = "";
 		for(var r=0;r<rows;++r)
 			for(var c=0;c<cols;++c)
 			{
@@ -3829,7 +3830,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					convertedRC[0] = (convertedRC[0]/2)|0;
 				try
 				{
-					bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]]|0;
+					bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
 					if(bmpData[r][c] < minValue)
 						throw("There was an illegal value less than minValue: " +
 								bmpData[r][c] + " < " + minValue + " @ (row,col) = (" +
@@ -3838,10 +3839,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 						throw("There was an illegal value greater than maxValue: " +
 								bmpData[r][c] + " > " + maxValue + " @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
-					if((((bmpData[r][c]-minValue)/stepValue)|0) != (bmpData[r][c]-minValue)/stepValue)
+					if((!allowFloatingPoint || stepValue != 1) &&
+							(((bmpData[r][c]-minValue)/stepValue)|0) != (bmpData[r][c]-minValue)/stepValue)
 						throw("There was an illegal value not following stepValue from minValue: " +
 								bmpData[r][c] + " != " +
-								(stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
+								(minValue + stepValue*(((bmpData[r][c]-minValue)/stepValue)|0)) +
 								" @ (row,col) = (" +
 								convertedRC[0] + "," + convertedRC[0] + ")");
 					color = //localConvertValueToRGBA(bmpData[r][c]);
@@ -3854,15 +3856,16 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 					bmpDataImage.data[(r*cols + c)*4+3]=color[3];
 				}
 				catch(err)
-				{noErrors = false;} //ignore errors
+				{noErrors = false; errStr += "\n" + err;} //ignore errors
 			}
 		bmpContext.putImageData(bmpDataImage,0,0);
 		bmp.src = bmpCanvas.toDataURL();
 
 		if(!noErrors)
-			throw("There was a mismatch in row/col dimensions. Input matrix was " +
+			throw("Input matrix was " +
 					"dimension [row,col] = [" + srcMatrix.length + "," +
-					(srcMatrix.length?srcMatrix[0].length:0) + "]");
+					(srcMatrix.length?srcMatrix[0].length:0) + "].\n\n" + 
+					errStr);
 	}
 
 	//:::::::::::::::::::::::::::::::::::::::::
@@ -4166,7 +4169,7 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			{
 				if(clickValues[i] < minValue) clickValues[i] = minValue;
 				if(clickValues[i] > maxValue) clickValues[i] = maxValue;
-				if(stepValue != 1)
+				if(!allowFloatingPoint || stepValue != 1)
 					clickValues[i] = (((clickValues[i]-minValue)/stepValue)|0)*stepValue + minValue; //lock to step
 				textInputEls[i].value = clickValues[i]; //fix value
 			}
@@ -4174,7 +4177,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			{
 				if(clickValues[i] < minValue) return;
 				if(clickValues[i] > maxValue) return;
-				if((((clickValues[i]-minValue)/stepValue)|0) != (clickValues[i]-minValue)/stepValue)
+				if((!allowFloatingPoint || stepValue != 1) &&
+					(((clickValues[i]-minValue)/stepValue)|0) != (clickValues[i]-minValue)/stepValue)
 					return; //no locked to step value
 				Debug.log("displaying change");
 			}
@@ -7186,6 +7190,7 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 		// 17		  0// "Value Map to Strings"
 		
 
+		Debug.log("Bitmap colChoicesArr",colChoicesArr);
 		if(colChoicesArr.length > 3)
 		{
 			str += "\nRow, Cols, Bits: " + colChoicesArr[0];
@@ -7255,6 +7260,22 @@ ConfigurationAPI.createTableColumnHeaderHTML = function(colType,colDataType,colC
 				str += "<br>Row, Cols, Bits: " + colChoicesArr[0];
 				str += ", " + colChoicesArr[1];
 				str += ", " + colChoicesArr[2];
+
+				for(let i=3; i < colChoicesArr.length; ++i)
+					if(colChoices[i] != ConfigurationAPI._DEFAULT)
+					{
+						switch(i)
+						{
+							case 16:
+								if(colChoices[i] == "Yes")
+									str += ", " + "Float"; 
+								break;
+							case 17:						
+								str += ", " + "Value-Map"; 
+								break;
+							default: //do not show some params
+						}
+					}
 			}
 		}
 		str += "]";
