@@ -1928,20 +1928,19 @@
 					//show tooltips
 					if(colType == ConfigurationAPI._BITMAP_DATA_TYPE)
 						DesktopContent.tooltip("BitMap Field Type",
-								"The BitMap type represents a 2-dimensional array of cells, " +
-								"where each cell has a bit-field. The aspect ratio is optional. " +
-								"The color fields are optional. " +
-								"Optional fields should be left as DEFAULT if unused. \n\n" +
+								"The <b>BitMap</b> type represents a 2-dimensional array of cells, " +
+								"where each cell has a bit-field/value. For example, the <b>BitMap</b> could hold a matrix of values with a fixed number of bits, or floating point values, or even strings mapped to integers. " + 
+								"\n\nThe advanced parameters are all optional, like apect ratio and color selections. " +								
+								"<b>Optional fields</b> should be left as DEFAULT if unused. \n\n" +
 
-								"The aspect ratio should be entered as &lt;Height&gt;:&lt;Width&gt;; for example, " +
+								"The <b>Aspect Ratio</b> should be entered as &lt;Height&gt;:&lt;Width&gt;; for example, " +
 								"if you have a pixel chip with pixel size 100 microns by 150 microns you " +
 								"may want your display to reflect that - you should enter &quot;100:150&quot (without the quotes)." +
-								`\n\n
-								If <b>Allow Floating Poin</b> is enabled, then the <b>Cell Bit-field Size</b> must be 32.
-								\n\n
-								<b>Value Map to Strings</b> is used to associate a CSV list of aliases with the integer values starting with 0.
-								For example &quot;Apple, Banana, Cookie&quot; will associate 0 with Apple, 1 with Banana, and 2 with Cookie.
-								`
+								"\n\n" +
+								"If <b>Allow Floating Point</b> is enabled, then the <b>Cell Bit-field Size</b> must be 32, and <b>Value Map to Strings</b> must be DEFAULT." +
+								"\n\n" +
+								"<b>Value Map to Strings</b> is used to associate a CSV list of aliases with the integer values starting with the min-value (0 by default)." +
+								" For example &quot;Apple, Banana, Cookie&quot; will associate 0 with Apple, 1 with Banana, and 2 with Cookie."
 								);
 					else if(colType == "FixedChoiceData")
 						DesktopContent.tooltip("FixedChoiceData Field Type",

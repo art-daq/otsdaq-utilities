@@ -8371,7 +8371,7 @@
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
-							_currentTableName,
+							treeEditingTargetTable_,
 							treeEditingTargetUID_,
 							treeEditingTargetColumn_,
 							document.getElementById("treeNode-BitMap-Params-" +
@@ -19162,6 +19162,19 @@
 			let doDisplayColsAscending = bitMapParams[13] == "Yes"?1:0;
 			let doSnakeColumns = bitMapParams[14] == "Yes"?1:0;
 			let doSnakeRows = bitMapParams[15] == "Yes"?1:0;
+
+			let allowFloatingPoint = 0;
+			let valueMapToStrings, valueMapToStringsArr = [];
+			if(bitMapParams.length > 16)
+			{
+				allowFloatingPoint = bitMapParams[16] == "Yes"?1:0;
+				valueMapToStrings = bitMapParams[17];
+				valueMapToStringsArr = valueMapToStrings.split(',');
+				//remove all white space
+				for(let i=0; i<valueMapToStringsArr.length; ++i)
+					valueMapToStringsArr[i] = valueMapToStringsArr[i].trim();				
+				Debug.log("valueMapToStringsArr",valueMapToStringsArr);
+			}
 			
 			if (!val || val.trim() === "" || val.trim().toUpperCase() === DEFAULT) //if empty value
 				return `<div style="display:flex; justify-content:center"><div style="height:` + 
@@ -19193,8 +19206,25 @@
 					{
 						for (let j = 0; j < width; j++)
 						{
+							let v = bitmapMatrix[i][j];
+							if(valueMapToStrings != "" && valueMapToStrings != ConfigurationAPI._DEFAULT)
+							{
+								if((v|0) == v)
+								{
+									Debug.log("Interpreting as number.. so leaving as number. Perhaps map to string is newly setup.");									
+								}
+								else //interpret as string
+								{
+									v = valueMapToStringsArr.indexOf(v);
+									if(v < 0) 
+										v = maxValue+1; //default to maxValue+1 (to get ceiling value color)
+									else 
+										v += minValue; //add offset
+								}
+							}
+
 							const rgb = ConfigurationAPI.bitMapDialogConvertValueToRGBA(
-								bitmapMatrix[i][j],
+								v,
 								minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
 								floorValueColor, ceilValueColor);
 							// const normalized = bitmapMatrix[i][j] / maxVal;
@@ -19222,7 +19252,7 @@
 				}
 				catch (e)
 				{
-					Debug.warn("Bitmap parse error:", val);
+					Debug.warn("Bitmap parse error:", val,"\n\nHere is the error:",e);
 					return "(Invalid Bitmap)";
 				}
 			}
