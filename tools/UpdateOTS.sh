@@ -43,7 +43,7 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--de
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --fetchall            \t #will fetch all    repositories in srcs/"
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pullall             \t #will pull  all    repositories in srcs/ (i.e. not just otsdaq)."
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pushall \"comment\" \t #will push  all    repositories in srcs/ (i.e. not just otsdaq)."
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables."
+	echo -e "UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables based on your table dependencies at \${USER_DATA}/ServiceData/CoreTableInfoNames.dat."
 	# --warn is used by ots script to warn users that there are uncommitted changes in srcs/
 	# warn usage to display only stderr: UpdateOTS.sh --warn 2>&1 >/dev/null &
 	echo -e "UpdateOTS.sh:${LINENO}  "
