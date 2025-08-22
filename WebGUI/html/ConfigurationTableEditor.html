@@ -1003,10 +1003,10 @@
 				//create hidden optional fields
 				str += "<a href='#' onclick='javascript:" +
 						"if(this.textContent.indexOf(\"Show\") == 0) " +
-						"{ document.getElementById(\"bitmapFieldInput-optional\").style.display = \"block\";" +
+						"{ this.closest(\"td\").querySelector(\"#bitmapFieldInput-optional\").style.display = \"block\";" +
 						"this.innerHTML = \"Hide Optional Fields\";}" +
 						"else " +
-						"{ document.getElementById(\"bitmapFieldInput-optional\").style.display = \"none\";" +
+						"{ this.closest(\"td\").querySelector(\"#bitmapFieldInput-optional\").style.display = \"none\";" +
 						"this.innerHTML = \"Show Optional Fields\";}" +
 						"' style='float:right;'>" +
 						"Show Optional Fields</a>";
