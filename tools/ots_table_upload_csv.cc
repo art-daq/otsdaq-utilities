@@ -32,7 +32,8 @@ void UploadTableCSV(int argc, char* argv[])
 	std::cout << "=================================================\n";
 	__COUT_INFO__ << "Uploading Table CSV!" << std::endl;
 
-	std::cout << "\n\nusage: 2 arguments:\n\t <table name> <file path to CSV> \n\n" << std::endl;
+	std::cout << "\n\nusage: 2 arguments:\n\t <table name> <file path to CSV> \n\n"
+	          << std::endl;
 
 	std::cout << "argc = " << argc << std::endl;
 	for(int i = 0; i < argc; i++)
@@ -47,8 +48,8 @@ void UploadTableCSV(int argc, char* argv[])
 	std::string tableName = argv[1];
 	__COUTV__(tableName);
 	auto tablePos = tableName.find("Table");
-	if(tablePos == std::string::npos || //avoid case when tableName is length 4
-		tablePos != tableName.size() - strlen("Table"))
+	if(tablePos == std::string::npos ||  //avoid case when tableName is length 4
+	   tablePos != tableName.size() - strlen("Table"))
 		tableName += "Table";
 	__COUTV__(tableName);
 
@@ -62,7 +63,9 @@ void UploadTableCSV(int argc, char* argv[])
 	}
 	catch(...)
 	{
-		__SS__ << "No valid ots kerberos user found, please kinit and source setup_ots.sh or kint_setup.sh." << __E__;
+		__SS__ << "No valid ots kerberos user found, please kinit and source "
+		          "setup_ots.sh or kint_setup.sh."
+		       << __E__;
 		__SS_THROW__;
 	}
 	__COUTV__(author);
@@ -83,7 +86,7 @@ void UploadTableCSV(int argc, char* argv[])
 	std::fclose(fp);
 
 	__COUTV__(csv);
-	
+
 	// return;
 
 	//==============================================================================
@@ -129,7 +132,7 @@ void UploadTableCSV(int argc, char* argv[])
 	ConfigurationManagerRW  cfgMgrInst("export_admin");
 	ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
 
-    //load all table info to fill nameToTableMap_
+	//load all table info to fill nameToTableMap_
 	{
 		std::string                             accumulatedWarnings;
 		const std::map<std::string, TableInfo>& allTableInfo =
@@ -144,8 +147,8 @@ void UploadTableCSV(int argc, char* argv[])
 
 	//Note: similar to 'void ConfigurationSupervisorBase::handleCreateTableXML'
 
-	TableVersion version;    //point to mockup
-	TableBase* table = cfgMgr->getTableByName(tableName);
+	TableVersion version;  //point to mockup
+	TableBase*   table = cfgMgr->getTableByName(tableName);
 	// create a temporary version from the source version
 	TableVersion temporaryVersion = table->createTemporaryView(version);
 
@@ -153,10 +156,10 @@ void UploadTableCSV(int argc, char* argv[])
 
 	TableView* cfgView = table->getTemporaryView(temporaryVersion);
 
-	try 
+	try
 	{
 		// returns -1 on error that data was unchanged, calls init to check table
-		cfgView->fillFromCSV(csv, 0 /* dataOffset */, author);		
+		cfgView->fillFromCSV(csv, 0 /* dataOffset */, author);
 
 		std::stringstream comment;
 		comment << "Table CSV uploaded with 'ots_table_upload_csv.'" << __E__;
@@ -174,25 +177,24 @@ void UploadTableCSV(int argc, char* argv[])
 
 	// return;
 	// note: if sourceTableAsIs, accept equivalent versions
-	bool foundEquivalent;
-	TableVersion newVersion = cfgMgr->saveModifiedVersion(
-									tableName,
-	                                version,
-	                                false /* makeTemporary */,
-	                                table,
-	                                temporaryVersion,
-	                                false /* ignoreDuplicates */,
-	                                true /* lookForEquivalent */,
-	                                &foundEquivalent);
-	    
+	bool         foundEquivalent;
+	TableVersion newVersion = cfgMgr->saveModifiedVersion(tableName,
+	                                                      version,
+	                                                      false /* makeTemporary */,
+	                                                      table,
+	                                                      temporaryVersion,
+	                                                      false /* ignoreDuplicates */,
+	                                                      true /* lookForEquivalent */,
+	                                                      &foundEquivalent);
+
 	if(foundEquivalent)
-		__COUT_WARN__ << "Found equivalent version of CSV upload as Table " << tableName << "-v" << newVersion << 
-        	"... no need to create new version from " << uploadPath
-                    << __E__;
+		__COUT_WARN__ << "Found equivalent version of CSV upload as Table " << tableName
+		              << "-v" << newVersion << "... no need to create new version from "
+		              << uploadPath << __E__;
 	else
-    	__COUT_INFO__ << "Table " << tableName << "-v" << newVersion << 
-        	" was successfully uploaded as CSV from " << uploadPath << "!"
-                    << __E__;
+		__COUT_INFO__ << "Table " << tableName << "-v" << newVersion
+		              << " was successfully uploaded as CSV from " << uploadPath << "!"
+		              << __E__;
 
 }  //end UploadTableCSV()
 

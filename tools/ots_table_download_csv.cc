@@ -33,7 +33,9 @@ void DownloadTableCSV(int argc, char* argv[])
 	std::cout << "=================================================\n";
 	__COUT_INFO__ << "Downloading Table CSV!" << std::endl;
 
-	std::cout << "\n\nusage: 2 or 3 arguments:\n\t <table name> <table version> <optional: file path to save CSV> \n\n" << std::endl;
+	std::cout << "\n\nusage: 2 or 3 arguments:\n\t <table name> <table version> "
+	             "<optional: file path to save CSV> \n\n"
+	          << std::endl;
 
 	std::cout << "argc = " << argc << std::endl;
 	for(int i = 0; i < argc; i++)
@@ -48,23 +50,22 @@ void DownloadTableCSV(int argc, char* argv[])
 	std::string tableName = argv[1];
 	__COUTV__(tableName);
 	auto tablePos = tableName.find("Table");
-	if(tablePos == std::string::npos || //avoid case when tableName is length 4
-		tablePos != tableName.size() - strlen("Table"))
+	if(tablePos == std::string::npos ||  //avoid case when tableName is length 4
+	   tablePos != tableName.size() - strlen("Table"))
 		tableName += "Table";
 	__COUTV__(tableName);
 	TableVersion tableVersion(atoi(argv[2]));
-	__COUTV__(tableVersion); 
+	__COUTV__(tableVersion);
 	std::string downloadPath = "";
 	if(argc > 3)
-        downloadPath = argv[3];
-    else
-    {
-        std::stringstream ss;
-        ss << tableName << "_v" << tableVersion << "_" << time(0) << ".csv";
-        downloadPath = ss.str();
-    }
+		downloadPath = argv[3];
+	else
+	{
+		std::stringstream ss;
+		ss << tableName << "_v" << tableVersion << "_" << time(0) << ".csv";
+		downloadPath = ss.str();
+	}
 	__COUTV__(downloadPath);
-
 
 	// return;
 
@@ -111,7 +112,7 @@ void DownloadTableCSV(int argc, char* argv[])
 	ConfigurationManagerRW  cfgMgrInst("export_admin");
 	ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
 
-    //load all table info to fill nameToTableMap_
+	//load all table info to fill nameToTableMap_
 	{
 		std::string                             accumulatedWarnings;
 		const std::map<std::string, TableInfo>& allTableInfo =
@@ -124,26 +125,23 @@ void DownloadTableCSV(int argc, char* argv[])
 		__COUTV__(allTableInfo.size());
 	}
 
+	std::stringstream csv;
+	cfgMgr->getVersionedTableByName(tableName, tableVersion)->getViewP()->printCSV(csv);
 
-    std::stringstream csv;
-    cfgMgr->getVersionedTableByName(tableName, tableVersion)->getViewP()->printCSV(csv);
+	//Uploade should use similar to fillFromCSV
 
-    //Uploade should use similar to fillFromCSV
+	FILE* fp = std::fopen(downloadPath.c_str(), "w");
+	if(!fp)
+	{
+		__COUT_ERR__ << "\n\nERROR! Could not open file at " << downloadPath
+		             << ". Error: " << errno << " - " << strerror(errno) << __E__;
+		return;
+	}
+	fputs(csv.str().c_str(), fp);
+	fclose(fp);
 
-    FILE* fp = std::fopen(downloadPath.c_str(), "w");
-    if(!fp)
-    {
-        __COUT_ERR__ << "\n\nERROR! Could not open file at " << downloadPath
-                        << ". Error: " << errno << " - " << strerror(errno)
-                        << __E__;
-        return;
-    }
-    fputs(csv.str().c_str(), fp);
-    fclose(fp);
-
-    __COUT_INFO__ << "Table " << tableName << "-v" << tableVersion << 
-        "was successfully downloaded as CSV to " << downloadPath
-                    << __E__;
+	__COUT_INFO__ << "Table " << tableName << "-v" << tableVersion
+	              << "was successfully downloaded as CSV to " << downloadPath << __E__;
 
 }  //end DownloadTableCSV()
 
