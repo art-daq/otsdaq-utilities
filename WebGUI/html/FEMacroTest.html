@@ -10,7 +10,7 @@
 	<!-- MultiSelectBox: Must include .css style sheet and .js functionality -->
 	<link rel="stylesheet" type="text/css" href="/WebPath/css/MultiSelectBox.css">
 	<script type="text/JavaScript" src="/WebPath/js/js_lib/MultiSelectBox.js"></script>
-	<script type="text/JavaScript" src="/WebPath/js/js_lib/plotly.min.js"></script> <!-- tested with plotly-3.0.1.min.js -->
+	<!-- <script type="text/JavaScript" src="/WebPath/js/js_lib/plotly.min.js"></script> loaded by loadPlotly(), tested with plotly-3.0.1.min.js -->
 
 	<style type="text/css">
 
@@ -254,6 +254,8 @@
 			//makeSequencePublic()
 			//copyOutput()
 
+			//loadPlotly()
+
 		var verticalOrientation_ = true;
 		var sequenceMode_ = false;
 
@@ -372,23 +374,24 @@
 				firstTime = false;
 			}
 			var windowTooltip = "Welcome to the FE Macros web app!\n\n" +
-				"This app provides an interface for devices configured in the context. " +
-				"It allows for common functions such as resets and reading and writing to memory. " +
+				"This app provides a user interface for configured devices. " +
+				"It allows for launching common functions, such as resets and reading and writing to memory, or interface-spcific functions, at one or many front-ends with a click of the mouse. " +
 				"\n\n" +
-				"Choose a Front-End (FE) type (i.e. this should match your FE plugin class name) to access functionalities. " +
-				"Alternatively, you can handpick a subset of devices for more granular control by selecting <b>FE Target UID</b> or <b>toggle Multi-select</b>. " +
+				"The Macro Name dropdown will always show the list of functions that are defined for the selected front-end filters. " +
+				"To start filtering front-ends, choose a Front-End (FE) type (i.e. this should match your FE plugin class name) to access the set of functions that are defined for that particular front-end plugin class. " +
+				"You can filter further and handpick a subset of FE devices for more granular control by selecting <b>FE Target UID</b> or <b>Toggle Multi-select</b>. " +
 				"Once you've chosen your FE type and target(s), select the FE Macro name, and hit <b>Run</b> to execute. " +
 				"The FE Macro will only run one time and on the devices specified. " +
-				"For more information about a FE Macro click on the tooltip icon below the FE Macro name. " +
 				"\n\n" +
-				"The output is displayed in the middle panel. " +
+				"The output of the executed function is displayed in the middle panel. " +
 				"\n\n" +
-				"The panel on the right tracks your history. You can run previous FE Macros by clicking on them. " +
-				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait in between repeat executions. " +
+				"The panel on the right tracks your history. You can launch previously run FE Macros, by clicking on them in the history pane. " +
+				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait between repeat executions. " +
 				"\n\n" +
 				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros. " + 
 				"<b>Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " + 
-				"Note that sequences in the admin user's folder are considered public and will be accessible by all users.";
+				"Note that sequences in the admin user's folder are considered public and will be accessible by all users." +
+				"\n\nAlso, some FE Macros have a tooltip defined for additional information; click on the tooltip icon <span class='macroInfo' style='display:inline-block; width: 50px; height: 50px; margin: -7px 0 0 -10px;'></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next to the FE Macro name to view the tooltip info. ";
 
 			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
@@ -807,8 +810,7 @@
 			{
 				str += "Received error... " + getDateString(new Date);
 				str += "<br>";
-				Debug.log("Error while running FE Macro: " + errStr,
-						Debug.HIGH_PRIORITY);
+				Debug.err("Error while running FE Macro: " + errStr);
 				el.innerHTML = str;
 				return;
 			}
@@ -1087,18 +1089,25 @@ Here is the json string received:
 			}
 			el.innerHTML = str;
 
-			for(var feExecJsonKey in feExecJson)
-			{ //add built in plot(s)
-				Debug.logv({feExecJsonKey});
-				Plotly.newPlot(feExecJsonKey + "_plotly", 
-					feExecJson[feExecJsonKey].data, 
-					feExecJson[feExecJsonKey].layout,
-					{ responsive: true } /* allow dynamic resizing */ );
+			//======================
+			function localPlotlyHandler()
+			{ 
+				for(var feExecJsonKey in feExecJson)
+				{ //add built in plot(s)
+					Debug.logv({feExecJsonKey});
+					Plotly.newPlot(feExecJsonKey + "_plotly", 
+						feExecJson[feExecJsonKey].data, 
+						feExecJson[feExecJsonKey].layout,
+						{ responsive: true } /* allow dynamic resizing */ );
 
-				resizeObserver.observe(document.getElementById(
-						feExecJsonKey + "_plotly_container"
-					));
-			} //end built in plot(s)
+					resizeObserver.observe(document.getElementById(
+							feExecJsonKey + "_plotly_container"
+						));
+				} //end built in plot(s)
+			} //end localPlotlyHandler()
+
+			if(Object.keys(feExecJson).length) //only load Plotly if needed
+				loadPlotly(localPlotlyHandler);
 
 			Debug.log("Returning page scroll position",
 				DesktopContent.getWindowScrollTop(),"to",scrollTop);
@@ -2701,9 +2710,11 @@ Here is the json string received:
 			//var testBtn = document.getElementById("testSequenceBtn");
 			var saveBtn = document.getElementById("saveSequenceBtn");
 			var resetBtn = document.getElementById("resetSequenceBtn");
+			var overwriteBtn = document.getElementById("overwriteSequenceBtn");
 			resetBtn.disabled = status;
 			//testBtn.disabled = status;
 			saveBtn.disabled = status;
+			overwriteBtn.disabled = status;
 		} //end statusEditButtons()
 
 		//=====================================================================================
@@ -2790,8 +2801,18 @@ Here is the json string received:
 
 		//=====================================================================================
 		//showPopupSaveSequence ~~
-		function showPopupSaveSequence()
+		function showPopupSaveSequence(overwrite)
 		{
+			Debug.logv({overwrite});
+			if(overwrite)
+			{
+				var sequenceName = document.getElementById("select-sequence").value;
+				Debug.log("showPopupSaveSequence overwrite",sequenceName);
+				//force name into position for save
+				document.getElementById("sequenceName").innerText = sequenceName; 
+				saveSequence(1);
+				return;
+			}
 			var popup = document.getElementById("popupSaveSequence");
 			var sequenceNameInput = document.getElementById("sequenceName");
 			popup.style.display = "grid";
@@ -2952,7 +2973,7 @@ Here is the json string received:
 					"disabled": true,
 					"onClick": "showPopupSaveSequence()",
 				},
-				"Save",
+				"Save as",
 				true);
 			// var testButton = DesktopContent.htmlOpen(
 			// 	"button",
@@ -2980,6 +3001,15 @@ Here is the json string received:
 				},
 				"Close",
 				true);
+			var overwriteButton = DesktopContent.htmlOpen(
+				"button",
+				{
+					"id": "overwriteSequenceBtn",
+					"disabled": true,
+					"onClick": "showPopupSaveSequence(1)",
+				},
+				"Overwrite",
+				true);
 
 			str += DesktopContent.htmlOpen(
 				"div",
@@ -3005,7 +3035,7 @@ Here is the json string received:
 					"id": "sequence-builder-buttons",
 					"style": "margin-top:10px; display: none; gap: 20px"
 				},
-				saveButton + resetButton + closeButton,
+				saveButton + resetButton + closeButton + overwriteButton,
 				true);
 
 
@@ -3013,15 +3043,26 @@ Here is the json string received:
 			// load saved sequences
 			DesktopContent.XMLHttpRequest("Request?RequestType=loadFEMacroSequences",
 				"",
-				function(req)
+				function(req, reqParam, errStr)
 				{
 					// request hendler
 					Debug.log("loadFEMacroSequences() was called.");
 
+					if(!errStr)
+						errStr = "";
+					var err = DesktopContent.getXMLValue(req,"Error");
+					if(err && err != "")
+						errStr += "\n" + err;
+					if(errStr != "")
+					{
+						Debug.err("Error while loading FE Macro Sequences: " + errStr);
+						return;
+					}
+
 					var sequenceString = DesktopContent.getXMLValue(req, "FEsequences");
 					if (!sequenceString)
 					{
-						Debug.log("Sequence is empty!");
+						Debug.warn("Loaded sequence is empty!");
 						return;
 					}
 					var sequenceSelector = document.getElementById("select-sequence");
@@ -3037,7 +3078,7 @@ Here is the json string received:
 						option.value = seq;
 						sequenceSelector.add(option);
 					}
-				}
+				} //end loadFEMacroSequences handler
 			);
 		} //end loadSequnces()
 
@@ -3183,6 +3224,8 @@ Here is the json string received:
 		//selectSequence ~~
 		function selectSequence(elem = "undefined")
 		{
+			Debug.log("selectSequence",elem);
+
 			var container = document.getElementById("show-sequence");
 
 			// no sequence selected
@@ -3190,12 +3233,15 @@ Here is the json string received:
 			{
 				// reset the list
 				selectedSequence_ = {};
-				showSequence("show-sequence", selectedSequence_)
+				showSequence("show-sequence", selectedSequence_);
 				statusActionButtons(true);
 				currentIndex = 0;
 				updateCurrentMacroDisplay("No Macro Running", 0, 0);
 				return;
 			}
+			
+			closeSequence();	 				// close the sequence-building if it is open		
+			showSequence("show-sequence", {}); 	// reset the sequence of commands to prepare for load
 
 			// call the API
 			DesktopContent.XMLHttpRequest("Request?RequestType=getFEMacroSequence" +
@@ -3204,20 +3250,26 @@ Here is the json string received:
 				function(req)
 				{
 					// request hendler
-					Debug.log("loadFEMacroSequences() was called.");
+					Debug.log("selectSequence() getFEMacroSequence was called.");
 					var sequenceString = DesktopContent.getXMLValue(req, "FEsequence");
 					if (!sequenceString)
 					{
-						Debug.log("Sequence is empty!");
+						Debug.err("Sequence returned is empty!");
 						return;
 					}
 					Debug.log(sequenceString);
-					selectedSequence_ = JSON.parse(decodeURI(sequenceString));
+					try
+					{
+						selectedSequence_ = JSON.parse(decodeURI(sequenceString));
+					}
+					catch(e)
+					{
+						Debug.err("Error while parsing returned sequence data! Notify admins - here was the error:",e);
+						return;
+					}
 
 					updateCurrentMacroDisplay("No Macro Running", 0, 0);
 					currentIndex = 0;
-					// close the building if it is open
-					closeSequence();
 					// fill the list
 					showSequence("show-sequence", selectedSequence_);
 					// active buttons
@@ -3228,17 +3280,19 @@ Here is the json string received:
 
 		//=====================================================================================
 		//saveSequence ~~
-		function saveSequence()
+		function saveSequence(overwrite)
 		{
 			var sequenceSelector = document.getElementById("select-sequence");
 			var sequenceName = document.getElementById("sequenceName");
 			var errorMessage = document.getElementById("sequenceName-error");
 			var isNewSequence = sequenceSelector.value === "Unnamed";
+			Debug.log("saveSequence",sequenceName);
 
 			// check if name is empty
 			if (sequenceName.value === "")
 			{
 				errorMessage.innerText = "Sequence name cannot be empty!";
+				Debug.err("Sequence name cannot be empty! Please enter a sequence name to be saved.");
 				return;
 			}
 
@@ -3247,32 +3301,45 @@ Here is the json string received:
 			if (invalidCharacters.test(sequenceName.value))
 			{
 				errorMessage.innerText = "Sequence name contains invalid characters!";
+				Debug.err("Sequence name contains invalid characters! Please use only alphanumeric, spaces, dashes, underscores.");
 				return;
 			}
 
 			// check if the name is unique
-			for (var i = 0; i < sequenceSelector.options.length; i++)
-			{
-				if (sequenceSelector.options[i].value === sequenceName.value)
-				{
-					errorMessage.innerText = "Name already in use!";
-					return;
-				}
-			}
+			if(!overwrite)
+				for (var i = 0; i < sequenceSelector.options.length; i++)
+					if (sequenceSelector.options[i].value === sequenceName.value)
+					{
+						errorMessage.innerText = "Name already in use!";
+						Debug.err("Name already in use! Please click <b>Overwrite</b> if you want to modify this sequence.");
+						return;
+					}
 
 			// prepare the payload of the API call
-			var postData = "FEsequence=" + encodeURI(JSON.stringify(tempSequence_)) +
-						   "&sequenceName=" + sequenceName.value;
+			var postData = "FEsequence=" + encodeURIComponent(JSON.stringify(tempSequence_)) +
+						   "&sequenceName=" + encodeURIComponent(sequenceName.value);
 
 
 			Debug.log(JSON.stringify(tempSequence_));
 			Debug.log("Sequence Name:", sequenceName.value);
 
 			// API call
-			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence",
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence" + 
+				(overwrite?"&overwrite=1":""),
 				postData,
-				function ()
+				function (req, reqParam, errStr)
 				{
+					if(!errStr)
+						errStr = "";
+					var err = DesktopContent.getXMLValue(req,"Error");
+					if(err && err != "")
+						errStr += "\n" + err;
+					if(errStr != "")
+					{
+						Debug.err("Error while saving ne FE Macro Sequence: " + errStr);
+						return;
+					}
+
 					// Update the dropdown based on whether it's a new sequence or not
 					if (isNewSequence)
 					{
@@ -3301,11 +3368,12 @@ Here is the json string received:
 					sequenceSelector.value = sequenceName.value;
 					selectSequence(sequenceName.value);
 
-				},
+					Debug.info("Sequence '" + sequenceName.value + "' was successfully saved!");
+				}, //end save handler
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
 				true /*callHandlerOnErr*/
-			);
+			); //end save request
 
 			var errorMessage = document.getElementById("sequenceName-error");
 			errorMessage.innerText = "";
@@ -3697,6 +3765,27 @@ Here is the json string received:
 
 		// END SEQUENCE CONTROL
 		//=====================================================================================
+
+
+		//=====================================================================================
+		//loadPlotly ~~
+		//	lazy loading of plotly, only when needed for plots to avoid load time on body load
+		function loadPlotly(callback) 
+		{
+			if (window.Plotly) // Already loaded
+			{
+				Debug.log("Plotly already loaded");	
+				callback();
+				return;
+			}
+
+			// Create script tag
+			const script = document.createElement("script");
+			script.src = "/WebPath/js/js_lib/plotly.min.js";  // pick version you need
+			script.onload = callback;
+			document.head.appendChild(script);
+		} //end loadPlotly()
+
 	</script>
 
 </head>
