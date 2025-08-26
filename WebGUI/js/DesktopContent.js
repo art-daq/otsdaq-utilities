@@ -2968,12 +2968,11 @@ DesktopContent.parseCSV = function(text)
 	let currentRow = [];
 	let currentValue = '';
 	let insideQuotes = false;
-	let prevChar = '';
 
 	for (let i = 0; i < text.length; i++) 
 	{
 		const char = text[i];
-		const nextChar = (i+1 < text.length?text[i + 1]:'');
+		const nextChar = (i+1 < text.length ? text[i+1] : '');
 
 		if (char === '"') 
 		{
@@ -2981,8 +2980,9 @@ DesktopContent.parseCSV = function(text)
 			{
 				// Escaped double-quote
 				currentValue += '"';
-				i++; //skip next quote
-			} else 
+				++i; //skip next quote
+			} 
+			else 
 			{
 				// Toggle quote mode
 				insideQuotes = !insideQuotes;
@@ -3008,7 +3008,6 @@ DesktopContent.parseCSV = function(text)
 		{
 			currentValue += char;
 		}
-		prevChar = char;
 	} //end text loop
 
 	// Add last value if any

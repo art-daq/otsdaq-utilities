@@ -3579,16 +3579,18 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 			return false;
 		}
 		bitMask = 0;
-		for(var i=0;i<bitFieldSize;++i)
+		for(let i=0;i<bitFieldSize;++i)
 			bitMask |= 1 << i;
 		bitMask = bitMask >>> 0; // >>> 0 converts to unsigned 32-bit integer
 
-		minValue = bitMapParams[3] == ConfigurationAPI._DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
-		maxValue = bitMapParams[4] == ConfigurationAPI._DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
+		minValue = bitMapParams[3] == ConfigurationAPI._DEFAULT || bitMapParams[3] == ""?0:(parseFloat(bitMapParams[3]));
+		maxValue = bitMapParams[4] == ConfigurationAPI._DEFAULT || bitMapParams[4] == ""?bitMask:(parseFloat(bitMapParams[4]));
 		if(maxValue < minValue)
 			maxValue = bitMask;
 		midValue = (maxValue + minValue)/2; //used for color calcs
-		stepValue = bitMapParams[5] == ConfigurationAPI._DEFAULT || bitMapParams[5] == ""?1:(bitMapParams[5]|0);
+		stepValue = bitMapParams[5] == ConfigurationAPI._DEFAULT || bitMapParams[5] == ""?1:(parseFloat(bitMapParams[5]));
+
+		Debug.log("minValue, maxValue, stepValue",minValue, maxValue, stepValue);
 
 		if(minValue < 0 || minValue > bitMask)
 		{
@@ -4205,7 +4207,11 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		{
 			Debug.log("localUpdateScroll " + i);
 
-			clickValues[i] = scrollEls[i].value|0;
+			if(allowFloatingPoint)
+				clickValues[i] = parseFloat(scrollEls[i].value);
+			else
+				clickValues[i] = scrollEls[i].value|0;
+
 			clickColors[i] = //localConvertValueToRGBA(clickValues[i]);
 				ConfigurationAPI.bitMapDialogConvertValueToRGBA(clickValues[i],
 					minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
@@ -4221,8 +4227,8 @@ ConfigurationAPI.bitMapDialog = function(tableName,UIDName,fieldName,bitMapParam
 		{
 			Debug.log("localUpdateTextInput " + textInputEls[i].value + " " + finalChange);
 			
-			let tmpNumber = textInputEls[i].value;
-			if(isNaN(parseFloat(textInputEls[i].value)))
+			let tmpNumber = parseFloat(textInputEls[i].value);
+			if(isNaN(tmpNumber))
 			{
 				if(finalChange) //show error for final change
 					Debug.err("Input value",textInputEls[i].value,"is not a valid number!");

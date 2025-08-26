@@ -19106,17 +19106,12 @@
 			let numOfCols = bitMapParams[1]|0;
 			let bitFieldSize = bitMapParams[2]|0;
 			let bitMask = 0;
-			if(bitFieldSize > 30)
-			{
-				bitMask = 0;
-				for(var i=0;i<bitFieldSize;++i)
-					bitMask |= 1 << i;
-			}
-			else
-				bitMask = (1<<bitFieldSize) - 1; //wont work for 31 bits (JS is always signed)
+			for(let i=0;i<bitFieldSize;++i)
+				bitMask |= 1 << i;
+			bitMask = bitMask >>> 0; // >>> 0 converts to unsigned 32-bit integer
 
-			let minValue = bitMapParams[3] == DEFAULT || bitMapParams[3] == ""?0:(bitMapParams[3]|0);
-			let maxValue = bitMapParams[4] == DEFAULT || bitMapParams[4] == ""?bitMask:(bitMapParams[4]|0);
+			let minValue = bitMapParams[3] == DEFAULT || bitMapParams[3] == ""?0:(parseFloat(bitMapParams[3]));
+			let maxValue = bitMapParams[4] == DEFAULT || bitMapParams[4] == ""?bitMask:(parseFloat(bitMapParams[4]));
 			if(maxValue < minValue)
 				maxValue = bitMask;
 			let midValue = (maxValue + minValue)/2; //used for color calcs
@@ -19246,9 +19241,12 @@
 
 					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="height:` + 
 						imgH + `px; aspect-ratio: ` +
-						forcedAspectW + "/" + forcedAspectH + 
-						`; image-rendering:pixelated; display:flex; justify-content:center" />` +
-							`<div id='matrix' style='display: none'>${val}</div></div>`;
+						forcedAspectW + "/" + forcedAspectH + ";" +
+						`border: 1px solid #ccc;
+						box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+						image-rendering:pixelated; display:flex; justify-content:center` +
+						`" />` +
+						`<div id='matrix' style='display: none'>${val}</div></div>`;
 				}
 				catch (e)
 				{

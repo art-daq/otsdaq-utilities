@@ -3,14 +3,14 @@
   #   ...then in VS code, for example, find with .* regular expressions '[ \t]+$' and replace with empty ''
 
   excluded_dirs="" #could space-separate excluded directories
-  exclude_regex="^(nothingtoseehere"
+  exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
 
   for dir in $excluded_dirs;do
     if [ -d $dir ]; then
       exclude_regex="${exclude_regex}|$dir"
     fi
   done
-  exclude_regex="${exclude_regex})"
+  exclude_regex="(${exclude_regex}))"
   echo "Excluding files from checks via ${exclude_regex}"
 
   against=0
@@ -40,7 +40,11 @@
       #echo "Checking whitespace for $name"
       bname=$( basename $name )
       ext=$(echo $bname | awk -F. '{if(NF==1) print ""; else print $NF};' )
-      if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl"          || "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc"          || "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"          || "$bname" == "SConscript"          || "$name" =~ $geomReg1 || "$name" =~ $geomReg2 ]]; then
+      if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl" \
+            || "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc" \
+            || "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"  \
+            || "$bname" == "SConscript"  \
+            || "$name" =~ $geomReg1 || "$name" =~ $geomReg2 ]]; then
 
           # check whitespace and return non-zero if not allowed
 
