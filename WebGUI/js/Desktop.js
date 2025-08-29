@@ -3158,7 +3158,18 @@ Desktop.desktopTooltip = function(alwaysShow)
 			"The top pane of the Dashboard " +
 			"is made of buttons and icons going from left to right:" +
 
-			"\n\t- <b>Left Pane Toggler:</b> " +
+			"\n\n\t- <b>Left Pane Toggler:</b>" + 
+			"<div style='padding: 5px 10px 5px 10px;"
+			+ "display: inline-block;"
+			+ "padding: 0px 10px 6px 10px;"
+			+ "margin: 0 0 0px 6px;"
+			+ "height: 16px;"
+			+ "text-align: center;"
+			+ "cursor: pointer;"
+			+ "border-radius: 3px;"
+			+ "border: 1px solid rgba(255,255,255,0.8);"
+			+ "box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ rgb(100,100,100) 0 .1em 3px, rgb(10,10,10) 0 .2em 1px, /* color border */ rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */'>" + 
+			'<img id="dashboard_bi_arrow" src="/WebPath/images/dashboardImages/icon-Bi-arrow-gray.png"></div>' + 
 			"<INDENT>" +
 			"The first button you will encounter in the top pane looks like a horizontal double-arrow " +
 			"icon. This button toggles the display of the left pane of the Dashboard. Note when you " +

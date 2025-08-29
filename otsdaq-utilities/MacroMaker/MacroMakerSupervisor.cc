@@ -1763,11 +1763,12 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
                                                 const std::string& username)
 {
-	__COUTT__ << "loadFEMacroSequences for " << username << __E__;
+	__SUP_COUT__ << "loadFEMacroSequences for " << username << __E__;
 	DIR*           dir;
 	struct dirent* ent;
 	std::string    fullPath  = (std::string)MACROS_SEQUENCE_PATH + username + "/";
 	std::string    sequences = "";
+	__SUP_COUTV__(fullPath);
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
 		/* print all the files and directories within directory */
@@ -1793,6 +1794,13 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 		             << __E__;
 	}
 
+	if(username == WebUsers::DEFAULT_ADMIN_USERNAME)
+	{
+		// already have admin list, return the list of sequences
+		xmldoc.addTextElementToData("FEsequences", sequences);
+		return;
+	}
+
 	//always add admin sequences (as "public")
 	fullPath = (std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME + "/";
 
@@ -1807,7 +1815,7 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 			if(read.is_open())
 			{
 				read.close();
-				sequences += ent->d_name + std::string(";");
+				sequences += std::string("public/") + ent->d_name + std::string(";");
 			}
 			else
 				__SUP_COUT__ << "Unable to open file" << __E__;
@@ -1832,26 +1840,58 @@ void MacroMakerSupervisor::saveFEMacroSequence(cgicc::Cgicc&      cgi,
                                                const std::string& username)
 {
 	// get data from the http request
-	std::string name = CgiDataUtilities::postData(cgi, "sequenceName");
+	std::string name =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgi, "sequenceName"));
 	std::string FEsequence =
 	    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgi, "FEsequence"));
+	bool overwrite = CgiDataUtilities::getDataAsInt(cgi, "overwrite");
 
+	__SUP_COUTV__(overwrite);
 	__SUP_COUTV__(name);
 	__SUP_COUTV__(FEsequence);
 
-	// append to the file
+	//reject illegal characters (only alphanumeric, spaces, dash, underscores)
+	std::string fixedName = "";
+	for(size_t i = 0; i < name.size(); ++i)
+		if(!(name[i] == ' ' || name[i] == '-' || name[i] == '_' ||
+		     (name[i] >= '0' && name[i] <= '9') || (name[i] >= 'A' && name[i] <= 'Z') ||
+		     (name[i] >= 'a' && name[i] <= 'z')))
+		{
+			__SUP_SS__
+			    << "Illegal character in Sequence name (position " << i
+			    << ") - only alphanumeric, spaces, dashes, and underscores allowed!"
+			    << __E__;
+			__SUP_SS_THROW__;
+		}
+		else
+			fixedName += name[i];
+	__SUP_COUTV__(fixedName);
+
 	std::string fullPath =
-	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + name + ".dat";
-	__SUP_COUT__ << fullPath << __E__;
-	std::ofstream seqfile(fullPath.c_str(), std::ios::app);
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + fixedName + ".dat";
+	__SUP_COUTV__(fullPath);
+
+	//do not allow overwrite
+	if(!overwrite && std::filesystem::exists(fullPath))
+	{
+		__SUP_SS__ << "Please choose another Sequence name! A sequence with the same "
+		              "resulting filename already exists at "
+		           << fullPath << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	std::ofstream seqfile(fullPath.c_str());
 	if(seqfile.is_open())
 	{
-		// seqfile << "#" << name << __E__;
 		seqfile << FEsequence << __E__;
 		seqfile.close();
 	}
 	else
-		__SUP_COUT__ << "Unable to open " << name << ".dat" << __E__;
+	{
+		__SUP_SS__ << "Unable to open file to save FE Macro Sequence at " << fullPath
+		           << __E__;
+		__SUP_SS_THROW__;
+	}
 }  //end saveFEMacroSequence()
 
 //==============================================================================
@@ -1859,20 +1899,38 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
                                               cgicc::Cgicc&      cgi,
                                               const std::string& username)
 {
-	std::string sequenceName = CgiDataUtilities::getData(cgi, "name");
+	std::string name =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::getData(cgi, "name"));
+	__SUP_COUTV__(name);
 
-	__SUP_COUTV__(sequenceName);
+	bool isPublic = (name.find("public/") == 0 ? true : false);
+	__SUP_COUTV__(isPublic);
+
+	//reject illegal characters (only alphanumeric, spaces, dash, underscores)
+	std::string fixedName = "";
+	for(size_t i = (isPublic ? std::string("public/").size() : 0); i < name.size(); ++i)
+		if(!(name[i] == ' ' || name[i] == '-' || name[i] == '_' ||
+		     (name[i] >= '0' && name[i] <= '9') || (name[i] >= 'A' && name[i] <= 'Z') ||
+		     (name[i] >= 'a' && name[i] <= 'z')))
+		{
+			__COUT__ << "Illegal character in Sequence name (position " << i
+			         << ") - only alphanumeric, spaces, dashes, and underscores allowed!"
+			         << __E__;
+		}
+		else
+			fixedName += name[i];
+	__SUP_COUTV__(fixedName);
 
 	// access to the file
 	std::string fullPath =
-	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + sequenceName + ".dat";
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + fixedName + ".dat";
 	__SUP_COUT__ << fullPath << __E__;
 
 	std::ifstream      read(fullPath.c_str());  // reading the file
 	char*              response;
 	unsigned long long fileSize;
 
-	if(read.is_open())
+	if(!isPublic && read.is_open())
 	{
 		read.seekg(0, std::ios::end);
 		fileSize           = read.tellg();
@@ -1890,13 +1948,14 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
 	}
 	else
 	{
-		__SUP_COUT__ << "Unable to open " << fullPath << "! Trying public area..."
-		             << __E__;
+		if(!isPublic)
+			__SUP_COUT__ << "Unable to open " << fullPath << "! Trying public area..."
+			             << __E__;
 
 		//attempt to load from admin "public" area
 		std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
-		                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" +
-		                             sequenceName + ".dat";
+		                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" + fixedName +
+		                             ".dat";
 		__SUP_COUT__ << publicFullPath << __E__;
 
 		std::ifstream      read(publicFullPath.c_str());  // reading the file
@@ -1921,10 +1980,9 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
 		}
 		else
 		{
-			__SUP_COUT__ << "Unable to open " << fullPath << " and " << publicFullPath
-			             << "!" << __E__;
-
-			xmldoc.addTextElementToData("error", "ERROR");
+			__SUP_SS__ << "Unable to open FE Macro Sequence at " << fullPath << " or "
+			           << publicFullPath << __E__;
+			__SUP_SS_THROW__;
 		}
 	}
 }  //end getFEMacroSequence()
@@ -1933,14 +1991,44 @@ void MacroMakerSupervisor::getFEMacroSequence(HttpXmlDocument&   xmldoc,
 void MacroMakerSupervisor::deleteFEMacroSequence(cgicc::Cgicc&      cgi,
                                                  const std::string& username)
 {
-	std::string sequenceName = CgiDataUtilities::getData(cgi, "name");
+	std::string name =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::getData(cgi, "name"));
+	__SUP_COUTV__(name);
 
-	__SUP_COUTV__(sequenceName);
+	bool isPublic = (name.find("public/") == 0 ? true : false);
+	__SUP_COUTV__(isPublic);
+
+	//reject illegal characters (only alphanumeric, spaces, dash, underscores)
+	std::string fixedName = "";
+	for(size_t i = (isPublic ? std::string("public/").size() : 0); i < name.size(); ++i)
+		if(!(name[i] == ' ' || name[i] == '-' || name[i] == '_' ||
+		     (name[i] >= '0' && name[i] <= '9') || (name[i] >= 'A' && name[i] <= 'Z') ||
+		     (name[i] >= 'a' && name[i] <= 'z')))
+		{
+			__COUT__ << "Illegal character in Sequence name (position " << i
+			         << ") - only alphanumeric, spaces, dashes, and underscores allowed!"
+			         << __E__;
+		}
+		else
+			fixedName += name[i];
+	__SUP_COUTV__(fixedName);
 
 	// access to the file
 	std::string fullPath =
-	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + sequenceName + ".dat";
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + fixedName + ".dat";
+	if(isPublic)
+		fullPath = (std::string)MACROS_SEQUENCE_PATH + WebUsers::DEFAULT_ADMIN_USERNAME +
+		           "/" + fixedName + ".dat";
 	__SUP_COUT__ << fullPath << __E__;
+
+	//do not allow overwrite
+	if(!std::filesystem::exists(fullPath))
+	{
+		__SUP_SS__
+		    << "The specified Sequence name does not exist! Looking for sequence file at "
+		    << fullPath << __E__;
+		__SUP_SS_THROW__;
+	}
 
 	std::remove(fullPath.c_str());
 	__SUP_COUT__ << "Successfully deleted " << fullPath << __E__;
@@ -1950,22 +2038,45 @@ void MacroMakerSupervisor::deleteFEMacroSequence(cgicc::Cgicc&      cgi,
 void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
                                               const std::string& username)
 {
-	std::string sequenceName = CgiDataUtilities::getData(cgi, "name");
+	std::string name =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::getData(cgi, "name"));
+	__SUP_COUTV__(name);
 
-	__SUP_COUTV__(sequenceName);
+	bool isPublic = (name.find("public/") == 0 ? true : false);
+	__SUP_COUTV__(isPublic);
+	if(isPublic)
+	{
+		__SUP_SS__ << "The specified Sequence name is already designated as public."
+		           << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	//reject illegal characters (only alphanumeric, spaces, dash, underscores)
+	std::string fixedName = "";
+	for(size_t i = 0; i < name.size(); ++i)
+		if(!(name[i] == ' ' || name[i] == '-' || name[i] == '_' ||
+		     (name[i] >= '0' && name[i] <= '9') || (name[i] >= 'A' && name[i] <= 'Z') ||
+		     (name[i] >= 'a' && name[i] <= 'z')))
+		{
+			__COUT__ << "Illegal character in Sequence name (position " << i
+			         << ") - only alphanumeric, spaces, dashes, and underscores allowed!"
+			         << __E__;
+		}
+		else
+			fixedName += name[i];
+	__SUP_COUTV__(fixedName);
 
 	// access to the file
 	std::string source =
-	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + sequenceName + ".dat";
+	    (std::string)MACROS_SEQUENCE_PATH + username + "/" + fixedName + ".dat";
 	__SUP_COUT__ << source << __E__;
 	std::string destination = (std::string)MACROS_SEQUENCE_PATH +
-	                          WebUsers::DEFAULT_ADMIN_USERNAME + "/" + sequenceName +
-	                          ".dat";
+	                          WebUsers::DEFAULT_ADMIN_USERNAME + "/" + fixedName + ".dat";
 	__SUP_COUT__ << destination << __E__;
 
 	if(std::filesystem::exists(destination))
 	{
-		__SUP_SS__ << "The sequence name '" << sequenceName
+		__SUP_SS__ << "The sequence name '" << fixedName
 		           << "' already exists in the admin/public location: " << destination
 		           << __E__;
 		__SUP_SS_THROW__;
@@ -1974,7 +2085,7 @@ void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
 	//copy if file does not already exist
 	std::filesystem::copy_file(
 	    source, destination, std::filesystem::copy_options::skip_existing);
-	__SUP_COUT__ << "Successfully made " << sequenceName
+	__SUP_COUT__ << "Successfully made " << fixedName
 	             << " public at path: " << destination << __E__;
 }  //end deleteFEMacroSequence()
 
