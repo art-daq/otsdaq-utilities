@@ -1,8 +1,8 @@
 [![otsdaq](https://github.com/art-daq/otsdaq/blob/develop/doc/logo.png?raw=true)](https://otsdaq.fnal.gov/)
 
-_otsdaq_ is a Ready-to-Use data-acquisition (DAQ) solution aimed at test-beam, detector development, and other rapid-deployment scenarios. otsdaq uses the artdaq DAQ framework under-the-hood, providing flexibility and scalability to meet evolving DAQ needs.
+_otsdaq_ is a Ready-to-Use data-acquisition (DAQ) solution aimed at scaling down to test-beam, detector development, and other rapid-deployment scenarios; and scaling up through the development cycle to fullscale production and operation.   _otsdaq_ uses the _artdaq_ DAQ framework under-the-hood, providing flexibility and scalability to meet evolving DAQ needs.
 
-_otsdaq_ provides a library of supported front-end boards and firmware modules which implement a custom UDP protocol. Additionally, an integrated Run Control GUI and readout software are provided, preconfigured to communicate with otsdaq firmware.
+_otsdaq_ provides a library of supported front-end boards and firmware modules which implement a custom UDP protocol.   Additionally, an integrated Run Control GUI and readout software are provided, preconfigured to communicate with _otsdaq_ firmware.
 
 otsdaq-utilities provides some feature extensions built off of the base classes in _otsdaq_ including Configuration, Chat, and Logbook utilities. otsdaq-utilities also includes all of the client side web interface code (i.e., html, css, and JavaScript).
 
