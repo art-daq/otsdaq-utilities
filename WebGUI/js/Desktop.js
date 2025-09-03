@@ -3180,7 +3180,7 @@ Desktop.desktopTooltip = function(alwaysShow)
 			"<INDENT>" +
 			"The next button you will encounter in the top pane reads 'Layouts.' " +
 			"This button gives you access to your Window Layout Presets. You will see 2 'System' presets there " +
-			"which can be setup by uesrs with admin privileges. There are also 3 'User' presets which you can setup for " +
+			"which can be setup by users with admin privileges. There are also 3 'User' presets which you can setup for " +
 			"yourself in the User Settings window (get there with " +
 			"the cog wheel icon in the upper-right of the Desktop)." +
 			"</INDENT>" +

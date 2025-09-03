@@ -670,6 +670,17 @@ Debug.errorPop = function(err,severity)
 			el = document.createElement("div");
 			el.setAttribute("id", Debug._errBoxId);
 			el.style.display = "none";
+			
+			var downloadArrowStr = //make download arrow
+				'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="35" viewBox="0 0 24 35" fill="white">' + 
+				'<!-- Top rectangle (stem) -->' +
+				'<rect x="8" width="8" y="0" height="11"></rect>' +
+				'<!-- Downward arrow head -->' +
+				'<polygon points="3,10 21,10 12,20"></polygon>' +
+				'<!-- Base line -->' +
+				'<rect x="6" width="12" height="4" y="23"></rect>' +
+				'</svg>';
+
 			var str = "<a class='" +
 				Debug._errBoxId +
 				"-header' onclick='javascript:Debug.closeErrorPop();event.stopPropagation();' onmousemove='event.stopPropagation();'  onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();'>Close Errors</a>";
@@ -686,8 +697,8 @@ Debug.errorPop = function(err,severity)
 					"<br>"+
 					str + "<br>" +
 				"<div style='color:white;font-size:16px;padding-bottom:5px;'>" +
-				"Note: Newest messages are at the top." +
-				"<label style='color:white;font-size:11px;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</font>" +
+				"Note: Newest messages are at the top.<br>" +
+				"<label style='color:white;font-size:11px;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</label>" +
 
 				"<div id='downloadIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
 				"style='float: right; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;'>" +
@@ -697,11 +708,8 @@ Debug.errorPop = function(err,severity)
 				
 				"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' " +
 				"style='float: right; margin: -10px 30px -100px -100px; cursor: pointer;'>" +
-				//make download arrow
-					"<div style='display: block; margin-left: 3px; height:7px; width: 6px; background-color: white;'></div>" +
-					"<div style='display: block; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 8px solid white;'></div>" +
-					"<div style='position: relative; top: 5px; width: 12px; height: 2px; display: block; background-color: white;'></div>" +
-				"</div>" +
+				
+				downloadArrowStr + 
 
 				"</div>" +
 				"<div id='" +
@@ -817,6 +825,7 @@ Debug.errorPop = function(err,severity)
 					"font-family: 'Comfortaa', arial;" +
 					"left: 8px; top: 8px; margin-right: 8px;" +
 					"margin-bottom:-12px;" +
+					"margin-top: 6px;" +
 					"text-align: left;" +
 					"overflow-y: scroll;" +
 					"overflow-x: auto;" +
@@ -1229,7 +1238,8 @@ Debug.handleErrorResize = function()
 
 
 //=====================================================================================
-Debug.downloadMessages = function() {
+Debug.downloadMessages = function() 
+{
 
 	console.log("downloading messages...");
 
@@ -1237,7 +1247,7 @@ Debug.downloadMessages = function() {
 	var dataStr = "data:text/txt;charset=utf-8,";
 
 	var lines = Debug._errBox.innerText.split('\n');
-	for(var i=2;i<lines.length-2;++i)
+	for(var i=6;i<lines.length-2;++i) //skip popup header and footer text
 		dataStr += encodeURIComponent(lines[i] + "\n"); //encoded \n
 
 	var link = document.createElement("a");
@@ -1253,7 +1263,8 @@ Debug.downloadMessages = function() {
 } //end Debug.downloadMessages
 
 //=====================================================================================
-Debug.copyMessagesToClipboard = function() {
+Debug.copyMessagesToClipboard = function() 
+{
 
 	console.log("Copying messages to clipboard...");
 
@@ -1261,7 +1272,7 @@ Debug.copyMessagesToClipboard = function() {
 	var dataStr = "";
 
 	var lines = Debug._errBox.innerText.split('\n');
-	for(var i=2;i<lines.length-2;++i)
+	for(var i=6;i<lines.length-2;++i) //skip popup header and footer text
 		dataStr += lines[i] + "\n"; 
 
 

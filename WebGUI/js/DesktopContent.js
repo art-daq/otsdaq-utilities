@@ -1049,7 +1049,7 @@ DesktopContent.showLoading = function(nextFunction)
 				el.style.display = "none";
 				var str = "";
 
-				str += "<table height='100%' width='100%'><td id='" +
+				str += "<table height='100%' width='100%'><td style='color: white' id='" +
 						DesktopContent._loadBoxId + "-td'>Loading...</td></table>";
 				el.innerHTML = str;
 				body.appendChild(el); //add element to body of page
@@ -2009,7 +2009,8 @@ DesktopContent.setWindowTooltip = function(tip)
 //=====================================================================================
 //setSecurityOne
 //       make server request to enable random security sequence for URL
-DesktopContent.setSecurityOn = function(on) {
+DesktopContent.setSecurityOn = function(on) 
+{
 		console.log("Reached");
 	DesktopContent.XMLHttpRequest(
 			"ToggleSecurityCodeGeneration?RequestType=TurnGenerationOn" +
@@ -2017,11 +2018,12 @@ DesktopContent.setSecurityOn = function(on) {
 			,""
 			,DesktopContent.toggleSecurityCodeGenerationHandler
 			,0,0,0,true,true);
- }
+} //end setSecurityOn()
 
 //=====================================================================================
 //toggleSecurityCodeGenerationHandler ~~
-DesktopContent.toggleSecurityCodeGenerationHandler = function(req) {
+DesktopContent.toggleSecurityCodeGenerationHandler = function(req) 
+{
 	var status = DesktopContent.getXMLValue(req,"Status");
 	Debug.log("Status: " + status);
 	if (status == "Generation_Success") {
@@ -2031,7 +2033,7 @@ DesktopContent.toggleSecurityCodeGenerationHandler = function(req) {
 				"'Edit User Data' app.");
 		Debug.log("Plase refer to the console for the new link!", Debug.INFO_PRIORITY);
 	}
-}
+} //end toggleSecurityCodeGenerationHandler()
 
 //=====================================================================================
 //tooltipSetNeverShow ~~
