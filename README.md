@@ -10,16 +10,16 @@ otsdaq-utilities provides some feature extensions built off of the base classes 
 
 
 Below are some helpful links to _otsdaq_ C++ classes organized by topic. The topics are as follows:  
-  
-*   [Supervisor Base Classes](#supervisor)
-*   [_otsdaq_ Core Supervisors](#coreSupervisors)
+
+*   [Supervisor Base Classes](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#supervisor)
+*   [_otsdaq_ Core Supervisors](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#coreSupervisors)
 *   [Configuration Primer](https://otsdaq.fnal.gov/tutorials/first_demo/topics/configuration_primer.html)
-*   [Web Desktop Login and Requests](#access)
-*   [Front-ends](#frontends)
-*   [Data Managers](#dataManagers)
-*   [_artdaq_](#artdaq)
-*   [Visualization and DQM](#visualization)
-*   [Slow Controls](#slowControls)
+*   [Web Desktop Login and Requests](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#access)
+*   [Front-ends](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#frontends)
+*   [Data Managers](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#dataManagers)
+*   [_artdaq_](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#artdaq)
+*   [Visualization and DQM](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#visualization)
+*   [Slow Controls](https://art-daq.github.io/otsdaq_doxygen/otsdaq/#slowControls)
 
   
   
