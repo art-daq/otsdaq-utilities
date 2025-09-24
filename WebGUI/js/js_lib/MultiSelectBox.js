@@ -506,7 +506,7 @@ MultiSelectBox.initMySelectBoxes = function(clearPreviousSelections, targetId)
 				{
 					//MultiSelectBox.dbg(opt);
 					MultiSelectBox.addClass(options[opt],"optionhighlighted");
-					options[opt].scrollIntoView(); //so highlighted are visible to user
+					options[opt].scrollIntoView({ block: 'nearest', inline: 'start' }); //so highlighted are visible to user
 				}
 				else
 					MultiSelectBox.removeClass(options[opt],"optionhighlighted");

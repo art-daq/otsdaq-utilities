@@ -160,6 +160,7 @@
 		//toggleVersionTracking()
 		//flattenToSystemAliases()
 		//createAppStatusDesktopIcon()
+		//createIteratorDesktopIcon()
 		//mergeGroups(groupANameContext, groupAKeyContext, groupBNameContext, groupBKeyContext,groupANameConfig, groupAKeyConfig, groupBNameConfig, groupBKeyConfig, mergeApproach)
 		//mergeGroupsDialog()
 		//popUpGroupUploadDownloadUpdateForm(groupName,groupKey,isUpload)
@@ -18183,7 +18184,8 @@
 				"Flatten Configuration to System Aliases ONLY",
 				"Merge Table Groups",
 				"Open the artdaq Configuration GUI",
-				"Add Application Status Monitoring to Desktop"
+				"Add Application Status Monitoring web-app to Desktop",
+				"Add Iterator web-app to Desktop"
 			];
 			var menuItemHandlers = [
 				"verifyRelaunchNormalMode();",
@@ -18194,7 +18196,8 @@
 				"createSystemViewMenu(0,0,0,0," +
 				(e.pageX - 1) + "," +
 				(e.pageY - 1) + ", 1 /*artdaq GUI mode*/);",
-				"createAppStatusDesktopIcon()"
+				"createAppStatusDesktopIcon()",
+				"createIteratorDesktopIcon()"
 			];
 
 			Debug.log("createEditTableMenu()");
@@ -18258,6 +18261,56 @@
 					);
 
 		} //end createAppStatusDesktopIcon()
+
+		//==============================================================================
+		//createIteratorDesktopIcon ~~
+		function createIteratorDesktopIcon()
+		{
+			Debug.log("createIteratorDesktopIcon()");
+
+			//if no active backbone, create it
+			if(ConfigurationAPI._activeGroups.Backbone.groupName == "")
+			{
+				var tableMap = "tableList=";
+				for (var i = 0; i < ConfigurationAPI._backboneMemberNames.length; ++i)
+					tableMap += ConfigurationAPI._backboneMemberNames[i] + ",-1,";
+
+				Debug.log("Identified missing backbone, attempting to create it.");
+				ConfigurationAPI.saveGroupAndActivate("WizBackbone",tableMap,
+					function(retParams)
+					{
+						Debug.log("Save and activate is done.");
+
+						DesktopContent.addDesktopIcon(
+							"Iterator" /*caption*/,
+							"IT" /*altText*/,
+							"" /*folderPath*/,
+							true /*unique*/,
+							1 /*permissionString*/,
+							"icon-Iterate.png" /*imageURL*/,
+							"/WebPath/html/Iterate.html" /*windowURL*/,
+							200 /*linked app*/, //always link to Gateway
+							"" /*parameters*/
+							);
+					},	//end of done handler for saveGroupAndActivate
+					true, //request return parameters
+					true  //lookForEquivalent
+				);
+			}
+			else //backbone is already in place
+				DesktopContent.addDesktopIcon(
+					"Iterator" /*caption*/,
+					"IT" /*altText*/,
+					"" /*folderPath*/,
+					true /*unique*/,
+					1 /*permissionString*/,
+					"icon-Iterate.png" /*imageURL*/,
+					"/WebPath/html/Iterate.html" /*windowURL*/,
+					"ots::ConfigurationGUISupervisor" /*linkedApp*/,
+					"" /*parameters*/
+					);
+
+		} //end createIteratorDesktopIcon()
 
 		//==============================================================================
 		//mergeGroupsDialog ~~
