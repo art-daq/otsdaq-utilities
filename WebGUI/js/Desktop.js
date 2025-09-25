@@ -1358,7 +1358,7 @@ Desktop.createDesktop = function(security) {
 
 					Debug.log("An error occurred opening the window named '" +
 							windowName + "' - it was not found in the Desktop icons. Does it exist? " +
-							"Do you have permissions to access this window? Notify admins if the problem persists.",
+							"Do you have permissions to access this window? You can add Desktop icons in the Configure web-app.\n\nNotify admins if the problem persists.",
 							Debug.HIGH_PRIORITY);
 
 					//respond done

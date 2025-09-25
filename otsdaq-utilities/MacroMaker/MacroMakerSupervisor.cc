@@ -900,7 +900,7 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 	else if(Command == "makeSequencePublic")
 		makeSequencePublic(cgi, userInfo.username_);
 	else
-		xmldoc.addTextElementToData("Error", "Unrecognized command '" + Command + "'");
+		xmldoc.addTextElementToData("Error", "Command '" + Command + "' not recognized by the Macro Maker Supervisor (was it intended for another Supervisor?).");
 }  // end handleRequest()
 
 //==============================================================================

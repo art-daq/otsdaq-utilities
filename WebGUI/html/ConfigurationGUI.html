@@ -161,6 +161,8 @@
 		//flattenToSystemAliases()
 		//createAppStatusDesktopIcon()
 		//createIteratorDesktopIcon()
+		//createCodeEditorDesktopIcon()
+		//createConsoleDesktopIcon()
 		//mergeGroups(groupANameContext, groupAKeyContext, groupBNameContext, groupBKeyContext,groupANameConfig, groupAKeyConfig, groupBNameConfig, groupBKeyConfig, mergeApproach)
 		//mergeGroupsDialog()
 		//popUpGroupUploadDownloadUpdateForm(groupName,groupKey,isUpload)
@@ -18185,6 +18187,8 @@
 				"Merge Table Groups",
 				"Open the artdaq Configuration GUI",
 				"Add Application Status Monitoring web-app to Desktop",
+				"Add Console web-app to Desktop",
+				"Add Code Editor web-app to Desktop",
 				"Add Iterator web-app to Desktop"
 			];
 			var menuItemHandlers = [
@@ -18197,6 +18201,8 @@
 				(e.pageX - 1) + "," +
 				(e.pageY - 1) + ", 1 /*artdaq GUI mode*/);",
 				"createAppStatusDesktopIcon()",
+				"createConsoleDesktopIcon()",
+				"createCodeEditorDesktopIcon()",
 				"createIteratorDesktopIcon()"
 			];
 
@@ -18289,7 +18295,7 @@
 							1 /*permissionString*/,
 							"icon-Iterate.png" /*imageURL*/,
 							"/WebPath/html/Iterate.html" /*windowURL*/,
-							200 /*linked app*/, //always link to Gateway
+							"ots::ConfigurationGUISupervisor" /*linkedApp*/,
 							"" /*parameters*/
 							);
 					},	//end of done handler for saveGroupAndActivate
@@ -18311,6 +18317,106 @@
 					);
 
 		} //end createIteratorDesktopIcon()
+
+		//==============================================================================
+		//createConsoleDesktopIcon ~~
+		function createConsoleDesktopIcon()
+		{
+			Debug.log("createConsoleDesktopIcon()");
+
+			//if no active backbone, create it
+			if(ConfigurationAPI._activeGroups.Backbone.groupName == "")
+			{
+				var tableMap = "tableList=";
+				for (var i = 0; i < ConfigurationAPI._backboneMemberNames.length; ++i)
+					tableMap += ConfigurationAPI._backboneMemberNames[i] + ",-1,";
+
+				Debug.log("Identified missing backbone, attempting to create it.");
+				ConfigurationAPI.saveGroupAndActivate("WizBackbone",tableMap,
+					function(retParams)
+					{
+						Debug.log("Save and activate is done.");
+
+						DesktopContent.addDesktopIcon(
+							"Console" /*caption*/,
+							"CONSOLE" /*altText*/,
+							"" /*folderPath*/,
+							true /*unique*/,
+							1 /*permissionString*/,
+							"icon-Console.png" /*imageURL*/,
+							"/WebPath/html/Console.html" /*windowURL*/,
+							"ots::ConsoleSupervisor" /*linkedApp*/,
+							"" /*parameters*/
+							);
+					},	//end of done handler for saveGroupAndActivate
+					true, //request return parameters
+					true  //lookForEquivalent
+				);
+			}
+			else //backbone is already in place
+				DesktopContent.addDesktopIcon(
+					"Console" /*caption*/,
+					"CONSOLE" /*altText*/,
+					"" /*folderPath*/,
+					true /*unique*/,
+					1 /*permissionString*/,
+					"icon-Console.png" /*imageURL*/,
+					"/WebPath/html/Console.html" /*windowURL*/,
+					"ots::ConsoleSupervisor" /*linkedApp*/,	
+					"" /*parameters*/
+					);
+
+		} //end createConsoleDesktopIcon()
+
+		//==============================================================================
+		//createIteratorDesktopIcon ~~
+		function createCodeEditorDesktopIcon()
+		{
+			Debug.log("createCodeEditorDesktopIcon()");
+
+			//if no active backbone, create it
+			if(ConfigurationAPI._activeGroups.Backbone.groupName == "")
+			{
+				var tableMap = "tableList=";
+				for (var i = 0; i < ConfigurationAPI._backboneMemberNames.length; ++i)
+					tableMap += ConfigurationAPI._backboneMemberNames[i] + ",-1,";
+
+				Debug.log("Identified missing backbone, attempting to create it.");
+				ConfigurationAPI.saveGroupAndActivate("WizBackbone",tableMap,
+					function(retParams)
+					{
+						Debug.log("Save and activate is done.");
+
+						DesktopContent.addDesktopIcon(
+							"Code Edtor" /*caption*/,
+							"CODE" /*altText*/,
+							"" /*folderPath*/,
+							true /*unique*/,
+							1 /*permissionString*/,
+							"icon-CodeEditor.png" /*imageURL*/,
+							"/WebPath/html/CodeEditor.html" /*windowURL*/,
+							"ots::CodeEditorSupervisor" /*linkedApp*/,
+							"" /*parameters*/
+							);
+					},	//end of done handler for saveGroupAndActivate
+					true, //request return parameters
+					true  //lookForEquivalent
+				);
+			}
+			else //backbone is already in place
+				DesktopContent.addDesktopIcon(
+					"Code Edtor" /*caption*/,
+					"CODE" /*altText*/,
+					"" /*folderPath*/,
+					true /*unique*/,
+					1 /*permissionString*/,
+					"icon-CodeEditor.png" /*imageURL*/,
+					"/WebPath/html/CodeEditor.html" /*windowURL*/,
+					"ots::CodeEditorSupervisor" /*linkedApp*/,	
+					"" /*parameters*/
+					);
+
+		} //end createCodeEditorDesktopIcon()
 
 		//==============================================================================
 		//mergeGroupsDialog ~~

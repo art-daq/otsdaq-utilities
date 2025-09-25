@@ -1988,7 +1988,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 	}  // end GetCustomCountsAndActions or AddCustomCountsAndAction
 	else
 	{
-		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized."
+		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized by the Console Supervisor (was it intended for another Supervisor?)."
 		           << __E__;
 		__SUP_SS_THROW__;
 	}

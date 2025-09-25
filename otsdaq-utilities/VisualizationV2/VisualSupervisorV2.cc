@@ -1309,4 +1309,10 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		//               std::ostringstream* out = NULL;
 		//	       xmlOut.outputXmlDocument((std::ostringstream*) out, true);
 	}
+	else
+	{
+		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized by the Visual Supervisor V2 (was it intended for another Supervisor?)."
+		           << __E__;
+		__SUP_SS_THROW__;
+	}
 }

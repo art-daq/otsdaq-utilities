@@ -338,7 +338,23 @@ ViewerRoot.prepareNextLocation = function(objName, objTitle)
 	ViewerRoot.rootIsTransparentArr.push(drawTransparently); //keep for transparent drawing
 	ViewerRoot.rootIsAutoRefreshArr.push(ViewerRoot.autoRefreshDefault);
 	ViewerRoot.rootObjNameArr.push(objName);	//assign new report to position
-	ViewerRoot.rootObjTitleArr.push(objTitle);
+	
+	//look for .root name other blank
+	let prependName = "";
+	{
+		let splitPath = objName.split('/');
+		for(let i=0;i<splitPath.length;++i)
+		{
+			let ii = splitPath[i].indexOf(".root");
+			if(ii > 0)
+			{
+				prependName = splitPath[i].substr(0,ii) + ": ";
+				break;
+			}
+		}
+		Debug.logv({prependName});
+	}
+	ViewerRoot.rootObjTitleArr.push(prependName + objTitle);
 
 	ViewerRoot.manageRootHeaders(); 	//manage headers for all positions
 	ViewerRoot.resizeRootObjects(true); 	//resize all root objects as a result of new element
