@@ -1311,7 +1311,9 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 	}
 	else
 	{
-		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized by the Visual Supervisor V2 (was it intended for another Supervisor?)."
+		__SUP_SS__ << "requestType Request, " << requestType
+		           << ", not recognized by the Visual Supervisor V2 (was it intended for "
+		              "another Supervisor?)."
 		           << __E__;
 		__SUP_SS_THROW__;
 	}

@@ -378,7 +378,9 @@ void LogbookSupervisor::request(const std::string&               requestType,
 	}
 	else
 	{
-		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized by the Logbook Supervisor (was it intended for another Supervisor?)."
+		__SUP_SS__ << "requestType Request, " << requestType
+		           << ", not recognized by the Logbook Supervisor (was it intended for "
+		              "another Supervisor?)."
 		           << __E__;
 		__SUP_SS_THROW__;
 	}

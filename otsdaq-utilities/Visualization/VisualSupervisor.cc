@@ -211,7 +211,7 @@ catch(const std::runtime_error& e)
 	    __LINE__ /*line*/,
 	    __FUNCTION__ /*function*/
 	);
-} // end transitionConfiguring() catch
+}  // end transitionConfiguring() catch
 
 //==============================================================================
 void VisualSupervisor::transitionHalting(toolbox::Event::Reference e)
@@ -238,7 +238,7 @@ void VisualSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 	    "*=1 | rootAdminControls=100");
-} //end setSupervisorPropertyDefaults()
+}  //end setSupervisorPropertyDefaults()
 
 //========================================================================================================================
 /// forceSupervisorPropertyValues
@@ -252,7 +252,7 @@ void VisualSupervisor::forceSupervisorPropertyValues()
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NoXmlWhiteSpaceRequestTypes,
 	    "getRoot | getEvents");
 	//Note: json data in ROOTJS library expects no funny characters
-} //end forceSupervisorPropertyValues()
+}  //end forceSupervisorPropertyValues()
 
 //========================================================================================================================
 void VisualSupervisor::request(const std::string&               requestType,
@@ -1604,7 +1604,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 	}
 	else
 	{
-		__SUP_SS__ << "requestType Request, " << requestType << ", not recognized by the Visual Supervisor (was it intended for another Supervisor?)."
+		__SUP_SS__ << "requestType Request, " << requestType
+		           << ", not recognized by the Visual Supervisor (was it intended for "
+		              "another Supervisor?)."
 		           << __E__;
 		__SUP_SS_THROW__;
 	}
@@ -1612,4 +1614,4 @@ void VisualSupervisor::request(const std::string&               requestType,
 	if(theDataManager_ != nullptr)
 		theDataManager_->setDoNotStop(false);
 
-} //end request()
+}  //end request()

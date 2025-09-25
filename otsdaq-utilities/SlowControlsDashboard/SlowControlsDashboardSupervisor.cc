@@ -508,7 +508,9 @@ void SlowControlsDashboardSupervisor::handleRequest(
 	}
 	else
 	{
-		__SUP_SS__ << "Request, " << Command << ", not recognized by the Slow Controls Dashboard Supervisor (was it intended for another Supervisor?)."
+		__SUP_SS__ << "Request, " << Command
+		           << ", not recognized by the Slow Controls Dashboard Supervisor (was "
+		              "it intended for another Supervisor?)."
 		           << __E__;
 		__SUP_SS_THROW__;
 	}
