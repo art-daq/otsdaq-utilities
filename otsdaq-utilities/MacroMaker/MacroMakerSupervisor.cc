@@ -840,7 +840,15 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
                                          const WebUsers::RequestUserInfo& userInfo)
 {
 	if(Command == "FElist")  // called by MacroMaker GUI
+	{
+		//make user directories if needed
+		std::string macroPath = (std::string)MACROS_DB_PATH + userInfo.username_ + "/";
+		mkdir(macroPath.c_str(), 0755);
+		std::string histPath = (std::string)MACROS_HIST_PATH + userInfo.username_ + "/";
+		mkdir(histPath.c_str(), 0755);
+
 		getFElist(xmldoc);
+	}
 	else if(Command == "writeData")  // called by MacroMaker GUI
 		writeData(xmldoc, cgi, userInfo.username_);
 	else if(Command == "readData")  // called by MacroMaker GUI
@@ -864,6 +872,7 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 	else if(Command == "getFEMacroList")  // called by FE Macro Test and returns FE Macros
 	                                      // and Macro Maker Macros
 	{
+		//make user directories if needed
 		std::string macroPath = (std::string)MACROS_DB_PATH + userInfo.username_ + "/";
 		mkdir(macroPath.c_str(), 0755);
 		std::string histPath = (std::string)MACROS_HIST_PATH + userInfo.username_ + "/";
@@ -891,7 +900,10 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 	else if(Command == "makeSequencePublic")
 		makeSequencePublic(cgi, userInfo.username_);
 	else
-		xmldoc.addTextElementToData("Error", "Unrecognized command '" + Command + "'");
+		xmldoc.addTextElementToData("Error",
+		                            "Command '" + Command +
+		                                "' not recognized by the Macro Maker Supervisor "
+		                                "(was it intended for another Supervisor?).");
 }  // end handleRequest()
 
 //==============================================================================
@@ -1404,7 +1416,7 @@ void MacroMakerSupervisor::readData(HttpXmlDocument&   xmldoc,
 		std::string format  = addressFormatStr + ":" + dataFormatStr;
 		appendCommandToHistory(command, format, time, interfaces, username);
 	}
-}
+}  //end readData()
 
 //==============================================================================
 void MacroMakerSupervisor::createMacro(HttpXmlDocument& /*xmldoc*/,
@@ -1451,7 +1463,10 @@ void MacroMakerSupervisor::createMacro(HttpXmlDocument& /*xmldoc*/,
 		macrofile.close();
 	}
 	else
-		__SUP_COUT__ << "Unable to open file" << __E__;
+	{
+		__SUP_SS__ << "Unable to open file" << __E__;
+		__SUP_SS_THROW__;
+	}
 }  // end createMacro()
 
 //==============================================================================
@@ -1698,7 +1713,10 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        Command,
 		histfile.close();
 	}
 	else
-		__SUP_COUT__ << "Unable to open history.hist" << __E__;
+	{
+		__SUP_SS__ << "Unable to open history.hist at " << fullPath << __E__;
+		__SUP_SS_THROW__;
+	}
 }  //end appendCommandToHistory()
 
 //==============================================================================
@@ -1755,7 +1773,10 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		feHistoryIt->second.push_back((saveOutputs ? "1" : "0"));
 	}
 	else
-		__SUP_COUT__ << "Unable to open FEhistory.hist" << __E__;
+	{
+		__SUP_SS__ << "Unable to open FEhistory.hist at " << fullPath << __E__;
+		__SUP_SS_THROW__;
+	}
 
 }  //end appendCommandToHistory()
 
@@ -1832,7 +1853,6 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 
 	// return the list of sequences
 	xmldoc.addTextElementToData("FEsequences", sequences);
-	return;
 }  //end loadFEMacroSequences()
 
 //==============================================================================

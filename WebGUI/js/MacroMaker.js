@@ -101,8 +101,32 @@
 	function init()
 	{
 		Debug.log("init() was called");
-		DesktopContent.XMLHttpRequest("Request?RequestType=FElist","",FElistHandler);
-		DesktopContent.XMLHttpRequest("Request?RequestType=getPermission","",getPermissionHandler);
+
+		DesktopContent.setWindowTooltip(
+			"Welcome to the <b>Macro Maker</b> web app!\n\n" +
+			"<b>Macro Maker</b> can be used for debugging your hardware or front-end device - you can do simple writes and reads, or build macros of multiple operations. " +
+			"There are two tabs found at the top-left of the app: the <b>Manual Commands</b> tab and the <b>Macro Maker</b> tab." + 
+			"\n\n" +
+			"<INDENT><li><b>Manual Commands</b> tab:\n<INDENT>" +
+			"\n- The <b>Manual Commands</b> tab allows you to do simple reads and writes to particular addresses of your front-end device to help develop more complex functionality. " +
+			"\n\n- The <b>List of Available FEs</b> (Front-Ends) in the top-left is where you select one or many front-end targets of your read or write commands." +
+			"\n\n- The <b>Manual Commands</b> area in the middle is where you enter the <b>Address</b> and <b>Data</b> for the read and write commands - you can select hexadecimal (hex), decimal (dec), or ascii for the data format." +
+			"\n\n- The <b>Command History</b> area on the right is where the command results will be displayed. You can click a command history entry to re-run it." +
+			"\n\n- The <b>Macro Library</b> area at the bottom-left is where the named macro sequences created by you (<b>Private Macros</b>) or others (<b>Public Macros</b>) can be managed, executed, or used to generate C++ by right-clicking the target macro. Left-clicking the target macro will execute it." +
+			"</INDENT></INDENT>" +
+			"\n\n<INDENT><li>The <b>Macro Maker</b> tab:\n<INDENT>" +
+			"\n-The <b>Macro Maker</b> tab allows you to build up a macro sequence of reads and writes and save, delete, and edit named sequences." +
+			"\n\n-The <b>Macro Sequence</b> area on the left is the sequence of commands you are assembling for your macro." +
+			"\n\n-The <b>Macro Maker</b> area in the middle is where you enter the <b>Address</b> and <b>Data</b> for the read and write commands before clicking <b>ADD WRITE</b>, <b>READ</b>, or <b>DELAY</b> to add the commands to the <b>Macro Sequence</b>." +
+			"\n\n-The <b>Command History</b> area on the right can be used to draw from recent commands while constructing your sequence; click a command from the history area and it will be added to the <b>Macro Sequence</b>" + 
+			"</INDENT></INDENT>" +
+			"\n\n" +
+			"For more info and an introductory tutorial on Macro Maker, see the <a href='https://otsdaq.fnal.gov/tutorials_v2/tutorialPages/state_machine_and_macro_maker_demo.php' target='_blank'>State Machine and Macro Maker demo</a> tutorial. " +
+
+			""
+		);
+
+		
 		fecListDiv = document.getElementById('fecList');
 		macroLibDiv = document.getElementById('macroLib');
 		mainDiv = document.getElementById('main');
@@ -120,26 +144,25 @@
 		privateMacroBox = document.getElementById('listOfPrivateMacros');
 		publicMacroBox = document.getElementById('listOfPublicMacros');
 		window.onresize = redrawWindow;
-		redrawWindow(); //redraw window for the first time
-		loadExistingMacros();
-		loadUserHistory();
+
+		DesktopContent.XMLHttpRequest("Request?RequestType=getPermission","",getPermissionHandler);
+		redrawWindow(); //redraw window for the first time, call initLite() --> FElistHandler & loadUserHistory()
+		loadExistingMacros();		
 		toggleDisplay(0);
 		toggleMacroPublicity(0);
 
-
-
 		//fill in CodeEditor appId
 		DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
-				"&classNeedle=ots::CodeEditorSupervisor",
-				"", //end post data,
-				function(req)
-				{
-			_codeEditorAppId = DesktopContent.getXMLValue(req,"id") | 0;
-			Debug.log("_codeEditorAppId " + _codeEditorAppId);
-				}, //end handler
-				0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
-				false,//doNotShowLoadingOverlay,
-				true //targetGatewaySupervisor
+			"&classNeedle=ots::CodeEditorSupervisor",
+			"", //end post data,
+			function(req)
+			{
+				_codeEditorAppId = DesktopContent.getXMLValue(req,"id") | 0;
+				Debug.log("_codeEditorAppId " + _codeEditorAppId);
+			}, //end handler
+			0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
+			false,//doNotShowLoadingOverlay,
+			true //targetGatewaySupervisor
 		); //end getAppId request
 
 	} //end init()
@@ -151,7 +174,7 @@
 		DesktopContent.XMLHttpRequest("Request?RequestType=FElist","",
 				FElistHandler);
 		loadUserHistory();
-	}
+	} //end initLite()
 
 	//=====================================================================================
 	//Handling window resizing
@@ -222,7 +245,7 @@
 		publicMacroBox.style.height =  (h/2-_MARGIN*2-154-2) + "px"; //h*0.38 + "px";
 
 		initLite();
-	}
+	} //end redrawWindow()
 
 	//=====================================================================================
 	function FElistHandler(req)
@@ -301,7 +324,7 @@
 		}
 
 		MultiSelectBox.initMySelectBoxes();
-	}
+	} //end FElistHandler()
 
 	//=====================================================================================
 	function getPermissionHandler(req)
@@ -310,7 +333,7 @@
 
 		userPermission = DesktopContent.getXMLValue(req, "Permission");
 		console.log("User Permission: " + userPermission);
-	}
+	} //end getPermissionHandler()
 
 	//=====================================================================================
 	function listSelectionHandler(listoffecs)
@@ -318,7 +341,7 @@
 		 var splits = listoffecs.id.split('_');
 		 elementIndex = splits[splits.length-1] | 0;
 		 MultiSelectBox.dbg("Chosen element index:",elementIndex);
-	}
+	} //end listSelectionHandler()
 
 	//=====================================================================================
 	function callWrite(address,data)
@@ -405,10 +428,10 @@
 					writeHandler);
 			contentEl.innerHTML += update;
 			CMDHISTDIVINDEX++;
-			contentEl.scrollTop = contentEl.scrollHeight;
+			// contentEl.scrollTop = contentEl.scrollHeight; //scroll to top
 			reminderEl.innerHTML = "Data successfully written!";
 		}
-	}
+	} //end callWrite()
 
 	//=====================================================================================
 	function callRead(address)
@@ -465,7 +488,7 @@
 					"interfaces=" + selectionStrArray,
 					readHandler);
 		}
-	}
+	} //end callRead()
 
 	//=====================================================================================
 	function toggleReadBitField(fromLink)
@@ -478,7 +501,7 @@
 
 		Debug.log("checkbox val " + val);
 		document.getElementById("readBitFieldTable").style.display = val?"block":"none";
-	}
+	} //end toggleReadBitField()
 
 	//=====================================================================================
 	function writeHandler(req)
@@ -492,7 +515,7 @@
 		runningPercentageEl.innerHTML = Math.round(barWidth*10)/10 + '%';
 		waitForCurrentCommandToComeBack = false;
 
-	}
+	} //end writeHandler()
 
 	//=====================================================================================
 	function readHandler(req)
@@ -556,7 +579,7 @@
 			theAddressStrForRead = "";
 			contentEl.innerHTML += update;
 			CMDHISTDIVINDEX++;
-			contentEl.scrollTop = contentEl.scrollHeight;
+			// contentEl.scrollTop = contentEl.scrollHeight;
 			reminderEl.innerHTML = "Data read: " + convertedOutput;
 			var runningPercentageEl = document.getElementById('macroRunningPercentage');
 			var barEl = document.getElementById('macroRunningBar');
@@ -576,7 +599,7 @@
 		  if (arr[j]!==0) return false;
 		}
 		return true;
-	}
+	} //end isArrayAllZero()
 
 	//=====================================================================================
 	function convertToHex(format,target)
@@ -593,7 +616,7 @@
 					 output.push(target.charCodeAt(i).toString(16));
 				return output.join('');
 		}
-	}
+	} //end convertToHex()
 
 	//=====================================================================================
 	function convertFromHex(format,target,extractBitField)
@@ -650,7 +673,7 @@
 			str += String.fromCharCode(parseInt(target.substr(i, 2), 16));
 			return str;
 		}
-	}
+	} //end convertFromHex()
 
 	//=====================================================================================
 	function reverseLSB(original, execute)
@@ -665,14 +688,14 @@
 			return str;
 		}
 		else return original;
-	}
+	} //end reverseLSB()
 
 	//=====================================================================================
 	function LSBchecker(LSBF)
 	{
 		if(LSBF) return "*";
 		else return "";
-	}
+	} //end LSBchecker()
 
 	//=====================================================================================
 	// The function below sets dynamic styling for the elements on the MacroMaker html page
@@ -710,7 +733,7 @@
 			 document.getElementById("page2tag").style.backgroundColor = "#333";
 
 		 }
-	}
+	} //end toggleDisplay()
 
 	//=====================================================================================
 	function toggleMacroPublicity(onPublic)
@@ -738,7 +761,7 @@
 
 			isOnPrivateMacros = true;
 		}
-	}
+	} //end toggleMacroPublicity()
 
 	//=====================================================================================
 	function addCommand(command,address,data)//either has address+data, or have no address/data. # of parameters = 1 or 3
@@ -857,20 +880,20 @@
 		}
 		contentEl.innerHTML += update;
 		SEQINDEX++;
-		contentEl.scrollTop = contentEl.scrollHeight;
+		// contentEl.scrollTop = contentEl.scrollHeight;
 		sortable = Sortable.create(contentEl,{
 				chosenClass: 'chosenClassInSequence',
 				ghostClass:'ghostClassInSequence'
 		});//Works like magic!
 		getOrder();
-	}
+	} //end addCommand()
 
 	//=====================================================================================
 	function hideDeletex(seqIndex)
 	{
 		var deleteID = "deletex"+seqIndex;
 		document.getElementById(deleteID).style.display = "none";
-	}
+	} //end hideDeletex()
 
 	//=====================================================================================
 	function showDeletex(seqIndex)
@@ -881,7 +904,7 @@
 		deleteEl.style.left = (deleteEl.parentNode.offsetLeft +
 				deleteEl.parentNode.offsetWidth - 20) + "px";
 		deleteEl.style.display = "block";
-	}
+	} //end showDeletex()
 
 	//=====================================================================================
 	function getOrder()
@@ -895,7 +918,7 @@
 		//get the possibly-reordered index out of macro string
 		for(var i = 0; i < macroString.length; i++)
 			tempString.push(macroString[sorting.indexOf(order[i])]);
-	}
+	} //end getOrder()
 
 	//=====================================================================================
 	function removeCommand(seqIndex)
@@ -913,38 +936,37 @@
 			}
 		}
 		getOrder();
-	}
+	} //end removeCommand()
 
 	//=====================================================================================
 	function undoDelete()
 	{
 		addCommand(lastDeletedMacro.split(":")[1],lastDeletedMacro.split(":")[2],lastDeletedMacro.split(":")[3]);
 		document.getElementById("undoDelete").disabled = true;
-	}
+	} //end undoDelete()
 
 	//=====================================================================================
 	function showPopupClearAllConfirm()
 	{
 		var popupClearAllConfirm = document.getElementById("popupClearAllConfirm");
 		popupClearAllConfirm.style.display = "block";
-	}
+	} //end showPopupClearAllConfirm()
 
 	//=====================================================================================
 	function showPopupClearHistoryConfirm()
 	{
 		var popupClearAllConfirm = document.getElementById("popupClearHistoryConfirm");
 		popupClearAllConfirm.style.display = "block";
-	}
+	} //end showPopupClearHistoryConfirm()
 
 	//=====================================================================================
-
 	function clearAll(el)
 	{
 		var contentEl = document.getElementById('sequenceContent');
 		contentEl.innerHTML = "";
 		macroString = [];
 		hideSmallPopup(el);
-	}
+	} //end clearAll()
 
 	//=====================================================================================
 	function clearHistory(el)
@@ -953,7 +975,7 @@
 		var contentEl = document.getElementById('historyContent');
 		contentEl.innerHTML = "";
 		hideSmallPopup(el);
-	}
+	} //end clearHistory()
 
 	//=====================================================================================
 	function clearHistoryHandler(req)
@@ -961,14 +983,14 @@
 		Debug.log("clearHistoryHandler() was called.");// Req: " + req.responseText);
 
 		loadUserHistory();
-	}
+	} //end clearHistoryHandler()
 
 	//=====================================================================================
 	function hideSmallPopup(el)
 	{
 		var wholeDiv = el.parentNode.parentNode.parentNode;
 		wholeDiv.style.display = "none";
-	}
+	} //end hideSmallPopup()
 
 	//=====================================================================================
 	function saveMacro()
@@ -981,7 +1003,7 @@
 			if (userPermission == ADMIN_PERMISSION_THRESHOLD)
 				document.getElementById("makeMacroPublic").style.display = "block";
 		}
-	}
+	} //end saveMacro()
 
 	//=====================================================================================
 	function hidePopupSaveMacro()
@@ -991,7 +1013,7 @@
 		document.getElementById("macroName").value="";
 		document.getElementById("macroNotes").value="";
 		document.getElementById('macroReminder').innerHTML = "Macro successfully saved!";
-	}
+	} //end hidePopupSaveMacro()
 
 	//=====================================================================================
 	function hidePopupEditMacro()
@@ -999,7 +1021,7 @@
 		var popupEditMacro = document.getElementById("popupEditMacro");
 		popupEditMacro.style.display = "none";
 		arrayOfCommandsForEdit = [];
-	}
+	} //end hidePopupEditMacro()
 
 	//=====================================================================================
 	function saveAsMacro()
@@ -1088,7 +1110,7 @@
 
 		var start = "<p class=\"red\"><b><small>-- Start of Macro: " + macroName + " --</small></b></p>";
 		contentEl.innerHTML += start;
-		contentEl.scrollTop = contentEl.scrollHeight;
+		// contentEl.scrollTop = contentEl.scrollHeight; //scroll to top
 
 		progressBarInnerEl.style.display = "block";
 		progressBarOuterEl.style.display = "block";
@@ -1104,7 +1126,7 @@
 				{
 					var end = "<p class=\"red\"><b><small>-- End of Macro: " + macroName + " --</small></b></p>";
 					contentEl.innerHTML += end;
-					contentEl.scrollTop = contentEl.scrollHeight;
+					// contentEl.scrollTop = contentEl.scrollHeight; //scroll to top
 					isMacroRunning = false;
 					setTimeout(function(){
 						progressBarInnerEl.style.display = "none";
@@ -1178,7 +1200,7 @@
 											+ "\nSelected interface: " + selectionStrArray + "\" onclick=\"histCmdDelayDivOnclick(" + Command[2]
 											+ ")\">Delay <b>" + Command[2] + "</b> ms</div>";
 							contentEl.innerHTML += update;
-							contentEl.scrollTop = contentEl.scrollHeight;
+							// contentEl.scrollTop = contentEl.scrollHeight; //scroll to top
 							CMDHISTDIVINDEX++;
 							var runningPercentageEl = document.getElementById('macroRunningPercentage');
 							var barEl = document.getElementById('macroRunningBar');
@@ -1193,19 +1215,19 @@
 				}
 			}
 		},200);
-	}
+	} //end runMacro()
 
 	//=====================================================================================
 	function loadExistingMacros()
 	{
 		DesktopContent.XMLHttpRequest("Request?RequestType=loadMacros","",loadingMacrosHandler);
-	}
+	} //end loadExistingMacros()
 
 	//=====================================================================================
 	function loadUserHistory()
 	{
 		DesktopContent.XMLHttpRequest("Request?RequestType=loadHistory","",loadingHistHandler);
-	}
+	} //end loadUserHistory()
 
 	//=====================================================================================
 	function loadingMacrosHandler(req)
@@ -1230,7 +1252,9 @@
 					forDisplay.push(macroString[j].split(":").slice(1).filter(Boolean).join(":"));
 
 				stringOfAllMacros[MACROINDEX] = macroString;
-				out += "<div title='Sequence: " + forDisplay.join(",") + "\nNotes: "
+				out += "<div title='" +
+						"Macro &apos;" + arr.name + "&apos;\n" + 
+						"(Left-click to execute, Right-click for advanced options)\n\nSequence: " + forDisplay.join(",") + "\nNotes: "
 						+ arr.notes + "\nCreated: " + arr.time + "\nLSBF: " + arr.LSBF
 						+ "\' class='macroDiv' data-id=\"" + arr.name + "\" data-sequence=\""
 						+ macroString + "\" data-notes=\"" + arr.notes + "\" data-time=\""
@@ -1275,7 +1299,7 @@
 		else
 			document.getElementById("listOfPublicMacros").innerHTML = "";
 		console.log(namesOfAllMacros);
-	}
+	} //end loadingMacrosHandler()
 
 	//=====================================================================================
 	function loadingHistHandler(req)
@@ -1338,8 +1362,8 @@
 		}
 
 		contentEl.innerHTML = finalOutPut;
-		contentEl.scrollTop = contentEl.scrollHeight;
-	}
+		// contentEl.scrollTop = contentEl.scrollHeight; //scroll to top
+	} //end loadingHistHandler()
 
 	function histCmdWriteDivOnclick(addressStr, dataStr, addressFormatStr, dataFormatStr)
 	{
@@ -1577,7 +1601,7 @@
 		default:
 			Debug.log("Impossible!? macroAction=" + macroAction);
 		}
-	}
+	} //end macroActionOnRightClick()
 
 	//=====================================================================================
 	function exportFEMacro(macroName,macroSequence,macroNotes)
@@ -1831,7 +1855,7 @@
 			x[index] = textarea.value;
 			arrayOfCommandsForEdit[seqID] = x.join(":");
 		}
-	}
+	} //end editCommands()
 
 	//=====================================================================================
 	function deleteMacroHandler(req)
@@ -1843,7 +1867,7 @@
 		var deletedMacroName = DesktopContent.getXMLValue(req,"deletedMacroName");
 		var reminderEl = document.getElementById('reminder');
 		reminderEl.innerHTML = "Successfully deleted " + decodeURI(deletedMacroName);
-	}
+	} //end deleteMacroHandler()
 
 	//=====================================================================================
 	function saveChangedMacro()
@@ -1909,7 +1933,7 @@
 					newMacroNameForEdit /*parameter*/);
 			hidePopupEditMacro();
 		}
-	}
+	} //end saveChangedMacro()
 
 	//=====================================================================================
 	function saveChangedMacroHandler(req,macroName)
@@ -1933,7 +1957,7 @@
 			var Command = macroStringForReload[i].split(":");
 			addCommand(Command[1],Command[2],Command[3]);
 		}
-	}
+	} //end reloadMacroSequence()
 
 	//=====================================================================================
 	function reloadEditSequence()
@@ -1964,7 +1988,7 @@
 					nodeListOfTextareas[i].innerHTML = convertToHex("dec",nodeListOfTextareas[i].value);
 			}
 		}
-	}
+	} //end reloadEditSequence()
 
 	//=====================================================================================
 	function setFieldToVariable(div, seqID, index,isReadResultField)
@@ -2058,7 +2082,7 @@
 				popupNameVariableEl.style.display = "none";
 			};
 		}
-	}
+	} //end setFieldToVariable()
 
 	//=====================================================================================
 	function dealWithVariables(stringOfCommands,macroName,LSBF)
@@ -2185,4 +2209,4 @@
 				return;
 			}
 		};
-	}
+	} //end dealWithVariables()

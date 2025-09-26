@@ -103,6 +103,12 @@ li a:hover:not(.active) {
     background-color: #111;
 }
 
+input {
+    font-size: 16px;
+}
+select {
+    font-size: 14px;
+}
 
 #nav {
     height: 45px;
@@ -375,7 +381,7 @@ button {
     color:#001626;
     margin-bottom:10px;
     border-radius:1px;
-    width: 45px;
+    width: 55px;
     height: 17px;
 }
 

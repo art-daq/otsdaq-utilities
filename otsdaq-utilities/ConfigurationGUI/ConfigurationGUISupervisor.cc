@@ -1553,7 +1553,9 @@ try
 	}
 	else
 	{
-		__SUP_SS__ << "requestType '" << requestType << "' request not recognized."
+		__SUP_SS__ << "requestType Request, " << requestType
+		           << ", not recognized by the Configuration GUI Supervisor (was it "
+		              "intended for another Supervisor?)."
 		           << __E__;
 		__SUP_COUT__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());

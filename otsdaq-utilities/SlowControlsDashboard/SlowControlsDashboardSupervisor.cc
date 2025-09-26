@@ -506,6 +506,14 @@ void SlowControlsDashboardSupervisor::handleRequest(
 	{
 		saveImageFile(cgiIn, xmlOut, userInfo);
 	}
+	else
+	{
+		__SUP_SS__ << "Request, " << Command
+		           << ", not recognized by the Slow Controls Dashboard Supervisor (was "
+		              "it intended for another Supervisor?)."
+		           << __E__;
+		__SUP_SS_THROW__;
+	}
 
 	__SUP_COUT__ << "" << __E__;
 }  // end handleRequest()

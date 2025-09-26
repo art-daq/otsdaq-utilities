@@ -2360,9 +2360,8 @@
 						else
 						{
 							//really an error
-							Debug.log("There was an error while creating the " + _recordsAlias + " '" +
-									planName  + ".'",
-									Debug.HIGH_PRIORITY);
+							Debug.err("There was an error while creating the " + _recordsAlias + " '" +
+									planName  + ".'" + (err?("\n\n" + err):""));
 							return;
 						}
 					}
