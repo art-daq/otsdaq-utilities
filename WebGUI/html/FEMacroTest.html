@@ -194,8 +194,11 @@
 		}
 
 		.export-btns {
-			cursor: pointer;
-			margin-left: 15px;
+			cursor: 	pointer;
+			float:		right;
+			margin: 	10px 65px -35px 15px;
+			position: 	relative;
+			z-index: 	10;
 		}
 
 	</style>
@@ -797,7 +800,7 @@
 
 			var str = "";
 
-			str += "<div class='export-btns' onclick='copyOutput()' style='float:right'>" +
+			str += "<div class='export-btns' onclick='copyOutput()'>" +
 						"<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png' alt='Copy Macro Output' title='Copy macro execution text output to clipboard.'>" +
 					"</div>";
 
@@ -934,10 +937,12 @@
 
 					if(!outputFileFound || outputArgNames.length > 1)
 					{
-						if(outputArgNames.length > 1 || f == 0)
+						if(outputArgNames.length > 1 || f == 0 || //only put separator for first or large response
+								outputArgValues[0].getAttribute("value").length > 200)
 							str += "<hr width='80%'><br>";
 						str += "<b>";//Ran... " + feExecTime + "<br>";
-						if(outputArgNames.length > 1 || f == 0)
+						if(outputArgNames.length > 1 || f == 0 || 
+								outputArgValues[0].getAttribute("value").length > 200)
 							str += "FEMacro: &quot;" + feMacroName + "&quot;<br>";
 						str += "FE Target #" + (f+1) + " UID: <label style='color:red; font-size:inherit;'>" +
 							feTargetUID + "</label> (" +
