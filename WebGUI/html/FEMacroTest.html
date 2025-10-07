@@ -307,7 +307,7 @@
 		MAP_FROM_LAYOUT_TO_MACRO_TYPES_[MACRO_TYPE_PUBLIC_] 	= 1;
 		MAP_FROM_LAYOUT_TO_MACRO_TYPES_[MACRO_TYPE_PRIVATE_] 	= 2;
 
-		var inputValueHistory_ = {}; //keep last input values, and recall for quick launches
+		var inputValueHistory_ = {}; //keep last input values, and recall for quick launches (organized by parameter name and r,c macro position as higher priority)
 		var multiSelectToggleSetting_ = {}; //true for multiselect display
 
 		var focusedMacroCell = [-1,-1]; //when enter is pressed which macro to run
@@ -2453,6 +2453,20 @@ Here is the json string received:
 					".. waiting for response...";
 			var el = document.getElementById("history-status");
 			el.innerHTML = str;
+
+			//save input args to history
+			//recordObj["inputArgs"] is encoded ;-separated field/value pairs (pair separated by ,)
+			var inputArgsSplit = recordObj["inputArgs"].split(';');
+			for(var i=0;i<inputArgsSplit.length;++i)
+			{
+				var inputArgsPair = inputArgsSplit[i].split(',');
+				inputArgsPair[0] = decodeURIComponent(inputArgsPair[0]); //field
+				inputArgsPair[1] = decodeURIComponent(inputArgsPair[1]); //value
+				Debug.log("inputArgs field " + inputArgsPair[0]);
+				Debug.log("inputArgs value " + inputArgsPair[1]);
+				inputValueHistory_[inputArgsPair[0]] = inputArgsPair[1];
+			}
+			Debug.log("Updated inputValueHistory_ based on history call");			
 
 			var postData = "inputArgs=" + recordObj["inputArgs"] + "&outputArgs=" + recordObj["outputArgs"];
 			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
