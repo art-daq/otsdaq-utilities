@@ -803,9 +803,9 @@ try
 		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
 		std::string filterList     = CgiDataUtilities::postData(cgiIn, "filterList");
 		int         depth          = CgiDataUtilities::getDataAsInt(cgiIn, "depth");
-		bool hideStatusFalse       = CgiDataUtilities::getDataAsInt(cgiIn, "hideStatusFalse");
-		std::string diffGroup      = CgiDataUtilities::getData(cgiIn, "diffGroup");
-		std::string diffGroupKey   = CgiDataUtilities::getData(cgiIn, "diffGroupKey");
+		bool hideStatusFalse  = CgiDataUtilities::getDataAsInt(cgiIn, "hideStatusFalse");
+		std::string diffGroup = CgiDataUtilities::getData(cgiIn, "diffGroup");
+		std::string diffGroupKey = CgiDataUtilities::getData(cgiIn, "diffGroupKey");
 
 		__SUP_COUTT__ << "tableGroup: " << tableGroup << __E__;
 		__SUP_COUTT__ << "tableGroupKey: " << tableGroupKey << __E__;
@@ -1930,34 +1930,33 @@ try
 		                        false /* getGroupKeys */,
 		                        false /* getGroupInfo */,
 		                        true /* initializeActiveGroups */);
-	}	
-	else //make sure expected active tables are setup, for standard starting point
+	}
+	else  //make sure expected active tables are setup, for standard starting point
 	{
 		//This is needed, for example, when on Context group which could point into the
 		//	Configure group; need common starting point (which is the Active group tables)
 		//	Then bring the modified tables over top.
 		//	Context --> Configure is simplest example
 		//	...but Configure can also point at Context, or Iterator, or Backbone.
-		
+
 		__SUP_COUT__ << "Restoring active table group tables..." << __E__;
 		auto activeGroups = cfgMgr->getActiveTableGroups();
 		for(const auto& activeGroup : activeGroups)
 		{
-			if(activeGroup.second.first == groupName && 
-				activeGroup.second.second == groupKey)
+			if(activeGroup.second.first == groupName &&
+			   activeGroup.second.second == groupKey)
 			{
 				__SUP_COUTT__ << "Skipping target active group." << __E__;
-				continue;	
+				continue;
 			}
-			__SUP_COUTT__ << "Loading " << activeGroup.first << " " << 
-				activeGroup.second.first << "(" << activeGroup.second.second << ")..." << __E__;
+			__SUP_COUTT__ << "Loading " << activeGroup.first << " "
+			              << activeGroup.second.first << "(" << activeGroup.second.second
+			              << ")..." << __E__;
 			cfgMgr->loadTableGroup(
-					activeGroup.second.first,
-					activeGroup.second.second,
-					false /*doActivate*/
-				);
-		} //end load tables as active, but do not activate groups
-	}	
+			    activeGroup.second.first, activeGroup.second.second, false /*doActivate*/
+			);
+		}  //end load tables as active, but do not activate groups
+	}
 	__SUP_COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
 
 	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
@@ -2001,7 +2000,6 @@ try
 
 		if(accumulatedErrors && *accumulatedErrors != "")
 			__SUP_COUTV__(*accumulatedErrors);
-
 	}
 	__SUP_COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
 
@@ -2086,7 +2084,7 @@ try
 	}  // end ordered table loop
 
 	__SUP_COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
-	
+
 }  // end setupActiveTablesXML()
 catch(std::runtime_error& e)
 {
@@ -6011,7 +6009,8 @@ try
 			{
 				__SUP_COUT__ << "Handling version w/aliases" << __E__;
 			}
-			else if(lo.version() == TableVersion::INVALID)  //establish start of potential span
+			else if(lo.version() ==
+			        TableVersion::INVALID)  //establish start of potential span
 			{
 				hi = lo = v;
 				continue;
@@ -6029,9 +6028,7 @@ try
 					xmlOut.addTextElementToParent("Version", lo.toString(), parentEl);
 				else  //span
 					xmlOut.addTextElementToParent(
-					    "Version",
-					    "_" + lo.toString() + "_" + hi.toString(),
-					    parentEl);
+					    "Version", "_" + lo.toString() + "_" + hi.toString(), parentEl);
 			}
 			hi = lo = v.version();
 
@@ -6042,7 +6039,7 @@ try
 				for(const auto& alias : aliases)
 					xmlOut.addTextElementToParent("VersionAlias", alias, subparentEl);
 				hi = lo = TableVersion::INVALID;  //invalidate for fresh start
-			}                          //end version alias handling
+			}                                     //end version alias handling
 
 		}  //end version loop
 
@@ -6052,9 +6049,7 @@ try
 				xmlOut.addTextElementToParent("Version", lo.toString(), parentEl);
 			else  //span
 				xmlOut.addTextElementToParent(
-				    "Version",
-				    "_" + lo.toString() + "_" + hi.toString(),
-				    parentEl);
+				    "Version", "_" + lo.toString() + "_" + hi.toString(), parentEl);
 		}
 	}  //end existing table version handling
 
@@ -6334,9 +6329,9 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	       userConfigurationManagers_.end())
 	{
 		__SUP_COUT__ << "Using pre-loaded Configuration Manager. time=" << time(0) << " "
-		             << clock() << " Setting author from " << 
-					  userConfigurationManagers_.at(preLoadCfgMgrName)->getUsername() << " to " <<
-					 username << __E__;
+		             << clock() << " Setting author from "
+		             << userConfigurationManagers_.at(preLoadCfgMgrName)->getUsername()
+		             << " to " << username << __E__;
 		userConfigurationManagers_[mapKey] =
 		    userConfigurationManagers_.at(preLoadCfgMgrName);
 		userLastUseTime_[mapKey] = userLastUseTime_.at(preLoadCfgMgrName);
@@ -6383,9 +6378,9 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		    false /* getGroupInfo */,
 		    true /* initializeActiveGroups */);
 	}
-	__SUP_COUTT__ << "Configuration Manager for author=" << userConfigurationManagers_[mapKey]->getUsername()
-				  << " ready. time=" << time(0) << " " << clock()
-	              << " runTimeSeconds()="
+	__SUP_COUTT__ << "Configuration Manager for author="
+	              << userConfigurationManagers_[mapKey]->getUsername()
+	              << " ready. time=" << time(0) << " " << clock() << " runTimeSeconds()="
 	              << userConfigurationManagers_[mapKey]->runTimeSeconds() << __E__;
 
 	// update active sessionIndex last use time
@@ -7665,26 +7660,44 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 	// get all group info from cache (if no cache, get from interface)
 
 	if(!cfgMgr->getAllGroupInfo().size() ||
-		cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ == "" ||
-		cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ ==
-			ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN || 
-		( //if active Context group type is not defined, then refresh
-			cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONTEXT_TYPE) != TableGroupKey::INVALID &&
-			cfgMgr->getAllGroupInfo().find(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONTEXT_TYPE))
-				!= cfgMgr->getAllGroupInfo().end() &&
-			(cfgMgr->getAllGroupInfo().at(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONTEXT_TYPE)).latestKeyGroupTypeString_ == "" || 
-			cfgMgr->getAllGroupInfo().at(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONTEXT_TYPE)).latestKeyGroupTypeString_ == ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)
-		) || 
-		( //if active Config group type is not defined, then refresh
-			cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONFIGURATION_TYPE) != TableGroupKey::INVALID &&
-			cfgMgr->getAllGroupInfo().find(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONFIGURATION_TYPE))
-				!= cfgMgr->getAllGroupInfo().end() &&
-			(cfgMgr->getAllGroupInfo().at(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONFIGURATION_TYPE)).latestKeyGroupTypeString_ == "" || 
-			cfgMgr->getAllGroupInfo().at(cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONFIGURATION_TYPE)).latestKeyGroupTypeString_ == ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)
-		))
+	   cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ == "" ||
+	   cfgMgr->getAllGroupInfo().begin()->second.latestKeyGroupTypeString_ ==
+	       ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN ||
+	   (  //if active Context group type is not defined, then refresh
+	       cfgMgr->getActiveGroupKey(ConfigurationManager::GroupType::CONTEXT_TYPE) !=
+	           TableGroupKey::INVALID &&
+	       cfgMgr->getAllGroupInfo().find(cfgMgr->getActiveGroupName(
+	           ConfigurationManager::GroupType::CONTEXT_TYPE)) !=
+	           cfgMgr->getAllGroupInfo().end() &&
+	       (cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
+	                    ConfigurationManager::GroupType::CONTEXT_TYPE))
+	                .latestKeyGroupTypeString_ == "" ||
+	        cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
+	                    ConfigurationManager::GroupType::CONTEXT_TYPE))
+	                .latestKeyGroupTypeString_ ==
+	            ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)) ||
+	   (  //if active Config group type is not defined, then refresh
+	       cfgMgr->getActiveGroupKey(
+	           ConfigurationManager::GroupType::CONFIGURATION_TYPE) !=
+	           TableGroupKey::INVALID &&
+	       cfgMgr->getAllGroupInfo().find(cfgMgr->getActiveGroupName(
+	           ConfigurationManager::GroupType::CONFIGURATION_TYPE)) !=
+	           cfgMgr->getAllGroupInfo().end() &&
+	       (cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
+	                    ConfigurationManager::GroupType::CONFIGURATION_TYPE))
+	                .latestKeyGroupTypeString_ == "" ||
+	        cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
+	                    ConfigurationManager::GroupType::CONFIGURATION_TYPE))
+	                .latestKeyGroupTypeString_ ==
+	            ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)))
 	{
-		__SUP_COUT__ << "Group Info cache appears empty or stale. Attempting to regenerate..."
-		             << __E__;
+		__SUP_COUT__
+		    << "Group Info cache appears empty or stale. Attempting to regenerate..."
+		    << __E__;
 		cfgMgr->getAllTableInfo(true /*refresh*/,
 		                        0 /* accumulatedWarnings */,
 		                        "" /* errorFilterName */,
