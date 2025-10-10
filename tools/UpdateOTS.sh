@@ -790,13 +790,13 @@ HIDING_COUNT_MESSAGE=`echo -e "UpdateOTS.sh:${LINENO}  \t Hiding verbose Data_* 
 echo $HIDING_COUNT_MESSAGE
 #cat $CHECKIN_LOG_PATH | grep -v Data_ | grep -v databases_
 
-cp $CHECKIN_LOG_PATH ${CHECKIN_LOG_PATH}.bk;
+cp $CHECKIN_LOG_PATH ${CHECKIN_LOG_PATH}.bk &>/dev/null
 sed -i ':a;N;$!ba;s/databases_.*\n.*databases_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
 sed -i ':a;N;$!ba;s/Data_.*\n.*HIDING_COUNT_MESSAGE/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
 sed -i ':a;N;$!ba;s/Data_.*\n.*Data_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
 sed -i "s/.*HIDING_COUNT_MESSAGE.*/${HIDING_COUNT_MESSAGE}/g" ${CHECKIN_LOG_PATH}.bk;
 cat ${CHECKIN_LOG_PATH}.bk;
-rm ${CHECKIN_LOG_PATH}.bk
+rm ${CHECKIN_LOG_PATH}.bk &>/dev/null
 
 echo -e "UpdateOTS.sh:${LINENO}  \t end log dump... #######################################################"
 echo -e "UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"

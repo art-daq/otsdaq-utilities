@@ -520,7 +520,7 @@
 		//	- Allow to select a System Config to edit or start anew (all table versions are dont cares)
 		//		- Be able to edit the versions associated with the System Config while
 		//		viewing other System Configs for inspiration
-		//	- Allow to select a table to edit or start anew (from mock-up)
+		//	- Allow to select a table to edit or start anew (from mockup)
 		//		- Be able to edit a table, and view others to copy chunks from them
 		//
 
@@ -2346,7 +2346,8 @@
 			var groupKey = DesktopContent.getXMLValue(req, "TableGroupKey");
 
 			var treeErr = DesktopContent.getXMLValue(req, "TreeErrors");
-			if (treeErr) {
+			if (treeErr) 
+			{
 				Debug.warn(treeErr);
 
 				//don't power through if a new group was attempted
@@ -2397,11 +2398,11 @@
 				var foundEquivalentKey = DesktopContent.getXMLValue(req, "foundEquivalentKey") | 0; //as int
 
 				if (foundEquivalentKey)
-					Debug.log("Found equivalent group '" + attemptedNewGroupName +
-						" (" + groupKey + ")'", Debug.INFO_PRIORITY);
+					Debug.info("<b>Found equivalent</b> group <b>'" + attemptedNewGroupName +
+						" (" + groupKey + ")'</b>");
 				else
-					Debug.log("Successfully created new group '" + attemptedNewGroupName +
-						" (" + groupKey + ")'", Debug.INFO_PRIORITY);
+					Debug.info("Successfully <b>created</b> new group <b>'" + attemptedNewGroupName +
+						" (" + groupKey + ")'</b>");
 			}
 
 
@@ -3873,17 +3874,33 @@
 			var activeTableNames = req.responseXML.getElementsByTagName("ActiveTableName");
 			var activeTableVersions = req.responseXML.getElementsByTagName("ActiveTableVersion");
 			var activeTableComments = req.responseXML.getElementsByTagName("ActiveTableComment");
-			treeMemberNames_ = [];
-			treeMemberVersions_ = [];
-			treeMemberComments_ = [];
+
+			//save map of existing tree member names/versions to compare to change
+			var compareMemberMap = {};
+			for (var i = 0; treeMemberNames_ && i < treeMemberNames_.length; ++i) 			
+				compareMemberMap[treeMemberNames_[i]] = treeMemberVersions_[i];
+
+			treeMemberNames_ = []; //reset
+			treeMemberVersions_ = []; //reset
+			treeMemberComments_ = []; //reset
 
 			_tableLinkDropdownChoices = [];
 			_tableLinkDropdownChoices.push(DesktopContent.getXMLValue(req, "DefaultNoLink"));
-			for (var i = 0; i < activeTableNames.length; ++i) {
+			for (var i = 0; i < activeTableNames.length; ++i) 
+			{
 				treeMemberNames_.push(activeTableNames[i].getAttribute("value"));
 				_tableLinkDropdownChoices.push(treeMemberNames_[i]);
 				treeMemberVersions_.push(activeTableVersions[i].getAttribute("value"));
 				treeMemberComments_.push(activeTableComments[i].getAttribute("value"));
+
+				//this should never happen unexpectedly!
+				if(compareMemberMap[treeMemberNames_[i]] !== undefined && 
+						compareMemberMap[treeMemberNames_[i]] != treeMemberVersions_[i])
+					Debug.err("Should never happen! The active version for table '" + 
+						treeMemberNames_[i] + "' changed from v" + 
+						compareMemberMap[treeMemberNames_[i]] + " to v" + 
+						treeMemberVersions_[i] + 
+						". Try Refreshing the Tree-view, or notify admins.");
 			}
 
 			if (!parentId &&
@@ -6214,6 +6231,11 @@
 
 		//==============================================================================
 		//setupTableGroupTreeView ~
+		//	Note that modifiedTables is not a parameter, so the result will be tree view of 
+		//		the unmodified group.
+		//	Issues arise when starting to getTreeView crossing into other active tables.
+		//		To prevent insanity, track the loaded tables as also modified tables!
+		//	Also, at this point must not allow random active tables, which could happen during editing (i.e. must reactivate the Configure Group).
 		function setupTableGroupTreeView(tableGroupName, tableGroupKey, backLinkStr)
 		{
 			editCellCancel();
@@ -6506,23 +6528,32 @@
 				{
 					var type = DesktopContent.getXMLValue(req, "AttemptedGroupActivationType");
 
-					Debug.log("Note: There was a successful activation of the " +
-						((type && type != "")?(type + " "):"") + "group '" +
+					Debug.info("There was a <b>successful activation</b> of the " +
+						((type && type != "")?(type + " "):"") + "group <b>'" +
 						DesktopContent.getXMLValue(req, "AttemptedGroupActivationName") +
 						" (" +
 						DesktopContent.getXMLValue(req, "AttemptedGroupActivationKey") +
-						").'",
-						Debug.INFO_PRIORITY);
+						").'</b>" +
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 				}
 				else if (!_firstTimeSilentActive && //only popup after the first time
 					thereIsAChange)					//and if change
 				{
 					if (thereIsAnEmpty) //may have been a deactivating (due to error?)
-						Debug.log("Note: There was a change to the active Context group (check the top of the page)!",
-							Debug.INFO_PRIORITY);
+						Debug.warn("There was a change to the active groups (a group was deactivated)! If this was unexpected, check the System View for more info, or contact system admins." + 
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 					else //must have been an activation
-						Debug.log("Note: There was a successful activation of a group (check the System View for changes)!",
-							Debug.INFO_PRIORITY);
+						Debug.warn("There was a change to the active groups! If this was unexpected, check the System View for more info, or contact system admins." + 
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 
 					//Debug.log(_OTS_RELAUNCH_STR,Debug.INFO_PRIORITY);
 				}
@@ -6873,6 +6904,7 @@
 			str += "</td><td colspan='2' style='white-space: nowrap;'>";
 			var title = "Select the version in the drop-downs for all tables based on this selection.";
 			str += "<a onclick='versionsForCreateTableGroup(0); return false;' title='" + title + "'>Latest</a> | " +
+				"<a onclick='versionsForCreateTableGroup(3); return false;' title='" + title + "'>Mockups</a> | " +
 				"<a onclick='versionsForCreateTableGroup(1); return false;' title='" + title + "'>Defaults</a> | " +
 				"<a onclick='popUpVersionAliasGroupEditorForm(); return false;' title='" + title + "'>Other Alias</a>";
 			str += "</td>";
@@ -7070,9 +7102,8 @@
 				if (els[el].checked)
 				{
 					sel = document.getElementById("select-" + els[el].value);
-					if (sel.options.length)
+					if (sel.options.length && sel.selectedIndex >= 0)
 					{
-						if (sel.selectedIndex < 0) sel.selectedIndex = 0; //default to default
 						Debug.log("table=" + els[el].value + " version=" +
 							sel.options[sel.selectedIndex].value);
 						tableMap += els[el].value + "," + sel.options[sel.selectedIndex].value + ",";
@@ -7107,9 +7138,11 @@
 
 		//==============================================================================
 		//versionsForCreateTableGroup ~
-		//0 is latest, 1 is default, 2 is otherAlias
+		//0 is latest, 1 is default, 2 is otherAlias, 3 is mockups
 		function versionsForCreateTableGroup(i, alias)
 		{
+			Debug.log("versionsForCreateTableGroup()",i,alias);
+
 			var els = document.getElementsByClassName("memberTableCheckbox");
 			var sel, options;
 			switch (i)
@@ -7184,6 +7217,14 @@
 							options[defaultToSel].selected = true;
 					}
 
+					break;
+				case 3: //mockups
+					for (var el = 0; el < els.length; ++el)
+					{
+						//Debug.log(els[el].value);
+						sel = document.getElementById("select-" + els[el].value);
+						sel.value = "";
+					}
 					break;
 				default:
 					Debug.err("Impossible! Should never happen!! Alert system admins.");
@@ -11176,7 +11217,7 @@
 				var el = document.getElementById("popUpDialog");
 				if (el) el.parentNode.removeChild(el);
 
-				Debug.log("Saving operations complete.", Debug.INFO_PRIORITY);
+				Debug.info("<b>Saving</b> operations complete.");
 				treeHasChanged(true); // reset
 				return;
 			}
@@ -12840,7 +12881,10 @@
 		{
 			Debug.log("hardRefreshTreeView()");
 
-			treeViewHandlerStr_ = "";
+			treeViewHandlerStr_ = ""; //reset
+			treeMemberNames_ = []; //reset
+			treeMemberVersions_ = []; //reset
+			treeMemberComments_ = []; //reset
 
 			//capture expanded children status
 			doCaptureTreeViewExpand();
@@ -17796,9 +17840,8 @@
 					if (els[el].checked)
 					{
 						sel = document.getElementById("select-" + els[el].value);
-						if (sel.options.length)
+						if (sel.options.length && sel.selectedIndex >= 0)
 						{
-							if (sel.selectedIndex < 0) sel.selectedIndex = 0; //default to default
 							Debug.log("table=" + els[el].value + " version=" +
 								sel.options[sel.selectedIndex].value);
 							tableMap += els[el].value + "," + sel.options[sel.selectedIndex].value + ",";
@@ -17950,15 +17993,6 @@
 
 							var newGroupKey = DesktopContent.getXMLValue(req, "TableGroupKey");
 							affectedGroupKeys.push(newGroupKey); //can only be one group, since affectedGroupNames[0] was used in request
-
-							var foundEquivalentKey = DesktopContent.getXMLValue(req, "foundEquivalentKey") | 0; //as int
-
-							if (foundEquivalentKey)
-								Debug.log("Found equivalent group '" + attemptedNewGroupName +
-									" (" + newGroupKey + ")'", Debug.INFO_PRIORITY);
-							else
-								Debug.log("Successfully created new group '" + attemptedNewGroupName +
-									" (" + newGroupKey + ")'", Debug.INFO_PRIORITY);
 
 							//need to modify root group name if changed
 
@@ -18902,7 +18936,7 @@
 			var refreshWrapper = "if(treeHasChanged_) DesktopContent.popUpVerification(" +
 				"\"The tree has been modified. Refreshing will discard changes and " +
 				"revert to the tree-view of group '" + treeGroupName_ + " (" +
-				treeGroupKey_ + ").' <br><br>Are you sure you want to Refresh?\", " +
+				treeGroupKey_ + ")' AND currently active groups. <br><br>Are you sure you want to Refresh?\", " +
 				"function() {" + hardRefreshLinkStr + "},0,\"#efeaea\",0,\"#770000\");" +
 				"else {" + hardRefreshLinkStr + "}";
 
