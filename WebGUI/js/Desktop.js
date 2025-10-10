@@ -1389,7 +1389,8 @@ Desktop.createDesktop = function(security) {
 						windowName,
 						"",
 						windowPath +		//e.g. "http://rulinux03.dhcp.fnal.gov:1983/WebPath/html/ConfigurationGUI.html?urn=280",
-						((windowPath.indexOf('?') < 0)? "?":"&amp;") + //add ? start of get parameters if necessary
+						((windowPath.indexOf('?') < 0)? "?":					//add ? start of get parameters if necessary
+							((windowPath.indexOf('&amp;') > 0)? "&amp;":"&")) + //then assume & for parameters is good
 						((newWindowOps)?"newWindowOps=" + newWindowOps:""), //add get parameter to path for further operations
 						eval(pathUniquePair[1]));
 			} //end handling of opening desktop window
@@ -1400,7 +1401,8 @@ Desktop.createDesktop = function(security) {
 						windowName,
 						windowSubname,
 						windowPath +		//e.g. "http://rulinux03.dhcp.fnal.gov:1983/WebPath/html/ConfigurationGUI.html?urn=280",
-						((windowPath.indexOf('?') < 0)? "?":"&amp;") + //add ? start of get parameters if necessary
+						((windowPath.indexOf('?') < 0)? "?":					//add ? start of get parameters if necessary
+							((windowPath.indexOf('&amp;') > 0)? "&amp;":"&")) + //then assume & for parameters is good
 						((newWindowOps)?"newWindowOps=" + newWindowOps:""), //add get parameter to path for further operations
 						eval(windowUnique));
 			}

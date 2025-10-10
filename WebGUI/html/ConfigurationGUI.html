@@ -2667,7 +2667,7 @@
 
 			var cfgVersionStr;
 			var cfgNameStr = "";
-			var replaceScreenJS, newWindowStr, newwindowJS, newtabJS;
+			var replaceScreenJS, newWindowStr, newWindowJS, newTabJS;
 			var groupMemberNavContextMenuItemHandlers = [];
 
 			str += "<table cellpadding='0' cellspacing='0' border='0' style='float:left;'>";
@@ -2731,16 +2731,16 @@
 					newWindowStr = location.pathname +
 						location.search +
 						"&newWindowOps=" + newWindowStr;
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
-					groupMemberNavContextMenuItemHandlers.push(newwindowJS);
+					groupMemberNavContextMenuItemHandlers.push(newWindowJS);
 
 					//make new tab link
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
-					groupMemberNavContextMenuItemHandlers.push(newtabJS);
+					groupMemberNavContextMenuItemHandlers.push(newTabJS);
 
 					str += //start member Link div
 						"<div class='treeNode-Link' style='float:left;'  " +
@@ -5238,8 +5238,8 @@
 		{
 			var backLinkStr;
 			var onmouseupJS = "";
-			var newwindowJS = "";
-			var newtabJS = "";
+			var newWindowJS = "";
+			var newTabJS = "";
 
 			var DEFAULT_treeNavContextMenuItems = [
 				"Go-to Table View",
@@ -5298,22 +5298,22 @@
 						location.search +
 						"&newWindowOps=" + newWindowStr;
 
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newwindowJS);
+					treeNavContextMenuItemHandlers.push(newWindowJS);
 				}
 
 				//open table-view in new browser tab link
 				{
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 				//open Subset-Configuration in new window link
@@ -5359,7 +5359,7 @@
 
 
 					//DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeHandler) {
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"\",\"" +
 						//windowPath
@@ -5367,19 +5367,19 @@
 						"\",false /*unique*/);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newwindowJS);
+					treeNavContextMenuItemHandlers.push(newWindowJS);
 				}
 
 				//open Subset-Configuration in new browser tab link
 				{
 					//DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"\",\"" +
 						newWindowStr + "\",false /*unique*/);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 				//add Subset-Configuration desktop icon
@@ -5388,7 +5388,7 @@
 						//	folderPath, unique, permissionString,
 						//	imageURL, windowContentURL, linkedApp, parameters)
 
-					newtabJS = "DesktopContent.addDesktopIcon(" +
+					newTabJS = "DesktopContent.addDesktopIcon(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"CfgSub\",\"Config Subsets\"" +
 						", false /*unique*/" +
@@ -5405,7 +5405,7 @@
 						");";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 
@@ -9956,12 +9956,12 @@
 					{
 						var backLinkStr = "setupSpecificTable(\\\"" +
 								_currentTableName + "\\\",\\\"" +
-							_version + "\\\");";
+								_version + "\\\");";
 
 						var w = _OK_CANCEL_DIALOG_STR.indexOf("width:95px;");
 						controlString = _OK_CANCEL_DIALOG_STR.substr(0, w);
 						w += ("width:95px;").length;
-						controlString += "width:150px;"; //needs to be wider
+						controlString += "width:260px;"; //needs to be wider
 						controlString += _OK_CANCEL_DIALOG_STR.substr(w,
 							_OK_CANCEL_DIALOG_STR.length - 6 - w);//remove closing </div>
 						controlString += " | " +
@@ -9973,6 +9973,47 @@
 							"title='Go-to Link Table' " +
 							">" +
 							"<b style='color:rgb(44, 44, 187);font-size: 16px;'>Goto</b></a>";
+
+						var newWindowStr = "setupSpecificTable(\"" +
+							_editingCellElOldValue + "\",\"\")";
+						newWindowStr = newWindowStr.replace(/"/g, "\\\"");
+
+						newWindowStr = location.pathname +
+							location.search +
+							"&newWindowOps=" + newWindowStr;
+
+						{ //add link to open table in new window
+
+							let newWindowJS = "DesktopContent.openNewWindow(" +
+								"\"Configure\",\"\",\"" +
+								newWindowStr + "\",false);";
+
+							controlString += " " +
+								"<a class='popUpOkCancel' href='#' onclick='" +
+								newWindowJS + " event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();'" +
+								"style='color:rgb(44, 44, 187);' " +
+								"title='Go-to Link Table in New Window' " +
+								">" +
+								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Window</b></a>";
+						} //end add link to open table in new window
+
+						{ //add link to open table in new browser tab
+							let newTabJS = "DesktopContent.openNewBrowserTab(" +
+								"\"Configure\",\"\",\"" +
+								newWindowStr + "\",false);";
+
+							controlString += " " +
+								"<a class='popUpOkCancel' href='#' onclick='" +
+								newTabJS + " event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();'" +
+								"style='color:rgb(44, 44, 187);' " +
+								"title='Go-to Link Table in New Browser Tab' " +
+								">" +
+								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Tab</b></a>";
+						} //end add link to open table in new browser tab
+						
+
 						controlString += "</div>";
 					}
 					else
@@ -18170,7 +18211,7 @@
 				//	windowName=Code%20Editor&windowSubname=&
 				//	windowUnique=0&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=280#0
 
-				var newwindowJS;
+				var newWindowJS;
 				var newWindowStr;
 
 				newWindowStr = "/WebPath/html/ConfigurationGUI_artdaq.html?" +
@@ -18180,25 +18221,25 @@
 
 				Debug.log("newWindowStr = " + newWindowStr);
 
-				newwindowJS = "DesktopContent.openNewWindow(" +
+				newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"ARTDAQ Config\" /*name*/," +
 						"\"\" /*subname*/,\"" +
 						newWindowStr + "\"," +
 						"false /*unique*/);";
 
-				Debug.log("newwindowJS = " + newwindowJS);
+				Debug.log("newWindowJS = " + newWindowJS);
 
-				menuItemHandlers.push(newwindowJS);
+				menuItemHandlers.push(newWindowJS);
 
-				newwindowJS = "DesktopContent.openNewBrowserTab(" +
+				newWindowJS = "DesktopContent.openNewBrowserTab(" +
 						"\"ARTDAQ Config\" /*name*/," +
 						"\"\" /*subname*/,\"" +
 						newWindowStr + "\"," +
 						"false /*unique*/);";
 
-				Debug.log("newwindowJS = " + newwindowJS);
+				Debug.log("newWindowJS = " + newWindowJS);
 
-				menuItemHandlers.push(newwindowJS);
+				menuItemHandlers.push(newWindowJS);
 
 				SimpleContextMenu.createMenu(
 					menuItems,
