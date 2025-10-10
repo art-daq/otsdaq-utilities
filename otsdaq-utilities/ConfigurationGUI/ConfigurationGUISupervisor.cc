@@ -3363,16 +3363,17 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 	}
 	catch(std::runtime_error& e)
 	{
-		__SUP_SS__ << "Error getting unique field values from path '" << startPath << "' and field list '" << 
-			fieldList << "!'\n\n" << e.what()
-		           << __E__;
+		__SUP_SS__ << "Error getting unique field values from path '" << startPath
+		           << "' and field list '" << fieldList << "!'\n\n"
+		           << e.what() << __E__;
 		__SUP_COUT_ERR__ << "\n" << ss.str();
 		xmlOut.addTextElementToData("Error", ss.str());
 	}
 	catch(...)
 	{
-		__SUP_SS__ << "Error getting unique field values from path '" << startPath << "' and field list '" << 
-			fieldList << "!'\n\n" << __E__;
+		__SUP_SS__ << "Error getting unique field values from path '" << startPath
+		           << "' and field list '" << fieldList << "!'\n\n"
+		           << __E__;
 		try
 		{
 			throw;
