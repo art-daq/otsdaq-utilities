@@ -1027,8 +1027,14 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 	catch(const std::runtime_error& e)
 	{
 		__SS__ << "Exception caught during Logbook ECL connection: " << e.what();
-		ss << "\n\nIf the problem persists, you can turn off ECL communication by clearing the environment variable ECL_USER_NAME (e.g. " <<
-			"export ECL_USER_NAME="") at the terminal and restarting ots, or you can permanently disable the requirement by editing the Configuration Tree and setting Gateway Supervisor --> State Machine --> RequireUserLogInputOnConfigureTransition/RequireUserLogInputOnRunTransition = false.";
+		ss << "\n\nIf the problem persists, you can turn off ECL communication by "
+		      "clearing the environment variable ECL_USER_NAME (e.g. "
+		   << "export ECL_USER_NAME="
+		      ") at the terminal and restarting ots, or you can permanently disable the "
+		      "requirement by editing the Configuration Tree and setting Gateway "
+		      "Supervisor --> State Machine --> "
+		      "RequireUserLogInputOnConfigureTransition/"
+		      "RequireUserLogInputOnRunTransition = false.";
 		__COUT_ERR__ << ss.str();
 		retStr = ss.str();
 	}

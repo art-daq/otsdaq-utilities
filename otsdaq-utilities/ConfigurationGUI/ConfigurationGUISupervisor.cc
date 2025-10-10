@@ -1952,9 +1952,19 @@ try
 			__SUP_COUTT__ << "Loading " << activeGroup.first << " "
 			              << activeGroup.second.first << "(" << activeGroup.second.second
 			              << ")..." << __E__;
-			cfgMgr->loadTableGroup(
-			    activeGroup.second.first, activeGroup.second.second, false /*doActivate*/
-			);
+			try
+			{
+				cfgMgr->loadTableGroup(activeGroup.second.first,
+				                       activeGroup.second.second,
+				                       false /*doActivate*/
+				);
+			}
+			catch(...)  //ignore errors
+			{
+				__SUP_COUT__ << "Ignoring errors while setting up active tables for "
+				             << activeGroup.second.first << "("
+				             << activeGroup.second.second << ")..." << __E__;
+			}
 		}  //end load tables as active, but do not activate groups
 	}
 	__SUP_COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
