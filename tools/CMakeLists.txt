@@ -12,7 +12,7 @@ cet_script(ALWAYS_COPY
 	# ots_create_repo_from_demo.sh #Deprecated
 	# ots_get_and_fix_repo.sh #Deprecated
 	# ots_add_qualifiers_to_repo_product_deps.sh #Deprecated
-	# displayVersionsAndQualifiers.sh #Deprecated
+	displayVersionsAndQualifiers.sh #Deprecated
 )
 
 install_headers()
