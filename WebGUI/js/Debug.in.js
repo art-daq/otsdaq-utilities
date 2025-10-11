@@ -346,7 +346,11 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 					returnStr = localCallOutDebugLocales(
 						source + str);
 					if(returnStr) //in case of failure, leave alone
-						str = returnStr;
+						str = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
+							"<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
+									"</div>").replace(/<TAB>/g,
+											"<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
+													"</div>");
 					Debug.errorPop(str,num);
 				}
 				Debug.lastLogger = ""; //clear for next

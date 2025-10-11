@@ -520,7 +520,7 @@
 		//	- Allow to select a System Config to edit or start anew (all table versions are dont cares)
 		//		- Be able to edit the versions associated with the System Config while
 		//		viewing other System Configs for inspiration
-		//	- Allow to select a table to edit or start anew (from mock-up)
+		//	- Allow to select a table to edit or start anew (from mockup)
 		//		- Be able to edit a table, and view others to copy chunks from them
 		//
 
@@ -2667,7 +2667,7 @@
 
 			var cfgVersionStr;
 			var cfgNameStr = "";
-			var replaceScreenJS, newWindowStr, newwindowJS, newtabJS;
+			var replaceScreenJS, newWindowStr, newWindowJS, newTabJS;
 			var groupMemberNavContextMenuItemHandlers = [];
 
 			str += "<table cellpadding='0' cellspacing='0' border='0' style='float:left;'>";
@@ -2731,16 +2731,16 @@
 					newWindowStr = location.pathname +
 						location.search +
 						"&newWindowOps=" + newWindowStr;
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
-					groupMemberNavContextMenuItemHandlers.push(newwindowJS);
+					groupMemberNavContextMenuItemHandlers.push(newWindowJS);
 
 					//make new tab link
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
-					groupMemberNavContextMenuItemHandlers.push(newtabJS);
+					groupMemberNavContextMenuItemHandlers.push(newTabJS);
 
 					str += //start member Link div
 						"<div class='treeNode-Link' style='float:left;'  " +
@@ -5238,8 +5238,8 @@
 		{
 			var backLinkStr;
 			var onmouseupJS = "";
-			var newwindowJS = "";
-			var newtabJS = "";
+			var newWindowJS = "";
+			var newTabJS = "";
 
 			var DEFAULT_treeNavContextMenuItems = [
 				"Go-to Table View",
@@ -5298,22 +5298,22 @@
 						location.search +
 						"&newWindowOps=" + newWindowStr;
 
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newwindowJS);
+					treeNavContextMenuItemHandlers.push(newWindowJS);
 				}
 
 				//open table-view in new browser tab link
 				{
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"Configure\",\"\",\"" +
 						newWindowStr + "\",false);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 				//open Subset-Configuration in new window link
@@ -5359,7 +5359,7 @@
 
 
 					//DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeHandler) {
-					newwindowJS = "DesktopContent.openNewWindow(" +
+					newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"\",\"" +
 						//windowPath
@@ -5367,19 +5367,19 @@
 						"\",false /*unique*/);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newwindowJS);
+					treeNavContextMenuItemHandlers.push(newWindowJS);
 				}
 
 				//open Subset-Configuration in new browser tab link
 				{
 					//DesktopContent.openNewBrowserTab = function(name,subname,windowPath,unique)
-					newtabJS = "DesktopContent.openNewBrowserTab(" +
+					newTabJS = "DesktopContent.openNewBrowserTab(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"\",\"" +
 						newWindowStr + "\",false /*unique*/);";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 				//add Subset-Configuration desktop icon
@@ -5388,7 +5388,7 @@
 						//	folderPath, unique, permissionString,
 						//	imageURL, windowContentURL, linkedApp, parameters)
 
-					newtabJS = "DesktopContent.addDesktopIcon(" +
+					newTabJS = "DesktopContent.addDesktopIcon(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"CfgSub\",\"Config Subsets\"" +
 						", false /*unique*/" +
@@ -5405,7 +5405,7 @@
 						");";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
-					treeNavContextMenuItemHandlers.push(newtabJS);
+					treeNavContextMenuItemHandlers.push(newTabJS);
 				}
 
 
@@ -6533,21 +6533,27 @@
 						DesktopContent.getXMLValue(req, "AttemptedGroupActivationName") +
 						" (" +
 						DesktopContent.getXMLValue(req, "AttemptedGroupActivationKey") +
-						").'</b>" + 
-						"\n\nThe <b>previous</b> active groups were as follows:\n" + oldStr + 
-						"\n\nThe <b>new</b> active groups are as follows:\n" + str);
+						").'</b>" +
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 				}
 				else if (!_firstTimeSilentActive && //only popup after the first time
 					thereIsAChange)					//and if change
 				{
 					if (thereIsAnEmpty) //may have been a deactivating (due to error?)
 						Debug.warn("There was a change to the active groups (a group was deactivated)! If this was unexpected, check the System View for more info, or contact system admins." + 
-						"\n\nThe <b>previous</b> active groups were as follows:\n" + oldStr + 
-						"\n\nThe <b>new</b> active groups are as follows:\n" + str);
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 					else //must have been an activation
 						Debug.warn("There was a change to the active groups! If this was unexpected, check the System View for more info, or contact system admins." + 
-						"\n\nThe <b>previous</b> active groups were as follows:\n" + oldStr + 
-						"\n\nThe <b>new</b> active groups are as follows:\n" + str);
+						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
+							oldStr +
+						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
+							str + "</INDENT></INDENT>");
 
 					//Debug.log(_OTS_RELAUNCH_STR,Debug.INFO_PRIORITY);
 				}
@@ -6898,6 +6904,7 @@
 			str += "</td><td colspan='2' style='white-space: nowrap;'>";
 			var title = "Select the version in the drop-downs for all tables based on this selection.";
 			str += "<a onclick='versionsForCreateTableGroup(0); return false;' title='" + title + "'>Latest</a> | " +
+				"<a onclick='versionsForCreateTableGroup(3); return false;' title='" + title + "'>Mockups</a> | " +
 				"<a onclick='versionsForCreateTableGroup(1); return false;' title='" + title + "'>Defaults</a> | " +
 				"<a onclick='popUpVersionAliasGroupEditorForm(); return false;' title='" + title + "'>Other Alias</a>";
 			str += "</td>";
@@ -7095,9 +7102,8 @@
 				if (els[el].checked)
 				{
 					sel = document.getElementById("select-" + els[el].value);
-					if (sel.options.length)
+					if (sel.options.length && sel.selectedIndex >= 0)
 					{
-						if (sel.selectedIndex < 0) sel.selectedIndex = 0; //default to default
 						Debug.log("table=" + els[el].value + " version=" +
 							sel.options[sel.selectedIndex].value);
 						tableMap += els[el].value + "," + sel.options[sel.selectedIndex].value + ",";
@@ -7132,9 +7138,11 @@
 
 		//==============================================================================
 		//versionsForCreateTableGroup ~
-		//0 is latest, 1 is default, 2 is otherAlias
+		//0 is latest, 1 is default, 2 is otherAlias, 3 is mockups
 		function versionsForCreateTableGroup(i, alias)
 		{
+			Debug.log("versionsForCreateTableGroup()",i,alias);
+
 			var els = document.getElementsByClassName("memberTableCheckbox");
 			var sel, options;
 			switch (i)
@@ -7209,6 +7217,14 @@
 							options[defaultToSel].selected = true;
 					}
 
+					break;
+				case 3: //mockups
+					for (var el = 0; el < els.length; ++el)
+					{
+						//Debug.log(els[el].value);
+						sel = document.getElementById("select-" + els[el].value);
+						sel.value = "";
+					}
 					break;
 				default:
 					Debug.err("Impossible! Should never happen!! Alert system admins.");
@@ -9940,12 +9956,12 @@
 					{
 						var backLinkStr = "setupSpecificTable(\\\"" +
 								_currentTableName + "\\\",\\\"" +
-							_version + "\\\");";
+								_version + "\\\");";
 
 						var w = _OK_CANCEL_DIALOG_STR.indexOf("width:95px;");
 						controlString = _OK_CANCEL_DIALOG_STR.substr(0, w);
 						w += ("width:95px;").length;
-						controlString += "width:150px;"; //needs to be wider
+						controlString += "width:260px;"; //needs to be wider
 						controlString += _OK_CANCEL_DIALOG_STR.substr(w,
 							_OK_CANCEL_DIALOG_STR.length - 6 - w);//remove closing </div>
 						controlString += " | " +
@@ -9957,6 +9973,47 @@
 							"title='Go-to Link Table' " +
 							">" +
 							"<b style='color:rgb(44, 44, 187);font-size: 16px;'>Goto</b></a>";
+
+						var newWindowStr = "setupSpecificTable(\"" +
+							_editingCellElOldValue + "\",\"\")";
+						newWindowStr = newWindowStr.replace(/"/g, "\\\"");
+
+						newWindowStr = location.pathname +
+							location.search +
+							"&newWindowOps=" + newWindowStr;
+
+						{ //add link to open table in new window
+
+							let newWindowJS = "DesktopContent.openNewWindow(" +
+								"\"Configure\",\"\",\"" +
+								newWindowStr + "\",false);";
+
+							controlString += " " +
+								"<a class='popUpOkCancel' href='#' onclick='" +
+								newWindowJS + " event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();'" +
+								"style='color:rgb(44, 44, 187);' " +
+								"title='Go-to Link Table in New Window' " +
+								">" +
+								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Window</b></a>";
+						} //end add link to open table in new window
+
+						{ //add link to open table in new browser tab
+							let newTabJS = "DesktopContent.openNewBrowserTab(" +
+								"\"Configure\",\"\",\"" +
+								newWindowStr + "\",false);";
+
+							controlString += " " +
+								"<a class='popUpOkCancel' href='#' onclick='" +
+								newTabJS + " event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();'" +
+								"style='color:rgb(44, 44, 187);' " +
+								"title='Go-to Link Table in New Browser Tab' " +
+								">" +
+								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Tab</b></a>";
+						} //end add link to open table in new browser tab
+						
+
 						controlString += "</div>";
 					}
 					else
@@ -17824,9 +17881,8 @@
 					if (els[el].checked)
 					{
 						sel = document.getElementById("select-" + els[el].value);
-						if (sel.options.length)
+						if (sel.options.length && sel.selectedIndex >= 0)
 						{
-							if (sel.selectedIndex < 0) sel.selectedIndex = 0; //default to default
 							Debug.log("table=" + els[el].value + " version=" +
 								sel.options[sel.selectedIndex].value);
 							tableMap += els[el].value + "," + sel.options[sel.selectedIndex].value + ",";
@@ -18155,7 +18211,7 @@
 				//	windowName=Code%20Editor&windowSubname=&
 				//	windowUnique=0&windowPath=/WebPath/html/ConfigurationGUI_artdaq.html?urn=280#0
 
-				var newwindowJS;
+				var newWindowJS;
 				var newWindowStr;
 
 				newWindowStr = "/WebPath/html/ConfigurationGUI_artdaq.html?" +
@@ -18165,25 +18221,25 @@
 
 				Debug.log("newWindowStr = " + newWindowStr);
 
-				newwindowJS = "DesktopContent.openNewWindow(" +
+				newWindowJS = "DesktopContent.openNewWindow(" +
 						"\"ARTDAQ Config\" /*name*/," +
 						"\"\" /*subname*/,\"" +
 						newWindowStr + "\"," +
 						"false /*unique*/);";
 
-				Debug.log("newwindowJS = " + newwindowJS);
+				Debug.log("newWindowJS = " + newWindowJS);
 
-				menuItemHandlers.push(newwindowJS);
+				menuItemHandlers.push(newWindowJS);
 
-				newwindowJS = "DesktopContent.openNewBrowserTab(" +
+				newWindowJS = "DesktopContent.openNewBrowserTab(" +
 						"\"ARTDAQ Config\" /*name*/," +
 						"\"\" /*subname*/,\"" +
 						newWindowStr + "\"," +
 						"false /*unique*/);";
 
-				Debug.log("newwindowJS = " + newwindowJS);
+				Debug.log("newWindowJS = " + newWindowJS);
 
-				menuItemHandlers.push(newwindowJS);
+				menuItemHandlers.push(newWindowJS);
 
 				SimpleContextMenu.createMenu(
 					menuItems,

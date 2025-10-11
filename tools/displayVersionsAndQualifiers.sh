@@ -8,6 +8,37 @@ function displayVersionsAndQualifiers
 	#this is TODO for the new Spack world:
 	OTS_ENV=`ls -l -rta | grep tdaq-v | rev | cut -d '/' -f1 | rev | head -1`
 	echo -e "displayVersionsAndQualifiers.sh:${LINENO} |  \t OTS_ENV=$OTS_ENV"
+
+	# consider using...
+
+
+
+	# When you're in an environment, it won't print packages which aren't in the environment tree (so if you have otsdaq checked out, it won't show up)
+	# spack list --format version_json otsdaq will list the tags Spack knows about
+	# [
+	#   {"name": "otsdaq",
+	#    "latest_version": "v3_02_00",
+	#    "versions": ["develop", "v3_02_00", "v3_01_00", "v3_00_00", "v2_10_00", "v2_09_01", "v2_09_00", "v2_08_02", "v2_08_01", "v2_08_00", "v2_07_00", "v2_06_11", "v2_06_10", "v2_06_09", "v2_06_08", "v2_06_07"],
+	#    "homepage": "https://cdcvs.fnal.gov/redmine/projects/artdaq/wiki",
+	#    "file": "https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/otsdaq/package.py",
+	#    "maintainers": [],
+
+	# and how do i know which version I am on? which tag the products are setup for
+	# cd srcs/otsdaq;git describe --tags
+	# v3_03_00-36-g8ed8c96f
+
+
+	# If you didn't have packages checked out across bundles, you'd be able to see the bundle version...
+	# in your spack find output, you can see that you have art-suite@s132, but the artdaq and otsdaq bundles
+	# are part of your srcs build, so you can't programmatically see what versions those bundles are at.
+	# (It doesn't matter, since you're basically building develop)
+
+	# Someone that only has mu2e packages checked out would have the otsdaq-suite and artdaq-suite bundles in
+	# their spack find output
+
+	# artdaq-spack and mu2e-spack are both generally safe to pull
+
+	# fnal_art and scd_recipes should be left alone
 	return
 
 	# this is for the old MRB world
