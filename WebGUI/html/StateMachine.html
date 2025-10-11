@@ -326,8 +326,8 @@
 			var _HUD_H = 54;
 
 
-			var _PARAMETER_SETUP_MIN_HEIGHT = 25;
-			var _PARAMETER_SETUP_MAX_HEIGHT = 80;
+			var _PARAMETER_SETUP_MIN_HEIGHT = 45;
+			var _PARAMETER_SETUP_MAX_HEIGHT = 100;
 			var _PARAMETER_SETUP_WIDTH = 150;
 
 			var _EXTRAS_WIDTH = 220;
@@ -463,6 +463,7 @@
 					Debug.log("_fsmName=" + _fsmName);
 				else
 					_fsmName = "";
+
 
 				try	{ _fsmWindowName = DesktopContent.getDesktopWindowTitle(); }
 				catch(e) {;} //ignore any errors (like cross-origin)
@@ -608,7 +609,7 @@
 				if (!req) //first time
 				{
 					_transParamsHtmlStr = //clear
-					"<a href='Javascript:toggleConfigurationAliasSelect();' title='Toggle hide/show of Configuration Alias selection pane'>Config Alias</a><br><br>";
+					'<div style="font-size:smaller;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-bottom: 5px;">FSM: ' + _fsmName + "</div><a href='Javascript:toggleConfigurationAliasSelect();' title='Toggle hide/show of Configuration Alias selection pane'>Config Alias</a><br><br>";
 
 					_parameterInitCount = 0;
 
