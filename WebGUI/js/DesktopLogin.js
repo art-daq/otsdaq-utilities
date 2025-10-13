@@ -306,11 +306,12 @@ else {
 			{
 				Debug.log("maintaining cookie code = " + _cookieCode);
 
-				var exdate = new Date();
-				exdate.setDate(exdate.getDate() + _DEFAULT_COOKIE_DURATION_DAYS);
-				var c_value;
-				c_value = escape(code) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
-				document.cookie= _cookieCodeStr + "=" + c_value;
+				//var exdate = new Date();
+				//exdate.setDate(exdate.getDate() + _DEFAULT_COOKIE_DURATION_DAYS);
+				//var c_value;
+				//c_value = escape(code) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
+				//document.cookie= _cookieCodeStr + "=" + c_value;
+				localStorage.setItem(_cookieCodeStr, code);
 
 				return;
 			}
@@ -319,13 +320,15 @@ else {
 			if(!_system_blackout && _cookieCode == code) return; //unchanged do nothing (unless coming out of blackout)
 
 			_cookieCode = code;	//set local cookie code values
-			var exdate = new Date();
-			exdate.setDate(exdate.getDate() + _DEFAULT_COOKIE_DURATION_DAYS);
-			var c_value;
-			c_value = escape(code) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
-			document.cookie= _cookieCodeStr + "=" + c_value;
-			c_value = escape(_user) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
-			document.cookie= _cookieUserStr + "=" + c_value;
+			//var exdate = new Date();
+			//exdate.setDate(exdate.getDate() + _DEFAULT_COOKIE_DURATION_DAYS);
+			//var c_value;
+			//c_value = escape(code) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
+			//document.cookie= _cookieCodeStr + "=" + c_value;
+			localStorage.setItem(_cookieCodeStr, code);
+			//c_value = escape(_user) + ((_DEFAULT_COOKIE_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
+			//document.cookie= _cookieUserStr + "=" + c_value;
+                        localStorage.setItem(_cookieUserStr, _user);
 
 			//Debug.log("set cookie");
 			//var ccdiv = document.getElementById("DesktopContent-cookieCodeMailbox");
@@ -340,17 +343,18 @@ else {
 			// get login cookie
 		var _getCookie = function(c_name)
 		{
-			var i,x,y,ARRcookies=document.cookie.split(";");
-			for (i=0;i<ARRcookies.length;i++)
-			{
-				x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-				y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-				x=x.replace(/^\s+|\s+$/g,"");
-				if (x==c_name)
-				{
-					return unescape(y);
-				}
-			}
+			//var i,x,y,ARRcookies=document.cookie.split(";");
+			//for (i=0;i<ARRcookies.length;i++)
+			//{
+			//	x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+			//	y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+			//	x=x.replace(/^\s+|\s+$/g,"");
+			//	if (x==c_name)
+			//	{
+			//		return unescape(y);
+			//	}
+			//}
+			return localStorage.getItem(c_name);
 		} //end _getCookie()
 
 		//==============================================================================
@@ -360,6 +364,9 @@ else {
 		{
 			_cookieCode = 0;
 			Debug.log("Delete cookies",Debug.LOW_PRIORITY);
+			localStorage.removeItem(_cookieCodeStr);
+			localStorage.removeItem(_cookieUserStr);
+                        // legacy, just in case
 			var c_value;
 			c_value = "; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 			document.cookie= _cookieCodeStr + "=" + c_value;
@@ -752,16 +759,19 @@ else {
 		//==============================================================================
 		var _saveUsernameCookie = function () {
 			Debug.log("Desktop _saveUsernameCookie _user " + _user);
-			var exdate = new Date();
-			exdate.setDate(exdate.getDate() + _DEFAULT_REMEMBER_ME_DURATION_DAYS);
-			var c_value;
-			c_value = escape(_user) + ((_DEFAULT_REMEMBER_ME_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
-			document.cookie= _cookieRememberMeStr + "=" + c_value;
+			//var exdate = new Date();
+			//exdate.setDate(exdate.getDate() + _DEFAULT_REMEMBER_ME_DURATION_DAYS);
+			//var c_value;
+			//c_value = escape(_user) + ((_DEFAULT_REMEMBER_ME_DURATION_DAYS==null) ? "" : "; expires="+exdate.toUTCString());
+			//document.cookie= _cookieRememberMeStr + "=" + c_value;
+			localStorage.setItem(_cookieRememberMeStr, _user);
 		}
 
 		//==============================================================================
 		var _deleteUsernameCookie = function () {
 			Debug.log("Desktop _deleteUsernameCookie _user " + _user);
+			localStorage.removeItem(_cookieRememberMeStr);
+			// legcacy, just in case
 			var c_value;
 			c_value = "; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 			document.cookie= _cookieRememberMeStr + "=" + c_value;
