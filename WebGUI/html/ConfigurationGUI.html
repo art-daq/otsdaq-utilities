@@ -48,13 +48,13 @@
 		//setupTableGroupTreeView(tableGroupName,tableGroupKey,backLinkStr)
 		//treeViewHandler(req,parentId,errStr)
 		//doCaptureTreeViewExpand()
-		//doRestoreNextTreeViewExpand()
+		//doRestoreNextTreeViewExpand(scrollTarget)
 		//recursiveDrawTree(parent,depth,path,parentIdString)
 		//getTreeViewTableStrings(tableLinkName,isLink,linkId,childLinkIndex,isGroupLink)
 		//hardRefreshTreeView()
 		//refreshTreeView();
 		//applyTreeFilter(filter,reapplyFilter,infoWasToggled)
-		//toggleTreeChildren(depth,uid,setVal)
+		//toggleTreeChildren(depth,uid,setVal,doNext, scrollTargetPath)
 		//expandTreeChildrenDepth()
 		//hideTreeChildrenDepth()
 		//createTreeViewMenu(event)
@@ -649,6 +649,7 @@
 		var treeEditingTargetUID_ = "";
 		var treeEditingTargetColumn_ = "";
 		var treeEditingNodeParentIdString_ = "";
+		var treeEditingScrollTargetPath_ = ""; //used by doRestoreNextTreeViewExpand/toggleTreeChildren to focus on a node after a tree refresh (or intense tree activity)
 		var treeEditingNodeDepth_ = -1;
 		var treeEditingNodeIdString_ = "";
 		var treeEditingNodeInitValue_ = "";
@@ -3991,6 +3992,12 @@
 
 				//target is children area
 				el = document.getElementById("treeNode-ChildrenOf-" + parentId);
+				if(!el)
+				{
+					Debug.log("Parent is no longer available? ID =",parentId);
+					return;
+				}
+
 				el.style.display = "block"; //make sure it is shown
 
 				//change toggle to "-"
@@ -4437,6 +4444,8 @@
 				{
 					treeViewExpandedCapture_.push([
 							document.getElementById("treeNode-path-" + idString).innerText,
+							//take Value node here, and not NodeName, to accomodate depth 0 and non-0,.. 
+							//	if a GroupID has changed, then the value will mismatch, but not expanding it will be an indicator to the user anyway
 							document.getElementById("treeNode-Value-" + idString).innerText
 							 ]);
 					Debug.log("Found shown ",
@@ -4449,13 +4458,30 @@
 
 		//==============================================================================
 		//doRestoreNext ~
-		function doRestoreNextTreeViewExpand()
+		//	Scroll to scrollTarget after all nodes expanded
+		function doRestoreNextTreeViewExpand(scrollTarget)
 		{
 			//expand them in order
 
 			if(treeViewExpandedCapture_.length) //trigger chain reaction
 			{
-				Debug.log("Try ",treeViewExpandedCapture_[0]);
+				Debug.log("Try ",treeViewExpandedCapture_[0], scrollTarget);
+
+				//convert scrollTarget ID to path, so target can be found after refresh by toggleTreeChildren()
+				if(scrollTarget && scrollTarget.length)
+				{
+					//convert parent id to parent path/value, because parent ID is lost for depth 2+ when new nodes are refreshed
+					let scrollTargetPathEl = document.getElementById("treeNode-path-" + scrollTarget);
+					let scrollTargetValueEl = document.getElementById("treeNode-nodeName-" + scrollTarget);
+					if(scrollTargetPathEl && scrollTargetValueEl) //redefine scrollTarget
+					{
+						treeEditingScrollTargetPath_ = scrollTargetPathEl.innerText +
+							scrollTargetValueEl.innerText;
+					}
+					Debug.logv({treeEditingScrollTargetPath_});
+					scrollTarget = ""; //clear to avoid recursively redoing
+				}
+
 				//find matching path
 
 				var allNodes = document.getElementsByClassName("treeNode-Expander");
@@ -4471,19 +4497,21 @@
 							document.getElementById("treeNode-Value-" + idString).innerText ==
 									treeViewExpandedCapture_[0][1])
 					{
-
 						try
 						{
 							toggleTreeChildren(
 									params[0] | 0, 		//make integer
 									params[1] | 0,
 									true,
-									true /*doNext*/);
+									true /*doNext*/,
+									treeEditingScrollTargetPath_
+								);
 						}
 						catch(e){break;} //ignore error
 
 						Debug.log("Completed ",treeViewExpandedCapture_[0]);
 						treeViewExpandedCapture_.splice(0,1);
+
 						return;
 					}
 				}
@@ -4491,7 +4519,7 @@
 				//if here, can not find current node.. so remove and proceed
 				Debug.log("Not found ",treeViewExpandedCapture_[0]);
 				treeViewExpandedCapture_.splice(0,1);
-				doRestoreNextTreeViewExpand();
+				doRestoreNextTreeViewExpand(scrollTarget);
 			}
 
 		} //end doRestoreNextTreeViewExpand()
@@ -5475,6 +5503,7 @@
 
 			//other globals are unused
 			treeEditingNodeParentIdString_ = "";
+			treeEditingScrollTargetPath_ = "";
 			treeEditingTargetUID_ = "";
 			treeEditingTargetColumn_ = "";
 			treeEditingNodeInitValue_ = "1"; //just something so editTreeNodeOK proceeds
@@ -5496,6 +5525,7 @@
 			var idString = depth + "-" + uid;
 			treeEditingNodeDepth_ = depth;
 			treeEditingNodeIdString_ = idString;
+			treeEditingScrollTargetPath_ = "";
 
 			//Debug.log("handleTreeNodeClick editClick " + editClick);
 
@@ -6135,7 +6165,8 @@
 		// return true if action taken, else false
 		//
 		// if doNext, then always call treeViewHandler()
-		function toggleTreeChildren(depth, uid, setVal, doNext)
+		// if scrollTargetPath, update the parent ID if path found, and scroll to parent ID 
+		function toggleTreeChildren(depth, uid, setVal, doNext, scrollTargetPath)
 		{
 			if(doNext) Debug.log("Do Next",depth,uid,setVal,_mouseIsSelecting);
 			if (_mouseIsSelecting) return;
@@ -6221,7 +6252,26 @@
 					"&depth=1",
 					"startPath=" + path + nodeName + "/" +
 					"&modifiedTables=" + modifiedTables,
-					treeViewHandler,
+					function(req, parentId, err)
+					{
+						treeViewHandler(req, parentId, err);
+
+						if(scrollTargetPath && scrollTargetPath.length)
+						{
+							Debug.log("Scrolling to target", scrollTargetPath, path + nodeName);
+
+							if(path + nodeName == scrollTargetPath)
+							{
+								Debug.log("Scroll target now!");
+								treeEditingNodeParentIdString_ = parentId;
+							}
+
+							//jump to entire node, to highlight entire expansion
+							jump("treeNode-" + treeEditingNodeParentIdString_);
+							//jump to value to scroll to top of node (to see diff)
+							jump("treeNode-Value-" + treeEditingNodeParentIdString_);
+						}
+					}, //end getTreeView handler
 					idString,
 					0, true); //progressHandler, callHandlerOnErr
 				return true; //do not do localReturn!, the request handles it
@@ -12237,6 +12287,10 @@
 								editCellCancel();
 								return;
 							}
+
+							//add tree save buttons
+							treeHasChanged();
+
 							//change target edit tree node
 							localEditTreeNodeOKRequestsComplete(tableIndex, newValue);
 
@@ -12247,8 +12301,6 @@
 							//refresh versions based on treeMemberVersions_ fix all the table and table-link versions
 							refreshTreeTableVersions();
 
-							//add tree save buttons
-							treeHasChanged();
 
 							//finish special handling of new row
 							if (treeEditingNodeType_ == "table-newRow")
@@ -12463,6 +12515,8 @@
 							//check if parent is now empty in the handler treeViewHandler()
 							toggleTreeChildren(treeEditingNodeParentIdString_.split('-')[0],
 								treeEditingNodeParentIdString_.split('-')[1], true);
+
+							Debug.log("treeEditingNodeParentIdString_ " + treeEditingNodeParentIdString_);
 						}
 						else //new way, keep expansion settings
 						{
@@ -12473,10 +12527,11 @@
 								treeEditingNodeParentIdString_.split('-')[1], false);
 							pel.innerHTML = "";
 
-							doRestoreNextTreeViewExpand();
+							doRestoreNextTreeViewExpand(treeEditingNodeParentIdString_ /* scrollTarget */);
+							//the doRestoreNextTreeViewExpand will destroy the parent ID string (makes a new one for depth 2+)
+							//but will be fixed by scroll target on new node
 						}
 
-						Debug.log("treeEditingNodeParentIdString_ " + treeEditingNodeParentIdString_);
 					}
 					else if (treeEditingNodeType_.indexOf("link-") == 0)
 					{
@@ -18109,10 +18164,17 @@
 
 		//==============================================================================
 		//jump ~~
-		function jump(anchor)
+		function jump(anchor, doNotHighlight)
 		{
 			Debug.log("jump = " + anchor);
-			DesktopContent.scrollIntoViewY(anchor, true);
+			try
+			{
+				DesktopContent.scrollIntoViewY(anchor, !doNotHighlight /* highlight */);
+			}
+			catch(e)
+			{
+				Debug.log("Error jumping to anchor",anchor,e);
+			}
 		} //end jump()
 
 		//==============================================================================

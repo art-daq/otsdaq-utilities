@@ -47,6 +47,27 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--de
 	# --warn is used by ots script to warn users that there are uncommitted changes in srcs/
 	# warn usage to display only stderr: UpdateOTS.sh --warn 2>&1 >/dev/null &
 	echo -e "UpdateOTS.sh:${LINENO}  "
+
+
+	#copy tutorial launching scripts
+	echo
+	echo -e "UpdateOTS.sh:${LINENO}  \t updating tutorial launch scripts..."
+	chmod 755 $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #make sure permissions allow deleting
+	chmod 755 $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #make sure permissions allow deleting
+	chmod 755 $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #make sure permissions allow deleting
+	timeout 1 rm $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
+	timeout 1 rm $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
+	timeout 1 rm $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
+	# echo -e "UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
+	#cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh
+	wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
+	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh #for safety, prevent accidental execution by users
+
+	rm $OTS_SOURCE/../reset_ots_artdaq_tutorial.sh &>/dev/null 2>&1 #hide output
+	#now there is only one reset_tutorial script (that includes the artdaq tutorial), so cleanup old systems and do not download script
+
+	echo -e "UpdateOTS.sh:${LINENO}  "
+
 	exit
 fi
 
@@ -628,23 +649,6 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 	echo -e "UpdateOTS.sh:${LINENO}  \t Update log start:" > $UPDATE_LOG_PATH
 
 	#updateUserData #do not call function during git pulls, have user explicitly call --tables to avoid unexepcted table changes
-
-	#copy tutorial launching scripts
-	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t updating tutorial launch scripts..."
-	chmod 755 $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #make sure permissions allow deleting
-	chmod 755 $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #make sure permissions allow deleting
-	chmod 755 $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #make sure permissions allow deleting
-	timeout 1 rm $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
-	timeout 1 rm $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
-	timeout 1 rm $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
-	# echo -e "UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
-	#cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh
-	wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
-	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh #for safety, prevent accidental execution by users
-
-	rm $OTS_SOURCE/../reset_ots_artdaq_tutorial.sh &>/dev/null 2>&1 #hide output
-	#now there is only one reset_tutorial script (that includes the artdaq tutorial), so cleanup old systems and do not download script
 
 
 
