@@ -7504,14 +7504,16 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 
 			if(groupKey != sharedGroupInfoPtrs[i]->latestKey_.toString())
 			{
-				__SUP_SS__ << "Error loading group information for the group alias '" << aliasNodePair.first
-				 	<< "' mapping to group '" << groupName << "(" << groupKey << ")" << __E__;
+				__SUP_SS__ << "Error loading group information for the group alias '"
+				           << aliasNodePair.first << "' mapping to group '" << groupName
+				           << "(" << groupKey << ")" << __E__;
 				__SUP_SS_THROW__;
 			}
 
 			xmlOut.addTextElementToData("GroupAlias", aliasNodePair.first);
 			xmlOut.addTextElementToData("GroupName", groupName);
-			xmlOut.addTextElementToData("GroupKey", sharedGroupInfoPtrs[i]->latestKey_.toString());
+			xmlOut.addTextElementToData("GroupKey",
+			                            sharedGroupInfoPtrs[i]->latestKey_.toString());
 			xmlOut.addTextElementToData(
 			    "AliasComment",
 			    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
@@ -7731,8 +7733,8 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 
 	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 
-	std::string   groupName;
-	std::string   groupString, groupTypeString, groupComment, groupCreationTime,
+	std::string groupName;
+	std::string groupString, groupTypeString, groupComment, groupCreationTime,
 	    groupAuthor;
 	for(auto& groupInfo : allGroupInfo)
 	{
@@ -7740,7 +7742,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 
 		//get group info and force update of groupKeys from DB Interface cache if possible
 		cfgMgr->getGroupInfo(groupName, true /* attemptToReloadKeys */);
-		
+
 		if(groupInfo.second.keys_.size() == 0)
 		{
 			__SUP_COUT__ << "Group name '" << groupName
@@ -7749,7 +7751,8 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		}
 
 		xmlOut.dataSs_ << "<TableGroupName value='" << groupName << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupKey value='" << groupInfo.second.latestKey_ << "'/>" << __E__;
+		xmlOut.dataSs_ << "<TableGroupKey value='" << groupInfo.second.latestKey_ << "'/>"
+		               << __E__;
 
 		// trusting the cache!
 		xmlOut.dataSs_ << "<TableGroupType value='"
@@ -7852,7 +7855,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				               << "'/>" << __E__;
 				xmlOut.dataSs_ << "<TableGroupCreationTime value='"
 				               << ""
-				               << "'/>" << __E__;				
+				               << "'/>" << __E__;
 			}
 
 			if(returnMembers)
