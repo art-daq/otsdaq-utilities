@@ -7501,9 +7501,17 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 		{
 			groupName = aliasNodePair.second.getNode("GroupName").getValueAsString();
 			groupKey  = aliasNodePair.second.getNode("GroupKey").getValueAsString();
+
+			if(groupKey != sharedGroupInfoPtrs[i]->latestKey_.toString())
+			{
+				__SUP_SS__ << "Error loading group information for the group alias '" << aliasNodePair.first
+				 	<< "' mapping to group '" << groupName << "(" << groupKey << ")" << __E__;
+				__SUP_SS_THROW__;
+			}
+
 			xmlOut.addTextElementToData("GroupAlias", aliasNodePair.first);
 			xmlOut.addTextElementToData("GroupName", groupName);
-			xmlOut.addTextElementToData("GroupKey", groupKey);
+			xmlOut.addTextElementToData("GroupKey", sharedGroupInfoPtrs[i]->latestKey_.toString());
 			xmlOut.addTextElementToData(
 			    "AliasComment",
 			    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
@@ -7723,13 +7731,16 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 
 	__SUP_COUTT__ << "cfgMgr runtime=" << cfgMgr->runTimeSeconds() << __E__;
 
-	TableGroupKey groupKey;
 	std::string   groupName;
 	std::string   groupString, groupTypeString, groupComment, groupCreationTime,
 	    groupAuthor;
 	for(auto& groupInfo : allGroupInfo)
 	{
 		groupName = groupInfo.first;
+
+		//get group info and force update of groupKeys from DB Interface cache if possible
+		cfgMgr->getGroupInfo(groupName, true /* attemptToReloadKeys */);
+		
 		if(groupInfo.second.keys_.size() == 0)
 		{
 			__SUP_COUT__ << "Group name '" << groupName
@@ -7737,10 +7748,8 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 			continue;
 		}
 
-		groupKey = *(groupInfo.second.keys_.rbegin());
-
 		xmlOut.dataSs_ << "<TableGroupName value='" << groupName << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupKey value='" << groupKey << "'/>" << __E__;
+		xmlOut.dataSs_ << "<TableGroupKey value='" << groupInfo.second.latestKey_ << "'/>" << __E__;
 
 		// trusting the cache!
 		xmlOut.dataSs_ << "<TableGroupType value='"
@@ -7754,19 +7763,6 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		               << groupInfo.second.latestKeyGroupAuthor_ << "'/>" << __E__;
 		xmlOut.dataSs_ << "<TableGroupCreationTime value='"
 		               << groupInfo.second.latestKeyGroupCreationTime_ << "'/>" << __E__;
-
-		// xmlOut.addTextElementToData("TableGroupName", groupName);
-		// xmlOut.addTextElementToData("TableGroupKey", groupKey.toString());
-
-		// // trusting the cache!
-		// xmlOut.addTextElementToData("TableGroupType",
-		//                             groupInfo.second.latestKeyGroupTypeString_);
-		// xmlOut.addTextElementToData("TableGroupComment",
-		//                             groupInfo.second.latestKeyGroupComment_);
-		// xmlOut.addTextElementToData("TableGroupAuthor",
-		//                             groupInfo.second.latestKeyGroupAuthor_);
-		// xmlOut.addTextElementToData("TableGroupCreationTime",
-		//                             groupInfo.second.latestKeyGroupCreationTime_);
 
 		if(returnMembers)
 		{
@@ -7791,7 +7787,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		//	but just empty members (not displayed anyway)
 		for(auto& keyInSet : groupInfo.second.keys_)
 		{
-			if(keyInSet == groupKey)
+			if(keyInSet == groupInfo.second.latestKey_)
 				continue;  // skip the lastest
 
 			xmlOut.dataSs_ << "<TableGroupName value='" << groupName << "'/>" << __E__;
@@ -7847,6 +7843,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				xmlOut.dataSs_ << "<TableGroupType value='"
 				               << groupInfo.second.latestKeyGroupTypeString_ << "'/>"
 				               << __E__;
+				//leave place holder comment,author,time for javascript parsing
 				xmlOut.dataSs_ << "<TableGroupComment value='"
 				               << ""
 				               << "'/>" << __E__;
@@ -7855,16 +7852,7 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				               << "'/>" << __E__;
 				xmlOut.dataSs_ << "<TableGroupCreationTime value='"
 				               << ""
-				               << "'/>" << __E__;
-				// // assume latest in cache reflects others (for speed)
-				// xmlOut.addTextElementToData("TableGroupType",
-				//                             groupInfo.second.latestKeyGroupTypeString_);
-				// xmlOut.addTextElementToData("TableGroupComment",
-				//                             groupInfo.second.latestKeyGroupComment_);
-				// xmlOut.addTextElementToData("TableGroupAuthor",
-				//                             groupInfo.second.latestKeyGroupAuthor_);
-				// xmlOut.addTextElementToData("TableGroupCreationTime",
-				//                             groupInfo.second.latestKeyGroupCreationTime_);
+				               << "'/>" << __E__;				
 			}
 
 			if(returnMembers)
