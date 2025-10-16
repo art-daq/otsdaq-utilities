@@ -1026,7 +1026,11 @@ DesktopContent.showLoading = function(nextFunction)
 		//Debug.log("DesktopContent.showLoading " + DesktopContent._loadBoxRequestStack);
 
 		if(DesktopContent._loadBoxRequestStack++) //box should still be open, add to stack
+		{
+			//re-position to center of page before returning in case scroll has changed
+			localPositionIt();
 			return;
+		}
 
 		//check if DesktopContent._loadBox has been set
 		if(!DesktopContent._loadBox)
@@ -1100,7 +1104,30 @@ DesktopContent.showLoading = function(nextFunction)
 		}
 
 		//have load popup element now, so display it at center of page
+		localPositionIt();
 
+		//===================
+		//setup Loading.. animation
+		var loadBoxStr = "..";
+		var el = document.getElementById(DesktopContent._loadBoxId + "-td");
+		el.innerHTML = "Loading" + loadBoxStr;
+
+		/////////////////////////
+		var loadBoxAnimationFunction = function() {
+			if(loadBoxStr.length > 3) loadBoxStr = "";
+			else
+				loadBoxStr += ".";
+			el.innerHTML = "Loading" + loadBoxStr;
+			//console.log("loading",loadBoxStr.length);
+		};  //end loadBoxAnimationFunction
+
+		window.clearInterval(DesktopContent._loadBoxTimer);
+		DesktopContent._loadBoxTimer = window.setInterval(loadBoxAnimationFunction, 300);
+	} //end localDoIt()
+
+	/////////////
+	function localPositionIt()
+	{
 		var W = 100;
 		var H = 60;
 
@@ -1127,25 +1154,7 @@ DesktopContent.showLoading = function(nextFunction)
 		DesktopContent._loadBox.style.height = (H) + "px";
 
 		DesktopContent._loadBox.style.display = "block";
-
-		//===================
-		//setup Loading.. animation
-		var loadBoxStr = "..";
-		var el = document.getElementById(DesktopContent._loadBoxId + "-td");
-		el.innerHTML = "Loading" + loadBoxStr;
-
-		/////////////////////////
-		var loadBoxAnimationFunction = function() {
-			if(loadBoxStr.length > 3) loadBoxStr = "";
-			else
-				loadBoxStr += ".";
-			el.innerHTML = "Loading" + loadBoxStr;
-			//console.log("loading",loadBoxStr.length);
-		};  //end loadBoxAnimationFunction
-
-		window.clearInterval(DesktopContent._loadBoxTimer);
-		DesktopContent._loadBoxTimer = window.setInterval(loadBoxAnimationFunction, 300);
-	} //end localDoIt()
+	} //end localPositionIt()
 } //end showLoading()
 //=====================================================================================
 DesktopContent._loadBoxHideTimer = 0;
@@ -1185,10 +1194,7 @@ DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 	const el = document.getElementById(targetID) || document.getElementsByName(targetID)[0];
 	
 	if(!el)
-	{
-		Debug.err("Scroll-into-view target element '" + targetID + "' not found!");
-		return;
-	}
+		throw new Error("Scroll-into-view target element '" + targetID + "' not found!");
 
 	el.scrollIntoView({ block: 'nearest', inline: 'start' });
 
@@ -1198,6 +1204,8 @@ DesktopContent.scrollIntoViewY = function(targetID, doHighlight)
 	if(doHighlight)
 	{
 		const bg = el.style.backgroundColor;
+		if(bg == "yellow") return; //avoid multiple highlight effects
+
 		el.style.transition = 'background-color 0.5s ease-in-out';
 		el.style.backgroundColor = 'yellow';
 		setTimeout(() => {
