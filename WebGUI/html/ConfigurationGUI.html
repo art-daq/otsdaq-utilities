@@ -1894,12 +1894,16 @@
 					for (var j = 0; j < msValues.length; ++j)
 						if (msValues[j] == groupName)
 						{
-							//only represent single latest group/key
-							if ((key | 0) > (msKeys[j] | 0))
-							{
-								msKeys[j] = key; //found new latest key
-								indexToLatest[j] = i; //update latest index
-							}
+							// New way: In multi-user system, do not take highest number key as latest
+							//	allow server to define latest based on user activity
+							//	and is defined by the first key in the response
+							// Old way:
+							// 	//only represent single latest group/key
+							// 	if ((key | 0) > (msKeys[j] | 0))
+							// 	{
+							// 		msKeys[j] = key; //found new latest key
+							// 		indexToLatest[j] = i; //update latest index
+							// 	}
 
 							//add to all keys
 							msAllKeys[j] += "-" + key;
@@ -6450,6 +6454,21 @@
 			versionTrackingHandler(req);
 
 			ConfigurationAPI.extractActiveGroups(req); //also capture active groups in API members for future compatibility
+
+			//do not modify global system setting readback if req failed
+			if(!req)
+			{
+				//if system view, refresh it to show active
+				try
+				{
+					if (!systemViewPreventInfiniteLoop_ &&
+							document.getElementById("display").children[0].textContent ==
+						"System View")
+						setupSystemViewMode();
+				}
+				catch (e) { ; }
+				return;
+			}
 
 			if(ConfigurationAPI._configUsername)
 			{

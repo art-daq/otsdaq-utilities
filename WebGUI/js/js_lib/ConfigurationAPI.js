@@ -262,6 +262,9 @@ ConfigurationAPI.extractActiveGroups = function(req)
 		return undefined;
 	}
 
+	//do not modify global system setting readback if req failed
+	if(!req) return retObj;
+
 	ConfigurationAPI._activeGroups = {};
 	ConfigurationAPI._activeGroups = retObj;
 
