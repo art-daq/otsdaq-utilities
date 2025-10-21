@@ -7512,19 +7512,20 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 
 			xmlOut.addTextElementToData("GroupAlias", aliasNodePair.first);
 			xmlOut.addTextElementToData("GroupName", groupName);
-			xmlOut.addTextElementToData("GroupKey",
-			                            sharedGroupInfoPtrs[i]->getLatestKey().toString());
+			xmlOut.addTextElementToData(
+			    "GroupKey", sharedGroupInfoPtrs[i]->getLatestKey().toString());
 			xmlOut.addTextElementToData(
 			    "AliasComment",
 			    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
 			        .getValueAsString());
 
-			xmlOut.addTextElementToData("GroupComment",
-			                            sharedGroupInfoPtrs[i]->getLatestKeyGroupComment());
-			xmlOut.addTextElementToData("GroupAuthor",
-			                            sharedGroupInfoPtrs[i]->getLatestKeyGroupAuthor());
 			xmlOut.addTextElementToData(
-			    "GroupCreationTime", sharedGroupInfoPtrs[i]->getLatestKeyGroupCreationTime());
+			    "GroupComment", sharedGroupInfoPtrs[i]->getLatestKeyGroupComment());
+			xmlOut.addTextElementToData(
+			    "GroupAuthor", sharedGroupInfoPtrs[i]->getLatestKeyGroupAuthor());
+			xmlOut.addTextElementToData(
+			    "GroupCreationTime",
+			    sharedGroupInfoPtrs[i]->getLatestKeyGroupCreationTime());
 			xmlOut.addTextElementToData(
 			    "GroupType", sharedGroupInfoPtrs[i]->getLatestKeyGroupTypeString());
 			// xmlOut.addTextElementToData("GroupMemberMap",	sharedGroupInfoPtrs[i]->latestKeyMemberMap_);
@@ -7751,12 +7752,13 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		}
 
 		xmlOut.dataSs_ << "<TableGroupName value='" << groupName << "'/>" << __E__;
-		xmlOut.dataSs_ << "<TableGroupKey value='" << groupInfo.second.getLatestKey() << "'/>"
-		               << __E__;
+		xmlOut.dataSs_ << "<TableGroupKey value='" << groupInfo.second.getLatestKey()
+		               << "'/>" << __E__;
 
 		// trusting the cache!
 		xmlOut.dataSs_ << "<TableGroupType value='"
-		               << groupInfo.second.getLatestKeyGroupTypeString() << "'/>" << __E__;
+		               << groupInfo.second.getLatestKeyGroupTypeString() << "'/>"
+		               << __E__;
 		xmlOut.dataSs_ << "<TableGroupComment value='"
 		               << StringMacros::escapeString(
 		                      groupInfo.second.getLatestKeyGroupComment(),
@@ -7765,7 +7767,8 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 		xmlOut.dataSs_ << "<TableGroupAuthor value='"
 		               << groupInfo.second.getLatestKeyGroupAuthor() << "'/>" << __E__;
 		xmlOut.dataSs_ << "<TableGroupCreationTime value='"
-		               << groupInfo.second.getLatestKeyGroupCreationTime() << "'/>" << __E__;
+		               << groupInfo.second.getLatestKeyGroupCreationTime() << "'/>"
+		               << __E__;
 
 		if(returnMembers)
 		{
