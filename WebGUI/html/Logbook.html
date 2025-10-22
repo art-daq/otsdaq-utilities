@@ -76,6 +76,7 @@
 				border: 2px solid rgba(0,0,0,0.6);
 				border-radius: 5px;
 				background-color: rgba(0,0,0,0.5);
+				margin-bottom: 20px;
 			}
 
 			.areaContent td {
@@ -700,11 +701,13 @@
 					}
 
 				Debug.logv({selStr});
+				Debug.logv({invSelStr});
+				Debug.logv({countWithout});
 
 				_categoryFilter = isAll?"*":selStr;
 
-				if((selArr.length > 10 && countWithout < 4) ||
-					(selArr.length > 4 && countWithout == 1))
+				if(!isAll && ((selArr.length > 10 && countWithout < 4) ||
+					(selArr.length > 4 && countWithout == 1)))
 				{	//then change to wo/ inverted selection
 					_categoryFilter = "!" //(indicator)
 						+ invSelStr;
@@ -717,6 +720,8 @@
 				Debug.logv({newTabUrl});
 
 				openSelectedCategoriesTabLink.href = newTabUrl;
+
+				refreshLogbook();
 			} //end handleCategoryFilterChange()
 
 			//=====================================================================================
@@ -1872,9 +1877,8 @@
 			</td>
 		</table>
 
-
 		<!------------------------ AREA CONTENT --------------------------------->
-		<div class='areaContentDiv'>
+		<div class='areaContentDiv' style="overflow-x: auto;">
 		<table class='areaContent' width='100%'>
 		<td align='center'>
 

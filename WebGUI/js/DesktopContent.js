@@ -296,6 +296,14 @@ DesktopContent.init = function(onloadFunction)
 	window.focus();
 	DesktopContent._theWindow.focus();	//before this fix, full screen in new tab would not give window focus
 
+	document.addEventListener('click', function (e) {
+		const target = e.target.closest('a[href="#"]');
+		if (target) {
+		  e.preventDefault();    // stops the navigation or hash change
+		//   e.stopPropagation();   // blocks onclick! ensures it stays inside the iframe
+		  console.log("Blocked href='#' inside iframe but onclick still runs");
+		}
+	  }, true);
 
 //	try
 //	{
@@ -887,20 +895,19 @@ DesktopContent.handleFocus = function(e)
 //	DesktopContent._myDesktopFrame.parentNode.parentNode.style.zIndex = DesktopContent._zMailbox.innerHTML;
 //	DesktopContent._zMailbox.innerHTML = parseInt(DesktopContent._zMailbox.innerHTML) + 1;
 	return true;
-}
+} //end DesktopContent.handleFocus()
 //=====================================================================================
 DesktopContent.handleBlur = function(e)
 {
 	//Debug.log("Blur DesktopContent._isFocused " + DesktopContent._isFocused);
 	DesktopContent._isFocused = false;
-}
+} //end DesktopContent.handleBlur()
 //=====================================================================================
 DesktopContent.handleScroll = function(e)
 {
-
 	//console.log("Scroll DesktopContent.handleScroll", DesktopContent._isFocused, DesktopContent._theWindowId);
 	window.focus();
-}
+} //end DesktopContent.handleScroll()
 
 //=====================================================================================
 DesktopContent.unmaximizeWindow = function(mouseEvent,onlyDesktopFunction)
