@@ -21,9 +21,14 @@ class ECLConnection
 	~ECLConnection(){};
 
 	const std::string& getSafeURL(void) const { return _safe_url; }
-	bool               Post(ECLEntry_t& e);
-	bool               Get(std::string, std::string&);
-	bool               Search(std::string);
+	bool               safeURLisHTTPS(void) const
+	{
+		return _safe_url.size() > 5 && _safe_url[0] == 'h' && _safe_url[1] == 't' &&
+		       _safe_url[2] == 't' && _safe_url[3] == 'p' && _safe_url[4] == 's';
+	}
+	bool Post(ECLEntry_t& e);
+	bool Get(std::string, std::string&);
+	bool Search(std::string);
 
 	static std::string EscapeECLString(std::string input = "");
 

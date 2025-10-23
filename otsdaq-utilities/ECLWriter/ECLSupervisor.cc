@@ -778,6 +778,13 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 					                                                 "url=",
 					                                                 "\"");
 
+					if(eclConn_->safeURLisHTTPS())
+					{
+						__COUTS__(2) << "Force file URL to https: " << furl << __E__;
+						if(furl.size() > 5 && furl[0] == 'h' && furl[1] == 't' &&
+						   furl[2] == 't' && furl[3] == 'p' && furl[4] == ':')
+							furl.insert(4, 1, 's');  // insert 's' at index 4
+					}
 					__COUTVS__(2, furl);
 					std::string fname = StringMacros::extractXmlField(response,
 					                                                  "attachment",
@@ -819,6 +826,13 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 					                                                 "full_url=",
 					                                                 "\"");
 
+					if(eclConn_->safeURLisHTTPS())
+					{
+						__COUTS__(2) << "Force file URL to https: " << furl << __E__;
+						if(furl.size() > 5 && furl[0] == 'h' && furl[1] == 't' &&
+						   furl[2] == 't' && furl[3] == 'p' && furl[4] == ':')
+							furl.insert(4, 1, 's');  // insert 's' at index 4
+					}
 					__COUTVS__(2, furl);
 					std::string fname = StringMacros::extractXmlField(response,
 					                                                  "attachment",
