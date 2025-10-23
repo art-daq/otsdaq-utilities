@@ -856,6 +856,14 @@
 				var logbookStatus;
 				if((logbookStatus = DesktopContent.getXMLValue(req,"logbook_status")) !="1") //failed
 				{
+					if(!logbookStatus)
+					{
+						logbookStatus = "Error!";
+						Debug.err("Error encountered while generating post preview: " +
+							DesktopContent.getXMLValue(req,"Error"));
+						document.getElementById('PreviewStatus').innerHTML = logbookStatus;
+						return;
+					}
 					document.getElementById('PreviewStatus').innerHTML = logbookStatus;
 					return;
 				}
@@ -968,11 +976,12 @@
 
 				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
 				requestURL = "/urn:xdaq-application:lid="+urn+"/";
-				xhr.open("POST", requestURL + "Log");
+				xhr.open("POST", requestURL + "Request?RequestType=PreviewEntry" + 
+					"&CookieCode=" + DesktopContent._cookieCodeMailbox);
 
 				//add other values to form so they are transmitted with files
-				fd.append("RequestType","PreviewEntry");
-				fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
+				// fd.append("RequestType","PreviewEntry");
+				// fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
 				fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
 				fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
 				xhr.send(fd);
