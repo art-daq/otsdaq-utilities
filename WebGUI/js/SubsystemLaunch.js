@@ -122,7 +122,9 @@ SubsystemLaunch.create = function() {
 				"\n\n" +
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
-				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
+				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts." +
+				"\n\n" +
+				"TODO: Add information to user for how to add subsystem. Data folder -> Config table -> Icon";
 			Debug.log("Subsystem Launch init ");
 			DesktopContent.tooltip("Subsystem Launch", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
@@ -622,8 +624,11 @@ SubsystemLaunch.create = function() {
 									"title='Click to open Subsystem Landing Page of &apos;" +
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
-							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 
+							SubsystemLaunch.subsystems[s].status == 'UNKNOWN' 
+								? str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url // Replace with hostname for the subsystem once functionality implemented
+								: str += SubsystemLaunch.subsystems[s].name + " at " + "hi ali";
+								//TODO: Move this from static rendering to dynamic rendering location -> move out of init
 							if(addLandingPage)
 								str += "</a>";
 							str += "</div>";
