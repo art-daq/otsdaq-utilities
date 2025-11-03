@@ -76,7 +76,7 @@ class ECLSupervisor : public CoreSupervisorBase
 																		 const std::vector<cgicc::FormFile>& files,
 																		 std::string                         creator,
 																		 HttpXmlDocument*                    xmldoc = 0);
-	
+
 	std::string ECLUser_;
 	std::string ECLHost_;
 	std::string ECLPwd_;
