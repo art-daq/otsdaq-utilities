@@ -67,10 +67,10 @@ class ECLSupervisor : public CoreSupervisorBase
 	void								getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
 	void								webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
 	void								refreshLogbook					(time_t              date,
-	    								              					 size_t              duration,
-	    								              					 HttpXmlDocument*    xmldoc         = 0,
-	    								              					 std::ostringstream* out            = 0,
-	    								              					 std::string         categoryFilter = "");
+																		 size_t              duration,
+																		 HttpXmlDocument*    xmldoc         = 0,
+																		 std::ostringstream* out            = 0,
+																		 std::string         categoryFilter = "");
 	void 								createPost						(std::string&                        subject,
 																		 std::string&                        text,
 																		 const std::vector<cgicc::FormFile>& files,
