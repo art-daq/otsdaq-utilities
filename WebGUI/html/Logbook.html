@@ -426,7 +426,7 @@
 			var _MARGIN = 20;
 			var _HIDDEN_HEIGHT = 33;
 			var _CATEGORY_FILTER_HEIGHT = 338;
-			var _AREA_HEIGHTS = [270,390,500];
+			var _AREA_HEIGHTS = [270,340,500]; //area 1 is post
 			var _MAX_CATEGORY_NAME_LENGTH = 300;
 			var _DEFAULT_ENTRY_INPUT_TEXT = "Enter the text for your logbook post here.";
 			var _DEFAULT_ENTRY_INPUT_SUBJECT = "Enter subject here.";
@@ -445,6 +445,8 @@
 
 			var _adminPopUpDiv = 0;
 			var _isAdmin = false;
+			var _noPostPreview = false; //if server has disabled post previews
+			var _noPostAttachments = false; //if server has disabled post attachments
 
 			//refreshing logbook
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
@@ -746,7 +748,18 @@
 			//redrawLogbook ~
 			function redrawLogbook()
 			{
-				Debug.log("Logbook redrawLogbook to " + _isAdmin + " - " + window.innerWidth + " - " + window.innerHeight);
+				Debug.log("Logbook redrawLogbook to ",
+					_isAdmin,_noPostPreview,_noPostAttachments,
+					" - " + window.innerWidth + " - " + window.innerHeight);
+
+				if(_noPostPreview)
+				{
+					document.getElementById("formSubmitButton").value = "Post Entry";
+				}
+				if(_noPostAttachments)
+				{
+					document.getElementById("fileForm").style.display = "none";
+				}
 
 				var w = DesktopContent.getWindowWidth();
 				if(w < 600) w=600; //prevent super squeeze
@@ -859,7 +872,8 @@
 					if(!logbookStatus)
 					{
 						logbookStatus = "Error!";
-						Debug.err("Error encountered while generating post preview: " +
+						Debug.err("Error encountered while generating post" + 
+							(_noPostPreview?": ":" preview: ") +
 							DesktopContent.getXMLValue(req,"Error"));
 						document.getElementById('PreviewStatus').innerHTML = logbookStatus;
 						return;
@@ -868,6 +882,17 @@
 					return;
 				}
 				//successful preview submitted
+
+				if(_noPostPreview)
+				{
+					Debug.log("Finishing post with no preview...");
+					document.getElementById('PreviewStatus').innerHTML = "Entry posted.";
+					document.getElementById('newPostSubject').value = "";
+					document.getElementById('newPostText').value = "";
+					clearFileInput();
+					refreshLogbook();
+					return;
+				}
 
 				//hide input form
 				document.getElementById('postFormDiv').style.display = "none";
@@ -963,28 +988,47 @@
 					return;
 				}
 
+				if(_noPostPreview)
+					DesktopContent.popUpVerification(
+						"Are you sure you want to <u><i>Post</i></u> your entry to the logbook?",
+						localUploadToServer, document.getElementById("categoryTextBox").value);
+				else
+					localUploadToServer();
 
-				Debug.log("Logbook uploadFile " );
-				var xhr = new XMLHttpRequest();
-				var fd = new FormData(document.getElementById('fileForm'));
+				return;
 
-				/* event listeners */
-				xhr.upload.addEventListener("progress", uploadProgress, false);
-				xhr.addEventListener("load", handler, false);
-				xhr.addEventListener("error", uploadFailed, false);
-				xhr.addEventListener("abort", uploadCanceled, false);
+				//=============================
+				function localUploadToServer()
+				{
+					Debug.log("Logbook uploadFile " );
+					var xhr = new XMLHttpRequest();
+					var fd = new FormData(document.getElementById('fileForm'));
 
-				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
-				requestURL = "/urn:xdaq-application:lid="+urn+"/";
-				xhr.open("POST", requestURL + "Request?RequestType=PreviewEntry" + 
-					"&CookieCode=" + DesktopContent._cookieCodeMailbox);
+					/* event listeners */
+					xhr.upload.addEventListener("progress", uploadProgress, false);
+					xhr.addEventListener("load", handler, false);
+					xhr.addEventListener("error", uploadFailed, false);
+					xhr.addEventListener("abort", uploadCanceled, false);
 
-				//add other values to form so they are transmitted with files
-				// fd.append("RequestType","PreviewEntry");
-				// fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
-				fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
-				fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
-				xhr.send(fd);
+					var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
+					requestURL = "/urn:xdaq-application:lid="+urn+"/";
+					if(_noPostPreview)
+						requestURL += "Request?RequestType=PostEntry";
+					else
+						requestURL += "Request?RequestType=PreviewEntry";
+					Debug.logv({requestURL});
+
+					xhr.open("POST", requestURL +
+						"&CookieCode=" + DesktopContent._cookieCodeMailbox);
+
+					//add other values to form so they are transmitted with files
+					// fd.append("RequestType","PreviewEntry");
+					// fd.append("CookieCode",DesktopContent._cookieCodeMailbox);
+					fd.append("EntryText",convertForServer(newPostText.value)); //add escaped user text
+					fd.append("EntrySubject",convertForServer(newPostSubject.value)); //add escaped user subject
+					xhr.send(fd);
+				} //end localUploadToServer()
+
 			} //end uploadToServer()
 
 			//=====================================================================================
@@ -1113,6 +1157,8 @@
 			function handleGetCategoryListRequest(req, preselectsArr)
 			{
 				_isAdmin = DesktopContent.getXMLValue(req,"is_admin")=="1"?1:0;
+				_noPostPreview = DesktopContent.getXMLValue(req,"no_post_preview")=="1"?1:0;
+				_noPostAttachments = DesktopContent.getXMLValue(req,"no_post_attachments")=="1"?1:0;
 
 				_categorysArray = req.responseXML.getElementsByTagName("category");
 
@@ -1851,8 +1897,8 @@
 						<div id="fileSize"></div>
 					</div>
 				</form>
-
-				<input type='submit' onmouseup='uploadToServer("Preview",handlePreviewPost);' value='Preview Post'>
+				<br>
+				<input id="formSubmitButton" type='submit' onmouseup='uploadToServer("Preview",handlePreviewPost);' value='Preview Post'>
 				<div id="PreviewStatus"></div>
 
 			</div>
