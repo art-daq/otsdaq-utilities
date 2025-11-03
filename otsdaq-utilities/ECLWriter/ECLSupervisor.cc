@@ -244,8 +244,10 @@ void ECLSupervisor::request(const std::string&               requestType,
 	{
 		//allow all users to ECL categories, but tell GUI not admin since have no access to managing ECL posts directly
 		xmlOut.addTextElementToData("is_admin", "0");  // indicate not an admin
-		xmlOut.addTextElementToData("no_post_preview", "1");  // indicate no post preview, just post directly
-		xmlOut.addTextElementToData("no_post_attachments", "1");  // indicate no post attachments supported
+		xmlOut.addTextElementToData("no_post_preview",
+		                            "1");  // indicate no post preview, just post directly
+		xmlOut.addTextElementToData("no_post_attachments",
+		                            "1");  // indicate no post attachments supported
 		getCategories(&xmlOut);
 	}
 	else if(requestType == "SetActiveCategory")
@@ -310,27 +312,28 @@ void ECLSupervisor::request(const std::string&               requestType,
 		std::string            users = theRemoteWebUsers_.getActiveUserList();
 
 		form.name("default");  // these form names must be created in advance? ... default
-								// seems to have one field and be generic: 'text' field
+		                       // seems to have one field and be generic: 'text' field
 
 		{
 			std::stringstream ss;
-			ss << "Author: " << creator << " (" <<  creator << ")" << __E__ << __E__;
+			ss << "Author: " << creator << " (" << creator << ")" << __E__ << __E__;
 			ss << "Message: " << __E__ << EntryText << __E__ << __E__;
 
-			ss << "This was a Manual Log Entry from '" << CategoryName_
-			<< "' at host '" << __ENV__("THIS_HOST") << "'" << __E__;
+			ss << "This was a Manual Log Entry from '" << CategoryName_ << "' at host '"
+			   << __ENV__("THIS_HOST") << "'" << __E__;
 			ss << "Active ots users: " << users << __E__;
 			ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
 			ss << "Uptime: "
-			<< StringMacros::getTimeDurationString(
-					CorePropertySupervisorBase::getSupervisorUptime())
-			<< __E__;
-			field = Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
-							"text");
+			   << StringMacros::getTimeDurationString(
+			          CorePropertySupervisorBase::getSupervisorUptime())
+			   << __E__;
+			field =
+			    Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
+			            "text");
 			fields.push_back(field);
 		}
 
-		std::string retStr = "1"; //1 for success
+		std::string retStr = "1";  //1 for success
 		form.field(fields);
 		eclEntry.form(form);
 		try
@@ -345,12 +348,13 @@ void ECLSupervisor::request(const std::string&               requestType,
 		}
 		catch(const std::runtime_error& e)
 		{
-			__SS__ << "Exception caught during ECL message post and ECL connection: " << e.what();
+			__SS__ << "Exception caught during ECL message post and ECL connection: "
+			       << e.what();
 			__COUT_ERR__ << ss.str();
 			retStr = ss.str();
 		}
 
-		xmlOut.addTextElementToData(XML_STATUS,retStr);
+		xmlOut.addTextElementToData(XML_STATUS, retStr);
 	}
 	// else if(requestType == "PreviewEntry")
 	// {
