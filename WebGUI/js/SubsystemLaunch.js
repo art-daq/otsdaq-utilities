@@ -785,7 +785,7 @@ SubsystemLaunch.create = function() {
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
-
+		updateSubsystemName();
 		return;
 
 		//===========
@@ -1156,7 +1156,6 @@ SubsystemLaunch.create = function() {
 		function localDisplayState(cell, statusString, progressNum)
 		{
 			//copied from otsdaq-utilities/WebGUI/js/SystemStatus.js:551
-
 			try { //some states can provide error detail after ":::" marker (ignore extra detail for now)
 				statusString = statusString.split(":::")[0];
 			}
@@ -1246,6 +1245,20 @@ SubsystemLaunch.create = function() {
 			}
 		} //end localDisplayState()
 	}	//end displayStatus()
+
+	function updateSubsystemName() {
+		for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+		{
+			if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN')
+			{
+				document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url
+			}
+			else
+			{
+				document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + "hi ali";
+			}
+		}
+	}
 
 
 	//=====================================================================================
