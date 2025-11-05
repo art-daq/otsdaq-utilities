@@ -6275,6 +6275,11 @@
 							//jump to value to scroll to top of node (to see diff)
 							jump("treeNode-Value-" + treeEditingNodeParentIdString_);
 						}
+
+						//show tooltip if opening root level table
+						if(path == "/" && nodeName != "")
+							showTableTooltip(nodeName);
+						
 					}, //end getTreeView handler
 					idString,
 					0, true); //progressHandler, callHandlerOnErr
