@@ -84,6 +84,21 @@ else
 		var _layoutMenuItems = [];
 		var numOfUserLayouts = 5;
 		var numOfSystemLayouts = 5;
+
+		Desktop.XMLHttpRequest(
+			"Request?RequestType=getSettings&accounts=1",
+			"",
+			function(req) {
+				var _layoutArray = Desktop.getXMLValue(req,"pref_layout").split(";");
+				var _sysLayoutArray = Desktop.getXMLValue(req,"pref_syslayout").split(";");
+				var _layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout").split(",");
+				var _sysLayoutAliasArray = Desktop.getXMLValue(req,"pref_sysalias_layout").split(",");
+				localStorage.setItem("_layoutArray", JSON.stringify(_layoutArray));
+				localStorage.setItem("_sysLayoutArray", JSON.stringify(_sysLayoutArray));
+				localStorage.setItem("_layoutAliasArray", JSON.stringify(_layoutAliasArray));
+				localStorage.setItem("_sysLayoutAliasArray", JSON.stringify(_sysLayoutAliasArray));
+		});
+
 		for(var i=0;i<numOfSystemLayouts;++i)
 			_layoutMenuItems.push("System Preset-" + (i+1));
 		_layoutMenuItems.push("---");
@@ -465,6 +480,16 @@ else
 			}
 			if(!_layoutDropDownDisplayed) return; //do not create if closing
 
+			const _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
+			const _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
+
+			for(var i=0;i<numOfSystemLayouts;++i)
+				if (_sysLayoutAliasArray[i] != -1 && _sysLayoutAliasArray.length > 0)
+					_layoutMenuItems[i] = "System Preset-" + _sysLayoutAliasArray[i];
+			for(var i=0;i<numOfUserLayouts;++i)
+				if (_layoutAliasArray[i] != -1 && _layoutAliasArray.length > 0)
+					_layoutMenuItems[numOfSystemLayouts+i+1] = "User Preset-" + _layoutAliasArray[i];
+
 			//create default dropdown menu element
 			el = document.createElement("div");
 			el.setAttribute("id", "DesktopDashboard-defaults-dropdown");
@@ -474,9 +499,12 @@ else
 				if(_layoutMenuItems[i] == "---") //horizontal line
 					str += "<center><hr width='75%' style='border:1px solid; margin-top:5px'/></center>";
 				else {
-					str += "<a href='#' onmouseup='Desktop.desktop.dashboard.windowDashboardLayoutsDropDown(); "
-						+ "Desktop.desktop.defaultLayoutSelect("+i+"); return false;'>"
-						+ _layoutMenuItems[i] + "</a>";
+					str += "<a href='#' "
+					+ "id='layoutID" + i + "' "
+					+ "title='Preview' "
+					+ "onmouseup='Desktop.desktop.defaultLayoutSelect("+i+"); Desktop.desktop.dashboard.windowDashboardLayoutsDropDown();'>"
+					+ "onmouseover='Desktop.desktop.dashboard.hoverPreviewLayout(" + i + ");' "
+					+ _layoutMenuItems[i] + "</a>";
 
 					str += "<a onclick='Desktop.openNewBrowserTab(" +
 										"\"Desktop.openLayout(" + i + ")\",\"\"," +
@@ -835,6 +863,49 @@ else
 			},500); //end timeout handler
 		} //end handleDashboardWinMouseDown()
 
+		//==============================================================================
+		this.hoverPreviewLayout = function(layoutID)
+		{
+			const _layoutArray = JSON.parse(localStorage.getItem("_layoutArray")) || [];
+			const _sysLayoutArray = JSON.parse(localStorage.getItem("_sysLayoutArray")) || [];
+
+			var str = "";
+			var el = document.getElementById("layoutID"+layoutID);
+
+			isSystemLayout = layoutID <= numOfSystemLayouts;
+			layoutID = (isSystemLayout?layoutID:layoutID-numOfSystemLayouts-1);
+			var winLayArr = (isSystemLayout?_sysLayoutArray:_layoutArray);
+
+			if(winLayArr[layoutID] == null) return;
+			var winLayArr = winLayArr[layoutID].split(",");
+			var numOfFields = 8;
+
+			//destroy 7 field approach (new way adds the 8th field for isMinimized)
+			var num = parseInt(winLayArr.length/numOfFields); //numOfFields fields per window
+			str = "~ Layout of " + num + " Window" + ((num==1)?"":"s") + " ";
+
+			var fieldArr = ["X","Y","W","H",""];
+			for(var i=0;i<num;++i)
+			{
+				str +=  "\n" + decodeURIComponent(winLayArr[i*numOfFields]) +
+						" - " +
+						decodeURIComponent(winLayArr[i*numOfFields+1]) +
+						" - ";
+
+				for(var j=3;j<numOfFields;++j)
+					if(j < 7)
+						str += ((j-3)?", ":"") + fieldArr[j-3] + ":" +
+						(Math.round(winLayArr[i*numOfFields+j]/100)|0) + "%";
+					else if(winLayArr[i*numOfFields+j] == "0") //then minimized
+						str += ", Minimized";
+					else if(winLayArr[i*numOfFields+j] == "2") //then maximized
+						str += ", Maximized";
+			}
+			str += ";";
+
+			el.title = str;
+		}
+
 		//------------------------------------------------------------------
 		//handle class construction ----------------------
 		//------------------------------------------------------------------
@@ -857,11 +928,16 @@ else
 		tmpBtn.onmouseup = _toggleWindowDashboard;
 		_topBar.appendChild(tmpBtn);
 
-		tmpBtn = document.createElement("div");
-		tmpBtn.setAttribute("class", "DesktopDashboard-button DesktopDashboard-button-left");
-		tmpBtn.innerHTML = "<a href='#' title='Click to open default window layouts'>Layouts</a>";
-		tmpBtn.onmouseup = _windowDashboardLayoutsDropDown;
-		_topBar.appendChild(tmpBtn);
+		if(Desktop.desktop.security == Desktop.SECURITY_TYPE_DIGEST_ACCESS ||
+			Desktop.desktop.security == Desktop.SECURITY_TYPE_NONE) //dont show features if in wizard mode
+		{
+			// no layouts in wiz mode
+			tmpBtn = document.createElement("div");
+			tmpBtn.setAttribute("class", "DesktopDashboard-button DesktopDashboard-button-left");
+			tmpBtn.innerHTML = "<a href='#' title='Click to open default window layouts'>Layouts</a>";
+			tmpBtn.onmouseup = _windowDashboardLayoutsDropDown;
+			_topBar.appendChild(tmpBtn);
+		}
 
 		tmpBtn = document.createElement("div");
 		tmpBtn.setAttribute("class", "DesktopDashboard-button DesktopDashboard-button-left");

@@ -17,6 +17,7 @@
 			var _selectedLayout = -2; //hold index of selected , if any
 			var _mailbox,_settingsLayoutMailbox; //pass messages to Desktop
 			var _layoutArray,_sysLayoutArray,_accountsArray;
+			var _layoutAliasArray, _sysLayoutAliasArray;
 			var _NUM_USER_LAYOUTS = 5; //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
 			var _NUM_SYS_LAYOUTS = 5;  //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
 			var _NUM_OF_LAYOUT_FIELDS = 8;
@@ -158,6 +159,9 @@
 					"\nWhen security is enabled, users with admin privileges can create/modify/delete user accounts, " +
 					"and manipulate which user holds the <b>lock</b> (the ots lock mechanism enforces one-user-at-a-time for particular operations).";
 
+				const _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
+				const _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
+
 				var str = "";
 				//create windows layout div
 				for(var i=0;i<_NUM_USER_LAYOUTS;++i)
@@ -165,19 +169,29 @@
 					if(i) str += "<br>";
 					str += "<a onmouseup='Javascript:setLayout(" + (i+1) +
 							",event)' class='winLayoutLink' id='winLayoutLink" + (i+1) + "'>" +
-							"<li>User Preset-" + (i+1) + " (Click to set)</li></a>" +
-							"<div class='winLayoutText' id='winLayoutText" + (i+1) + "'></div>";
+							"<li>User Preset-" + (i+1) + " (Click to set)</li></a>";
+					
+					if(_layoutAliasArray[i] != -1)
+						str +="<input type='text' id='winLayoutAlias" + (i+1) + "' value='" + _layoutAliasArray[i] + "'>";
+					else
+						str += "<input type='text' id='winLayoutAlias" + (i+1) + "' placeholder='Enter Alias'>";
+					str += "<div class='winLayoutText' id='winLayoutText" + (i+1) + "'></div>";
 				}
 				str += "<div id='windSystemLayoutDiv' style='display:none; white-space:nowrap;'>" +
 						"<hr width='100%'/>";
-				for(var i=0;i<_NUM_SYS_LAYOUTS;++i)
-				{
-					if(i) str += "<br>";
-					str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS+i+1) +
-							",event)' class='winLayoutLink' id='winSysLayoutLink" + (i+1) + "'>" +
-							"<li>System Preset-" + (i+1) + " (Click to set)</li></a>" +
-							"<div class='winLayoutText' id='winSysLayoutText" + (i+1) + "'></div>";
-				}
+						for(var i=0;i<_NUM_SYS_LAYOUTS;++i)
+						{
+							if(i) str += "<br>";
+							str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS+i+1) +
+									",event)' class='winLayoutLink' id='winSysLayoutLink" + (i+1) + "'>" +
+									"<li>System Preset-" + (i+1) + " (Click to set)</li></a>";
+							
+							if(_sysLayoutAliasArray[i] != -1)
+								str +="<input type='text' id='winSysLayoutAlias" + (i+1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
+							else
+								str += "<input type='text' id='winSysLayoutAlias" + (i+1) + "' placeholder='Enter Alias'>";
+							str += "<div class='winLayoutText' id='winSysLayoutText" + (i+1) + "'></div>";
+						}
 				str += "</div>";
 				document.getElementById("windLayoutDiv").innerHTML = str;
 
@@ -882,13 +896,14 @@
 				////////////////////////
 				//layout
 
-				console.log("_layoutArray",_layoutArray);
-				console.log("_sysLayoutArray",_sysLayoutArray);
+				var _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
+				var _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
 
 				Debug.log("_selectedLayout " + _selectedLayout);
 				if(_selectedLayout >= 1 && _selectedLayout <= _NUM_USER_LAYOUTS) //set new  default layout from desktop mailbox
 				{
 					_layoutArray[_selectedLayout-1] = _settingsLayoutMailbox.innerHTML;
+					_layoutAliasArray[_selectedLayout-1] = document.getElementById("winLayoutAlias"+_selectedLayout).value;
 				}
 				//for array to proper size for sever communication (just in case)
 				_layoutArray = _layoutArray.slice(0,_NUM_USER_LAYOUTS);
@@ -904,6 +919,7 @@
 						_selectedLayout <= _NUM_USER_LAYOUTS+_NUM_SYS_LAYOUTS)
 				{
 					_sysLayoutArray[_selectedLayout-1-_NUM_USER_LAYOUTS] = _settingsLayoutMailbox.innerHTML;
+					_sysLayoutAliasArray[_selectedLayout-1] = document.getElementById("winSysLayoutAlias"+_selectedLayout).value;
 				}
 				//for array to proper size for sever communication (just in case)
 				_sysLayoutArray = _sysLayoutArray.slice(0,_NUM_SYS_LAYOUTS);
@@ -915,8 +931,16 @@
 				data += "syslayout=" + layoutStr + "&";
 
 
+				localStorage.setItem("_layoutArray", JSON.stringify(_layoutArray));
+				localStorage.setItem("_sysLayoutArray", JSON.stringify(_sysLayoutArray));
+				localStorage.setItem("_layoutAliasArray", JSON.stringify(_layoutAliasArray));
+				localStorage.setItem("_sysLayoutAliasArray", JSON.stringify(_sysLayoutAliasArray));
+
 				////////////////////////
 				//send save req
+				data += "aliaslayout=" + _layoutAliasArray + "&";
+				data += "sysAliaslayout=" + _sysLayoutAliasArray + "&";
+
 				_triedNewAccount = false;
 				Debug.log("Settings Save Preferences -- " + data);
 				DesktopContent.XMLHttpRequest("Request?RequestType=setSettings",
