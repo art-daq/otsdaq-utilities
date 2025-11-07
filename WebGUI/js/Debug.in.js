@@ -1190,11 +1190,12 @@ Debug.handleErrorResize = function()
 	var screenw = w;
 	var minx = 0;
 
-	if(w > 900) //clip to 850 and center (for looks)
+	if(w > 900) //if enough space, leave 10% margins and center (for looks)
 	{
-		offX += (w-850)/2;
-		minx = -(w-850)/2;
-		w = 850;
+		let neww = (w * 0.8)|0;
+		offX += (w-neww)/2;
+		minx = -(w-neww)/2;
+		w = neww;
 	}
 
 	if(w + Debug._errBoxOffW  < 200) //clip to minimum width
