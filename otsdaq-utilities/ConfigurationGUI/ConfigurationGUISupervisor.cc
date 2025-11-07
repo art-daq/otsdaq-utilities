@@ -7941,35 +7941,61 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		if(versionAliases.find(it->first) != versionAliases.end())
 			for(auto& aliasVersion : versionAliases[it->first])
 				if(it->second.versions_.find(aliasVersion.second) !=
-				   it->second.versions_.end())
-					// if(aliasVersion.first !=
-					// ConfigurationManager::SCRATCH_VERSION_ALIAS) //NOT NEEDED IF
-					// SCRATCH IS ALWAYS ALIAS
+				   it->second.versions_.end()) //Note : scratch version is always an alias ==> ConfigurationManager::SCRATCH_VERSION_ALIAS)
 					xmlOut.addTextElementToParent(
 					    "Version",
 					    ConfigurationManager::ALIAS_VERSION_PREAMBLE + aliasVersion.first,
 					    parentEl);
-		//				else //NOT NEEDED IF SCRATCH IS ALWAYS ALIAS
-		//					__SUP_COUT_ERR__ << "Alias for table " << it->first << " is a
-		// reserved  alias '" <<
-		//						ConfigurationManager::SCRATCH_VERSION_ALIAS << "' - this
-		// is  illegal." << __E__;
-
-		//		//if scratch version exists, add an alias for it /NOT NEEDED IF SCRATCH IS
-		// ALWAYS ALIAS
-		//		if(it->second.versions_.find(TableVersion(TableVersion::SCRATCH)) !=
-		//				it->second.versions_.end())
-		//			xmlOut.addTextElementToParent("Version",
-		//					ConfigurationManager::ALIAS_VERSION_PREAMBLE +
-		// ConfigurationManager::SCRATCH_VERSION_ALIAS, 					parentEl);
 
 		// get all table versions for the current table
 		//	except skip scratch version
-		for(auto& version : it->second.versions_)
-			if(!version.isScratchVersion())
-				xmlOut.addTextElementToParent("Version", version.toString(), parentEl);
+		// for speed, group versions into spans:
+		//======
+		/// Lambda function to output table version values in spans
+		auto vSpanToXML = [](auto const& sortedKeys, auto& xmlOut, auto& configEl) {
+			//add lo and hi spans, instead of each individual value
+			size_t lo = -1, hi = -1;
+			for(auto& keyInOrder : sortedKeys)
+			{
+				//skip scratch version
+				if(keyInOrder.isScratchVersion()) continue;
 
-		//++it;
+				if(lo == size_t(-1))  //establish start of potential span
+				{
+					hi = lo = keyInOrder.version();
+					continue;
+				}
+				else if(hi + 1 == keyInOrder.version())  //span is growing
+				{
+					hi = keyInOrder.version();
+					continue;
+				}
+				//else jump by more than one, so close out span
+
+				if(lo == hi)  //single value
+					xmlOut.addNumberElementToParent("Version", lo, configEl);
+				else  //span
+					xmlOut.addTextElementToParent(
+						"Version",
+						"_" + std::to_string(lo) + "_" + std::to_string(hi),
+						configEl);
+				hi = lo = keyInOrder.version();
+			}
+
+			if(lo != size_t(-1))  //check if last one to do!
+			{
+				if(lo == hi)  //single value
+					xmlOut.addNumberElementToParent("Version", lo, configEl);
+				else  //span
+					xmlOut.addTextElementToParent(
+						"Version",
+						"_" + std::to_string(lo) + "_" + std::to_string(hi),
+						configEl);
+			}
+		};  //end local lambda vSpanToXML()
+		
+		vSpanToXML(it->second.versions_, xmlOut, parentEl);
+		
 	}  // end table loop
 
 }  // end handleTablesXML()

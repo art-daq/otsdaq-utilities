@@ -174,6 +174,7 @@
 
 			//getSubsystemColor(subsystemId)
 			//getMultiNodeName(i,subi)
+			//getNodeNameWithoutStatus(i)
 			//getPrinterSyntaxStringWithWidth(s,w)
 
 			//checkForActiveGroupChange(init)
@@ -1634,10 +1635,7 @@
 				//box
 				var count = _nodes[i].nodeCount?_nodes[i].nodeCount:1;
 
-				var nodeName = _nodes[i].name;
-				//remove ";status=" extra node identifier
-				nodeName = nodeName.split(";status=")[0]; //use split for backwards compatibility
-
+				var nodeName = getNodeNameWithoutStatus(i);
 				var hostname;
 
 				if(type == ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR)
@@ -2641,7 +2639,7 @@
 				menuItemHandlers.push("launchEditNodeDialog(" + i + ")");
 			}
 
-			var nodeName = _nodes[i].name;
+			var nodeName = getNodeNameWithoutStatus(i);
 			if(subi !== undefined) //dealing with a particular multi-node node
 				nodeName = getMultiNodeName(i,subi);
 
@@ -2709,7 +2707,7 @@
 
 			if(editType>5) y -= 50;
 
-			var nodeName = _nodes[i].name;
+			var nodeName = getNodeNameWithoutStatus(i);
 			if(subi !== undefined) //dealing with a particular multi-node node
 				nodeName = getMultiNodeName(i,subi);
 
@@ -3394,7 +3392,7 @@
 
 			var type = _nodes[i].type;
 			var typeName = ARTDAQConfigurationAPI.NODE_SHORT_TYPE_NAMES[type];
-			var nodeName =  _nodes[i].name.split(";status=")[0];
+			var nodeName = getNodeNameWithoutStatus(i);
 
 			//undo hover node
 			doNodeHover(_mouseHoverNode,true /*undoHover*/);
@@ -3511,7 +3509,7 @@
 				if(j == i) continue; //skip this node
 
 				str += "<option >" +
-						_nodes[j].name.split(";status=")[0] +
+						getNodeNameWithoutStatus(i) +
 						"</option>";
 			}
 			str += "</select>"; //end other node names dropdown
@@ -4239,7 +4237,7 @@
 					"[" + subi + "] - " +
 					_nodes[i].name);
 
-			var nodeName = _nodes[i].name;
+			var nodeName = getNodeNameWithoutStatus(i);
 			if(subi !== undefined) //dealing with a particular multi-node node
 				nodeName = getMultiNodeName(i,subi);
 
@@ -4344,7 +4342,7 @@
 			DesktopContent.popUpVerification(
 					"Are you sure want to <u><b>delete</b></u> the node <b>" +
 					ARTDAQConfigurationAPI.getShortTypeName(_nodes[i].type) +
-					"::" + _nodes[i].name + "</b>?",
+					"::" + getNodeNameWithoutStatus(i) + "</b>?",
 					localDeleteNode /*yes-to-reload handler*/
 			);
 
@@ -4444,7 +4442,7 @@
 		//getMultiNodeName ~~
 		function getMultiNodeName(i,subi)
 		{
-			var nodeName =  _nodes[i].name.split(";status=")[0];
+			var nodeName = getNodeNameWithoutStatus(i);
 			var namePieces = nodeName.split('*');
 			if(namePieces.length > 1 &&
 					subi < _nodes[i].nodeVectorIndexArr.length)
@@ -4469,6 +4467,14 @@
 			}
 
 		} //end getMultiNodeName()
+
+		//=====================================================================================
+		//getNodeNameWithoutStatus ~~
+		//	if needed, remove ";status=" extra node identifier
+		function getNodeNameWithoutStatus(i)
+		{
+			return _nodes[i].name.split(";status=")[0]; //use split for backwards compatibility
+		} //end getNodeNameWithoutStatus()
 
 		//=====================================================================================
 		//getPrinterSyntaxStringWithWidth ~~
@@ -5142,7 +5148,7 @@
 					//else valid, so change start node subsystem
 
 					Debug.log("The reader '<b>" +
-							_nodes[startNodeIndex].name +
+							getNodeNameWithoutStatus(startNodeIndex) +
 							"</b>' was successfully moved from subsystem '<b>" +
 							_subsystems[_nodes[startNodeIndex].subsystemId].label +
 							"</b>' to the " +
@@ -5225,7 +5231,7 @@
 						Debug.log("The " +
 								ARTDAQConfigurationAPI.NODE_TYPES[_nodes[endNodeIndex].type] +
 								" '<b>" +
-								_nodes[endNodeIndex].name +
+								getNodeNameWithoutStatus(endNodeIndex) +
 								"</b>' was successfully moved from subsystem '<b>" +
 								_subsystems[_nodes[endNodeIndex].subsystemId].label +
 								"</b>' to the " +
@@ -5303,7 +5309,7 @@
 					//else valid, so change end node subsystem
 
 					Debug.log("The dispatcher '<b>" +
-							_nodes[endNodeIndex].name +
+							getNodeNameWithoutStatus(endNodeIndex) +
 							"</b>' was successfully moved from subsystem '<b>" +
 							_subsystems[_nodes[endNodeIndex].subsystemId].label +
 							"</b>' to the " +
@@ -5369,7 +5375,7 @@
 					Debug.log("The " +
 							ARTDAQConfigurationAPI.NODE_TYPES[_nodes[endNodeIndex].type] +
 							" '<b>" +
-							_nodes[endNodeIndex].name +
+							getNodeNameWithoutStatus(endNodeIndex) +
 							"</b>' was successfully moved from subsystem '<b>" +
 							_subsystems[_nodes[endNodeIndex].subsystemId].label +
 							"</b>' to the " +

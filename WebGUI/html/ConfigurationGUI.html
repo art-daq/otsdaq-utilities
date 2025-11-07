@@ -328,6 +328,13 @@
 			top: 0;
 		}
 
+		.recordAdd {
+			text-decoration: none;
+			font-size: 30px;
+			font-weight: bold;
+			color: rgb(15, 152, 76);
+		}
+
 		#preloadImage-treeEditIconHover {
 			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 		}
@@ -2199,15 +2206,30 @@
 				//Debug.log("CfgGUI requestHandler config= " + tableName +
 				//				+ " tableNames.length " + tableVersions.length);
 
-				for (var j = 0; j < tableVersions.length; ++j) {
+				var versionIt, versionsHi;
+				for (var j = 0; j < tableVersions.length; ++j) 
+				{
 					version = tableVersions[j].getAttribute("value");
-					str += "<td align='center'>";
-					str += "version" + "<br>";
-					str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
-						"\",\"" + version + "\",\"" + backLinkStr + "\"); return false;'>";
-					str += ((version | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : version);
-					str += "</td>";
-				}
+					if(version && version.length && version[0] == '_') //if a span
+					{
+						var splitArr = version.split('_');
+						version = versionIt = splitArr[1] | 0;
+						versionsHi = splitArr[2] | 0;
+					}
+					else
+						versionIt = versionsHi = 0; //just to run once
+
+					for(;
+						versionIt <= versionsHi; ++versionIt, ++version)
+					{
+						str += "<td align='center'>";
+						str += "version" + "<br>";
+						str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
+							"\",\"" + version + "\",\"" + backLinkStr + "\"); return false;'>";
+						str += ((version | 0) == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : version);
+						str += "</td>";
+					} //end version span loop
+				} //end version xml value loop
 				str += "</tr></table>";
 				str += "</div>";
 				str += "</td></tr>";
@@ -8840,19 +8862,36 @@
 							{
 								str += "<div id='clearDiv'></div>";
 								str += "<div id='treeView-groupMemberEditDiv' " +
-									"style='height:200px; width:250px;" +
+									"style='height:200px; " +
+									(DesktopContent.getBodyWidth() > 950?
+										"width:500px;":"width:250px;") +
 									//"margin-bottom: 0px;" +
 									"margin: -20px 0 -5px 0;'"; //margin messes up error printing
 								"'";
 								str += ">";
 								str += "</div>";
 
+								//background box
+								str += "<div style='" +
+									"position: absolute;" +
+									(DesktopContent.getBodyWidth() > 950?
+										"left: 540px;":"left: 290px;") +
+									"top: 76px; " +
+									"height: 209px; width:559px;" +
+									"background-color: rgb(226, 216, 216);" +
+									"border-radius: 5px;" +
+									"z-index: 10;" +
+									"border: 1px solid rgb(153, 153, 153);" +
+									"'" +
+									"></div>";
 								//link for new default record in group
 								str += "<a onmouseup='event.stopPropagation();' " +
 									"id='treeView-editGroupLink-uidCreate' " +
 									"style='" +
 									"position: absolute;" +
-									"left: 300px; top: 80px;" +
+									(DesktopContent.getBodyWidth() > 950?
+										"left: 550px;":"left: 300px;") +
+									"top: 80px;" +
 									"z-index: 10;" +
 									"white-space: nowrap; text-decoration: underline;" +
 									"' " + //end style
@@ -8861,30 +8900,33 @@
 									"editTreeNodeOK();" +
 									"'" +
 									">";
-								str += "Create a new Default Record in Group";
+								str += "<div style='float: left; margin: -3px 0 3px 80px;' class='recordAdd'>+</div>";
+								str += "<div style='text-decoration: underline;float: right; margin: 4px -80px 0 8px;'>Create a new Default Record in Group</div>";
 								str += "</a>";
 
 								//uid info box
 								str += "<div id='treeView-editLink-uidInfo' " +
 									"onclick='event.stopPropagation();' onmouseup='event.stopPropagation();'" +
 									"style='" +
-									"height: 148px; width: 350px; position: absolute; " +
-									"display: none; background-color: rgb(193, 152, 152); " +
-									"left: 300px; top: 100px; border-radius: 5px; cursor: auto;" +
+									"height: 148px; width: 520px; position: absolute; " +
+									"display: block; background-color: rgb(193, 152, 152); " +
+									(DesktopContent.getBodyWidth() > 950?
+										"left: 550px;":"left: 300px;") +
+									"top: 110px; border-radius: 5px; cursor: auto;" +
 									"padding: 10px; overflow: auto; white-space: nowrap;" +
 									"z-index: 10;" +
-									"'>";
+									"'>Mouse over a Group Member record to show its field values.";
 
 							}
 							else if (linkIdType == "UID")		//add extra UID-link stuff
 							{
 								str += "<div id='clearDiv'></div>";
 
-								//backgroun box
+								//background box
 								str += "<div style='" +
 									"position: absolute;" +
 									"left: 170px; top: 76px; " +
-									"height: 199px; width:389px;" +
+									"height: 209px; width:559px;" +
 									"background-color: rgb(226, 216, 216);" +
 									"border-radius: 5px;" +
 									"z-index: 10;" +
@@ -8898,23 +8940,24 @@
 									"position: absolute;" +
 									"left: 180px; top: 80px;" +
 									"z-index: 10;" +
-									"white-space: nowrap; text-decoration: underline;" +
+									"white-space: nowrap; text-decoration: none;" +
 									"' " + //end style
 									"onclick='event.stopPropagation(); " +
 									"treeEditingNodeType_ = \"table-newUIDRow\";" +
 									"editTreeNodeOK();" +
 									"'" +
 									">";
-								str += "Create a new Default Record in Linked Table";
+								str += "<div style='float: left; margin: -3px 0 3px 80px;' class='recordAdd'>+</div>";
+								str += "<div style='text-decoration: underline;float: right; margin: 4px -80px 0 8px;'>Create a new Default Record in Linked Table</div>";
 								str += "</a>";
 
 								//uid info box
 								str += "<div id='treeView-editLink-uidInfo' " +
 									"onclick='event.stopPropagation();' onmouseup='event.stopPropagation();'" +
 									"style='" +
-									"height: 148px; width: 350px; position: absolute; " +
+									"height: 148px; width: 520px; position: absolute; " +
 									"display: none; background-color: rgb(193, 152, 152); " +
-									"left: 180px; top: 100px; border-radius: 5px; cursor: auto;" +
+									"left: 180px; top: 110px; border-radius: 5px; cursor: auto;" +
 									"padding: 10px; overflow: auto; white-space: nowrap;" +
 									"z-index: 10;" +
 									"'>";
