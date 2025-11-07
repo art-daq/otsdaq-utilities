@@ -1238,7 +1238,7 @@ Debug.handleErrorResize = function()
 	el.style.top = (h+6-10) + "px";
 
 	el = document.getElementsByClassName(Debug._errBoxId + "-err")[0];
-	el.style.height = (h-115) + "px";
+	el.style.height = (h-120) + "px";
 } //end handleErrorResize()
 
 
