@@ -7941,7 +7941,8 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		if(versionAliases.find(it->first) != versionAliases.end())
 			for(auto& aliasVersion : versionAliases[it->first])
 				if(it->second.versions_.find(aliasVersion.second) !=
-				   it->second.versions_.end()) //Note : scratch version is always an alias ==> ConfigurationManager::SCRATCH_VERSION_ALIAS)
+				   it->second.versions_
+				       .end())  //Note : scratch version is always an alias ==> ConfigurationManager::SCRATCH_VERSION_ALIAS)
 					xmlOut.addTextElementToParent(
 					    "Version",
 					    ConfigurationManager::ALIAS_VERSION_PREAMBLE + aliasVersion.first,
@@ -7958,7 +7959,8 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 			for(auto& keyInOrder : sortedKeys)
 			{
 				//skip scratch version
-				if(keyInOrder.isScratchVersion()) continue;
+				if(keyInOrder.isScratchVersion())
+					continue;
 
 				if(lo == size_t(-1))  //establish start of potential span
 				{
@@ -7976,9 +7978,9 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					xmlOut.addNumberElementToParent("Version", lo, configEl);
 				else  //span
 					xmlOut.addTextElementToParent(
-						"Version",
-						"_" + std::to_string(lo) + "_" + std::to_string(hi),
-						configEl);
+					    "Version",
+					    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+					    configEl);
 				hi = lo = keyInOrder.version();
 			}
 
@@ -7988,14 +7990,14 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					xmlOut.addNumberElementToParent("Version", lo, configEl);
 				else  //span
 					xmlOut.addTextElementToParent(
-						"Version",
-						"_" + std::to_string(lo) + "_" + std::to_string(hi),
-						configEl);
+					    "Version",
+					    "_" + std::to_string(lo) + "_" + std::to_string(hi),
+					    configEl);
 			}
 		};  //end local lambda vSpanToXML()
-		
+
 		vSpanToXML(it->second.versions_, xmlOut, parentEl);
-		
+
 	}  // end table loop
 
 }  // end handleTablesXML()
