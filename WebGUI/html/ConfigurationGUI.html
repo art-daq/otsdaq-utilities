@@ -294,6 +294,21 @@
 			cursor: pointer;
 		}
 
+		.treeNode-Value-editCommentIcon {
+			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-commentEdit.png);
+			width: 24px;
+			height: 20px;
+			float: left;
+			border: 0;
+			margin: -2px 5px -7px -30px;
+			display: none;
+		}
+
+		.treeNode-Value-editCommentIcon:hover {
+			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-commentEditHover.png);
+			cursor: pointer;
+		}
+
 		.treeNode-deleteIcon {
 			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
 			width: 16px;
@@ -337,6 +352,10 @@
 
 		#preloadImage-treeEditIconHover {
 			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
+		}
+
+		#preloadImage-treeEditCommentIconHover {
+			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-commentEditHover.png);
 		}
 
 		#preloadImage-treeEditTrashIcon {
@@ -5146,7 +5165,7 @@
 
 					if (nodeEditType == "link") //add edit icon for links
 						treeViewHandlerStr_ +=
-							//"<div style='margin-top:-4px; float:left;'>" + //to account for not being in value node
+							"<div style='margin-top:-4px; float:left;'>" + //to account for not being in value node
 							"<div class='treeNode-Value-editIcon' id='treeNode-Value-editIcon-" +
 							(depth + "-" + uid) + "' " +
 							"onclick='handleTreeNodeClick(" +
@@ -5155,7 +5174,7 @@
 							nodeEditType +
 							"\"); event.stopPropagation();' " +
 							"title='Edit this link.' " +
-							"></div>";
+							"></div></div>";
 
 					treeViewHandlerStr_ += "</td></tr></table>"; //close linkmenu/editicon table row
 				}
@@ -5169,10 +5188,10 @@
 				if(diffValueStr != "")
 					treeViewHandlerStr_ += "<td>" + diffValueStr + "</td>";
 
-				if (nodeEditType == "table") //since there is no editing of table, use editIcon
+				if (nodeEditType == "table") //since there is no editing of table, use editIcon position for comment icon
 					treeViewHandlerStr_ +=
 						"<td><div style='margin-top:-4px; float:left;'>" + //to account for not being in value node
-						"<div class='treeNode-Value-editIcon' id='treeNode-Value-editIcon-" +
+						"<div class='treeNode-Value-editCommentIcon' id='treeNode-Value-editIcon-" +
 						(depth + "-" + uid) + "' " +
 						"onclick='handleTreeNodeClick(" +
 						depth + "," + uid + "," +
@@ -5188,7 +5207,7 @@
 					nodeEditType = "link-comment";
 					treeViewHandlerStr_ +=
 						"<td><div style='margin-top:-1px; margin-left:70px; float:left;'>" + //to account for not being in value node
-						"<div class='treeNode-Value-editIcon' id='treeNode-Value-editCommentIcon-" +
+						"<div class='treeNode-Value-editCommentIcon' id='treeNode-Value-editCommentIcon-" +
 						(depth + "-" + uid) + "' " +
 						"onclick='handleTreeNodeClick(" +
 						depth + "," + uid + "," +
@@ -5205,7 +5224,7 @@
 					nodeEditType = "node-comment";
 					treeViewHandlerStr_ +=
 						"<td><div style='margin-top:-4px; float:left;'>" + //to account for not being in value node
-						"<div class='treeNode-Value-editIcon' id='treeNode-Value-editCommentIcon-" +
+						"<div class='treeNode-Value-editCommentIcon' id='treeNode-Value-editCommentIcon-" +
 						(depth + "-" + uid) + "' " +
 						"onclick='handleTreeNodeClick(" +
 						depth + "," + uid + "," +
@@ -8847,13 +8866,14 @@
 
 							str += "</td><td>";
 
-							str += "<div style='display:block' " +
+							str += "<div style='margin-top:-4px; float:left;'>" + //to account for not being in value node
+								"<div style='display:block' " +
 								"class='treeNode-Value-editIcon' " +
 								"id='editTree-groupIdFreeform-editIcon' " +
 								"onmouseup='event.stopPropagation();'" +
 								"onclick='handleEditTreeGroupIDEditFreeformToggle();event.stopPropagation();' " +
 								"title='Toggle free-form " + linkIdType + " editing' " +
-								"></div>";
+								"></div></div>";
 							str += "</td></tr></table>"; //end select and editIcon table
 
 							str += "</td></tr></table>";
@@ -19956,6 +19976,7 @@
 	<hr>
 	<div id='display'></div>
 	<div class='preloadImage' id='preloadImage-treeEditIconHover'></div>
+	<div class='preloadImage' id='preloadImage-treeEditCommentIconHover'></div>
 	<div class='preloadImage' id='preloadImage-treeEditTrashIcon'></div>
 	<div class='preloadImage' id='preloadImage-treeEditTrashIconHover'></div>
 	<div class='preloadImage' id='preloadImage-treeEditCopyIcon'></div>
