@@ -89,6 +89,7 @@ SubsystemLaunch.create = function() {
 	//	this.handleCheckbox(c)
 	//	this.getFsmName()
 	//	this.openChatWindow()
+	//  this.updateSubsystemName()
 
 
 
@@ -122,9 +123,7 @@ SubsystemLaunch.create = function() {
 				"\n\n" +
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
-				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts." +
-				"\n\n" +
-				"TODO: Add information to user for how to add subsystem. Data folder -> Config table -> Icon";
+				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
 			Debug.log("Subsystem Launch init ");
 			DesktopContent.tooltip("Subsystem Launch", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
@@ -625,10 +624,7 @@ SubsystemLaunch.create = function() {
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
 
-							SubsystemLaunch.subsystems[s].status == 'UNKNOWN' 
-								? str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url // Replace with hostname for the subsystem once functionality implemented
-								: str += SubsystemLaunch.subsystems[s].name + " at " + "hi ali";
-								//TODO: Move this from static rendering to dynamic rendering location -> move out of init
+							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							if(addLandingPage)
 								str += "</a>";
 							str += "</div>";
@@ -1246,19 +1242,41 @@ SubsystemLaunch.create = function() {
 		} //end localDisplayState()
 	}	//end displayStatus()
 
-	function updateSubsystemName() {
-		for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
-		{
-			if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN')
+	//=====================================================================================
+	//updateSubsystemName
+	function updateSubsystemName()
+	{
+		DesktopContent.XMLHttpRequest("../../urn:xdaq-application:lid=200/Request?RequestType=getAppStatus", "",
+			function(req,param,err)
 			{
-				document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url
-			}
-			else
-			{
-				document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + "hi ali";
-			}
-		}
-	}
+				if (err)
+				{
+					Debug.err("Could not load app status: " + err);
+				}
+				
+				let hostname = ""
+				const ips = req.responseXML.getElementsByTagName("context");
+
+				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+				{
+					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN')
+						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+					else
+					{
+						for (let i = 0; i < ips.length; i++)
+						{
+							const currentIp = ips[i].getAttribute("value");
+							if (currentIp && currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
+							{
+								hostname = ips[i].previousElementSibling.getAttribute("value");
+								break;
+							}
+						}
+						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
+					}
+				}
+			}, 0, 0, true, true);
+	}    //end updateSubsystemName()
 
 
 	//=====================================================================================
