@@ -1978,6 +1978,8 @@
 				_canvas.height = (h - _MARGIN*2);
 				_context.clearRect(0, 0, _canvas.width, _canvas.height);
 
+				_blackout.style.width = _canvas.width + "px";
+				_blackout.style.height = _canvas.height + "px";
 
 				if(_altStateDrawingMode)
 				{
@@ -2496,6 +2498,8 @@
 				var lt = [y/mag,-x/mag];
 				var arrowOff = _stateOvalRadius*2 + _ARROW_MARGIN;
 				var arrowSz = _perimeterRadius - arrowOff*2;
+				// Debug.logv({arrowSz});
+				// Debug.logv({arrowOff});
 
 				_context.save(); //matching save/restore 1
 
@@ -2503,15 +2507,15 @@
 				{
 					_context.fillStyle = getTransitionDrawingColor(stateIndex);
 					_context.beginPath();
-					_context.moveTo(startx + arrowOff*up[0] +
-									(_ARROW_PATH[0][0]*lt[0] + _ARROW_PATH[0][1]*up[0])*arrowSz,
+					_context.moveTo(startx + arrowOff*up[0] + //do not get so wide so quickly, so /2
+									(_ARROW_PATH[0][0]*lt[0]/2 + _ARROW_PATH[0][1]*up[0])*arrowSz,
 									starty + arrowOff*up[1] +
-									(_ARROW_PATH[0][0]*lt[1] + _ARROW_PATH[0][1]*up[1])*arrowSz);
+									(_ARROW_PATH[0][0]*lt[1]/2 + _ARROW_PATH[0][1]*up[1])*arrowSz);
 					for(var i=0;i<_ARROW_PATH.length;++i)
 						_context.lineTo(startx + arrowOff*up[0] +
-										(_ARROW_PATH[i][0]*lt[0] + _ARROW_PATH[i][1]*up[0])*arrowSz,
+										(_ARROW_PATH[i][0]*lt[0]/2 + _ARROW_PATH[i][1]*up[0])*arrowSz,
 										starty + arrowOff*up[1] +
-										(_ARROW_PATH[i][0]*lt[1] + _ARROW_PATH[i][1]*up[1])*arrowSz);
+										(_ARROW_PATH[i][0]*lt[1]/2 + _ARROW_PATH[i][1]*up[1])*arrowSz);
 					_context.closePath();
 					_context.fill();
 
