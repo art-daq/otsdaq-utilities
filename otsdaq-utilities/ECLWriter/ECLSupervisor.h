@@ -33,6 +33,7 @@
 
 #include "otsdaq-utilities/ECLWriter/ECLConnection.h"
 
+// clang-format off
 namespace ots
 {
 class ConfigurationManager;
@@ -63,13 +64,18 @@ class ECLSupervisor : public CoreSupervisorBase
 	xoap::MessageReference MakeSystemLogEntry(xoap::MessageReference msg);
 
   private:
-	void getCategories(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
-	void webUserSetActiveCategory(std::string category, HttpXmlDocument* xmldoc = 0);
-	void refreshLogbook(time_t              date,
-	                    size_t              duration,
-	                    HttpXmlDocument*    xmldoc         = 0,
-	                    std::ostringstream* out            = 0,
-	                    std::string         categoryFilter = "");
+	void								getCategories					(HttpXmlDocument* xmldoc = 0, std::ostringstream* out = 0);
+	void								webUserSetActiveCategory		(std::string category, HttpXmlDocument* xmldoc = 0);
+	void								refreshLogbook					(time_t              date,
+																		 size_t              duration,
+																		 HttpXmlDocument*    xmldoc         = 0,
+																		 std::ostringstream* out            = 0,
+																		 std::string         categoryFilter = "");
+	void 								createPost						(std::string&                        subject,
+																		 std::string&                        text,
+																		 const std::vector<cgicc::FormFile>& files,
+																		 std::string                         creator,
+																		 HttpXmlDocument*                    xmldoc = 0);
 
 	std::string ECLUser_;
 	std::string ECLHost_;
@@ -83,5 +89,6 @@ class ECLSupervisor : public CoreSupervisorBase
 	const std::string EscapeECLString(const std::string& input = "");
 };
 }  // namespace ots
+// clang-format on
 
 #endif
