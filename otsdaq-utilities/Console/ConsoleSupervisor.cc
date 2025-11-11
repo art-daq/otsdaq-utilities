@@ -370,29 +370,38 @@ try
 					missedSs << "Console missed "
 					         << (newSequenceId - 1) -
 					                (sourceLastSequenceID[newSourceId] + 1) + 1
-					         << " packet(s) from " << cs->messages_.back().getSource()
-					         << "!" << __E__;
+					         << " packet(s) [" << sourceLastSequenceID[newSourceId]
+					         << " -> " << newSequenceId << "] from "
+					         << cs->messages_.back().getSource() << ":" << newSourceId
+					         << "! (uptime: " << cs->getSupervisorUptime() << " s)"
+					         << __E__;
 					__SS__ << missedSs.str();
 					std::cout << ss.str();
 
-					// generate special message to indicate missed packets
-					cs->messages_.emplace_back(CONSOLE_SPECIAL_WARNING + missedSs.str(),
-					                           cs->messageCount_++,
-					                           cs->priorityCustomTriggerList_);
-					//force time to now for auto-generated message
-					cs->messages_.back().setTime(time(0));
-					//Force a custom count because Console Label are ignored! if(cs->messages_.back().hasCustomTriggerMatchAction())
-					if(cs->priorityCustomTriggerList_.size())
+					// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
+					// after startup grace period, generate special message to indicate missed packets
+					if(cs->getSupervisorUptime() > 20 /* seconds */)
 					{
-						cs->customTriggerActionQueue_.push(
-						    cs->priorityCustomTriggerList_
-						        [0]);  //push newest action to back
-						cs->priorityCustomTriggerList_[0]
-						    .occurrences++;  //increment occurrences
-						cs->customTriggerActionQueue_.back().triggeredMessageCountIndex =
-						    cs->messages_.back().getCount();
-						cs->messages_.back().setCustomTriggerMatch(
-						    cs->customTriggerActionQueue_.back());
+						cs->messages_.emplace_back(
+						    CONSOLE_SPECIAL_WARNING + missedSs.str(),
+						    cs->messageCount_++,
+						    cs->priorityCustomTriggerList_);
+						//force time to now for auto-generated message
+						cs->messages_.back().setTime(time(0));
+						//Force a custom count because Console Label are ignored! if(cs->messages_.back().hasCustomTriggerMatchAction())
+						if(cs->priorityCustomTriggerList_.size())
+						{
+							cs->customTriggerActionQueue_.push(
+							    cs->priorityCustomTriggerList_
+							        [0]);  //push newest action to back
+							cs->priorityCustomTriggerList_[0]
+							    .occurrences++;  //increment occurrences
+							cs->customTriggerActionQueue_.back()
+							    .triggeredMessageCountIndex =
+							    cs->messages_.back().getCount();
+							cs->messages_.back().setCustomTriggerMatch(
+							    cs->customTriggerActionQueue_.back());
+						}
 					}
 				}
 
