@@ -55,7 +55,7 @@ else
 		//------------------------------------------------------------------
 		var _defaultDashboardColor = "rgb(0,40,85)";
 
-		var _defaultAliasArray = [1,2,3,4,5];
+		var _defaultAliasArray = [-1,-1,-1,-1,-1];
 
 
 
@@ -821,6 +821,8 @@ else
 			_sysLayoutAliasArray = _sysLayoutAliasArray==undefined?_defaultAliasArray:_sysLayoutAliasArray.split(",");
 			_userPref_layout 	= Desktop.getXMLValue(req,"pref_layout").split(";");
 			_sysPref_layout 	= Desktop.getXMLValue(req,"pref_syslayout").split(";");
+
+			console.log("[DesktopDashboard]_sysLayoutAliasArray " + _sysLayoutAliasArray);
 
 			for(var i=0;i<numOfSystemLayouts;++i) {
 				if (_sysLayoutAliasArray[i]==-1)
