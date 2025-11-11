@@ -1051,8 +1051,6 @@ else {
 		//==============================================================================
 		this.getUserDefaultLayout = function(i) { return _userPref_layout.split(";")[i]; }
 		this.getSystemDefaultLayout = function(i) { return _sysPref_layout.split(";")[i]; }
-		this.getUserDefaultAliasLayout = function(i) { return _userPref_aliaslayout.split(";")[i]; }
-		this.getSystemDefaultAliasLayout = function(i) { return _sysPref_aliaslayout.split(";")[i]; }
 
 		//==============================================================================
 		this.activeSessionLogoutOption = function()

@@ -16,6 +16,7 @@
 
 			var _selectedLayout = -2; //hold index of selected , if any
 			var _mailbox,_settingsLayoutMailbox; //pass messages to Desktop
+			var _defaultAliasArray = [1,2,3,4,5];
 			var _layoutArray,_sysLayoutArray,_accountsArray;
 			var _layoutAliasArray, _sysLayoutAliasArray;
 			var _NUM_USER_LAYOUTS = 5; //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
@@ -159,9 +160,29 @@
 					"\nWhen security is enabled, users with admin privileges can create/modify/delete user accounts, " +
 					"and manipulate which user holds the <b>lock</b> (the ots lock mechanism enforces one-user-at-a-time for particular operations).";
 
-				const _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
-				const _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
 
+				DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
+					"", layoutSettingsHandler);
+
+				////////Tooltips/////////
+				DesktopContent.tooltip("User Settings Introduction", windowTooltip);
+				DesktopContent.setWindowTooltip(windowTooltip);
+			} //end init()
+
+			//==============================================================================
+			function layoutSettingsHandler(req)
+			{
+				_layoutAliasArray = DesktopContent.getXMLValue(req,"pref_aliaslayout")
+				_sysLayoutAliasArray = DesktopContent.getXMLValue(req,"pref_sysalias_layout");
+				_layoutAliasArray = _layoutAliasArray==undefined?_defaultAliasArray:_layoutAliasArray.split(",");
+				_sysLayoutAliasArray = _sysLayoutAliasArray==undefined?_defaultAliasArray:_sysLayoutAliasArray.split(",");
+				loadLayoutSettings();
+				settingsRequest();
+			}
+
+			//==============================================================================
+			function loadLayoutSettings()
+			{
 				var str = "";
 				//create windows layout div
 				for(var i=0;i<_NUM_USER_LAYOUTS;++i)
@@ -178,29 +199,23 @@
 					str += "<div class='winLayoutText' id='winLayoutText" + (i+1) + "'></div>";
 				}
 				str += "<div id='windSystemLayoutDiv' style='display:none; white-space:nowrap;'>" +
-						"<hr width='100%'/>";
-						for(var i=0;i<_NUM_SYS_LAYOUTS;++i)
-						{
-							if(i) str += "<br>";
-							str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS+i+1) +
-									",event)' class='winLayoutLink' id='winSysLayoutLink" + (i+1) + "'>" +
-									"<li>System Preset-" + (i+1) + " (Click to set)</li></a>";
-							
-							if(_sysLayoutAliasArray[i] != -1)
-								str +="<input type='text' id='winSysLayoutAlias" + (i+1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
-							else
-								str += "<input type='text' id='winSysLayoutAlias" + (i+1) + "' placeholder='Enter Alias'>";
-							str += "<div class='winLayoutText' id='winSysLayoutText" + (i+1) + "'></div>";
-						}
+					"<hr width='100%'/>";
+				for(var i=0;i<_NUM_SYS_LAYOUTS;++i)
+				{
+					if(i) str += "<br>";
+					str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS+i+1) +
+							",event)' class='winLayoutLink' id='winSysLayoutLink" + (i+1) + "'>" +
+							"<li>System Preset-" + (i+1) + " (Click to set)</li></a>";
+
+					if(_sysLayoutAliasArray[i] != -1)
+						str +="<input type='text' id='winSysLayoutAlias" + (i+1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
+					else
+						str += "<input type='text' id='winSysLayoutAlias" + (i+1) + "' placeholder='Enter Alias'>";
+					str += "<div class='winLayoutText' id='winSysLayoutText" + (i+1) + "'></div>";
+				}
 				str += "</div>";
 				document.getElementById("windLayoutDiv").innerHTML = str;
-
-				settingsRequest();
-
-				////////Tooltips/////////
-				DesktopContent.tooltip("User Settings Introduction", windowTooltip);
-				DesktopContent.setWindowTooltip(windowTooltip);
-			} //end init()
+			}
 
 			//=====================================================================================
 			//request current settings immediately once page loads
@@ -896,14 +911,12 @@
 				////////////////////////
 				//layout
 
-				var _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
-				var _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
-
-				Debug.log("_selectedLayout " + _selectedLayout);
+				var tmpAlias;
 				if(_selectedLayout >= 1 && _selectedLayout <= _NUM_USER_LAYOUTS) //set new  default layout from desktop mailbox
 				{
 					_layoutArray[_selectedLayout-1] = _settingsLayoutMailbox.innerHTML;
-					_layoutAliasArray[_selectedLayout-1] = document.getElementById("winLayoutAlias"+_selectedLayout).value;
+					tmpAlias = document.getElementById("winLayoutAlias"+_selectedLayout).value.trim();
+					_layoutAliasArray[_selectedLayout-1] = tmpAlias.length==0?_selectedLayout:tmpAlias;
 				}
 				//for array to proper size for sever communication (just in case)
 				_layoutArray = _layoutArray.slice(0,_NUM_USER_LAYOUTS);
@@ -919,7 +932,8 @@
 						_selectedLayout <= _NUM_USER_LAYOUTS+_NUM_SYS_LAYOUTS)
 				{
 					_sysLayoutArray[_selectedLayout-1-_NUM_USER_LAYOUTS] = _settingsLayoutMailbox.innerHTML;
-					_sysLayoutAliasArray[_selectedLayout-1] = document.getElementById("winSysLayoutAlias"+_selectedLayout).value;
+					tmpAlias = document.getElementById("winSysLayoutAlias"+_selectedLayout).value.trim();
+					_sysLayoutAliasArray[_selectedLayout-1] = tmpAlias.length==0?_selectedLayout:tmpAlias;
 				}
 				//for array to proper size for sever communication (just in case)
 				_sysLayoutArray = _sysLayoutArray.slice(0,_NUM_SYS_LAYOUTS);
@@ -929,12 +943,6 @@
 				for(var j=0;j<_sysLayoutArray.length;++j)
 					layoutStr += _sysLayoutArray[j] + (j==_sysLayoutArray.length-1?"":";");
 				data += "syslayout=" + layoutStr + "&";
-
-
-				localStorage.setItem("_layoutArray", JSON.stringify(_layoutArray));
-				localStorage.setItem("_sysLayoutArray", JSON.stringify(_sysLayoutArray));
-				localStorage.setItem("_layoutAliasArray", JSON.stringify(_layoutAliasArray));
-				localStorage.setItem("_sysLayoutAliasArray", JSON.stringify(_sysLayoutAliasArray));
 
 				////////////////////////
 				//send save req

@@ -55,6 +55,8 @@ else
 		//------------------------------------------------------------------
 		var _defaultDashboardColor = "rgb(0,40,85)";
 
+		var _defaultAliasArray = [1,2,3,4,5];
+
 
 
 		//all units in pixels unless otherwise specified
@@ -80,24 +82,11 @@ else
 
 		var _windowDashboardWindowCSSRule;  //e.g. _var.style.width = "100px"
 
+		var _userPref_layout, _sysPref_layout;
 		var _layoutDropDownDisplayed = false;
 		var _layoutMenuItems = [];
 		var numOfUserLayouts = 5;
 		var numOfSystemLayouts = 5;
-
-		Desktop.XMLHttpRequest(
-			"Request?RequestType=getSettings&accounts=1",
-			"",
-			function(req) {
-				var _layoutArray = Desktop.getXMLValue(req,"pref_layout").split(";");
-				var _sysLayoutArray = Desktop.getXMLValue(req,"pref_syslayout").split(";");
-				var _layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout").split(",");
-				var _sysLayoutAliasArray = Desktop.getXMLValue(req,"pref_sysalias_layout").split(",");
-				localStorage.setItem("_layoutArray", JSON.stringify(_layoutArray));
-				localStorage.setItem("_sysLayoutArray", JSON.stringify(_sysLayoutArray));
-				localStorage.setItem("_layoutAliasArray", JSON.stringify(_layoutAliasArray));
-				localStorage.setItem("_sysLayoutAliasArray", JSON.stringify(_sysLayoutAliasArray));
-		});
 
 		for(var i=0;i<numOfSystemLayouts;++i)
 			_layoutMenuItems.push("System Preset-" + (i+1));
@@ -480,47 +469,8 @@ else
 			}
 			if(!_layoutDropDownDisplayed) return; //do not create if closing
 
-			const _sysLayoutAliasArray = JSON.parse(localStorage.getItem("_sysLayoutAliasArray")) || [];
-			const _layoutAliasArray = JSON.parse(localStorage.getItem("_layoutAliasArray")) || [];
-
-			for(var i=0;i<numOfSystemLayouts;++i)
-				if (_sysLayoutAliasArray[i] != -1 && _sysLayoutAliasArray.length > 0)
-					_layoutMenuItems[i] = "System Preset-" + _sysLayoutAliasArray[i];
-			for(var i=0;i<numOfUserLayouts;++i)
-				if (_layoutAliasArray[i] != -1 && _layoutAliasArray.length > 0)
-					_layoutMenuItems[numOfSystemLayouts+i+1] = "User Preset-" + _layoutAliasArray[i];
-
-			//create default dropdown menu element
-			el = document.createElement("div");
-			el.setAttribute("id", "DesktopDashboard-defaults-dropdown");
-			el.style.backgroundColor = _defaultDashboardColor;
-			var str = "";
-			for(var i=0;i<_layoutMenuItems.length;++i)
-				if(_layoutMenuItems[i] == "---") //horizontal line
-					str += "<center><hr width='75%' style='border:1px solid; margin-top:5px'/></center>";
-				else {
-					str += "<a href='#' "
-					+ "id='layoutID" + i + "' "
-					+ "title='Preview' "
-					+ "onmouseup='Desktop.desktop.defaultLayoutSelect("+i+"); Desktop.desktop.dashboard.windowDashboardLayoutsDropDown();'>"
-					+ "onmouseover='Desktop.desktop.dashboard.hoverPreviewLayout(" + i + ");' "
-					+ _layoutMenuItems[i] + "</a>";
-
-					str += "<a onclick='Desktop.openNewBrowserTab(" +
-										"\"Desktop.openLayout(" + i + ")\",\"\"," +
-										"\"\",0 /*unique*/);' " + //end onclick
-										"title='Click to open the layout in a new tab' " +
-										">"
-					str += "<img style='width:11px;margin-left:10px;' " +
-							"src='/WebPath/images/dashboardImages/icon-New-Tab.png'>";
-					str += "</a>";
-
-					if(i<_layoutMenuItems.length-1)
-						str += "<br/>";
-				}
-
-			el.innerHTML = str;
-			_dashboardElement.appendChild(el);
+			Desktop.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
+					"", Desktop.desktop.dashboard.handleDashboardLayoutWindow);
 		} //end _windowDashboardLayoutsDropDown()
 
 		//------------------------------------------------------------------
@@ -863,18 +813,73 @@ else
 			},500); //end timeout handler
 		} //end handleDashboardWinMouseDown()
 
+		this.handleDashboardLayoutWindow = function(req) 
+		{
+			_layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout")
+			_sysLayoutAliasArray = Desktop.getXMLValue(req,"pref_sysalias_layout");
+			_layoutAliasArray = _layoutAliasArray==undefined?_defaultAliasArray:_layoutAliasArray.split(",");
+			_sysLayoutAliasArray = _sysLayoutAliasArray==undefined?_defaultAliasArray:_sysLayoutAliasArray.split(",");
+			_userPref_layout 	= Desktop.getXMLValue(req,"pref_layout").split(";");
+			_sysPref_layout 	= Desktop.getXMLValue(req,"pref_syslayout").split(";");
+
+			for(var i=0;i<numOfSystemLayouts;++i) {
+				if (_sysLayoutAliasArray[i]==-1)
+					_layoutMenuItems[i] = "System Preset-" + (i+1);
+				else
+					_layoutMenuItems[i] = "System Preset-" + _sysLayoutAliasArray[i];
+			}
+
+			for(var i=0;i<numOfUserLayouts;++i) {
+				if (_layoutAliasArray[i]==-1 || _layoutAliasArray[i].length==0)
+					_layoutMenuItems[numOfSystemLayouts+i+1] = "User Preset-" + (i+1);
+				else
+					_layoutMenuItems[numOfSystemLayouts+i+1] = "User Preset-" + _layoutAliasArray[i];
+			}
+
+			//create default dropdown menu element
+			el = document.createElement("div");
+			el.setAttribute("id", "DesktopDashboard-defaults-dropdown");
+			el.style.backgroundColor = _defaultDashboardColor;
+			var str = "";
+			for(var i=0;i<_layoutMenuItems.length;++i)
+				if(_layoutMenuItems[i] == "---") //horizontal line
+					str += "<center><hr width='75%' style='border:1px solid; margin-top:5px'/></center>";
+				else {
+					str += "<a href='#' "
+					+ "id='layoutID" + i + "' "
+					+ "title='Preview' "
+					+ "onmouseup='Desktop.desktop.defaultLayoutSelect("+i+"); Desktop.desktop.dashboard.windowDashboardLayoutsDropDown(); '"
+					+ "onmouseover='Desktop.desktop.dashboard.hoverPreviewLayout(" + i + ");'> "
+					+ _layoutMenuItems[i] + "</a>";
+
+					str += "<a onclick='Desktop.openNewBrowserTab(" +
+										"\"Desktop.openLayout(" + i + ")\",\"\"," +
+										"\"\",0 /*unique*/);' " + //end onclick
+										"title='Click to open the layout in a new tab' " +
+										">"
+					str += "<img style='width:11px;margin-left:10px;' " +
+							"src='/WebPath/images/dashboardImages/icon-New-Tab.png'>";
+					str += "</a>";
+
+					if(i<_layoutMenuItems.length-1)
+						str += "<br/>";
+				}
+
+			el.innerHTML = str;
+			_dashboardElement.appendChild(el);
+		}
+
 		//==============================================================================
 		this.hoverPreviewLayout = function(layoutID)
 		{
-			const _layoutArray = JSON.parse(localStorage.getItem("_layoutArray")) || [];
-			const _sysLayoutArray = JSON.parse(localStorage.getItem("_sysLayoutArray")) || [];
+			Debug.log("Previewing layout " + layoutID);
 
 			var str = "";
 			var el = document.getElementById("layoutID"+layoutID);
 
 			isSystemLayout = layoutID <= numOfSystemLayouts;
 			layoutID = (isSystemLayout?layoutID:layoutID-numOfSystemLayouts-1);
-			var winLayArr = (isSystemLayout?_sysLayoutArray:_layoutArray);
+			var winLayArr = (isSystemLayout?_sysPref_layout:_userPref_layout);
 
 			if(winLayArr[layoutID] == null) return;
 			var winLayArr = winLayArr[layoutID].split(",");
@@ -901,7 +906,6 @@ else
 					else if(winLayArr[i*numOfFields+j] == "2") //then maximized
 						str += ", Maximized";
 			}
-			str += ";";
 
 			el.title = str;
 		}
