@@ -1458,8 +1458,11 @@
 							"&fsmName=" + _fsmName +
 							"&fsmWindowName=" + _fsmWindowName,
 							transitionPostData,
-							function(req)
+							function(req, param, err)
 							{
+								if(err)
+									Debug.err(err);
+								
 								_awaitingRequestReply = false; //indicate reply has been received
 								_selectedTransition = localSelectedTransition; //return selection to overwrite any user mouse moves
 								physicsLaunchHandler(req, true /* transitionAttempted */);
