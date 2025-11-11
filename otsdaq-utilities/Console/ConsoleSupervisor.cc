@@ -380,7 +380,9 @@ try
 
 					// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
 					// after startup grace period, generate special message to indicate missed packets
-					if(cs->getSupervisorUptime() > 20 /* seconds */)
+					if(cs->getSupervisorUptime() > 20 /* seconds */ || 		
+						sourceLastSequenceID[newSourceId] != 1 || //veto missed error if sequenceID was 1 (this likely means a trace source was restarted)			
+						newSequenceId != 1) //veto missed error if sequenceID is 1 (this likely means a trace source was restarted)
 					{
 						cs->messages_.emplace_back(
 						    CONSOLE_SPECIAL_WARNING + missedSs.str(),
