@@ -17,7 +17,7 @@
 	//physicsLaunchHandler(req,transitionAttempted)
 	//handleMouseUp(mouseEvent)
 	//getTransitionParameterData(param)
-	//transitionTimerHandler(mouseEvent)
+	//transitionTimerHandler()
 	//handleCheckTransitionProgress(req)
 	//handleMouseMove(mouseEvent)
 	//drawHudForMouseHover()
@@ -377,7 +377,8 @@
 			var _parameterInitCount;
 			var _lastAliasListUpdateTime = 0;
 
-			var _inAnimation; //bool used to indicate if currently in transition (animation taking place)
+			var _inAnimation = false; //bool used to indicate if currently in transition (animation taking place)
+			var _awaitingRequestReply = false; //bool used to indicate if currently awaiting a request reply (and should avoid oscillating transition/state display)
 			var _smallStateMode, _stateOvalRadius, _perimeterRadius, _currStateTransArr;
 			var _fullConfigureDescriptionMode;
 			var _selectedTransition = -1; //init to nothing selected
@@ -1022,7 +1023,6 @@
 			//	poll current state of state machine
 			function currStateRequestHandler(req,id,err)
 			{
-
 				if(!req) //error! stop handler
 				{
 					window.clearTimeout(_verifyStateTimeout);
@@ -1130,11 +1130,15 @@
 						document.getElementById("run-number").innerHTML = DesktopContent.getXMLValue(req,"run_number");
 
 						window.clearTimeout(_verifyStateTimeout);
-						_verifyStateTimeout = window.setTimeout(getCurrentState,_VERIFY_STATE_PERIOD); //verify current state every 10 seconds (and resync time elapse)
+
+						if(!_awaitingRequestReply)
+							_verifyStateTimeout = window.setTimeout(getCurrentState,_VERIFY_STATE_PERIOD); //verify current state every 10 seconds (and resync time elapse)
+						else
+							Debug.log("Awaiting request reply, stop getting update for a moment!");
 
 
 						//if in transition and not animating, then this is a surprise, try to adjust
-						if(inTrans && (_transitionProgress === undefined ||
+						if(!_awaitingRequestReply && inTrans && (_transitionProgress === undefined ||
 								_transitionProgress == 100))
 						{
 							Debug.log("Server indicates in state transition. Attempting to refresh state machine...");
@@ -1145,7 +1149,7 @@
 						}
 
 						//if in transition and not animating, then this is a surprise, try to adjust
-						if(!inTrans && _transitionProgress !== undefined &&
+						if(!_awaitingRequestReply && !inTrans && _transitionProgress !== undefined &&
 								_transitionProgress < 100)
 						{
 							Debug.log("Server indicates NOT in state transition. Attempting to refresh state machine...");
@@ -1241,9 +1245,9 @@
 					{
 						var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
 						if(err)
-							Debug.log(err,Debug.HIGH_PRIORITY);
-						Debug.log("Server indicated failure to attempt state transition. Attempting to refresh state machine...",Debug.HIGH_PRIORITY);
-						//alert("Server indicated failure to attempt state transition.");
+							Debug.err(err);
+						Debug.err("Server indicated failure to attempt state transition. Attempting to refresh state machine...");
+
 						_inAnimation = false;
 
 						//refresh FSM
@@ -1252,6 +1256,10 @@
 						_transitionTimer = window.setInterval(transitionTimerHandler,_TRANS_TRANSLATE_PERIOD);
 						return;
 					}
+
+					Debug.log("Reply is in so continue transition"); //assume transition animation was already started with physicsLaunchHandler(0,false /*transitionAttempted*/); 
+					transitionTimerHandler();
+					return;
 				}
 
 				_inAnimation = true; //indicates transition animation starting
@@ -1429,6 +1437,10 @@
 				function localCompleteTransition(logEntry)
 				{
 					_inAnimation = true; //indicates transition animation starting
+					_awaitingRequestReply = true;; //indicates waiting for request reply
+
+					//start transition visuals early for quicker user feedback
+					physicsLaunchHandler(0,false /*transitionAttempted*/);
 
 					//stop verifying state during transition
 					window.clearTimeout(_verifyStateTimeout);
@@ -1448,10 +1460,11 @@
 							transitionPostData,
 							function(req)
 							{
+								_awaitingRequestReply = false; //indicate reply has been received
 								_selectedTransition = localSelectedTransition; //return selection to overwrite any user mouse moves
 								physicsLaunchHandler(req, true /* transitionAttempted */);
 							}, //end request handler
-							0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/,
+							0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/,
 							true /*doNoShowLoadingOverlay*/);
 				} //end localCompleteTransition()
 
@@ -1474,16 +1487,14 @@
 			//transitionTimerHandler ~~
 			//  fades out states, fades in progress, when transition complete at server fade out progress
 			//  and finally fade in new state
-			function transitionTimerHandler(mouseEvent)
+			function transitionTimerHandler()
 			{
-
-				//Debug.log("Physics transitionTimerHandler to state " + _transitionFadeAlpha);
-
+				// Debug.log("Physics transitionTimerHandler to state " + _transitionFadeAlpha);
 
 				if(_transitionFadeAlphaInc > 0 && _transitionFadeAlpha >= 1) //done fading out ------------------
 				{
 					//if first time, start checking for complete with server
-					if(_transitionProgress == -1)
+					if(_transitionProgress == -1 && !_awaitingRequestReply)
 					{
 						_transitionProgress = 0;
 						DesktopContent.XMLHttpRequest("Request?RequestType=getCurrentState" +
@@ -1560,9 +1571,14 @@
 					updateTimeInState(0); //reset local time in state
 					redrawPhysics(); //draw new state under blackout
 
-					//resume verifying state
-					window.clearTimeout(_verifyStateTimeout);
-					_verifyStateTimeout = window.setTimeout(getCurrentState,_VERIFY_STATE_PERIOD); //verify current state every 10 seconds (and resync time elapse)
+					if(!_awaitingRequestReply)
+					{
+						//resume verifying state
+						window.clearTimeout(_verifyStateTimeout);
+						_verifyStateTimeout = window.setTimeout(getCurrentState,_VERIFY_STATE_PERIOD); //verify current state every 10 seconds (and resync time elapse)
+					}
+					else
+						Debug.log("Awaiting request reply...");
 					return;
 				}
 				else 														//normal fade in or fade out -------------------
