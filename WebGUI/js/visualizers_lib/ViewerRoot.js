@@ -217,7 +217,6 @@ ViewerRoot.init = function()
 	func_list = new Array();
 	frame_id = 0;
 	random_id = 0;
-	_fsmName = "";
 
 	//create and add report container
 	ViewerRoot.rootContainer = document.createElement('div');
