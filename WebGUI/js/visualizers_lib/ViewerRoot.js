@@ -720,62 +720,11 @@ ViewerRoot.checkStreamerInfoLoaded = function() {
 }
 
 //=====================================================================================
-// ViewerRoot.currStateRequestHandler ~~
-ViewerRoot.currStateRequestHandler = function(req) {
-	if(!req) //error! stop handler
-	{
-		window.clearTimeout(_verifyStateTimeout);
-		window.clearInterval(_timeUpdateTimeout);
-		Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
-		return;
-	}
-	var cs = DesktopContent.getXMLValue(req,"current_state");
-	// var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
-	_fsmName = cs;
-}
-
-//=====================================================================================
-// ViewerRoot.checkState ~~
-ViewerRoot.checkState = function() {
-	return new Promise((resolve, reject) => {
-		DesktopContent.XMLHttpRequest(
-			"Request?RequestType=getCurrentState" +
-			"&fsmName=" + _fsmName,
-			"",
-			function(req) {
-				// This runs when the request finishes
-				ViewerRoot.currStateRequestHandler(req);
-				resolve(); // <-- allow awaiting functions to continue
-			},
-			0 /*reqParam*/,
-			0 /*progressHandler*/,
-			0 /*callHandlerOnErr*/,
-			true /*doNotShowLoadingOverlay*/,
-			true /*targetGatewaySupervisor*/,
-			true /*ignoreSystemBlock*/
-		);
-	});
-}
-
-//=====================================================================================
-// ViewerRoot.checkLiveDQMPathnState ~~
-ViewerRoot.checkLiveDQMPathnState = async function(path) {
-	await ViewerRoot.checkState();
-	return _fsmName == "Running" || !path.includes("LIVE_DQM.root");
-}
-
-//=====================================================================================
 // ViewerRoot.getDirectoryContents ~~
 //	request directory contents from server for path
-ViewerRoot.getDirectoryContents = async function(path) {
+ViewerRoot.getDirectoryContents = function(path) {
 
 	Debug.log("ViewerRoot getDirectoryContents " + path);
-
-	if (!(await ViewerRoot.checkLiveDQMPathnState(path))) {
-		// check if state is running and path is in LIVE DQM 
-		path = "///";  // set path to root 
-		Debug.errorPop("State needs to be Running to use Live DQM", 1);
-	}
 
 	if(path.indexOf(".root/") >=0)
 		DesktopContent.XMLHttpRequest("Request?RequestType=getRoot", "RootPath="+path, ViewerRoot.getDirContentsHandler,

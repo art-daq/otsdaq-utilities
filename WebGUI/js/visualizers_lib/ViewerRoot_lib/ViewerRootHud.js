@@ -398,10 +398,62 @@ ViewerRoot.createHud = function() {
 		redrawDirectoryDisplay(); //redraw current directory
 	} //end collapseDirectory()
 
+	// currStateRequestHandler ~~
+	this.currStateRequestHandler = function(req, dirPath, currDir) {
+		Debug.log("ViewerRoot Hud currStateRequestHandler");
+
+		if(!req) //error! stop handler
+		{
+			window.clearTimeout(_verifyStateTimeout);
+			window.clearInterval(_timeUpdateTimeout);
+			Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
+			return;
+		}
+
+		var cs = DesktopContent.getXMLValue(req,"current_state");
+		// var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
+
+		if(cs != "Running") {
+			var str = "State needs to be Running to use Live DQM.\n"
+			if(currDir != "")
+				str += "Click <a onclick='javascript:Debug.closeErrorPop();Javascript:ViewerRoot.hud.returnToRootDirectory();'>here</a> to return to root directory"
+			Debug.errorPop(str, 1);
+		} else {
+			currDirPtr = findDir(dirPath);
+			ViewerRoot.getDirectoryContents(dirPath);
+		}
+	} // end currStateRequestHandler()
+
+	// returnToRootDirectory ~~
+	this.returnToRootDirectory = function() {
+		Debug.log("ViewerRoot Hud returnToRootDirectory");
+
+		ViewerRoot.hud.changeDirectory("/");
+	} // end returnToRootDirectory()
+
+	// changeDirectory ~~
 	this.changeDirectory = function(dirPath) {
 		Debug.log("ViewerRoot Hud changeDirectory  " + dirPath);
-		currDirPtr = findDir(dirPath);
-		ViewerRoot.getDirectoryContents(dirPath);
+
+		if (dirPath.includes("LIVE_DQM.root")) {
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getCurrentState" +
+				"&fsmName=" + _fsmName,
+				"",
+				function(req) {
+					ViewerRoot.hud.currStateRequestHandler(req, dirPath, currDirPtr[1]);
+				},
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/,
+				true /*ignoreSystemBlock*/
+			);
+		} else {
+			currDirPtr = findDir(dirPath);
+			ViewerRoot.getDirectoryContents(dirPath);
+		}
 	} // end changeDirectory()
 
 
