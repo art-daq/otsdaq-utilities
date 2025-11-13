@@ -14,6 +14,7 @@ ViewerRoot.createHud = function() {
 	//	findDir(path,currDir,currPath)
 	//	redrawDirectoryDisplay(currDir,tabSz,path,str)
 	//	this.collapseDirectory(dirPath)
+	//  this.currStateRequestHandler(req,paths)
 	//	this.changeDirectory(dirPath)
 	//	animateDropDown()
 	//	mouseOverDropDown()
@@ -400,7 +401,7 @@ ViewerRoot.createHud = function() {
 	} //end collapseDirectory()
 
 	// currStateRequestHandler ~~
-	this.currStateRequestHandler = function(req, dirPath, currDir) {
+	this.currStateRequestHandler = function(req,paths) {
 		Debug.log("ViewerRoot Hud currStateRequestHandler");
 
 		if(!req) //error! stop handler
@@ -413,6 +414,8 @@ ViewerRoot.createHud = function() {
 
 		var cs = DesktopContent.getXMLValue(req,"current_state");
 		// var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
+
+		const [dirPath, currDir] = paths;
 
 		if(cs != "Running") {
 			var str = "State needs to be Running to use Live DQM.\n"
@@ -434,10 +437,8 @@ ViewerRoot.createHud = function() {
 				"Request?RequestType=getCurrentState" +
 				"&fsmName=" + _fsmName,
 				"",
-				function(req) {
-					ViewerRoot.hud.currStateRequestHandler(req, dirPath, currDirPtr[1]);
-				},
-				0 /*reqParam*/,
+				ViewerRoot.hud.currStateRequestHandler,
+				[dirPath, currDirPtr[1]] /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,

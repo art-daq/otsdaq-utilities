@@ -189,6 +189,8 @@ ViewerRoot._fsmName;
 //ViewerRoot.rootConfigReq
 //ViewerRoot.getRootConfigHandler
 //ViewerRoot.iterativeConfigLoader
+//ViewerRoot.currStateRequestHandler
+//ViewerRoot.haltRefresh
 //ViewerRoot.getRootDataHandler
 //ViewerRoot.interpretObjectBuffer
 
@@ -869,7 +871,7 @@ ViewerRoot.iterativeConfigLoader = function() {
 
 //=====================================================================================
 // ViewerRoot.currStateRequestHandler ~~
-ViewerRoot.currStateRequestHandler = function(req)
+ViewerRoot.currStateRequestHandler = function(req, rootName)
 {
 	Debug.log("ViewerRoot Hud currStateRequestHandler");
 
@@ -884,9 +886,23 @@ ViewerRoot.currStateRequestHandler = function(req)
 	var cs = DesktopContent.getXMLValue(req,"current_state");
 	var in_transition 		= DesktopContent.getXMLValue(req,"in_transition");
 
-	if(cs != "Running" || in_transition)
+	if(cs != "Running" || in_transition) {
 		Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
+		ViewerRoot.haltRefresh(rootName, Debug.WARN_PRIORITY);
+	}
 }//end currStateRequestHandler()
+
+//=====================================================================================
+// ViewerRoot.haltRefresh ~~
+ViewerRoot.haltRefresh = function(rootName, debugLevel) {
+	Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors or resumme run. Then uncheck the 'Pause Refresh' in the bottom right.", debugLevel);
+	var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
+	chk.checked = true;
+	ViewerRoot.pauseRefresh = true;
+
+	Debug.log("Error reading Root object from server - Name: " + rootName, debugLevel);
+	ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
+}//end haltRefresh()
 
 //=====================================================================================
 // ViewerRoot.getRootDataHandler ~~
@@ -919,25 +935,19 @@ ViewerRoot.getRootDataHandler = function(req, objHanlder)
 				"&fsmName=" + ViewerRoot._fsmName,
 				"",
 				ViewerRoot.currStateRequestHandler,
-				0 /*reqParam*/,
+				rootName /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/,
 				true /*ignoreSystemBlock*/
 			);
-			return;
 		}
-		else {
-			Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors or resumme run. Then uncheck the 'Pause Refresh' in the bottom right.", Debug.HIGH_PRIORITY);
-			var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
-			chk.checked = true;
-			ViewerRoot.pauseRefresh = true;
-	
-			Debug.log("Error reading Root object from server - Name: " + rootName, Debug.HIGH_PRIORITY);
-			ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
-			return;
+		else
+		{
+			ViewerRoot.haltRefresh(rootName, Debug.HIGH_PRIORITY);
 		}
+		return;
 	}
 
 	var rootTitle = object.fTitle;
