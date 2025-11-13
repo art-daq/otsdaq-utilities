@@ -884,9 +884,9 @@ ViewerRoot.currStateRequestHandler = function(req, rootName)
 	}
 
 	var cs = DesktopContent.getXMLValue(req,"current_state");
-	var in_transition 		= DesktopContent.getXMLValue(req,"in_transition");
+	var in_transition = DesktopContent.getXMLValue(req,"in_transition");
 
-	if(cs != "Running" || in_transition) {
+	if(cs != "Running" || in_transition == "1") {
 		Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
 		ViewerRoot.haltRefresh(rootName, Debug.WARN_PRIORITY);
 	}

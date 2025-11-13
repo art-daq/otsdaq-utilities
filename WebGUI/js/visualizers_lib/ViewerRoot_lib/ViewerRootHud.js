@@ -413,16 +413,20 @@ ViewerRoot.createHud = function() {
 		}
 
 		var cs = DesktopContent.getXMLValue(req,"current_state");
-		// var inTrans = DesktopContent.getXMLValue(req,"in_transition") == "1";
+		var inTrans = DesktopContent.getXMLValue(req,"in_transition");
 
 		const [dirPath, currDir] = paths;
 
-		if(cs != "Running") {
+		if (cs == "Running" && inTrans == "1") {
+			Debug.log("Detected transition out of the 'Running' state. Resume run to continue LIVE DQM.", Debug.WARN_PRIORITY);
+		}
+		else if(cs != "Running") {
 			var str = "State needs to be Running to use Live DQM.\n"
 			if(currDir != "")
 				str += "Click <a onclick='javascript:Debug.closeErrorPop();Javascript:ViewerRoot.hud.changeDirectory(\"/\");'>here</a> to return to root directory"
 			Debug.log(str, Debug.WARN_PRIORITY);
-		} else {
+		}
+		else {
 			currDirPtr = findDir(dirPath);
 			ViewerRoot.getDirectoryContents(dirPath);
 		}
