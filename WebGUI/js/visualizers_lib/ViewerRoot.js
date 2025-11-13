@@ -166,6 +166,8 @@ ViewerRoot.iterRootIsAutoRefreshArr;
 ViewerRoot.iterSaveNextObjectMode;
 ViewerRoot.iterSaveAutoRefreshDefault;
 
+ViewerRoot._fsmName;
+
 
 
 //"private" function list
@@ -764,11 +766,13 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 
 	if(refreshIndex === undefined) refreshIndex = -1;
 
+	objHanlder = [rootPath,refreshIndex];
+
 	Debug.log("ViewerRoot.rootReq " + rootPath );
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot",
 			"RootPath="+rootPath,
 			ViewerRoot.getRootDataHandler,
-			refreshIndex /*reqParam*/,
+			objHanlder /*reqParam*/,
 			 0 /*progressHandler*/,
 			 0 /*callHandlerOnErr*/,
 			 refreshIndex<0?false:true /*doNoShowLoadingOverlay*/);
@@ -863,11 +867,31 @@ ViewerRoot.iterativeConfigLoader = function() {
 
 } //end iterativeConfigLoader()
 
+//=====================================================================================
+// ViewerRoot.currStateRequestHandler ~~
+ViewerRoot.currStateRequestHandler = function(req)
+{
+	Debug.log("ViewerRoot Hud currStateRequestHandler");
+
+	if(!req) //error! stop handler
+	{
+		window.clearTimeout(_verifyStateTimeout);
+		window.clearInterval(_timeUpdateTimeout);
+		Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
+		return;
+	}
+
+	var cs = DesktopContent.getXMLValue(req,"current_state");
+	var in_transition 		= DesktopContent.getXMLValue(req,"in_transition");
+
+	if(cs != "Running" || in_transition)
+		Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
+}//end currStateRequestHandler()
 
 //=====================================================================================
 // ViewerRoot.getRootDataHandler ~~
 //	receives streamed root object from server and prepares it for js structures
-ViewerRoot.getRootDataHandler = function(req, refreshIndex)
+ViewerRoot.getRootDataHandler = function(req, objHanlder)
 {
 
 	//Debug.log("ViewerRoot getRootDataHandler " + req.responseText );
@@ -878,6 +902,8 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 	//"my" + rootType + ViewerRoot.objIndex;// DesktopContent.getXMLValue(req,"path");// + ViewerRoot.objIndex;
 	//if(rootName.length > 20) rootName = "..." + rootName.substr(rootName.length-18);
 
+	const [rootPath,refreshIndex] = objHanlder;
+
 	var rootJSON = DesktopContent.getXMLValue(req,"rootJSON");
 
 	//Debug.log("ViewerRoot tmpRootDataHandler JSON \n\n" + rootJSON );
@@ -886,15 +912,32 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 
 	if(!object || !rootType || !rootName)
 	{
-		Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors before resuming refreshes.", Debug.HIGH_PRIORITY);
-
-		var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
-		chk.checked = true;
-		ViewerRoot.pauseRefresh = true;
-
-		Debug.log("Error reading Root object from server - Name: " + rootName, Debug.HIGH_PRIORITY);
-		ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
-		return;
+		if(rootPath.includes("LIVE_DQM.root"))
+		{
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getCurrentState" +
+				"&fsmName=" + ViewerRoot._fsmName,
+				"",
+				ViewerRoot.currStateRequestHandler,
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/,
+				true /*ignoreSystemBlock*/
+			);
+			return;
+		}
+		else {
+			Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors or resumme run. Then uncheck the 'Pause Refresh' in the bottom right.", Debug.HIGH_PRIORITY);
+			var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
+			chk.checked = true;
+			ViewerRoot.pauseRefresh = true;
+	
+			Debug.log("Error reading Root object from server - Name: " + rootName, Debug.HIGH_PRIORITY);
+			ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
+			return;
+		}
 	}
 
 	var rootTitle = object.fTitle;

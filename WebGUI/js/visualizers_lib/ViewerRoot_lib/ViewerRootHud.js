@@ -33,6 +33,7 @@ ViewerRoot.createHud = function() {
 	var hudDirBrowserDiv;
 	var hudAdminSettingsDiv;
 	var hudPopUpDiv = 0;
+	var _fsmName;
 
 	var displayingControls = false;
 	var PRE_MADE_ROOT_CFG_DIR = "Pre-made Views";
@@ -416,20 +417,13 @@ ViewerRoot.createHud = function() {
 		if(cs != "Running") {
 			var str = "State needs to be Running to use Live DQM.\n"
 			if(currDir != "")
-				str += "Click <a onclick='javascript:Debug.closeErrorPop();Javascript:ViewerRoot.hud.returnToRootDirectory();'>here</a> to return to root directory"
-			Debug.errorPop(str, 1);
+				str += "Click <a onclick='javascript:Debug.closeErrorPop();Javascript:ViewerRoot.hud.changeDirectory(\"/\");'>here</a> to return to root directory"
+			Debug.log(str, Debug.WARN_PRIORITY);
 		} else {
 			currDirPtr = findDir(dirPath);
 			ViewerRoot.getDirectoryContents(dirPath);
 		}
 	} // end currStateRequestHandler()
-
-	// returnToRootDirectory ~~
-	this.returnToRootDirectory = function() {
-		Debug.log("ViewerRoot Hud returnToRootDirectory");
-
-		ViewerRoot.hud.changeDirectory("/");
-	} // end returnToRootDirectory()
 
 	// changeDirectory ~~
 	this.changeDirectory = function(dirPath) {
