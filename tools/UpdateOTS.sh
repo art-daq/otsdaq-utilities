@@ -529,10 +529,10 @@ for p in ${REPO_DIR[@]}; do
 	if [ -d $p/.git ]; then
 
 		bp=$(basename $p)
-		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" ]]; then
+		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" || $bp = "otsdaq-utilities" || $bp = "otsdaq-components" || $bp = "otsdaq-epics" || $bp = "otsdaq-suite" ]]; then
 			continue #skip core repos
 		fi
-		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" ]]; then
+		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" && $bp != "otsdaq-utilities" && $bp != "otsdaq-components" && $bp != "otsdaq-epics" && $bp != "otsdaq-suite" ]]; then
 			continue #skip non-core repos
 		fi
 
@@ -565,10 +565,10 @@ for p in ${REPO_DIR[@]}; do
 	if [ -d $p/.git ]; then
 
 	bp=$(basename $p)
-	if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" ]]; then
+	if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" || $bp = "otsdaq-utilities" || $bp = "otsdaq-components" || $bp = "otsdaq-epics" || $bp = "otsdaq-suite" ]]; then
 		continue #skip core repos
 	fi
-	if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" ]]; then
+	if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" && $bp != "otsdaq-utilities" && $bp != "otsdaq-components" && $bp != "otsdaq-epics" && $bp != "otsdaq-suite" ]]; then
 		continue #skip non-core repos
 	fi
 
@@ -816,10 +816,10 @@ for p in ${REPO_DIR[@]}; do
 
 
 		bp=$(basename $p)
-		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" ]]; then
+		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" || $bp = "otsdaq-utilities" || $bp = "otsdaq-components" || $bp = "otsdaq-epics" || $bp = "otsdaq-suite" ]]; then
 			continue #skip core repos
 		fi
-		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" ]]; then
+		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" && $bp != "otsdaq-utilities" && $bp != "otsdaq-components" && $bp != "otsdaq-epics" && $bp != "otsdaq-suite" ]]; then
 			continue #skip non-core repos
 		fi
 
