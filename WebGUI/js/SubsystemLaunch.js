@@ -1261,6 +1261,7 @@ SubsystemLaunch.create = function() {
 				
 				let hostname = ""
 				const ips = req.responseXML.getElementsByTagName("context");
+				let ipFound = false;
 
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
@@ -1271,16 +1272,20 @@ SubsystemLaunch.create = function() {
 						for (let i = 0; i < ips.length; i++)
 						{
 							const currentIp = ips[i].getAttribute("value");
-							if(!currentIp)
-							{
-								Debug.warn("The list of IP addresses corresponding to the subsystems was not found!");
-								return;
-							}
-							if (currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
+
+							if (currentIp && currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
 							{
 								hostname = ips[i].previousElementSibling.getAttribute("value");
+								ipFound = true;
 								break;
 							}
+						}
+						
+						if(!ipFound)
+						{
+							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + "was not found!");
+							document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							return;
 						}
 						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
 					}
