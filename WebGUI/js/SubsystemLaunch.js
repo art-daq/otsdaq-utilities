@@ -1280,10 +1280,10 @@ SubsystemLaunch.create = function() {
 								break;
 							}
 						}
-						
+
 						if(!ipFound)
 						{
-							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + "was not found!");
+							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
 							document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							return;
 						}
