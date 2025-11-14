@@ -1251,7 +1251,7 @@ SubsystemLaunch.create = function() {
 	//subsystems with their corresponding hostnames based on their IP addresses.
 	function updateSubsystemNames()
 	{
-		DesktopContent.XMLHttpRequest("../../urn:xdaq-application:lid=200/Request?RequestType=getAppStatus", "", //from GatewaySupervisor
+		DesktopContent.XMLHttpRequest("Request?RequestType=getAppStatus", "",
 			function(req,param,err)
 			{
 				if (err)
@@ -1290,7 +1290,12 @@ SubsystemLaunch.create = function() {
 						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
 					}
 				}
-			}, 0, 0, true, true);
+			},
+			0 /*reqParam*/,
+			0 /*progressHandler*/,
+			0 /*callHandlerOnErr*/,
+			true /*doNotShowLoadingOverlay*/,
+			true /*targetGatewaySupervisor*/);
 	}    //end updateSubsystemNames()
 
 
