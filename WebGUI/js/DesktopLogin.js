@@ -72,6 +72,7 @@ else {
 
 		//user preferences
 		var _userPref_bgColor, _userPref_dbColor, _userPref_winColor, _userPref_layout, _sysPref_layout;
+		var _userPref_aliaslayout, _sysPref_aliaslayout;
 		var _applyUserPreferences;
 		var _updateCurrentLayoutTimeout = 0;
 		var _UPDATE_LAYOUT_TIMEOUT_PERIOD = 2000; //give time for user to stop making changes, in ms
@@ -1022,6 +1023,8 @@ else {
 				_userPref_winColor 	= Desktop.getXMLValue(req,"pref_wincolor");
 				_userPref_layout 	= Desktop.getXMLValue(req,"pref_layout");
 				_sysPref_layout 	= Desktop.getXMLValue(req,"pref_syslayout");
+				_userPref_aliaslayout = Desktop.getXMLValue(req,"pref_aliaslayout");
+				_sysPref_aliaslayout = Desktop.getXMLValue(req,"pref_sysalias_layout");
 			}
 
 			Desktop.desktop.dashboard.setDefaultDashboardColor(_userPref_dbColor);
