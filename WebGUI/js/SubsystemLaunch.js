@@ -89,7 +89,7 @@ SubsystemLaunch.create = function() {
 	//	this.handleCheckbox(c)
 	//	this.getFsmName()
 	//	this.openChatWindow()
-	//  this.updateSubsystemName()
+	//  this.updateSubsystemNames()
 
 
 
@@ -763,6 +763,7 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
 	//getCurrentStatus ~~
 	var _getStatusCounter = 0;
+	var _updatesubsystemNamesCounter = 0;
 	function getCurrentStatus()
 	{
 		// Debug.log("getCurrentStatus()");
@@ -781,7 +782,9 @@ SubsystemLaunch.create = function() {
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
-		updateSubsystemName();
+		!(_updatesubsystemNamesCounter++ % 50) && updateSubsystemNames();
+		//update updatesubsystemNames fetches and parses xml so is expensive to run
+		//call once repeat every 50 cycles ~ 1 minute
 		return;
 
 		//===========
@@ -1243,10 +1246,12 @@ SubsystemLaunch.create = function() {
 	}	//end displayStatus()
 
 	//=====================================================================================
-	//updateSubsystemName
-	function updateSubsystemName()
+	//updateSubsystemNames
+	//This function queries getAppStatus from the AppStatus application. It matches
+	//subsystems with their corresponding hostnames based on their IP addresses.
+	function updateSubsystemNames()
 	{
-		DesktopContent.XMLHttpRequest("../../urn:xdaq-application:lid=200/Request?RequestType=getAppStatus", "",
+		DesktopContent.XMLHttpRequest("../../urn:xdaq-application:lid=200/Request?RequestType=getAppStatus", "", //from GatewaySupervisor
 			function(req,param,err)
 			{
 				if (err)
@@ -1259,14 +1264,19 @@ SubsystemLaunch.create = function() {
 
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
-					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN')
+					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN') //inactive subsystem/between states
 						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 					else
 					{
 						for (let i = 0; i < ips.length; i++)
 						{
 							const currentIp = ips[i].getAttribute("value");
-							if (currentIp && currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
+							if(!currentIp)
+							{
+								Debug.warn("The list of IP addresses corresponding to the subsystems was not found!");
+								return;
+							}
+							if (currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
 							{
 								hostname = ips[i].previousElementSibling.getAttribute("value");
 								break;
@@ -1276,7 +1286,7 @@ SubsystemLaunch.create = function() {
 					}
 				}
 			}, 0, 0, true, true);
-	}    //end updateSubsystemName()
+	}    //end updateSubsystemNames()
 
 
 	//=====================================================================================
