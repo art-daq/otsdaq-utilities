@@ -25,7 +25,7 @@
 		//setupTableViewMode(anchorTarget)							//gets tables
 		//tableViewRequestHandler(req,anchorTarget)
 		//tableSearchSelectionHandler(el)
-		//showTableTooltip(tableName)
+		//showTableTooltip(tableName, doNotAlwaysShow)
 
 		//setupSpecificTableGroup(groupName,groupKey,backLinkStr,anchorTarget)	//setup editor for specific table group
 		//specificGroupRequestHandler(req,param,errStr)
@@ -2302,7 +2302,7 @@
 
 		//==============================================================================
 		//showTableTooltip ~~
-		function showTableTooltip(tableName)
+		function showTableTooltip(tableName, doNotAlwaysShow)
 		{
 			Debug.log("showTableTooltip() " + tableName);
 
@@ -2320,17 +2320,17 @@
 							"table or the meaning of the column fields (admins can edit the description in the Table Editor in wiz mode). Here is the description for " +
 							"the '<b>" + tableName + "</b>' table:<br><br>" +
 							"<div style='margin-left:20px'>" +
-							tableDescription + "</div>", true /*alwaysShow*/);
+							tableDescription + "</div>", !doNotAlwaysShow /*alwaysShow*/);
 				else
 					DesktopContent.tooltip("Missing " + tableName + " Description",
 							"There is no table description for '<b>" +
 							tableName +
 							"</b>.' To create or edit a table description, go to the Table Editor in wiz mode.",
-							true /*alwaysShow*/);
+							!doNotAlwaysShow /*alwaysShow*/);
 					}, //end table response handler
 
 					0, //parameter
-					0, true  //progressHandler, callHandlerOnErr
+					0, false  //progressHandler, callHandlerOnErr
 			); //end request
 		} //end showTableTooltip
 
@@ -6316,6 +6316,11 @@
 							//jump to value to scroll to top of node (to see diff)
 							jump("treeNode-Value-" + treeEditingNodeParentIdString_);
 						}
+
+						//show tooltip if opening root level table
+						if(path == "/" && nodeName != "")
+							showTableTooltip(nodeName, true /* doNotAlwaysShow */);
+						
 					}, //end getTreeView handler
 					idString,
 					0, true); //progressHandler, callHandlerOnErr

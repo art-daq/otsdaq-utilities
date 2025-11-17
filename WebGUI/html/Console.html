@@ -1603,6 +1603,12 @@
 
 				updateSideBarCounts();
 
+				if(document.getElementById("consoleConnectionStatus").style.display == "block")
+				{
+					Debug.log("Disconnected so reloading console");
+					reconnectConsole();
+				}
+
 			} //end clearConsoleMessages()
 
 			//=====================================================================================
