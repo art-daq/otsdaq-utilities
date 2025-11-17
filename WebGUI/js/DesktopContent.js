@@ -1648,11 +1648,12 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 		//if(!DesktopContent._cookieCodeMailbox) //attempt to fix (e.g. for Desktop)
 		//	DesktopContent._cookieCodeMailbox = document.getElementById("DesktopContent-cookieCodeMailbox");
 		var cc = DesktopContent._cookieCodeMailbox;//DesktopContent._cookieCodeMailbox?DesktopContent._cookieCodeMailbox.innerHTML:""; //get cookie code from mailbox if available
-		reqData = "CookieCode="+cc+((data===undefined)?"":("&"+data));
+		reqData = "RequestOrigin=" + DesktopContent._serverOrigin + 
+			"&CookieCode="+cc+((data=="" || data===undefined)?"":("&"+data));
 	}
-	else
+	else //wiz mode
 	{
-		reqData = "sequence="+sequence+((data===undefined)?"":("&"+data));
+		reqData = "sequence="+sequence+((data=="" || data===undefined)?"":("&"+data));
 	}
 
 
