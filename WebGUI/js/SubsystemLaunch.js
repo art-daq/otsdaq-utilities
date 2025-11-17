@@ -143,6 +143,7 @@ SubsystemLaunch.create = function() {
 		} //end first time landing handling
 
 		window.clearTimeout(_getStatusTimer);
+		_updatesubsystemNamesCounter = 0; //reset counter for updating subsystem names
 
 		window.onclick = function()
 		{
@@ -1091,11 +1092,11 @@ SubsystemLaunch.create = function() {
 							if(_getAutoInitCount > 0)
 								Debug.err("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 							else
 								Debug.log("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 
 
 							if(_getAutoInitCount > 0)
