@@ -1261,10 +1261,10 @@ SubsystemLaunch.create = function() {
 				
 				let hostname = ""
 				const ips = req.responseXML.getElementsByTagName("context");
-				let ipFound = false;
 
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
+					let ipFound = false;
 					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN') //inactive subsystem/between states
 						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 					else
