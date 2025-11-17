@@ -89,6 +89,7 @@ SubsystemLaunch.create = function() {
 	//	this.handleCheckbox(c)
 	//	this.getFsmName()
 	//	this.openChatWindow()
+	//  this.updateSubsystemNames()
 
 
 
@@ -622,8 +623,8 @@ SubsystemLaunch.create = function() {
 									"title='Click to open Subsystem Landing Page of &apos;" +
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
-							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 
+							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							if(addLandingPage)
 								str += "</a>";
 							str += "</div>";
@@ -762,6 +763,7 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
 	//getCurrentStatus ~~
 	var _getStatusCounter = 0;
+	var _updatesubsystemNamesCounter = 0;
 	function getCurrentStatus()
 	{
 		// Debug.log("getCurrentStatus()");
@@ -780,7 +782,9 @@ SubsystemLaunch.create = function() {
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
-
+		!(_updatesubsystemNamesCounter++ % 50) && updateSubsystemNames();
+		//update updatesubsystemNames fetches and parses xml so is expensive to run
+		//call once repeat every 50 cycles ~ 1 minute
 		return;
 
 		//===========
@@ -1151,7 +1155,6 @@ SubsystemLaunch.create = function() {
 		function localDisplayState(cell, statusString, progressNum)
 		{
 			//copied from otsdaq-utilities/WebGUI/js/SystemStatus.js:551
-
 			try { //some states can provide error detail after ":::" marker (ignore extra detail for now)
 				statusString = statusString.split(":::")[0];
 			}
@@ -1241,6 +1244,59 @@ SubsystemLaunch.create = function() {
 			}
 		} //end localDisplayState()
 	}	//end displayStatus()
+
+	//=====================================================================================
+	//updateSubsystemNames
+	//This function queries getAppStatus from the AppStatus application. It matches
+	//subsystems with their corresponding hostnames based on their IP addresses.
+	function updateSubsystemNames()
+	{
+		DesktopContent.XMLHttpRequest("Request?RequestType=getAppStatus", "",
+			function(req,param,err)
+			{
+				if (err)
+				{
+					Debug.err("Could not load app status: " + err);
+				}
+				
+				let hostname = ""
+				const ips = req.responseXML.getElementsByTagName("context");
+
+				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+				{
+					let ipFound = false;
+					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN') //inactive subsystem/between states
+						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+					else
+					{
+						for (let i = 0; i < ips.length; i++)
+						{
+							const currentIp = ips[i].getAttribute("value");
+
+							if (currentIp && currentIp == SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url)
+							{
+								hostname = ips[i].previousElementSibling.getAttribute("value");
+								ipFound = true;
+								break;
+							}
+						}
+
+						if(!ipFound)
+						{
+							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
+							document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							return;
+						}
+						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
+					}
+				}
+			},
+			0 /*reqParam*/,
+			0 /*progressHandler*/,
+			0 /*callHandlerOnErr*/,
+			true /*doNotShowLoadingOverlay*/,
+			true /*targetGatewaySupervisor*/);
+	}    //end updateSubsystemNames()
 
 
 	//=====================================================================================
