@@ -649,11 +649,13 @@ Desktop.createDesktop = function(security) {
 
 		if(name.indexOf(" loading...") > 0)
 		{
-			Debug.log("Assuming user is trying to reload icons!");
-
+			Debug.log("Assuming user is trying to reload remote subsystem icons!");
+						
 			//reset icons, if permissions undefined, keep permissions from before
 			Desktop.desktop.icons.resetWithPermissions(
-				undefined /*undefined permissions*/, true /*keepSamePermissions*/);
+				undefined /*undefined permissions*/, true /*keepSamePermissions*/,
+				true /*showRemoteGatewayErrors*/);
+			
 			return;
 		}
 
@@ -2901,7 +2903,7 @@ Desktop.XMLHttpRequest = function(requestURL, data, returnHandler, reqIndex)
 	}
 
 	if(Desktop.desktop.login) //add cookie code if login instance has been created
-		data = "CookieCode="+Desktop.desktop.login.getCookieCode()+"&"+data;
+		data = "CookieCode="+Desktop.desktop.login.getCookieCode()+((data=="" || data===undefined)?"":("&"+data));
 	requestURL = "/urn:xdaq-application:lid=" + urnLid_ + "/" + requestURL; //urnLid_ is from parent html page
 	//Debug.log("Post " + requestURL + "\n\tData: " + data);
 	req.open("POST",requestURL,true);

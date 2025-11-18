@@ -104,10 +104,10 @@ else {
 
 		//=====================================================================================
 		// this.resetWithPermissions ~~
-		this.resetWithPermissions = function(permissions, keepSamePermissions)
+		this.resetWithPermissions = function(permissions, keepSamePermissions, showRemoteGatewayErrors)
 		{
 			Debug.log("Desktop resetWithPermissions " + permissions +
-					", " + keepSamePermissions,Debug.LOW_PRIORITY);
+					", " + keepSamePermissions + ", se" + showRemoteGatewayErrors);
 
 			if(permissions === undefined && !keepSamePermissions)
 				return;
@@ -118,9 +118,11 @@ else {
 			Desktop.desktop.icons.iconNameToPathMap = undefined; //undefined as indication that icons are not setup yet
 
 			if(!Desktop.isWizardMode())
-			{ //This is satisfied for  Digest Access Authorization and No Security on OTS
-				Desktop.XMLHttpRequest("Request?RequestType=getDesktopIcons", "",
-						iconRequestHandler);
+			{ //This is satisfied for Digest Access Authorization and No Security on OTS
+				Debug.log("Requesting desktop icons from...", window.parent.window.location.origin);
+				Desktop.XMLHttpRequest("Request?RequestType=getDesktopIcons", 
+						"RequestOrigin=" + encodeURIComponent(window.parent.window.location.origin),
+						iconRequestHandler, showRemoteGatewayErrors);
 				return;
 			}
 			else //it is the sequence for OtsWizardConfiguration
@@ -137,9 +139,11 @@ else {
 		//=====================================================================================
 		//_iconRequestHandler
 		//adds the icons from the hardcoded, C++ in OtsConfigurationWizard
-		var iconRequestHandler = function(req)
+		var iconRequestHandler = function(req, showRemoteGatewayErrors)
 		{
-
+			if(showRemoteGatewayErrors)
+				Debug.logv({showRemoteGatewayErrors});
+			
 			//clear folder object
 			Desktop.desktop.icons.folders = [{},[]];
 			Desktop.desktop.icons.iconNameToPathMap = {} ; //clear map
@@ -152,13 +156,16 @@ else {
 			if(!Desktop.isWizardMode())
 			{ //This is satisfied for  Digest Access Authorization and No Security on OTS
 
-				var err;
-				if((err = Desktop.getXMLValue(req,"Error")) && err != "")
+				var errs = DesktopContent.getXMLRequestErrors(req);
+				if(errs.length)
 				{
-					if(err.indexOf("Remote Gateway desktop icons") > 0) //demote to log
-						Debug.log("Warning: " + err);
-					else
-						Debug.err("Error: " + err, Debug.HIGH_PRIORITY);
+					for(var i=0;i<errs.length;++i)
+					{
+						if(!showRemoteGatewayErrors && errs[i].indexOf("Remote Gateway") > 0) //demote to log
+							Debug.log("Warning: " + errs[i]);
+						else
+							Debug.err(errs[i]);
+					}
 					//try to power through error //return;
 				}
 

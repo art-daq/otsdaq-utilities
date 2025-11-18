@@ -938,11 +938,13 @@
 					if(!outputFileFound || outputArgNames.length > 1)
 					{
 						if(outputArgNames.length > 1 || f == 0 || //only put separator for first or large response
-								outputArgValues[0].getAttribute("value").length > 200)
+								(outputArgValues.length && 
+								outputArgValues[0].getAttribute("value").length > 200))
 							str += "<hr width='80%'><br>";
 						str += "<b>";//Ran... " + feExecTime + "<br>";
 						if(outputArgNames.length > 1 || f == 0 || 
-								outputArgValues[0].getAttribute("value").length > 200)
+								(outputArgValues.length && 
+								outputArgValues[0].getAttribute("value").length > 200))
 							str += "FEMacro: &quot;" + feMacroName + "&quot;<br>";
 						str += "FE Target #" + (f+1) + " UID: <label style='color:red; font-size:inherit;'>" +
 							feTargetUID + "</label> (" +
