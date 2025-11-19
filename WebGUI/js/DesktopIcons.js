@@ -118,8 +118,10 @@ else {
 			Desktop.desktop.icons.iconNameToPathMap = undefined; //undefined as indication that icons are not setup yet
 
 			if(!Desktop.isWizardMode())
-			{ //This is satisfied for  Digest Access Authorization and No Security on OTS
-				Desktop.XMLHttpRequest("Request?RequestType=getDesktopIcons", "",
+			{ //This is satisfied for Digest Access Authorization and No Security on OTS
+				Debug.log("Requesting desktop icons from...", window.parent.window.location.origin);
+				Desktop.XMLHttpRequest("Request?RequestType=getDesktopIcons", 
+						"RequestOrigin=" + encodeURIComponent(window.parent.window.location.origin),
 						iconRequestHandler, showRemoteGatewayErrors);
 				return;
 			}
