@@ -1602,6 +1602,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		//         std::ostringstream* out ;
 		//	 xmlOut.outputXmlDocument((std::ostringstream*) out, true);
 	}
+	else if(
+	    requestType ==
+	    "getState")  // ################################################################################################################
+	{
+		std::string fsmName = theStateMachine_.getCurrentStateName();
+		bool in_transition = theStateMachine_.isInTransition();
+
+		xmlOut.addTextElementToData("current_state", fsmName);
+		xmlOut.addTextElementToData("in_transition", in_transition?"1":"0");
+	}
 	else
 	{
 		__SUP_SS__ << "requestType Request, " << requestType

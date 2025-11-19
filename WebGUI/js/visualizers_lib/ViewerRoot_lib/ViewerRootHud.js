@@ -413,11 +413,11 @@ ViewerRoot.createHud = function() {
 		}
 
 		var cs = DesktopContent.getXMLValue(req,"current_state");
-		var inTrans = DesktopContent.getXMLValue(req,"in_transition");
+		var inTransition = DesktopContent.getXMLValue(req,"in_transition");
 
 		const [dirPath, currDir] = paths;
 
-		if (cs == "Running" && inTrans == "1") {
+		if (cs == "Running" && inTransition == "1") {
 			Debug.log("Detected transition out of the 'Running' state. Resume run to continue LIVE DQM.", Debug.WARN_PRIORITY);
 		}
 		else if(cs != "Running") {
@@ -438,15 +438,14 @@ ViewerRoot.createHud = function() {
 
 		if (dirPath.includes("LIVE_DQM.root")) {
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=getCurrentState" +
-				"&fsmName=" + _fsmName,
+				"Request?RequestType=getState",
 				"",
 				ViewerRoot.hud.currStateRequestHandler,
 				[dirPath, currDirPtr[1]] /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
-				true /*targetGatewaySupervisor*/,
+				0 /*targetGatewaySupervisor*/,
 				true /*ignoreSystemBlock*/
 			);
 		} else {

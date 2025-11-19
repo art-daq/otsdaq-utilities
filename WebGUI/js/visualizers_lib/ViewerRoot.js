@@ -166,8 +166,6 @@ ViewerRoot.iterRootIsAutoRefreshArr;
 ViewerRoot.iterSaveNextObjectMode;
 ViewerRoot.iterSaveAutoRefreshDefault;
 
-ViewerRoot._fsmName;
-
 
 
 //"private" function list
@@ -931,15 +929,14 @@ ViewerRoot.getRootDataHandler = function(req, objHanlder)
 		if(rootPath.includes("LIVE_DQM.root"))
 		{
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=getCurrentState" +
-				"&fsmName=" + ViewerRoot._fsmName,
+				"Request?RequestType=getState",
 				"",
 				ViewerRoot.currStateRequestHandler,
 				rootName /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
-				true /*targetGatewaySupervisor*/,
+				0 /*targetGatewaySupervisor*/,
 				true /*ignoreSystemBlock*/
 			);
 		}
