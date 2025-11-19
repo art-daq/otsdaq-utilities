@@ -1606,11 +1606,11 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    requestType ==
 	    "getState")  // ################################################################################################################
 	{
-		std::string fsmName = theStateMachine_.getCurrentStateName();
-		bool in_transition = theStateMachine_.isInTransition();
+		std::string fsmName       = theStateMachine_.getCurrentStateName();
+		bool        in_transition = theStateMachine_.isInTransition();
 
 		xmlOut.addTextElementToData("current_state", fsmName);
-		xmlOut.addTextElementToData("in_transition", in_transition?"1":"0");
+		xmlOut.addTextElementToData("in_transition", in_transition ? "1" : "0");
 	}
 	else
 	{
