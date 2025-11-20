@@ -408,15 +408,18 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
-						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
-					str += "<option selected>Select an FSM action:</option>";
-					str += "<option >Configure</option>";
-					// str += "<option >Start</option>";
-					str += "<option >Stop</option>";
-					str += "<option >Halt</option>";
-					str += "</select>";
-
+					// str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
+					// 	"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
+					// str += "<option selected>Select an FSM action:</option>";
+					// str += "<option >Configure</option>";
+					// // str += "<option >Start</option>";
+					// str += "<option >Stop</option>";
+					// str += "<option >Halt</option>";
+					// str += "</select>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Configure</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Start</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Stop</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Halt</button>";
 					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
@@ -655,7 +658,6 @@ SubsystemLaunch.create = function() {
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>Stop</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>Halt</button>";
-
 						}	
 						else if(fieldIds[i] == "configAlias")
 						{
