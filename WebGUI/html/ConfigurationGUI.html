@@ -2321,7 +2321,7 @@
 							"the '<b>" + tableName + "</b>' table:<br><br>" +
 							"<div style='margin-left:20px'>" +
 							tableDescription + "</div>", !doNotAlwaysShow /*alwaysShow*/);
-				else
+				else if(!doNotAlwaysShow)
 					DesktopContent.tooltip("Missing " + tableName + " Description",
 							"There is no table description for '<b>" +
 							tableName +
