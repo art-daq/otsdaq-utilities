@@ -8993,7 +8993,8 @@ void ConfigurationGUISupervisor::testXDAQContext()
 	try
 	{
 		__SUP_COUT_INFO__ << "Attempting test activation of the context group." << __E__;
-		ConfigurationManager cfgMgr;  // create instance to activate saved context and backbone groups (not config group)
+		ConfigurationManager
+		    cfgMgr;  // create instance to activate saved context and backbone groups (not config group)
 	}
 	catch(const std::runtime_error& e)
 	{
