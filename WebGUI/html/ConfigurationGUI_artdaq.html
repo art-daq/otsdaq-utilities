@@ -5568,14 +5568,18 @@
 
 				//check for changes
 				if(doInit || _lastActiveGroups.length != activeConfigGroups.length)
-				{
+				{					
 					if(!doInit && _lastActiveGroups.length) //treat as change
 					{
 						localHandleChange(activeConfigGroups);
+						localPropagateActiveGroups(activeConfigGroups);
 						return;
 					}
 					else //treat as initializing active groups
+					{
 						_lastActiveGroups = activeConfigGroups;
+						localPropagateActiveGroups(activeConfigGroups);
+					}					
 				}
 
 				for(var i=0;i<_lastActiveGroups.length && activeConfigGroups.length;++i)
@@ -5583,9 +5587,10 @@
 					if(_lastActiveGroups[i] != activeConfigGroups[i])
 					{
 						localHandleChange(activeConfigGroups);
+						localPropagateActiveGroups(activeConfigGroups);
 						return;
 					}
-				}
+				} //end active group change check
 
 			},
 			0, 0, true,  //reqParam, progressHandler, callHandlerOnErr
@@ -5629,6 +5634,32 @@
 				_lastActiveGroups = activeConfigGroups;
 
 			} //end localHandleChange()
+
+			//===========
+			// pass active group values to elements that care
+			function localPropagateActiveGroups(activeConfigGroups)
+			{
+				var el = document.getElementById("directoryNavToggle");
+				if(el)
+				{
+					let str = "Choose the active configuration (Ctrl + D).";
+					str += "\n\n";
+					str += "The current active groups are as follows:\n"
+					str += "\tContext group: " + activeConfigGroups[0] + "(" + activeConfigGroups[1] + ")\n";
+					str += "\t  Config group: " + activeConfigGroups[2] + "(" + activeConfigGroups[3] + ")";
+					el.title = str;
+				}
+				el = document.getElementById("saveFile");
+				if(el)
+				{
+					let str = "Click to Save changes to the active configuration (Ctrl + S).";
+					str += "\n\n";
+					str += "The current active groups are as follows:\n"
+					str += "\tContext group: " + activeConfigGroups[0] + "(" + activeConfigGroups[1] + ")\n";
+					str += "\t  Config group: " + activeConfigGroups[2] + "(" + activeConfigGroups[3] + ")";
+					el.title = str;
+				}
+			} //end localPropagateActiveGroups()
 
 		} //end checkForActiveGroupChange()
 
