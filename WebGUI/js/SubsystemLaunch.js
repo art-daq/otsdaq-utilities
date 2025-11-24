@@ -416,10 +416,10 @@ SubsystemLaunch.create = function() {
 					// str += "<option >Stop</option>";
 					// str += "<option >Halt</option>";
 					// str += "</select>";
-					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Configure</button>";
-					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Start</button>";
-					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Stop</button>";
-					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>Halt</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);' style='margin-right:10px'>Configure</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);' style='margin-right:10px''>Start</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);' style='margin-right:10px''>Stop</button>";
+					str += "<button id='systemManualFsmAction' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);' style='margin-right:10px''>Halt</button>";
 					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
@@ -653,11 +653,17 @@ SubsystemLaunch.create = function() {
 							// str += "<option >Halt</option>";
 							// str += "</select>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
-								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>Configure</button>";
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" + 
+								"style='margin-right:10px'" + 
+								">Configure</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
-								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>Stop</button>";
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Stop</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
-								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>Halt</button>";
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Halt</button>";
 						}	
 						else if(fieldIds[i] == "configAlias")
 						{
