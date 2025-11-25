@@ -10421,8 +10421,8 @@
 			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d")
 			{
-				debug.log("Deleting block of table rows")
-				blockDeleteRows();	
+				debug.log("Deleting block of table rows");
+				blockDeleteRows();
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
@@ -10432,20 +10432,15 @@
 		function deleteBlockRows()
 		{
 			const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
-			console.log("Number of selected rows " + selectedRows.length);
-			
+			debug.log("Number of selected rows " + selectedRows.length);
+
 			for(var i=selectedRows.length-1; i>=0; i--)
 			{
-				console.log("selectedRows[i].cells[0] " + selectedRows[i].cells[0]);
-				console.log("selectedRows[i].cells[0].innerHTML " + selectedRows[i].cells[0].innerHTML);
-
-				const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0]
-				console.log("deleteBtn " + deleteBtn);
-
+				const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0];
 				if(!deleteBtn) return null;
 				deleteBtn.onclick();
 			}
-		}
+		} //end deleteBlockRows()
 
 		//==============================================================================
 		//keyHandler
