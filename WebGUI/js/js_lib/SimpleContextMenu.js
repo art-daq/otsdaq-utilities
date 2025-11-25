@@ -47,6 +47,7 @@ if (typeof DesktopContent == 'undefined' &&
 //"public" function list:
 //	SimpleContextMenu.createMenu(menuItems,menuItemHandlers,popupID,topLeftX,topLeftY, primaryColor, secondaryColor, useDefaultHighlightColors)
 //	SimpleContextMenu.createMenuCallAsString(menuItems,menuItemHandlers,popupID,topLeftX,topLeftY, primaryColor, secondaryColor, useDefaultHighlightColors)
+//	SimpleContextMenu.closeMenu()
 
 //"private" function list:
 //	SimpleContextMenu.mouseMoveHandler(event)
@@ -68,7 +69,7 @@ SimpleContextMenu.createMenu = function(menuItems,menuItemHandlers,
 		popupID,topLeftX,topLeftY, primaryColor, secondaryColor, useDefaultHighlightColors)
 {
 
-	//	Debug.log("Creating SimpleContextMenu...");
+	Debug.log("Creating SimpleContextMenu...");
 	//	Debug.log("menuItems=" + menuItems);
 	//	Debug.log("menuItemHandlers=" + menuItemHandlers);
 	//	Debug.log("popupID=" + popupID);
@@ -86,7 +87,7 @@ SimpleContextMenu.createMenu = function(menuItems,menuItemHandlers,
 	var el = SimpleContextMenu._popUpEl;
 	if(el)
 	{
-		Debug.log("Can not create SimpleContextMenu if one already exists",
+		Debug.log("Can not create SimpleContextMenu if one already exists. To force close, call SimpleContextMenu.closeMenu().",
 				Debug.MED_PRIORITY);
 		return;
 	}
@@ -240,20 +241,7 @@ SimpleContextMenu.mouseMoveHandler = function(e)
 	{
 		//Debug.log("Starting timer to remove SimpleContextMenu");
 		SimpleContextMenu._removePopupTimer = window.setTimeout(
-				function()
-				{
-			SimpleContextMenu._removePopupTimer = 0; //clear timer variable
-
-			//Debug.log("Removing SimpleContextMenu");
-			SimpleContextMenu._popUpEl.parentNode.removeChild(SimpleContextMenu._popUpEl);
-			SimpleContextMenu._popUpEl = 0;
-
-			if(SimpleContextMenu._styleEl)
-			{
-				SimpleContextMenu._styleEl.parentNode.removeChild(SimpleContextMenu._styleEl);
-				SimpleContextMenu._styleEl = 0;
-			}
-				},  //end mouse move remove popup handler
+				SimpleContextMenu.closeMenu,
 				1000 /*in milliseconds*/);
 	}
 	else if(!SimpleContextMenu._popUpEl) SimpleContextMenu._removePopupTimer = 0; //clear if popup gone
@@ -328,5 +316,30 @@ SimpleContextMenu.handleMouseOverMenuItem = function(event,index)
 			el.style.backgroundColor = 	SimpleContextMenu._primaryColor;
 			el.style.color = 			SimpleContextMenu._secondaryColor;
 		}
+	}
+} //end handleMouseOverMenuItem
+
+//=====================================================================================
+SimpleContextMenu.closeMenu = function()
+{
+	//kill timer
+	if(SimpleContextMenu._removePopupTimer)
+	{
+		window.clearTimeout(SimpleContextMenu._removePopupTimer);
+		SimpleContextMenu._removePopupTimer = 0;
+	}
+
+	//remove popup el
+	if(SimpleContextMenu._popUpEl)
+	{
+		SimpleContextMenu._popUpEl.parentNode.removeChild(SimpleContextMenu._popUpEl);
+		SimpleContextMenu._popUpEl = 0;
+	}
+
+	//remove popup style
+	if(SimpleContextMenu._styleEl)
+	{
+		SimpleContextMenu._styleEl.parentNode.removeChild(SimpleContextMenu._styleEl);
+		SimpleContextMenu._styleEl = 0;
 	}
 } //end handleMouseOverMenuItem
