@@ -563,7 +563,7 @@ try
 	}
 	else if(requestType == "getContextMemberNames")
 	{
-		std::set<std::string> members = cfgMgr->getContextMemberNames();
+		std::set<std::string> members = cfgMgr->getFixedContextMemberNames();
 
 		for(auto& member : members)
 			xmlOut.addTextElementToData("ContextMember", member);
@@ -3577,7 +3577,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	);
 
 	if(memberMap.size() >
-	       ConfigurationManager::contextMemberNames_.size() + 1 /* for optional table */
+	       ConfigurationManager::fixedContextMemberNames_.size() + 1 /* for optional table */
 	   && startPath == "/")
 	{
 		__COUTT__ << "Checking for orphaned tables..." << __E__;
