@@ -691,6 +691,10 @@
 
 		var _codeEditorAppId; //Code Editor Supervisor LID
 
+		var lastSelectedIndex = null;
+  		var isDragging = false;
+  		var dragModeSelect = true; // true => selecting, false => deselecting
+
 		//==============================================================================
 		//init called once body has loaded
 		function init()
@@ -3411,8 +3415,92 @@
 				versionHasChanged(attemptedVersion);
 
 			toggleTableDetails(_showTableDetails);
+
+			registerOnClickActions();
 		 } //end specificTableRequestHandler()
 
+		 //==============================================================================
+		 //blockContextMenu ~~
+		 function blockContextMenu(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+
+		//==============================================================================
+		//registerOnClickActions ~~
+		function registerOnClickActions()
+		{
+			var tbody = document.getElementById("SubSystemTable");
+
+			tbody.addEventListener('mousedown', (e) => {
+				const tr = e.target.closest('tr');
+				if (!tr || e.button !== 0) return; // only left click
+			
+				const idx = indexOfRow(tr);
+				if (idx === -1) return;
+			
+				// SHIFT RANGE (works without Ctrl)
+				if (e.shiftKey && lastSelectedIndex !== null) {
+					selectRange(lastSelectedIndex, idx, true);
+					lastSelectedIndex = idx;
+				  	e.preventDefault();
+				  	return;
+				}
+
+				// CTRL/Meta required for selection actions
+				if (!(e.ctrlKey || e.metaKey)) {
+					// no selection if not holding ctrlreturn;
+					return;
+				}
+				
+				// also stop the context menu that would appear afterwards
+				document.addEventListener("contextmenu", blockContextMenu, { once: true });
+			
+				// CTRL Click or CTRL Drag Starts
+				const currentlySelected = tr.classList.contains('selected');
+				dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
+				isDragging = true;
+				document.body.classList.add('no-select');
+				setSelectedByIndex(idx, dragModeSelect);
+				lastSelectedIndex = idx;
+				e.preventDefault();
+			});
+			
+			tbody.addEventListener('mouseover', (e) => {
+				if (!isDragging) return;
+				if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
+			
+				const tr = e.target.closest('tr');
+				if (!tr) return;
+				const idx = indexOfRow(tr);
+				if (idx === -1) return;
+				setSelectedByIndex(idx, dragModeSelect);
+			});
+			
+			window.addEventListener('mouseup', () => {
+				isDragging = false;
+				document.body.classList.remove('no-select');
+				window.getSelection().removeAllRanges();
+			});
+
+			tbody.addEventListener('click', (e) => {
+				event.stopPropagation(); // Stops other handlers
+				event.preventDefault();
+				const tr = e.target.closest('tr');
+				if (!tr) return;
+				const idx = indexOfRow(tr);
+			
+				// SHIFT does nothing here (handled in mousedown)
+				if (e.shiftKey) return;
+			
+				// Normal click does nothing
+				if (!(e.ctrlKey || e.metaKey)) return;
+			
+				// CTRL click toggle (final guarantee)
+				tr.classList.toggle('selected');
+				lastSelectedIndex = idx;
+			});
+		}
 		//==============================================================================
 		//toggleTableDetails ~~
 		function toggleTableDetails(setVal)
@@ -9204,6 +9292,15 @@
 		//selectThisCell ~~
 		function selectThisCell(r, c, el, event, paintMode)
 		{
+			if (event.ctrlKey || event.metaKey) {
+				if (isDragging)
+				{
+					// also stop the context menu that would appear afterwards
+					document.addEventListener("contextmenu", blockContextMenu, { once: true });
+				}
+				return;
+			}
+
 			var painterSource = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
 			var selectorSource = "crosshair";
 
@@ -10322,9 +10419,33 @@
 				editCellCancel();
 				return false;
 			}
+			else if (e.ctrlKey && e.key.toLowerCase() == "d")
+			{
+				debug.log("Deleting block of table rows")
+				blockDeleteRows();	
+			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
 		} //end bodyKeyHandler()
+		//==============================================================================
+		//blockDeleteRows
+		function deleteBlockRows()
+		{
+			const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
+			console.log("Number of selected rows " + selectedRows.length);
+			
+			for(var i=selectedRows.length-1; i>=0; i--)
+			{
+				console.log("selectedRows[i].cells[0] " + selectedRows[i].cells[0]);
+				console.log("selectedRows[i].cells[0].innerHTML " + selectedRows[i].cells[0].innerHTML);
+
+				const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0]
+				console.log("deleteBtn " + deleteBtn);
+
+				if(!deleteBtn) return null;
+				deleteBtn.onclick();
+			}
+		}
 
 		//==============================================================================
 		//keyHandler
@@ -11931,6 +12052,30 @@
 				} //end localSaveAndActivateGroups()
 			} //end localHandleAffectedGroups()
 		} //end saveModifiedTree()
+
+		// Helpers
+		function getRows() {
+			var tbody = document.getElementById("SubSystemTable");
+			return Array.from(tbody.querySelectorAll('tr'));
+		}
+		function indexOfRow(row) { return getRows().indexOf(row); }
+		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+		function setSelectedByIndex(i, state) {
+			const rows = getRows();
+			if (i >= 0 && i < rows.length) {
+				rows[i].classList.toggle('selected', state);
+			}
+		}
+		function selectRange(a, b, state = true) {
+			const rows = getRows();
+			const start = Math.min(a, b);
+			const end = Math.max(a, b);
+			for (let i = start; i <= end; i++) setSelectedByIndex(i, state);
+		}
+	  
+		// Prevent text selection while dragging
+		function disableTextSelection() { document.body.classList.add('no-select'); }
+		function enableTextSelection() { document.body.classList.remove('no-select'); window.getSelection().removeAllRanges(); }
 
 		//==============================================================================
 		//treeHasChanged ~~

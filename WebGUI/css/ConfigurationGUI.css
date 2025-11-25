@@ -79,6 +79,10 @@
 			background-color: 	rgb(226, 216, 216);
 			white-space: 		pre; /* was pre-wrap; but not sure why.. pre seems to maintain text better*/
 		}
+		#SubSystemTable tr.selected td {
+			background-color: rgb(255, 249, 196) !important;
+			white-space:		pre;
+		}
 		#SubSystemTable {
 			background-color: 	rgb(210, 193, 193); /*chrome does not color table unless after the td/th*/
 		}
