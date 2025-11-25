@@ -410,15 +410,18 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
-						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
-					str += "<option selected>Select an FSM action:</option>";
-					str += "<option >Configure</option>";
-					// str += "<option >Start</option>";
-					str += "<option >Stop</option>";
-					str += "<option >Halt</option>";
-					str += "</select>";
-
+					str += "<button id='systemManualFsmAction' " + 
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" + 
+						"style='margin-right:10px'>Configure</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Start</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Stop</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Halt</button>";
 					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
@@ -639,19 +642,19 @@ SubsystemLaunch.create = function() {
 						}
 						else if(fieldIds[i] == "action")
 						{
-							str += "<select id='subsystem_" + fieldIds[i] +
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+
-								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
-								SubsystemLaunch.subsystems[s].name + "&apos;' " +
-								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
-							str += "<option selected>Select an action for &apos;" +
-								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
-							str += "<option >Configure</option>";
-							// str += "<option >Start</option>";
-							str += "<option >Stop</option>";
-							str += "<option >Halt</option>";
-							str += "</select>";
-						}
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" + 
+								"style='margin-right:10px'" + 
+								">Configure</button>";
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Stop</button>";
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Halt</button>";
+						}	
 						else if(fieldIds[i] == "configAlias")
 						{
 							// str += "<div style='white-space:nowrap'>";
@@ -1447,6 +1450,7 @@ SubsystemLaunch.create = function() {
 	this.handleSubsystemActionSelect = function(el, subsystemIndex)
 	{
 		var command = el.value;
+		if(el.tagName = "BUTTON") command = el.innerText;
 		Debug.log("handleSubsystemActionSelect()", command, subsystemIndex);
 		if(command == "" || command == "Select an action:") return; //assume user is clearing
 
