@@ -23,6 +23,10 @@
 			padding: 0px;
 		}
 
+		.hoverUnderline:hover {
+			text-decoration: underline;
+		}
+
 		.controlsPane {
 			background-color: 		blue;
 			position: 				relative;
