@@ -3576,8 +3576,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	    &accumulatedErrors   // accumulate errors
 	);
 
-	if(memberMap.size() >
-	       ConfigurationManager::fixedContextMemberNames_.size() + 1 /* for optional table */
+	if(memberMap.size() > ConfigurationManager::fixedContextMemberNames_.size() +
+	                          1 /* for optional table */
 	   && startPath == "/")
 	{
 		__COUTT__ << "Checking for orphaned tables..." << __E__;
