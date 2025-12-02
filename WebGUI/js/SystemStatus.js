@@ -394,7 +394,7 @@ function restartApps(contextName, serverName)
 	if(_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
 
 	DesktopContent.popUpVerification(
-		"Restarting server " + serverName + " for 'no gateway apps'. Are you sure?",
+		"Restarting server " + serverName + " for 'non-gateway apps'. Are you sure?",
 		function () /* yes-to-restart servers */
 		{
 			//modify status to indicate shutting down
@@ -436,7 +436,6 @@ function restartApps(contextName, serverName)
 		}
 	);
 } // end of restartApps()
-
 
 //=====================================================================================
 // this function displays a table with the app array passed into it

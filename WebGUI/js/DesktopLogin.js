@@ -52,7 +52,7 @@ else {
 		var _cookieUserStr = "otsCookieUser";
 		var _cookieRememberMeStr = "otsRememberMeUser";
 		var _BLACKOUT_COOKIE_STR = "TEMPORARY_SYSTEM_BLACKOUT";
-		var _system_blackout = false;
+		var _system_blackout = undefined;
 		var _user = "";
 		var _displayName = "No-Login";
 		var _otsOwner = "";
@@ -864,17 +864,20 @@ else {
 		this.blackout = function(setVal)
 		{
 			setVal = setVal?true:false;
-			if(setVal == _system_blackout)
+			if(_system_blackout !== undefined &&
+					setVal == _system_blackout)
 				return; // do nothing if already setup with value
 
 			if(setVal) //start blackout
 			{
 				_setCookie(_BLACKOUT_COOKIE_STR);
 			}
-			else //remove blackout
+			else if(_cookieCode) //remove blackout and replace with cookie code
 			{
 				_setCookie(_cookieCode);
 			}
+			else //remove blackout if no cookie code
+				localStorage.removeItem(_cookieCodeStr);
 
 			_system_blackout = setVal;
 			Debug.log("Login blackout " + _system_blackout);
@@ -883,8 +886,11 @@ else {
 		//==============================================================================
 		//isBlackout ~
 		//	use to check for existing system blackout from exernal sources
+		this.getSystemBlackout = function() { return _system_blackout; }
 		this.isBlackout = function()
 		{
+			if(_system_blackout) return true;
+
 			var cc = _getCookie(_cookieCodeStr);
 			if(!cc) return false; //may be undefined
 			//Debug.log("Checking for blackout signal = " + cc.substr(0,10));
@@ -956,6 +962,12 @@ else {
 		{
 			Debug.log("Desktop Login Prompt Attempt Login", Debug.LOW_PRIORITY);
 			_attemptedLoginWithCert = false;
+
+			if(Desktop.desktop.login.isBlackout())
+			{
+				Debug.log("stopSystemBlackout - assume user expects system to be back");
+				Desktop.desktop.login.blackout(false);
+			}
 
 			var x = [];
 			for(var i=0;i<3;++i)

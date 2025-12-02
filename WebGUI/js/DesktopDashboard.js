@@ -659,11 +659,19 @@ else
 			if(remoteNamesArr.length)
 			{
 				titleStr += "\n";
-				titleStr += "Here are the users-with-lock for all active Remote Gateways:";
+				titleStr += "Here are the users-with-lock for all Gateways:";
+
+				titleStr += "\n";
+				titleStr +=  "  " + (1) + ". Top-level" + " -- ";
+				if(usernameWithLock == "")
+					titleStr += "unlocked";
+				else
+					titleStr += "user: " + usernameWithLock;
+
 				for(var i=0;i<remoteNamesArr.length && i<remoteLocksArr.length;++i)
 				{
 					titleStr += "\n";
-					titleStr += "  " + (i+1) + ". " + remoteNamesArr[i].getAttribute('value') + " -- ";
+					titleStr += "  " + (i+2) + ". " + remoteNamesArr[i].getAttribute('value') + " -- ";
 					var remoteUserWithLock = remoteLocksArr[i].getAttribute('value');
 					if(remoteUserWithLock == "")
 						titleStr += "unlocked";
@@ -691,7 +699,7 @@ else
 			{
 				//nobody has lock
 				str += "<a href='javascript:" + jsReq + "'" +
-						"title='Unlocked! Click to lockout the system and take the ots Lock" +
+						"title='Unlocked! Click to lockout the system and take the ots Lock." +
 						(titleStr?("\n"+titleStr):"") +
 						"'>";
 				str += "<img " +
@@ -713,7 +721,7 @@ else
 			else //this is user so can unlock
 			{
 				str += "<a href='javascript:" + jsReq + "' " +
-						"title='You have the Lock. Click to unlock the system and release the ots Lock" +
+						"title='You have the Lock. Click to unlock the system and release the ots Lock." +
 						(titleStr?("\n"+titleStr):"") +
 						"'>";
 				str += "<img " +
@@ -1002,7 +1010,12 @@ else
 			tmpBtn = document.createElement("div");
 			tmpBtn.setAttribute("class", "DesktopDashboard-button-right DesktopDashboard-user-account DesktopDashboard-user-logout");
 			tmpBtn.innerHTML = "<a href='#' title='Click to sign out of your account'>Sign out</a>";
-			tmpBtn.onmouseup = Desktop.logout;
+			tmpBtn.onmouseup = function()
+				{
+					Debug.log("Clicked logout")
+					Desktop.desktop.login.blackout(false); //remove blackout if any
+					Desktop.logout();
+				} //end logout mouseup
 			_topBar.appendChild(tmpBtn);
 
 			tmpBtn = document.createElement("div");

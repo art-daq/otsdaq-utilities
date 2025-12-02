@@ -172,6 +172,7 @@ else {
 		this.getWindowName = function() { return _name; }
 		this.getWindowSubName = function() { return _subname; }
 		this.getWindowUrl = function() { return _url; }
+		this.isRemoteWindow = function() { return _url.indexOf("remoteServerOrigin=") > 0 && _url.indexOf("&remoteServerUrnLid=") > 0; } //indicates remote subsystem window url
 		this.getWindowId = function() { return _id; }
 		this.getWindowX = function() { return _x; }
 		this.getWindowY = function() { return _y; }
