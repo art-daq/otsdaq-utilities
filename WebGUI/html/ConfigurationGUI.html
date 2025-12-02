@@ -2321,7 +2321,7 @@
 							"the '<b>" + tableName + "</b>' table:<br><br>" +
 							"<div style='margin-left:20px'>" +
 							tableDescription + "</div>", !doNotAlwaysShow /*alwaysShow*/);
-				else
+				else if(!doNotAlwaysShow)
 					DesktopContent.tooltip("Missing " + tableName + " Description",
 							"There is no table description for '<b>" +
 							tableName +
@@ -7062,13 +7062,28 @@
 				str += "</td><td>";
 
 				str += "<select id='select-" + name + "' onchange='handleGroupMemberChange();'>";
+				var versionIt, versionsHi;
 				for (var j = 0; j < tableVersions.length; ++j)
 				{
 					version = tableVersions[j].getAttribute("value");
-					str += "<option value='" + version + "'>";
-					str += version;	//can display however
-					str += "</option>";
-				}
+
+					if(version && version.length && version[0] == '_') //if a span
+					{
+						var splitArr = version.split('_');
+						version = versionIt = splitArr[1] | 0;
+						versionsHi = splitArr[2] | 0;
+					}
+					else
+						versionIt = versionsHi = 0; //just to run once
+
+					for(;
+						versionIt <= versionsHi; ++versionIt, ++version)
+					{
+						str += "<option value='" + version + "'>";
+						str += version;	//can display however
+						str += "</option>";
+					} //end version span loop
+				} //end version xml value loop
 				str += "</select>";
 				str += "</td>";
 
