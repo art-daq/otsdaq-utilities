@@ -851,8 +851,8 @@ Desktop.createDesktop = function(security) {
 		Desktop.desktop.redrawDashboardWindowButtons();
 
 		//_dashboard.redrawFullScreenButton();
-		//_dashboard.redrawRefreshButton();
-		Debug.log("Full Screen Toggled");
+		//_dashboard.redrawRefreshButton();		
+		Debug.log("foreground",_getForeWindow().getWindowName(),"Full Screen Toggled");
 	} //end toggleFullScreen()
 
 	//==============================================================================
@@ -999,7 +999,7 @@ Desktop.createDesktop = function(security) {
 			_getForeWindow().unminimize();
 		else
 			_getForeWindow().minimize();
-		Debug.log("Minimize Toggled");
+		Debug.log(_getForeWindow().getWindowName(),"Minimize Toggled");
 		//_dashboard.updateWindows();
 
 	} //end toggleMinimize()
@@ -1032,6 +1032,8 @@ Desktop.createDesktop = function(security) {
 
 		var win = this.getWindowById(id);
 		if(win == -1) return -1;
+
+		Debug.log("foreground",_getForeWindow().getWindowName(),"clickedWindowDashboard","winname",win.getWindowName());
 		if(_getForeWindow() != win)
 		{ //if not currently foreground window, set as only
 			var inMaxMode = false;
@@ -1040,11 +1042,14 @@ Desktop.createDesktop = function(security) {
 				this.toggleFullScreen(); //if old foreground is full screen, toggle
 				inMaxMode = true;
 			}
+			else if(_getForeWindow().wasMaximized())
+				inMaxMode = true;
 
 			this.setForeWindow(win);
 
 			if(_getForeWindow().isMinimized()) this.toggleMinimize(); //if new foreground is minimized, toggle
-			if(inMaxMode) this.toggleFullScreen();
+			if(inMaxMode) _getForeWindow().maximize();
+			Desktop.desktop.redrawDashboardWindowButtons();
 
 			return;
 		}

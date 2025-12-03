@@ -37,6 +37,7 @@ SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS = ["name","url","status","progress","det
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("status");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_INCLUDED = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("fsmIncluded");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_ALIASES = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("configAliasChoices");
+SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN = "UNKNOWN";
 SubsystemLaunch.subsystems = [];
 SubsystemLaunch.system = {};
 SubsystemLaunch.iterator = {};
@@ -143,6 +144,7 @@ SubsystemLaunch.create = function() {
 		} //end first time landing handling
 
 		window.clearTimeout(_getStatusTimer);
+		_updatesubsystemNamesCounter = 0; //reset counter for updating subsystem names
 
 		window.onclick = function()
 		{
@@ -838,6 +840,15 @@ SubsystemLaunch.create = function() {
 						if(i == SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS)
 						{
 							var status = subsystemArrs[fields[i]][j].getAttribute('value');
+							if(SubsystemLaunch.subsystems[j].fsmIncluded && //give popup warning if subsystem included and new unknown status
+									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN && 
+									status != SubsystemLaunch.subsystems[j][fields[i]])
+							{
+								Debug.warn("From Subsystem '" +
+									SubsystemLaunch.subsystems[j].name + " (" + SubsystemLaunch.subsystems[j].url + ")... " +
+									"Status is UNKNOWN. This may indicate that the Subsystem is offline or unreachable.");
+							}
+
 							if(status.indexOf("Launching") == 0)
 							{
 								//give user ... feedback
@@ -1094,11 +1105,11 @@ SubsystemLaunch.create = function() {
 							if(_getAutoInitCount > 0)
 								Debug.err("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 							else
 								Debug.log("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 
 
 							if(_getAutoInitCount > 0)
@@ -1268,7 +1279,7 @@ SubsystemLaunch.create = function() {
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
 					let ipFound = false;
-					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN') //inactive subsystem/between states
+					if (SubsystemLaunch.subsystems[s].status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) //inactive subsystem/between states
 						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 					else
 					{

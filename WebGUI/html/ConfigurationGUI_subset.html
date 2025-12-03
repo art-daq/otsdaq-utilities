@@ -455,8 +455,6 @@
 			str += "</div>";
 
 
-
-
 			//write MultiSelectBox to a particular div
 			MultiSelectBox.createSelectBox(
 					el,
@@ -467,7 +465,10 @@
 					0 /* iconURLs */,
 					0 /* mouseDownHandler */,
 					0 /* mouseUpHandler */,
-					true /* requireCtrlMultiClick */);
+					true /* requireCtrlMultiClick */,
+					0 /* titles */,
+					0 /* mouseMoveHandler */,
+					24 /* titleHeightOffset */);
 
 
 			MultiSelectBox.initMySelectBoxes(true /* clearPreviousSelections */, "RecordsGroupBox");
@@ -858,9 +859,8 @@
 
 							if(selectFirstRecord) //error! no record found, but parameter had data
 							{
-								Debug.log("Error! Parameter '_selectedRecords' was not empty, " +
-										"but no records matched selection criteria '" + _selectedRecords,
-										Debug.HIGH_PRIORITY);
+								Debug.err("Error! Parameter '_selectedRecords' was not empty, " +
+										"but no records matched selection criteria '" + _selectedRecords + "'!");
 								selectFirstRecord = false; //force false anyway, to show more errors
 							}
 
