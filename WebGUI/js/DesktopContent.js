@@ -2630,7 +2630,7 @@ DesktopContent.openNewWindow = function(name,subname,windowPath,unique,completeH
 	Debug.log("unique= " + unique);
 
 	//if window path is relative to local gateway, then be explict for cases that top level gateway differs
-	if(windowPath[0] == '/' &&
+	if(windowPath && windowPath[0] == '/' &&
 		DesktopContent._topServerUrnLid &&
 		DesktopContent._topServerOrigin != DesktopContent._serverOrigin)
 	{

@@ -673,7 +673,7 @@ SubsystemSquares.create = function() {
 					str += _dotDotDot;
 				if(SubsystemSquares.subsystems[s].redrawMode > 1)
 					str += " <label style='font-size:14px; position: relative;" +
-						"top: -2px;'>(" + SubsystemSquares.subsystems[s].detail + ")</label>";
+						"top: -2px;'>(" + decodeURIComponent(SubsystemSquares.subsystems[s].detail) + ")</label>";
 
 				els[0].innerHTML = str;
 

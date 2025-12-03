@@ -151,7 +151,7 @@ function getContextNames()
 	return new Promise(function(resolve, reject)
 			{
 		//get context
-		DesktopContent.XMLHttpRequest("Request?RequestType=getContextMemberNames", "",
+		DesktopContent.XMLHttpRequest("Request?RequestType=getContextNames", "",
 				function (req)
 				{
 			var memberNames = req.responseXML.getElementsByTagName("ContextMember");

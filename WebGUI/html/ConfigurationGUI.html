@@ -2321,7 +2321,7 @@
 							"the '<b>" + tableName + "</b>' table:<br><br>" +
 							"<div style='margin-left:20px'>" +
 							tableDescription + "</div>", !doNotAlwaysShow /*alwaysShow*/);
-				else
+				else if(!doNotAlwaysShow)
 					DesktopContent.tooltip("Missing " + tableName + " Description",
 							"There is no table description for '<b>" +
 							tableName +
@@ -4101,6 +4101,7 @@
 				//						"; return false;'>Refresh</a>";
 				//treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;";
 
+				treeViewHandlerStr_ += "<div style='white-space:nowrap; margin-left: 50px;'>";
 				treeViewHandlerStr_ += "<a onclick='expandTreeChildrenDepth(); return false;' " +
 					"title='Show/Expand all children at deepest depth; " +
 					"if no nodes are expanded, then expand XDAQContextTable preferentially.\n\n" +
@@ -4128,6 +4129,7 @@
 											"onkeydown='applySearchNode(event)'" + 
 											" autocomplete='off'></input>" +
 										"</div>";
+					
 
 
 				//				treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -4138,9 +4140,11 @@
 				//						">" + (treeViewHideStatus_?"Show":"Hide") + " Status=False</a>";
 				//
 
+				treeViewHandlerStr_ += "</div>";// style='white-space:nowrap'>";	
+
 				//display edit menu
 				treeViewHandlerStr_ +=
-					"<div class='tableView-Menu' onmousedown='createTreeViewMenu(event);' " +
+					"<div class='tableView-Menu' style='margin-top:-17px' onmousedown='createTreeViewMenu(event);' " +
 					"title='Edit Menu'>" +
 					"<div class='gotoNavDiv'></div>" +
 					"</div>"; //end context menu link div
@@ -7062,13 +7066,28 @@
 				str += "</td><td>";
 
 				str += "<select id='select-" + name + "' onchange='handleGroupMemberChange();'>";
+				var versionIt, versionsHi;
 				for (var j = 0; j < tableVersions.length; ++j)
 				{
 					version = tableVersions[j].getAttribute("value");
-					str += "<option value='" + version + "'>";
-					str += version;	//can display however
-					str += "</option>";
-				}
+
+					if(version && version.length && version[0] == '_') //if a span
+					{
+						var splitArr = version.split('_');
+						version = versionIt = splitArr[1] | 0;
+						versionsHi = splitArr[2] | 0;
+					}
+					else
+						versionIt = versionsHi = 0; //just to run once
+
+					for(;
+						versionIt <= versionsHi; ++versionIt, ++version)
+					{
+						str += "<option value='" + version + "'>";
+						str += version;	//can display however
+						str += "</option>";
+					} //end version span loop
+				} //end version xml value loop
 				str += "</select>";
 				str += "</td>";
 
