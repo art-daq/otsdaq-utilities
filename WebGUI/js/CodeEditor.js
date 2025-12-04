@@ -7671,12 +7671,14 @@ CodeEditor.create = function(standAlone) {
 			let i = 0;
 			let childLinkIndex;
 			let selected;
+			let groupLinkSelected;
 
 			if(pathSplit.length > 1 && pathSplit[pathSplit.length-2].indexOf(':') > 0)
 			{
 				i = pathSplit.length-2;
 				Debug.log("Found a group link field",i);
 				selected = pathSplit[i].split(':')[3];
+				groupLinkSelected =  pathSplit[i+1];
 				childLinkIndex = pathSplit[i].split(':')[2];
 				isGroupLink = true;
 				table = pathSplit[i].split(':')[1];
@@ -7730,10 +7732,15 @@ CodeEditor.create = function(standAlone) {
 			
 		
 			if(isGroupLink) //for group link, pre-select GroupID value
+			{
 				newWindowStr += "&selectedGroupIDs=" +
 					encodeURIComponent(
 							childLinkIndex + "=" +
 							selected);
+
+				if(groupLinkSelected)
+					newWindowStr += "&selectedRecords=" + groupLinkSelected;
+			}
 			else if(selected) //for unique link, preselect UID record
 				newWindowStr += "&selectedRecords=" + selected;
 		}
