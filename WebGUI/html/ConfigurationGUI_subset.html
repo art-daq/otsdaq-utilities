@@ -1861,7 +1861,6 @@
 			/////////////////////
 			function localProceedWithRename(newRowUID)
 			{
-
 				if(newRowUID)
 					newRowUID = newRowUID.trim();
 
@@ -1916,7 +1915,7 @@
 							Debug.INFO_PRIORITY);
 
 					_modifiedTables = undefined; //clear after save
-					_selectedRecords = ""; //clear after save
+					_selectedRecords = newRowUID; //select new record to be selected in aftermath
 
 					//runFilter(); //updates records and fields, and applies filter
 					initSubsetGlobalData();
@@ -1975,8 +1974,6 @@
 			{
 				Debug.log("localProceedWithCopy() " + copies);
 
-				_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
-
 				ConfigurationAPI.copySubsetRecords(_subsetBasePath,
 						recordArr,copies,
 						/////////////////////
@@ -2013,8 +2010,10 @@
 								Debug.INFO_PRIORITY);
 
 						_modifiedTables = undefined; //clear after save
+						_selectedRecords = recordStr; //select and load copied record in aftermath
+						_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
 
-						runFilter(); //updates records and fields, and applies filter
+						runFilter(false, true); //updates records and fields, and applies filter
 
 							}); //end saveModifiedTables handler
 
