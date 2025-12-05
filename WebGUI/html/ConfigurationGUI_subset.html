@@ -1867,6 +1867,8 @@
 
 				Debug.log("localProceedWithRename() " + newRowUID);
 
+				_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
+
 				ConfigurationAPI.renameSubsetRecords(_subsetBasePath,
 						originalRecord,newRowUID,
 						/////////////////////
@@ -1973,6 +1975,7 @@
 			{
 				Debug.log("localProceedWithCopy() " + copies);
 
+				_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
 
 				ConfigurationAPI.copySubsetRecords(_subsetBasePath,
 						recordArr,copies,
