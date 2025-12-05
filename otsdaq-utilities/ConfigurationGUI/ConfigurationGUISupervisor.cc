@@ -1205,6 +1205,8 @@ try
 			// if ignore warnings,
 			//	then only print errors, do not add to xml
 
+			__COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
+
 			cfgMgr->activateTableGroup(
 			    groupName, TableGroupKey(groupKey), &accumulatedErrors, &groupTypeString);
 
@@ -3576,7 +3578,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	    &accumulatedErrors   // accumulate errors
 	);
 
-	if(memberMap.size() > ConfigurationManager::fixedContextMemberNames_.size() +
+	if(memberMap.size() > ConfigurationManager::getFixedContextMemberNames().size() +
 	                          1 /* for optional table */
 	   && startPath == "/")
 	{

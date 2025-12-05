@@ -403,6 +403,9 @@
 		//		based on _subsetUIDs
 		function updateRecordsAndFields(selectFirstRecord,loadSelectedRecord)
 		{
+			Debug.log("updateRecordsAndFields selectFirstRecord=" +
+					selectFirstRecord + ", loadSelectedRecord=" + loadSelectedRecord);
+
 			var el = document.getElementById("recordMultiSelect");
 			if(!el) {Debug.log("Error: updateRecordsSelector null"); return; }
 
@@ -1112,7 +1115,7 @@
 		var _lastFilterStr = "";
 		function runFilter(selectFirstRecord,loadSelectedRecord)
 		{
-			Debug.log("Run Filter");
+			Debug.log("Run Filter",selectFirstRecord,loadSelectedRecord);
 
 			var groups = _groupingFieldList.split(',');
 			Debug.log("groups length " + groups.length);
@@ -1632,6 +1635,14 @@
 			/////////////////////
 			function localProceedWithDelete()
 			{
+				Debug.log("localProceedWithDelete()");
+
+				//unselect current record selections, so new record will be selected in aftermath
+				var el = document.getElementById("recordMultiSelect");
+				MultiSelectBox.setSelectionElementByIndex(el,-1 /*all*/,false /*selected*/);
+
+				//and clear filter so filter will be reapplied in aftermath
+				_lastFilterStr = "";
 
 				ConfigurationAPI.deleteSubsetRecords(_subsetBasePath,recordArr,
 						/////////////////////
@@ -1695,6 +1706,8 @@
 			var el = document.getElementById("recordMultiSelect");
 			MultiSelectBox.setSelectionElementByIndex(el,-1 /*all*/,false /*selected*/);
 
+			//and clear filter so filter will be reapplied in aftermath
+			_lastFilterStr = "";
 
 			ConfigurationAPI.addSubsetRecords(_subsetBasePath,newRowUID,
 					/////////////////////
