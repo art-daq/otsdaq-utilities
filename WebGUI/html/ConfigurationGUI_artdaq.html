@@ -339,8 +339,10 @@
 						var type = layoutNodesType[i].getAttribute('value');
 						var name = layoutNodesName[i].getAttribute('value');	
 						
-						//for backwards compatibility, add ";status=1" to name to keep (mostly) same user layout definitions
-						if(name.indexOf(";status=") < 0)
+						//for backwards compatibility, add ";status=1" (if not AS) to name to keep (mostly) same user layout definitions
+						if(type != ARTDAQConfigurationAPI.NODE_TYPES[
+								ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR] &&
+								name.indexOf(";status=") < 0)
 							name += ";status=1";
 
 						if(artdaqObj[type] &&
