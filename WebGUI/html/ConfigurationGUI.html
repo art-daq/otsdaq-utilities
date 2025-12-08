@@ -10419,6 +10419,16 @@
 				editCellCancel();
 				return false;
 			}
+			else if (e.ctrlKey && e.key.toLowerCase() == "c")
+			{
+				Debug.log("Copying block of table rows");
+				copyDeleteRows();
+			}
+			else if (e.ctrlKey && e.key.toLowerCase() == "v")
+			{
+				Debug.log("Pasting block of table rows");
+				pasteDeleteRows();
+			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d")
 			{
 				Debug.log("Deleting block of table rows");
@@ -10427,6 +10437,32 @@
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
 		} //end bodyKeyHandler()
+
+		//==============================================================================
+		//pasteBlockRows
+		function pasteBlockRows()
+		{	
+			for(var i=copiedRows.length-1; i>=0; i--)
+			{
+				console.log("selectedRows[i].cells[0] " + copiedRows[i].cells[0]);
+				console.log("selectedRows[i].cells[0].innerHTML " + copiedRows[i].cells[0].innerHTML);
+			}
+		} //end pasteBlockRows()
+
+		//==============================================================================
+		//copyBlockRows
+		function copyBlockRows()
+		{
+			const copiedRows = document.querySelectorAll("#SubSystemTable tr.selected");
+			console.log("Number of selected rows " + copiedRows.length);
+
+			for(var i=copiedRows.length-1; i>=0; i--)
+			{
+				console.log("selectedRows[i].cells[0] " + copiedRows[i].cells[0]);
+				console.log("selectedRows[i].cells[0].innerHTML " + copiedRows[i].cells[0].innerHTML);
+			}
+		} //end copyBlockRows()
+
 		//==============================================================================
 		//blockDeleteRows
 		function deleteBlockRows()
