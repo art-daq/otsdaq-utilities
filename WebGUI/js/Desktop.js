@@ -1740,20 +1740,39 @@ Desktop.createDesktop = function(security) {
 		case "needToLogin":
 			Debug.log("needToLogin");
 
-			if(!document.getElementById("Desktop-loginDiv") &&
-					!Desktop.desktop.login.isBlackout())
+			let isFromRemoteWindow = this.getWindowById(event.data.windowId|0).isRemoteWindow();
+
+
+			if(!isFromRemoteWindow && 
+				!document.getElementById("Desktop-loginDiv") &&
+				!Desktop.desktop.login.getSystemBlackout())
 			{
 				//use login div presence to only logout once
 				Debug.log("DesktopContent signaled new login needed!");
 				Desktop.logout();
 			}
-			else
+			else if(Desktop.desktop.login.getSystemBlackout())
+			{
 				Debug.log("Ignoring desktop content need for login signal due to blackout.");
+			}
+			else if(isFromRemoteWindow)
+			{
+				Debug.log("Ignoring remote desktop content need for login signal.");
+			}
 
 			break;
 		default:
-			Debug.log("Illegal window message request received! Notify admins", Debug.HIGH_PRIORITY);
+			Debug.err("Illegal window message request received! Notify admins");
 			return;
+		}
+
+		//tell desktop windows about blackout when possible!
+		if(Desktop.desktop.login.getSystemBlackout())
+		{
+			//return that system is in blackout
+			responseObject = {
+				"isBlackout":	1
+			};
 		}
 
 		if(responseObject !== undefined) //send response back
@@ -2940,6 +2959,7 @@ Desktop.getXMLValue = function(req, name)
 //	logout and login prompt
 Desktop.logout = function ()
 {
+	Debug.log("Desktop logout...");
 	if(Desktop.desktop && Desktop.desktop.login &&
 			!Desktop.desktop.login.isBlackout())
 		Desktop.desktop.login.logout();
