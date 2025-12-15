@@ -235,6 +235,14 @@
 				color: rgb(212, 172, 111);
 			}
 
+			.RunDbViewer-entryTable tr.subsystemRow {
+				display: table-cell;
+				
+			}
+			.RunDbViewer-entryTable tr.subsystemRow td {
+				display: block;
+			}
+
 			.RunDbViewer-entryUploads {
 				clear: left;
 				float: left;
@@ -350,6 +358,7 @@
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION	 		= "context_version"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION	= "online_software_version"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE				= "shifter_note"
+			var _XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD 	 	= "subsystem_config_record"
 
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
@@ -654,6 +663,8 @@
 					rundbviewerEl.innerHTML = "";
 
 					//display from newest to oldest
+					console.log("Run DB Viewer entries.length " + entries.length);
+
 					for(var i=entries.length-1;i>=0;--i)
 						displayRunDbViewerEntry(rundbviewerEl,entries[i]);
 
@@ -840,35 +851,114 @@
 				entryText.innerHTML = "<td>Condiotion ID</td><td><a href=\"#\" onclick=\"getRunConditionByID(this); return false;\">" + convertForClient(
 				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID)[0].getAttribute("value")) + "</a></td>";
 				table.appendChild(entryText);
-				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Configuration name</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME)[0].getAttribute("value")) + "</td>";
-				table.appendChild(entryText);
-				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Configuration version</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION)[0].getAttribute("value")) + "</td>";
-				table.appendChild(entryText);
-				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Context name</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME)[0].getAttribute("value")) + "</td>";
-				table.appendChild(entryText);
-				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Context version</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION)[0].getAttribute("value")) + "</td>";
-				table.appendChild(entryText);
-				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Online software version</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION)[0].getAttribute("value")) + "</td>";
-				table.appendChild(entryText);
+				//entryText = document.createElement("tr");
+				//entryText.innerHTML = "<td>Configuration name</td><td>" + convertForClient(
+				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME)[0].getAttribute("value")) + "</td>";
+				//table.appendChild(entryText);
+				//entryText = document.createElement("tr");
+				//entryText.innerHTML = "<td>Configuration version</td><td>" + convertForClient(
+				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION)[0].getAttribute("value")) + "</td>";
+				//table.appendChild(entryText);
+				//entryText = document.createElement("tr");
+				//entryText.innerHTML = "<td>Context name</td><td>" + convertForClient(
+				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME)[0].getAttribute("value")) + "</td>";
+				//table.appendChild(entryText);
+				//entryText = document.createElement("tr");
+				//entryText.innerHTML = "<td>Context version</td><td>" + convertForClient(
+				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION)[0].getAttribute("value")) + "</td>";
+				//table.appendChild(entryText);
+				//entryText = document.createElement("tr");
+				//entryText.innerHTML = "<td>Online software version</td><td>" + convertForClient(
+				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION)[0].getAttribute("value")) + "</td>";
+				//table.appendChild(entryText);
 				entryText = document.createElement("tr");
 				entryText.innerHTML = "<td>Notes</td><td>" + convertForClient(
 				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				
+				var subsystemInfo = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD)[0].getAttribute("value");
+
+				var sanitize = function(xml) {
+				return xml.replace(/(\s+)([^\s=<>\/]+)\s*=\s*([^"'\s=<>`][^\s<>]*)/g,
+					(m, ws, name, val) => `${ws}${name}="${val.replace(/"/g, '&quot;')}"`
+				);
+				}
+
+				var parseConfigRecord = function(record){
+					const obj = {};
+
+					// attributes
+					for (let a of record.attributes){
+						obj[a.name]=a.value;
+					}
+
+					// children
+					for (let child of record.children){
+						const key = child.tagName;
+						const value = child.textContent.trim();
+						obj[key] = obj[key] ? [].concat(obj[key], value) : value;
+					}
+
+					return obj;
+				}
+
+				var tableFromObj = function(o, i){
+					let t = "<tr class='subsystemRow'>";
+					let fr = "<tr class='subsystemRow'>";
+
+					const entries = Object.entries(o);
+
+					for (let j = 0; j < entries.length; j++) {
+						if(i == 0) {
+							if(Array.isArray(entries[j][0]))
+								fr += `<td>${entries[j][0].join("<br>")}</td>`;
+							else
+								fr += `<td>${entries[j][0]}</td>`;	
+						}
+
+						if(Array.isArray(entries[j][1]))
+							t += `<td>${entries[j][1].join("<br>")}</td>`;
+						else
+							t += `<td>${entries[j][1]}</td>`;
+							
+					}
+
+					if(i == 0)
+						t = fr + "</tr>" + t;
+					
+					return t + "</tr>";
+				}
+
+				var xmlToTables = function(xml){
+					xml = sanitize(xml);
+					const wrappedXML = `<ROOT>${xml}</ROOT>`;
+
+					const parser = new DOMParser();
+					const doc = parser.parseFromString(wrappedXML,"application/xml");
+
+					const records = doc.getElementsByTagName("config_record");
+					if (records.length == 0) return "";
+
+					let html = "<table border='1' cellpadding='4' style='border-collapse:collapse;margin:8px 0;'>";
+					for(let i=0;i<records.length;i++){
+						const obj = parseConfigRecord(records[i]);
+						//html += `<h3>config_record #${i+1}</h3>`;
+						html += tableFromObj(obj, i);
+					}
+
+					return html+"</table>";
+				}
+
+				entryText.innerHTML = "<td>Subsystem Configuration</td><td>" + xmlToTables(subsystemInfo) + "</td>";
+
 				table.appendChild(entryText);
 				body.appendChild(table);
 				//condition for condensed-view single line by removing <br>
 				restoreBr(body); //to toggle call restoreBr(el)
 
 				divEl.appendChild(omni);			    //add entry to div element
+
 			} //end displayRunDbViewerEntry()
 
 			//=====================================================================================
