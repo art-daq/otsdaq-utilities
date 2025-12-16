@@ -3957,11 +3957,11 @@
 				//this should never happen unexpectedly!
 				if(compareMemberMap[treeMemberNames_[i]] !== undefined && 
 						compareMemberMap[treeMemberNames_[i]] != treeMemberVersions_[i])
-					Debug.err("Should never happen! The active version for table '" + 
+					Debug.warn("The active version for table '" + 
 						treeMemberNames_[i] + "' changed from v" + 
 						compareMemberMap[treeMemberNames_[i]] + " to v" + 
 						treeMemberVersions_[i] + 
-						". Try Refreshing the Tree-view, or notify admins.");
+						". This could happen if, for example, aliases were changed in the active Backbone Group. You can likely ignore, or try Refreshing the Tree-view, or notify admins if you think this is unexpected.");
 			}
 
 			if (!parentId &&
