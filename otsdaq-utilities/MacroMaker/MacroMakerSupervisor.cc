@@ -629,7 +629,7 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	else
 	{
 		__SUP_COUTT__ << "***Successfully authenticated security sequence. " << time(0)
-		         << __E__;
+		              << __E__;
 	}
 	// SECURITY CHECK END ****
 
