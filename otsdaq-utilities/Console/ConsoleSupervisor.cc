@@ -2029,8 +2029,8 @@ std::string ConsoleSupervisor::getStatusProgressDetail(void)
 	// std::string 	lastErrorMessage_, lastWarnMessage_;
 	// time_t			lastErrorMessageTime_ = 0, lastWarnMessageTime_ = 0;
 
-	ss << ", Error #: " << errorCount_;
-	ss << ", Warn #: " << warnCount_;
+	ss << ", Errors: " << errorCount_;
+	ss << ", Warns: " << warnCount_;
 	ss << ", Last Error ("
 	   << (lastErrorMessageTime_ ? StringMacros::getTimestampString(lastErrorMessageTime_)
 	                             : "0")
