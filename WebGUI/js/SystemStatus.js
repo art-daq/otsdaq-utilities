@@ -627,7 +627,7 @@ function displayTable(appsArray)
 						statusString = statusString.split(":::")[0];
 					}
 					catch (e) { //ignore split error
-						; // Debug.log("What happened? " + e);
+						Debug.log("statusString split error, What happened? " + e);
 					}
 
 					if(statusString == "UNKNOWN") //change if restarting recently
@@ -795,11 +795,9 @@ function displayTable(appsArray)
 							statusString = statusString.split(":::")[0];
 						}
 						catch (e)
-						{
-							str = "UNKNOWN";
-							Debug.log("What happened? " + e);
+						{	//ignore split error
+							Debug.log("statusString split error, What happened? " + e);
 						}
-
 
 						switch (statusString)
 						{
