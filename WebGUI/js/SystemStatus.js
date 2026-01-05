@@ -452,7 +452,7 @@ function restartApps(contextName, serverName)
 						Debug.log("Successfully launched process to restart apps on server '" +
 								serverName + "' targeting context '" + contextName + ".'");
 
-						//recorder time of restart
+						//record time of restart
 						_contextRestartTime[contextName] = (new Date()).getTime();
 
 						//modify status to indicate shutting down
