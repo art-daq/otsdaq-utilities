@@ -561,6 +561,9 @@ function displayTable(appsArray)
 								progressPX + "px;'></div>";
 
 						}
+
+						if(progressNum != 100)
+							Debug.log("Progress for " + appsArray[i].name + ": " + progressNum + "%");
 					}
 					else if (columnKeys[j] == "status")
 					{
