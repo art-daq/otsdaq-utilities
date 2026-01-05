@@ -616,8 +616,8 @@ function displayTable(appsArray)
 
 					}
 
-					if(progressNum != 100)
-						Debug.log("Progress for " + appsArray[i].name + ": " + progressNum + "%");
+					// if(progressNum != 100)
+					// 	Debug.log("Progress for " + appsArray[i].name + ": " + progressNum + "%");
 				}
 				else if (columnKeys[j] == "status")
 				{
@@ -863,11 +863,11 @@ function displayTable(appsArray)
 						if(!logSpace) 
 							cell.innerHTML = ""; //leave blank if no value
 						else if(logSpace == dataSpace)
-							cell.innerHTML = (logSpace/1024).toFixed(2) + " MB, " + logUsage.toFixed(1) + " KB/s";
+							cell.innerHTML = (logSpace/1024).toFixed(2) + " MB, Usage: " + logUsage.toFixed(1) + " KB/s";
 						else
-							cell.innerHTML = "Log: " + (logSpace/1024).toFixed(2) + " MB, " + 
+							cell.innerHTML = "Log: " + (logSpace/1024).toFixed(2) + " MB, Log Usage:" + 
 								logUsage.toFixed(1) + " KB/s; Data: " + 
-								(dataSpace/1024).toFixed(2) + " MB, " + 
+								(dataSpace/1024).toFixed(2) + " MB, Data Usage:" + 
 								dataUsage.toFixed(1) + " KB/s";
 					}
 					else if (columnKeys[j] == "context" || columnKeys[j] == "action")
