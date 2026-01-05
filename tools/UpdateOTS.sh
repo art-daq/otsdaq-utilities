@@ -795,11 +795,11 @@ echo $HIDING_COUNT_MESSAGE
 #cat $CHECKIN_LOG_PATH | grep -v Data_ | grep -v databases_
 
 cp $CHECKIN_LOG_PATH ${CHECKIN_LOG_PATH}.bk &>/dev/null
-sed -i ':a;N;$!ba;s/databases_.*\n.*databases_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
-sed -i ':a;N;$!ba;s/Data_.*\n.*HIDING_COUNT_MESSAGE/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
-sed -i ':a;N;$!ba;s/Data_.*\n.*Data_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk;
-sed -i "s/.*HIDING_COUNT_MESSAGE.*/${HIDING_COUNT_MESSAGE}/g" ${CHECKIN_LOG_PATH}.bk;
-cat ${CHECKIN_LOG_PATH}.bk;
+sed -i ':a;N;$!ba;s/databases_.*\n.*databases_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk &>/dev/null;
+sed -i ':a;N;$!ba;s/Data_.*\n.*HIDING_COUNT_MESSAGE/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk &>/dev/null;
+sed -i ':a;N;$!ba;s/Data_.*\n.*Data_/HIDING_COUNT_MESSAGE/g' ${CHECKIN_LOG_PATH}.bk &>/dev/null;
+sed -i "s/.*HIDING_COUNT_MESSAGE.*/${HIDING_COUNT_MESSAGE}/g" ${CHECKIN_LOG_PATH}.bk &>/dev/null;
+cat ${CHECKIN_LOG_PATH}.bk &>/dev/null;
 rm ${CHECKIN_LOG_PATH}.bk &>/dev/null
 
 echo -e "UpdateOTS.sh:${LINENO}  \t end log dump... #######################################################"
