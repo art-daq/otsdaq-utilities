@@ -3103,7 +3103,7 @@ Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 	var str = "";
 	if(windowPath == "folder")
 	{
-		Debug.log("Openging folder in new tab",Desktop.desktop.icons.getFolderFocus(),name);
+		Debug.log("Opening folder in new tab",Desktop.desktop.icons.getFolderFocus(),name);
 		if(Desktop.desktop.icons.getFolderFocus())
 			str += "Folder=" + encodeURIComponent(Desktop.desktop.icons.getFolderFocus()) + "/";
 		else
