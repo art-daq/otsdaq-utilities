@@ -3151,7 +3151,7 @@ Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 	// check from = that there is nothing but numbers
 
 	var search = window.parent.window.location.search;
-	url = window.parent.window.location.pathname;
+	var url = window.parent.window.location.pathname;
 
 	if(!Desktop.isWizardMode())
 	{
