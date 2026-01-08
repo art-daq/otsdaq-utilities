@@ -1802,7 +1802,7 @@ Desktop.createDesktop = function(security) {
 	{
 		Debug.log("Focusing on folder icon set... ",p,paramsStr.substr(p));
 		let pp = paramsStr.indexOf('&',p); //find end of value for Folder param
-		if(pp < 0) pp = paramsStr.indexOf('#',p); ; //if no more params, could be a hastag
+		if(pp < 0) pp = paramsStr.indexOf('#',p); //if no more params, could be a hastag
 		if(pp < 0) pp = paramsStr.length; //if no more params, take to end of string
 		p += ("Folder=").length; //move p to start of value for Folder param
 
