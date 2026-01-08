@@ -108,16 +108,25 @@ else {
 
 				//update display name
 				ldiv = document.getElementById("DesktopDashboard-user-displayName");
-				var tmpStr = "Welcome to " + _otsOwner + "ots, " + _displayName;
+				let otsAndFolder = "ots" +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
+				let otsAndFolderShort;
+				if(otsAndFolder.length > 20)
+					otsAndFolderShort = otsAndFolder.substring(0,17) + "...";
+				else
+					otsAndFolderShort = otsAndFolder;
+
+				var tmpStr = "Welcome to " + _otsOwner + otsAndFolderShort + ", " + _displayName;
 
 				if(ldiv.innerText != "" && //if not first time
-						ldiv.innerText.indexOf("ots, " + _displayName) < 0) //and name is different
+						ldiv.innerText.indexOf(otsAndFolder + ", " + _displayName) < 0) //and name is different
 				{
 					//if _display name is different then close all windows!
 					Debug.log("Desktop.desktop.closeAllWindows() for new user",Debug.LOW_PRIORITY);
 					Desktop.desktop.closeAllWindows();
 				}
 				ldiv.innerHTML = tmpStr;
+				ldiv.title = "Welcome to " + _otsOwner + otsAndFolder + ", " + _displayName;;
 
 				//reset desktop based on user's permissions
 				Desktop.desktop.resetDesktop(_permissions);
@@ -498,6 +507,9 @@ else {
 					Desktop.desktop.getWindowByIndex(i).getFrame().contentWindow.postMessage(
 							reqObject,"*");
 				}
+
+				Debug.log("Checking for any shortcut work from get parameters...");
+				Desktop.desktop.actOnParameterAction();  //first time, _firstCheckOfMailboxes is true (then it will try again in checkMailboxes)
 
 				return;
 			} //end handle login success
