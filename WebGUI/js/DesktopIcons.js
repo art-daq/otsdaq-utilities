@@ -73,6 +73,7 @@ else {
 
 		var _iconNameToPathMap = undefined; // {/* "name": [path,unique] */} ...used to open icons programatically
 
+		var _folderFocusPath = ""; //if set, only show icons in this folder path on desktop (and subfolders)
 
 		//------------------------------------------------------------------
 		//create public members variables ----------------------
@@ -216,14 +217,42 @@ else {
 
 
 			var numberOfIconFields = 7;
+			Debug.logv({_folderFocusPath});
+			var iconsAdded = 0;
 			for(var i=0;i<(iconArray.length);i+=numberOfIconFields) //add icons
 			{
-				if(_permissions >= iconArray[i+3])
+				if(_permissions >= iconArray[i+3]) //check permissions
+				{
+					if(iconArray[i+6]) Debug.log("Folder path",iconArray[i+6]);
+
+					if(_folderFocusPath == "" ||
+						iconArray[i+6].indexOf(_folderFocusPath) == 0)
+					{
+						//modify folder path if in focus path (to appear as zoomed in on folder contents)
+						iconArray[i+6] = iconArray[i+6].substr(_folderFocusPath.length);
+					}
+					else if(_folderFocusPath != "")
+						continue;
+
+					++iconsAdded;
 					Desktop.desktop.icons.addIcon(iconArray[i],iconArray[i+1],iconArray[i+5],iconArray[i+2]|0,iconArray[i+4],iconArray[i+6]);
-			}
+				}
+			} //end icon add loop
 
+			if(_folderFocusPath != "" && iconsAdded == 0)
+				Debug.err("No icons matched Folder path parameter provided: " + _folderFocusPath);
 
-		}
+		} //end iconRequestHandler()
+
+		//=====================================================================================
+		// this.setFolderFocus ~~
+		//	to setup the filter to only show icons in a particular folder path
+		this.setFolderFocus = function(folderPath)
+		{
+			Debug.logv({folderPath});
+			_folderFocusPath = folderPath;
+		} //end setFolderFocus()
+		this.getFolderFocus = function() { return _folderFocusPath?_folderFocusPath:""; }
 
 		//=====================================================================================
 		// this.addIcon ~~
@@ -443,8 +472,10 @@ else {
 			link.appendChild(div);
 			iconContainer.appendChild(link); //add subtext to icon container
 
-			if(linkurl != "folder") //if not folder, add context click menu handlers
+			if(1) //for folders too now! linkurl != "folder") //if not folder, add context click menu handlers
 			{
+				let isFolder = linkurl == "folder";
+
 				//add context click menu handlers
 				//	mouseup and contextMenu to stop default right-click behavior
 				//	and mousedown to start the menu (so "deep clicks" work)
@@ -462,19 +493,21 @@ else {
 					_deepClickTimer = window.setTimeout(function() {
 
 						Debug.log("Create Icon Menu");
-						var menuItems = [
-										 "Open and Maximize Window",
-										 "Open in New Browser Tab",
-										 "Open and Tile All Windows"
-										 ];
-						var menuItemHandlers = [
-												"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
-												+ "\",\"" + linkurl + "\","+uniqueWin+",2);", // 2 for maximize
-												"Desktop.openNewBrowserTab(\""+ subtext + "\",\"" + ""
-												+ "\",\"" + linkurl + "\","+uniqueWin+");", // 2 for maximize
-												"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
-												+ "\",\"" + linkurl + "\","+uniqueWin+",1);", // 1 for tile
-												];
+						var menuItems = [];
+						if(!isFolder) menuItems.push("Open and Maximize Window");
+						menuItems.push("Open in New Browser Tab");
+						if(!isFolder) menuItems.push("Open and Tile All Windows");
+
+						var menuItemHandlers = [];
+						if(!isFolder) menuItemHandlers.push(
+										"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
+										+ "\",\"" + linkurl + "\","+uniqueWin+",2);"); // 2 for maximize
+						menuItemHandlers.push("Desktop.openNewBrowserTab(\""+ subtext + "\",\"" + ""
+										+ "\",\"" + linkurl + "\","+uniqueWin+");");
+						if(!isFolder) menuItemHandlers.push(
+										"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
+										+ "\",\"" + linkurl + "\","+uniqueWin+",1);"); // 1 for tile
+
 						Debug.log("createEditTableMenu()");
 						SimpleContextMenu.createMenu(
 								menuItems,
@@ -497,7 +530,8 @@ else {
 				//				return false;
 				//			});
 				iconContainer.addEventListener("mousedown",	deepClickHandler);
-			}
+			
+			} //end icon/folder context menu adding
 
 			_iconsElement.appendChild(iconContainer); //add to desktop icon element
 
@@ -816,36 +850,58 @@ else {
 					" key:",key,
 					" type:",type);
 
-			if(type != "icon") return;
+			if(type != "icon" && type != "folder") return;
+			let isFolder = type == "folder";
 
-			//only deep click functionality for icons
+			//only deep click functionality for icons and, now, folders
 
-			var target = _openFolderPtr[1][key];
-			//Icon object array (0-subtext, 1-altText, 2-linkurl, 3-uniqueWin, 4-picfn)
+			var subtext, linkurl, uniqueWin;
+			if(isFolder)
+			{
+				subtext = val;
+				linkurl = "folder";
+				uniqueWin = 1;
+
+				//add folder path - to name
+				let folderPath = _openFolderPath.length > 1?(_openFolderPath + "/"):"";
+				Debug.logv({folderPath});
+				if(folderPath)
+					subtext = folderPath.substr(1) + subtext; //skip initial '/'
+			}
+			else
+			{
+				var target = _openFolderPtr[1][key];
+				//Icon object array (0-subtext, 1-altText, 2-linkurl, 3-uniqueWin, 4-picfn)
+				subtext = target[0];
+				linkurl = target[2];
+				uniqueWin = target[3];
+			}
 
 
 			//========================
 			//	this functionality should mirror local function
-			//	deepClickHandler() in addIcon()
+			//	deepClickHandler() in addIcon() L483 above
 
 			event.cancelBubble = true; //prevent default behavior
 			event.preventDefault();
 			this.deepClickTimer = window.setTimeout(function() {
 
 				Debug.log("Create Icon Menu");
-				var menuItems = [
-								 "Open and Maximize Window",
-								 "Open in New Browser Tab",
-								 "Open and Tile All Windows"
-								 ];
-				var menuItemHandlers = [
-										"Desktop.desktop.addWindow(\""+ target[0] + "\",\"" + ""
-										+ "\",\"" + target[2] + "\","+target[3]+",2);", // 2 for maximize
-										"Desktop.openNewBrowserTab(\""+ target[0] + "\",\"" + ""
-										+ "\",\"" + target[2] + "\","+target[3]+");", // 2 for maximize
-										"Desktop.desktop.addWindow(\""+ target[0] + "\",\"" + ""
-										+ "\",\"" + target[2] + "\","+target[3]+",1);", // 1 for tile
-										];
+				var menuItems = [];
+				if(!isFolder) menuItems.push("Open and Maximize Window");
+				menuItems.push("Open in New Browser Tab");
+				if(!isFolder) menuItems.push("Open and Tile All Windows");
+
+				var menuItemHandlers = [];
+				if(!isFolder) menuItemHandlers.push(
+								"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
+								+ "\",\"" + linkurl + "\","+uniqueWin+",2);"); // 2 for maximize
+				menuItemHandlers.push("Desktop.openNewBrowserTab(\""+ subtext + "\",\"" + ""
+								+ "\",\"" + linkurl + "\","+uniqueWin+");");
+				if(!isFolder) menuItemHandlers.push(
+								"Desktop.desktop.addWindow(\""+ subtext + "\",\"" + ""
+								+ "\",\"" + linkurl + "\","+uniqueWin+",1);"); // 1 for tile
+
 				Debug.log("createEditTableMenu()");
 				SimpleContextMenu.createMenu(
 						menuItems,
