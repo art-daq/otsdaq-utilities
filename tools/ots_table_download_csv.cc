@@ -25,7 +25,6 @@ using namespace ots;
 
 void DownloadTableCSV(int argc, char* argv[])
 {
-
 	std::cout << "=================================================\n";
 	std::cout << "=================================================\n";
 	std::cout << "=================================================\n";
@@ -67,7 +66,6 @@ void DownloadTableCSV(int argc, char* argv[])
 
 	// return;
 
-	
 	//==============================================================================
 	// Define environment variables
 	//	Note: normally these environment variables are set by ots script
