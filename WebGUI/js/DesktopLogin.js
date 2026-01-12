@@ -126,7 +126,7 @@ else {
 					Desktop.desktop.closeAllWindows();
 				}
 				ldiv.innerHTML = tmpStr;
-				ldiv.title = "Welcome to " + _otsOwner + otsAndFolder + ", " + _displayName;;
+				ldiv.title = "Welcome to " + _otsOwner + otsAndFolder + ", " + _displayName;
 
 				//reset desktop based on user's permissions
 				Desktop.desktop.resetDesktop(_permissions);

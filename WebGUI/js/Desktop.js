@@ -1802,7 +1802,7 @@ Desktop.createDesktop = function(security) {
 	{
 		Debug.log("Focusing on folder icon set... ",p,paramsStr.substr(p));
 		let pp = paramsStr.indexOf('&',p); //find end of value for Folder param
-		if(pp < 0) pp = paramsStr.indexOf('#',p); ; //if no more params, could be a hastag
+		if(pp < 0) pp = paramsStr.indexOf('#',p); //if no more params, could be a hastag
 		if(pp < 0) pp = paramsStr.length; //if no more params, take to end of string
 		p += ("Folder=").length; //move p to start of value for Folder param
 
@@ -3103,7 +3103,7 @@ Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 	var str = "";
 	if(windowPath == "folder")
 	{
-		Debug.log("Openging folder in new tab",Desktop.desktop.icons.getFolderFocus(),name);
+		Debug.log("Opening folder in new tab",Desktop.desktop.icons.getFolderFocus(),name);
 		if(Desktop.desktop.icons.getFolderFocus())
 			str += "Folder=" + encodeURIComponent(Desktop.desktop.icons.getFolderFocus()) + "/";
 		else
@@ -3151,7 +3151,7 @@ Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 	// check from = that there is nothing but numbers
 
 	var search = window.parent.window.location.search;
-	url = window.parent.window.location.pathname;
+	var url = window.parent.window.location.pathname;
 
 	if(!Desktop.isWizardMode())
 	{
