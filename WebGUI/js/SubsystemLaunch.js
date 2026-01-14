@@ -847,7 +847,7 @@ SubsystemLaunch.create = function() {
 							{
 								Debug.warn("From Subsystem '" +
 									SubsystemLaunch.subsystems[j].name + " (" + SubsystemLaunch.subsystems[j].url + ")... " +
-									"Status is UNKNOWN. This may indicate that the Subsystem is offline or unreachable.");
+									"Status is UNKNOWN. This may indicate that the Subsystem is offline or unreachable, or if intermittent, too many TRACE levels may be enabled.");
 							}
 
 							if(status.indexOf("Launching") == 0)
