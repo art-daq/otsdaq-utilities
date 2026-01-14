@@ -1231,13 +1231,18 @@ Desktop.createDesktop = function(security) {
 
 	//actOnParameterAction() ~~~
 	//	called during create desktop to handle any shortcuts to windows being maximized
+	//	or to focus the Desktop on a folder icon set
 	this.actOnParameterAction = function()
 	{
 
 		//get parameters
 		var paramsStr = window.parent.window.location.search.substr(1); //skip the '?'
+
+		var extraParamCount = Desktop.isWizardMode() ? 1 : 0; //1 extra param in wiz mode
+		extraParamCount += Desktop.desktop.icons.getFolderFocus() ? 1 : 0; //1 extra param if already focusing on folder icons (if already focusing, then likely trying to focus on different folder icons, so need to look for new Folder param)
+		
 		var params = [];
-		var paramCnt = 5 + (Desktop.isWizardMode()?1:0); //1 extra param in wiz mode
+		var paramCnt = 5 + extraParamCount; //expecting 5 parameters, but if in wizard mode, then also expect a 6th parameter for the wizard step, and if focusing on folder icons, then also expect a 7th parameter for the folder focus
 		var spliti, splitiOld = 0;
 		for(var i=0;i<paramCnt;++i)
 		{
@@ -1259,6 +1264,7 @@ Desktop.createDesktop = function(security) {
 		{
 			spliti = params[i].indexOf('=');
 			varPair = [params[i].substr(0,spliti),params[i].substr(spliti+1)];
+			Debug.log(i + ": " + varPair[0] + "=" + varPair[1]);
 			if(varPair[0] 		== "requestingWindowId")
 				requestingWindowId 	= varPair[1];
 			else if(varPair[0] 	== "windowPath")
@@ -1277,25 +1283,6 @@ Desktop.createDesktop = function(security) {
 			newWindowOps = windowPath.split('&')[1].split('=')[1];
 			windowPath = windowPath.split('&')[0];
 		}
-
-//		for(var i=0;i<params.length;++i)
-//		{
-//    		spliti = params[i].indexOf('=');
-//    		varPair = [params[i].substr(0,spliti),params[i].substr(spliti+1)];
-//			Debug.log(i + ": " + varPair[0] + "=" + varPair[1]);
-//			if(varPair[0] 		== "requestingWindowId")
-//				requestingWindowId 	= varPair[1];
-//			else if(varPair[0] 	== "windowPath")
-//				windowPath 			= decodeURIComponent(varPair[1]);
-//			else if(varPair[0] 	== "windowName")
-//				windowName 			= varPair[1];
-//			else if(varPair[0] 	== "windowSubname")
-//				windowSubname		= varPair[1];
-//			else if(varPair[0] 	== "windowUnique")
-//				windowUnique 		= varPair[1];
-//			else if(varPair[0] 	== "newWindowOps")
-//				newWindowOps 		= varPair[1];
-//		}
 
 		if(requestingWindowId != "" && windowPath != "")
 		{
@@ -1808,8 +1795,24 @@ Desktop.createDesktop = function(security) {
 
 	Debug.log("Desktop Created");
 
-	Debug.log("Checking for any shortcut work from get parameters...");
-	Desktop.desktop.actOnParameterAction();  //first time, _firstCheckOfMailboxes is true (then it will try again in checkMailboxes)
+	//check for Folder parameter
+	var paramsStr = window.parent.window.location.search.substr(1); //skip the '?'
+	let p;
+	if((p = paramsStr.indexOf("Folder=")) >= 0)
+	{
+		Debug.log("Focusing on folder icon set... ",p,paramsStr.substr(p));
+		let pp = paramsStr.indexOf('&',p); //find end of value for Folder param
+		if(pp < 0) pp = paramsStr.indexOf('#',p); //if no more params, could be a hastag
+		if(pp < 0) pp = paramsStr.length; //if no more params, take to end of string
+		p += ("Folder=").length; //move p to start of value for Folder param
+
+		let folderParam = paramsStr.substr(p,pp-p);
+		Debug.log("Applying folder focus... ",folderParam);
+
+		Desktop.desktop.icons.setFolderFocus(decodeURIComponent(folderParam));
+		window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+			(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
+	}
 } //end Desktop constructor
 
 ////////////////////////////////////////////////////////////////////
@@ -3094,42 +3097,61 @@ Desktop.isWizardMode = function()
 
 //==============================================================================
 //openNewBrowserTab ~~
+//	handler opening folder or icon in new browser tab, e.g. for wiz mode and normal mode
 Desktop.openNewBrowserTab = function(name,subname,windowPath,unique)
 {
-	//for windowPath, need to check lid=## is terminated with /
-	// check from = that there is nothing but numbers
+	var str = "";
+	if(windowPath == "folder")
 	{
-		var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
-		var isAllNumbers = true;
-		for(i;i<windowPath.length;++i)
-		{
-			Debug.log(windowPath[i]);
-
-			if(windowPath[i] < "0" || windowPath[i] > "9")
-			{
-				isAllNumbers = false;
-				break;
-			}
-		}
-		if(isAllNumbers)
-			windowPath += "/";
+		Debug.log("Opening folder in new tab",Desktop.desktop.icons.getFolderFocus(),name);
+		if(Desktop.desktop.icons.getFolderFocus())
+			str += "Folder=" + encodeURIComponent(Desktop.desktop.icons.getFolderFocus()) + "/";
+		else
+			str = "Folder=";
+		str += encodeURIComponent(name);
 	}
-	Debug.log("DesktopWindow= " + windowPath);
+	else // not a folder
+	{
+		//for windowPath, need to check lid=## is terminated with /
+		// check from = that there is nothing but numbers
+		{
+			var i = windowPath.indexOf("urn:xdaq-application:lid=") + ("urn:xdaq-application:lid=").length;
+			var isAllNumbers = true;
+			for(i;i<windowPath.length;++i)
+			{
+				Debug.log(windowPath[i]);
 
-	Debug.log("name= " + name);
-	Debug.log("subname= " + subname);
-	Debug.log("unique= " + unique);
-	var search = window.parent.window.location.search;
-	url = window.parent.window.location.pathname;
+				if(windowPath[i] < "0" || windowPath[i] > "9")
+				{
+					isAllNumbers = false;
+					break;
+				}
+			}
+			if(isAllNumbers)
+				windowPath += "/";
+		} //end windowPath handling
+		Debug.log("DesktopWindow= " + windowPath);
 
-	var str = "requestingWindowId=Desktop";
+		Debug.log("name= " + name);
+		Debug.log("subname= " + subname);
+		Debug.log("unique= " + unique);
+
+		str = "requestingWindowId=Desktop";
+
+		if(Desktop.desktop.icons.getFolderFocus())
+			str += "&Folder=" + encodeURIComponent(Desktop.desktop.icons.getFolderFocus());
+
 		str += "&windowName=" + name;
 		str += "&windowSubname=" + subname;
 		str += "&windowUnique=" + unique;
 		str += "&windowPath=" + encodeURIComponent(windowPath);
+	} //end icon non-folder handling
 
 	//if there is no search, need to check lid=## is terminated with /
 	// check from = that there is nothing but numbers
+
+	var search = window.parent.window.location.search;
+	var url = window.parent.window.location.pathname;
 
 	if(!Desktop.isWizardMode())
 	{
