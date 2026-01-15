@@ -511,11 +511,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 				         << " Live: " << theDataManager_->getLiveDQMHistos() << std::endl;
 			if(path == "/")
 			{
-				// Add live histos if I am in the main dir.
-				if(theDataManager_ != nullptr &&
-				   theDataManager_->getLiveDQMHistos() == true)
-					xmlOut.addTextElementToData("dir",
-					                            LIVEDQM_DIR + ".root");  // add to xml
+				// Add live histos
+				xmlOut.addTextElementToData("dir",
+											LIVEDQM_DIR + ".root");  // add to xml
 
 				// check for ROOT_DISPLAY_CONFIG_PATH
 				DIR* pRtDIR  = opendir(ROOT_DISPLAY_CONFIG_PATH);
