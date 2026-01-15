@@ -630,15 +630,47 @@ else
 		var _oldUserNameWithLock = "";
 		var _oldOtherSubsystemsWithLock = "";
 		//=====================================================================================
-		this.doSetUserWithLock = function()
+		//if folderFocus is specified, then lock/unlock action will be on the focused subsystem, otherwise it will be on the top-level system
+		this.doSetUserWithLock = function(folderFocus)
 		{
 			Debug.log("doSetUserWithLock()");
 			var user = Desktop.desktop.login.getUsername();
 			var data = "";
-			data += "lock=" + ((!_oldUserNameWithLock || _oldUserNameWithLock == "")?"1":"0") + "&";
+			let doLockElseUnlock = ((!_oldUserNameWithLock || _oldUserNameWithLock == "")?true:false)
+			data += "lock=" + (doLockElseUnlock?"1":"0") + "&";
 			data += "username=" + user;
 
-			Desktop.XMLHttpRequest(
+			let url = "";
+			if(folderFocus) //modify URL to target subsystem
+			{
+				if(!Desktop.desktop.icons.getFolderFocusSettingsURL())
+				{
+					Debug.err("Please try again in a moment, it seems that Subsystem Settings have not fully loaded for Remote Subsystem '<b>" + 
+						Desktop.desktop.icons.getFolderFocusSubsystem() + "</b>.'");
+					return;
+				}
+
+				Debug.log("Modifying URL to target subsystem from... " + Desktop.desktop.icons.iconNameToPathMap["User Settings"]);
+				url = Desktop.desktop.icons.getFolderFocusSettingsURL();
+				let remoteGatewayLid = url.substr(
+					url.lastIndexOf("&remoteServerUrnLid=") + ("&remoteServerUrnLid=").length) | 0;
+				Debug.logv({remoteGatewayLid});	
+				if(!remoteGatewayLid)
+					Debug.err("Invalid remote subsystem Gateway LID found in User Settings icon URL: " + url);
+				url = url.substr(0,url.indexOf("/WebPath/"));
+				url += requestURL = "/urn:xdaq-application:lid=" + remoteGatewayLid + "/";
+				Debug.logv({url});								
+				Debug.info("<b>" + 
+					(doLockElseUnlock?"Locking":"Unlocking") +
+					"</b> for user '<b>" +
+					user + "</b>' at Remote Subsystem '<b>" + 
+					Desktop.desktop.icons.getFolderFocusSubsystem() + "</b>.'" + 
+					"\n\nIt make take a few seconds for the <b>" +
+					(doLockElseUnlock?"lock":"unlock") + 
+					"</b> to take effect.");
+			}
+
+			Desktop.XMLHttpRequest(url +
 					"Request?RequestType=setUserWithLock&accounts=1",
 					data,
 					Desktop.desktop.dashboard.handleSetUserWithLock);
@@ -653,9 +685,13 @@ else
 
 			var usernameWithLock = Desktop.getXMLValue(req,"username_with_lock"); //get user with lock
 
-			var remoteNamesArr = req.responseXML.getElementsByTagName("RemoteGateway_name");
-			var remoteLocksArr = req.responseXML.getElementsByTagName("RemoteGateway_usernameWithLock");
+			var remoteNamesArr 		= req.responseXML.getElementsByTagName("RemoteGateway_name");
+			var remoteLocksArr 		= req.responseXML.getElementsByTagName("RemoteGateway_usernameWithLock");
+			var remoteFoldersArr 	= req.responseXML.getElementsByTagName("RemoteGateway_desktopFolderIcon");
+			
 			var titleStr = "";
+			var isFolderFocusOnSubsystem = false;
+			var folderFocusUrl = "";
 			if(remoteNamesArr.length)
 			{
 				titleStr += "\n";
@@ -677,15 +713,43 @@ else
 						titleStr += "unlocked";
 					else
 						titleStr += "user: " + remoteUserWithLock;
-				}
+
+					if(Desktop.desktop.icons.getFolderFocus() && //in case subfolder path, use indexOf
+						Desktop.desktop.icons.getFolderFocus().indexOf(remoteFoldersArr[i].getAttribute('value')) == 0)
+					{
+						isFolderFocusOnSubsystem = true;
+						usernameWithLock = remoteUserWithLock; //override with subsystem lock if folder focus is on subsystem						
+
+						//override settings icon html for subsystem folder focus
+						// find subsystem folder icon 						
+						let sel = document.getElementById("DesktopDashboard-settings-icon");
+						if(sel)
+						{
+							if(Desktop.desktop.icons.getFolderFocusSettingsURL())
+							{
+								//sub in path to focus settings		
+								sel.innerHTML = "<a href='Javascript:var win = Desktop.desktop.addWindow(\"Settings\",Desktop.desktop.login.getUsername()," +
+									"\"" + Desktop.desktop.icons.getFolderFocusSettingsURL() + 
+									"\",true);'  title='Click to open " + 
+									"&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+									"&apos; " + "settings window'><img src='/WebPath/images/dashboardImages/icon-Settings.png'></a>";								
+								sel.style.display = "block"; //show
+							}
+							else
+								sel.style.display = "none"; //hide if no settings icon found (while icons are loading)
+						}
+
+					}
+				} //end loop through remote gateways
 			}
 
 			var user = Desktop.desktop.login.getUsername();
-			var data = "";
-			data += "lock=" + ((!usernameWithLock || usernameWithLock == "")?"1":"0") + "&";
-			data += "username=" + user;
 
-			var jsReq = "Desktop.desktop.dashboard.doSetUserWithLock();";
+			//if folder focus is on subsystem, then pass that info to server so it can the lock/unlock action will be on the focused subsystem
+			var jsReq = "Desktop.desktop.dashboard.doSetUserWithLock(" + 
+				(isFolderFocusOnSubsystem ? "\"" + Desktop.desktop.icons.getFolderFocus() + 
+						"\"":"") +
+				");";
 
 			if(_oldUserNameWithLock == usernameWithLock &&
 				_oldOtherSubsystemsWithLock == titleStr &&
@@ -699,7 +763,13 @@ else
 			{
 				//nobody has lock
 				str += "<a href='javascript:" + jsReq + "'" +
-						"title='Unlocked! Click to lockout the system and take the ots Lock." +
+						"title='Unlocked! Click to lockout the " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"system and take the ots " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"Lock." +
 						(titleStr?("\n"+titleStr):"") +
 						"'>";
 				str += "<img " +
@@ -715,13 +785,25 @@ else
 			if(usernameWithLock != user) //not user so cant unlock
 				str = "<img src='/WebPath/images/dashboardImages/icon-Settings-LockDisabled.png' " +
 						"title='User " +
-						usernameWithLock + " has the ots Lock" +
+						usernameWithLock + " has the ots " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"Lock" +
 						(titleStr?("\n"+titleStr):"") +
 						"'>";
 			else //this is user so can unlock
 			{
 				str += "<a href='javascript:" + jsReq + "' " +
-						"title='You have the Lock. Click to unlock the system and release the ots Lock." +
+						"title='You have the " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"Lock. Click to unlock the " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"system and release the ots " + 
+						(isFolderFocusOnSubsystem ? "&apos;" + Desktop.desktop.icons.getFolderFocus() + 
+						"&apos; ":"") + 
+						"Lock." +
 						(titleStr?("\n"+titleStr):"") +
 						"'>";
 				str += "<img " +

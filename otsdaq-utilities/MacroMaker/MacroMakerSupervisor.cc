@@ -515,6 +515,11 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 			{
 				if(buffer == "GetFrontendMacroInfo")
 				{
+					std::string macroPath = (std::string)MACROS_DB_PATH + "NO-USER" + "/";
+					mkdir(macroPath.c_str(), 0755);
+					std::string histPath = (std::string)MACROS_HIST_PATH + "NO-USER" + "/";
+					mkdir(histPath.c_str(), 0755);
+
 					HttpXmlDocument xmldoc;
 					theSupervisor->getFEMacroList(xmldoc, "NO-USER");
 

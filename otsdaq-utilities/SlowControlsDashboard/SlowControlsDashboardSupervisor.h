@@ -89,7 +89,6 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	int                                  alarmNotifyRefreshRate_;
 	std::mutex                           alarmCheckThreadErrorMutex_;
 	std::string                          alarmCheckThreadError_;
-	int                                  readOnly_;
 
 	/// cached data to expose to the web user
 	std::vector<std::vector<std::string>>              alarms_;
