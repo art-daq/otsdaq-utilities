@@ -1058,7 +1058,7 @@ try
 		{
 			xmlOut.addTextElementToData(
 			    "StructureStatusAsJSON",
-			    cfgMgr->getTableByName(tableName)->getStructureStatusAsJSON(cfgMgr));
+			    cfgMgr->getTableByName(tableName)->getStructureAsJSON(cfgMgr));
 		}
 		catch(const std::runtime_error& e)
 		{
