@@ -52,7 +52,7 @@ else {
 		var _cookieUserStr = "otsCookieUser";
 		var _cookieRememberMeStr = "otsRememberMeUser";
 		var _BLACKOUT_COOKIE_STR = "TEMPORARY_SYSTEM_BLACKOUT";
-		var _system_blackout = false;
+		var _system_blackout = undefined;
 		var _user = "";
 		var _displayName = "No-Login";
 		var _otsOwner = "";
@@ -108,16 +108,25 @@ else {
 
 				//update display name
 				ldiv = document.getElementById("DesktopDashboard-user-displayName");
-				var tmpStr = "Welcome to " + _otsOwner + "ots, " + _displayName;
+				let otsAndFolder = "ots" +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
+				let otsAndFolderShort;
+				if(otsAndFolder.length > 20)
+					otsAndFolderShort = otsAndFolder.substring(0,17) + "...";
+				else
+					otsAndFolderShort = otsAndFolder;
+
+				var tmpStr = "Welcome to " + _otsOwner + otsAndFolderShort + ", " + _displayName;
 
 				if(ldiv.innerText != "" && //if not first time
-						ldiv.innerText.indexOf("ots, " + _displayName) < 0) //and name is different
+						ldiv.innerText.indexOf(otsAndFolder + ", " + _displayName) < 0) //and name is different
 				{
 					//if _display name is different then close all windows!
 					Debug.log("Desktop.desktop.closeAllWindows() for new user",Debug.LOW_PRIORITY);
 					Desktop.desktop.closeAllWindows();
 				}
 				ldiv.innerHTML = tmpStr;
+				ldiv.title = "Welcome to " + _otsOwner + otsAndFolder + ", " + _displayName;
 
 				//reset desktop based on user's permissions
 				Desktop.desktop.resetDesktop(_permissions);
@@ -499,6 +508,9 @@ else {
 							reqObject,"*");
 				}
 
+				Debug.log("Checking for any shortcut work from get parameters...");
+				Desktop.desktop.actOnParameterAction();  //first time, _firstCheckOfMailboxes is true (then it will try again in checkMailboxes)
+
 				return;
 			} //end handle login success
 			else
@@ -864,17 +876,20 @@ else {
 		this.blackout = function(setVal)
 		{
 			setVal = setVal?true:false;
-			if(setVal == _system_blackout)
+			if(_system_blackout !== undefined &&
+					setVal == _system_blackout)
 				return; // do nothing if already setup with value
 
 			if(setVal) //start blackout
 			{
 				_setCookie(_BLACKOUT_COOKIE_STR);
 			}
-			else //remove blackout
+			else if(_cookieCode) //remove blackout and replace with cookie code
 			{
 				_setCookie(_cookieCode);
 			}
+			else //remove blackout if no cookie code
+				localStorage.removeItem(_cookieCodeStr);
 
 			_system_blackout = setVal;
 			Debug.log("Login blackout " + _system_blackout);
@@ -883,8 +898,11 @@ else {
 		//==============================================================================
 		//isBlackout ~
 		//	use to check for existing system blackout from exernal sources
+		this.getSystemBlackout = function() { return _system_blackout; }
 		this.isBlackout = function()
 		{
+			if(_system_blackout) return true;
+
 			var cc = _getCookie(_cookieCodeStr);
 			if(!cc) return false; //may be undefined
 			//Debug.log("Checking for blackout signal = " + cc.substr(0,10));
@@ -956,6 +974,12 @@ else {
 		{
 			Debug.log("Desktop Login Prompt Attempt Login", Debug.LOW_PRIORITY);
 			_attemptedLoginWithCert = false;
+
+			if(Desktop.desktop.login.isBlackout())
+			{
+				Debug.log("stopSystemBlackout - assume user expects system to be back");
+				Desktop.desktop.login.blackout(false);
+			}
 
 			var x = [];
 			for(var i=0;i<3;++i)

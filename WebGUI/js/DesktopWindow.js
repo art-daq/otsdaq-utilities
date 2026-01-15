@@ -172,6 +172,7 @@ else {
 		this.getWindowName = function() { return _name; }
 		this.getWindowSubName = function() { return _subname; }
 		this.getWindowUrl = function() { return _url; }
+		this.isRemoteWindow = function() { return _url.indexOf("remoteServerOrigin=") > 0 && _url.indexOf("&remoteServerUrnLid=") > 0; } //indicates remote subsystem window url
 		this.getWindowId = function() { return _id; }
 		this.getWindowX = function() { return _x; }
 		this.getWindowY = function() { return _y; }
@@ -352,7 +353,8 @@ else {
 
 			this.windiv.style.display = "inline"; //make sure is visible
 			this.setWindowSizeAndPosition(_x,_y,_w,_h);
-			window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+			window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+				(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
 
 			Debug.log(document.title, _name, "unmaximize()");
 		} //end unmaximize()
@@ -365,7 +367,8 @@ else {
 			if(_isMaximized)
 				window.parent.document.title = _name;
 			else
-				window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+				window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
 
 			_isMinimized = true;
 			this.windiv.style.display = "none";
@@ -379,7 +382,8 @@ else {
 			if(_isMaximized)
 				window.parent.document.title = _name;
 			else
-				window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+				window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
 
 			_isMinimized = false;
 			this.windiv.style.display = "inline";

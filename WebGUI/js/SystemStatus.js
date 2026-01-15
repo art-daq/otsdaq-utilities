@@ -8,6 +8,8 @@ var _arrayOnDisplayTable 	= new Array(); // has the array values currently displ
 
 var _updateAppsTimeout		= 0;
 
+var _contextRestartTime 	= {}; //map of context name to last restart time
+
 var _displayingFilters 		= false; //set default here
 
 var _statusDivElement, _filtersDivElement, _toggleFiltersLinkElement;
@@ -213,7 +215,8 @@ function getAppsArray()
 				return;
 			}
 			var appNames, appUrls, appIds, appStatus, appTime,
-				appStale, appClasses, appProgress, appDetail, appContexts, appSubapps;
+				appStale, appClasses, appProgress, appDetail, appContexts, 
+				appSubapps, availableLogSpaceKB, availableDataSpaceKB, logUsageRateKBps, dataUsageRateKBps;
 
 			appNames = req.responseXML.getElementsByTagName("name");
 			appIds = req.responseXML.getElementsByTagName("id");
@@ -222,6 +225,10 @@ function getAppsArray()
 			appStale = req.responseXML.getElementsByTagName("stale");
 			appProgress = req.responseXML.getElementsByTagName("progress");
 			appDetail = req.responseXML.getElementsByTagName("detail");
+			availableLogSpaceKB = req.responseXML.getElementsByTagName("availableLogSpaceKB");
+			availableDataSpaceKB = req.responseXML.getElementsByTagName("availableDataSpaceKB");
+			logUsageRateKBps = req.responseXML.getElementsByTagName("logUsageRateKBps");
+			dataUsageRateKBps = req.responseXML.getElementsByTagName("dataUsageRateKBps");
 			appClasses = req.responseXML.getElementsByTagName("class");
 			appUrls = req.responseXML.getElementsByTagName("url");
 			appContexts = req.responseXML.getElementsByTagName("context");
@@ -278,6 +285,10 @@ function getAppsArray()
 					"stale"     :   appStale[i].getAttribute("value"),
 					"progress"  :   appProgress[i].getAttribute("value"),
 					"detail"  	:   appDetail[i].getAttribute("value"),
+					"availableLogSpaceKB"  		:   availableLogSpaceKB[i].getAttribute("value"),
+					"availableDataSpaceKB"  	:   availableDataSpaceKB[i].getAttribute("value"),
+					"logUsageRateKBps"  		:   logUsageRateKBps[i].getAttribute("value"),
+					"dataUsageRateKBps"  		:   dataUsageRateKBps[i].getAttribute("value"),
 					"class"     :   appClasses[i].getAttribute("value"),
 					"url"       :   appUrls[i].getAttribute("value"),
 					"context"   :   appContexts[i].getAttribute("value")
@@ -290,6 +301,10 @@ function getAppsArray()
 					var subappStale = appSubapps[i].getElementsByTagName("subapp_stale");
 					var subappProgress = appSubapps[i].getElementsByTagName("subapp_progress");
 					var subappDetail = appSubapps[i].getElementsByTagName("subapp_detail");
+					var subappAvailableLogSpaceKB = appSubapps[i].getElementsByTagName("subapp_availableLogSpaceKB");
+					var subappAvailableDataSpaceKB = appSubapps[i].getElementsByTagName("subapp_availableDataSpaceKB");
+					var subappLogUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_logUsageRateKBps");
+					var subappDataUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_dataUsageRateKBps");
 					var subappUrl = appSubapps[i].getElementsByTagName("subapp_url");
 					var subappID = appSubapps[i].getElementsByTagName("subapp_id");
 					var subappClass = appSubapps[i].getElementsByTagName("subapp_class");
@@ -297,15 +312,19 @@ function getAppsArray()
 					_allAppsArray[_allAppsArray.length - 1].subappStatus = new Array();
 					for (var j = 0; j < subappNames.length; j++) {
 						_allAppsArray[_allAppsArray.length - 1].subappStatus.push({
-							"name": subappNames[j].getAttribute("value"),
-							"status": subappStatus[j].getAttribute("value"),
-							"time": subappTime[j].getAttribute("value"),
-							"stale": subappStale[j].getAttribute("value"),
-							"progress": subappProgress[j].getAttribute("value"),
-							"detail": subappDetail[j].getAttribute("value"),
-							"class": subappClass[j].getAttribute("value"),
-							"id": subappID[j].getAttribute("value"),
-							"url": subappUrl[j].getAttribute("value")
+							"name"		: subappNames[j].getAttribute("value"),
+							"status"	: subappStatus[j].getAttribute("value"),
+							"time"		: subappTime[j].getAttribute("value"),
+							"stale"		: subappStale[j].getAttribute("value"),
+							"progress"	: subappProgress[j].getAttribute("value"),
+							"detail"	: subappDetail[j].getAttribute("value"),
+							"availableLogSpaceKB"  	:   subappAvailableLogSpaceKB[j].getAttribute("value"),
+							"availableDataSpaceKB"  :   subappAvailableDataSpaceKB[j].getAttribute("value"),
+							"logUsageRateKBps"  	:   subappLogUsageRateKBps[j].getAttribute("value"),
+							"dataUsageRateKBps"  	:   subappDataUsageRateKBps[j].getAttribute("value"),
+							"class"		: subappClass[j].getAttribute("value"),
+							"id"		: subappID[j].getAttribute("value"),
+							"url"		: subappUrl[j].getAttribute("value")
 						});
 					}
 				}
@@ -389,18 +408,18 @@ function updateAppsArray()
 // this function start stop Apps on a server
 function restartApps(contextName, serverName)
 {
-	console.log("Restart " + contextName + "s'Apps");
+	Debug.log("Restart " + contextName + "'s Apps");
 	//cancel update apps timer
 	if(_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
 
 	DesktopContent.popUpVerification(
-		"Restarting server " + serverName + " for 'no gateway apps'. Are you sure?",
+		"Restarting server " + serverName + " for 'non-gateway apps'. Are you sure?",
 		function () /* yes-to-restart servers */
 		{
 			//modify status to indicate shutting down
 			if(_arrayOnDisplayTable && _arrayOnDisplayTable.length)
 			{
-				Debug.log("Modifying status of", contextName,"to shutting down...");
+				Debug.log("Modifying status of", contextName, "to shutting down...");
 
 				for (var i = 0; i < _arrayOnDisplayTable.length; i++)
 				{
@@ -410,7 +429,7 @@ function restartApps(contextName, serverName)
 				displayTable(_arrayOnDisplayTable);
 
 				//return update apps timer with some extra time for user to see "Shutting Down"
-				_updateAppsTimeout = window.setTimeout(updateAppsArray, 3000 /*ms*/);
+				// _updateAppsTimeout = window.setTimeout(updateAppsArray, 3000 /*ms*/);
 			}
 
 			DesktopContent.XMLHttpRequest(
@@ -419,7 +438,41 @@ function restartApps(contextName, serverName)
 				function(req)
 				{
 					var status = DesktopContent.getXMLValue(req,"status");
-					console.log("Response", status);
+					Debug.log("Response", status);
+					if(status != "restarted")
+					{
+						Debug.warn("Unexpected response when restarting apps on server '" +
+								serverName + "' targeting context '" + contextName + "': " + status);
+
+						if(_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+						_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000 /*ms*/);
+					}
+					else 
+					{
+						Debug.log("Successfully launched process to restart apps on server '" +
+								serverName + "' targeting context '" + contextName + ".'");
+
+						//record time of restart
+						_contextRestartTime[contextName] = (new Date()).getTime();
+
+						//modify status to indicate shutting down
+						if(_arrayOnDisplayTable && _arrayOnDisplayTable.length)
+						{
+							Debug.log("Modifying status of", contextName, "to start up...");
+
+
+							for (var i = 0; i < _arrayOnDisplayTable.length; i++)
+							{
+								if (_arrayOnDisplayTable[i].context != contextName) continue;
+								_arrayOnDisplayTable[i].status = "Starting Up"; //force to starting up
+							}
+							displayTable(_arrayOnDisplayTable);
+							
+							//return update apps timer with some extra time for user to see "Starting Up"
+							if(_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+							_updateAppsTimeout = window.setTimeout(updateAppsArray, 3000 /*ms*/);
+						}
+					}
 				} /*returnStatus*/,
 				0 /*reqParam*/,
 				0 /*progressStatus*/,
@@ -436,7 +489,6 @@ function restartApps(contextName, serverName)
 		}
 	);
 } // end of restartApps()
-
 
 //=====================================================================================
 // this function displays a table with the app array passed into it
@@ -462,8 +514,9 @@ function displayTable(appsArray)
 	var columnNames = ["Context Name", "App Name", "Status", "Progress", "Detail",
 					   //add white space so changing ping has less update effect
 					   "&nbsp;&nbsp;Last Update&nbsp;&nbsp;",
-					   "App Type", "App URL", "App ID", "Action" ];
-	var columnKeys = ["context", "name", "status", "progress", "detail", "stale", "class", "url", "id", "action" ];
+					   "App Type", "App URL", "App ID", "Action", "Available Space"];
+	var columnKeys = ["context", "name", "status", "progress", "detail", 		
+		"stale", "class", "url", "id", "action", "availableSpace" ];
 	var columnCount = columnNames.length;
 
 	//Add the header row.
@@ -490,39 +543,210 @@ function displayTable(appsArray)
 		var appRowId = 0; //using this id to make a subRow id for apps in each context
 		for (var i = 0; i < appsArray.length; i++)
 		{
-			if (appsArray[i].context == contextName)
+			if (appsArray[i].context != contextName) continue;
+			
+			row = table.insertRow(-1);
+			row.setAttribute("class", "subRow");
+			row.id = contextName + "-" + appRowId;
+
+			appRowId++;
+
+			for (var j = 0; j < columnKeys.length; ++j)
 			{
+				cell = row.insertCell(-1);
+
+				//add mouseover tooltip
+				cell.title = appsArray[i].name + "'s " +
+					columnNames[j];
+
+				if(columnKeys[j] == "action")
+				{
+					var url = appsArray[i].url;
+					url = url.substring(url.indexOf("://")+3,url.lastIndexOf(":"));
+					if(!appsArray[i].class.includes("Gateway"))
+						cell.innerHTML = "<button onclick = 'restartApps(\"" +
+										contextName + "\", \"" + url + "\")' title = 'Restart " +
+										" no gateway apps on " + url + "' class = 'contextButton'>" +
+										"Restart server</button>";
+				}
+				else if (columnKeys[j] == "stale")
+				{
+					cell.style.fontSize = "12px";
+
+					var staleString = "";
+					var staleSeconds = appsArray[i][columnKeys[j]] | 0;
+					if (appsArray[i].time == "0")
+						staleString = "No status";
+					else if (staleSeconds < 1)
+						staleString = "0." + ping_ + " seconds ago";
+					else if (staleSeconds < 2)
+						staleString = "1." + ping_ + " seconds ago";
+					else if (staleSeconds < 46)
+						staleString = staleSeconds + " seconds ago";
+					else if (staleSeconds < 90)
+						staleString = "One minute ago";
+					else if (staleSeconds < 40 * 60)
+						staleString = (((staleSeconds / 60) | 0) + 1) + " minutes ago";
+					else if (staleSeconds < 75 * 60)
+						staleString = "One hour ago";
+					else if (staleSeconds < 60 * 60 * 2)
+						staleString = (((staleSeconds / 60 / 60) | 0) + 1) + " hours ago";
+					else if (staleSeconds < 60 * 60 * 48)
+						staleString = (((staleSeconds / 60 / 60 / 24) | 0) + 1) + " days ago";
+
+					cell.innerHTML = staleString;
+				}
+				else if (columnKeys[j] == "progress")
+				{
+					var progressNum = appsArray[i][columnKeys[j]] | 0;
+					if (progressNum > 100)
+						progressNum = 99; //attempting to figure out max (or variable steps)
+
+					if (progressNum == 100)
+						cell.innerHTML = "Done";
+					else
+					{
+						//scale progress bar to width of cell (66px)
+
+						var progressPX = ((66 * progressNum / 100) | 0);
+						if (progressPX > 0 && progressPX < 3) progressPX = 3; //show something non-zero
+
+						cell.innerHTML = "&nbsp;" + progressNum + " %<div class='progressBar' style='width:" +
+							progressPX + "px;'></div>";
+
+					}
+
+					// if(progressNum != 100)
+					// 	Debug.log("Progress for " + appsArray[i].name + ": " + progressNum + "%");
+				}
+				else if (columnKeys[j] == "status")
+				{
+					var statusString = appsArray[i][columnKeys[j]];
+
+					try { //some states can provide error detail after ":::" marker (ignore extra detail for now)
+						statusString = statusString.split(":::")[0];
+					}
+					catch (e) { //ignore split error
+						Debug.log("statusString split error, What happened? " + e);
+					}
+
+					if(statusString == "UNKNOWN") //change if restarting recently
+					{
+						var restartTime = _contextRestartTime[appsArray[i].context];
+						if(restartTime)
+						{
+							var currentTime = (new Date()).getTime();
+							if(currentTime - restartTime < 30*1000) //30 seconds
+								statusString = "Starting Up";
+						}
+					}
+
+					switch (statusString)
+					{
+						case "Starting Up":
+						case "Initial":
+							cell.style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
+							break;
+						case "Halted":
+							cell.style.background = "radial-gradient(circle at 50% 120%, rgb(255, 207, 105), rgb(245, 218, 179) 10%, rgb(234, 131, 3) 80%, rgb(121, 68, 0) 100%)";
+							break;
+						case "Configured":
+						case "Paused":
+							cell.style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(179, 204, 197) 10%, rgb(5, 148, 122) 80%, rgb(6, 39, 69) 100%)";
+							break;
+						case "Running":
+							cell.style.background = "radial-gradient(circle at 50% 120%, rgb(0, 255, 67), rgb(142, 255, 172) 10%, rgb(5, 148, 42) 80%, rgb(6, 39, 69) 100%)";
+							break;
+						case "Shutting Down":
+						case "Failed":
+						case "Error":
+						case "Soft-Error":
+							cell.style.background = "radial-gradient(circle at 50% 120%, rgb(255, 124, 124), rgb(255, 159, 159) 10%, rgb(218, 0, 0) 80%, rgb(144, 1, 1) 100%)";
+
+							cell.style.cursor = "pointer";
+							cell.id = "cell-" + i + "-" + j;
+							cell.onclick =
+								function ()
+								{
+									Debug.log("Cell " + this.id);
+
+									var i = this.id.split('-');
+									var j = i[2] | 0;
+									var i = i[1] | 0;
+									Debug.log(
+										appsArray[i][columnKeys[j]],
+										Debug.HIGH_PRIORITY);
+								}; //end onclick()
+							break;
+						default:
+					} // end of switch
+
+					cell.innerHTML = statusString;
+				}
+				else if (columnKeys[j] == "detail")
+				{
+					var tmpDetail = decodeURIComponent(appsArray[i][columnKeys[j]]);
+					if(tmpDetail.length > 150)
+						tmpDetail = tmpDetail.substr(0,150) + "...";
+					cell.innerHTML = tmpDetail;
+				}
+				else if (columnKeys[j] == "availableSpace")
+				{
+					var logSpace = appsArray[i]["availableLogSpaceKB"] | 0;
+					var dataSpace = appsArray[i]["availableDataSpaceKB"] | 0;
+					var logUsage = parseFloat(appsArray[i]["logUsageRateKBps"]) || 0;
+					var dataUsage = parseFloat(appsArray[i]["dataUsageRateKBps"]) || 0;
+
+					if(!logSpace) 
+						cell.innerHTML = ""; //leave blank if no value
+					else if(logSpace == dataSpace)
+						cell.innerHTML = (logSpace/1024).toFixed(2) + " MB, Usage: " + logUsage.toFixed(1) + " KB/s";
+					else
+						cell.innerHTML = "Log: " + (logSpace/1024).toFixed(2) + " MB, Log Usage: " + 
+							logUsage.toFixed(1) + " KB/s; Data: " + 
+							(dataSpace/1024).toFixed(2) + " MB, Data Usage: " + 
+							dataUsage.toFixed(1) + " KB/s";
+				}
+				else if (columnKeys[j] == "context")
+				{
+					// Skip to make things look better
+				}
+				else
+					cell.innerHTML = appsArray[i][columnKeys[j]];
+
+				if (columnKeys[j] == "status")
+				{
+					cell.style.textAlign = "center";
+					cell.className = "statusCell";
+
+				}// end of status style handling
+				else if (columnKeys[j] == "progress" || columnKeys[j] == "id")
+					cell.style.textAlign = "center";
+			} //end app column loop
+
+			for (var subapp in appsArray[i].subappStatus)
+			{
+				var subappInfo = appsArray[i].subappStatus[subapp];
 				row = table.insertRow(-1);
-				row.setAttribute("class", "subRow");
-				row.id = contextName + "-" + appRowId;
-
-				appRowId++;
-
 				for (var j = 0; j < columnKeys.length; ++j)
 				{
 					cell = row.insertCell(-1);
 
 					//add mouseover tooltip
-					cell.title = appsArray[i].name + "'s " +
+					cell.title = subappInfo.name + "'s " +
 						columnNames[j];
 
-					if(columnKeys[j] == "action")
+					if (columnKeys[j] == "name")
 					{
-						var url = appsArray[i].url;
-						url = url.substring(url.indexOf("://")+3,url.lastIndexOf(":"));
-						if(!appsArray[i].class.includes("Gateway"))
-							cell.innerHTML = "<button onclick = 'restartApps(\"" +
-											contextName + "\", \"" + url + "\")' title = 'Restart " +
-											" no gateway apps on " + url + "' class = 'contextButton'>" +
-											"Restart server</button>";
+						cell.innerHTML = "---> " + subappInfo.name;
 					}
 					else if (columnKeys[j] == "stale")
 					{
 						cell.style.fontSize = "12px";
 
 						var staleString = "";
-						var staleSeconds = appsArray[i][columnKeys[j]] | 0;
-						if (appsArray[i].time == "0")
+						var staleSeconds = subappInfo[columnKeys[j]] | 0;
+						if (subappInfo.time == "0")
 							staleString = "No status";
 						else if (staleSeconds < 1)
 							staleString = "0." + ping_ + " seconds ago";
@@ -545,14 +769,13 @@ function displayTable(appsArray)
 					}
 					else if (columnKeys[j] == "progress")
 					{
-						var progressNum = appsArray[i][columnKeys[j]] | 0;
+						var progressNum = subappInfo[columnKeys[j]] | 0;
 						if (progressNum > 100)
 							progressNum = 99; //attempting to figure out max (or variable steps)
 
 						if (progressNum == 100)
 							cell.innerHTML = "Done";
-						else
-						{
+						else {
 							//scale progress bar to width of cell (66px)
 
 							var progressPX = ((66 * progressNum / 100) | 0);
@@ -565,18 +788,20 @@ function displayTable(appsArray)
 					}
 					else if (columnKeys[j] == "status")
 					{
-						var statusString = appsArray[i][columnKeys[j]];
+						var statusString = subappInfo[columnKeys[j]];
 
-						try { //some states can provide error detail after ":::" marker (ignore extra detail for now)
+						try
+						{
 							statusString = statusString.split(":::")[0];
 						}
-						catch (e) { //ignore split error
-							; // Debug.log("What happened? " + e);
+						catch (e)
+						{	//ignore split error
+							Debug.log("statusString split error, What happened? " + e);
 						}
-
 
 						switch (statusString)
 						{
+							case "Starting Up":
 							case "Initial":
 								cell.style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
 								break;
@@ -607,7 +832,7 @@ function displayTable(appsArray)
 										var j = i[2] | 0;
 										var i = i[1] | 0;
 										Debug.log(
-											appsArray[i][columnKeys[j]],
+											subappInfo[columnKeys[j]],
 											Debug.HIGH_PRIORITY);
 									}; //end onclick()
 								break;
@@ -618,17 +843,37 @@ function displayTable(appsArray)
 					}
 					else if (columnKeys[j] == "detail")
 					{
-						var tmpDetail = decodeURIComponent(appsArray[i][columnKeys[j]]);
+						// cell.innerText = //decodeURIComponent(
+						//     subappInfo[columnKeys[j]];
+						//     //);
+						var tmpDetail = decodeURIComponent(subappInfo[columnKeys[j]]);
 						if(tmpDetail.length > 150)
 							tmpDetail = tmpDetail.substr(0,150) + "...";
 						cell.innerHTML = tmpDetail;
 					}
-					else if (columnKeys[j] == "context")
+					else if (columnKeys[j] == "availableSpace")
 					{
-						// Skip to make things look better
+						var logSpace = subappInfo["availableLogSpaceKB"] | 0;
+						var dataSpace = subappInfo["availableDataSpaceKB"] | 0;
+						var logUsage = parseFloat(subappInfo["logUsageRateKBps"]) || 0;
+						var dataUsage = parseFloat(subappInfo["dataUsageRateKBps"]) || 0;
+
+						if(!logSpace) 
+							cell.innerHTML = ""; //leave blank if no value
+						else if(logSpace == dataSpace)
+							cell.innerHTML = (logSpace/1024).toFixed(2) + " MB, Usage: " + logUsage.toFixed(1) + " KB/s";
+						else
+							cell.innerHTML = "Log: " + (logSpace/1024).toFixed(2) + " MB, Log Usage:" + 
+								logUsage.toFixed(1) + " KB/s; Data: " + 
+								(dataSpace/1024).toFixed(2) + " MB, Data Usage:" + 
+								dataUsage.toFixed(1) + " KB/s";
+					}
+					else if (columnKeys[j] == "context" || columnKeys[j] == "action")
+					{
+						// Subapps don't have these
 					}
 					else
-						cell.innerHTML = appsArray[i][columnKeys[j]];
+						cell.innerHTML = subappInfo[columnKeys[j]];
 
 					if (columnKeys[j] == "status")
 					{
@@ -639,154 +884,8 @@ function displayTable(appsArray)
 					else if (columnKeys[j] == "progress" || columnKeys[j] == "id")
 						cell.style.textAlign = "center";
 				}
-
-				for (var subapp in appsArray[i].subappStatus)
-				{
-					var subappInfo = appsArray[i].subappStatus[subapp];
-					row = table.insertRow(-1);
-					for (var j = 0; j < columnKeys.length; ++j)
-					{
-						cell = row.insertCell(-1);
-
-						//add mouseover tooltip
-						cell.title = subappInfo.name + "'s " +
-							columnNames[j];
-
-						if (columnKeys[j] == "name")
-						{
-							cell.innerHTML = "---> " + subappInfo.name;
-						}
-						else if (columnKeys[j] == "stale")
-						{
-							cell.style.fontSize = "12px";
-
-							var staleString = "";
-							var staleSeconds = subappInfo[columnKeys[j]] | 0;
-							if (subappInfo.time == "0")
-								staleString = "No status";
-							else if (staleSeconds < 1)
-								staleString = "0." + ping_ + " seconds ago";
-							else if (staleSeconds < 2)
-								staleString = "1." + ping_ + " seconds ago";
-							else if (staleSeconds < 46)
-								staleString = staleSeconds + " seconds ago";
-							else if (staleSeconds < 90)
-								staleString = "One minute ago";
-							else if (staleSeconds < 40 * 60)
-								staleString = (((staleSeconds / 60) | 0) + 1) + " minutes ago";
-							else if (staleSeconds < 75 * 60)
-								staleString = "One hour ago";
-							else if (staleSeconds < 60 * 60 * 2)
-								staleString = (((staleSeconds / 60 / 60) | 0) + 1) + " hours ago";
-							else if (staleSeconds < 60 * 60 * 48)
-								staleString = (((staleSeconds / 60 / 60 / 24) | 0) + 1) + " days ago";
-
-							cell.innerHTML = staleString;
-						}
-						else if (columnKeys[j] == "progress")
-						{
-							var progressNum = subappInfo[columnKeys[j]] | 0;
-							if (progressNum > 100)
-								progressNum = 99; //attempting to figure out max (or variable steps)
-
-							if (progressNum == 100)
-								cell.innerHTML = "Done";
-							else {
-								//scale progress bar to width of cell (66px)
-
-								var progressPX = ((66 * progressNum / 100) | 0);
-								if (progressPX > 0 && progressPX < 3) progressPX = 3; //show something non-zero
-
-								cell.innerHTML = "&nbsp;" + progressNum + " %<div class='progressBar' style='width:" +
-									progressPX + "px;'></div>";
-
-							}
-						}
-						else if (columnKeys[j] == "status")
-						{
-							var statusString = subappInfo[columnKeys[j]];
-
-							try
-							{
-								statusString = statusString.split(":::")[0];
-							}
-							catch (e)
-							{
-								str = "UNKNOWN";
-								Debug.log("What happened? " + e);
-							}
-
-
-							switch (statusString)
-							{
-								case "Initial":
-									cell.style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
-									break;
-								case "Halted":
-									cell.style.background = "radial-gradient(circle at 50% 120%, rgb(255, 207, 105), rgb(245, 218, 179) 10%, rgb(234, 131, 3) 80%, rgb(121, 68, 0) 100%)";
-									break;
-								case "Configured":
-								case "Paused":
-									cell.style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(179, 204, 197) 10%, rgb(5, 148, 122) 80%, rgb(6, 39, 69) 100%)";
-									break;
-								case "Running":
-									cell.style.background = "radial-gradient(circle at 50% 120%, rgb(0, 255, 67), rgb(142, 255, 172) 10%, rgb(5, 148, 42) 80%, rgb(6, 39, 69) 100%)";
-									break;
-								case "Shutting Down":
-								case "Failed":
-								case "Error":
-								case "Soft-Error":
-									cell.style.background = "radial-gradient(circle at 50% 120%, rgb(255, 124, 124), rgb(255, 159, 159) 10%, rgb(218, 0, 0) 80%, rgb(144, 1, 1) 100%)";
-
-									cell.style.cursor = "pointer";
-									cell.id = "cell-" + i + "-" + j;
-									cell.onclick =
-										function ()
-										{
-											Debug.log("Cell " + this.id);
-
-											var i = this.id.split('-');
-											var j = i[2] | 0;
-											var i = i[1] | 0;
-											Debug.log(
-												subappInfo[columnKeys[j]],
-												Debug.HIGH_PRIORITY);
-										}; //end onclick()
-									break;
-								default:
-							} // end of switch
-
-							cell.innerHTML = statusString;
-						}
-						else if (columnKeys[j] == "detail")
-						{
-							// cell.innerText = //decodeURIComponent(
-							//     subappInfo[columnKeys[j]];
-							//     //);
-							var tmpDetail = decodeURIComponent(subappInfo[columnKeys[j]]);
-							if(tmpDetail.length > 150)
-								tmpDetail = tmpDetail.substr(0,150) + "...";
-							cell.innerHTML = tmpDetail;
-						}
-						else if (columnKeys[j] == "context" || columnKeys[j] == "action")
-						{
-							// Subapps don't have these
-						}
-						else
-							cell.innerHTML = subappInfo[columnKeys[j]];
-
-						if (columnKeys[j] == "status")
-						{
-							cell.style.textAlign = "center";
-							cell.className = "statusCell";
-
-						}// end of status style handling
-						else if (columnKeys[j] == "progress" || columnKeys[j] == "id")
-							cell.style.textAlign = "center";
-					}
-				}
-			}
-		}
+			} //end of subapp loop			
+		}  //end of apps in context loop
 
 		if (appRowId == 0) //no apps found
 		{

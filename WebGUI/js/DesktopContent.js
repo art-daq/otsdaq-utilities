@@ -224,7 +224,7 @@ DesktopContent._updateCookieCodeTimer = 0;
 
 DesktopContent._needToLoginMailbox = false;
 //DesktopContent._openWindowMailbox = 0;
-DesktopContent._blockSystemCheckMailbox = false;
+DesktopContent._isSystemBlackout = false;
 DesktopContent._windowColorPostbox;
 DesktopContent._dashboardColorPostbox;
 DesktopContent._desktopColor;
@@ -274,7 +274,7 @@ DesktopContent.init = function(onloadFunction)
 //		DesktopContent._updateTimeMailbox     = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-updateTimeMailbox");
 //		DesktopContent._needToLoginMailbox    = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-needToLoginMailbox");
 //		DesktopContent._openWindowMailbox	  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-openWindowMailbox");
-//		DesktopContent._blockSystemCheckMailbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-blockSystemCheckMailbox");
+//		DesktopContent._isSystemBlackout = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-blockSystemCheckMailbox");
 //
 //		DesktopContent._windowColorPostbox	  = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-windowColorPostbox");
 //		DesktopContent._dashboardColorPostbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-dashboardColorPostbox");
@@ -412,7 +412,7 @@ DesktopContent.init = function(onloadFunction)
 		}
 		else if(event.data.request == "giveParentCookieCode")
 		{
-			Debug.log("Received cookie response from parent page");
+			Debug.log("Received cookie response from parent page",window.location.href);
 			DesktopContent._cookieCodeMailbox = event.data.cookieCode;
 		}
 		else if(event.data.request == "updateWindowSequence")
@@ -435,7 +435,6 @@ DesktopContent.init = function(onloadFunction)
 			DesktopContent._serverOrigin = event.data.gatewayOrigin;
 			DesktopContent._topServerUrnLid = event.data.topGatewayURN;
 			DesktopContent._topServerOrigin = event.data.topGatewayOrigin;
-			DesktopContent._cookieCodeMailbox = event.data.cookieCode;
 
 			Debug.log("The Desktop Window ID = " + DesktopContent._theWindowId);
 			Debug.log("The Desktop Window Title = " + DesktopContent._theWindowTitle);
@@ -497,14 +496,25 @@ DesktopContent.init = function(onloadFunction)
 	//The first message is initiated by the Desktop once the window frame has been loaded.
 	DesktopContent._theWindow.addEventListener('message', event => {
 
-		// console.log(window.location.href,
-		// 	"Desktop Window event.data",event.data);
+		console.log(window.location.href,
+			"Desktop Window event.data",event.data);
 
 
 		if(!event.data.windowId)
 		{
 			Debug.log("Illegal message received!");
 			return;
+		}
+
+		if(!DesktopContent._isSystemBlackout && event.data.isBlackout)
+		{
+			DesktopContent._isSystemBlackout = true;
+			Debug.log("Identified system blackout!",window.location.href);
+		}
+		else if(DesktopContent._isSystemBlackout && !event.data.isBlackout)
+		{
+			DesktopContent._isSystemBlackout = false;
+			Debug.log("Lifted system blackout.",window.location.href);
 		}
 
 		if(!event.data.request)
@@ -589,7 +599,6 @@ DesktopContent.init = function(onloadFunction)
 		}
 		else
 		{
-
 			//Debug.log("Request or Response!");
 
 			if(event.data.request == "getParentCookieCode")
@@ -614,11 +623,17 @@ DesktopContent.init = function(onloadFunction)
 			switch(event.data.request)
 			{
 			case "getCookieCode" + "Response":
-				DesktopContent._cookieCodeMailbox = event.data.cookieCode;
+				if(event.data.cookieCode)
+					DesktopContent._cookieCodeMailbox = event.data.cookieCode;
+				else
+					Debug.log("Why undefined cookie code received?",window.location.href);
 				//console.log("getCookieCode" + "Response");
 				break;
 			case "loginNotify":
-				DesktopContent._cookieCodeMailbox = event.data.cookieCode;
+				if(event.data.cookieCode)
+					DesktopContent._cookieCodeMailbox = event.data.cookieCode;
+				else
+					Debug.log("Why loginNotify undefined cookie code received?",window.location.href);
 				DesktopContent._needToLoginMailbox = false;
 				DesktopContent._arrayOfFailedHandlers = []; // clear
 				console.log("loginNotify",DesktopContent._needToLoginMailbox);
@@ -655,7 +670,8 @@ DesktopContent.init = function(onloadFunction)
 				}
 				break;
 			default:
-				Debug.log("Illegal response received from Desktop! Notify admins", Debug.HIGH_PRIORITY);
+				if(!DesktopContent._isSystemBlackout)
+					Debug.log("Illegal response received from Desktop! Notify admins", Debug.HIGH_PRIORITY);
 				return;
 			}
 
@@ -1332,13 +1348,13 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 
 
 
-	if((!ignoreSystemBlock && DesktopContent._blockSystemCheckMailbox) //we expect the system to be down during system block
+	if((!ignoreSystemBlock && DesktopContent._isSystemBlackout) //we expect the system to be down during system block, so disallow the request
 			|| DesktopContent._needToLoginMailbox)
 	{
 		//check if already marked the mailbox.. and do nothing because we know something is wrong
 
 		errStr = "The system appears to be down.";
-		errStr += " (Try reconnecting/reloading the page, or alert ots admins if the problem persists.)";
+		errStr += " (Try retrying/reconnecting/reloading the page, or alert ots admins if the problem persists.)";
 
 		if(!callHandlerOnErr)
 			Debug.log("Error: " + errStr,Debug.HIGH_PRIORITY);
@@ -1381,13 +1397,13 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 	//set timeout to detect infinite loops or long waits
 	var timeoutTimer;
 	var timeoutFunction = function()
-					{
-						Debug.log("It has been 60 seconds.. still waiting for a response. " +
-							"Is there an infinite loop occuring at the server? " +
-							"Or is this just a really long request..",
-							Debug.HIGH_PRIORITY);
-						timeoutTimer = window.setTimeout(timeoutFunction, 60000);
-					}
+		{
+			Debug.log("It has been 60 seconds.. still waiting for a response. " +
+				"Is there an infinite loop occuring at the server? " +
+				"Or is this just a really long request..",
+				Debug.HIGH_PRIORITY);
+			timeoutTimer = window.setTimeout(timeoutFunction, 60000);
+		} //end timeout function handler
 	timeoutTimer = window.setTimeout(timeoutFunction, 60000);
 
 	//setup response handler
@@ -1473,7 +1489,7 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 					errStr = "Login has expired.";
 					Debug.err(errStr);
 
-					if(ignoreSystemBlock || !DesktopContent._blockSystemCheckMailbox) //make sure system is alive
+					if(ignoreSystemBlock || !DesktopContent._isSystemBlackout) //make sure system is alive
 					{
 						DesktopContent._needToLoginMailbox = true; //force to login screen on server failure
 						if(DesktopContent._theDesktopWindow)
@@ -1505,7 +1521,7 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 						{ //clear req, server failed
 							errStr = "Request Failed - Missing Cookie in Response.";
 
-							if(ignoreSystemBlock || !DesktopContent._blockSystemCheckMailbox)  //make sure system is alive
+							if(ignoreSystemBlock || !DesktopContent._isSystemBlackout)  //make sure system is alive
 							{
 								console.log(errStr); //make sure there is some record of this need-to-login!
 
@@ -1517,7 +1533,8 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 									"request":  		"needToLogin"
 											},"*");
 							}
-
+							else
+								Debug.log("System block in place, ignoring missing cookie in response.");
 						}
 						else if(DesktopContent._lastCookieCode != "AllowNoUser")
 						{
@@ -1526,6 +1543,8 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 
 							var deltaTime = DesktopContent._lastCookieTime - DesktopContent._updateTimeMailbox;
 							DesktopContent._cookieCodeMailbox = DesktopContent._lastCookieCode;
+							if(!DesktopContent._lastCookieCode)
+								Debug.err("Impossible undefined last cookie!");
 
 							if(DesktopContent._theDesktopWindow && deltaTime > 5*1000 /*ms*/)
 							{
@@ -1647,6 +1666,20 @@ DesktopContent.XMLHttpRequest = function(requestURL, data, returnHandler,
 	{
 		//if(!DesktopContent._cookieCodeMailbox) //attempt to fix (e.g. for Desktop)
 		//	DesktopContent._cookieCodeMailbox = document.getElementById("DesktopContent-cookieCodeMailbox");
+		if(!DesktopContent._cookieCodeMailbox)
+		{
+			var errStr = "Undefined permissions. Is system down?";
+			Debug.log(errStr,window.location.href);
+			window.clearTimeout(timeoutTimer);
+			DesktopContent._updateTimeMailbox = 0; //reset cookie code timer, so it is requested from parent
+
+			if(returnHandler && callHandlerOnErr)
+				returnHandler(0, reqParam, errStr);
+			else
+				Debug.err(errStr);
+			return;
+		}
+
 		var cc = DesktopContent._cookieCodeMailbox;//DesktopContent._cookieCodeMailbox?DesktopContent._cookieCodeMailbox.innerHTML:""; //get cookie code from mailbox if available
 		reqData = "RequestOrigin=" + DesktopContent._serverOrigin + 
 			"&CookieCode="+cc+((data=="" || data===undefined)?"":("&"+data));
@@ -2879,6 +2912,9 @@ DesktopContent.addDesktopIcon = function(caption, altText,
 DesktopContent.systemBlackout = function(doBlackout)
 {
 	Debug.log("systemBlackout =" + doBlackout);
+
+	DesktopContent._isSystemBlackout = doBlackout?true:false;
+
 	//inform Desktop.js to refresh icons (handled by _checkMailboxes())
 	DesktopContent._theDesktopWindow.postMessage(
 			{

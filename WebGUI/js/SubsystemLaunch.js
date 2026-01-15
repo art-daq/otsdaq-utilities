@@ -628,8 +628,9 @@ SubsystemLaunch.create = function() {
 									"title='Click to open Subsystem Landing Page of &apos;" +
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
-
+							str += "<div id='subsystem_" + s + "_name_container'>";
 							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							str += "</div>";
 							if(addLandingPage)
 								str += "</a>";
 							str += "</div>";
@@ -1280,7 +1281,7 @@ SubsystemLaunch.create = function() {
 				{
 					let ipFound = false;
 					if (SubsystemLaunch.subsystems[s].status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) //inactive subsystem/between states
-						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 					else
 					{
 						for (let i = 0; i < ips.length; i++)
@@ -1298,10 +1299,10 @@ SubsystemLaunch.create = function() {
 						if(!ipFound)
 						{
 							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
-							document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							return;
 						}
-						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
+						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
 					}
 				}
 			},

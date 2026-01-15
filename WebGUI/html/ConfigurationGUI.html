@@ -914,9 +914,9 @@
 						//reload persistent active groups (persistent active config group will be modified when state machine configures)
 						//firstInit_ should be used to stop the reload -- for example, after a group activation with warnings ignored
 						"",
-						function(req,anchorTarget)
+						function(req,anchorTarget,errStr)
 						{
-							groupAliasesRequestHandler(req,anchorTarget);
+							groupAliasesRequestHandler(req,anchorTarget,errStr);
 							systemViewPreventInfiniteLoop_ = false;
 						}, anchorTarget,
 						0/*progressHandler*/, true /*callHandlerOnErr*/);
@@ -960,12 +960,12 @@
 		{
 			Debug.log("Attempting to Flatten System Aliases... ",
 				Debug.INFO_PRIORITY);
-			handleOtsRelaunchResponse(req, undefined, true /*isOther*/);
+			handleOtsRelaunchResponse(req, undefined, undefined, true /*isOther*/);
 		} //end handleFlattenSystemAliasesResponse()
 
 		//==============================================================================
 		//handleFlattenSystemAliasesResponse ~
-		function handleOtsRelaunchResponse(req, isWiz, isOther)
+		function handleOtsRelaunchResponse(req, isWiz, errStr, isOther)
 		{
 			if (req) //if supervisor is killed, then req will be 0, which is a good sign of progress
 			{ 	//else check error response
@@ -973,8 +973,16 @@
 				if (err)
 				{
 					Debug.err(err);
+					DesktopContent.systemBlackout(false); //end blackout
 					return;
 				}
+			}
+			else if (errStr && //if error not due to server going down, then remove blackout
+				errStr.indexOf("Request was interrupted") < 0)
+			{
+				Debug.err("Relaunch failed: " + errStr);
+				DesktopContent.systemBlackout(false); //end blackout
+				return;
 			}
 
 			var countDown = 10;
@@ -1078,15 +1086,22 @@
 
 		//==============================================================================
 		//groupAliasesRequestHandler ~
-		function groupAliasesRequestHandler(req, anchorTarget)
+		function groupAliasesRequestHandler(req, anchorTarget, errStr)
 		{
 
 			var err = DesktopContent.getXMLValue(req, "Error");
-			if (err) {
+			if (err) 
+			{
 				Debug.err(err);
 
 				//attempt to go on, in case error was just associtate with one group
 				//return;
+			}
+
+			if (errStr && errStr.length)
+			{
+				Debug.err(errStr);
+				return;
 			}
 
 			DesktopContent.tooltip("System View",
@@ -3942,11 +3957,11 @@
 				//this should never happen unexpectedly!
 				if(compareMemberMap[treeMemberNames_[i]] !== undefined && 
 						compareMemberMap[treeMemberNames_[i]] != treeMemberVersions_[i])
-					Debug.err("Should never happen! The active version for table '" + 
+					Debug.warn("The active version for table '" + 
 						treeMemberNames_[i] + "' changed from v" + 
 						compareMemberMap[treeMemberNames_[i]] + " to v" + 
 						treeMemberVersions_[i] + 
-						". Try Refreshing the Tree-view, or notify admins.");
+						". This could happen if, for example, aliases were changed in the active Backbone Group. You can likely ignore, or try Refreshing the Tree-view, or notify admins if you think this is unexpected.");
 			}
 
 			if (!parentId &&
