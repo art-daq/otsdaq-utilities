@@ -373,9 +373,13 @@
 		function init()
 		{
 			if(firstTime)
-			{
+			{			
+				Debug.logv({firstTime});
+
 				firstTime = false;
+				document.body.addEventListener("keydown",handleKeyInput); 
 			}
+
 			var windowTooltip = "Welcome to the FE Macros web app!\n\n" +
 				"This app provides a user interface for configured devices. " +
 				"It allows for launching common functions, such as resets and reading and writing to memory, or interface-spcific functions, at one or many front-ends with a click of the mouse. " +
@@ -2437,23 +2441,25 @@ Here is the json string received:
 				verticalOutputDivSize_ = [el.offsetWidth,el.offsetHeight-1];
 				Debug.log("Found output div at scroll position ",el.scrollLeft,el.scrollTop);
 				verticalOutputScrollPosition_ = [el.scrollLeft,el.scrollTop];
+			}
 
-				el = document.getElementById("macroModule-output");
+			el = document.getElementById("macroModule-output");
+			if(el)
+			{
 				el.style.width = (verticalOutputDivSize_[0] + 30) + "px";
 
 				var str = "";
 				str += "Launched '" + recordObj["macroName"] + 
 						"'... " + getDateString(new Date) +
 						".. waiting for response...";
-				el.innerHTML = str;				
+				el.innerHTML = str;
 			}
-
 
 			var str = "";
 			str += "Launched '" + recordObj["macroName"] + 
 					"'... " + getDateString(new Date) +
 					".. waiting for response...";
-			var el = document.getElementById("history-status");
+			el = document.getElementById("history-status");
 			el.innerHTML = str;
 
 			//save input args to history
@@ -3812,7 +3818,7 @@ Here is the json string received:
 </head>
 
 
-<body onload='//init() called by DesktopContent.js' > <!--</body>onkeydown='handleKeyInput(event);'>	-->
+<body onload='//init() called by DesktopContent.js' > 
 
 	<!-- <center> -->
 

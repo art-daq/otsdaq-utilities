@@ -563,7 +563,7 @@ try
 	}
 	else if(requestType == "getContextMemberNames")
 	{
-		std::set<std::string> members = cfgMgr->getContextMemberNames();
+		std::set<std::string> members = cfgMgr->getFixedContextMemberNames();
 
 		for(auto& member : members)
 			xmlOut.addTextElementToData("ContextMember", member);
@@ -1204,6 +1204,8 @@ try
 
 			// if ignore warnings,
 			//	then only print errors, do not add to xml
+
+			__COUTTV__(StringMacros::mapToString(cfgMgr->getActiveVersions()));
 
 			cfgMgr->activateTableGroup(
 			    groupName, TableGroupKey(groupKey), &accumulatedErrors, &groupTypeString);
@@ -3576,8 +3578,8 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	    &accumulatedErrors   // accumulate errors
 	);
 
-	if(memberMap.size() >
-	       ConfigurationManager::contextMemberNames_.size() + 1 /* for optional table */
+	if(memberMap.size() > ConfigurationManager::getFixedContextMemberNames().size() +
+	                          1 /* for optional table */
 	   && startPath == "/")
 	{
 		__COUTT__ << "Checking for orphaned tables..." << __E__;
@@ -8992,21 +8994,25 @@ void ConfigurationGUISupervisor::testXDAQContext()
 {
 	try
 	{
-		__SUP_COUT__ << "Attempting test activation of the context group." << __E__;
-		ConfigurationManager cfgMgr;  // create instance to activate saved groups
+		__SUP_COUT_INFO__ << "Attempting test activation of the context group." << __E__;
+		ConfigurationManager
+		    cfgMgr;  // create instance to activate saved context and backbone groups (not config group)
 	}
 	catch(const std::runtime_error& e)
 	{
 		__SUP_COUT_WARN__
 		    << "The test activation of the context group failed. Ignoring error: \n"
 		    << e.what() << __E__;
+		return;
 	}
 	catch(...)
 	{
 		__SUP_COUT_WARN__ << "The test activation of the context group failed. Ignoring."
 		                  << __E__;
+		return;
 	}
 
+	__SUP_COUT_INFO__ << "Completed test activation of the context group." << __E__;
 	return;
 
 	/////////////////////////////////

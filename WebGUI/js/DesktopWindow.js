@@ -172,6 +172,7 @@ else {
 		this.getWindowName = function() { return _name; }
 		this.getWindowSubName = function() { return _subname; }
 		this.getWindowUrl = function() { return _url; }
+		this.isRemoteWindow = function() { return _url.indexOf("remoteServerOrigin=") > 0 && _url.indexOf("&remoteServerUrnLid=") > 0; } //indicates remote subsystem window url
 		this.getWindowId = function() { return _id; }
 		this.getWindowX = function() { return _x; }
 		this.getWindowY = function() { return _y; }
@@ -180,6 +181,7 @@ else {
 		this.getWindowHeight = function() { return _h; }
 		this.getWindowHeaderHeight = function() { return _defaultHeaderHeight; }
 		this.isMaximized = function() {return _isMaximized && !_isMinimized;} //make sure the maximized window is visible
+		this.wasMaximized = function() {return _isMaximized && _isMinimized;} //if window should restore maximized
 		this.isMinimized = function() {return _isMinimized;}
 
 
@@ -215,7 +217,7 @@ else {
 			y = parseInt(y);
 			w = parseInt(w);
 			h = parseInt(h);
-			//Debug.log("set size",_x-x,_y-y,_w-w,_h-h,x,y,w,h,_defaultWindowMinWidth,_defaultWindowMinHeight);
+			// Debug.log(_name,"set size",_x-x,_y-y,_w-w,_h-h,x,y,w,h,_defaultWindowMinWidth,_defaultWindowMinHeight);
 
 			//apply minimum size requirements and maximized state
 			_w = _isMaximized?Desktop.desktop.getDesktopContentWidth():(w < _defaultWindowMinWidth?_defaultWindowMinWidth:w);
@@ -241,10 +243,11 @@ else {
 			_winfrmHolder.style.width = (_w-2*_defaultFrameBorder-2)+"px";  //extra 2 for border pixels
 			_winfrmHolder.style.height = (_h-_defaultHeaderHeight-_defaultFrameBorder-2)+"px"; 	//extra 2 for border pixels
 
-			//Debug.log("Desktop Window position to " + _x + "," +
+			// Debug.log(_name,"Desktop Window position to " + _x + "," +
 			//           _y + " size to " + _w + "," + _h);
 
-			if(_isMaximized){ //keep proper dimensions
+			if(_isMaximized)
+			{ 	//keep proper dimensions
 				_winfrm.style.position = "absolute";
 				_winfrm.style.zIndex = _z + 1;
 				_winfrm.style.width = _w + "px";
@@ -271,7 +274,8 @@ else {
 				for(var h=0;hdrs && h<hdrs.length;++h)
 					hdrs[h].style.display = "none";
 			}
-			else {
+			else 
+			{
 				_winfrm.style.zIndex = _z;
 				_winfrm.style.position = "static";
 				_winfrmHolder.style.position = "static";
@@ -338,7 +342,8 @@ else {
 			this.windiv.style.display = "inline"; //make sure is visible
 			this.setWindowSizeAndPosition(_x+10,_y,_w,_h);
 			window.parent.document.title = _name;
-			// console.log(document.title, _name, "Maximize()");
+			
+			Debug.log(document.title, _name, "maximize()");
 		} //end maximize()
 
 		//==============================================================================
@@ -348,7 +353,10 @@ else {
 
 			this.windiv.style.display = "inline"; //make sure is visible
 			this.setWindowSizeAndPosition(_x,_y,_w,_h);
-			window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+			window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+				(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
+
+			Debug.log(document.title, _name, "unmaximize()");
 		} //end unmaximize()
 
 		//==============================================================================
@@ -356,15 +364,15 @@ else {
 		//	minimize window toggles visible or not (does not affect current position/size)
 		this.minimize = function()
 		{
-
 			if(_isMaximized)
 				window.parent.document.title = _name;
 			else
-				window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+				window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
 
 			_isMinimized = true;
 			this.windiv.style.display = "none";
-			Debug.log(_name,"this.windiv.style.display now is " + this.windiv.style.display);
+			Debug.log("minimize()",_name,"this.windiv.style.display now is " + this.windiv.style.display);
 		} //end minimize()
 
 		//==============================================================================
@@ -374,11 +382,12 @@ else {
 			if(_isMaximized)
 				window.parent.document.title = _name;
 			else
-				window.parent.document.title = Desktop.isWizardMode()?"ots wiz":"ots";
+				window.parent.document.title = (Desktop.isWizardMode()?"ots wiz":"ots") +
+					(Desktop.desktop.icons.getFolderFocus()?" - " + Desktop.desktop.icons.getFolderFocus():"");
 
 			_isMinimized = false;
 			this.windiv.style.display = "inline";
-			Debug.log(_name,"this.windiv.style.display now is " + this.windiv.style.display);
+			Debug.log("unminimize()",_name,"this.windiv.style.display now is " + this.windiv.style.display);
 		} //end unminimize()
 
 		//------------------------------------------------------------------

@@ -296,13 +296,13 @@ MultiSelectBox.myOptionSelect = function(option, index, isSingleSelect, event)
 // These parameters are optional and can be omitted or set to 0:
 //		keys, types, handler, noMultiSelect, mouseOverHandler,
 //		iconURLs, mouseDownHandler, mouseUpHandler,
-//		requireCtrlMultiClick, titles, mouseMoveHandler
+//		requireCtrlMultiClick, titles, mouseMoveHandler, titleHeightOffset
 // Note: handler is the string name of the function
 MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 		handler,noMultiSelect,mouseOverHandler,iconURLs,mouseDownHandler,
 		mouseUpHandler,
 		requireCtrlMultiClick,titles,
-		mouseMoveHandler)
+		mouseMoveHandler, titleHeightOffset)
 {
 	if(!el)
 	{ MultiSelectBox.dbg("Invalid Element given to MultiSelectBox: " + el);
@@ -335,8 +335,10 @@ MultiSelectBox.createSelectBox = function(el,name,title,vals,keys,types,
 
 	if(title)
 	{
+		if(!titleHeightOffset) titleHeightOffset = 0;
 		str += "<div id='" + name + "header' " +
-				"style='margin-top:20px; width:100%; white-space:nowrap; height:21px'><b>"; //had to add height for new Chrome bug
+				"style='margin-top:20px; width:100%; white-space:nowrap; height:" + 
+				(21 + titleHeightOffset) + "px'><b>"; //had to add height for new Chrome bug
 		str += title;
 		str += "</b></div>";
 	}

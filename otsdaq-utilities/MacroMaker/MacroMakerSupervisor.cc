@@ -628,8 +628,8 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	}
 	else
 	{
-		__COUT__ << "***Successfully authenticated security sequence. " << time(0)
-		         << __E__;
+		__SUP_COUTT__ << "***Successfully authenticated security sequence. " << time(0)
+		              << __E__;
 	}
 	// SECURITY CHECK END ****
 
@@ -653,7 +653,9 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	    {WebUsers::DEFAULT_USER_GROUP, WebUsers::PERMISSION_LEVEL_ADMIN}};
 	userInfo.setGroupPermissionLevels(StringMacros::mapToString(initPermissions));
 
-	if(1 || !userInfo.automatedCommand_)
+	if(TTEST(1))
+		__SUP_COUTT__ << "requestType: " << requestType << __E__;
+	else if(!userInfo.automatedCommand_)
 		__SUP_COUT__ << "requestType: " << requestType << __E__;
 
 	if(userInfo.NonXMLRequestType_)

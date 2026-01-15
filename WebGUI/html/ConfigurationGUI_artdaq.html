@@ -339,8 +339,10 @@
 						var type = layoutNodesType[i].getAttribute('value');
 						var name = layoutNodesName[i].getAttribute('value');	
 						
-						//for backwards compatibility, add ";status=1" to name to keep (mostly) same user layout definitions
-						if(name.indexOf(";status=") < 0)
+						//for backwards compatibility, add ";status=1" (if not AS) to name to keep (mostly) same user layout definitions
+						if(type != ARTDAQConfigurationAPI.NODE_TYPES[
+								ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR] &&
+								name.indexOf(";status=") < 0)
 							name += ";status=1";
 
 						if(artdaqObj[type] &&
@@ -2517,12 +2519,17 @@
 
 		//=====================================================================================
 		//handleEditIconMouseUp ~~
-		function handleEditIconMouseUp(i,e,x,subi,menuDepth,menuDepthType)
+		// handle primary menu navigation for editing node parameters
+		// To go back, keep stack of menuDepth and menuDepthType and y
+		var _backMenuStackParams = [];
+		function handleEditIconMouseUp(i,e,x,subi,menuDepth,menuDepthType,goBack,goBack2)
 		{
 			if(e) e.stopPropagation();
 
 			var type = _nodes[i].type;
 			var typeName = ARTDAQConfigurationAPI.getShortTypeName(type);
+
+			if(!goBack && !menuDepth) _backMenuStackParams = []; //clear stack at top level
 
 			if(x == undefined && _nodes[i].nodeCount && _nodes[i].nodeCount > 1)
 			{
@@ -2547,7 +2554,7 @@
 							")");
 				}
 				x = event.pageX - 10;
-				var y = event.pageY - 10;
+				if(!y) y = event.pageY - 10;
 				if(_w - x < 400) x = _w - 405; //move box away from edge
 				if(x < 5) x = 5;
 
@@ -2570,11 +2577,33 @@
 			if(_w - x < 400) x = _w - 405; //move box away from edge
 			if(x < 5) x = 5;
 
+			if(goBack && _backMenuStackParams.length)
+			{
+				Debug.log("Go back",_backMenuStackParams);
+				let params = _backMenuStackParams.pop();
+				menuDepth = params[0];
+				menuDepthType = params[1];
+				y = params[2];
+				if(goBack2 && _backMenuStackParams.length)
+				{
+					let params = _backMenuStackParams.pop();
+					menuDepth = params[0];
+					menuDepthType = params[1];
+					y = params[2];
+				}
+			}
+			//push current params for next go back						
+			_backMenuStackParams.push([				
+				menuDepth,
+				menuDepthType,
+				y
+			]);			
+
 			Debug.log("mouseup-edit i = " + i + "[" +
 					subi + "] - d" + menuDepth + ":" +
 					menuDepthType + " - " +
 					typeName + "::" +
-					_nodes[i].name);
+					_nodes[i].name + " - x" + x + ",y" + y);
 
 			var editTypes = [];
 			var depthTypes = {}; //define depth type if more menu depth
@@ -2638,6 +2667,19 @@
 				menuItems.push("Edit <b><u>Node</u></b> (i.e. name, subsystem, host, instances)");
 				menuItemHandlers.push("launchEditNodeDialog(" + i + ")");
 			}
+			else //at non-0 depth, all types go back to previous level
+			{
+				menuItems.push("Go back");
+				menuItemHandlers.push("handleEditIconMouseUp(" +
+							i + ", undefined /*e*/, " +
+							x + " /*x*/," +
+							j + " /*subi*/," +
+							((menuDepth|0)-1) + "," +
+							depthTypes[t] + " /*menuDepthType*/," +
+							1 + " /*goBack*/," + //indicate to go to go back stack
+							1 + " /*goBack2*/" + //indicate to go to go back stack twice for correct params (to get rid of self)
+							")");
+			}
 
 			var nodeName = getNodeNameWithoutStatus(i);
 			if(subi !== undefined) //dealing with a particular multi-node node
@@ -2652,7 +2694,7 @@
 				if(depthTypes[t] !== undefined) //go to next depth menu
 					menuItemHandlers.push("handleEditIconMouseUp(" +
 							i + ", undefined /*e*/, " +
-							(e.pageX - 10) + " /*x*/," +
+							x + " /*x*/," +
 							j + " /*subi*/," +
 							((menuDepth|0)+1) + "," +
 							depthTypes[t] + " /*menuDepthType*/" +
@@ -2665,7 +2707,7 @@
 						"\"" + editTypes[t]  + "\"," +
 						subi + " /*subi*/," +
 						(menuDepth|0) + "," +
-						(menuDepth?t:0) + " /*menuDepthType*/" +
+						(menuDepth?t:0) + " /*menuDepthType*/," +
 						")");
 			} //end edit type loop
 
@@ -2703,7 +2745,7 @@
 
 
 			if(!x) x = event.pageX - 10;
-			var y = event.pageY - 10; //always follow mouse -- otherwise menu may become impossible to navigate
+			var y = event.pageY - 10; //always follow mouse -- otherwise menu may become impossible to navigate because if previous menu was large, now mouse may not be over any valid selections
 
 			if(editType>5) y -= 50;
 
@@ -2716,6 +2758,19 @@
 				//create menu to choose new tab or not
 				var menuItems = [];
 				var menuItemHandlers = [];
+
+				//always add ability to go back
+				{
+					menuItems.push("Go back");
+					menuItemHandlers.push("handleEditIconMouseUp(" +
+								i + ", undefined /*e*/, " +
+								x + " /*x*/," +
+								subi + " /*subi*/," +
+								((menuDepth|0)) + "," +
+								menuDepthType + " /*menuDepthType*/," +
+								1 + " /*goBack*/" + //give y to keep menu from always going down the page
+								")");
+				}
 
 				menuItems.push( "Edit <b><u>" + subsetName +
 						"</u></b> of " + typeName + "::" +
@@ -5215,6 +5270,8 @@
 					else if(_nodes[endNodeIndex].type ==
 							ARTDAQConfigurationAPI.NODE_TYPE_LOGGER ||
 							_nodes[endNodeIndex].type ==
+							ARTDAQConfigurationAPI.NODE_TYPE_DISPATCHER ||
+							_nodes[endNodeIndex].type ==
 									ARTDAQConfigurationAPI.NODE_TYPE_ROUTER)
 					{
 						if(_nodes[startNodeIndex].subsystemId ==
@@ -5264,6 +5321,8 @@
 								ARTDAQConfigurationAPI.NODE_TYPES[_nodes[startNodeIndex].type] +
 								"</b>' must be type '<b>" +
 								ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_BUILDER] +
+								"</b>' or '<b>" +
+								ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_DISPATCHER] +
 								"</b>' or '<b>" +
 								ARTDAQConfigurationAPI.NODE_TYPES[ARTDAQConfigurationAPI.NODE_TYPE_LOGGER] +
 								"</b>.'",
@@ -5515,10 +5574,14 @@
 					if(!doInit && _lastActiveGroups.length) //treat as change
 					{
 						localHandleChange(activeConfigGroups);
+						localPropagateActiveGroups(activeConfigGroups);
 						return;
 					}
 					else //treat as initializing active groups
+					{
 						_lastActiveGroups = activeConfigGroups;
+						localPropagateActiveGroups(activeConfigGroups);
+					}					
 				}
 
 				for(var i=0;i<_lastActiveGroups.length && activeConfigGroups.length;++i)
@@ -5526,9 +5589,10 @@
 					if(_lastActiveGroups[i] != activeConfigGroups[i])
 					{
 						localHandleChange(activeConfigGroups);
+						localPropagateActiveGroups(activeConfigGroups);
 						return;
 					}
-				}
+				} //end active group change check
 
 			},
 			0, 0, true,  //reqParam, progressHandler, callHandlerOnErr
@@ -5572,6 +5636,32 @@
 				_lastActiveGroups = activeConfigGroups;
 
 			} //end localHandleChange()
+
+			//===========
+			// pass active group values to elements that care
+			function localPropagateActiveGroups(activeConfigGroups)
+			{
+				var el = document.getElementById("directoryNavToggle");
+				if(el)
+				{
+					let str = "Choose the active configuration (Ctrl + D).";
+					str += "\n\n";
+					str += "The current active groups are as follows:\n"
+					str += "\tContext group: " + activeConfigGroups[0] + "(" + activeConfigGroups[1] + ")\n";
+					str += "\t  Config group: " + activeConfigGroups[2] + "(" + activeConfigGroups[3] + ")";
+					el.title = str;
+				}
+				el = document.getElementById("saveFile");
+				if(el)
+				{
+					let str = "Click to Save changes to the active configuration (Ctrl + S).";
+					str += "\n\n";
+					str += "The current active groups are as follows:\n"
+					str += "\tContext group: " + activeConfigGroups[0] + "(" + activeConfigGroups[1] + ")\n";
+					str += "\t  Config group: " + activeConfigGroups[2] + "(" + activeConfigGroups[3] + ")";
+					el.title = str;
+				}
+			} //end localPropagateActiveGroups()
 
 		} //end checkForActiveGroupChange()
 

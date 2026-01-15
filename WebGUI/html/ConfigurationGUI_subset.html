@@ -403,6 +403,9 @@
 		//		based on _subsetUIDs
 		function updateRecordsAndFields(selectFirstRecord,loadSelectedRecord)
 		{
+			Debug.log("updateRecordsAndFields selectFirstRecord=" +
+					selectFirstRecord + ", loadSelectedRecord=" + loadSelectedRecord);
+
 			var el = document.getElementById("recordMultiSelect");
 			if(!el) {Debug.log("Error: updateRecordsSelector null"); return; }
 
@@ -455,8 +458,6 @@
 			str += "</div>";
 
 
-
-
 			//write MultiSelectBox to a particular div
 			MultiSelectBox.createSelectBox(
 					el,
@@ -467,7 +468,10 @@
 					0 /* iconURLs */,
 					0 /* mouseDownHandler */,
 					0 /* mouseUpHandler */,
-					true /* requireCtrlMultiClick */);
+					true /* requireCtrlMultiClick */,
+					0 /* titles */,
+					0 /* mouseMoveHandler */,
+					24 /* titleHeightOffset */);
 
 
 			MultiSelectBox.initMySelectBoxes(true /* clearPreviousSelections */, "RecordsGroupBox");
@@ -858,9 +862,8 @@
 
 							if(selectFirstRecord) //error! no record found, but parameter had data
 							{
-								Debug.log("Error! Parameter '_selectedRecords' was not empty, " +
-										"but no records matched selection criteria '" + _selectedRecords,
-										Debug.HIGH_PRIORITY);
+								Debug.err("Error! Parameter '_selectedRecords' was not empty, " +
+										"but no records matched selection criteria '" + _selectedRecords + "'!");
 								selectFirstRecord = false; //force false anyway, to show more errors
 							}
 
@@ -1112,7 +1115,7 @@
 		var _lastFilterStr = "";
 		function runFilter(selectFirstRecord,loadSelectedRecord)
 		{
-			Debug.log("Run Filter");
+			Debug.log("Run Filter",selectFirstRecord,loadSelectedRecord);
 
 			var groups = _groupingFieldList.split(',');
 			Debug.log("groups length " + groups.length);
@@ -1632,6 +1635,14 @@
 			/////////////////////
 			function localProceedWithDelete()
 			{
+				Debug.log("localProceedWithDelete()");
+
+				//unselect current record selections, so new record will be selected in aftermath
+				var el = document.getElementById("recordMultiSelect");
+				MultiSelectBox.setSelectionElementByIndex(el,-1 /*all*/,false /*selected*/);
+
+				//and clear filter so filter will be reapplied in aftermath
+				_lastFilterStr = "";
 
 				ConfigurationAPI.deleteSubsetRecords(_subsetBasePath,recordArr,
 						/////////////////////
@@ -1695,6 +1706,8 @@
 			var el = document.getElementById("recordMultiSelect");
 			MultiSelectBox.setSelectionElementByIndex(el,-1 /*all*/,false /*selected*/);
 
+			//and clear filter so filter will be reapplied in aftermath
+			_lastFilterStr = "";
 
 			ConfigurationAPI.addSubsetRecords(_subsetBasePath,newRowUID,
 					/////////////////////
@@ -1848,11 +1861,12 @@
 			/////////////////////
 			function localProceedWithRename(newRowUID)
 			{
-
 				if(newRowUID)
 					newRowUID = newRowUID.trim();
 
 				Debug.log("localProceedWithRename() " + newRowUID);
+
+				_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
 
 				ConfigurationAPI.renameSubsetRecords(_subsetBasePath,
 						originalRecord,newRowUID,
@@ -1901,7 +1915,7 @@
 							Debug.INFO_PRIORITY);
 
 					_modifiedTables = undefined; //clear after save
-					_selectedRecords = ""; //clear after save
+					_selectedRecords = newRowUID; //select new record to be selected in aftermath
 
 					//runFilter(); //updates records and fields, and applies filter
 					initSubsetGlobalData();
@@ -1960,7 +1974,6 @@
 			{
 				Debug.log("localProceedWithCopy() " + copies);
 
-
 				ConfigurationAPI.copySubsetRecords(_subsetBasePath,
 						recordArr,copies,
 						/////////////////////
@@ -1997,8 +2010,10 @@
 								Debug.INFO_PRIORITY);
 
 						_modifiedTables = undefined; //clear after save
+						_selectedRecords = recordStr; //select and load copied record in aftermath
+						_lastFilterStr = ""; //clear filter so filter will be reapplied in aftermath
 
-						runFilter(); //updates records and fields, and applies filter
+						runFilter(false, true); //updates records and fields, and applies filter
 
 							}); //end saveModifiedTables handler
 

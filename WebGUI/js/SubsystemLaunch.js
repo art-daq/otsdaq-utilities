@@ -37,6 +37,7 @@ SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS = ["name","url","status","progress","det
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("status");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_INCLUDED = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("fsmIncluded");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_ALIASES = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("configAliasChoices");
+SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN = "UNKNOWN";
 SubsystemLaunch.subsystems = [];
 SubsystemLaunch.system = {};
 SubsystemLaunch.iterator = {};
@@ -143,6 +144,7 @@ SubsystemLaunch.create = function() {
 		} //end first time landing handling
 
 		window.clearTimeout(_getStatusTimer);
+		_updatesubsystemNamesCounter = 0; //reset counter for updating subsystem names
 
 		window.onclick = function()
 		{
@@ -408,15 +410,18 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<select id='systemManualFsmAction' style='padding: 4px; font-size: 14px;' "+
-						"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'>";
-					str += "<option selected>Select an FSM action:</option>";
-					str += "<option >Configure</option>";
-					// str += "<option >Start</option>";
-					str += "<option >Stop</option>";
-					str += "<option >Halt</option>";
-					str += "</select>";
-
+					str += "<button id='systemManualFsmAction' " + 
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" + 
+						"style='margin-right:10px'>Configure</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Start</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Stop</button>";
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"style='margin-right:10px'>Halt</button>";
 					str += "</td></tr>";
 				}
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
@@ -623,8 +628,9 @@ SubsystemLaunch.create = function() {
 									"title='Click to open Subsystem Landing Page of &apos;" +
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
-
+							str += "<div id='subsystem_" + s + "_name_container'>";
 							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							str += "</div>";
 							if(addLandingPage)
 								str += "</a>";
 							str += "</div>";
@@ -637,19 +643,19 @@ SubsystemLaunch.create = function() {
 						}
 						else if(fieldIds[i] == "action")
 						{
-							str += "<select id='subsystem_" + fieldIds[i] +
-								"_select_" + s + "' style='padding: 4px; font-size: 14px;background: rgb(248 235 235); color: rgb(130 71 71);' "+
-								"title='Click to select a manual Finite State Machine action only targeting subsystem &apos;" +
-								SubsystemLaunch.subsystems[s].name + "&apos;' " +
-								"onchange='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'>";
-							str += "<option selected>Select an action for &apos;" +
-								SubsystemLaunch.subsystems[s].name + "&apos;:</option>";
-							str += "<option >Configure</option>";
-							// str += "<option >Start</option>";
-							str += "<option >Stop</option>";
-							str += "<option >Halt</option>";
-							str += "</select>";
-						}
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" + 
+								"style='margin-right:10px'" + 
+								">Configure</button>";
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Stop</button>";
+							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
+								">Halt</button>";
+						}	
 						else if(fieldIds[i] == "configAlias")
 						{
 							// str += "<div style='white-space:nowrap'>";
@@ -835,6 +841,15 @@ SubsystemLaunch.create = function() {
 						if(i == SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS)
 						{
 							var status = subsystemArrs[fields[i]][j].getAttribute('value');
+							if(SubsystemLaunch.subsystems[j].fsmIncluded && //give popup warning if subsystem included and new unknown status
+									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN && 
+									status != SubsystemLaunch.subsystems[j][fields[i]])
+							{
+								Debug.warn("From Subsystem '" +
+									SubsystemLaunch.subsystems[j].name + " (" + SubsystemLaunch.subsystems[j].url + ")... " +
+									"Status is UNKNOWN. This may indicate that the Subsystem is offline or unreachable.");
+							}
+
 							if(status.indexOf("Launching") == 0)
 							{
 								//give user ... feedback
@@ -1091,11 +1106,11 @@ SubsystemLaunch.create = function() {
 							if(_getAutoInitCount > 0)
 								Debug.err("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 							else
 								Debug.log("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
-									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
+									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
 
 
 							if(_getAutoInitCount > 0)
@@ -1265,8 +1280,8 @@ SubsystemLaunch.create = function() {
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
 					let ipFound = false;
-					if (SubsystemLaunch.subsystems[s].status == 'UNKNOWN') //inactive subsystem/between states
-						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+					if (SubsystemLaunch.subsystems[s].status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) //inactive subsystem/between states
+						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 					else
 					{
 						for (let i = 0; i < ips.length; i++)
@@ -1284,10 +1299,10 @@ SubsystemLaunch.create = function() {
 						if(!ipFound)
 						{
 							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
-							document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							return;
 						}
-						document.getElementById("subsystem_" + s + "_name").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
+						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
 					}
 				}
 			},
@@ -1436,6 +1451,7 @@ SubsystemLaunch.create = function() {
 	this.handleSubsystemActionSelect = function(el, subsystemIndex)
 	{
 		var command = el.value;
+		if(el.tagName = "BUTTON") command = el.innerText;
 		Debug.log("handleSubsystemActionSelect()", command, subsystemIndex);
 		if(command == "" || command == "Select an action:") return; //assume user is clearing
 

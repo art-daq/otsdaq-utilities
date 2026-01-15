@@ -25,8 +25,8 @@ if (typeof DesktopContent == 'undefined')
 	throw('ERROR: DesktopContent is undefined! Must include DesktopContent.js before CodeEditor.js');
 
 
-CodeEditor.MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
-CodeEditor.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
+CodeEditor.MENU_PRIMARY_COLOR = "rgb(220, 220, 220)";
+CodeEditor.MENU_SECONDARY_COLOR = "rgb(70, 67, 67)";
 
 
 CodeEditor.editor; //this is THE CodeEditor variable
@@ -216,6 +216,8 @@ CodeEditor.create = function(standAlone) {
 	//	openDirectory(forPrimary,path,doNotOpenPane)
 	//	handleDirectoryContent(forPrimary,req)
 	//	openFile(forPrimary,path,extension,doConfirm,gotoLine,altPaths,altExtensions,propagateErr)
+	//		localOpenGitLink(path, extension, line)
+	//		localDoIt()
 	//	openRelatedFile(forPrimary,inOtherPane)
 	//	gotoLine(forPrimary,line,selectionCursor,topOfView)
 	//	handleFileContent(forPrimary,req,fileObj)
@@ -225,6 +227,7 @@ CodeEditor.create = function(standAlone) {
 	//	getCursor(el)
 	//	updateDecorations(forPrimary,forceDisplayComplete,forceDecorations)
 	//		localInsertLabel(startPos)
+	//		localInsertConfigTreeLink(startPos)
 	//	autoIndent(forPrimary,cursor)
 	//	updateDualView(forPrimary)
 	//	updateOutline(forPrimary,{text,time})
@@ -250,10 +253,12 @@ CodeEditor.create = function(standAlone) {
 	//	stopUpdateHandling(event)
 	//	updateTimeoutHandler()
 	//	doubleClickHandler(forPrimary)
+	//
 	//	download(forPrimary)
 	//	upload(forPrimary)
 	//	uploadTextFromFile(forPrimary)
-	//  openGitLink(path, extension, line)
+	//
+	//	openFclTreeViewMenu(path,openType)
 
 
 	//for display
@@ -2132,12 +2137,12 @@ CodeEditor.create = function(standAlone) {
 			localDoIt();
 		}
 
-		//=====================================================================================
-		//openGitLink ~~
+		/////////////////////////////////
+		//localOpenGitLink ~~
 		//	Open the github link to the file in a new tab
 		//
 		//	Done when file is not in srcs/
-		function openGitLink(path, extension, line)
+		function localOpenGitLink(path, extension, line)
 		{
 			const gitPath = path.includes("/.spack-env/")
 				? path.substr(path.indexOf("/.spack-env/") + 25)
@@ -2165,14 +2170,15 @@ CodeEditor.create = function(standAlone) {
 						Debug.err("Github repository not found.");
 				}
 			);
-		}
+		} //end localOpenGitLink()
 
+		/////////////////////////////////
 		function localDoIt()
 		{
 			if (path && path.includes(".spack-env"))
 			{
 				Debug.warn("File is not in sources. Opening in repo...")
-				openGitLink(path, extension, gotoLine);
+				localOpenGitLink(path, extension, gotoLine);
 				return;
 			}
 			CodeEditor.editor.toggleDirectoryNav(forPrimary,false /*set val*/);
@@ -2979,6 +2985,9 @@ CodeEditor.create = function(standAlone) {
 			"wget"					: _DECORATION_GREEN,
 			"chmod"					: _DECORATION_GREEN,
 			"sleep"					: _DECORATION_GREEN,
+		},
+		"fcl" : {
+			"config-tree" 			: _DECORATION_GRAY,
 		}
 	};
 	this.updateDecorations = function(forPrimary,forceDisplayComplete,forceDecorations)
@@ -3024,7 +3033,8 @@ CodeEditor.create = function(standAlone) {
 				_fileExtension[forPrimary][0] == 'C' ||
 				_fileExtension[forPrimary][0] == 'h' ||
 				_fileExtension[forPrimary][0] == 'j' ||
-				_fileExtension[forPrimary] == "icc")
+				_fileExtension[forPrimary] == "icc" ||
+				_fileExtension[forPrimary] == "fcl")
 		{
 			commentString = "//"; //comment string
 			//blockCommentStartString = "/*"; //TODO
@@ -3049,9 +3059,11 @@ CodeEditor.create = function(standAlone) {
 				_fileExtension[forPrimary][0] == 'j' ||
 				_fileExtension[forPrimary] == "icc")
 			fileDecorType = "c++"; //c++ style
-		else if(_fileExtension[forPrimary] == 'sh' ||
-				_fileExtension[forPrimary] == 'py')
+		else if(_fileExtension[forPrimary] == "sh" ||
+				_fileExtension[forPrimary] == "py")
 			fileDecorType = "sh"; //script style
+		else if(_fileExtension[forPrimary] == "fcl")
+			fileDecorType = "fcl"; //fcl style
 
 		var newNode;
 		var node;
@@ -3099,6 +3111,7 @@ CodeEditor.create = function(standAlone) {
 						str[0] == 'C' ||
 						str[0] == 'h' ||
 						str.substr(0,3) == "txt" ||
+						str.substr(0,3) == "fcl" ||
 						str.substr(0,2) == "py" ||
 						str.substr(0,2) == "sh" ||
 						str[0] == "j"
@@ -3148,28 +3161,30 @@ CodeEditor.create = function(standAlone) {
 						else if(nameArr.length > 1 && nameArr[0] == "" &&
 								nameArr[1] == "WebPath")
 						{
-							name = "/otsdaq_utilities/WebGUI" +
+							name = "/otsdaq-utilities/WebGUI" +
 									name.substr(("/WebPath").length);
 						}
 						else if(nameArr[0] != "")
 						{
-							//look-up first entry
-							var i = nameArr[0].indexOf('-');
-							if(i > 0) //change -'s to _
-							{
-								var repo = "";
-								if(nameArr[0] != "otsdaq-core")
-								{
-									nameArr[0] = nameArr[0].substr(0,i) + '_'
-											+ nameArr[0].substr(i+1); //change - to _
-								}
-								else
-									nameArr[0] = "otsdaq";
+							//look-up first entry (no longer _'s, keep the -'s)							
+							// var i = nameArr[0].indexOf('-');
+							// if(i > 0) //change -'s to _
+							// {
+							// 	var repo = "";
+							// 	if(nameArr[0] != "otsdaq-core")
+							// 	{
+							// 		nameArr[0] = nameArr[0].substr(0,i) + '_'
+							// 				+ nameArr[0].substr(i+1); //change - to _
+							// 	}
+							// 	else
+							// 		nameArr[0] = "otsdaq";
 
 
-							}
-							//add repo name first
-							name = "/" + nameArr[0] + "/" + name;
+							// }
+
+							//add repo name first (if source code area)
+							if(nameArr[0].indexOf("-config") < 0) 							
+								name = "/" + nameArr[0] + "/" + name;
 						}
 
 
@@ -3329,6 +3344,89 @@ CodeEditor.create = function(standAlone) {
 			n += 1; //to return to same modified text node
 
 		} //end localInsertLabel
+
+		/////////////////////////////////
+		function localInsertConfigTreeLink(startPos)
+		{
+			//advance startPos beyond special keyword "config-tree: "
+			startPos += ("config-tree: ").length;		
+
+			//split text node into 3 nodes.. text | label | text
+
+			//make config-tree path a link that user can click
+			//	to open config subset view
+
+			let endPos = val.indexOf('\n',startPos); //find new line ending
+			let treePath = val.substr(startPos,endPos-startPos);
+			Debug.log("localInsertConfigTreeLink()",treePath);
+
+			// newNode = document.createTextNode(val.substr(0,startPos)); //pre-special text			
+
+			newNode = document.createElement("label");
+			newNode.style.fontWeight = fontWeight; //bold or normal
+			newNode.style.color = decor;
+			newNode.textContent = val.substr(0,startPos); //"config-tree: "
+			el.insertBefore(newNode,node);
+
+			newNode = document.createElement("label");
+			newNode.style.fontWeight = "bold"; //bold or normal
+			newNode.style.color = decor;
+			newNode.style.cursor = "pointer";
+			newNode.className = "hoverUnderline";
+			newNode.textContent = treePath; //special text
+			newNode.title = "Click to open editor related to this fcl field:\n\n" + treePath;
+			newNode.onmouseup = function(e)
+			{
+				Debug.log("Clicked fcl config-tree path", this.textContent);
+
+				//open context menu to open tree-view or config-subset
+				var menuItems = [];
+				var menuItemHandlers = [];
+
+				let lastField = this.textContent.split('/');
+				if(lastField.length > 1)
+					lastField = lastField[lastField.length - 1];
+
+				// menuItems.push("Open &apos;<label style='font-size:10px;color:inherit;'>" + lastField + "</label>&apos; Tree-view Editor");
+				// menuItems.push("Open &apos;<label style='font-size:10px;color:inherit;'>" + lastField + "</label>&apos; Tree-view Editor" +
+				// 	" in a <label style='color:rgb(251, 128, 67);font-weight:bold;'>new browser tab</font>");
+				menuItems.push("Open &apos;<label style='font-size:10px;color:inherit;'>" + lastField + "</label>&apos; Subset Editor");
+				menuItems.push("Open &apos;<label style='font-size:10px;color:inherit;'>" + lastField + "</label>&apos; Subset Editor" +
+					" in a <label style='color:rgb(251, 128, 67);font-weight:bold;'>new browser tab</font>");
+
+				// menuItemHandlers.push("CodeEditor.editor.openFclTreeViewMenu(" +
+				// 	"\"" + this.textContent + "\",0 /*tree-view type*/)");
+				// menuItemHandlers.push("CodeEditor.editor.openFclTreeViewMenu(" +
+				// 	"\"" + this.textContent + "\",0 /*tree-view type*/, 1 /*newTab*/)");
+				menuItemHandlers.push("CodeEditor.editor.openFclTreeViewMenu(" +
+					"\"" + this.textContent + "\",1 /*subset type*/)");
+				menuItemHandlers.push("CodeEditor.editor.openFclTreeViewMenu(" +
+					"\"" + this.textContent + "\",1 /*subset type*/, 1 /*newTab*/)");
+
+
+				let x = e.pageX - 10;
+				let y = e.pageY - 10;
+				if(DesktopContent.getWindowWidth() - x < 400) x = DesktopContent.getWindowWidth() - 405; //move box away from edge
+				if(DesktopContent.getWindowHeight() - y < 60) y = DesktopContent.getWindowHeight() - 65; //move box away from edge
+
+				SimpleContextMenu.closeMenu(); //close any existing for fast user clicking
+				SimpleContextMenu.createMenu(
+					menuItems,
+					menuItemHandlers,
+					"simpleContextMenuPopup",		//element ID
+					x, y, 		//same menu position
+					CodeEditor.MENU_PRIMARY_COLOR,
+					CodeEditor.MENU_SECONDARY_COLOR,
+					true /*defaultHighlighting*/
+				);
+			} //end mouseup
+			el.insertBefore(newNode,node);
+
+			node.textContent = val.substr(endPos); //post-special text
+			
+			n += 1; //to return to same modified text node
+
+		} //end localInsertConfigTreeLink
 
 		for(n=0;!done && n<el.childNodes.length;++n)
 		{
@@ -3529,15 +3627,25 @@ CodeEditor.create = function(standAlone) {
 								startOfComment != -1 ||
 								(i+commentString.length-1 < val.length &&
 									val.substr(i,commentString.length) ==
-									commentString)))
-					{
-						if(startOfComment == -1 && val[i] == commentString[0]) //start comment
+									commentString) ||
+								(fileDecorType == "fcl" &&  									
+									val[i] == '#' && 
+									!(
+										i+7 < val.length &&
+										val.substr(i,8) == "#include"
+									))))
+					{						
+						if(startOfComment == -1 && (val[i] == commentString[0] //start comment
+							|| (fileDecorType == "fcl" && val[i] == '#')))						 
 						{
 							startOfComment = i;
 							firstSpecialStringStartHandling = true;
 							firstSpecialStringEndHandling = true;
 						}
-						else if(startOfComment != -1 && val[i] == '\n')	//end comment
+						else if(startOfComment != -1 && (val[i] == '\n' || 	//end comment
+							(val[i] == 'c' && fileDecorType == "fcl" && //special end of comment for fcl, to find config-tree key word
+								i+10 < val.length && 
+								val.substr(i,11) == "config-tree"))) 
 						{
 							//++i; //do not include \n in label
 							specialString = val.substr(startOfComment,i-startOfComment);
@@ -3570,11 +3678,16 @@ CodeEditor.create = function(standAlone) {
 
 						if(decor) //found special word
 						{
-							//console.log(specialString);
+							console.log(specialString);
+
 							fontWeight = "bold";
-							localInsertLabel(startOfWord);
+							if(fileDecorType == "fcl")
+								localInsertConfigTreeLink(startOfWord);
+							else
+								localInsertLabel(startOfWord);
 							startOfWord = -1;
 							//done = true; //for debugging
+
 							break;
 						}
 						else
@@ -7497,6 +7610,159 @@ CodeEditor.create = function(standAlone) {
 
 				});	 //end show loading
 
-	} //end uploadTextFromFile()
+	} //end uploadTextFromFile()	
+
+	//=====================================================================================
+	//openFclTreeViewMenu ~~
+	// open tree-view or subset-editor directly to the specified path
+	//	openType := 0 --> tree-view, 1 --> subset-editor
+	var _ConfigSupervisorLid;
+	this.openFclTreeViewMenu = function(path,openType,newTab)
+	{
+		Debug.log("openFclTreeViewMenu",openType,newTab,path);
+
+		//first need app ID for the Configure Supervisor, if we dont already have it
+		if(!_ConfigSupervisorLid)
+		{
+
+			//fill in CodeEditor appId
+			DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
+					"&classNeedle=ots::ConfigurationGUISupervisor",
+					"", //end post data,
+					function(req)
+					{
+				_ConfigSupervisorLid = DesktopContent.getXMLValue(req,"id") | 0;
+				Debug.log("_ConfigSupervisorLid " + _ConfigSupervisorLid);
+				if(!_ConfigSupervisorLid)
+				{
+					Debug.err("Could not find the XDAQ Application ID for the Configuration Supervisor - do you have one instantiated in your active Context?");
+					return;
+				}
+				//now retry
+				CodeEditor.editor.openFclTreeViewMenu(path,openType,newTab);
+					}, //end handler
+					0, 0, 0,//reqParam, progressHandler, callHandlerOnErr,
+					false,//doNotShowLoadingOverlay,
+					true //targetGatewaySupervisor
+			); //end getAppId request
+			return;
+		}
+
+		//Note: path will end in "Link" if it is a group link
+		//	otherwise it is a unique link
+		// Tree-path rule is, if the last link in the path is a group link with a specified group ID, then include in the last link  
+
+		var typeName;
+		var subsetName = "";
+		var pathSplit = path.split('/');
+		var newWindowStr = "";
+		if(openType == 0) //tree-view
+		{
+
+		}
+		else if(openType == 1) //subset-editor
+		{
+			//reverse find first path segment with :'s, which indicates group link
+			// then copy subset fields from ConfigurationGUI_artdaq
+			//	use chrome inspector to find translation from 
+			//	table, isGroupLink, and link
+			let table;
+			let isGroupLink;
+			let i = 0;
+			let childLinkIndex;
+			let selected;
+			let groupLinkSelected;
+
+			if(pathSplit.length > 1 && pathSplit[pathSplit.length-2].indexOf(':') > 0)
+			{
+				i = pathSplit.length-2;
+				Debug.log("Found a group link field",i);
+				selected = pathSplit[i].split(':')[3];
+				groupLinkSelected =  pathSplit[i+1];
+				childLinkIndex = pathSplit[i].split(':')[2];
+				isGroupLink = true;
+				table = pathSplit[i].split(':')[1];
+
+				subsetName = pathSplit[i].split(':')[0];
+				subsetName = subsetName.substr(0,subsetName.indexOf("Link")); //remove Link
+			}
+			else if (pathSplit.length > 2 && pathSplit[pathSplit.length-3].indexOf(':') > 0)
+			{
+				i = pathSplit.length-3;				
+				Debug.log("Found a unique link field",i);
+				selected = pathSplit[i+1];
+				if(selected == '*')
+				{
+					Debug.log("Found a group link field",i);
+					selected = pathSplit[i].split(':')[3];
+					childLinkIndex = pathSplit[i].split(':')[2];
+					isGroupLink = true;
+				}
+				else
+					Debug.log("Found a group link field",i);
+				
+				table = pathSplit[i].split(':')[1];
+
+				subsetName = pathSplit[i].split(':')[0];
+				subsetName = subsetName.substr(0,subsetName.indexOf("Link")); //remove Link
+			}
+			else //assume no link, just take initial record
+			{
+				table = pathSplit[0];	
+				if(pathSplit.length > 1)
+					selected = pathSplit[1];			
+			}
+				
+		
+			typeName = pathSplit[0].substr(0,pathSplit[0].indexOf("Table")); //remove Table
+
+			Debug.log("table",table,"typeName",typeName,"subsetName",subsetName);
+			Debug.logv({isGroupLink});
+			Debug.logv({childLinkIndex});
+			Debug.logv({selected});
+
+			newWindowStr = "/WebPath/html/ConfigurationGUI_subset.html?urn=" +
+							_ConfigSupervisorLid +
+							"&subsetBasePath=" +
+							table +
+							"&groupingFieldList=AUTO" +
+							"&recordAlias=" + encodeURIComponent(typeName + " " +
+									subsetName) +
+									"&editableFieldList=" + "!*CommentDescription";
+			
+		
+			if(isGroupLink) //for group link, pre-select GroupID value
+			{
+				newWindowStr += "&selectedGroupIDs=" +
+					encodeURIComponent(
+							childLinkIndex + "=" +
+							selected);
+
+				if(groupLinkSelected)
+					newWindowStr += "&selectedRecords=" + groupLinkSelected;
+			}
+			else if(selected) //for unique link, preselect UID record
+				newWindowStr += "&selectedRecords=" + selected;
+		}
+		else 
+		{
+			Debug.err("Impossible illegal openType",openType);
+			return;
+		}
+
+		Debug.logv({newWindowStr});
+
+		if(newTab)
+			DesktopContent.openNewBrowserTab(
+				typeName + " " + subsetName,
+				"",
+				newWindowStr, false /*unique*/);
+		else
+			DesktopContent.openNewWindow(
+				typeName + " " + subsetName,
+				"",
+				newWindowStr, false /*unique*/);
+
+	} //end openFclTreeViewMenu()
 
 } //end create() CodeEditor instance
