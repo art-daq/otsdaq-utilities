@@ -7728,10 +7728,10 @@
 
 		//==============================================================================
 		//tableCopyOrMoveRow
-		function tableCopyOrMoveRow(deleteSrc)
+		function tableCopyOrMoveRow(deleteSrc, rowSrc=0, isCopyShortCut=false)
 		{
 			var numberOfCopies = 1;
-			if(!deleteSrc)
+			if(!deleteSrc && !isCopyShortCut)
 			{
 				//propmpt for number of copies
 				numberOfCopies = prompt("How many copy instances would you like (default: 1)?",1);
@@ -7744,10 +7744,10 @@
 				}
 				Debug.logv({numberOfCopies});
 			}
-			var src = document.getElementById("copyAndMoveRowsSrc").value | 0;
-			var dest = document.getElementById("copyAndMoveRowsDest").value | 0;
-			var srcCount = document.getElementById("copyAndMoveRowsSrcCount").value | 0;
 
+			var src = isCopyShortCut ? rowSrc : document.getElementById("copyAndMoveRowsSrc").value | 0;
+			var dest = isCopyShortCut ? (rowSrc+1) : document.getElementById("copyAndMoveRowsDest").value | 0;
+			var srcCount = isCopyShortCut ? 1 : document.getElementById("copyAndMoveRowsSrcCount").value | 0;
 
 			Debug.log("tableCopyOrMoveRow src=" + src + " srcCount=" + srcCount + " dest=" + dest);
 
@@ -10454,6 +10454,11 @@
 				editCellCancel();
 				return false;
 			}
+			else if (e.ctrlKey && e.key.toLowerCase() == "v")
+			{
+				Debug.log("Copying table rows");
+				copyAndPasteBlockRows();
+			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d")
 			{
 				Debug.log("Deleting block of table rows");
@@ -10464,29 +10469,18 @@
 		} //end bodyKeyHandler()
 
 		//==============================================================================
-		//pasteBlockRows
-		function pasteBlockRows()
-		{	
-			for(var i=copiedRows.length-1; i>=0; i--)
-			{
-				console.log("selectedRows[i].cells[0] " + copiedRows[i].cells[0]);
-				console.log("selectedRows[i].cells[0].innerHTML " + copiedRows[i].cells[0].innerHTML);
-			}
-		} //end pasteBlockRows()
-
-		//==============================================================================
-		//copyBlockRows
-		function copyBlockRows()
+		//copyAndPasteBlockRows
+		function copyAndPasteBlockRows()
 		{
-			const copiedRows = document.querySelectorAll("#SubSystemTable tr.selected");
-			console.log("Number of selected rows " + copiedRows.length);
+			const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
+			Debug.log("Number of selected rows " + selectedRows.length);
 
-			for(var i=copiedRows.length-1; i>=0; i--)
+			for(var i=selectedRows.length-1; i>=0; i--)
 			{
-				console.log("selectedRows[i].cells[0] " + copiedRows[i].cells[0]);
-				console.log("selectedRows[i].cells[0].innerHTML " + copiedRows[i].cells[0].innerHTML);
+				rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
+				tableCopyOrMoveRow(0, rowIndex, true);
 			}
-		} //end copyBlockRows()
+		} //end copyAndPasteBlockRows()
 
 		//==============================================================================
 		//blockDeleteRows
