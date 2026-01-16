@@ -5582,7 +5582,19 @@
 		{
 			if(DesktopContent.isLoading())
 			{
-				Debug.warn("Please wait for Loading... to complete.");
+				Debug.log("Please wait for Loading... to complete.");
+				//stack up latest user click for when Loading... is completed
+				if(!waitForOpsToComplete) //only stack up user clicks
+				{
+					window.clearTimeout(waitForPrevOpsTimer_);
+					waitForPrevOpsTimer_ = window.setTimeout(function()
+						{
+							Debug.log("Trying again to handle user click action");
+							waitForPrevOpsTimer_ = 0;
+							handleTreeNodeClick(depth, uid, editClick, type, waitForOpsToComplete);
+						}, 100); //guarantee user click action happens
+				}
+
 				return;
 			}
 
