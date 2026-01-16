@@ -3515,7 +3515,8 @@
 				tr.classList.toggle('selected');
 				lastSelectedIndex = idx;
 			});
-		}
+		} //end registerOnClickActions()
+
 		//==============================================================================
 		//toggleTableDetails ~~
 		function toggleTableDetails(setVal)
@@ -10453,16 +10454,6 @@
 				editCellCancel();
 				return false;
 			}
-			else if (e.ctrlKey && e.key.toLowerCase() == "c")
-			{
-				Debug.log("Copying block of table rows");
-				copyDeleteRows();
-			}
-			else if (e.ctrlKey && e.key.toLowerCase() == "v")
-			{
-				Debug.log("Pasting block of table rows");
-				pasteDeleteRows();
-			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d")
 			{
 				Debug.log("Deleting block of table rows");
@@ -12137,10 +12128,6 @@
 			const end = Math.max(a, b);
 			for (let i = start; i <= end; i++) setSelectedByIndex(i, state);
 		}
-	  
-		// Prevent text selection while dragging
-		function disableTextSelection() { document.body.classList.add('no-select'); }
-		function enableTextSelection() { document.body.classList.remove('no-select'); window.getSelection().removeAllRanges(); }
 
 		//==============================================================================
 		//treeHasChanged ~~
