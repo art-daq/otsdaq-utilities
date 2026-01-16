@@ -10489,7 +10489,7 @@
 
 			for(var i=selectedRows.length-1; i>=0; i--)
 			{
-				rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
+				let rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
 				tableCopyOrMoveRow(0, rowIndex, true);
 			}
 		} //end copyAndPasteBlockRows()
@@ -10503,7 +10503,7 @@
 
 			for(var i=selectedRows.length-1; i>=0; i--)
 			{
-				rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
+				let rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
 				try
 				{
 					const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0];
