@@ -3452,7 +3452,7 @@
 				if (!tr || e.button !== 0) return; // only left click
 			
 				const idx = indexOfRow(tr);
-				if (idx === -1) return;
+				if (idx === -1 || idx == 0) return;
 			
 				// SHIFT RANGE (works without Ctrl)
 				if (e.shiftKey && lastSelectedIndex !== null) {
@@ -10491,9 +10491,18 @@
 
 			for(var i=selectedRows.length-1; i>=0; i--)
 			{
-				const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0];
-				if(!deleteBtn) return null;
-				deleteBtn.onclick();
+				rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
+				try
+				{
+					const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0];
+					if(!deleteBtn) return null;
+					deleteBtn.onclick();
+					Debug.log("Successfully deleted row" + rowIndex);
+				}
+				catch
+				{
+					Debug.log("Failed to delete table row " + rowIndex);
+				}
 			}
 		} //end deleteBlockRows()
 
