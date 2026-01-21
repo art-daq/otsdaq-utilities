@@ -691,7 +691,6 @@ else
 			
 			var titleStr = "";
 			var isFolderFocusOnSubsystem = false;
-			var folderFocusUrl = "";
 			if(remoteNamesArr.length)
 			{
 				titleStr += "\n";
