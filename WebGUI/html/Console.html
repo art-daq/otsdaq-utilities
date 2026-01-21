@@ -34,7 +34,8 @@
 			}
 
 
-			#userLink, #clearConsoleLink, #downloadIconDiv, #pauseControlsLink, #navLatestControlsLink {
+			#userLink, #clearConsoleLink, #downloadIconDiv, 
+			#pauseControlsLink, #navLatestControlsLink, #navOldestControlsLink {
 				float: right;
 				margin: 2px 2px 2px 20px;
 			}
@@ -54,7 +55,7 @@
 				text-decoration: 	underline;
 			}
 			#consoleHistory a {
-				color: 				inherit;
+				color: 				inherit;				
 			}
 			#consoleHistory a:hover {
 				font-size: 			14px;
@@ -116,8 +117,9 @@
 			}
 
 			#consoleHistory {
-				overflow-x: auto;
-				overflow-y: scroll;
+				overflow-x: 	auto;
+				overflow-y: 	scroll;
+				font-weight: 	600;
 			}
 
 			#consoleHistory::-webkit-scrollbar
@@ -474,6 +476,7 @@
 				//clearFilterControls(field)
 				//togglePauseControls()
 				//navToLatest()
+				//navToOldest()
 				//clearConsoleMessages()
 				//downloadMessages()
 				//requestOlderMessages()
@@ -1070,7 +1073,7 @@
 			var _localRefreshTimeout = _REFRESH_INTERVAL;
 			function handleRefreshConsole(req, param)
 			{
-				Debug.logv({_scrollWithNewChats});
+				// Debug.logv({_scrollWithNewChats});
 
 				if(param && param == "prepend")
 				{
@@ -1123,8 +1126,9 @@
 						}
 					}
 
-					if(_consoleMessageArray.length)
-						Debug.log("Received",_consoleMessageArray.length,"messages");
+					if(_consoleMessageArray.length && _consoleMessageArray[0].length)
+						Debug.log("Received",_consoleMessageArray.length,"fields for",
+								_consoleMessageArray[0].length,"messages.");
 					updateConsoleHistory(param);
 					updateSideBarCounts(); //must be called after console history update
 
@@ -1562,8 +1566,104 @@
 
 				var lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;
 				if(lendiff > 0) //truncate chat history at entry div start
-					_consoleEl.innerHTML = str.substr(str.indexOf("/div>",lendiff) + 5);
-				else
+				{
+					// Debug.log("Truncating...");
+					//keep err, warn, info entries if possible
+					var searchIndex = 0;
+					let startIndex = -1
+					do
+					{				
+						let otherIndex = str.indexOf("_LevelEntry",searchIndex);
+						//find in browser single or double quote mode
+						while(otherIndex != -1 && str[otherIndex + "_LevelEntry".length] != "'" && str[otherIndex + "_LevelEntry".length] != '"')
+							otherIndex = str.indexOf("_LevelEntry",errIndex+1); //look again
+
+						if(otherIndex == -1)
+							break; //no more not important entries found
+
+						var errIndex = str.indexOf("Error_LevelEntry",searchIndex);
+						while(errIndex != -1 && str[errIndex + "Error_LevelEntry".length] != "'" && str[errIndex + "Error_LevelEntry".length] != '"')
+							errIndex = str.indexOf("Error_LevelEntry",errIndex+1); //look again
+						var warnIndex = str.indexOf("Warning_LevelEntry",searchIndex);
+						while(warnIndex != -1 && str[warnIndex + "Warning_LevelEntry".length] != "'" && str[warnIndex + "Warning_LevelEntry".length] != '"')
+							warnIndex = str.indexOf("Warning_LevelEntry",warnIndex+1); //look again
+						var infoIndex = str.indexOf("Info_LevelEntry",searchIndex);	
+						while(infoIndex != -1 && str[infoIndex + "Info_LevelEntry".length] != "'" && str[infoIndex + "Info_LevelEntry".length] != '"')
+							infoIndex = str.indexOf("Info_LevelEntry",infoIndex+1); //look again
+
+						//move all pointers to end of found entry
+						if(errIndex != -1)
+							errIndex += "Error_LevelEntry".length;
+						if(warnIndex != -1)
+							warnIndex += "Warning_LevelEntry".length;
+						if(infoIndex != -1)
+							infoIndex += "Info_LevelEntry".length;
+						otherIndex += "_LevelEntry".length;
+					
+						let nextImportantIndex = -1;
+						if(errIndex != -1)
+							nextImportantIndex = errIndex;
+						if(warnIndex != -1)
+							nextImportantIndex = nextImportantIndex == -1?warnIndex:Math.min(warnIndex,nextImportantIndex);
+						if(infoIndex != -1)
+							nextImportantIndex = nextImportantIndex == -1?infoIndex:Math.min(infoIndex,nextImportantIndex);
+
+						if(nextImportantIndex == -1)
+							break; //no more important entries found, so do normal truncation
+						
+						startIndex = str.indexOf("<div ",searchIndex);
+
+						let endIndex = str.indexOf("/div>",startIndex + lendiff);
+						if(endIndex == -1) break; //should not happen, so just break and do normal truncation
+						else endIndex += 5; //move to after /div>
+
+						if(nextImportantIndex > endIndex)
+						{
+							//no more important entries found in sensitive area, so truncate the rest and be done
+							str = str.substr(0,startIndex) + str.substr(endIndex);						
+							lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;
+							break; 
+						}
+
+						if(otherIndex == nextImportantIndex)
+						{
+							//don't truncate at important entries							
+							searchIndex = otherIndex + 1;
+							continue;
+						}
+
+						//if here, then otherIndex is not err/warn/info, so can truncate this message
+
+						endIndex = str.lastIndexOf("/div>",nextImportantIndex);
+						if(endIndex == -1) break; //should not happen, so just break and do normal truncation
+						else endIndex += 5; //move to after /div>
+						
+						str = str.substr(0,startIndex) + str.substr(endIndex);
+						searchIndex = startIndex + (nextImportantIndex - endIndex) + 1; //continue searching from here
+						lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;
+						if(lendiff <= 0)
+							break; //done truncating
+						//else continue searching
+
+					} while(1);
+
+					//if still too long, then truncate normally
+					if(lendiff > 0)
+					{
+						startIndex = str.indexOf("<div ",searchIndex);						
+						let endIndex = str.indexOf("/div>",startIndex + lendiff);
+						if(endIndex == -1)
+						{
+							Debug.log("Truncation failed! Perhaps need larger MAX value?");
+							endIndex = startIndex + lendiff; //should not happen, so just break and do normal truncation
+						}
+						else endIndex += 5; //move to after /div>
+						_consoleEl.innerHTML = str.substr(0,startIndex) + str.substr(endIndex);
+					}
+					else //truncation loop was successful
+						_consoleEl.innerHTML = str;
+				}
+				else //no truncation needed
 					_consoleEl.innerHTML = str;
 
 				if(_scrollWithNewChats)
@@ -1572,8 +1672,16 @@
 				{
 					var els = _consoleEl.getElementsByClassName("consoleEntryId-" + startIndex);
 					var endPosition = els[els.length-1].offsetTop;
-					// Debug.log("endPosition ",endPosition,endPosition-startPosition);
-					_historyEl.scrollTop += endPosition-startPosition;
+					if(_historyEl.scrollTop + endPosition-startPosition < 0)
+					{
+						// Debug.log("Keeping scroll position at top");
+						_historyEl.scrollTop = _historyEl.scrollTop; //keep scroll position if too negative
+					}
+					else
+					{
+						// Debug.log("endPosition ",endPosition,endPosition-startPosition);
+						_historyEl.scrollTop += endPosition-startPosition;
+					}
 				}
 
 			} //end updateConsoleHistory()
@@ -1802,18 +1910,58 @@
 				_historyEl.scrollTop = _historyEl.scrollHeight;
 				_scrollWithNewChats = true;
 			} //end navToLatest()
+			
+			//=====================================================================================
+			//navToOldest ~
+			function navToOldest()
+			{
+				Debug.log("navToOldest()");
+				_historyEl.scrollTop = 0;
+				_scrollWithNewChats = false;
+			} //end navToOldest()
 
 			//=====================================================================================
 			//handleUserScroll ~
 			//	identify when user wants to keep up with live chats
+			var _userMouseInputTimeout = 0;
 			function handleUserScroll(e)
 			{
+				//=========================
+				function localGetScrollPct()
+				{
+					const maxScroll = _historyEl.scrollHeight - _historyEl.clientHeight; //_historyEl.scrollHeight - _historyEl.offsetHeight
+  					
+					if (maxScroll <= 0) return 1; //content fits without scroll
+					else
+					{
+						let scrollPct = _historyEl.scrollTop/maxScroll;
+						return scrollPct;
+					}
+				} //end localGetScrollPct()
+
 				if(_userMouseInput) //only mess with scroll if user did something with mouse recently
 				{
-					_scrollWithNewChats = (_historyEl.scrollTop >= (_historyEl.scrollHeight - _historyEl.offsetHeight)*0.99 - 2);
+					clearTimeout(_consoleUpdateTimer); //pause updates while user scrolling
+					_consoleUpdateTimer = 0;
+					
+					let scrollPct = localGetScrollPct();
+					_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats					
+					// Debug.log("_scrollWithNewChats",_scrollWithNewChats,scrollPct);
+
 					DesktopContent.handleScroll(e);
-					_userMouseInput = false; //clear
-					Debug.logv({_scrollWithNewChats});
+					
+					window.clearTimeout(_userMouseInputTimeout);
+					_userMouseInputTimeout = window.setTimeout(()=>
+					{
+						let scrollPct = localGetScrollPct();
+						_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats					
+						Debug.log("Clearing user mouse input - final _scrollWithNewChats",_scrollWithNewChats,scrollPct);
+						
+						_userMouseInput = false;
+						clearTimeout(_consoleUpdateTimer); //pause updates while user scrolling
+						_consoleUpdateTimer = window.setTimeout(getConsoleUpdates,_REFRESH_INTERVAL); //schedule next update
+					},500); //clear after short delay
+
 					//Debug.log("scroll pos", _historyEl.scrollTop, _historyEl.scrollHeight, _historyEl.offsetHeight);
 				}
 			} //end handleUserScroll()
@@ -4458,7 +4606,13 @@
 			</div>
 
 			<div id='navLatestControlsLink'>
-				<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
+				<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' 
+					class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
+			</div>
+
+			<div id='navOldestControlsLink'>
+				<a onclick='navToOldest();' title='Scroll to oldest console messages.' 
+					class='consoleLink' id='pauseControlsLinkText'>Oldest</a>
 			</div>
 		</div>
 

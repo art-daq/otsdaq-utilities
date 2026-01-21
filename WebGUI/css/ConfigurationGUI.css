@@ -31,12 +31,20 @@
 		}
 
 		a:hover {
-			text-decoration: none;
-			font-weight: bold;
+			text-decoration: 		none;
+			font-weight: 			bold;
 		}
 		
 		a.underline:hover {
-		text-decoration: none;
+			text-decoration: 		none;
+		}
+
+		.groupHistoryLink {
+			color: 					black;
+			text-decoration: 		none;
+		}
+		.groupHistoryLink:hover {
+			text-decoration: 		underline;
 		}
 
 		#display {

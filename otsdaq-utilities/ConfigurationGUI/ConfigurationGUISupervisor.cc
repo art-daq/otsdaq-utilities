@@ -192,6 +192,7 @@ try
 	//	saveSpecificTable
 	//	clearTableTemporaryVersions
 	//	clearTableCachedVersions
+	//	getGroupHistory
 	//
 	//		---- associated with JavaScript Table API
 	//	getTreeView
@@ -793,6 +794,27 @@ try
 		{
 			__SUP_COUT__ << "Error detected!\n\n " << __E__;
 			xmlOut.addTextElementToData("Error", "Error clearing cached views! ");
+		}
+	}
+	else if(requestType == "getGroupHistory")
+	{
+		std::string groupAction =
+		    StringMacros::decodeURIComponent(
+				CgiDataUtilities::getData(cgiIn, "groupAction"));               // from GET
+		std::string groupType = CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
+
+		__SUP_COUTV__(groupAction);
+		__SUP_COUTV__(groupType);
+
+		std::vector<std::map<std::string /* group field key */, 
+			std::string /* group field value */>> groups = 
+				ConfigurationManager::loadGroupHistory(groupAction, groupType);
+		
+		for(const auto& group : groups)
+		{
+			auto parentEl = xmlOut.addTextElementToData("GroupHistoryEntry", "");  // create parent element for each entry
+			for(const auto& field : group)
+				xmlOut.addTextElementToParent(field.first, field.second, parentEl);
 		}
 	}
 	else if(requestType == "getTreeView")
@@ -8543,12 +8565,12 @@ try
 		                                          "ActivatedIterator"};
 
 		std::vector<std::string> filenames = {
-		    FSM_LAST_CONFIGURED_GROUP_ALIAS_FILE,
-		    FSM_LAST_STARTED_GROUP_ALIAS_FILE,
+		    ConfigurationManager::LAST_CONFIGURED_CONFIG_GROUP_FILE,
+		    ConfigurationManager::LAST_STARTED_CONFIG_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_CONFIG_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_CONTEXT_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_BACKBONE_GROUP_FILE,
-		    ConfigurationManager::LAST_ACTIVATED_ITERATOR_GROUP_FILE};
+		    ConfigurationManager::LAST_ACTIVATED_ITERATE_GROUP_FILE};
 
 		std::string userPath =
 		    subsystem.second.getNode("SubsystemUserDataPath").getValue();
