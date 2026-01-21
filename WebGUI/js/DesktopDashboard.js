@@ -636,7 +636,7 @@ else
 			Debug.log("doSetUserWithLock()");
 			var user = Desktop.desktop.login.getUsername();
 			var data = "";
-			let doLockElseUnlock = ((!_oldUserNameWithLock || _oldUserNameWithLock == "")?true:false)
+			let doLockElseUnlock = ((!_oldUserNameWithLock || _oldUserNameWithLock == "")?true:false);
 			data += "lock=" + (doLockElseUnlock?"1":"0") + "&";
 			data += "username=" + user;
 
