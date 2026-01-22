@@ -34,7 +34,7 @@
 			}
 
 
-			#userLink, #clearConsoleLink, #downloadIconDiv, 
+			#userLink, #clearConsoleLink, #downloadIconDiv,
 			#pauseControlsLink, #navLatestControlsLink, #navOldestControlsLink {
 				float: right;
 				margin: 2px 2px 2px 20px;
@@ -55,7 +55,7 @@
 				text-decoration: 	underline;
 			}
 			#consoleHistory a {
-				color: 				inherit;				
+				color: 				inherit;
 			}
 			#consoleHistory a:hover {
 				font-size: 			14px;
@@ -1149,17 +1149,17 @@
 			//=====================================================================================
 			//initSideBar ~
 			function initSideBar()
-			{				
+			{
 				var str = "";
 
 				str += "<a id='filterControlsLink' class='consoleLink' " +
 						"href='Javascript:toggleFilterControls();' " +
 						"title='Toggle Filter Controls' >Hide Filters</a>";
-			
+
 				str += "<a id='advancedControlsLink' class='consoleLink' " +
 						"onclick=\"toggleAdvancedControls(); " +
                   		"this.textContent = (this.textContent === 'Exit Adv.') ? 'Advanced' : 'Exit Adv.';\" " +
-      					"title='Toggle advanced controls'>Advanced</a>"; 
+						"title='Toggle advanced controls'>Advanced</a>";
 
 				str += "<div id='filterContainer'>";
 				for(var f in _FIELDS_TO_OBSERVE) //create filter divs for each field's multiselect box
@@ -1571,7 +1571,7 @@
 					var searchIndex = 0;
 					let startIndex = -1;
 					do
-					{				
+					{
 						let otherIndex = str.indexOf("_LevelEntry",searchIndex);
 						//find in browser single or double quote mode
 						while(otherIndex != -1 && str[otherIndex + "_LevelEntry".length] != "'" && str[otherIndex + "_LevelEntry".length] != '"')
@@ -1586,7 +1586,7 @@
 						var warnIndex = str.indexOf("Warning_LevelEntry",searchIndex);
 						while(warnIndex != -1 && str[warnIndex + "Warning_LevelEntry".length] != "'" && str[warnIndex + "Warning_LevelEntry".length] != '"')
 							warnIndex = str.indexOf("Warning_LevelEntry",warnIndex+1); //look again
-						var infoIndex = str.indexOf("Info_LevelEntry",searchIndex);	
+						var infoIndex = str.indexOf("Info_LevelEntry",searchIndex);
 						while(infoIndex != -1 && str[infoIndex + "Info_LevelEntry".length] != "'" && str[infoIndex + "Info_LevelEntry".length] != '"')
 							infoIndex = str.indexOf("Info_LevelEntry",infoIndex+1); //look again
 
@@ -1598,7 +1598,7 @@
 						if(infoIndex != -1)
 							infoIndex += "Info_LevelEntry".length;
 						otherIndex += "_LevelEntry".length;
-					
+
 						let nextImportantIndex = -1;
 						if(errIndex != -1)
 							nextImportantIndex = errIndex;
@@ -1609,7 +1609,7 @@
 
 						if(nextImportantIndex == -1)
 							break; //no more important entries found, so do normal truncation
-						
+
 						startIndex = str.indexOf("<div ",searchIndex);
 
 						let endIndex = str.indexOf("/div>",startIndex + lendiff);
@@ -1619,14 +1619,14 @@
 						if(nextImportantIndex > endIndex)
 						{
 							//no more important entries found in sensitive area, so truncate the rest and be done
-							str = str.substr(0,startIndex) + str.substr(endIndex);						
+							str = str.substr(0,startIndex) + str.substr(endIndex);
 							lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;
-							break; 
+							break;
 						}
 
 						if(otherIndex == nextImportantIndex)
 						{
-							//don't truncate at important entries							
+							//don't truncate at important entries
 							searchIndex = otherIndex + 1;
 							continue;
 						}
@@ -1636,7 +1636,7 @@
 						endIndex = str.lastIndexOf("/div>",nextImportantIndex);
 						if(endIndex == -1) break; //should not happen, so just break and do normal truncation
 						else endIndex += 5; //move to after /div>
-						
+
 						str = str.substr(0,startIndex) + str.substr(endIndex);
 						searchIndex = startIndex + (nextImportantIndex - endIndex) + 1; //continue searching from here
 						lendiff = str.length - _CONSOLE_HISTORY_MAX_LENGTH;
@@ -1649,7 +1649,7 @@
 					//if still too long, then truncate normally
 					if(lendiff > 0)
 					{
-						startIndex = str.indexOf("<div ",searchIndex);						
+						startIndex = str.indexOf("<div ",searchIndex);
 						let endIndex = str.indexOf("/div>",startIndex + lendiff);
 						if(endIndex == -1)
 						{
@@ -1909,7 +1909,7 @@
 				_historyEl.scrollTop = _historyEl.scrollHeight;
 				_scrollWithNewChats = true;
 			} //end navToLatest()
-			
+
 			//=====================================================================================
 			//navToOldest ~
 			function navToOldest()
@@ -1929,7 +1929,7 @@
 				function localGetScrollPct()
 				{
 					const maxScroll = _historyEl.scrollHeight - _historyEl.clientHeight; //_historyEl.scrollHeight - _historyEl.offsetHeight
-  					
+
 					if (maxScroll <= 0) return 1; //content fits without scroll
 					else
 					{
@@ -1942,20 +1942,20 @@
 				{
 					clearTimeout(_consoleUpdateTimer); //pause updates while user scrolling
 					_consoleUpdateTimer = 0;
-					
+
 					let scrollPct = localGetScrollPct();
-					_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats					
+					_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats
 					// Debug.log("_scrollWithNewChats",_scrollWithNewChats,scrollPct);
 
 					DesktopContent.handleScroll(e);
-					
+
 					window.clearTimeout(_userMouseInputTimeout);
 					_userMouseInputTimeout = window.setTimeout(()=>
 					{
 						let scrollPct = localGetScrollPct();
-						_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats					
+						_scrollWithNewChats = (scrollPct > 0.995); //if near bottom, then follow new chats
 						Debug.log("Clearing user mouse input - final _scrollWithNewChats",_scrollWithNewChats,scrollPct);
-						
+
 						_userMouseInput = false;
 						clearTimeout(_consoleUpdateTimer); //pause updates while user scrolling
 						_consoleUpdateTimer = window.setTimeout(getConsoleUpdates,_REFRESH_INTERVAL); //schedule next update
@@ -2086,7 +2086,7 @@
 					_consoleUpdateTimer = 0;
 				}
 				Debug.log("toggleAdvancedControls()");
-				
+
 				if(_advancedContainerEl.style.display == "block") //then close
 				{
 					closeAdvancedControls();
@@ -4605,12 +4605,12 @@
 			</div>
 
 			<div id='navLatestControlsLink'>
-				<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.' 
+				<a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.'
 					class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
 			</div>
 
 			<div id='navOldestControlsLink'>
-				<a onclick='navToOldest();' title='Scroll to oldest console messages.' 
+				<a onclick='navToOldest();' title='Scroll to oldest console messages.'
 					class='consoleLink' id='pauseControlsLinkText'>Oldest</a>
 			</div>
 		</div>
