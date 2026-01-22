@@ -8992,10 +8992,10 @@ void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
 ///		test activation of context group
 void ConfigurationGUISupervisor::testXDAQContext()
 {
-	if(0) //keep for debugging
+	if(0)  //keep for debugging
 	{
 		__COUT_INFO__ << "Hello0!";
-		ConfigurationManagerRW  cfgMgrInst("ExampleUser");
+		ConfigurationManagerRW cfgMgrInst("ExampleUser");
 		__COUT_INFO__ << "Hello1!";
 		ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
 		__COUT_INFO__ << "Hello2!";
@@ -9029,7 +9029,6 @@ void ConfigurationGUISupervisor::testXDAQContext()
 
 	/////////////////////////////////
 	// below has been used for debugging.
-
 
 	// behave like a user
 	// start with top level xdaq context
