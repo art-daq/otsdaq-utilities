@@ -2345,16 +2345,16 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 	for(auto& field : msg.fields)
 	{
 		if(field.first == ConsoleMessageStruct::FieldType::SOURCE)
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SOURCEID)
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SEQID)
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::TIMESTAMP)  //use Time instead
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first ==
 		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
-			continue;                               // skip, not userful
+			continue;                               // skip, not useful
 
 		if(field.first ==
 		   ConsoleMessageStruct::FieldType::MSG)  //only need to escape message field
