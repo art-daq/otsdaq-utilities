@@ -744,7 +744,7 @@ else
 
 			var user = Desktop.desktop.login.getUsername();
 
-			//if folder focus is on subsystem, then pass that info to server so it can the lock/unlock action will be on the focused subsystem
+			//if folder focus is on subsystem, then pass that info to server so the lock/unlock action will be on the focused subsystem
 			var jsReq = "Desktop.desktop.dashboard.doSetUserWithLock(" + 
 				(isFolderFocusOnSubsystem ? "\"" + Desktop.desktop.icons.getFolderFocus() + 
 						"\"":"") +
