@@ -385,10 +385,10 @@ else
 					doubleSizeWindowIndex = 0; //wrap around
 				if(doubleSizeWindowIndex < 0)
 					doubleSizeWindowIndex = Desktop.desktop.getNumberOfWindows()-1; //wrap around
-				
+
 				Debug.log("Desktop Dashboard Organize r" + rows + " , c" + cols,
 					"doubleSizeWindowIndex",doubleSizeWindowIndex);
-					
+
 				if(_windowOrganizeMode && numOfWindows > 1)
 				{
 					var i = doubleSizeWindowIndex; //target double-wide window index
@@ -902,7 +902,7 @@ else
 			},500); //end timeout handler
 		} //end handleDashboardWinMouseDown()
 
-		this.handleDashboardLayoutWindow = function(req) 
+		this.handleDashboardLayoutWindow = function(req)
 		{
 			_layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout")
 			_sysLayoutAliasArray = Desktop.getXMLValue(req,"pref_sysalias_layout");
