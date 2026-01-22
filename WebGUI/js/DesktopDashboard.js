@@ -259,27 +259,78 @@ else
 			var xx, yy;
 
 			var numOfWindows = Desktop.desktop.getNumberOfWindows();
+			if(!Desktop.desktop.lastTileWinPositions ||
+				Object.keys(Desktop.desktop.lastTileWinPositions).length != numOfWindows)
+			{
+				Debug.log("New window detected, resetting _windowOrganizeMode.");
+				_windowOrganizeMode = -1;
+				_windowOrganizeModeVert = 0;
+			}
+
+			//if Console window is open, then start in _windowOrganizeModeVert = 2
+			var indexOfConsoleWin = -1;
+			for(var i=0;i<Desktop.desktop.getNumberOfWindows();++i)
+			{
+				win = Desktop.desktop.getWindowByIndex(i);
+				if(win.getWindowName().indexOf("Console") !== -1 ||
+					win.getWindowUrl().indexOf("Console.html") !== -1)
+				{
+					Debug.log("Found Console window at index ",i,
+						win.getWindowName(),win.getWindowUrl());
+					indexOfConsoleWin = i;
+					if(_windowOrganizeMode == -1) //if console window is open, start in console drawer mode
+						_windowOrganizeModeVert = 2;
+					break;
+				}
+			} //end Console window search loop
+
+
+			++_windowOrganizeMode; //advance the (target window) mode each tile call
+
 
 			//cycle through different modes where the various windows get a bigger spot
-			if(++_windowOrganizeMode < 0 ||
+			if(_windowOrganizeMode < 0 ||
 				(_windowOrganizeMode > numOfWindows && _windowOrganizeModeVert == 1))
 			{
-				_windowOrganizeMode = 0; //wrap-around
-				_windowOrganizeModeVert = 0;
-				Debug.log("Favoring horizontal mode");
+				_windowOrganizeMode = 0; //wrap-around target window id
+				if(indexOfConsoleWin != -1) //wrap around to console mode if console open
+				{
+					_windowOrganizeModeVert = 2;
+					Debug.log("Favoring console drawer mode");
+				}
+				else
+				{
+					_windowOrganizeModeVert = 0;
+					Debug.log("Favoring horizontal mode");
+				}
 			}
 			else if(_windowOrganizeMode > numOfWindows && _windowOrganizeModeVert == 0)
 			{
 				//switch mode to vertical mode (before full wrap around)
-				_windowOrganizeMode = 0; //vert wrap-around
+				_windowOrganizeMode = 0; //wrap-around target window id
 				_windowOrganizeModeVert = 1;
 				Debug.log("Favoring vertical mode");
 			}
+			else if(_windowOrganizeModeVert == 2)
+			{
+				if(_windowOrganizeMode >= numOfWindows ||
+					(numOfWindows == 2 && _windowOrganizeMode == 1)) //only 1 other window, so no more tiling options
+				{
+					//switch mode to vertical mode (before full wrap around)
+					_windowOrganizeMode = 0; //wrap-around target window id
+					_windowOrganizeModeVert = 0;
+					Debug.log("Favoring horizontal mode");
+				}
+			}
 
-			//for all modes, except 0, add a spot
+			if(_windowOrganizeModeVert == 2 && numOfWindows > 1) //console drawer mode
+				--numOfWindows; //console window at bottom, so do not count it in tiling
+
+			//for all (window target) modes, except 0, add a spot
 			// and allow that window to use the first two spots
 			if(_windowOrganizeMode && numOfWindows > 1)
 				++numOfWindows;
+
 
 			if(1) //tile code
 			{
@@ -287,7 +338,30 @@ else
 				var ww = Math.floor(dw/numOfWindows);
 				var wh = dh;
 
-				while((ww*2 < wh && _windowOrganizeModeVert == 0) ||
+				Desktop.desktop.lastTileWinPositions = {}; //reset, if windows are tiled, this map will be updated with wid => x,y,w,h of each window
+
+
+				if(_windowOrganizeModeVert == 2) //console drawer mode
+				{
+					//so reduce height by 1/3 and place Console window at bottom
+					wh = Math.floor(dh*1/3);
+
+					win = Desktop.desktop.getWindowByIndex(indexOfConsoleWin);
+
+					//make sure window is visible
+					if(win.isMinimized()) win.unminimize();
+					if(win.isMaximized()) win.unmaximize();
+
+					win.setWindowSizeAndPosition(dx,dy + (dh - wh),dw,wh);
+					Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [dx,dy + (dh - wh),dw,wh];
+
+					//revise the desktop height and starting window height for other window placement
+					dh -= wh;
+					wh = dh;
+					Debug.log("Console drawer placed");
+				}
+
+				while((ww*2 < wh && (_windowOrganizeModeVert == 0 || _windowOrganizeModeVert == 2)) ||
 					(ww*4 < wh && _windowOrganizeModeVert == 1))
 				{
 					//Debug.log("Desktop Dashboard Organize " + ww + " , " + wh,Debug.LOW_PRIORITY);
@@ -296,25 +370,27 @@ else
 				xx = dx; yy = dy;
 				//Debug.log("Desktop Dashboard Organize " + ww + " , " + wh,Debug.LOW_PRIORITY);
 				var cols = Math.ceil(numOfWindows/rows);
-				Debug.log("Desktop Dashboard Organize r" + rows + " , c" + cols,Debug.LOW_PRIORITY);
+				Debug.log("Desktop Dashboard Organize r" + rows + " , c" + cols,
+					"doubleSizeWindowIndex",doubleSizeWindowIndex);
 
 
 				//we know size, now place windows
-
-
-				Desktop.desktop.lastTileWinPositions = {}; //reset, if windows are tiled, this map will be updated with wid => x,y,w,h of each window
 
 
 				//first the bigger one
 				var ic = 0; //counter for new row
 				var numOfWindowsPlaced = 0;
 				var doubleSizeWindowIndex = (Desktop.desktop.getNumberOfWindows()-1) - (_windowOrganizeMode-1);
+				if(_windowOrganizeModeVert == 2 && doubleSizeWindowIndex == indexOfConsoleWin)
+					++doubleSizeWindowIndex; //skip console window in console drawer mode
 				if(doubleSizeWindowIndex >= Desktop.desktop.getNumberOfWindows())
-					doubleSizeWindowIndex = 0;
+					doubleSizeWindowIndex = 0; //wrap around
+				if(doubleSizeWindowIndex < 0)
+					doubleSizeWindowIndex = Desktop.desktop.getNumberOfWindows()-1; //wrap around
 				Debug.logv({doubleSizeWindowIndex});
 				if(_windowOrganizeMode && numOfWindows > 1)
 				{
-					var i = doubleSizeWindowIndex;//_windowOrganizeMode-1; //target window index
+					var i = doubleSizeWindowIndex; //target double-wide window index
 
 					win = Desktop.desktop.getWindowByIndex(i);
 							//document.getElementById('DesktopDashboard-windowDashboard-winIndex'+i).innerHTML);
@@ -324,15 +400,15 @@ else
 
 					//make double wide
 					win.setWindowSizeAndPosition(xx,yy,ww*2,wh);
-					++numOfWindowsPlaced;
+					numOfWindowsPlaced += 2; //count as 2
 					Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww*2,wh];
 
 					xx += ww*2;
 					ic+=2;
 					if((ic)%cols==0){xx = dx; yy += wh;} //start new row
-					//					Debug.log("Desktop Dashboard Organize i:" + i + " - " + (ic)%cols + " -  "
-					//							+ xx + " , " + yy + " :: "
-					//							+ ww*2 + " , " + wh,Debug.LOW_PRIORITY);
+					//Debug.log("Desktop Dashboard Organize i:" + i + " - " + (ic)%cols + " -  "
+					//		+ xx + " , " + yy + " :: "
+					//		+ ww*2 + " , " + wh,Debug.LOW_PRIORITY);
 				}
 
 				//now the other windows
@@ -342,19 +418,23 @@ else
 					if(_windowOrganizeMode && numOfWindows > 1 && i == doubleSizeWindowIndex) //_windowOrganizeMode-1)
 						continue; //skip the window already placed
 
-					win = Desktop.desktop.getWindowByIndex(i);
-						//document.getElementById('DesktopDashboard-windowDashboard-winIndex'+i).innerHTML);
+					if(indexOfConsoleWin == i && _windowOrganizeModeVert == 2)
+						continue; //skip console window in console drawer mode
 
+					win = Desktop.desktop.getWindowByIndex(i);
+					//document.getElementById('DesktopDashboard-windowDashboard-winIndex'+i).innerHTML);
+
+					//make sure window is visible
 					if(win.isMinimized()) win.unminimize();
 					if(win.isMaximized()) win.unmaximize();
 
 					//if last window fill remaining space rows*cols > numOfWindows
-					if(numOfWindowsPlaced == Desktop.desktop.getNumberOfWindows()-1)
+					if(numOfWindowsPlaced == numOfWindows-1)
 					{
 						win.setWindowSizeAndPosition(xx,yy,ww*(1 + (rows*cols - numOfWindows)),wh);
 						Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww*(1 + (rows*cols - numOfWindows)),wh];
 					}
-					else
+					else //normal place
 					{
 						win.setWindowSizeAndPosition(xx,yy,ww,wh);
 						Desktop.desktop.lastTileWinPositions[win.getWindowId()] = [xx,yy,ww,wh];
@@ -363,9 +443,9 @@ else
 
 					xx += ww;
 					if((++ic)%cols==0){xx = dx; yy += wh;} //start new row
-					//					Debug.log("Desktop Dashboard Organize i:" + i + " - " + (ic)%cols + " -  "
-					//							+ xx + " , " + yy + " :: "
-					//							+ ww + " , " + wh,Debug.LOW_PRIORITY);
+					//Debug.log("Desktop Dashboard Organize i:" + i + " - " + (ic)%cols + " -  "
+					//		+ xx + " , " + yy + " :: "
+					//		+ ww + " , " + wh,Debug.LOW_PRIORITY);
 				}
 				Desktop.desktop.redrawDashboardWindowButtons();
 			}

@@ -2192,6 +2192,7 @@ void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
 
 		// addMessageToResponse(xmlOut, msg);
 		addMessageToResponse(messagesJson, msg);
+		__COUTTV__(messagesJson.size());
 
 	}  //end main message add loop
 
@@ -2329,7 +2330,7 @@ void ConsoleSupervisor::addMessageToResponse(HttpXmlDocument* xmlOut,
 void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
                                              ConsoleSupervisor::ConsoleMessageStruct& msg)
 {
-	if(xmlValue.size() > 0)
+	if(xmlValue.size() && xmlValue[xmlValue.size()-1] != '[') //if not first entry, add comma
 		xmlValue += ",";
 
 	xmlValue += "{";	
@@ -2350,11 +2351,11 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 
 		if(field.first == ConsoleMessageStruct::FieldType::MSG) //only need to escape message field
 			xmlValue +=
-				"\"message_" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
+				"\"" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
 				StringMacros::escapeString(field.second) + "\",";
 		else
 			xmlValue +=
-				"\"message_" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
+				"\"" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
 				field.second + "\",";
 
 		// xmlOut->addTextElementToParent(
@@ -2365,22 +2366,22 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 
 	// give modified level also
 	xmlValue +=
-	    "\"message_Level\":\"" + msg.getLevel() + "\",";
+	    "\"Level\":\"" + msg.getLevel() + "\",";
 	// xmlOut->addTextElementToParent("message_Level", msg.getLevel(), refreshParent_);
 
 	// give timestamp also
 	xmlValue +=
-	    "\"message_Time\":\"" + msg.getTime() + "\",";
+	    "\"Time\":\"" + msg.getTime() + "\",";
 	// xmlOut->addTextElementToParent("message_Time", msg.getTime(), refreshParent_);
 
 	// give global count index also
 	xmlValue +=
-	    "\"message_Count\":\"" + std::to_string(msg.getCount()) + "\",";
+	    "\"Count\":\"" + std::to_string(msg.getCount()) + "\",";
 	//xmlOut->addTextElementToParent("message_Count", std::to_string(msg.getCount()), refreshParent_);
 
 	//give Custom count label also (i.e., which search string this message matches, or blank "" for no match)
 	xmlValue +=
-	    "\"message_Custom\":\"" +
+	    "\"Custom\":\"" +
 	     StringMacros::escapeString(
 	        StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'})) +
 	    "\"";

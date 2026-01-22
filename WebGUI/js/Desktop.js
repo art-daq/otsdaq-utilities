@@ -217,6 +217,7 @@ Desktop.createDesktop = function(security) {
 			var w = _windows[_windows.length-1];
 			w.setWindowSizeAndPosition(w.getWindowX(),w.getWindowY(),w.getWindowWidth(),w.getWindowHeight());
 		}
+		Desktop.desktop.lastTileWinPositions = {}; //reset tiled window positions on resize
 
 	} //end _handleDesktopResize()
 

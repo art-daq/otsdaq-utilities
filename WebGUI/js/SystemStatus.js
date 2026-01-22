@@ -182,8 +182,10 @@ function getContextNames()
 
 			resolve(_allContextNames);
 
-				}
-				); //end request handler
+				}, //end request handler
+				0,0, //reqParam, progressHandler
+				false /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/); // end of XMLHttpRequest
 
 			}); // end of Promise
 
@@ -385,10 +387,10 @@ function getAppsArray()
 			if(_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
 			_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000 /*ms*/);
 
-				},
+				},  //end request handler
 				0,0, //reqParam, progressHandler
 				true /*callHandlerOnErr*/,
-				true /*doNotShowLoadingOverlay*/);// end of request handler
+				true /*doNotShowLoadingOverlay*/); // end of XMLHttpRequest
 			});// end of Promise
 
 }// end of getAppsArray()

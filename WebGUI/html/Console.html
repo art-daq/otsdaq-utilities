@@ -1105,34 +1105,30 @@
 				//Debug.log("Chat _lastUpdateIndex now is " + _lastUpdateIndex);
 
 				var msgs = req.responseXML.getElementsByTagName("messages")[0];
-				if(msgs && msgs.children.length) //if messages list is present in req
+				let msgStr;
+				if(msgs && msgs.children.length && //if messages list is present in req
+					(msgStr = DesktopContent.getXMLValue(msgs.children[0])) &&
+					msgStr.length > 5) //and has data
 				{
-					_consoleMessageArray = new Array();
+					//giant JSON blob is faster than filling xml on server side
+					_consoleMessageArray = JSON.parse(msgStr);
 
-					//fill _consoleMessageArray for each field
-					var lengthVerify = -1;
-					for(var f in _consoleMessageFields)
+					if(_consoleMessageArray.length)
+						Debug.log("Received",_consoleMessageArray.length,"messages with",
+								Object.keys(_consoleMessageArray[0]).length,"fields.");
+					if(Object.keys(_consoleMessageArray[0]).length != _consoleMessageFields.length)
 					{
-						_consoleMessageArray.push(
-								msgs.getElementsByTagName("message_" + _consoleMessageFields[f]));
-
-						if(lengthVerify == -1)
-							lengthVerify = _consoleMessageArray[_consoleMessageArray.length-1].length;
-						else if(lengthVerify !=  _consoleMessageArray[_consoleMessageArray.length-1].length)
-						{
-							Debug.log("Message fields received are incomplete!",Debug.HIGH_PRIORITY);
-							document.getElementById("consoleConnectionStatus").style.display = "block"; //show DISCONNECTED
-							return; //this stops refershing, because no future refresh is schedule
-						}
+						Debug.err("Console message field count mismatch! Expected " +
+								_consoleMessageFields.length + " got " +
+								Object.keys(_consoleMessageArray[0]).length);
 					}
+					else
+					{
+						updateConsoleHistory(param);
+						updateSideBarCounts(); //must be called after console history update
 
-					if(_consoleMessageArray.length && _consoleMessageArray[0].length)
-						Debug.log("Received",_consoleMessageArray.length,"fields for",
-								_consoleMessageArray[0].length,"messages.");
-					updateConsoleHistory(param);
-					updateSideBarCounts(); //must be called after console history update
-
-					_localRefreshTimeout = 100; //ms, refresh more often if we just got data
+						_localRefreshTimeout = 100; //ms, refresh more often if we just got data
+					}
 				}
 				else //set timeout in ms, refresh more often if we just got data
 				{
@@ -1140,6 +1136,7 @@
 						_localRefreshTimeout *= 4;
 					if(_localRefreshTimeout > _REFRESH_INTERVAL)
 						_localRefreshTimeout = _REFRESH_INTERVAL;
+					Debug.logv({_localRefreshTimeout});
 				}
 
 				document.getElementById("consoleConnectionStatus").style.display = "none"; //hide DISCONNECTED
@@ -1147,7 +1144,6 @@
 				if(_consoleUpdateTimer) //only allow one timer for updates at a time
 					clearTimeout(_consoleUpdateTimer);
 				_consoleUpdateTimer = window.setTimeout(getConsoleUpdates,_localRefreshTimeout); //schedule next update
-				//console.log("_localRefreshTimeout",_localRefreshTimeout);
 			} //end handleRefreshConsole()
 
 			//=====================================================================================
@@ -1454,8 +1450,11 @@
 			//	param can be "prepend" to prepend older messages to the top of the history
 			function updateConsoleHistory(param)
 			{
-				if(!_consoleMessageArray || //if _consoleMessageArray incomplete, do nothing (should never happpen?)
-						_consoleMessageArray.length != _consoleMessageFields.length) return;
+				if(!_consoleMessageArray) //if _consoleMessageArray undefined, do nothing (should never happpen?)
+				{
+					Debug.log("Console updateConsoleHistory: undefined message array");
+					return;
+				}
 
 				var newChatFound = false;
 				var str = "";
@@ -1470,18 +1469,18 @@
 					observedSz[_FIELDS_TO_OBSERVE[f]] = Object.keys(_observed[_FIELDS_TO_OBSERVE[f]]).length;
 
 				 //assume all fields' arrays are same length (checked by req handler)
-				for(var i=0;i<_consoleMessageArray[0].length;++i)
+				for(var i=0;i<_consoleMessageArray.length;++i)
 				{
-					tmp.Label = _consoleMessageArray[_MESSAGE_FIELD_LABEL][i].getAttribute('value');
-					tmp.Level = _consoleMessageArray[_MESSAGE_FIELD_LEVEL][i].getAttribute('value');
-					tmp.Custom = _consoleMessageArray[_MESSAGE_FIELD_CUSTOM][i].getAttribute('value');
-					tmp.Hostname = _consoleMessageArray[_MESSAGE_FIELD_HOSTNAME][i].getAttribute('value');
-					tmp.Count = _consoleMessageArray[_MESSAGE_FIELD_COUNT][i].getAttribute('value');
+					tmp.Label = 	_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_LABEL]];
+					tmp.Level = 	_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_LEVEL]];
+					tmp.Custom = 	_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_CUSTOM]];
+					tmp.Hostname = 	_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_HOSTNAME]];
+					tmp.Count = 	_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_COUNT]];
 
-					firstMsg = _consoleMessageArray[_MESSAGE_FIELD_FILE][i].getAttribute('value') +
-							":" + _consoleMessageArray[_MESSAGE_FIELD_LINE][i].getAttribute('value');// + "\t";
+					firstMsg = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_FILE]] +
+							":" + _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_LINE]];// + "\t";
 
-					secondMsg = _consoleMessageArray[_MESSAGE_FIELD_MSG][i].getAttribute('value');
+					secondMsg = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_MSG]];
 
 					firstMsg = convertForClient(firstMsg);
 					secondMsg = convertForClient(secondMsg);
@@ -1507,7 +1506,7 @@
 						"<span class='" + tmp.Custom + "_CustomEntry'>" + //open label level custom span (for filtering)
 						"<span class='elaboratedEntry'><b>" +
 						tmp.Level + " " +
-						"(" + formatTime(_consoleMessageArray[_MESSAGE_FIELD_TIME][i].getAttribute('value')) + ") ";
+						"(" + formatTime(_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_TIME]]) + ") ";
 					str += tmp.Label + ":</b> " +
 							"</span><span class='lineNumberEntry'>" +
 						DesktopContent.htmlOpen("a", //start macro module table
