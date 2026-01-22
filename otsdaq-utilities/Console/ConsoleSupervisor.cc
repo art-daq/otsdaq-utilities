@@ -272,10 +272,15 @@ try
 				i = 200;  // mark so things are good for all time. (this indicates things
 				          // are configured to be sent here)
 
-				__COUT_INFO__ << "INFO messages look like this and mean ‘something occurred of which you should be aware.’" << __E__;
-				__COUT_WARN__ << "WARNING messages look like this and mean 'something suboptimal occurred and could be fixed.'" << __E__;
-				__COUT_ERR__ << "ERROR messages look like this and mean 'something wrong occured and should be fixed.’" << __E__;
-				
+				__COUT_INFO__ << "INFO messages look like this and mean ‘something "
+				                 "occurred of which you should be aware.’"
+				              << __E__;
+				__COUT_WARN__ << "WARNING messages look like this and mean 'something "
+				                 "suboptimal occurred and could be fixed.'"
+				              << __E__;
+				__COUT_ERR__ << "ERROR messages look like this and mean 'something wrong "
+				                "occured and should be fixed.’"
+				             << __E__;
 
 				//				//to debug special packets
 				//				__SS__ << "???";
@@ -413,21 +418,22 @@ try
 				// save the new last sequence ID
 				sourceLastSequenceID[newSourceId] = newSequenceId;
 
-				size_t i = 0; //to skip over important messages
+				size_t i = 0;  //to skip over important messages
 				while(cs->messages_.size() > 0 &&
 				      cs->messages_.size() > cs->maxMessageCount_)
-				{					
-					if(i < cs->maxMessageCount_/2 && //in first half, keep important messages
-						(cs->messages_[i].getLevel() == "Error" ||
-						  cs->messages_[i].getLevel() == "Warning" ||
-						  cs->messages_[i].getLevel() == "Info"))
+				{
+					if(i < cs->maxMessageCount_ /
+					           2 &&  //in first half, keep important messages
+					   (cs->messages_[i].getLevel() == "Error" ||
+					    cs->messages_[i].getLevel() == "Warning" ||
+					    cs->messages_[i].getLevel() == "Info"))
 					{
 						++i;
 						continue;
 					}
 					//else erase expendable message
-					cs->messages_.erase(cs->messages_.begin() + i);					
-				} //end loop to maintain max message count
+					cs->messages_.erase(cs->messages_.begin() + i);
+				}  //end loop to maintain max message count
 
 				c += strlen(&(buffer.c_str()[c])) + 1;
 			}  // end handle message stacking in packet
@@ -2171,7 +2177,7 @@ void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
 	    "earliest_update_count",
 	    std::to_string(messages_[refreshReadPointer].getCount()));
 
-	std::string messagesJson = "[";	
+	std::string messagesJson = "[";
 
 	// output oldest to new
 	for(; refreshReadPointer < messages_.size(); ++refreshReadPointer)
@@ -2330,10 +2336,11 @@ void ConsoleSupervisor::addMessageToResponse(HttpXmlDocument* xmlOut,
 void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
                                              ConsoleSupervisor::ConsoleMessageStruct& msg)
 {
-	if(xmlValue.size() && xmlValue[xmlValue.size()-1] != '[') //if not first entry, add comma
+	if(xmlValue.size() &&
+	   xmlValue[xmlValue.size() - 1] != '[')  //if not first entry, add comma
 		xmlValue += ",";
 
-	xmlValue += "{";	
+	xmlValue += "{";
 	// for all fields, give value
 	for(auto& field : msg.fields)
 	{
@@ -2349,14 +2356,13 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
 			continue;                               // skip, not userful
 
-		if(field.first == ConsoleMessageStruct::FieldType::MSG) //only need to escape message field
-			xmlValue +=
-				"\"" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
-				StringMacros::escapeString(field.second) + "\",";
+		if(field.first ==
+		   ConsoleMessageStruct::FieldType::MSG)  //only need to escape message field
+			xmlValue += "\"" + ConsoleMessageStruct::fieldNames.at(field.first) +
+			            "\":\"" + StringMacros::escapeString(field.second) + "\",";
 		else
-			xmlValue +=
-				"\"" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
-				field.second + "\",";
+			xmlValue += "\"" + ConsoleMessageStruct::fieldNames.at(field.first) +
+			            "\":\"" + field.second + "\",";
 
 		// xmlOut->addTextElementToParent(
 		//     "message_" + ConsoleMessageStruct::fieldNames.at(field.first),
@@ -2365,30 +2371,26 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 	}  //end msg field loop
 
 	// give modified level also
-	xmlValue +=
-	    "\"Level\":\"" + msg.getLevel() + "\",";
+	xmlValue += "\"Level\":\"" + msg.getLevel() + "\",";
 	// xmlOut->addTextElementToParent("message_Level", msg.getLevel(), refreshParent_);
 
 	// give timestamp also
-	xmlValue +=
-	    "\"Time\":\"" + msg.getTime() + "\",";
+	xmlValue += "\"Time\":\"" + msg.getTime() + "\",";
 	// xmlOut->addTextElementToParent("message_Time", msg.getTime(), refreshParent_);
 
 	// give global count index also
-	xmlValue +=
-	    "\"Count\":\"" + std::to_string(msg.getCount()) + "\",";
+	xmlValue += "\"Count\":\"" + std::to_string(msg.getCount()) + "\",";
 	//xmlOut->addTextElementToParent("message_Count", std::to_string(msg.getCount()), refreshParent_);
 
 	//give Custom count label also (i.e., which search string this message matches, or blank "" for no match)
-	xmlValue +=
-	    "\"Custom\":\"" +
-	     StringMacros::escapeString(
-	        StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'})) +
-	    "\"";
+	xmlValue += "\"Custom\":\"" +
+	            StringMacros::escapeString(StringMacros::vectorToString(
+	                msg.getCustomTriggerMatch().needleSubstrings, {'*'})) +
+	            "\"";
 	// xmlOut->addTextElementToParent(
-	    // "message_Custom",
-	    // StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'}),
-	    // refreshParent_);
+	// "message_Custom",
+	// StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'}),
+	// refreshParent_);
 
 	xmlValue += "}";
 }  // end addMessageToResponse()

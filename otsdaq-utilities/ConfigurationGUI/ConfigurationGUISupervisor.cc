@@ -798,21 +798,22 @@ try
 	}
 	else if(requestType == "getGroupHistory")
 	{
-		std::string groupAction =
-		    StringMacros::decodeURIComponent(
-				CgiDataUtilities::getData(cgiIn, "groupAction"));               // from GET
-		std::string groupType = CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
+		std::string groupAction = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getData(cgiIn, "groupAction"));  // from GET
+		std::string groupType =
+		    CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
 
 		__SUP_COUTV__(groupAction);
 		__SUP_COUTV__(groupType);
 
-		std::vector<std::map<std::string /* group field key */, 
-			std::string /* group field value */>> groups = 
-				ConfigurationManager::loadGroupHistory(groupAction, groupType);
-		
+		std::vector<std::map<std::string /* group field key */,
+		                     std::string /* group field value */>>
+		    groups = ConfigurationManager::loadGroupHistory(groupAction, groupType);
+
 		for(const auto& group : groups)
 		{
-			auto parentEl = xmlOut.addTextElementToData("GroupHistoryEntry", "");  // create parent element for each entry
+			auto parentEl = xmlOut.addTextElementToData(
+			    "GroupHistoryEntry", "");  // create parent element for each entry
 			for(const auto& field : group)
 				xmlOut.addTextElementToParent(field.first, field.second, parentEl);
 		}
