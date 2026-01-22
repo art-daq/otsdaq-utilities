@@ -904,7 +904,7 @@ else
 
 		this.handleDashboardLayoutWindow = function(req)
 		{
-			_layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout")
+			_layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout");
 			_sysLayoutAliasArray = Desktop.getXMLValue(req,"pref_sysalias_layout");
 			_layoutAliasArray = _layoutAliasArray==undefined?_defaultAliasArray:_layoutAliasArray.split(",");
 			_sysLayoutAliasArray = _sysLayoutAliasArray==undefined?_defaultAliasArray:_sysLayoutAliasArray.split(",");
