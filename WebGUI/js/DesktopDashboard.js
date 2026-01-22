@@ -658,7 +658,7 @@ else
 				if(!remoteGatewayLid)
 					Debug.err("Invalid remote subsystem Gateway LID found in User Settings icon URL: " + url);
 				url = url.substr(0,url.indexOf("/WebPath/"));
-				url += requestURL = "/urn:xdaq-application:lid=" + remoteGatewayLid + "/";
+				url += "/urn:xdaq-application:lid=" + remoteGatewayLid + "/";
 				Debug.logv({url});								
 				Debug.info("<b>" + 
 					(doLockElseUnlock?"Locking":"Unlocking") +
