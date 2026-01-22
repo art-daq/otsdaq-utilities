@@ -1576,7 +1576,7 @@
 						let otherIndex = str.indexOf("_LevelEntry",searchIndex);
 						//find in browser single or double quote mode
 						while(otherIndex != -1 && str[otherIndex + "_LevelEntry".length] != "'" && str[otherIndex + "_LevelEntry".length] != '"')
-							otherIndex = str.indexOf("_LevelEntry",errIndex+1); //look again
+							otherIndex = str.indexOf("_LevelEntry",otherIndex+1); //look again
 
 						if(otherIndex == -1)
 							break; //no more not important entries found
