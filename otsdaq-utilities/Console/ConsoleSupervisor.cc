@@ -272,14 +272,14 @@ try
 				i = 200;  // mark so things are good for all time. (this indicates things
 				          // are configured to be sent here)
 
-				__COUT_INFO__ << "INFO messages look like this and mean ‘something "
-				                 "occurred of which you should be aware.’"
+				__COUT_INFO__ << "INFO messages look like this and mean 'something "
+				                 "occurred of which you should be aware.'"
 				              << __E__;
 				__COUT_WARN__ << "WARNING messages look like this and mean 'something "
 				                 "suboptimal occurred and could be fixed.'"
 				              << __E__;
 				__COUT_ERR__ << "ERROR messages look like this and mean 'something wrong "
-				                "occured and should be fixed.’"
+				                "occured and should be fixed.'"
 				             << __E__;
 
 				//				//to debug special packets
