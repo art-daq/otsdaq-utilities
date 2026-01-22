@@ -370,8 +370,6 @@ else
 				xx = dx; yy = dy;
 				//Debug.log("Desktop Dashboard Organize " + ww + " , " + wh,Debug.LOW_PRIORITY);
 				var cols = Math.ceil(numOfWindows/rows);
-				Debug.log("Desktop Dashboard Organize r" + rows + " , c" + cols,
-					"doubleSizeWindowIndex",doubleSizeWindowIndex);
 
 
 				//we know size, now place windows
@@ -387,7 +385,10 @@ else
 					doubleSizeWindowIndex = 0; //wrap around
 				if(doubleSizeWindowIndex < 0)
 					doubleSizeWindowIndex = Desktop.desktop.getNumberOfWindows()-1; //wrap around
-				Debug.logv({doubleSizeWindowIndex});
+				
+				Debug.log("Desktop Dashboard Organize r" + rows + " , c" + cols,
+					"doubleSizeWindowIndex",doubleSizeWindowIndex);
+					
 				if(_windowOrganizeMode && numOfWindows > 1)
 				{
 					var i = doubleSizeWindowIndex; //target double-wide window index
