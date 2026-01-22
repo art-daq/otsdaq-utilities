@@ -665,7 +665,7 @@ else
 					"</b> for user '<b>" +
 					user + "</b>' at Remote Subsystem '<b>" + 
 					Desktop.desktop.icons.getFolderFocusSubsystem() + "</b>.'" + 
-					"\n\nIt make take a few seconds for the <b>" +
+					"\n\nIt may take a few seconds for the <b>" +
 					(doLockElseUnlock?"lock":"unlock") + 
 					"</b> to take effect.");
 			}
