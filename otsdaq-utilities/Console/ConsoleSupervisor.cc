@@ -2171,6 +2171,8 @@ void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
 	    "earliest_update_count",
 	    std::to_string(messages_[refreshReadPointer].getCount()));
 
+	std::string messagesJson = "[";	
+
 	// output oldest to new
 	for(; refreshReadPointer < messages_.size(); ++refreshReadPointer)
 	{
@@ -2188,9 +2190,14 @@ void ConsoleSupervisor::insertMessageRefresh(HttpXmlDocument* xmlOut,
 			// continue;
 		}
 
-		addMessageToResponse(xmlOut, msg);
+		// addMessageToResponse(xmlOut, msg);
+		addMessageToResponse(messagesJson, msg);
 
 	}  //end main message add loop
+
+	messagesJson += "]";
+
+	xmlOut->addTextElementToParent("message_json", messagesJson, refreshParent_);
 
 	if(requestOutOfSync)  // if request was out of sync, show message
 		__SUP_COUT__ << requestOutOfSyncMsg;
@@ -2315,4 +2322,72 @@ void ConsoleSupervisor::addMessageToResponse(HttpXmlDocument* xmlOut,
 	    StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'}),
 	    refreshParent_);
 
+}  // end addMessageToResponse()
+
+//==============================================================================
+/// Treat xml value as JSON array of messages
+void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
+                                             ConsoleSupervisor::ConsoleMessageStruct& msg)
+{
+	if(xmlValue.size() > 0)
+		xmlValue += ",";
+
+	xmlValue += "{";	
+	// for all fields, give value
+	for(auto& field : msg.fields)
+	{
+		if(field.first == ConsoleMessageStruct::FieldType::SOURCE)
+			continue;  // skip, not userful
+		if(field.first == ConsoleMessageStruct::FieldType::SOURCEID)
+			continue;  // skip, not userful
+		if(field.first == ConsoleMessageStruct::FieldType::SEQID)
+			continue;  // skip, not userful
+		if(field.first == ConsoleMessageStruct::FieldType::TIMESTAMP)  //use Time instead
+			continue;  // skip, not userful
+		if(field.first ==
+		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
+			continue;                               // skip, not userful
+
+		if(field.first == ConsoleMessageStruct::FieldType::MSG) //only need to escape message field
+			xmlValue +=
+				"\"message_" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
+				StringMacros::escapeString(field.second) + "\",";
+		else
+			xmlValue +=
+				"\"message_" + ConsoleMessageStruct::fieldNames.at(field.first) + "\":\"" +
+				field.second + "\",";
+
+		// xmlOut->addTextElementToParent(
+		//     "message_" + ConsoleMessageStruct::fieldNames.at(field.first),
+		//     field.second,
+		//     refreshParent_);
+	}  //end msg field loop
+
+	// give modified level also
+	xmlValue +=
+	    "\"message_Level\":\"" + msg.getLevel() + "\",";
+	// xmlOut->addTextElementToParent("message_Level", msg.getLevel(), refreshParent_);
+
+	// give timestamp also
+	xmlValue +=
+	    "\"message_Time\":\"" + msg.getTime() + "\",";
+	// xmlOut->addTextElementToParent("message_Time", msg.getTime(), refreshParent_);
+
+	// give global count index also
+	xmlValue +=
+	    "\"message_Count\":\"" + std::to_string(msg.getCount()) + "\",";
+	//xmlOut->addTextElementToParent("message_Count", std::to_string(msg.getCount()), refreshParent_);
+
+	//give Custom count label also (i.e., which search string this message matches, or blank "" for no match)
+	xmlValue +=
+	    "\"message_Custom\":\"" +
+	     StringMacros::escapeString(
+	        StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'})) +
+	    "\"";
+	// xmlOut->addTextElementToParent(
+	    // "message_Custom",
+	    // StringMacros::vectorToString(msg.getCustomTriggerMatch().needleSubstrings, {'*'}),
+	    // refreshParent_);
+
+	xmlValue += "}";
 }  // end addMessageToResponse()

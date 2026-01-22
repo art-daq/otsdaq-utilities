@@ -373,6 +373,12 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
 		if [[ "$remote_url" == *github.com* ]]; then
 			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
+
+			#skip spack and fermi-spack-tools repos
+			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				continue
+			fi
+
 			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
