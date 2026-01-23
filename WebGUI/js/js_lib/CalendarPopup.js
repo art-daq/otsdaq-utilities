@@ -441,7 +441,7 @@ function handleSelection() {
     var el = document.getElementById(calendarPopup_CALID + "-monthSelect");
     var newMo = el.value;
     el = document.getElementById(calendarPopup_CALID + "-monthYearDisplay");	//display updated month
-    el.innerHTML = newMo;
+    el.textContent = newMo;
     newMo = (new Date(newMo + " 1 2013")).getMonth();	//get new month in 0-11 format
     el = document.getElementById(calendarPopup_CALID + "-currMonth");
     el.innerHTML = newMo;
@@ -449,7 +449,8 @@ function handleSelection() {
     el = document.getElementById(calendarPopup_CALID + "-yearSelect");
     newMo = el.value;
     el = document.getElementById(calendarPopup_CALID + "-monthYearDisplay");	//display updated month
-    el.innerHTML += " " + newMo;
+    var currentMonthText = el.textContent || el.innerText || el.innerHTML;
+    el.textContent = currentMonthText + " " + newMo;
     el = document.getElementById(calendarPopup_CALID + "-currYear");
     el.innerHTML = newMo;
 
