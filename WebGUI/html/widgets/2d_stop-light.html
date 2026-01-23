@@ -1,287 +1,272 @@
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-	<head>
-		<meta http-equiv="content-type" content="text/html;charset=utf-8">
-		<title>2D Stop Light</title>
 
-		<style>
+<head>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8">
+	<title>2D Stop Light</title>
 
-			body {
-			  font: 10px sans-serif;
-			  background: rgba(255, 255, 255, 1);
-			  margin: 0px !important;
-			}
+	<style>
+		body {
+			font: 10px sans-serif;
+			background: rgba(255, 255, 255, 1);
+			margin: 0px !important;
+		}
 
-			table, th, td {
-			  border: 0px solid grey;
-			  border-collapse: collapse;
-			}
+		table,
+		th,
+		td {
+			border: 0px solid grey;
+			border-collapse: collapse;
+		}
 
-			a {
-			  font-size: 1vw;
-			}
+		a {
+			font-size: 1vw;
+		}
+	</style>
 
-		</style>
+	<script>
+		//functions:
+		//init()
 
-		<script>
-			//functions:
-			//init()
+		var pv_settings_ = [];
+		var parameters_ = { class: "", "upload_csv_file": "not uploaded", "export_csv_file": " ", "background_color": "transparent", "table_border": "1px", "table_border_color": "grey", "link_to_page": "" };
 
-			var pv_settings_ = [];
-			var parameters_ = {class: "", "upload_csv_file": "not uploaded", "export_csv_file": " ", "background_color": "transparent", "table_border": "1px", "table_border_color": "grey","link_to_page": ""};
+		//define data sample
+		//each cell contain
+		//{
+		//    id:counter
+		//  , y:i
+		//  , x:j
+		//  , pvName:pv
+		//  , pvValue:value
+		//  , pvStatus:status
+		//  , pvSeverity:severity
+		//  , pvTime:time
+		//};
+		var tabledata;
+		var pvToCellsMap = {};
+		const STATUS_COLORS = {
+			"HIHI": "red",
+			"HIGH": "yellow",
+			"LOW": "blue",
+			"LOLO": "purple",
+			"INVALID": "lightgray",
+			"GREEN_BASE": "rgba(0, 230, 64, "
+		};
 
-			//define data sample
-			//each cell contain
-			//{
-			//    id:counter
-			//  , y:i
-			//  , x:j
-			//  , pvName:pv
-			//  , pvValue:value
-			//  , pvStatus:status
-			//  , pvSeverity:severity
-			//  , pvTime:time
-			//};
-			var tabledata;
-			var pvToCellsMap = {};
-			const STATUS_COLORS = {
-					"HIHI": "red",
-					"HIGH": "yellow",
-					"LOW":  "blue",
-					"LOLO": "purple",
-					"INVALID": "lightgray",
-					"GREEN_BASE": "rgba(0, 230, 64, "
-			};
+		var table;
+		var tds = [];
+		var _xSize;
+		var _ySize;
 
-			var table;
-			var tds = [];
-			var _xSize;
-			var _ySize;
+		/////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////
 
-			/////////////////////////////////////////////////////////////////////////////////////////
-			/////////////////////////////////////////////////////////////////////////////////////////
+		//init called once body has loaded
 
-			//init called once body has loaded
+		function init() {
+			console.log("2d stop light: init()");
+			console.log(window.frameElement.id);
+			window.parent.setupWidget(window.frameElement.id, getAttributes());
+		}
 
-			function init()
-			{
-				console.log("2d stop light: init()");
-				console.log(window.frameElement.id);
-				window.parent.setupWidget(window.frameElement.id, getAttributes());
-			}
+		function setupPVs(settings) {
+			console.log("2d stop light: setupPVs()", settings);
+			pv_settings_ = settings;
+		}
 
-			function setupPVs(settings)
-			{
-				console.log("2d stop light: setupPVs()" , settings);
-				pv_settings_ = settings;
-			}
+		function drawWidget(widget, parameters) {
+			if (parameters) parameters_ = parameters;
+			document.getElementsByTagName("body")[0].style.backgroundColor = parameters_["background_color"];
 
-			function drawWidget(widget, parameters)
-			{
-				if (parameters) parameters_ = parameters;
-				document.getElementsByTagName("body")[0].style.backgroundColor = parameters_["background_color"];
+			var display = document.getElementById("display");
+			display.innerHTML = "";
+			if (!Object.getOwnPropertyNames(widget.pvList).length)
+				display.innerHTML = "<center>2d stop light: <br/> No associated PVs to display.</center>";
 
-				var display = document.getElementById("display");
-				display.innerHTML = "";
-				if (!Object.getOwnPropertyNames(widget.pvList).length)
-					display.innerHTML = "<center>2d stop light: <br/> No associated PVs to display.</center>";
+			//make widget table to show
+			newPVTable();
+		}
 
-				//make widget table to show
-				newPVTable();
-			}
+		function getAttributes() {
+			return parameters_;
+		}
 
-			function getAttributes()
-			{
-				return parameters_;
-			}
+		function setAttributes(attributes) {
+			parameters_ = attributes;
+			console.log("2d stop light: setAttributes()");
+			console.log(parameters_);
+		}
 
-			function setAttributes(attributes)
-			{
-				parameters_ = attributes;
-				console.log("2d stop light: setAttributes()");
-				console.log(parameters_);
-			}
+		function newPVTable() {
+			console.log("2d stop light: newPVTable() reached");
 
-			function newPVTable()
-			{
-				console.log("2d stop light: newPVTable() reached");
+			//make widget table to show
+			var display = document.getElementById("display");
+			display.innerHTML = "";
 
-				//make widget table to show
-				var display = document.getElementById("display");
-				display.innerHTML = "";
+			table = document.createElement('table');
+			table.id = "display-table";
+			display.appendChild(table);
 
-				table = document.createElement('table');
-				table.id = "display-table";
-				display.appendChild(table);
+			table.style.height = window.innerHeight + "px";
+			table.style.width = "100%";
+			table.border = parameters_["table_border"];
+			table.style.borderColor = parameters_["table_border_color"];
 
-				table.style.height = window.innerHeight + "px";
-				table.style.width = "100%";
-				table.border = parameters_["table_border"];
-				table.style.borderColor = parameters_["table_border_color"];
+			var i = 0;
+			for (var row = 1; row <= _ySize; row++) {
+				var tr = document.createElement('tr');
+				tr.id = "tr" + row;
 
-				var i = 0;
-				for(var row = 1; row <= _ySize; row++)
-				{
-					var tr = document.createElement('tr');
-					tr.id = "tr" + row;
+				for (var cell = 1; cell <= _xSize; cell++) {
+					i = (row - 1) * _xSize + (cell - 1);
 
-					for (var cell = 1; cell <= _xSize; cell++)
-					{
-						i= (row - 1)*_xSize + (cell - 1);
+					var td = document.createElement('td');
+					var center = document.createElement('center');
+					var a = document.createElement('a');
+					//td.id = "td" + row + "-" + cell;
+					//center.id = "center" + row + "-" + cell;
+					//a.id = "a" + row + "-" + cell;
+					tds[i] = td;
 
-						var td = document.createElement('td');
-						var center = document.createElement('center');
-						var a = document.createElement('a');
-						//td.id = "td" + row + "-" + cell;
-						//center.id = "center" + row + "-" + cell;
-						//a.id = "a" + row + "-" + cell;
-						tds[i] = td;
+					center.appendChild(a);
+					td.appendChild(center);
+					tr.appendChild(td);
 
-						center.appendChild(a);
-						td.appendChild(center);
-						tr.appendChild(td);
-
-						// fill each cell of table
-						if (tabledata[i] && tabledata[i].pvName != "-1")
-						{
-							if (!pvToCellsMap[tabledata[i].pvName]) {
-                    			pvToCellsMap[tabledata[i].pvName] = [];
-                			}	
-                			pvToCellsMap[tabledata[i].pvName].push(i);
-                
-                			a.innerHTML = "+";
-							tds[i].style.backgroundColor = "rgba(0, 230, 64, 1)";
-							tds[i].style.border = "2px solid grey";
-							tds[i].style.borderColor = parameters_["table_border_color"];
+					// fill each cell of table
+					if (tabledata[i] && tabledata[i].pvName != "-1") {
+						if (!pvToCellsMap[tabledata[i].pvName]) {
+							pvToCellsMap[tabledata[i].pvName] = [];
 						}
+						pvToCellsMap[tabledata[i].pvName].push(i);
 
-						//remove right border if next cell has the same pvName
-						if (i > 0  && tabledata[i] && tabledata[i].pvName != "-1" && tabledata[i+1] && tabledata[i+1].pvName == tabledata[i].pvName)
-						{
-							tds[i].style.borderRight = "hidden";
-						}
-
-						//remove bottom border if bottom cell, in next row, has the same pvName
-						if (i > 0  && tabledata[i] && tabledata[i].pvName != "-1" && tabledata[i+_xSize] && tabledata[i+_xSize].pvName == tabledata[i].pvName)
-						{
-							tds[i].style.borderBottom = "hidden";
-						}
-					}
-					table.appendChild(tr);
-				}
-				console.log("2d stop light: newPVTable() tabledata size" , i);
-
-				document.getElementById("display").appendChild(table);
-			}
-
-			function drawNewValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
-			{
-				console.log("2d stop light: drawNewValue() reached");
-
-				var cellIndices = pvToCellsMap[pvName];
-				if (cellIndices) {
-    					cellIndices.forEach(id => {
-						if(tabledata[id] != undefined){
-        						tabledata[id].pvValue = pvValue;
-							tabledata[id].pvTime = pvTime;
-                					tabledata[id].pvStatus = pvStatus;
-                					tabledata[id].pvSeverity = pvSeverity;
-						}
-						refreshPVTableCell(id);
-					});
-				}
-			}
-
-			function getCellColor(pvName, pvTime, pvStatus, valColor) {
-	    			if (!window.parent.checkPVTime(window.frameElement.id, pvName, pvTime)) {
-        				return STATUS_COLORS.INVALID;
-    				}
-
-			        if (STATUS_COLORS[pvStatus]) {
-        				return STATUS_COLORS[pvStatus];
-    				}
-
-    				// Default color
-					return STATUS_COLORS.GREEN_BASE + valColor + ")";
-			}
-
-			function refreshPVTableCell(cell)
-			{
-				if (tds[cell] != undefined)
-				{
-					//if (tabledata[cell].pvName == "-1") continue;
-					tds[cell].firstElementChild.firstElementChild.innerHTML = "+";//tabledata[cell].pvName;
-
-					//tds[cell].firstElementChild.title = JSON.stringify(tabledata[cell]);
-					if (pv_settings_[tabledata[cell].pvName])
-						tds[cell].firstElementChild.title =
-											  window.parent.setWidgetToolTip(tabledata[cell].pvName
-											, tabledata[cell].pvValue
-											, tabledata[cell].pvTime
-											, tabledata[cell].pvStatus
-											, tabledata[cell].pvSeverity
-											, pv_settings_);
-
-					var fullPathToPage = parameters_["link_to_page"];
-					tds[cell].firstElementChild.firstElementChild.onclick = function(e) {
-						e.preventDefault();
-						drawGraph(tabledata[cell].pvName);
-					};
-					tds[cell].firstElementChild.firstElementChild.style.cursor = "pointer";
-					if (fullPathToPage) {
-						tds[cell].firstElementChild.firstElementChild.href = "javascript:window.parent.loadPhoebusPage(\"" +fullPathToPage+"\")";
+						a.innerHTML = "+";
+						tds[i].style.backgroundColor = "rgba(0, 230, 64, 1)";
+						tds[i].style.border = "2px solid grey";
+						tds[i].style.borderColor = parameters_["table_border_color"];
 					}
 
-					var valColor = 0;
-					var max = 0;
-					var min =0;
-					if (pv_settings_[tabledata[cell].pvName].Upper_Warning_Limit) max = pv_settings_[tabledata[cell].pvName].Upper_Warning_Limit;
-					if (pv_settings_[tabledata[cell].pvName].Lower_Warning_Limit) min = pv_settings_[tabledata[cell].pvName].Lower_Warning_Limit;
-					if (Math.abs(tabledata[cell].pvValue)
-						&& Math.abs(max)
-						&& Math.abs(min))
-						valColor = (tabledata[cell].pvValue - min)/(max - min);
+					//remove right border if next cell has the same pvName
+					if (i > 0 && tabledata[i] && tabledata[i].pvName != "-1" && tabledata[i + 1] && tabledata[i + 1].pvName == tabledata[i].pvName) {
+						tds[i].style.borderRight = "hidden";
+					}
 
-					valColor = valColor >= 0. ? valColor : 0.;
-					tds[cell].style.backgroundColor = getCellColor(
-        				tabledata[cell].pvName, 
-        				tabledata[cell].pvTime, 
-        				tabledata[cell].pvStatus, 
-        				valColor
-    					);
+					//remove bottom border if bottom cell, in next row, has the same pvName
+					if (i > 0 && tabledata[i] && tabledata[i].pvName != "-1" && tabledata[i + _xSize] && tabledata[i + _xSize].pvName == tabledata[i].pvName) {
+						tds[i].style.borderBottom = "hidden";
+					}
 				}
+				table.appendChild(tr);
+			}
+			console.log("2d stop light: newPVTable() tabledata size", i);
+
+			document.getElementById("display").appendChild(table);
+		}
+
+		function drawNewValue(pvName, pvValue, pvTime, pvStatus, pvSeverity) {
+			console.log("2d stop light: drawNewValue() reached");
+
+			var cellIndices = pvToCellsMap[pvName];
+			if (cellIndices) {
+				cellIndices.forEach(id => {
+					if (tabledata[id] != undefined) {
+						tabledata[id].pvValue = pvValue;
+						tabledata[id].pvTime = pvTime;
+						tabledata[id].pvStatus = pvStatus;
+						tabledata[id].pvSeverity = pvSeverity;
+					}
+					refreshPVTableCell(id);
+				});
+			}
+		}
+
+		function getCellColor(pvName, pvTime, pvStatus, valColor) {
+			if (!window.parent.checkPVTime(window.frameElement.id, pvName, pvTime)) {
+				return STATUS_COLORS.INVALID;
 			}
 
-			window.addEventListener('resize', ()=> {
-				console.log("2d stop light: window.addEventListener('resize')");
-				var table = document.getElementById("display-table");
-				if (table) table.style.height = window.innerHeight + "px";
-			});
+			if (STATUS_COLORS[pvStatus]) {
+				return STATUS_COLORS[pvStatus];
+			}
 
-			//=====================================================================================
-			// Open plot with historical data for a given PV name
-			function drawGraph(pvName)
-			{
-				console.log("2d stop light: drawGraph() called for PV:", pvName);
-				
-				if (!pvName || pvName === "-1") {
-					console.warn("2d stop light: Invalid PV name for drawGraph()");
-					return;
+			// Default color
+			return STATUS_COLORS.GREEN_BASE + valColor + ")";
+		}
+
+		function refreshPVTableCell(cell) {
+			if (tds[cell] != undefined) {
+				//if (tabledata[cell].pvName == "-1") continue;
+				tds[cell].firstElementChild.firstElementChild.innerHTML = "+";//tabledata[cell].pvName;
+
+				//tds[cell].firstElementChild.title = JSON.stringify(tabledata[cell]);
+				if (pv_settings_[tabledata[cell].pvName])
+					tds[cell].firstElementChild.title =
+						window.parent.setWidgetToolTip(tabledata[cell].pvName
+							, tabledata[cell].pvValue
+							, tabledata[cell].pvTime
+							, tabledata[cell].pvStatus
+							, tabledata[cell].pvSeverity
+							, pv_settings_);
+
+				var fullPathToPage = parameters_["link_to_page"];
+				tds[cell].firstElementChild.firstElementChild.onclick = function (e) {
+					e.preventDefault();
+					drawGraph(tabledata[cell].pvName);
+				};
+				tds[cell].firstElementChild.firstElementChild.style.cursor = "pointer";
+				if (fullPathToPage) {
+					tds[cell].firstElementChild.firstElementChild.href = "javascript:window.parent.loadPhoebusPage(\"" + fullPathToPage + "\")";
 				}
-				
-				var safeArray = JSON.stringify([{[pvName]: 1}]);
-				var url = location.origin + "/WebPath/UserWebPath/html/DCSMonitoringPages/Plot.html?urn=" + window.parent.DesktopContent._localUrnLid + "&pv_names=" + safeArray;
-				
-				window.parent.DesktopContent.openNewWindow("Plot", pvName, url, false);
-			} //end drawGraph()
 
-		</script>
+				var valColor = 0;
+				var max = 0;
+				var min = 0;
+				if (pv_settings_[tabledata[cell].pvName].Upper_Warning_Limit) max = pv_settings_[tabledata[cell].pvName].Upper_Warning_Limit;
+				if (pv_settings_[tabledata[cell].pvName].Lower_Warning_Limit) min = pv_settings_[tabledata[cell].pvName].Lower_Warning_Limit;
+				if (Math.abs(tabledata[cell].pvValue)
+					&& Math.abs(max)
+					&& Math.abs(min))
+					valColor = (tabledata[cell].pvValue - min) / (max - min);
 
-	</head>
+				valColor = valColor >= 0. ? valColor : 0.;
+				tds[cell].style.backgroundColor = getCellColor(
+					tabledata[cell].pvName,
+					tabledata[cell].pvTime,
+					tabledata[cell].pvStatus,
+					valColor
+				);
+			}
+		}
 
-	<body onload="Javascript:init()">
-		<div id="display"></div>
-	</body>
+		window.addEventListener('resize', () => {
+			console.log("2d stop light: window.addEventListener('resize')");
+			var table = document.getElementById("display-table");
+			if (table) table.style.height = window.innerHeight + "px";
+		});
+
+		//=====================================================================================
+		// Open plot with historical data for a given PV name
+		function drawGraph(pvName) {
+			console.log("2d stop light: drawGraph() called for PV:", pvName);
+
+			if (!pvName || pvName === "-1") {
+				console.warn("2d stop light: Invalid PV name for drawGraph()");
+				return;
+			}
+
+			var safeArray = JSON.stringify([{ [pvName]: 1 }]);
+			var url = location.origin + "/WebPath/UserWebPath/html/DCSMonitoringPages/Plot.html?urn=" + window.parent.DesktopContent._localUrnLid + "&pv_names=" + safeArray;
+
+			window.parent.DesktopContent.openNewWindow("Plot", pvName, url, false);
+		} //end drawGraph()
+
+	</script>
+
+</head>
+
+<body onload="Javascript:init()">
+	<div id="display"></div>
+</body>
 
 </html>
