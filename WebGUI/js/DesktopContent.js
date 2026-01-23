@@ -242,6 +242,7 @@ DesktopContent._pageInitCalled = false;
 DesktopContent._windowMessagingInactive = undefined;
 
 DesktopContent._sequence = 0;
+DesktopContent._standAloneMode = 0; //1  means do not expect any login credentials, set by window parameter
 
 //=====================================================================================
 //initialize content's place in the world
@@ -344,6 +345,8 @@ DesktopContent.init = function (onloadFunction) {
         Debug.log("Remote Gateway Application Origin = " + DesktopContent._remoteServerOrigin);
     }
 
+	DesktopContent._standAloneMode = DesktopContent.getParameter(0,"standAloneMode") | 0;
+	Debug.log("Stand-alone mode = " + DesktopContent._standAloneMode);
 
     //get Wizard sequence (if in Wizard mode)
     try {
@@ -1573,7 +1576,8 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
     if (!sequence) {
         //if(!DesktopContent._cookieCodeMailbox) //attempt to fix (e.g. for Desktop)
         //	DesktopContent._cookieCodeMailbox = document.getElementById("DesktopContent-cookieCodeMailbox");
-        if (!DesktopContent._cookieCodeMailbox) {
+		if(!DesktopContent._standAloneMode && !DesktopContent._cookieCodeMailbox)
+		{
             var errStr = "Undefined permissions. Is system down?";
             Debug.log(errStr, window.location.href);
             window.clearTimeout(timeoutTimer);

@@ -2761,6 +2761,7 @@ Desktop.XMLHttpRequest = function (requestURL, data, returnHandler, reqIndex) {
 
     if (Desktop.desktop.login) //add cookie code if login instance has been created
         data = "CookieCode=" + Desktop.desktop.login.getCookieCode() + ((data == "" || data === undefined) ? "" : ("&" + data));
+	if(requestURL.indexOf("http") != 0) //if not absolute url, then add urn prefix
     requestURL = "/urn:xdaq-application:lid=" + urnLid_ + "/" + requestURL; //urnLid_ is from parent html page
     //Debug.log("Post " + requestURL + "\n\tData: " + data);
     req.open("POST", requestURL, true);
