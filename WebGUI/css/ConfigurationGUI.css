@@ -2,41 +2,41 @@
 
 
 
-		* {
-			font-size: 16px;
-			font-family: 'Inconsolata', monospace;
-		}
+* {
+    font-size: 16px;
+    font-family: 'Inconsolata', monospace;
+}
 
-		body {
-			background-color: rgb(226, 216, 216);
-		}
+body {
+    background-color: rgb(226, 216, 216);
+}
 
-		#clearDiv {
-			clear: both;
-		}
+#clearDiv {
+    clear: both;
+}
 
-		a, input {
-			cursor:					pointer;
-		}
+a, input {
+    cursor: pointer;
+}
 
-		a {
-			color: 					rgb(44, 44, 187);
-			text-decoration: 		underline;
-			outline: 				none;  /* to stop firefox selection */
-			-webkit-user-select: 	none; /* to stop text highlights */
-			-moz-user-select: 		none;
-			user-select: 			none;
-			white-space:			nowrap;
-		}
+a {
+    color: rgb(44, 44, 187);
+    text-decoration: underline;
+    outline: none; /* to stop firefox selection */
+    -webkit-user-select: none; /* to stop text highlights */
+    -moz-user-select: none;
+    user-select: none;
+    white-space: nowrap;
+}
 
-		a:hover {
-			text-decoration: none;
-			font-weight: bold;
-		}
-		
-		a.underline:hover {
-		text-decoration: none;
-		}
+    a:hover {
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    a.underline:hover {
+        text-decoration: none;
+    }
 
 .groupHistoryLink {
     color: black;
@@ -47,29 +47,29 @@
         text-decoration: underline;
     }
 
-		#display {
-			padding: 20px;
-		}
+#display {
+    padding: 20px;
+}
 
-		#activeConfig {
-			font-size: 14px;
-			margin: 10px 0 10px 0;
-		}
+#activeConfig {
+    font-size: 14px;
+    margin: 10px 0 10px 0;
+}
 
-		b, h3, h1 {
-			color: rgb(65, 86, 146);
-			font-size: 20px;
-		}
+b, h3, h1 {
+    color: rgb(65, 86, 146);
+    font-size: 20px;
+}
 
-		.bold-header {
-			color: rgb(81, 152, 204);
-			font-size: 16px;
-		}
+.bold-header {
+    color: rgb(81, 152, 204);
+    font-size: 16px;
+}
 
-		/*firefox seems to put an extra pixel of letter-spacing in bold words*/
-		/* this seems to have been fixed by choosing the correct truetype font in font.css*/
-		/*target firefox*/
-		/*@-moz-document url-prefix() {
+/*firefox seems to put an extra pixel of letter-spacing in bold words*/
+/* this seems to have been fixed by choosing the correct truetype font in font.css*/
+/*target firefox*/
+/*@-moz-document url-prefix() {
 			b, th {
 				letter-spacing: -1px;
 			}
@@ -79,69 +79,70 @@
 		}*/
 
 
-		#SubSystemTable {
-			background-color: 	rgb(210, 193, 193);
-			border:				1px solid grey /*rgb(156,94,94)*/;
-		}
+#SubSystemTable {
+    background-color: rgb(210, 193, 193);
+    border: 1px solid grey /*rgb(156,94,94)*/;
+}
 
-		#SubSystemTable td, #SubSystemTable th {
-			background-color: 	rgb(226, 216, 216);
-			white-space: 		pre; /* was pre-wrap; but not sure why.. pre seems to maintain text better*/
-		}
-		#SubSystemTable tr.selected td {
-			background-color: rgb(255, 249, 196) !important;
-			white-space:		pre;
-		}
+    #SubSystemTable td, #SubSystemTable th {
+        background-color: rgb(226, 216, 216);
+        white-space: pre; /* was pre-wrap; but not sure why.. pre seems to maintain text better*/
+    }
 
-		#SubSystemTable {
-			background-color: 	rgb(210, 193, 193); /*chrome does not color table unless after the td/th*/
-		}
+    #SubSystemTable tr.selected td {
+        background-color: rgb(255, 249, 196) !important;
+        white-space: pre;
+    }
 
-		#SubSystemTable th {
-			background-color: 	rgb(210, 193, 193);
-		}
+#SubSystemTable {
+    background-color: rgb(210, 193, 193); /*chrome does not color table unless after the td/th*/
+}
 
-		#SubSystemTable td {
-			cursor: crosshair;
-		}
+    #SubSystemTable th {
+        background-color: rgb(210, 193, 193);
+    }
 
-		.tableAddRowButton, .tableDeleteRowButton {
-			background-color: rgb(210, 193, 193);
-			border: 1px solid grey;
-			padding: 0px 4px 0px 4px;
-			text-decoration: none;
-			margin: 2px;
-			width: 8px;
-		}
+    #SubSystemTable td {
+        cursor: crosshair;
+    }
 
-		.tableAddRowButton:hover, .tableDeleteRowButton:hover {
-			text-decoration: none;
-			background-color: rgb(208, 209, 222);
-		}
+.tableAddRowButton, .tableDeleteRowButton {
+    background-color: rgb(210, 193, 193);
+    border: 1px solid grey;
+    padding: 0px 4px 0px 4px;
+    text-decoration: none;
+    margin: 2px;
+    width: 8px;
+}
 
-		.tableView-Menu {
-			float:				left;
-		    margin: 			4px 10px 3px 0;
-		    padding: 			3px 4px 3px 4px;
-		    border-radius: 		3px;
-		    background-color: 	rgb(177, 195, 195);
-		    color: 				rgb(44, 44, 187);
-		    font-size:			14px;
+    .tableAddRowButton:hover, .tableDeleteRowButton:hover {
+        text-decoration: none;
+        background-color: rgb(208, 209, 222);
+    }
+
+.tableView-Menu {
+    float: left;
+    margin: 4px 10px 3px 0;
+    padding: 3px 4px 3px 4px;
+    border-radius: 3px;
+    background-color: rgb(177, 195, 195);
+    color: rgb(44, 44, 187);
+    font-size: 14px;
 }
 
     .tableView-Menu:hover {
-			background-color:	rgb(218, 194, 194);
-		    margin: 			3px 10px 4px 0;
-		    cursor:				pointer;
-		}
+        background-color: rgb(218, 194, 194);
+        margin: 3px 10px 4px 0;
+        cursor: pointer;
+    }
 
-		.gotoNavDiv {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-gotoNav.png);
-			width: 				8px;
-			height: 			7px;
-		}
+.gotoNavDiv {
+    background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-gotoNav.png);
+    width: 8px;
+    height: 7px;
+}
 
-		th {
-			text-align: 		center;
-			font-weight:		bold;
-		}
+th {
+    text-align: center;
+    font-weight: bold;
+}
