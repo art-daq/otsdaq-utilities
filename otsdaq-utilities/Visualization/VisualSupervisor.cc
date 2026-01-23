@@ -513,7 +513,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 			{
 				// Add live histos
 				xmlOut.addTextElementToData("dir",
-											LIVEDQM_DIR + ".root");  // add to xml
+				                            LIVEDQM_DIR + ".root");  // add to xml
 
 				// check for ROOT_DISPLAY_CONFIG_PATH
 				DIR* pRtDIR  = opendir(ROOT_DISPLAY_CONFIG_PATH);
