@@ -1,514 +1,517 @@
 
-		body {
-			background-color: 		white;
-			overflow: 				hidden;
-		}
+body {
+    background-color: white;
+    overflow: hidden;
+}
 
-		b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
-			color:					rgb(12, 10, 113);
-		}
+b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
+    color: rgb(12, 10, 113);
+}
 
-		/* make buttons and links have a hand cursor */
-		input[type="button"], button, a, select {
-			cursor: 				pointer;
-		}
+/* make buttons and links have a hand cursor */
+input[type="button"], button, a, select {
+    cursor: pointer;
+}
 
-		.controlsPane {
-			position:				absolute;
-			top:					-2px;
-			z-index:				1002;
-		}
+.controlsPane {
+    position: absolute;
+    top: -2px;
+    z-index: 1002;
+}
 
-		.controlsButton {
-			-webkit-user-select: 	none;
-			-moz-user-select: 		none;
-			user-select:			none;
+.controlsButton {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    overflow: hidden;
+    cursor: pointer;
+    width: 34px;
+    height: 36px;
+    background-color: rgb(202, 204, 210);
+    box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+    rgb(150,150,150) 0 .1em 3px, rgb(175,175,175) 0 .2em 1px, /* color border */
+    rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
+}
 
-			overflow: 				hidden;
-			cursor: 				pointer;
-			width: 					34px;
-			height: 				36px;
+    .controlsButton:hover,
+    .controlsButton:focus {
+        background-color: rgb(225, 227, 233);
+    }
 
-			background-color: 		rgb(202, 204, 210);
+    .controlsButton:active {
+        background-color: rgb(202, 204, 210);
+        -webkit-transform: translateY(.1em);
+        -moz-transform: translateY(.1em);
+        transform: translateY(.1em);
+    }
 
+#directoryNavToggleTop {
+    float: left;
+    width: 10px;
+    height: 4px;
+    margin: 6px 3px 0px 6px;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid white;
+}
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-					inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-					rgb(150,150,150) 0 .1em 3px,
-					rgb(175,175,175) 0 .2em 1px, /* color border */
-					rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-		}
+#directoryNavToggleBottom {
+    background-color: white;
+    float: left;
+    width: 24px;
+    height: 15px;
+    margin: 0px 3px 0px 5px;
+}
 
-		.controlsButton:hover,
-		.controlsButton:focus {
-			background-color: 		rgb(225, 227, 233);
-		}
+#saveFileMain {
+    border: 1px solid white;
+    border-radius: 2px;
+    float: left;
+    width: 21px;
+    height: 21px;
+    margin: 8px 3px 0px 6px;
+}
 
-		.controlsButton:active {
-			background-color: 		rgb(202, 204, 210);
-			-webkit-transform: 		translateY(.1em);
-			-moz-transform: 		translateY(.1em);
-			transform: 				translateY(.1em);
-		}
+#saveFileMainTop {
+    border: 1px solid white;
+    float: left;
+    width: 13px;
+    height: 10px;
+    margin: -23px 0px 0px 10px;
+}
 
-		#directoryNavToggleTop {
-			float: 					left;
-			width: 					10px;
-			height: 				4px;
-			margin: 				6px 3px 0px 6px;
-			border-right: 			3px solid transparent;
-			border-bottom: 			4px solid white;
-		}
-		#directoryNavToggleBottom {
-			background-color: 		white;
-			float: 					left;
-			width: 					24px;
-			height: 				15px;
-			margin: 				0px 3px 0px 5px;
-		}
+#saveFileMainBottom {
+    border: 1px solid white;
+    float: left;
+    width: 7px;
+    height: 5px;
+    margin: -7px 0px 0px 13px;
+}
 
-		#saveFileMain {
-			border:					1px solid white;
-			border-radius:			2px;
-			float: 					left;
-			width: 					21px;
-			height: 				21px;
-			margin: 				8px 3px 0px 6px;
-		}
-		#saveFileMainTop {
-			border:					1px solid white;
-			float: 					left;
-			width: 					13px;
-			height: 				10px;
-			margin: 				-23px 0px 0px 10px;
-		}
-		#saveFileMainBottom {
-			border:					1px solid white;
-			float: 					left;
-			width: 					7px;
-			height: 				5px;
-			margin: 				-7px 0px 0px 13px;
-		}
+#theGridCanvas, #theCanvas, #theActionCanvas, #preCanvas, #postCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
 
-		#theGridCanvas, #theCanvas, #theActionCanvas, #preCanvas, #postCanvas {
-			position: 				absolute;
-			left: 					0;
-			top: 					0;
-		}
-		#theCanvas, #theActionCanvas {
-			z-index:				1000;
-		}
-		.node-point /*place on top of the canvas*/ {
-			z-index:				1001;
-		}
+#theCanvas, #theActionCanvas {
+    z-index: 1000;
+}
 
-		.node {
-			position:				absolute;
-			cursor:					pointer;
-		}
+.node-point /*place on top of the canvas*/ {
+    z-index: 1001;
+}
 
-		.node-box {
-			background-color : 		rgb(241, 231, 231);
+.node {
+    position: absolute;
+    cursor: pointer;
+}
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-			border-radius: 			3px;
+.node-box {
+    background-color: rgb(241, 231, 231);
+    box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+    rgba(200, 200, 200,0.6) 0 .1em 3px, rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
+    rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
+    border-radius: 3px;
+    position: absolute;
+    cursor: pointer;
+    z-index: 1000; /*get above arrows*/
+}
 
-			position:				absolute;
-			cursor:					pointer;
-			z-index:				1000; /*get above arrows*/
-		}
+    .node-box:hover {
+        background-color: rgb(230, 201, 201);
+        box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+        rgba(200, 200, 200,0.6) 0 .1em 3px, rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
+        rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
+    }
 
-		.node-box:hover {
+.node-point {
+    background-color: rgb(206, 148, 148);
+    border: 3px solid rgb(132, 92, 92);
+    border-radius: 9px;
+    width: 9px;
+    height: 9px;
+    box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+    rgba(200, 200, 200, 0.6) 0 0 3px, rgba(200, 200, 200, 0.6) 0 0 1px, /* color border */
+    rgba(0,0,0,0.2) 0 0 5px; /* drop shadow */
 
-			background-color: 		rgb(230, 201, 201);
+    position: absolute;
+    cursor: pointer;
+    display: none;
+}
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .5em 5px;	/* drop shadow */
-		}
+    .node-point:hover {
+        background-color: rgb(230, 201, 201);
+    }
 
-		.node-point {
-			background-color : 		rgb(206, 148, 148);
-			border:					3px solid rgb(132, 92, 92);
-			border-radius: 			9px;
-			width:					9px;
-			height:					9px;
+.node-boxText {
+    width: 100%;
+    text-align: center;
+    color: black;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    margin-top: 43px;
+}
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200, 0.6) 0 0 3px,
-									rgba(200, 200, 200, 0.6) 0 0 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 0 5px;	/* drop shadow */
+.node-headerText {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    text-align: center;
+    color: black;
+    font-size: 10px;
+    position: absolute;
+    white-space: nowrap;
+    overflow: hidden;
+}
 
-			position:				absolute;
-			cursor:					pointer;
-			display:				none;
-		}
-
-		.node-point:hover {
-			background-color: 		rgb(230, 201, 201);
-		}
-
-		.node-boxText {
-			width: 					100%;
-			text-align: 			center;
-			color: 					black;
-
-			-webkit-user-select: 	none;
-			-moz-user-select: 		none;
-			user-select:			none;
-
-			margin-top: 			43px;
-		}
-
-		.node-headerText {
-			-webkit-user-select: 	none;
-			-moz-user-select: 		none;
-			user-select:			none;
-
-			text-align: 			center;
-			color: 					black;
-			font-size: 				10px;
-			position: 				absolute;
-
-			white-space:			nowrap;
-			overflow:				hidden;
-
-		}
-		.node-headerTextHover {
-			-webkit-user-select: 	auto;
-			-moz-user-select: 		auto;
-			user-select:			auto;
-
-			z-index:				3000; /*get above arrows*/
+.node-headerTextHover {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    user-select: auto;
+    z-index: 3000; /*get above arrows*/
 
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .3em 5px;	/* drop shadow */
+    box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+    rgba(200, 200, 200,0.6) 0 .1em 3px, rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
+    rgba(0,0,0,0.2) 0 .3em 5px; /* drop shadow */
 
-			background:				white;
-			padding:				5px;
-			overflow-x:				auto;
-		}
+    background: white;
+    padding: 5px;
+    overflow-x: auto;
+}
 
-		#createNodeDiv {
-			background-color: 		rgb(195, 230, 193);
-			cursor:					pointer;
-			width: 					32px;
-			height: 				32px;
-			border-radius: 			32px;
-			border: 				0px solid rgb(6, 82, 9);
+#createNodeDiv {
+    background-color: rgb(195, 230, 193);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 32px;
+    border: 0px solid rgb(6, 82, 9);
+    box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
+    rgba(200, 200, 200,0.6) 0 .1em 3px, rgba(200, 200, 200,0.6) 0 .1em 1px, /* color border */
+    rgba(0,0,0,0.2) 0 .3em 5px; /* drop shadow */
 
-			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
-									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
-									rgba(200, 200, 200,0.6) 0 .1em 3px,
-									rgba(200, 200, 200,0.6) 0 .1em 1px,  /* color border */
-									rgba(0,0,0,0.2) 0 .3em 5px;	/* drop shadow */
+    left: -1000px;
+    position: absolute;
+    z-index: 2000; /* to place on top of everything */
+}
 
-			left:					-1000px;
-			position: 				absolute;
-		    z-index:				2000; 	/* to place on top of everything */
-		}
+    #createNodeDiv:hover {
+        background-color: rgb(215, 255, 213);
+    }
 
-		#createNodeDiv:hover {
-			background-color: 		rgb(215, 255, 213);
-		}
+#createNode {
+    margin: 1px 16px -10px 8px;
+    float: left;
+    text-decoration: none;
+    font-size: 30px;
+    font-weight: bold;
+    color: rgb(15, 152, 76);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
 
-		#createNode {
-			margin: 				1px 16px -10px 8px;
-			float:					left;
+#selectionBoxDiv {
+    border: 1px dashed gray;
+    left: -1000px;
+    position: absolute;
+    z-index: 2000;
+}
 
-			text-decoration: 		none;
-			font-size: 				30px;
-			font-weight: 			bold;
-			color: 					rgb(15, 152, 76);
+.node-icon {
+    position: absolute;
+    display: none;
+    z-index: 1001; /* same as node anchor points */
+    background-repeat: no-repeat;
+}
 
-			-webkit-user-select: 	none;
-			-moz-user-select: 		none;
-			user-select:			none;
-		}
+.node-editIcon {
+    background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
+    width: 24px;
+    height: 20px;
+    float: left;
+    border: 0;
+    margin: -9px 0 -7px -4px;
+}
 
-		#selectionBoxDiv {
-			border:					1px dashed gray;
+    .node-editIcon:hover {
+        background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
+        cursor: pointer;
+    }
 
-			left:					-1000px;
-			position: 				absolute;
-			z-index:				2000;
-		}
+.node-deleteIcon {
+    background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
+    width: 16px;
+    height: 20px;
+    border: 0;
+    margin: -8px 0 -10px 6px;
+}
 
-		.node-icon {
-			position:			absolute;
-			display:			none;
-			z-index:			1001; /* same as node anchor points */
-			background-repeat:	no-repeat;
-		}
+    .node-deleteIcon:hover {
+        background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
+        cursor: pointer;
+    }
 
-		.node-editIcon {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEdit.png);
-			width: 				24px;
-			height: 			20px;
-			float: 				left;
-			border: 			0;
-			margin: 			-9px 0 -7px -4px;
-		}
-		.node-editIcon:hover {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
-			cursor: 			pointer;
-		}
+.node-viewFclIcon {
+    border: 2px solid rgb(202, 204, 210);
+    width: 16px;
+    height: 20px;
+    border-radius: 2px;
+    margin: -10px 0 0 2px;
+    background: white;
+}
 
-		.node-deleteIcon {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCan.png);
-			width: 				16px;
-			height: 			20px;
-			border: 			0;
-			margin: 			-8px 0 -10px 6px;
-		}
-		.node-deleteIcon:hover {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
-			cursor: 			pointer;
-		}
+    .node-viewFclIcon:hover {
+        border: 2px solid rgb(101, 173, 199);
+    }
 
-		.node-viewFclIcon {
-		    border: 			2px solid rgb(202, 204, 210);
-		    width: 				16px;
-		    height: 			20px;
-		    border-radius: 		2px;
-		    margin: 			-10px 0 0 2px;
-		    background:			white;
-		}
-		.node-viewFclIcon:hover {
-			border: 			2px solid rgb(101, 173, 199);
-		}
-		.node-viewFclIcon:hover * {
-			border-color: 		rgb(101, 173, 199);
-		}
-		.node-viewFclIcon-line {
-			border-top: 		2px solid rgb(202, 204, 210);
-			border-bottom: 		2px solid rgb(202, 204, 210);
-			height: 			2px;
-			width:				12px;
-			float:				left;
-			margin:				3px 0 -1px 2px;
-		}
+        .node-viewFclIcon:hover * {
+            border-color: rgb(101, 173, 199);
+        }
 
-		.editNodeDialog-table {
-			margin-bottom: 		10px;
-			width:				400px;
-		}
-		.editNodeDialog-fieldCol {
-			text-align:			right;
-			width:				180px;
-			white-space:		nowrap;
-		}
-		.editNodeDialog-valueCol {
-			text-align:			left;
-			width:				220px;
-		}
-		#ConfigurationAPI-popUpDialog a b {
-			color: 				rgb(138, 99, 99) !important;
-		}
+.node-viewFclIcon-line {
+    border-top: 2px solid rgb(202, 204, 210);
+    border-bottom: 2px solid rgb(202, 204, 210);
+    height: 2px;
+    width: 12px;
+    float: left;
+    margin: 3px 0 -1px 2px;
+}
 
-		.grid-plusMinusArrows {
-			position:			absolute;
-			z-index:			1001;
-			display:			none;
-		}
-		.grid-plusMinusArrows-arrow {
-			cursor:				pointer;
-		}
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-down-body,
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-up-body,
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-left-body,
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-right-body {
-			background-color:	rgb(225, 227, 233);
-		}
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-down-point {
-			border-top-color:	rgb(225, 227, 233);
-		}
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-up-point {
-			border-bottom-color:rgb(225, 227, 233);
-		}
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-left-point {
-			border-right-color:	rgb(225, 227, 233);
-		}
-		.grid-plusMinusArrows-arrow:hover
-		.grid-plusMinusArrows-right-point {
-			border-left-color:	rgb(225, 227, 233);
-		}
+.editNodeDialog-table {
+    margin-bottom: 10px;
+    width: 400px;
+}
 
-		.grid-plusMinusArrows-upDown {
-			width:				100px;
-			height:				30px;
-		}
-		.grid-plusMinusArrows-leftRight {
-			width:				30px;
-			height:				100px;
-		}
-		.grid-plusMinusArrows-down {
-			float:				left;
-		}
-		.grid-plusMinusArrows-up {
-			float:				right;
-			margin-top:			-6px;
-		}
-		.grid-plusMinusArrows-left {
-			float:				left;
-		}
-		.grid-plusMinusArrows-right {
-			float:				left;
-			margin:				50px -6px 0 6px;
-		}
-		.grid-plusMinusArrows-down-body,
-		.grid-plusMinusArrows-up-body {
-			display: 			block;
-			margin-left: 		5px;
-			height:				16px;
-			width: 				14px;
-			background-color: 	rgb(202, 204, 210);
-		}
-		.grid-plusMinusArrows-down-point {
-			display: 			block;
-			width: 				0;
-			height: 			0;
-			border-left: 		12px solid transparent;
-			border-right: 		12px solid transparent;
-			border-top: 		14px solid rgb(202, 204, 210);
-		}
-		.grid-plusMinusArrows-up-point {
-			display: 			block;
-			width: 				0;
-			height: 			0;
-			border-left: 		12px solid transparent;
-			border-right: 		12px solid transparent;
-			border-bottom: 		14px solid rgb(202, 204, 210);
-		}
-		.grid-plusMinusArrows-left-body,
-		.grid-plusMinusArrows-right-body {
-			display: 			block;
-			float:				left;
-			margin-top: 		5px;
-			height:				14px;
-			width: 				16px;
-			background-color: 	rgb(202, 204, 210);
-		}
-		.grid-plusMinusArrows-left-point {
-			display: 			block;
-			float:				left;
-			width: 				0;
-			height: 			0;
-			border-top: 		12px solid transparent;
-			border-bottom: 		12px solid transparent;
-			border-right: 		14px solid rgb(202, 204, 210);
-		}
-		.grid-plusMinusArrows-right-point {
-			display: 			block;
-			float:				left;
-			width: 				0;
-			height: 			0;
-			border-top: 		12px solid transparent;
-			border-bottom: 		12px solid transparent;
-			border-left: 		14px solid rgb(202, 204, 210);
-		}
+.editNodeDialog-fieldCol {
+    text-align: right;
+    width: 180px;
+    white-space: nowrap;
+}
 
-		.preloadImage {
-			width: 				24px;
-			height: 			20px;
-			position:			absolute;
-			left: 				-100px;
-			top: 				0;
-		}
-		#preloadImage-treeEditTrashIconHover {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
-		}
-		#preloadImage-treeEditIconHover {
-			background-image: 	url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
-		}
+.editNodeDialog-valueCol {
+    text-align: left;
+    width: 220px;
+}
 
-		/* ---------- for status/enable button in node edit ---------- */
-		.switch {
-			position: relative;
-			display: inline-block;
-			width: 60px;
-			height: 34px;
-		}
+#ConfigurationAPI-popUpDialog a b {
+    color: rgb(138, 99, 99) !important;
+}
 
-		/* Hide default HTML checkbox */
-		.switch input {
-			opacity: 0;
-			width: 0;
-			height: 0;
-		}
+.grid-plusMinusArrows {
+    position: absolute;
+    z-index: 1001;
+    display: none;
+}
 
-		/* The slider */
-		.slider {
-			position: absolute;
-			cursor: pointer;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background-color: #ccc;
-			-webkit-transition: .4s;
-			transition: .4s;
-		}
+.grid-plusMinusArrows-arrow {
+    cursor: pointer;
+}
 
-		.slider:before {
-			position: absolute;
-			content: "";
-			height: 26px;
-			width: 26px;
-			left: 4px;
-			bottom: 4px;
-			background-color: white;
-			-webkit-transition: .4s;
-			transition: .4s;
-		}
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-down-body,
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-up-body,
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-left-body,
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-right-body {
+        background-color: rgb(225, 227, 233);
+    }
 
-		input:checked+.slider {
-			background-color: #21c53c;
-		}
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-down-point {
+        border-top-color: rgb(225, 227, 233);
+    }
 
-		input:focus+.slider {
-			box-shadow: 0 0 1px #21c53c;
-		}
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-up-point {
+        border-bottom-color: rgb(225, 227, 233);
+    }
 
-		input:checked+.slider:before {
-			-webkit-transform: translateX(26px);
-			-ms-transform: translateX(26px);
-			transform: translateX(26px);
-		}
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-left-point {
+        border-right-color: rgb(225, 227, 233);
+    }
 
-		/* Rounded sliders */
-		.slider.round {
-			border-radius: 34px;
-		}
+    .grid-plusMinusArrows-arrow:hover
+    .grid-plusMinusArrows-right-point {
+        border-left-color: rgb(225, 227, 233);
+    }
 
-		.slider.round:before {
-			border-radius: 50%;
-		}
+.grid-plusMinusArrows-upDown {
+    width: 100px;
+    height: 30px;
+}
 
-		.ediNode-statusDisabled {
-			color: #838282 !important;
-			font-weight: bold;
-		}
-		.ediNode-statusEnabled {
-			color: #147f26 !important;
-			font-weight: bold;
-		}
-		/* ---------- end for status/enable button in node edit ---------- */
+.grid-plusMinusArrows-leftRight {
+    width: 30px;
+    height: 100px;
+}
+
+.grid-plusMinusArrows-down {
+    float: left;
+}
+
+.grid-plusMinusArrows-up {
+    float: right;
+    margin-top: -6px;
+}
+
+.grid-plusMinusArrows-left {
+    float: left;
+}
+
+.grid-plusMinusArrows-right {
+    float: left;
+    margin: 50px -6px 0 6px;
+}
+
+.grid-plusMinusArrows-down-body,
+.grid-plusMinusArrows-up-body {
+    display: block;
+    margin-left: 5px;
+    height: 16px;
+    width: 14px;
+    background-color: rgb(202, 204, 210);
+}
+
+.grid-plusMinusArrows-down-point {
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 14px solid rgb(202, 204, 210);
+}
+
+.grid-plusMinusArrows-up-point {
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-bottom: 14px solid rgb(202, 204, 210);
+}
+
+.grid-plusMinusArrows-left-body,
+.grid-plusMinusArrows-right-body {
+    display: block;
+    float: left;
+    margin-top: 5px;
+    height: 14px;
+    width: 16px;
+    background-color: rgb(202, 204, 210);
+}
+
+.grid-plusMinusArrows-left-point {
+    display: block;
+    float: left;
+    width: 0;
+    height: 0;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-right: 14px solid rgb(202, 204, 210);
+}
+
+.grid-plusMinusArrows-right-point {
+    display: block;
+    float: left;
+    width: 0;
+    height: 0;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-left: 14px solid rgb(202, 204, 210);
+}
+
+.preloadImage {
+    width: 24px;
+    height: 20px;
+    position: absolute;
+    left: -100px;
+    top: 0;
+}
+
+#preloadImage-treeEditTrashIconHover {
+    background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
+}
+
+#preloadImage-treeEditIconHover {
+    background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
+}
+
+/* ---------- for status/enable button in node edit ---------- */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+    /* Hide default HTML checkbox */
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+input:checked + .slider {
+    background-color: #21c53c;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #21c53c;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+.ediNode-statusDisabled {
+    color: #838282 !important;
+    font-weight: bold;
+}
+
+.ediNode-statusEnabled {
+    color: #147f26 !important;
+    font-weight: bold;
+}
+/* ---------- end for status/enable button in node edit ---------- */

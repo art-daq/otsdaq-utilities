@@ -192,6 +192,7 @@ try
 	//	saveSpecificTable
 	//	clearTableTemporaryVersions
 	//	clearTableCachedVersions
+	//	getGroupHistory
 	//
 	//		---- associated with JavaScript Table API
 	//	getTreeView
@@ -793,6 +794,29 @@ try
 		{
 			__SUP_COUT__ << "Error detected!\n\n " << __E__;
 			xmlOut.addTextElementToData("Error", "Error clearing cached views! ");
+		}
+	}
+	else if(requestType == "getGroupHistory")
+	{
+		std::string groupAction = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getData(cgiIn, "groupAction"));  // from GET
+		std::string groupType =
+		    CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
+
+		__SUP_COUTV__(groupAction);
+		__SUP_COUTV__(groupType);
+
+		std::vector<std::map<std::string /* group field key */,
+		                     std::string /* group field value */>>
+		    groups = ConfigurationManager::loadGroupHistory(
+		        groupAction, groupType, true /* formatTime */);
+
+		for(const auto& group : groups)
+		{
+			auto parentEl = xmlOut.addTextElementToData(
+			    "GroupHistoryEntry", "");  // create parent element for each entry
+			for(const auto& field : group)
+				xmlOut.addTextElementToParent(field.first, field.second, parentEl);
 		}
 	}
 	else if(requestType == "getTreeView")
@@ -8543,12 +8567,12 @@ try
 		                                          "ActivatedIterator"};
 
 		std::vector<std::string> filenames = {
-		    FSM_LAST_CONFIGURED_GROUP_ALIAS_FILE,
-		    FSM_LAST_STARTED_GROUP_ALIAS_FILE,
+		    ConfigurationManager::LAST_CONFIGURED_CONFIG_GROUP_FILE,
+		    ConfigurationManager::LAST_STARTED_CONFIG_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_CONFIG_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_CONTEXT_GROUP_FILE,
 		    ConfigurationManager::LAST_ACTIVATED_BACKBONE_GROUP_FILE,
-		    ConfigurationManager::LAST_ACTIVATED_ITERATOR_GROUP_FILE};
+		    ConfigurationManager::LAST_ACTIVATED_ITERATE_GROUP_FILE};
 
 		std::string userPath =
 		    subsystem.second.getNode("SubsystemUserDataPath").getValue();
@@ -8992,6 +9016,18 @@ void ConfigurationGUISupervisor::handleTableDiff(HttpXmlDocument&        xmlOut,
 ///		test activation of context group
 void ConfigurationGUISupervisor::testXDAQContext()
 {
+	if(0)  //keep for debugging
+	{
+		__COUT_INFO__ << "Hello0!";
+		ConfigurationManagerRW cfgMgrInst("ExampleUser");
+		__COUT_INFO__ << "Hello1!";
+		ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
+		__COUT_INFO__ << "Hello2!";
+		cfgMgr->testXDAQContext();
+		__COUT_INFO__ << "Hello3!";
+		return;
+	}
+
 	try
 	{
 		__SUP_COUT_INFO__ << "Attempting test activation of the context group." << __E__;
@@ -9017,14 +9053,6 @@ void ConfigurationGUISupervisor::testXDAQContext()
 
 	/////////////////////////////////
 	// below has been used for debugging.
-
-	// ConfigurationManagerRW  cfgMgrInst("ExampleUser");
-	// __COUT_INFO__ << "Hello1!";
-	// ConfigurationManagerRW* cfgMgr = &cfgMgrInst;
-	// __COUT_INFO__ << "Hello2!";
-	// cfgMgr->testXDAQContext();
-	// __COUT_INFO__ << "Hello3!";
-	// return;
 
 	// behave like a user
 	// start with top level xdaq context

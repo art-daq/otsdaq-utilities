@@ -44,8 +44,8 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--de
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pullall             \t #will pull  all    repositories in srcs/ (i.e. not just otsdaq)."
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pushall \"comment\" \t #will push  all    repositories in srcs/ (i.e. not just otsdaq)."
 	echo -e "UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables based on your table dependencies at \${USER_DATA}/ServiceData/CoreTableInfoNames.dat."
-	# --warn is used by ots script to warn users that there are uncommitted changes in srcs/
-	# warn usage to display only stderr: UpdateOTS.sh --warn 2>&1 >/dev/null &
+	# Note: --warn is used by ots script to warn users that there are uncommitted changes in srcs/
+	# 		warn usage to display only stderr: UpdateOTS.sh --warn 2>&1 >/dev/null &
 	echo -e "UpdateOTS.sh:${LINENO}  "
 
 
@@ -373,6 +373,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
 		if [[ "$remote_url" == *github.com* ]]; then
 			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
+
 			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -380,12 +381,20 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			# else
 			# 	echo "Working tree is clean."
 			fi
-			branch="$(git rev-parse --abbrev-ref HEAD)"
-			if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
-				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
-			# else
-			# 	echo "You are on main or develop"
+
+			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
+			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
+			else
+				#find unmerged branches
+				branch="$(git rev-parse --abbrev-ref HEAD)"
+				if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
+					echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+				# else
+				# 	echo "You are on main or develop"
+				fi
 			fi
+
 			#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
 			missing=$(comm -23 \
 				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
@@ -518,7 +527,7 @@ echo -e "UpdateOTS.sh:${LINENO}  \t Source directory found as OTS_SOURCE = ${OTS
 echo
 echo
 
-if [ $ALL_REPOS = 1 ]; then
+if [[ $ALL_REPOS = 1 || $WARN_ONLY = 1 ]]; then
 	REPO_DIR="$(find -L $OTS_SOURCE -maxdepth 1 -iname '*')"
 else
 	REPO_DIR="$(find -L $OTS_SOURCE -maxdepth 1 -iname 'otsdaq*')"
