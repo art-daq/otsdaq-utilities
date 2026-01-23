@@ -2355,9 +2355,9 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 		if(field.first == ConsoleMessageStruct::FieldType::SOURCEID)
 			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SEQID)
-			continue;  // skip, not useful
+			continue;                                                  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::TIMESTAMP)  //use Time instead
-			continue;  // skip, not useful
+			continue;                                                  // skip, not useful
 		if(field.first ==
 		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
 			continue;                               // skip, not useful
