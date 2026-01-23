@@ -23,7 +23,7 @@
 //	public function list:
 //		ViewerRoot.launch()
 //
-//  2025 from web, updating to 7.9.0 from 5.8.0: 
+//  2025 from web, updating to 7.9.0 from 5.8.0:
 //				https://root.cern/js/latest/api.htm#custom_html_th2_src
 //				https://github.com/root-project/jsroot/blob/master/docs/JSROOT.md#migration-v6---v7
 //
@@ -334,7 +334,7 @@ ViewerRoot.prepareNextLocation = function (objName, objTitle) {
 	ViewerRoot.rootIsTransparentArr.push(drawTransparently); //keep for transparent drawing
 	ViewerRoot.rootIsAutoRefreshArr.push(ViewerRoot.autoRefreshDefault);
 	ViewerRoot.rootObjNameArr.push(objName);	//assign new report to position
-	
+
 	//look for .root name other blank
 	let prependName = "";
 	{
@@ -1131,7 +1131,7 @@ ViewerRoot.interpretObjectJSON = function (object, rootType, objName, refreshInd
 								object.JSON;
 									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 					});
-			}			
+			}
 		}
         catch (e) {
 			Debug.err("ROOT Object type '" + object._typename +
