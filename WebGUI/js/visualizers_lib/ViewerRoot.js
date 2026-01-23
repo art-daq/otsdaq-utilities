@@ -1177,7 +1177,7 @@ function loadScript(url, callback) {
 		 callback();
 	  };
    }
-   var rnd = Math.floor(Math.random()*80000);
+   //var rnd = Math.floor(Math.random()*80000); //keeping in case we need to bring back cache breaking behavior in the future
    script.src = url;//+ "?r=" + rnd;
    document.getElementsByTagName("head")[0].appendChild(script);
 } //end loadScript()
