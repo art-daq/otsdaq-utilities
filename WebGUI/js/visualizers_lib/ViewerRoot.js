@@ -507,7 +507,7 @@ ViewerRoot.clearAll = function () {
 
 	ViewerRoot.rootTargetIndex = -1;
 	//ViewerRoot.numPositionsTiled will be 0 at end
-	for(ViewerRoot.numPositionsTiled; ViewerRoot.numPositionsTiled>0; --ViewerRoot.numPositionsTiled)
+	for(; ViewerRoot.numPositionsTiled>0; --ViewerRoot.numPositionsTiled)
 		ViewerRoot.removeAllAtPosition(ViewerRoot.numPositionsTiled-1);
 	ViewerRoot.manageRootHeaders();
 	ViewerRoot.resizeRootObjects();
