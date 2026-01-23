@@ -883,7 +883,6 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 	//Debug.log("ViewerRoot getRootDataHandler " + req.responseText );
 
 	var rootType = DesktopContent.getXMLValue(req,"rootType");
-	var rootStr = DesktopContent.getXMLValue(req,"rootData");
 	var rootName = DesktopContent.getXMLValue(req,"path");//
 	//"my" + rootType + ViewerRoot.objIndex;// DesktopContent.getXMLValue(req,"path");// + ViewerRoot.objIndex;
 	//if(rootName.length > 20) rootName = "..." + rootName.substr(rootName.length-18);
