@@ -279,7 +279,7 @@ try
 				                 "suboptimal occurred and could be fixed.'"
 				              << __E__;
 				__COUT_ERR__ << "ERROR messages look like this and mean 'something wrong "
-				                "occured and should be fixed.'"
+				                "occurred and should be fixed.'"
 				             << __E__;
 
 				//				//to debug special packets
