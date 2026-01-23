@@ -108,9 +108,12 @@ else {
         var _refreshHeader = function () {
             var hdrW = _w - 2 * _defaultHeaderLeftMargin - 5 * (_defaultButtonSize + _defaultButtonLeftMargin) - 1;
             _winhdr.style.width = hdrW + "px";
-            _winhdr.innerHTML = _name + (_subname == "" ? "" : " - ") + _subname;
-            while (_winhdr.scrollWidth > hdrW && _winhdr.innerHTML.length > 4)
-                _winhdr.innerHTML = _winhdr.innerHTML.substr(0, _winhdr.innerHTML.length - 4) + "...";
+            var title = _name + (_subname == "" ? "" : " - ") + _subname;
+            _winhdr.textContent = title;
+            while (_winhdr.scrollWidth > hdrW && title.length > 4) {
+                title = title.substr(0, title.length - 4) + "...";
+                _winhdr.textContent = title;
+            }
         } //end _refreshHeader()
 
         //==============================================================================
