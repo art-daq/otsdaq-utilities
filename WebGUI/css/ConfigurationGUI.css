@@ -92,6 +92,7 @@ b, h3, h1 {
     #SubSystemTable tr.selected td {
         background-color: rgb(255, 249, 196) !important;
         white-space: pre;
+        font-weight: bold;
     }
 
 #SubSystemTable {
