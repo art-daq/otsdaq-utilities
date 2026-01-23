@@ -328,6 +328,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 
   private:
 	void 				addMessageToResponse				(HttpXmlDocument* xmlOut, ConsoleSupervisor::ConsoleMessageStruct& msg);
+	void 				addMessageToResponse				(std::string& xmlValue, ConsoleSupervisor::ConsoleMessageStruct& msg);
 
 	std::deque<ConsoleMessageStruct> messages_;
 	std::mutex                       messageMutex_;

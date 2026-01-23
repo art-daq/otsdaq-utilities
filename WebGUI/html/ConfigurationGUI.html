@@ -13,6 +13,8 @@
 		//niceName(str)									//removes "Table" from name
 		//encodeHTML(s)
 
+		//setupGroupHistory()
+
 		//setupSystemViewMode(anchorTarget)							//gets table groups aliases
 		//groupAliasesRequestHandler(req,anchorTarget)
 
@@ -469,6 +471,8 @@
 			background-color: 	rgb(226, 216, 216);
 			padding: 			10px;
 		}
+
+		#groupHistoryTable tr:nth-child(even),
 		#groupAddRemoveTable tr:nth-child(even),
 		#systemViewActiveTable tr:nth-child(even),
 		#subsystemViewActiveTable tr:nth-child(even),
@@ -489,10 +493,16 @@
 		#systemAliasTable {
 			padding-right:		20px;
 		}
+		#groupHistoryTable th,
 		#systemAliasTable th {
 			color: 				rgb(65, 86, 146);
 			border-left: 		2px solid rgb(140, 86, 86);
 			padding-bottom:		5px;
+		}
+		#groupHistoryTable td {
+			padding-left: 30px;
+			padding-right: 30px;
+			border-left: 		2px solid rgb(140, 86, 86);
 		}
 
 		.noUserSelect {
@@ -864,6 +874,151 @@
 		} //end encodeHTML()
 
 		//==============================================================================
+		//setupGroupHistory ~
+		function setupGroupHistory(ael, groupAction, groupType)
+		{
+			Debug.log("setupGroupHistory()", ael ? ael.innerText : "undefined");
+
+			if(ael) //take from element selection
+			{
+				groupAction = "Activated";
+				groupType = "unknown";
+
+				if(ael.innerText.indexOf("Group History View") >= 0 ||
+					ael.id == "groupHistoryActionSelect" ||
+					ael.id == "groupHistoryTypeSelect")
+				{
+					//get current selections from dropdowns
+					var actionSelectEl = document.getElementById("groupHistoryActionSelect");
+					if(actionSelectEl)
+						groupAction = actionSelectEl.value;
+					var typeSelectEl = document.getElementById("groupHistoryTypeSelect");
+					if(typeSelectEl)
+						groupType = typeSelectEl.value;
+				}
+				else if(ael.innerText.indexOf("Configure Group") >= 0)
+					groupType = "Configuration";
+				else if(ael.innerText.indexOf("Context") >= 0)
+					groupType = "Context";
+				else if(ael.innerText.indexOf("Backbone") >= 0)
+					groupType = "Backbone";
+				else if(ael.innerText.indexOf("Iterat") >= 0)
+					groupType = "Iterate";
+				else if(ael.innerText.indexOf("Last Configured") >= 0)
+				{	groupAction = "Configured"; groupType = "Configuration"; }
+				else if(ael.innerText.indexOf("Last Run Started") >= 0)
+				{	groupAction = "Started"; groupType = "Configuration"; }
+
+			} //else keep from input params
+
+			if(!groupType || groupType == "unknown")
+			{
+				if(ael)
+					Debug.err("Could not determine group type from link text: " + ael.innerText);
+				else
+					Debug.err("No group type specified!");
+				return;
+			}
+
+			var el = document.getElementById("display");
+			el.innerHTML = "Loading...";
+
+			//get history for this group type
+			DesktopContent.XMLHttpRequest("Request?RequestType=getGroupHistory&groupAction=" +
+				groupAction + "&groupType=" +
+				groupType, "",
+				function(req)
+				{
+					Debug.log("got group history response for action =", groupAction,
+						"... type =", groupType);
+					var groupHistory = [];
+					var groupHistoryEls = req.responseXML.getElementsByTagName("GroupHistoryEntry");
+					for(var i=0;i<groupHistoryEls.length;++i)
+					{
+						var entry = {
+							groupName: DesktopContent.getXMLValue(groupHistoryEls[i], "groupName"),
+							groupKey: DesktopContent.getXMLValue(groupHistoryEls[i], "groupKey"),
+							time: DesktopContent.getXMLValue(groupHistoryEls[i], "time"),
+							user: DesktopContent.getXMLValue(groupHistoryEls[i], "user")
+						};
+						groupHistory.push(entry);
+					}
+					Debug.logv({groupHistory});
+
+					var str = "";
+
+					//header for likning to each group history entry
+					str += "<div style='margin-bottom:10px;'>Click on a group history entry below to view the associated group of tables.</div>";
+
+					var groupActions = ["Activated", "Configured", "Started",  "Configured or Started"];
+					var groupTypes = ["Configuration", "Context", "Backbone",  "Iterate"];
+					//dropdown for each group action
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
+						"<select id='groupHistoryActionSelect' onchange='setupGroupHistory(this)'>";
+					for(var i=0;i<groupActions.length;++i)
+						str += "<option value='" + groupActions[i] + "' " +
+							(groupAction == groupActions[i] ? "selected" : "") + ">" +
+							groupActions[i] + "</option>";
+					str += "</select></div>";
+
+					//dropdown for each group type
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryTypeSelect'>Select a group type: </label>" +
+						"<select id='groupHistoryTypeSelect' onchange='setupGroupHistory(this)'>";
+					for(var i=0;i<groupTypes.length;++i)
+						str += "<option value='" + groupTypes[i] + "' " +
+							(groupType == groupTypes[i] ? "selected" : "") + ">" +
+							groupTypes[i] + "</option>";
+					str += "</select></div>";
+
+					//button to launch group history view
+					str += "<button onclick='setupGroupHistory(this)'>Reload Group History View</button>";
+					str += "<br><br>";
+
+					if(groupHistory.length == 0)
+						str += "No history found for " + groupAction + " &apos;" + groupType + "&apos; groups.";
+					else
+					{
+
+						var returnToHereLink = "setupGroupHistory(0, \\\"" + groupAction + "\\\",\\\"" +
+							groupType + "\\\");";
+
+						str += "<table id='groupHistoryTable' style='border-collapse:collapse; margin-left:20px;'>";
+						str += "<tr><th style='text-align:center; border-bottom:1px solid black; border-left: 0;'>" +  //hide first column border-left
+							groupAction + " Group</th>" +
+							"<th style='text-align:center; border-bottom:1px solid black;'>Time</th>" +
+							"<th style='text-align:center; border-bottom:1px solid black;'>User</th></tr>";
+						for(var i=groupHistory.length-1;i>=0;--i)
+						{
+							str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
+								"<a href='#' onclick='setupSpecificTableGroup(\"" +
+								groupHistory[i].groupName + "\",\"" +
+								groupHistory[i].groupKey + "\", " +
+								"\"" + returnToHereLink + "\"" +
+								"); return false;'>" +
+								groupHistory[i].groupName +
+								"</a>(" + groupHistory[i].groupKey + ")" +
+								"&nbsp;&nbsp;" +
+								//tree-view
+								"<a href='#' onclick='setupTableGroupTreeView(\"" +
+								groupHistory[i].groupName + "\",\"" +
+								groupHistory[i].groupKey + "\", " +
+								"\"" + returnToHereLink + "\"); return false;' " +
+								" title='Open the tree-view for " +
+								groupHistory[i].groupName + "(" +
+								groupHistory[i].groupKey + ")'>Tree-view</a>" +
+								"</td>" +
+								//time and user:
+								"<td>" + groupHistory[i].time + "</td>" +
+								"<td>" + groupHistory[i].user + "</td></tr>";
+						}
+						str += "</table>";
+					}
+
+					el.innerHTML = str;
+				}); //end getGroupHistory request handler
+		} //end setupGroupHistory()
+
+		//==============================================================================
 		//setupSystemViewMode ~
 		function setupSystemViewMode(anchorTarget)
 		{
@@ -1065,7 +1220,7 @@
 						Debug.err(errStr);
 						return;
 					}
-					
+
 					//call with attemptedVersion parameter
 					specificTableRequestHandler(req, backLinkStr,
 							(version !== undefined && version != "")?version:undefined);
@@ -1090,7 +1245,7 @@
 		{
 
 			var err = DesktopContent.getXMLValue(req, "Error");
-			if (err) 
+			if (err)
 			{
 				Debug.err(err);
 
@@ -1276,6 +1431,9 @@
 						str += "<tr><td style='text-align:left;white-space:nowrap;" +
 								extraPadding + "'>";
 
+						str += "<a href='#' onclick='setupGroupHistory(this)' " +
+								"class='groupHistoryLink' " +
+								"title='Show the history of selected table groups.' >";
 
 						if (!_lastTableGroups[i] || _lastTableGroups[i] == "")
 						{
@@ -1332,6 +1490,7 @@
 							str += "<label style='font-size:10px;white-space:nowrap;'>[" +
 									_lastTableGroups[i + 2] + "]</label>: ";
 						}
+						str += "</a>";
 
 						str += "</td><td style='text-align:left; padding-left:20px;" + extraPadding + "'>";
 
@@ -2241,7 +2400,7 @@
 				//				+ " tableNames.length " + tableVersions.length);
 
 				var versionIt, versionsHi;
-				for (var j = 0; j < tableVersions.length; ++j) 
+				for (var j = 0; j < tableVersions.length; ++j)
 				{
 					version = tableVersions[j].getAttribute("value");
 					if(version && version.length && version[0] == '_') //if a span
@@ -2360,7 +2519,7 @@
 
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			
+
 
 			var param = "";
 			if (backLinkStr && backLinkStr != "")
@@ -2407,7 +2566,7 @@
 			var groupKey = DesktopContent.getXMLValue(req, "TableGroupKey");
 
 			var treeErr = DesktopContent.getXMLValue(req, "TreeErrors");
-			if (treeErr) 
+			if (treeErr)
 			{
 				Debug.warn(treeErr);
 
@@ -2589,12 +2748,12 @@
 				{ //skip past repeated author
 					Debug.logv({groupComment});
 					var commentAuthorSubstr = groupComment.substr(0,ci+2); //include +2 in size for ": "
-					ci = groupComment.lastIndexOf(commentAuthorSubstr);		
+					ci = groupComment.lastIndexOf(commentAuthorSubstr);
 					if(ci < 0) ci = 0; //if not found again, keep single author name
-					Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+					Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);
 					groupComment = groupComment.substr(ci);
 				}
-				
+
 				str += "<tr><th>Comment:</th><td>" +
 					groupComment.replace(/\n/g, "<br>") + "</td></tr>";
 				str += "</table>";
@@ -3186,7 +3345,7 @@
 						tableVersion = existingVersionIt = splitArr[1] | 0;
 						tableVersionHi = splitArr[2] | 0;
 					}
-					else 
+					else
 						tableVersionHi = tableVersion; //just to run once
 
 					//Note: aliased version are always stanadlone
@@ -3254,9 +3413,9 @@
 			{ //skip past repeated author
 				Debug.logv({tableComment});
 				var commentAuthorSubstr = tableComment.substr(0,ci+2); //include +2 in size for ": "
-				ci = tableComment.lastIndexOf(commentAuthorSubstr);		
+				ci = tableComment.lastIndexOf(commentAuthorSubstr);
 				if(ci < 0) ci = 0; //if not found again, keep single author name
-				Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+				Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);
 				tableComment = tableComment.substr(ci);
 			}
 			str += "<tr><th>Comment:</th><td class='underlineRow'>" +
@@ -3938,7 +4097,7 @@
 
 			//save map of existing tree member names/versions to compare to change
 			var compareMemberMap = {};
-			for (var i = 0; treeMemberNames_ && i < treeMemberNames_.length; ++i) 			
+			for (var i = 0; treeMemberNames_ && i < treeMemberNames_.length; ++i)
 				compareMemberMap[treeMemberNames_[i]] = treeMemberVersions_[i];
 
 			treeMemberNames_ = []; //reset
@@ -3947,7 +4106,7 @@
 
 			_tableLinkDropdownChoices = [];
 			_tableLinkDropdownChoices.push(DesktopContent.getXMLValue(req, "DefaultNoLink"));
-			for (var i = 0; i < activeTableNames.length; ++i) 
+			for (var i = 0; i < activeTableNames.length; ++i)
 			{
 				treeMemberNames_.push(activeTableNames[i].getAttribute("value"));
 				_tableLinkDropdownChoices.push(treeMemberNames_[i]);
@@ -3955,12 +4114,12 @@
 				treeMemberComments_.push(activeTableComments[i].getAttribute("value"));
 
 				//this should never happen unexpectedly!
-				if(compareMemberMap[treeMemberNames_[i]] !== undefined && 
+				if(compareMemberMap[treeMemberNames_[i]] !== undefined &&
 						compareMemberMap[treeMemberNames_[i]] != treeMemberVersions_[i])
-					Debug.warn("The active version for table '" + 
-						treeMemberNames_[i] + "' changed from v" + 
-						compareMemberMap[treeMemberNames_[i]] + " to v" + 
-						treeMemberVersions_[i] + 
+					Debug.warn("The active version for table '" +
+						treeMemberNames_[i] + "' changed from v" +
+						compareMemberMap[treeMemberNames_[i]] + " to v" +
+						treeMemberVersions_[i] +
 						". This could happen if, for example, aliases were changed in the active Backbone Group. You can likely ignore, or try Refreshing the Tree-view, or notify admins if you think this is unexpected.");
 			}
 
@@ -4141,10 +4300,10 @@
 											"<input id='tree-view-searchbar' " +
 											"title='Type to highlight and seek any matching records. Hit the UP-arrow and DOWN-arrow to scroll the tree-view to the matching records.' " +
 											"placeholder='Search...' " +
-											"onkeydown='applySearchNode(event)'" + 
+											"onkeydown='applySearchNode(event)'" +
 											" autocomplete='off'></input>" +
 										"</div>";
-					
+
 
 
 				//				treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -4155,7 +4314,7 @@
 				//						">" + (treeViewHideStatus_?"Show":"Hide") + " Status=False</a>";
 				//
 
-				treeViewHandlerStr_ += "</div>";// style='white-space:nowrap'>";	
+				treeViewHandlerStr_ += "</div>";// style='white-space:nowrap'>";
 
 				//display edit menu
 				treeViewHandlerStr_ +=
@@ -4508,7 +4667,7 @@
 				{
 					treeViewExpandedCapture_.push([
 							document.getElementById("treeNode-path-" + idString).innerText,
-							//take Value node here, and not NodeName, to accomodate depth 0 and non-0,.. 
+							//take Value node here, and not NodeName, to accomodate depth 0 and non-0,..
 							//	if a GroupID has changed, then the value will mismatch, but not expanding it will be an indicator to the user anyway
 							document.getElementById("treeNode-Value-" + idString).innerText
 							 ]);
@@ -4837,7 +4996,7 @@
 						let bmpParams = [];
 						for (var j = 1; j < choices.length; ++j) //skip the first DEFAULT param
 							bmpParams.push(choices[j].getAttribute("value"));
-						
+
 						treeViewHandlerStr_ += createBmpString(value,bmpParams);
 					}
 					else
@@ -5275,9 +5434,9 @@
 					{ //skip past repeated author
 						Debug.logv({tableComment});
 						var commentAuthorSubstr = tableComment.substr(0,ci+2); //include +2 in size for ": "
-						ci = tableComment.lastIndexOf(commentAuthorSubstr);		
+						ci = tableComment.lastIndexOf(commentAuthorSubstr);
 						if(ci < 0) ci = 0; //if not found again, keep single author name
-						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);
 						tableComment = tableComment.substr(ci);
 					}
 					treeViewHandlerStr_ += //"<td style='font-size:14px; white-space: nowrap;'>" +
@@ -5290,9 +5449,9 @@
 					{ //skip past repeated author
 						Debug.logv({comment});
 						var commentAuthorSubstr = comment.substr(0,ci+2); //include +2 in size for ": "
-						ci = comment.lastIndexOf(commentAuthorSubstr);		
+						ci = comment.lastIndexOf(commentAuthorSubstr);
 						if(ci < 0) ci = 0; //if not found again, keep single author name
-						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);		
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,ci);
 						comment = comment.substr(ci);
 					}
 					treeViewHandlerStr_ += "//" + comment;
@@ -6203,7 +6362,7 @@
 			if (deepestDepth < 0) //secondDeepestDepth < 0)
 			{
 				Debug.log("AllNodes ",treeEditingEditIconShownEl_,"size",
-					allNodes.length); 
+					allNodes.length);
 				Debug.log("The tree has been collapsed as far as possible" +
 					(treeEditingEditIconShownEl_ ? (" with respect to the highlighted node " +
 						"'" + nameOfTargetNode + "'") : "") + "!", Debug.INFO_PRIORITY);
@@ -6241,7 +6400,7 @@
 		// return true if action taken, else false
 		//
 		// if doNext, then always call treeViewHandler()
-		// if scrollTargetPath, update the parent ID if path found, and scroll to parent ID 
+		// if scrollTargetPath, update the parent ID if path found, and scroll to parent ID
 		function toggleTreeChildren(depth, uid, setVal, doNext, scrollTargetPath)
 		{
 			if(doNext) Debug.log("Do Next",depth,uid,setVal,_mouseIsSelecting);
@@ -6351,7 +6510,7 @@
 						//show tooltip if opening root level table
 						if(path == "/" && nodeName != "")
 							showTableTooltip(nodeName, true /* doNotAlwaysShow */);
-						
+
 					}, //end getTreeView handler
 					idString,
 					0, true); //progressHandler, callHandlerOnErr
@@ -6362,7 +6521,7 @@
 
 		//==============================================================================
 		//setupTableGroupTreeView ~
-		//	Note that modifiedTables is not a parameter, so the result will be tree view of 
+		//	Note that modifiedTables is not a parameter, so the result will be tree view of
 		//		the unmodified group.
 		//	Issues arise when starting to getTreeView crossing into other active tables.
 		//		To prevent insanity, track the loaded tables as also modified tables!
@@ -6379,7 +6538,7 @@
 			//if tree root table group has changed, then reset tree member cache
 			if(tableGroupName != treeGroupName_ || tableGroupKey != treeGroupKey_)
 			{
-				Debug.log("Clearing tree member cache in prep for new root tree group " + 
+				Debug.log("Clearing tree member cache in prep for new root tree group " +
 					tableGroupName + "(" + tableGroupKey + ")");
 
 				treeMemberNames_ = []; //reset
@@ -6702,13 +6861,13 @@
 					thereIsAChange)					//and if change
 				{
 					if (thereIsAnEmpty) //may have been a deactivating (due to error?)
-						Debug.warn("There was a change to the active groups (a group was deactivated)! If this was unexpected, check the System View for more info, or contact system admins." + 
+						Debug.warn("There was a change to the active groups (a group was deactivated)! If this was unexpected, check the System View for more info, or contact system admins." +
 						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
 							oldStr +
 						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
 							str + "</INDENT></INDENT>");
 					else //must have been an activation
-						Debug.warn("There was a change to the active groups! If this was unexpected, check the System View for more info, or contact system admins." + 
+						Debug.warn("There was a change to the active groups! If this was unexpected, check the System View for more info, or contact system admins." +
 						"\n\n<INDENT>The <b>previous</b> active groups were as follows:\n<INDENT>" +
 							oldStr +
 						"</INDENT>\n\nThe <b>new</b> active groups are as follows:\n<INDENT>" +
@@ -8333,13 +8492,13 @@
 					else //if repeated author names, also skip past
 					{
 						var commentAuthorSubstr = _editingCellElOldValue.substr(2,i); //2 start for leading "//" (and include +2 in size for ": ")
-						var j = _editingCellElOldValue.lastIndexOf(commentAuthorSubstr);	
+						var j = _editingCellElOldValue.lastIndexOf(commentAuthorSubstr);
 						if(j > 0)
-						{		
+						{
 							j += commentAuthorSubstr.length - 2; //-2 because +2 will be added next
 							i = j;
 						}
-						Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);		
+						Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);
 					}
 					var initVal = _editingCellElOldValue.substr(i+2).trim(); //skip past "//author" + ": ", and remove whitespace
 					treeEditingNodeInitValue_ = initVal;
@@ -8585,7 +8744,7 @@
 						Debug.log("Handling bitmap select");
 
 						_editingCellElOldValue = el.innerHTML;
-						treeEditingNodeInitValue_ = el.textContent;		
+						treeEditingNodeInitValue_ = el.textContent;
 
 						//let API bitmap dialog handle it
 						ConfigurationAPI.bitMapDialog(
@@ -8600,7 +8759,7 @@
 								Debug.log("yes " + val);
 								el.innerHTML = createBmpString(val,
 									document.getElementById("treeNode-BitMap-Params-" +
-										idString).textContent.split(';'));								
+										idString).textContent.split(';'));
 								editTreeNodeOK();
 							},
 							function () //cancel handler
@@ -8610,7 +8769,7 @@
 								_editingCell = false;
 								_editingCellEl = 0;
 							});
-					
+
 						treeEditingNodeType_ += "-bitmap";
 						_editingCell = true;
 						_editingCellEl = el;
@@ -10059,7 +10218,7 @@
 						{
 							let ti = titleStr.indexOf(" value: ");
 							if(ti > 0)
-								titleStr = titleStr.substr(0,ti) + 
+								titleStr = titleStr.substr(0,ti) +
 									" value: " + val;
 							bitMapCellEl.title = titleStr;
 						}
@@ -10208,7 +10367,7 @@
 								">" +
 								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Tab</b></a>";
 						} //end add link to open table in new browser tab
-						
+
 
 						controlString += "</div>";
 					}
@@ -10323,7 +10482,7 @@
 
 						event.stopImmediatePropagation(); // Prevents further listeners on the same element
 						if (e.preventDefault)
-							e.preventDefault();	
+							e.preventDefault();
 						break;
 					}
 
@@ -10336,7 +10495,7 @@
 
 						event.stopImmediatePropagation(); // Prevents further listeners on the same element
 						if (e.preventDefault)
-							e.preventDefault();	
+							e.preventDefault();
 						break;
 					}
 
@@ -10356,7 +10515,7 @@
 
 					event.stopImmediatePropagation(); // Prevents further listeners on the same element
 						if (e.preventDefault)
-							e.preventDefault();	
+							e.preventDefault();
 				}
 			}
 			else if (e.key == "Escape" && _editingCellEl)
@@ -10364,7 +10523,7 @@
 				Debug.log(e.key);
 				event.stopImmediatePropagation(); // Prevents further listeners on the same element
 				if (e.preventDefault)
-					e.preventDefault();				
+					e.preventDefault();
 				editCellCancel();
 				return false;
 			}
@@ -11539,7 +11698,7 @@
 
 							//update tree member table version based on result
 							treeMemberVersions_[treeMemberIndex] = savedVersion;
-							treeMemberVersionIsNew[treeMemberIndex] = foundEquivalentVersion?0:1;							
+							treeMemberVersionIsNew[treeMemberIndex] = foundEquivalentVersion?0:1;
 
 							++numberOfReturns;
 
@@ -11630,7 +11789,7 @@
 									tableMap += affectedArr[a] + "," +
 										treeMemberVersions_[k] + ",";
 
-									if(treeMemberVersionIsNew[k])									
+									if(treeMemberVersionIsNew[k])
 									{
 										Debug.log("Found a new persistent table version in group, so group must be new!");
 										groupIsNew = true;
@@ -12522,7 +12681,7 @@
 					{
 						let ti = titleStr.indexOf("Value: ");
 						if(ti > 0)
-							titleStr = titleStr.substr(0,ti) + 
+							titleStr = titleStr.substr(0,ti) +
 								"Value: \t" + decodeURIComponent(newValue) + "\n";
 					}
 
@@ -12563,7 +12722,7 @@
 					}
 					else if(treeEditingNodeType_ == "value-bitmap")
 					{
-						//bitmap data (do nothing is ok, value already set)						
+						//bitmap data (do nothing is ok, value already set)
 						//requests are done, so end editing, update mouseover titles
 						if(titleStr)
 						{
@@ -13905,13 +14064,13 @@
 						if (depth == 2)
 							uid = document.getElementById("treeNode-Value-" +
 								parentIdString).textContent;
-						else 
+						else
 						{
 							let uidSplit = document.getElementById("treeNode-Value-" +
 								parentIdString).textContent.split('=');
 							if(uidSplit.length > 1)
 								uid = uidSplit[1].split(')')[0].trim();
-							else 
+							else
 								uid = uidSplit[0];
 						}
 
@@ -13968,12 +14127,12 @@
 								{
 									let ti = titleStr.indexOf("Value: ");
 									if(ti > 0)
-										titleStr = titleStr.substr(0,ti) + 
+										titleStr = titleStr.substr(0,ti) +
 											"Value: \t" + decodeURIComponent(newValue) + "\n";
 									el.title = titleStr; //title node title (e.g. at field)
 									els[i].title = titleStr; //value node title
-								}								
-							}							
+								}
+							}
 
 						} //end propagate changes to value node
 					}
@@ -14415,7 +14574,7 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables", "",
 				function(req)
 				{
-					allTableNames_forTooltip_ = req.responseXML.getElementsByTagName("TableName");			
+					allTableNames_forTooltip_ = req.responseXML.getElementsByTagName("TableName");
 					localShowLinkTooltip();
 				}); //end getTables request
 
@@ -16019,13 +16178,13 @@
 				if(i > 2)
 				{ //skip past repeated author
 					var commentAuthorSubstr = comment.substr(0,i+2); //include +2 in size for ": "
-					var j = comment.lastIndexOf(commentAuthorSubstr);		
+					var j = comment.lastIndexOf(commentAuthorSubstr);
 					if(j > 0)
-					{		
+					{
 						j += commentAuthorSubstr.length;
 						i = j;
 					}
-					Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);		
+					Debug.log("commentAuthorSubstr",commentAuthorSubstr,i,j);
 					comment = comment.substr(i);
 				}
 				str += comment;
@@ -16066,7 +16225,7 @@
 						{
 							Debug.err(errStr);
 							//cancel dialog
-							var pel = document.getElementById("popUpDialog"); 
+							var pel = document.getElementById("popUpDialog");
 							if(pel) pel.parentNode.removeChild(pel);
 							return;
 						}
@@ -17180,7 +17339,7 @@
 							function ()
 							{
 						//store uploaded file and disable button
-						_tableUploadStr = this.result.replace('\r',''); 
+						_tableUploadStr = this.result.replace('\r','');
 						Debug.log("_tableUploadStr = " + _tableUploadStr);
 						document.getElementById('popUpDialog-submitButton').disabled = false;
 							}
@@ -17343,9 +17502,9 @@
 				link.parentNode.removeChild(link);
 
 				//kill popup dialog
-				var el = document.getElementById("popUpDialog");		
+				var el = document.getElementById("popUpDialog");
 				if (el) el.parentNode.removeChild(el);
-				
+
 				Debug.info("File '" + filename + "' was successfully downloaded!");
 
 			}; //end downloadCSV handler
@@ -18645,7 +18804,7 @@
 					1 /*permissionString*/,
 					"icon-Console.png" /*imageURL*/,
 					"/WebPath/html/Console.html" /*windowURL*/,
-					"ots::ConsoleSupervisor" /*linkedApp*/,	
+					"ots::ConsoleSupervisor" /*linkedApp*/,
 					"" /*parameters*/
 					);
 
@@ -18695,7 +18854,7 @@
 					1 /*permissionString*/,
 					"icon-CodeEditor.png" /*imageURL*/,
 					"/WebPath/html/CodeEditor.html" /*windowURL*/,
-					"ots::CodeEditorSupervisor" /*linkedApp*/,	
+					"ots::CodeEditorSupervisor" /*linkedApp*/,
 					"" /*parameters*/
 					);
 
@@ -19557,7 +19716,7 @@
 			if(maxValue < minValue)
 				maxValue = bitMask;
 			let midValue = (maxValue + minValue)/2; //used for color calcs
-			
+
 			let forcedAspectW = 1, forcedAspectH = 1; //by cell
 			if(bitMapParams[6] != "" &&
 						bitMapParams[6] != DEFAULT)
@@ -19609,15 +19768,15 @@
 				valueMapToStringsArr = valueMapToStrings.split(',');
 				//remove all white space
 				for(let i=0; i<valueMapToStringsArr.length; ++i)
-					valueMapToStringsArr[i] = valueMapToStringsArr[i].trim();				
+					valueMapToStringsArr[i] = valueMapToStringsArr[i].trim();
 				Debug.log("valueMapToStringsArr",valueMapToStringsArr);
 			}
-			
+
 			if (!val || val.trim() === "" || val.trim().toUpperCase() === DEFAULT) //if empty value
-				return `<div style="display:flex; justify-content:center"><div style="height:` + 
+				return `<div style="display:flex; justify-content:center"><div style="height:` +
 					imgH + `px; aspect-ratio: ` +
 					forcedAspectW + "/" + forcedAspectH +
-					`; background: ` + 
+					`; background: ` +
 					minValueColorStr + `; image-rendering:pixelated;"></div>` +
 					`<div id='matrix' style='display: none'>${val}</div></div>`;
 			if (val && val.trim().startsWith("[") && val.trim().endsWith("]"))
@@ -19638,7 +19797,7 @@
 
 					const ctx = canvas.getContext("2d");
 					const imageData = ctx.createImageData(width, height);
-						
+
 					for (let i = 0; i < height; i++)
 					{
 						for (let j = 0; j < width; j++)
@@ -19648,21 +19807,21 @@
 							{
 								if((v|0) == v)
 								{
-									Debug.log("Interpreting as number.. so leaving as number. Perhaps map to string is newly setup.");									
+									Debug.log("Interpreting as number.. so leaving as number. Perhaps map to string is newly setup.");
 								}
 								else //interpret as string
 								{
 									v = valueMapToStringsArr.indexOf(v);
-									if(v < 0) 
+									if(v < 0)
 										v = maxValue+1; //default to maxValue+1 (to get ceiling value color)
-									else 
+									else
 										v += minValue; //add offset
 								}
 							}
 
 							const rgb = ConfigurationAPI.bitMapDialogConvertValueToRGBA(
 								v,
-								minValue, maxValue, minValueColor, midValueColor, maxValueColor, 
+								minValue, maxValue, minValueColor, midValueColor, maxValueColor,
 								floorValueColor, ceilValueColor);
 							// const normalized = bitmapMatrix[i][j] / maxVal;
 							// const r = Math.round(255 * (1 - normalized));
@@ -19681,7 +19840,7 @@
 					ctx.putImageData(imageData, 0, 0);
 					const dataUrl = canvas.toDataURL("image/png");
 
-					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="height:` + 
+					return `<div style="display:flex; justify-content:center"><img draggable="false" src="${dataUrl}" alt="Bitmap" style="height:` +
 						imgH + `px; aspect-ratio: ` +
 						forcedAspectW + "/" + forcedAspectH + ";" +
 						`border: 1px solid #ccc;
