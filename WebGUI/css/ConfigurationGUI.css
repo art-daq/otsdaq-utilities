@@ -26,7 +26,6 @@
 			-webkit-user-select: 	none; /* to stop text highlights */
 			-moz-user-select: 		none;
 			user-select: 			none;
-
 			white-space:			nowrap;
 		}
 
@@ -38,6 +37,15 @@
 		a.underline:hover {
 		text-decoration: none;
 		}
+
+.groupHistoryLink {
+    color: black;
+    text-decoration: none;
+}
+
+    .groupHistoryLink:hover {
+        text-decoration: underline;
+    }
 
 		#display {
 			padding: 20px;
@@ -75,6 +83,7 @@
 			background-color: 	rgb(210, 193, 193);
 			border:				1px solid grey /*rgb(156,94,94)*/;
 		}
+
 		#SubSystemTable td, #SubSystemTable th {
 			background-color: 	rgb(226, 216, 216);
 			white-space: 		pre; /* was pre-wrap; but not sure why.. pre seems to maintain text better*/
@@ -83,12 +92,15 @@
 			background-color: rgb(255, 249, 196) !important;
 			white-space:		pre;
 		}
+
 		#SubSystemTable {
 			background-color: 	rgb(210, 193, 193); /*chrome does not color table unless after the td/th*/
 		}
+
 		#SubSystemTable th {
 			background-color: 	rgb(210, 193, 193);
 		}
+
 		#SubSystemTable td {
 			cursor: crosshair;
 		}
@@ -101,6 +113,7 @@
 			margin: 2px;
 			width: 8px;
 		}
+
 		.tableAddRowButton:hover, .tableDeleteRowButton:hover {
 			text-decoration: none;
 			background-color: rgb(208, 209, 222);
@@ -114,7 +127,9 @@
 		    background-color: 	rgb(177, 195, 195);
 		    color: 				rgb(44, 44, 187);
 		    font-size:			14px;
-		} .tableView-Menu:hover {
+}
+
+    .tableView-Menu:hover {
 			background-color:	rgb(218, 194, 194);
 		    margin: 			3px 10px 4px 0;
 		    cursor:				pointer;

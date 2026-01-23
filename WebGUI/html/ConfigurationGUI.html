@@ -13,6 +13,8 @@
 		//niceName(str)									//removes "Table" from name
 		//encodeHTML(s)
 
+		//setupGroupHistory()
+
 		//setupSystemViewMode(anchorTarget)							//gets table groups aliases
 		//groupAliasesRequestHandler(req,anchorTarget)
 
@@ -469,6 +471,8 @@
 			background-color: 	rgb(226, 216, 216);
 			padding: 			10px;
 		}
+
+		#groupHistoryTable tr:nth-child(even),
 		#groupAddRemoveTable tr:nth-child(even),
 		#systemViewActiveTable tr:nth-child(even),
 		#subsystemViewActiveTable tr:nth-child(even),
@@ -489,10 +493,16 @@
 		#systemAliasTable {
 			padding-right:		20px;
 		}
+		#groupHistoryTable th,
 		#systemAliasTable th {
 			color: 				rgb(65, 86, 146);
 			border-left: 		2px solid rgb(140, 86, 86);
 			padding-bottom:		5px;
+		}
+		#groupHistoryTable td {
+			padding-left: 30px;
+			padding-right: 30px;
+			border-left: 		2px solid rgb(140, 86, 86);
 		}
 
 		.noUserSelect {
@@ -866,6 +876,151 @@
 			s = el.innerHTML;
 			return s.replace(/'/g, '&apos;');
 		} //end encodeHTML()
+
+		//==============================================================================
+		//setupGroupHistory ~
+		function setupGroupHistory(ael, groupAction, groupType)
+		{
+			Debug.log("setupGroupHistory()", ael ? ael.innerText : "undefined");
+
+			if(ael) //take from element selection
+			{
+				groupAction = "Activated";
+				groupType = "unknown";
+
+				if(ael.innerText.indexOf("Group History View") >= 0 ||
+					ael.id == "groupHistoryActionSelect" ||
+					ael.id == "groupHistoryTypeSelect")
+				{
+					//get current selections from dropdowns
+					var actionSelectEl = document.getElementById("groupHistoryActionSelect");
+					if(actionSelectEl)
+						groupAction = actionSelectEl.value;
+					var typeSelectEl = document.getElementById("groupHistoryTypeSelect");
+					if(typeSelectEl)
+						groupType = typeSelectEl.value;
+				}
+				else if(ael.innerText.indexOf("Configure Group") >= 0)
+					groupType = "Configuration";
+				else if(ael.innerText.indexOf("Context") >= 0)
+					groupType = "Context";
+				else if(ael.innerText.indexOf("Backbone") >= 0)
+					groupType = "Backbone";
+				else if(ael.innerText.indexOf("Iterat") >= 0)
+					groupType = "Iterate";
+				else if(ael.innerText.indexOf("Last Configured") >= 0)
+				{	groupAction = "Configured"; groupType = "Configuration"; }
+				else if(ael.innerText.indexOf("Last Run Started") >= 0)
+				{	groupAction = "Started"; groupType = "Configuration"; }
+
+			} //else keep from input params
+
+			if(!groupType || groupType == "unknown")
+			{
+				if(ael)
+					Debug.err("Could not determine group type from link text: " + ael.innerText);
+				else
+					Debug.err("No group type specified!");
+				return;
+			}
+
+			var el = document.getElementById("display");
+			el.innerHTML = "Loading...";
+
+			//get history for this group type
+			DesktopContent.XMLHttpRequest("Request?RequestType=getGroupHistory&groupAction=" +
+				groupAction + "&groupType=" +
+				groupType, "",
+				function(req)
+				{
+					Debug.log("got group history response for action =", groupAction,
+						"... type =", groupType);
+					var groupHistory = [];
+					var groupHistoryEls = req.responseXML.getElementsByTagName("GroupHistoryEntry");
+					for(var i=0;i<groupHistoryEls.length;++i)
+					{
+						var entry = {
+							groupName: DesktopContent.getXMLValue(groupHistoryEls[i], "groupName"),
+							groupKey: DesktopContent.getXMLValue(groupHistoryEls[i], "groupKey"),
+							time: DesktopContent.getXMLValue(groupHistoryEls[i], "time"),
+							user: DesktopContent.getXMLValue(groupHistoryEls[i], "user")
+						};
+						groupHistory.push(entry);
+					}
+					Debug.logv({groupHistory});
+
+					var str = "";
+
+					//header for likning to each group history entry
+					str += "<div style='margin-bottom:10px;'>Click on a group history entry below to view the associated group of tables.</div>";
+
+					var groupActions = ["Activated", "Configured", "Started",  "Configured or Started"];
+					var groupTypes = ["Configuration", "Context", "Backbone",  "Iterate"];
+					//dropdown for each group action
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
+						"<select id='groupHistoryActionSelect' onchange='setupGroupHistory(this)'>";
+					for(var i=0;i<groupActions.length;++i)
+						str += "<option value='" + groupActions[i] + "' " +
+							(groupAction == groupActions[i] ? "selected" : "") + ">" +
+							groupActions[i] + "</option>";
+					str += "</select></div>";
+
+					//dropdown for each group type
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryTypeSelect'>Select a group type: </label>" +
+						"<select id='groupHistoryTypeSelect' onchange='setupGroupHistory(this)'>";
+					for(var i=0;i<groupTypes.length;++i)
+						str += "<option value='" + groupTypes[i] + "' " +
+							(groupType == groupTypes[i] ? "selected" : "") + ">" +
+							groupTypes[i] + "</option>";
+					str += "</select></div>";
+
+					//button to launch group history view
+					str += "<button onclick='setupGroupHistory(this)'>Reload Group History View</button>";
+					str += "<br><br>";
+
+					if(groupHistory.length == 0)
+						str += "No history found for " + groupAction + " &apos;" + groupType + "&apos; groups.";
+					else
+					{
+
+						var returnToHereLink = "setupGroupHistory(0, \\\"" + groupAction + "\\\",\\\"" +
+							groupType + "\\\");";
+
+						str += "<table id='groupHistoryTable' style='border-collapse:collapse; margin-left:20px;'>";
+						str += "<tr><th style='text-align:center; border-bottom:1px solid black; border-left: 0;'>" +  //hide first column border-left
+							groupAction + " Group</th>" +
+							"<th style='text-align:center; border-bottom:1px solid black;'>Time</th>" +
+							"<th style='text-align:center; border-bottom:1px solid black;'>User</th></tr>";
+						for(var i=groupHistory.length-1;i>=0;--i)
+						{
+							str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
+								"<a href='#' onclick='setupSpecificTableGroup(\"" +
+								groupHistory[i].groupName + "\",\"" +
+								groupHistory[i].groupKey + "\", " +
+								"\"" + returnToHereLink + "\"" +
+								"); return false;'>" +
+								groupHistory[i].groupName +
+								"</a>(" + groupHistory[i].groupKey + ")" +
+								"&nbsp;&nbsp;" +
+								//tree-view
+								"<a href='#' onclick='setupTableGroupTreeView(\"" +
+								groupHistory[i].groupName + "\",\"" +
+								groupHistory[i].groupKey + "\", " +
+								"\"" + returnToHereLink + "\"); return false;' " +
+								" title='Open the tree-view for " +
+								groupHistory[i].groupName + "(" +
+								groupHistory[i].groupKey + ")'>Tree-view</a>" +
+								"</td>" +
+								//time and user:
+								"<td>" + groupHistory[i].time + "</td>" +
+								"<td>" + groupHistory[i].user + "</td></tr>";
+						}
+						str += "</table>";
+					}
+
+					el.innerHTML = str;
+				}); //end getGroupHistory request handler
+		} //end setupGroupHistory()
 
 		//==============================================================================
 		//setupSystemViewMode ~
@@ -1280,6 +1435,9 @@
 						str += "<tr><td style='text-align:left;white-space:nowrap;" +
 								extraPadding + "'>";
 
+						str += "<a href='#' onclick='setupGroupHistory(this)' " +
+								"class='groupHistoryLink' " +
+								"title='Show the history of selected table groups.' >";
 
 						if (!_lastTableGroups[i] || _lastTableGroups[i] == "")
 						{
@@ -1336,6 +1494,7 @@
 							str += "<label style='font-size:10px;white-space:nowrap;'>[" +
 									_lastTableGroups[i + 2] + "]</label>: ";
 						}
+						str += "</a>";
 
 						str += "</td><td style='text-align:left; padding-left:20px;" + extraPadding + "'>";
 
