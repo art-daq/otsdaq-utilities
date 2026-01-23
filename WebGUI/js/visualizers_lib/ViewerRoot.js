@@ -485,7 +485,7 @@ ViewerRoot.toggleAllAtPositionAutoRefresh = function (i) {
 			}
 		if(!doover && found>1) doover = true;
 		else doover = false;
-	} while(doover) //may need to do it over again, because values of superimposed root objects could be wrong
+	} while(doover); //may need to do it over again, because values of superimposed root objects could be wrong
 
 } //end toggleAllAtPositionAutoRefresh()
 
