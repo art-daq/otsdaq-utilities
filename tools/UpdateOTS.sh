@@ -374,11 +374,6 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		if [[ "$remote_url" == *github.com* ]]; then
 			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
 
-			#skip spack and fermi-spack-tools repos
-			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
-				continue
-			fi
-
 			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -386,12 +381,20 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			# else
 			# 	echo "Working tree is clean."
 			fi
-			branch="$(git rev-parse --abbrev-ref HEAD)"
-			if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
-				echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
-			# else
-			# 	echo "You are on main or develop"
+
+			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
+			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
+			else
+				#find unmerged branches
+				branch="$(git rev-parse --abbrev-ref HEAD)"
+				if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
+					echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+				# else
+				# 	echo "You are on main or develop"
+				fi
 			fi
+
 			#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
 			missing=$(comm -23 \
 				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \

@@ -27,7 +27,7 @@ var Debug = Debug || {}; //define Debug namespace
 
 Debug.mode = 1; 		//0 - debug off, 1 - debug on (note: all popups will turn off)
 Debug.simple = 0; 		//0 - use priority (more detail in printout), 1 - simple, no priority
-Debug.level = 4 + @OTS_DEBUG_MODE @ * 96; //100;		//priority level, (100 should be all, 0 only high priority)
+Debug.level = 4 + @OTS_DEBUG_MODE@ * 96; //100;		//priority level, (100 should be all, 0 only high priority)
 //all logs with lower priority level are printed
 
 Debug.lastLog = "";

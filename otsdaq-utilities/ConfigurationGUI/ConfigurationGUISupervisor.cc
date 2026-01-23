@@ -808,7 +808,8 @@ try
 
 		std::vector<std::map<std::string /* group field key */,
 		                     std::string /* group field value */>>
-		    groups = ConfigurationManager::loadGroupHistory(groupAction, groupType);
+		    groups = ConfigurationManager::loadGroupHistory(
+		        groupAction, groupType, true /* formatTime */);
 
 		for(const auto& group : groups)
 		{
