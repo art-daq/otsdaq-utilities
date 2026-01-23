@@ -1833,10 +1833,14 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
         win = Desktop.desktop.getWindowById(winId);
         if (win == -1) return false;
 
+        Debug.log("down",winId,win.getWindowName(),Desktop.foreWinLastMouse);
+
         //bring window to front if newly selected
         if (Desktop.desktop.getForeWindow() != win)
             Desktop.desktop.setForeWindow(win);
     }
+
+    Desktop.handleWindowMouseMove(mouseEvent,this); //update cursor and mode, in case there hasn't been a mouse move
 
     //touches can disable window mouse ops
     if (!Desktop.disableMouseDown && Desktop.winManipMode != Desktop.WIN_MANIP_MODE.NONE &&
@@ -1844,14 +1848,21 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
     {
         //register move cursor and window in question
         Desktop.foreWinLastMouse = [mouseEvent.clientX, mouseEvent.clientY];
-        if (!isDashboard) {
-            //Desktop.desktop.getForeWindow().hideFrame();
-
+        if (!isDashboard) {            
+            
             for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); ++i)
                 Desktop.desktop.getWindowByIndex(i).hideFrame();
 
         }
         //Debug.log("Move/Resize Mode: " + Desktop.winManipMode);
+    }
+    else
+    {
+        Debug.log("No Move/Resize Mode: " + Desktop.winManipMode +
+             " - " + this.style.cursor,"Desktop.disableMouseDown",
+            Desktop.disableMouseDown);
+
+        Desktop.handleWindowMouseMove(mouseEvent,this); //update cursor and mode, in case there hasn't been a mouse move
     }
 
     //if(!isDashboard) Debug.log("Mouse Down WinId:" + win.getWindowId() + " - " + this.style.cursor);
@@ -1865,6 +1876,8 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
 Desktop.handleWindowMouseUp = function (mouseEvent) {
     if (Desktop.foreWinLastMouse[0] != -1) //currently action happening on foreground window
     {
+        // Debug.log("up");
+
         if (Desktop.stretchAndMoveInterval) {
             window.clearInterval(Desktop.stretchAndMoveInterval);	//kill interval iframe mouse watchdog
             Desktop.stretchAndMoveInterval = 0;
@@ -1896,65 +1909,74 @@ Desktop.handleWindowMouseUp = function (mouseEvent) {
 
 //==============================================================================
 //handle window move and resize
-Desktop.handleWindowMouseMove = function (mouseEvent) {
-    var winId = this.id.split('-')[1]; //get id string from div container id
+Desktop.handleWindowMouseMove = function (mouseEvent, el) {
+    
+    if(this.id)  //if this exists, use it 
+        el = this;
+    
+    if(!el)
+        return false;
+
+    var winId = el.id.split('-')[1]; //get id string from div container id
     var isDashboard = (winId == "windowDashboard");
     var win;
     if (!isDashboard) {
         win = Desktop.desktop.getWindowById(winId);
         if (win == -1) return false;
-        if (win.isMaximized()) { this.style.cursor = "default"; return false; }
+        if (win.isMaximized()) { el.style.cursor = "default"; return false; }
+
+        // Debug.log("move",winId,win.getWindowName());
     }
 
     //change mouse cursor if over a window object and not manipulating the foreground window
     if (Desktop.foreWinLastMouse[0] == -1) {
-        var locX = mouseEvent.clientX - this.offsetLeft;
-        var locY = mouseEvent.clientY - this.offsetTop;
+        var locX = mouseEvent.clientX - el.offsetLeft;
+        var locY = mouseEvent.clientY - el.offsetTop;
 
         var hotCornerSz = 7;
         if (isDashboard) {
             if (locX > Desktop.desktop.dashboard.getDashboardWidth() - hotCornerSz) {
-                this.style.cursor = "e-resize";
+                el.style.cursor = "e-resize";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.SIDEBAR;
             }
             else
-                this.style.cursor = "default";
+                el.style.cursor = "default";
         }
         else {
             if ((locX < hotCornerSz && locY < hotCornerSz) ||
                 (locX > win.getWindowWidth() - hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) {
-                this.style.cursor = "nw-resize";
+                el.style.cursor = locY < hotCornerSz ? "nw-resize" : "se-resize";
                 Desktop.winManipMode = locY < hotCornerSz ?
                     Desktop.WIN_MANIP_MODE.NW : Desktop.WIN_MANIP_MODE.SE;
             }
             else if ((locX > win.getWindowWidth() - hotCornerSz && locY < hotCornerSz) ||
                 (locX < hotCornerSz && locY > win.getWindowHeight() - hotCornerSz)) {
-                this.style.cursor = "ne-resize";
+                el.style.cursor = locY < hotCornerSz ? "ne-resize" : "sw-resize";
                 Desktop.winManipMode = locY < hotCornerSz ?
                     Desktop.WIN_MANIP_MODE.NE : Desktop.WIN_MANIP_MODE.SW;
             }
             else if (locX < hotCornerSz) {
-                this.style.cursor = "w-resize";
+                el.style.cursor = "w-resize";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.W;
             }
             else if (locX > win.getWindowWidth() - hotCornerSz) {
-                this.style.cursor = "e-resize";
+                el.style.cursor = "e-resize";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.E;
             }
             else if (locY < hotCornerSz) {
-                this.style.cursor = "n-resize";
+                el.style.cursor = "n-resize";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.N;
             }
             else if (locY > win.getWindowHeight() - hotCornerSz) {
-                this.style.cursor = "s-resize";
+                el.style.cursor = "s-resize";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.S;
             }
             else if (locY < win.getWindowHeaderHeight()) {
-                this.style.cursor = "all-scroll";
+                el.style.cursor = "all-scroll";
                 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.MOVE;
             }
             else
-                this.style.cursor = "default";
+                el.style.cursor = "default";
         }
     }
 
@@ -2097,6 +2119,7 @@ Desktop.handleWindowManipulation = function (delta) {
     if (!Desktop.desktop.getForeWindow()) return false;
 
     var win = Desktop.desktop.getForeWindow();
+    // Debug.log("handle",win.getWindowId(),win.getWindowName());
 
     //check if windows are tiled
     var lastPositions = Desktop.desktop.lastTileWinPositions;
@@ -2231,9 +2254,9 @@ Desktop.handleWindowManipulation = function (delta) {
     //if(keepTile) return false;
     var deltaResidual = [0, 0, 0, 0]; //do not move other window if target window reached limits
     var winOriginal = [win.getWindowX(),
-    win.getWindowY(),
-    win.getWindowWidth(),
-    win.getWindowHeight()];
+        win.getWindowY(),
+        win.getWindowWidth(),
+        win.getWindowHeight()];
 
     switch (Desktop.winManipMode) {
         case Desktop.WIN_MANIP_MODE.MOVE: //move

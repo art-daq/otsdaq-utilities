@@ -919,6 +919,12 @@
                     Debug.err("No group type specified!");
                 return;
             }
+			if(groupAction == "Activated" &&
+				groupType == "Config Alias")
+			{
+				Debug.err("No history kept for Activated Config Aliases, please choose <b>Configured</b> or <b>Started</b> as the group action.");
+				return;	
+			}
 
             var el = document.getElementById("display");
             el.innerHTML = "Loading...";
@@ -949,7 +955,7 @@
                     str += "<div style='margin-bottom:10px;'>Click on a group history entry below to view the associated group of tables.</div>";
 
                     var groupActions = ["Activated", "Configured", "Started", "Configured or Started"];
-                    var groupTypes = ["Configuration", "Context", "Backbone", "Iterate"];
+                    var groupTypes = ["Configuration", "Context", "Backbone", "Iterate", "Config Alias"];
                     //dropdown for each group action
                     str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
                         "<select id='groupHistoryActionSelect' onchange='setupGroupHistory(this)'>";
@@ -980,7 +986,7 @@
                             groupType + "\\\");";
 
                         str += "<table id='groupHistoryTable' style='border-collapse:collapse; margin-left:20px;'>";
-                        str += "<tr><th style='text-align:center; border-bottom:1px solid black; border-left: 0;'>" +  //hide first column border-left
+                        str += "<tr><th colspan='2' style='text-align:center; border-bottom:1px solid black; border-left: 0;'>" +  //hide first column border-left
                             groupAction + " Group</th>" +
                             "<th style='text-align:center; border-bottom:1px solid black;'>Time</th>" +
                             "<th style='text-align:center; border-bottom:1px solid black;'>User</th></tr>";
@@ -994,6 +1000,9 @@
                                 groupHistory[i].groupName +
                                 "</a>(" + groupHistory[i].groupKey + ")" +
                                 "&nbsp;&nbsp;" +
+
+								"</td><td style='border-left: 0;'>" +
+
                                 //tree-view
                                 "<a href='#' onclick='setupTableGroupTreeView(\"" +
                                 groupHistory[i].groupName + "\",\"" +
