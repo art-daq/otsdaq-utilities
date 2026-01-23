@@ -877,7 +877,7 @@
 		//setupGroupHistory ~
 		function setupGroupHistory(ael, groupAction, groupType)
 		{
-			Debug.log("setupGroupHistory()",ael.innerText);
+			Debug.log("setupGroupHistory()", ael ? ael.innerText : "undefined");
 
 			if(ael) //take from element selection
 			{
