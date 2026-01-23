@@ -74,7 +74,7 @@ else {
         var _iconNameToPathMap = undefined; // {/* "name": [path,unique] */} ...used to open icons programatically
 
         var _folderFocusPath = ""; //if set, only show icons in this folder path on desktop (and subfolders)
-		var _folderFocusSettingsURL = ""; //if set, this URL is used to open the settings window for the focused folder (instead of the default settings icon URL)
+        var _folderFocusSettingsURL = ""; //if set, this URL is used to open the settings window for the focused folder (instead of the default settings icon URL)
 
         //------------------------------------------------------------------
         //create public members variables ----------------------
@@ -155,13 +155,11 @@ else {
             if (!Desktop.isWizardMode()) { //This is satisfied for  Digest Access Authorization and No Security on OTS
 
                 var errs = DesktopContent.getXMLRequestErrors(req);
-				if(errs.length)
-				{
-					for(var i=0;i<errs.length;++i)
-					{
-						if(!showRemoteGatewayErrors && 
-								(errs[i].indexOf("Remote Gateway") > 0 || //demote to log
-								errs[i].indexOf("Remote Subsystem") > 0))
+                if (errs.length) {
+                    for (var i = 0; i < errs.length; ++i) {
+                        if (!showRemoteGatewayErrors &&
+                            (errs[i].indexOf("Remote Gateway") > 0 || //demote to log
+                                errs[i].indexOf("Remote Subsystem") > 0))
                             Debug.log("Warning: " + errs[i]);
                         else
                             Debug.err(errs[i]);
@@ -222,20 +220,18 @@ else {
             {
                 if (_permissions >= iconArray[i + 3]) //check permissions
                 {
-					if(iconArray[i+6])
-					{
-						Debug.log("Folder path",iconArray[i+6], 
-							"url",iconArray[i+5]);
+                    if (iconArray[i + 6]) {
+                        Debug.log("Folder path", iconArray[i + 6],
+                            "url", iconArray[i + 5]);
 
-						//check for folder path Settings URL
-						if(_folderFocusPath != "" &&
-							iconArray[i+6].indexOf(_folderFocusPath) == 0 &&
-							iconArray[i+5].indexOf("/UserSettings.html") > 0)
-						{						
-							_folderFocusSettingsURL = iconArray[i+5];
-							Debug.logv({_folderFocusSettingsURL});
-						}
-					}
+                        //check for folder path Settings URL
+                        if (_folderFocusPath != "" &&
+                            iconArray[i + 6].indexOf(_folderFocusPath) == 0 &&
+                            iconArray[i + 5].indexOf("/UserSettings.html") > 0) {
+                            _folderFocusSettingsURL = iconArray[i + 5];
+                            Debug.logv({ _folderFocusSettingsURL });
+                        }
+                    }
 
                     if (_folderFocusPath == "" ||
                         iconArray[i + 6].indexOf(_folderFocusPath) == 0) {
@@ -251,9 +247,9 @@ else {
             } //end icon add loop
 
             if (_folderFocusPath != "" && iconsAdded == 0)
-				Debug.err("No icons matched Folder path parameter provided: " + _folderFocusPath + 
-						". Check that the Folder path is correct and that you have permission to access it." +
-						"\n\nIf you are targeting a Folder path associated with a Remote Subsystem, perhaps it has not loaded yet or is disconnected. Contact admins if the problem persists.");
+                Debug.err("No icons matched Folder path parameter provided: " + _folderFocusPath +
+                    ". Check that the Folder path is correct and that you have permission to access it." +
+                    "\n\nIf you are targeting a Folder path associated with a Remote Subsystem, perhaps it has not loaded yet or is disconnected. Contact admins if the problem persists.");
 
         } //end iconRequestHandler()
 
@@ -266,15 +262,14 @@ else {
         } //end setFolderFocus()
         this.getFolderFocus = function () { return _folderFocusPath ? _folderFocusPath : ""; }
 
-		this.getFolderFocusSettingsURL = function() { return _folderFocusSettingsURL?_folderFocusSettingsURL:""; }
-		this.getFolderFocusSubsystem = function() 
-		{
-			let i = _folderFocusPath.indexOf("/");
-			if(i > 0)
-				return _folderFocusPath.substr(0,i);
-			else				
-				return _folderFocusPath;
-		} //end getFolderFocusSubsystem()
+        this.getFolderFocusSettingsURL = function () { return _folderFocusSettingsURL ? _folderFocusSettingsURL : ""; }
+        this.getFolderFocusSubsystem = function () {
+            let i = _folderFocusPath.indexOf("/");
+            if (i > 0)
+                return _folderFocusPath.substr(0, i);
+            else
+                return _folderFocusPath;
+        } //end getFolderFocusSubsystem()
 
         //=====================================================================================
         // this.addIcon ~~
