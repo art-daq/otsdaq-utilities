@@ -741,13 +741,13 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 
 	if(refreshIndex === undefined) refreshIndex = -1;
 
-	var objHandlder = [rootPath,refreshIndex];
+	var objHandler = [rootPath,refreshIndex];
 
 	Debug.log("ViewerRoot.rootReq " + rootPath );
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot",
 			"RootPath="+rootPath,
 			ViewerRoot.getRootDataHandler,
-			objHandlder /*reqParam*/,
+			objHandler /*reqParam*/,
 			 0 /*progressHandler*/,
 			 0 /*callHandlerOnErr*/,
 			 refreshIndex<0?false:true /*doNoShowLoadingOverlay*/);
@@ -877,7 +877,7 @@ ViewerRoot.haltRefresh = function(rootName, debugLevel) {
 //=====================================================================================
 // ViewerRoot.getRootDataHandler ~~
 //	receives streamed root object from server and prepares it for js structures
-ViewerRoot.getRootDataHandler = function(req, objHandlder)
+ViewerRoot.getRootDataHandler = function(req, objHandler)
 {
 
 	//Debug.log("ViewerRoot getRootDataHandler " + req.responseText );
@@ -888,7 +888,8 @@ ViewerRoot.getRootDataHandler = function(req, objHandlder)
 	//"my" + rootType + ViewerRoot.objIndex;// DesktopContent.getXMLValue(req,"path");// + ViewerRoot.objIndex;
 	//if(rootName.length > 20) rootName = "..." + rootName.substr(rootName.length-18);
 
-	const [rootPath,refreshIndex] = objHandlder;
+	const rootPath = objHandler[0];
+	let refreshIndex = objHandler[1];
 
 	var rootJSON = DesktopContent.getXMLValue(req,"rootJSON");
 
