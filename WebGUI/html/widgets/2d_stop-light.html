@@ -14,7 +14,7 @@
 			}
 
 			table, th, td {
-			  !border: 0px solid grey;
+			  border: 0px solid grey;
 			  border-collapse: collapse;
 			}
 
@@ -44,6 +44,15 @@
 			//  , pvTime:time
 			//};
 			var tabledata;
+			var pvToCellsMap = {};
+			const STATUS_COLORS = {
+    				"HIHI": "red",
+    				"HIGH": "yellow",
+    				"LOW":  "blue",
+    				"LOLO": "purple",
+    				"INVALID": "lightgray",
+    				"GREEN_BASE": "rgba(0, 230, 64, "
+			};
 
 			var table;
 			var tds = [];
@@ -100,9 +109,12 @@
 
 				//make widget table to show
 				var display = document.getElementById("display");
+				display.innerHTML = "";
 
 				table = document.createElement('table');
 				table.id = "display-table";
+				display.appendChild(table);
+
 				table.style.height = window.innerHeight + "px";
 				table.style.width = "100%";
 				table.border = parameters_["table_border"];
@@ -133,7 +145,12 @@
 						// fill each cell of table
 						if (tabledata[i] && tabledata[i].pvName != "-1")
 						{
-							tds[i].firstElementChild.firstElementChild.innerHTML = "+";//tabledata[i].pvName;
+							if (!pvToCellsMap[tabledata[i].pvName]) {
+                    			pvToCellsMap[tabledata[i].pvName] = [];
+                			}	
+                			pvToCellsMap[tabledata[i].pvName].push(i);
+                
+                			a.innerHTML = "+";
 							tds[i].style.backgroundColor = "rgba(0, 230, 64, 1)";
 							tds[i].style.border = "2px solid grey";
 							tds[i].style.borderColor = parameters_["table_border_color"];
@@ -162,21 +179,31 @@
 			{
 				console.log("2d stop light: drawNewValue() reached");
 
-				//var cell = tabledata.find(function (element){ return element.pvName == pvName; });
-				var cells = [];
-				var k = 0;
-				for (i in tabledata) if (tabledata[i].pvName == pvName){cells[k] = tabledata[i]; k++;}
-				console.log(cells);
-				for (cell in cells)
-				{
-					if (cells[cell] == undefined) return;
-					cells[cell].pvValue = pvValue;
-					cells[cell].pvTime = pvTime;
-					cells[cell].pvStatus = pvStatus;
-					cells[cell].pvSeverity = pvSeverity;
-
-					refreshPVTableCell(cells[cell].id);
+				var cellIndices = pvToCellsMap[pvName];
+				if (cellIndices) {
+    					cellIndices.forEach(id => {
+						if(tabledata[id] != undefined){
+        						tabledata[id].pvValue = pvValue;
+							tabledata[id].pvTime = pvTime;
+                					tabledata[id].pvStatus = pvStatus;
+                					tabledata[id].pvSeverity = pvSeverity;
+						}
+						refreshPVTableCell(id);
+					});
 				}
+			}
+
+			function getCellColor(pvName, pvTime, pvStatus, valColor) {
+	    			if (!window.parent.checkPVTime(window.frameElement.id, pvName, pvTime)) {
+        				return STATUS_COLORS.INVALID;
+    				}
+
+			        if (STATUS_COLORS[pvStatus]) {
+        				return STATUS_COLORS[pvStatus];
+    				}
+
+    				// Default color
+    				return STATUS_COLORS.GREEN_BASE + valColor + ")";
 			}
 
 			function refreshPVTableCell(cell)
@@ -197,7 +224,14 @@
 											, pv_settings_);
 
 					var fullPathToPage = parameters_["link_to_page"];
-					tds[cell].firstElementChild.firstElementChild.href = "javascript:window.parent.loadPhoebusPage(\""+fullPathToPage+"\")";
+					tds[cell].firstElementChild.firstElementChild.onclick = function(e) {
+						e.preventDefault();
+						drawGraph(tabledata[cell].pvName);
+					};
+					tds[cell].firstElementChild.firstElementChild.style.cursor = "pointer";
+					if (fullPathToPage) {
+						tds[cell].firstElementChild.firstElementChild.href = "javascript:window.parent.loadPhoebusPage(\"" +fullPathToPage+"\")";
+					}
 
 					var valColor = 0;
 					var max = 0;
@@ -210,25 +244,37 @@
 						valColor = (tabledata[cell].pvValue - min)/(max - min);
 
 					valColor = valColor >= 0. ? valColor : 0.;
-					if (tabledata[cell].pvStatus == "HIHI")
-						tds[cell].style.backgroundColor = "red";
-					else if (tabledata[cell].pvStatus == "HIGH")
-						tds[cell].style.backgroundColor = "yellow";
-					else if (tabledata[cell].pvStatus == "LOW")
-						tds[cell].style.backgroundColor = "blue";
-					else if (tabledata[cell].pvStatus == "LOLO")
-						tds[cell].style.backgroundColor = "purple";
-					else if (!window.parent.checkPVTime(window.frameElement.id, tabledata[cell].pvName, tabledata[cell].pvTime))
-						tds[cell].style.backgroundColor = "lightgray";
-					else
-						tds[cell].style.backgroundColor = "rgba(0, 230, 64, " + valColor + ")";
+					tds[cell].style.backgroundColor = getCellColor(
+        				tabledata[cell].pvName, 
+        				tabledata[cell].pvTime, 
+        				tabledata[cell].pvStatus, 
+        				valColor
+    					);
 				}
 			}
 
-			window.onresize = function() {
-				console.log("2d stop light: window.onresize()");
-				table.style.height = window.innerHeight + "px";
-			};
+			window.addEventListener('resize', ()=> {
+				console.log("2d stop light: window.addEventListener('resize')");
+				var table = document.getElementById("display-table");
+				if (table) table.style.height = window.innerHeight + "px";
+			});
+
+			//=====================================================================================
+			// Open plot with historical data for a given PV name
+			function drawGraph(pvName)
+			{
+				console.log("2d stop light: drawGraph() called for PV:", pvName);
+				
+				if (!pvName || pvName === "-1") {
+					console.warn("2d stop light: Invalid PV name for drawGraph()");
+					return;
+				}
+				
+				var safeArray = JSON.stringify([{[pvName]: 1}]);
+				var url = location.origin + "/WebPath/UserWebPath/html/DCSMonitoringPages/Plot.html?urn=" + window.parent.DesktopContent._localUrnLid + "&pv_names=" + safeArray;
+				
+				window.parent.DesktopContent.openNewWindow("Plot", pvName, url, false);
+			} //end drawGraph()
 
 		</script>
 
