@@ -23,7 +23,7 @@
 //	public function list:
 //		ViewerRoot.launch()
 //
-//  2025 from web, updating to 7.9.0 from 5.8.0: 
+//  2025 from web, updating to 7.9.0 from 5.8.0:
 //				https://root.cern/js/latest/api.htm#custom_html_th2_src
 //				https://github.com/root-project/jsroot/blob/master/docs/JSROOT.md#migration-v6---v7
 //
@@ -334,7 +334,7 @@ ViewerRoot.prepareNextLocation = function (objName, objTitle) {
 	ViewerRoot.rootIsTransparentArr.push(drawTransparently); //keep for transparent drawing
 	ViewerRoot.rootIsAutoRefreshArr.push(ViewerRoot.autoRefreshDefault);
 	ViewerRoot.rootObjNameArr.push(objName);	//assign new report to position
-	
+
 	//look for .root name other blank
 	let prependName = "";
 	{
@@ -883,7 +883,6 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 	//Debug.log("ViewerRoot getRootDataHandler " + req.responseText );
 
 	var rootType = DesktopContent.getXMLValue(req,"rootType");
-	var rootStr = DesktopContent.getXMLValue(req,"rootData");
 	var rootName = DesktopContent.getXMLValue(req,"path");//
 	//"my" + rootType + ViewerRoot.objIndex;// DesktopContent.getXMLValue(req,"path");// + ViewerRoot.objIndex;
 	//if(rootName.length > 20) rootName = "..." + rootName.substr(rootName.length-18);
@@ -1132,7 +1131,7 @@ ViewerRoot.interpretObjectJSON = function (object, rootType, objName, refreshInd
 								object.JSON;
 									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 					});
-			}			
+			}
 		}
         catch (e) {
 			Debug.err("ROOT Object type '" + object._typename +
@@ -1178,7 +1177,7 @@ function loadScript(url, callback) {
 		 callback();
 	  };
    }
-   //var rnd = Math.floor(Math.random()*80000); // Commented out but kept for potential future cache-breaking behavior
+   //var rnd = Math.floor(Math.random()*80000); //keeping in case we need to bring back cache breaking behavior in the future
    script.src = url;//+ "?r=" + rnd;
    document.getElementsByTagName("head")[0].appendChild(script);
 } //end loadScript()
