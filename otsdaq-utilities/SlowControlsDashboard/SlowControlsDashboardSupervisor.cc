@@ -36,9 +36,6 @@ SlowControlsDashboardSupervisor::SlowControlsDashboardSupervisor(
 	interface_              = NULL;
 	alarmNotifyRefreshRate_ = 60;  // seconds
 
-	readOnly_ = getSupervisorProperty("ReadOnly", "1") == "1" ? true : false;
-	__SUP_COUTV__(readOnly_);
-
 	init();
 
 	__SUP_COUT__ << "Constructed." << __E__;
@@ -334,12 +331,13 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes, "poll");
 
-	if(readOnly_)
+	if(CorePropertySupervisorBase::isReadOnly())
 	{
 		CorePropertySupervisorBase::setSupervisorProperty(
 		    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
 		    "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
 			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");  // block users from writing if no write access
+		__COUT_INFO__ << "readOnly true in setSupervisorProperty" << __E__;
 	}
 }  //end forceSupervisorPropertyValues()
 
