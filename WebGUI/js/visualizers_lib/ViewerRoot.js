@@ -1178,7 +1178,7 @@ function loadScript(url, callback) {
 		 callback();
 	  };
    }
-   var rnd = Math.floor(Math.random()*80000);
+   //var rnd = Math.floor(Math.random()*80000); // Commented out but kept for potential future cache-breaking behavior
    script.src = url;//+ "?r=" + rnd;
    document.getElementsByTagName("head")[0].appendChild(script);
 } //end loadScript()
