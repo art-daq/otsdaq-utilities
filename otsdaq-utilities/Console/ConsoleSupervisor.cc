@@ -2274,6 +2274,8 @@ void ConsoleSupervisor::prependHistoricMessages(HttpXmlDocument* xmlOut,
 	xmlOut->addTextElementToData("earliest_update_count",  //return new early onhand count
 	                             std::to_string(readCountStart));
 
+	std::string messagesJson = "[";
+
 	//messages returned will be from readCountStart to earliestOnhandMessageCount-1
 	// output oldest to new
 	for(; refreshReadPointer < messages_.size(); ++refreshReadPointer)
@@ -2282,9 +2284,13 @@ void ConsoleSupervisor::prependHistoricMessages(HttpXmlDocument* xmlOut,
 		if(messages_[refreshReadPointer].getCount() >= earliestOnhandMessageCount)
 			break;  //found last message
 
-		addMessageToResponse(xmlOut, msg);
+		addMessageToResponse(messagesJson, msg);
 
 	}  //end main message add loop
+
+	messagesJson += "]";
+
+	xmlOut->addTextElementToParent("message_json", messagesJson, refreshParent_);
 
 }  // end prependHistoricMessages()
 
