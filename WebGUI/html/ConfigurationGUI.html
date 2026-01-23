@@ -953,7 +953,7 @@
 					var groupActions = ["Activated", "Configured", "Started",  "Configured or Started"];
 					var groupTypes = ["Configuration", "Context", "Backbone",  "Iterate"];
 					//dropdown for each group action
-					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Filter by group type: </label>" +
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
 						"<select id='groupHistoryActionSelect' onchange='setupGroupHistory(this)'>";
 					for(var i=0;i<groupActions.length;++i)
 						str += "<option value='" + groupActions[i] + "' " +
@@ -962,7 +962,7 @@
 					str += "</select></div>";
 
 					//dropdown for each group type
-					str += "<div style='margin-bottom:20px;'><label for='groupHistoryTypeSelect'>Filter by group action: </label>" +
+					str += "<div style='margin-bottom:20px;'><label for='groupHistoryTypeSelect'>Select a group type: </label>" +
 						"<select id='groupHistoryTypeSelect' onchange='setupGroupHistory(this)'>";
 					for(var i=0;i<groupTypes.length;++i)
 						str += "<option value='" + groupTypes[i] + "' " +
