@@ -82,6 +82,7 @@ else
 
 		var _windowDashboardWindowCSSRule;  //e.g. _var.style.width = "100px"
 
+		var _layoutAliasArray, _sysLayoutAliasArray;
 		var _userPref_layout, _sysPref_layout;
 		var _layoutDropDownDisplayed = false;
 		var _layoutMenuItems = [];
@@ -902,6 +903,9 @@ else
 			},500); //end timeout handler
 		} //end handleDashboardWinMouseDown()
 
+		//==============================================================================
+		//handleDashboardLayoutWindow ~~
+		//	handles layout dropdown menu population
 		this.handleDashboardLayoutWindow = function(req)
 		{
 			_layoutAliasArray = Desktop.getXMLValue(req,"pref_aliaslayout");
@@ -911,16 +915,18 @@ else
 			_userPref_layout 	= Desktop.getXMLValue(req,"pref_layout").split(";");
 			_sysPref_layout 	= Desktop.getXMLValue(req,"pref_syslayout").split(";");
 
-			console.log("[DesktopDashboard]_sysLayoutAliasArray " + _sysLayoutAliasArray);
+			Debug.log("[DesktopDashboard]_sysLayoutAliasArray " + _sysLayoutAliasArray);
 
-			for(var i=0;i<numOfSystemLayouts;++i) {
+			for(var i=0;i<numOfSystemLayouts;++i)
+			{
 				if (_sysLayoutAliasArray[i]==-1)
 					_layoutMenuItems[i] = "System Preset-" + (i+1);
 				else
 					_layoutMenuItems[i] = "System Preset-" + _sysLayoutAliasArray[i];
 			}
 
-			for(var i=0;i<numOfUserLayouts;++i) {
+			for(var i=0;i<numOfUserLayouts;++i)
+			{
 				if (_layoutAliasArray[i]==-1 || _layoutAliasArray[i].length==0)
 					_layoutMenuItems[numOfSystemLayouts+i+1] = "User Preset-" + (i+1);
 				else
@@ -935,7 +941,8 @@ else
 			for(var i=0;i<_layoutMenuItems.length;++i)
 				if(_layoutMenuItems[i] == "---") //horizontal line
 					str += "<center><hr width='75%' style='border:1px solid; margin-top:5px'/></center>";
-				else {
+				else
+				{
 					str += "<a href='#' "
 					+ "id='layoutID" + i + "' "
 					+ "title='Preview' "
@@ -958,7 +965,7 @@ else
 
 			el.innerHTML = str;
 			_dashboardElement.appendChild(el);
-		}
+		} //end handleDashboardLayoutWindow()
 
 		//==============================================================================
 		this.hoverPreviewLayout = function(layoutID)
