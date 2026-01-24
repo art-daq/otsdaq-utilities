@@ -1848,8 +1848,8 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
     {
         //register move cursor and window in question
         Desktop.foreWinLastMouse = [mouseEvent.clientX, mouseEvent.clientY];
-        if (!isDashboard) {            
-            
+        if (!isDashboard) {
+
             for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); ++i)
                 Desktop.desktop.getWindowByIndex(i).hideFrame();
 
@@ -1910,10 +1910,10 @@ Desktop.handleWindowMouseUp = function (mouseEvent) {
 //==============================================================================
 //handle window move and resize
 Desktop.handleWindowMouseMove = function (mouseEvent, el) {
-    
-    if(this.id)  //if this exists, use it 
+
+    if(this.id)  //if this exists, use it
         el = this;
-    
+
     if(!el)
         return false;
 
