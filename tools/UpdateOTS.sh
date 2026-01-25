@@ -405,6 +405,21 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			# else
 				# echo "All local branches are represented on origin."
 			fi
+
+			# find branches with unpushed commits
+			unpushed=$(git for-each-ref --format='%(refname:short)' refs/heads | while read -r b; do
+				upstream=$(git for-each-ref --format='%(upstream:short)' "refs/heads/$b")
+				[ -z "$upstream" ] && continue
+
+				ahead=$(git rev-list --count "$upstream..$b")
+				[ "$ahead" -gt 0 ] && printf "%s(%s ahead)\n" "$b" "$ahead"
+			done | paste -sd', ' -)
+
+			if [ -n "$unpushed" ]; then
+				echo -e " ===|>  WARNING!!! Found local branches with unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
+			fi
+
+			#done checking repo, return to previous directory
 			cd -
 		else
 			echo -e "UpdateOTS.sh:${LINENO}  NOT GitHub repo found: $repo_dir"
