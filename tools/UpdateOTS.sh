@@ -401,22 +401,21 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 				| paste -sd', ' -)
 			if [ -n "$missing" ]; then
-				echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
+				echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
 			# else
 				# echo "All local branches are represented on origin."
 			fi
 
 			# find branches with unpushed commits
-			unpushed=$(git for-each-ref --format='%(refname:short)' refs/heads | while read -r b; do
-				upstream=$(git for-each-ref --format='%(upstream:short)' "refs/heads/$b")
+			unpushed=$(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+			while read -r branch upstream; do
 				[ -z "$upstream" ] && continue
-
-				ahead=$(git rev-list --count "$upstream..$b")
-				[ "$ahead" -gt 0 ] && printf "%s(%s ahead)\n" "$b" "$ahead"
+				ahead=$(git rev-list --count "$upstream..$branch")
+				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
 			done | paste -sd', ' -)
 
 			if [ -n "$unpushed" ]; then
-				echo -e " ===|>  WARNING!!! Found local branches with unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
+				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
 			fi
 
 			#done checking repo, return to previous directory
@@ -618,21 +617,36 @@ for p in ${REPO_DIR[@]}; do
 		# else
 		# 	echo "Working tree is clean."
 		fi
+
+		#find unmerged branches
 		branch="$(git rev-parse --abbrev-ref HEAD)"
 		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
 			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
 		# else
 		# 	echo "You are on main or develop"
 		fi
+
 		#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
 		missing=$(comm -23 \
 			<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
 			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 			| paste -sd', ' -)
 		if [ -n "$missing" ]; then
-			echo -e  " ===|>  WARNING!!! Found some local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
+			echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
 		# else
 			# echo "All local branches are represented on origin."
+		fi
+
+		# find branches with unpushed commits
+		unpushed=$(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+		while read -r branch upstream; do
+			[ -z "$upstream" ] && continue
+			ahead=$(git rev-list --count "$upstream..$branch")
+			[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
+		done | paste -sd', ' -)
+
+		if [ -n "$unpushed" ]; then
+			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
 		fi
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
