@@ -15551,7 +15551,11 @@
                     }
 
                     var results = req.responseXML.getElementsByTagName("Match");
-                    console.log("results length " + results.length);
+                    if(results.length == 0)
+                    {
+                        Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br> Found no matches."));
+                        return;
+                    }
 
                     var matchStr = "";
                     var matchColumnMap = new Map();
@@ -15596,9 +15600,7 @@
                     }
 
                     Debug.log("matchStr " + matchStr);
-
-                    if (matchStr)
-                        Debug.info(DesktopContent.tooltipConditionString("Search Results: " + searchText + "<br><br>" + matchStr));
+                    Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>" + matchStr));
                 }, 0);
         } //end popUpSearchFieldPrompt()
 

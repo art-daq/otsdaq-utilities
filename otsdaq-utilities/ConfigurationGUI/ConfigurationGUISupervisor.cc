@@ -1158,30 +1158,33 @@ try
 	}
 	else if(requestType == "SearchFieldInAllTableVersions")
 	{
-		std::string searchText      = CgiDataUtilities::getData(cgiIn, "searchText");
-		std::string tableName      = CgiDataUtilities::getData(cgiIn, "tableName");
+		std::string searchText = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string tableName  = CgiDataUtilities::getData(cgiIn, "tableName");
 
 		__SUP_COUT__ << "searchText: " << searchText << __E__;
 		__SUP_COUT__ << "tableName: " << tableName << __E__;
 
-		//handleSearchFieldInAllTableVersionsXML(xmlOut, cfgMgr, searchText, tableName);
 		try
 		{
-			const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
-			
+			const std::map<std::string, TableInfo>& allTableInfo =
+			    cfgMgr->getAllTableInfo();
+
 			if(allTableInfo.find(tableName) == allTableInfo.end())
 			{
 				__SUP_SS__ << "Table '" << tableName << "' not found." << __E__;
 				xmlOut.addTextElementToData("Error", ss.str());
 				return;
 			}
-			
+
 			const TableInfo& tableInfo = allTableInfo.at(tableName);
-			xercesc::DOMElement* parentEl = xmlOut.addTextElementToData("SearchResults", "");
-			
-			unsigned int matchCount = 0;
-			
-			__COUT__ << "tableInfo versions length" << tableInfo.versions_.size() << __E__;
+			__COUT__ << "tableInfo versions length" << tableInfo.versions_.size()
+			         << __E__;
+
+			unsigned int matchCount          = 0;
+			bool         allowIllegalColumns = true;
+			bool         getRawData          = true;
+			// Create a parent element for search results
+			auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
 
 			// Loop through all versions of the table
 			for(const auto& version : tableInfo.versions_)
@@ -1189,54 +1192,131 @@ try
 				try
 				{
 					TableBase* table = cfgMgr->getTableByName(tableName);
-					
-					__COUT__ << "Getting table " << tableName << " version " << version << __E__;
-					
-					// Get the versioned table
-					std::string localAccumulatedErrors = "";
-					table->setActiveView(version);
-					
-					const TableView& view = table->getView();
-					
-					// Search through all rows and columns
-					for(unsigned int row = 0; row < view.getNumberOfRows(); ++row)
+
+					// get view pointer
+					TableView* tableViewPtr;
+					if(version.isInvalid())  // use mock-up
 					{
-						for(unsigned int col = 0; col < view.getNumberOfColumns(); ++col)
+						__COUT__ << "Using mock-up for table " << tableName << " version "
+						         << version << __E__;
+						tableViewPtr = table->getMockupViewP();
+					}
+					else  // use view version
+					{
+						try
 						{
-							const std::string& cellValue = view.getDataView()[row][col];
-							__COUT__ << "Checking row " << row << " column " << col 
-								<< " value: " << cellValue << __E__;
-							
-							// Check if searchText is found in cell value
-							if(cellValue.find(searchText))
+							// locally accumulate 'manageable' errors getting the version to avoid
+							// reverting to mockup
+							std::string localAccumulatedErrors = "";
+							tableViewPtr =
+							    cfgMgr
+							        ->getVersionedTableByName(
+							            tableName,
+							            version,
+							            allowIllegalColumns /*looseColumnMatching*/,
+							            &localAccumulatedErrors,
+							            getRawData)
+							        ->getViewP();
+
+							if(getRawData)
 							{
+								__COUT__ << "Adding raw data for table " << tableName
+								         << " version " << version << __E__;
+
+								const std::set<std::string>& srcColNames =
+								    tableViewPtr->getSourceColumnNames();
+								for(auto& srcColName : srcColNames)
+									xmlOut.addTextElementToData("ColumnHeader",
+									                            srcColName);
+
+								if(!version.isTemporaryVersion())
+								{
+									__COUT__ << "Table is temporary, reloading view to "
+									            "clear raw data"
+									         << __E__;
+									// if version is temporary, view is already ok
+									table->eraseView(
+									    version);  // clear so that the next get will fill the table
+									tableViewPtr =
+									    cfgMgr
+									        ->getVersionedTableByName(
+									            tableName,
+									            version,
+									            allowIllegalColumns /*looseColumnMatching*/
+									            ,
+									            &localAccumulatedErrors,
+									            false /* getRawData */)
+									        ->getViewP();
+								}
+							}  // end rawData handling
+
+							if(localAccumulatedErrors != "")
+								xmlOut.addTextElementToData("Error",
+								                            localAccumulatedErrors);
+						}
+						catch(const std::runtime_error& e)
+						{
+							__COUT__ << "Error loading version " << version
+							         << " for table " << tableName << ": " << e.what()
+							         << __E__;
+							__SUP_COUT_WARN__ << "Could not load version " << version
+							                  << " for table " << tableName << ": "
+							                  << e.what() << __E__;
+							// fallback to mockup
+							tableViewPtr = table->getMockupViewP();
+						}
+					}
+
+					__COUT__ << "Getting table " << tableName << " version " << version
+					         << __E__;
+
+					// Search through all rows and columns
+					for(unsigned int row = 0; row < tableViewPtr->getNumberOfRows();
+					    ++row)
+					{
+						for(unsigned int col = 0;
+						    col < tableViewPtr->getNumberOfColumns();
+						    ++col)
+						{
+							const std::string& cellValue =
+							    tableViewPtr->getDataView()[row][col];
+							// Check if searchText is found in cell value
+							if(cellValue.find(searchText) != std::string::npos)
+							{
+								__COUT__ << "Match found in row " << row << " column "
+								         << col << " value: " << cellValue << __E__;
 								auto matchEl = xmlOut.addTextElementToParent(
-									"Match", cellValue, parentEl);
+								    "Match", cellValue, parentEl);
 								xmlOut.addTextElementToParent(
-									"MatchVersion", version.toString(), matchEl);
+								    "MatchVersion", version.toString(), matchEl);
 								xmlOut.addTextElementToParent(
-									"MatchRow", std::to_string(row), matchEl);
+								    "MatchRow", std::to_string(row), matchEl);
 								xmlOut.addTextElementToParent(
-									"MatchColumn", view.getColumnInfo(col).getName(), matchEl);
-								
+								    "MatchColumn",
+								    tableViewPtr->getColumnInfo(col).getName(),
+								    matchEl);
+
 								++matchCount;
 							}
 						}
-					}
+					}  // end for rows and columns
 				}
 				catch(const std::runtime_error& e)
 				{
-					__SUP_COUT_WARN__ << "Could not load version " << version 
-						<< " for table " << tableName << ": " << e.what() << __E__;
+					__COUT__ << "Error searching in version " << version << " for table "
+					         << tableName << ": " << e.what() << __E__;
+					__SUP_COUT_WARN__ << "Could not load version " << version
+					                  << " for table " << tableName << ": " << e.what()
+					                  << __E__;
 				}
-			}
-			
+			}  //emd for version loop
+
 			xmlOut.addTextElementToData("MatchCount", std::to_string(matchCount));
 		}
 		catch(std::runtime_error& e)
 		{
-			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " 
-				<< e.what() << __E__;
+			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n "
+			           << e.what() << __E__;
 			__SUP_COUT_ERR__ << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 		}
@@ -1257,9 +1337,6 @@ try
 			__SUP_COUT_ERR__ << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 		}
-
-		
-
 	}
 	else if(requestType == "saveTreeNodeEdit")
 	{
