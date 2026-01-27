@@ -883,7 +883,7 @@
 				return xml.replace(/(\s+)([^\s=<>\/]+)\s*=\s*([^"'\s=<>`][^\s<>]*)/g,
 					(m, ws, name, val) => `${ws}${name}="${val.replace(/"/g, '&quot;')}"`
 				);
-				}
+				};
 
 				var parseConfigRecord = function(record){
 					const obj = {};
