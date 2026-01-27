@@ -246,7 +246,6 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 
 	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
 
-
 	auto runInfo = makeRunInfo(pluginName, runInfoUID);
 
 	if(runInfo == nullptr)
@@ -316,35 +315,46 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
 			i++;
 
-
 			__COUT__ << "Number of cycles: " << i << __E__;
 
-			try 
+			try
 			{
-				subsystemConfigRecords = runInfoInterface->getRunConfigSubsystemInfo(std::stoul(runData[5]));
+				subsystemConfigRecords =
+				    runInfoInterface->getRunConfigSubsystemInfo(std::stoul(runData[5]));
 			}
 			catch(const std::exception& e)
 			{
 				__COUT__ << "Error getting subsytem configuration info" << __E__;
-				__COUT__ << e.what() << __E__; 
+				__COUT__ << e.what() << __E__;
 			}
 
 			std::string rows;
 			for(auto subsystemConfRecord : subsystemConfigRecords)
 			{
-				rows.append("<config_record config_record_id= " + subsystemConfRecord[0] + ">");
+				rows.append("<config_record config_record_id= " + subsystemConfRecord[0] +
+				            ">");
 				rows.append("<config_id>" + subsystemConfRecord[0] + "</config_id>");
-				rows.append("<subsystem_id>" + subsystemConfRecord[1] + "</subsystem_id>");
-				rows.append("<subsystem_config_data>" + subsystemConfRecord[2] + "</subsystem_config_data>");
-				rows.append("<config_alias>" + subsystemConfRecord[3] + "</config_alias>");
-				rows.append("<context_name>" + subsystemConfRecord[4] + "</context_name>");
+				rows.append("<subsystem_id>" + subsystemConfRecord[1] +
+				            "</subsystem_id>");
+				rows.append("<subsystem_config_data>" + subsystemConfRecord[2] +
+				            "</subsystem_config_data>");
+				rows.append("<config_alias>" + subsystemConfRecord[3] +
+				            "</config_alias>");
+				rows.append("<context_name>" + subsystemConfRecord[4] +
+				            "</context_name>");
 				rows.append("<context_key>" + subsystemConfRecord[5] + "</context_key>");
-				rows.append("<context_group_name>" + subsystemConfRecord[6] + "</context_group_name>");
-				rows.append("<config_group_key>" + subsystemConfRecord[7] + "</config_group_key>");
-				rows.append("<backbone_name>" + subsystemConfRecord[8] + "</backbone_name>");
-				rows.append("<backbone_name>" + subsystemConfRecord[9] + "</backbone_name>");
-				rows.append("<config_db_uri>" + subsystemConfRecord[10] + "</config_db_uri>");
-				rows.append("<subsystem_sw_version_id>" + subsystemConfRecord[11] + "</subsystem_sw_version_id>");
+				rows.append("<context_group_name>" + subsystemConfRecord[6] +
+				            "</context_group_name>");
+				rows.append("<config_group_key>" + subsystemConfRecord[7] +
+				            "</config_group_key>");
+				rows.append("<backbone_name>" + subsystemConfRecord[8] +
+				            "</backbone_name>");
+				rows.append("<backbone_name>" + subsystemConfRecord[9] +
+				            "</backbone_name>");
+				rows.append("<config_db_uri>" + subsystemConfRecord[10] +
+				            "</config_db_uri>");
+				rows.append("<subsystem_sw_version_id>" + subsystemConfRecord[11] +
+				            "</subsystem_sw_version_id>");
 				rows.append("<create_time>" + subsystemConfRecord[12] + "</create_time>");
 				rows.append("</config_record>");
 			}

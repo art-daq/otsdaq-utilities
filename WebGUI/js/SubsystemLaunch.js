@@ -395,8 +395,8 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<button id='systemManualFsmAction' " + 
-						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" + 
+					str += "<button id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						"style='margin-right:10px'>Configure</button>";
 					str += "<button id='systemManualFsmAction' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
@@ -619,8 +619,8 @@ SubsystemLaunch.create = function() {
 						}
                         else if (fieldIds[i] == "action") {
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
-								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" + 
-								"style='margin-right:10px'" + 
+								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
+								"style='margin-right:10px'" +
 								">Configure</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
@@ -630,7 +630,7 @@ SubsystemLaunch.create = function() {
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
 								">Halt</button>";
-						}	
+						}
                         else if (fieldIds[i] == "configAlias") {
 							// str += "<div style='white-space:nowrap'>";
 							str += "<select id='subsystem_" + fieldIds[i] +
@@ -806,7 +806,7 @@ SubsystemLaunch.create = function() {
                         if (i == SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS) {
 							var status = subsystemArrs[fields[i]][j].getAttribute('value');
 							if(SubsystemLaunch.subsystems[j].fsmIncluded && //give popup warning if subsystem included and new unknown status
-									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN && 
+									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN &&
                                 status != SubsystemLaunch.subsystems[j][fields[i]]) {
 								Debug.warn("From Subsystem '" +
 									SubsystemLaunch.subsystems[j].name + " (" + SubsystemLaunch.subsystems[j].url + ")... " +
@@ -1207,7 +1207,7 @@ SubsystemLaunch.create = function() {
                 if (err) {
 					Debug.err("Could not load app status: " + err);
 				}
-				
+
 				let hostname = ""
 				const ips = req.responseXML.getElementsByTagName("context");
 

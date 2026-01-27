@@ -223,7 +223,7 @@
 				/*padding: 2px 10px 0 0;*/
 				width: 100%;
 				border: 1px solid rgb(245, 198, 127);
-				border-radius: 10px;			
+				border-radius: 10px;
 			}
 			.RunDbViewer-entryTable tr td:nth-child(1) {
 				text-align: left;
@@ -237,7 +237,6 @@
 
 			.RunDbViewer-entryTable tr.subsystemRow {
 				display: table-cell;
-				
 			}
 			.RunDbViewer-entryTable tr.subsystemRow td {
 				display: block;
@@ -876,7 +875,7 @@
 				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE)[0].getAttribute("value")) + "</td>";
 				table.appendChild(entryText);
 				entryText = document.createElement("tr");
-				
+
 				var subsystemInfo = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD)[0].getAttribute("value");
 
 				var sanitize = function(xml) {
@@ -914,19 +913,18 @@
 							if(Array.isArray(entries[j][0]))
 								fr += `<td>${entries[j][0].join("<br>")}</td>`;
 							else
-								fr += `<td>${entries[j][0]}</td>`;	
+								fr += `<td>${entries[j][0]}</td>`;
 						}
 
 						if(Array.isArray(entries[j][1]))
 							t += `<td>${entries[j][1].join("<br>")}</td>`;
 						else
 							t += `<td>${entries[j][1]}</td>`;
-							
 					}
 
 					if(i == 0)
 						t = fr + "</tr>" + t;
-					
+
 					return t + "</tr>";
 				}
 
