@@ -297,8 +297,7 @@ else {
             this.windiv.style.left = _x + "px";
             this.windiv.style.top = _y + "px";
 
-            //Debug.log("Desktop Window position to " + _x + "," +
-            //	_y );
+            // Debug.log("Desktop Window position to " + _x + "," + _y );
 
             //reset current layout update timer if a window moves
             Desktop.desktop.login.resetCurrentLayoutUpdateTimer();

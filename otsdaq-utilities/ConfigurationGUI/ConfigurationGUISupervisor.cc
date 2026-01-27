@@ -800,8 +800,8 @@ try
 	{
 		std::string groupAction = StringMacros::decodeURIComponent(
 		    CgiDataUtilities::getData(cgiIn, "groupAction"));  // from GET
-		std::string groupType =
-		    CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
+		std::string groupType = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getData(cgiIn, "groupType"));  // from GET
 
 		__SUP_COUTV__(groupAction);
 		__SUP_COUTV__(groupType);
