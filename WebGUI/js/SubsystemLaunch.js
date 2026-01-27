@@ -149,7 +149,7 @@ SubsystemLaunch.create = function() {
 			Debug.log("User clicked window, resetting timer...");
 			window.clearTimeout(_getStatusTimer);
 			_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
-		} //end window onclick handler
+		}; //end window onclick handler
 
 
 		//get all needed info sequentially
