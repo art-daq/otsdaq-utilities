@@ -596,7 +596,7 @@ SubsystemLaunch.create = function() {
 						}
                         else if (fieldIds[i] == "name") {
 							var addLandingPage = false;
-							str += "<div style='margin-right:30px;'>"
+							str += "<div style='margin-right:30px;'>";
                             if (SubsystemLaunch.subsystems[s].landingPage && SubsystemLaunch.subsystems[s].landingPage != "") {
 								addLandingPage = true;
 								str += "<a onclick='DesktopContent.openNewWindow(\"" +
