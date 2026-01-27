@@ -882,7 +882,7 @@
 				return xml.replace(/(\s+)([^\s=<>\/]+)\s*=\s*([^"'\s=<>`][^\s<>]*)/g,
 					(m, ws, name, val) => `${ws}${name}="${val.replace(/"/g, '&quot;')}"`
 				);
-				}
+				};
 
 				var parseConfigRecord = function(record){
 					const obj = {};
@@ -900,7 +900,7 @@
 					}
 
 					return obj;
-				}
+				};
 
 				var tableFromObj = function(o, i){
 					let t = "<tr class='subsystemRow'>";
@@ -926,7 +926,7 @@
 						t = fr + "</tr>" + t;
 
 					return t + "</tr>";
-				}
+				};
 
 				var xmlToTables = function(xml){
 					xml = sanitize(xml);
@@ -946,7 +946,7 @@
 					}
 
 					return html+"</table>";
-				}
+				};
 
 				entryText.innerHTML = "<td>Subsystem Configuration</td><td>" + xmlToTables(subsystemInfo) + "</td>";
 
