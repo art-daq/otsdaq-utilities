@@ -1208,7 +1208,7 @@ SubsystemLaunch.create = function() {
 					Debug.err("Could not load app status: " + err);
 				}
 
-				let hostname = ""
+				let hostname = "";
 				const ips = req.responseXML.getElementsByTagName("context");
 
                 for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s) {
