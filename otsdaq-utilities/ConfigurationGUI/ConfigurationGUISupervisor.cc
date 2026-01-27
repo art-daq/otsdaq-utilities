@@ -1156,6 +1156,113 @@ try
 		handleGetAffectedGroupsXML(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
 	}
+	else if(requestType == "SearchFieldInAllTableVersions")
+	{
+		std::string searchText      = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string tableName      = CgiDataUtilities::getData(cgiIn, "tableName");
+		std::string searchMinThreshold = CgiDataUtilities::getData(cgiIn, "searchMinThreshold");
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "tableName: " << tableName << __E__;
+		__SUP_COUT__ << "searchMinThreshold: " << searchMinThreshold << __E__;
+
+		//handleSearchFieldInAllTableVersionsXML(xmlOut, cfgMgr, searchText, tableName);
+		try
+		{
+			const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
+			
+			if(allTableInfo.find(tableName) == allTableInfo.end())
+			{
+				__SUP_SS__ << "Table '" << tableName << "' not found." << __E__;
+				xmlOut.addTextElementToData("Error", ss.str());
+				return;
+			}
+			
+			const TableInfo& tableInfo = allTableInfo.at(tableName);
+			xercesc::DOMElement* parentEl = xmlOut.addTextElementToData("SearchResults", "");
+			
+			unsigned int matchCount = 0;
+			
+			__COUT__ << "tableInfo versions length" << tableInfo.versions_.size() << __E__;
+
+			// Loop through all versions of the table
+			for(const auto& version : tableInfo.versions_)
+			{
+				try
+				{
+					TableBase* table = cfgMgr->getTableByName(tableName);
+					
+					__COUT__ << "Getting table " << tableName << " version " << version << __E__;
+					
+					// Get the versioned table
+					std::string localAccumulatedErrors = "";
+					table->setActiveView(version);
+					
+					const TableView& view = table->getView();
+					
+					// Search through all rows and columns
+					for(unsigned int row = 0; row < view.getNumberOfRows(); ++row)
+					{
+						for(unsigned int col = 0; col < view.getNumberOfColumns(); ++col)
+						{
+							const std::string& cellValue = view.getDataView()[row][col];
+							__COUT__ << "Checking row " << row << " column " << col 
+								<< " value: " << cellValue << __E__;
+							
+							// Check if searchText is found in cell value
+							if(cellValue.find(searchText))
+							{
+								auto matchEl = xmlOut.addTextElementToParent(
+									"Match", cellValue, parentEl);
+								xmlOut.addTextElementToParent(
+									"MatchVersion", version.toString(), matchEl);
+								xmlOut.addTextElementToParent(
+									"MatchRow", std::to_string(row), matchEl);
+								xmlOut.addTextElementToParent(
+									"MatchColumn", view.getColumnInfo(col).getName(), matchEl);
+								
+								++matchCount;
+							}
+						}
+					}
+				}
+				catch(const std::runtime_error& e)
+				{
+					__SUP_COUT_WARN__ << "Could not load version " << version 
+						<< " for table " << tableName << ": " << e.what() << __E__;
+				}
+			}
+			
+			xmlOut.addTextElementToData("MatchCount", std::to_string(matchCount));
+		}
+		catch(std::runtime_error& e)
+		{
+			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " 
+				<< e.what() << __E__;
+			__SUP_COUT_ERR__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+		catch(...)
+		{
+			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " << __E__;
+			try
+			{
+				throw;
+			}
+			catch(const std::exception& e)
+			{
+				ss << "Exception message: " << e.what();
+			}
+			catch(...)
+			{
+			}
+			__SUP_COUT_ERR__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+
+		
+
+	}
 	else if(requestType == "saveTreeNodeEdit")
 	{
 		std::string editNodeType = CgiDataUtilities::getData(cgiIn, "editNodeType");

@@ -3168,6 +3168,14 @@
                     "; return false;'>Clear Temporary Versions</a>";
             }
 
+            //{
+            //    //download table
+            //    var downloadLinkStr = "popUpTableDownloadForm(\"" + tableName + "\",\"" + version + "\",\"" + backLinkStr + "\");";
+            //    str += "&nbsp;&nbsp;&nbsp;&nbsp;";
+            //    str += "<a href='#' onclick='" + downloadLinkStr +
+            //        "; return false;'>Download Table</a>";
+            //}
+
 
 
             str += "<br><br>";
@@ -3182,7 +3190,7 @@
 
             //display config name and version
             str += "<div style='float:left;'>";
-            str += "<b>" + tableName + "</b> (version: " + (version == -1 ? _MOCKUP_VIEW_NAME :
+            str += "<b id='tableName'>" + tableName + "</b> (version: " + (version == -1 ? _MOCKUP_VIEW_NAME :
                 (version == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : version)) + ")";
             str += "</div>";
 
@@ -3268,6 +3276,13 @@
             str += "<div id='clearDiv'></div>";
             str += "<div id='findAndReplace'></div>";
             str += "<div id='aboveTableDialog'></div>";
+
+            //{
+            //    //search field in all table versions
+            //    str += "Search text in all table versions: ";
+            //    str += "&nbsp;&nbsp;";
+            //    str += "<input type='text' id='searchFieldInTableVersions' placeholder='Enter text' onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }'>";
+            //}
 
             //create table details
             str += "<div id='tableDetails' style='display:none'>Table Details:";
@@ -3536,7 +3551,7 @@
                 setSelectedByIndex(idx, dragModeSelect);
             });
 
-            window.addEventListener('mouseup', () => {
+            tbody.addEventListener('mouseup', () => {
                 isDragging = false;
                 document.body.classList.remove('no-select');
                 window.getSelection().removeAllRanges();
@@ -7481,6 +7496,31 @@
             ); //end diffWithActiveGroup
 
         } //end tableVersionDiff()
+
+        //==============================================================================
+        function setupSearchAllTableVersions() {
+            Debug.log("setupSearchAllTableVersions()");
+
+            var el = document.getElementById('aboveTableDialog'); //share with copyAndMove and tableVersionDiff
+            if (el.innerHTML != "") { el.innerHTML = ""; return; } //hide if already shown
+
+            var tableName = document.getElementById("tableName").innerText;
+
+            console.log("tableName: " + tableName);
+
+            var str = "";
+            str += "<br>Minimum threshold value... ";
+            str += "<br>";
+            str += "<input type='text' id='searchMinThreshold' value='1'/>";
+            
+            str += "<br>Search all Table Versions for... ";
+            str += "<br>";
+            str += "<input type='text' id='searchTextInAllTableVersions' value='' " +
+                "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }' " +
+                "/>";
+            str += "<br><br>";
+            el.innerHTML = str;
+        }
 
         //==============================================================================
         //setupTableVersionDiff
@@ -15485,6 +15525,55 @@
 
         //==============================================================================
         //popUpSaveNewTableForm
+        function popUpSearchFieldPrompt(tableName) {
+            console.log("CfgGUI popUpSearchFieldPrompt");
+            console.log("TableName " + tableName);
+
+            var el = document.getElementById("searchTextInAllTableVersions");
+            var searchText = el ? el.value : "";
+            Debug.log("Search field value: " + searchText);
+
+            var el = document.getElementById("searchMinThreshold");
+            var searchMinThreshold = el ? el.value : "";
+            Debug.log("Search field value: " + searchMinThreshold);
+
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInAllTableVersions" + 
+                "&searchText=" + searchText + 
+                "&searchMinThreshold=" + searchMinThreshold +
+                "&tableName=" + tableName,
+                "",
+                function(req){
+                    var req = arguments[0];
+                    var errStr = arguments[2];
+                    if (errStr) {
+                        Debug.err(errStr);
+                        return;
+                    }
+
+                    var results = req.responseXML.getElementsByTagName("Match");
+                    console.log("results length " + results.length);
+
+                    var matchStr = "";
+                    for (var i = 0; i < results.length; ++i) {
+                        var cellValue = DesktopContent.getXMLValue(results[i], "Match");
+                        var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
+                        var matchRow = DesktopContent.getXMLValue(results[i], "MatchRow");
+                        var matchColumn = DesktopContent.getXMLValue(results[i], "MatchColumn");
+                        
+                        matchStr += "Row: <b>" + matchRow + "</b>, Column: <b>" + matchColumn + 
+                            "</b>, Version: <b>" + matchVersion + "</b><br>";
+                    }
+
+                    console.log("matchStr " + matchStr);
+
+                    if (matchStr) {
+                        Debug.info(DesktopContent.tooltipConditionString("Search Results:<br><br>" + matchStr));
+                    }
+                }, 0);
+        } //end popUpSearchFieldPrompt()
+
+        //==============================================================================
+        //popUpSaveNewTableForm
         function popUpSaveNewTableForm() {
             editCellOK(); //editCellCancel();
             Debug.log("CfgGUI popUpSaveNewTableForm");
@@ -17726,6 +17815,7 @@
                 "Find and Replace",
                 "Copy and Move",
                 "Diff Table Versions",
+                "Search All Table Versions",
                 _showTableDetails ?
                     "Hide Table Details" :
                     "Show Table Details",
@@ -17754,6 +17844,7 @@
                 "setupFindAndReplace()",
                 "setupCopyAndMoveRows()",
                 "setupTableVersionDiff()",
+                "setupSearchAllTableVersions()",
                 "toggleTableDetails()",
                 "transposeTableView()",
                 "DesktopContent.openNewBrowserTab(" +
