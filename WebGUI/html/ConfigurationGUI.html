@@ -15538,8 +15538,8 @@
             var searchMinThreshold = el ? el.value : "";
             Debug.log("Search field value: " + searchMinThreshold);
 
-            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInAllTableVersions" + 
-                "&searchText=" + searchText + 
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInAllTableVersions" +
+                "&searchText=" + searchText +
                 "&tableName=" + tableName,
                 "",
                 function(req){
@@ -15585,7 +15585,7 @@
                             matchColumnMap.set(matchColumn, 1);
                     }
 
-                    // for last version looped through 
+                    // for last version looped through
                     if(matchColumnMap.size > 0)
                     {
                         matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
