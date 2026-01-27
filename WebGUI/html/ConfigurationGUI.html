@@ -7511,16 +7511,17 @@
             var str = "";
             str += "<br>Minimum threshold value... ";
             str += "<br>";
-            str += "<input type='text' id='searchMinThreshold' value='1'/>";
-            
+            str += "<input type='text' id='searchMinThreshold' value='1'" +
+                    "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
+
             str += "<br>Search all Table Versions for... ";
             str += "<br>";
             str += "<input type='text' id='searchTextInAllTableVersions' value='' " +
                 "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }' " +
-                "/>";
+                "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
             str += "<br><br>";
             el.innerHTML = str;
-        }
+        } //end setupSearchAllTableVersions()
 
         //==============================================================================
         //setupTableVersionDiff
@@ -15539,7 +15540,6 @@
 
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInAllTableVersions" + 
                 "&searchText=" + searchText + 
-                "&searchMinThreshold=" + searchMinThreshold +
                 "&tableName=" + tableName,
                 "",
                 function(req){
@@ -15554,21 +15554,51 @@
                     console.log("results length " + results.length);
 
                     var matchStr = "";
+                    var matchColumnMap = new Map();
+                    var prevVersion = -1;
                     for (var i = 0; i < results.length; ++i) {
-                        var cellValue = DesktopContent.getXMLValue(results[i], "Match");
+                        //var cellValue = DesktopContent.getXMLValue(results[i], "Match");
+                        //var matchRow = DesktopContent.getXMLValue(results[i], "MatchRow");
+
                         var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
-                        var matchRow = DesktopContent.getXMLValue(results[i], "MatchRow");
+                        if(matchVersion != prevVersion)
+                        {
+                            if(matchColumnMap.size > 0)
+                            {
+                                matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
+                                            "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                for (let [column, count] of matchColumnMap) {
+                                    if(count >= searchMinThreshold)
+                                        matchStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                                }
+                            }
+                            matchStr += "<br>";
+                            prevVersion = matchVersion;
+                            matchColumnMap = new Map();
+                        }
+
                         var matchColumn = DesktopContent.getXMLValue(results[i], "MatchColumn");
-                        
-                        matchStr += "Row: <b>" + matchRow + "</b>, Column: <b>" + matchColumn + 
-                            "</b>, Version: <b>" + matchVersion + "</b><br>";
+                        if(matchColumnMap.has(matchColumn))
+                            matchColumnMap.set(matchColumn, matchColumnMap.get(matchColumn)+1);
+                        else
+                            matchColumnMap.set(matchColumn, 1);
                     }
 
-                    console.log("matchStr " + matchStr);
-
-                    if (matchStr) {
-                        Debug.info(DesktopContent.tooltipConditionString("Search Results:<br><br>" + matchStr));
+                    // for last version looped through 
+                    if(matchColumnMap.size > 0)
+                    {
+                        matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
+                                    "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                        for (let [column, count] of matchColumnMap) {
+                            if(count >= searchMinThreshold)
+                                matchStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                        }
                     }
+
+                    Debug.log("matchStr " + matchStr);
+
+                    if (matchStr)
+                        Debug.info(DesktopContent.tooltipConditionString("Search Results: " + searchText + "<br><br>" + matchStr));
                 }, 0);
         } //end popUpSearchFieldPrompt()
 

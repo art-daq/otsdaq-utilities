@@ -1160,11 +1160,9 @@ try
 	{
 		std::string searchText      = CgiDataUtilities::getData(cgiIn, "searchText");
 		std::string tableName      = CgiDataUtilities::getData(cgiIn, "tableName");
-		std::string searchMinThreshold = CgiDataUtilities::getData(cgiIn, "searchMinThreshold");
 
 		__SUP_COUT__ << "searchText: " << searchText << __E__;
 		__SUP_COUT__ << "tableName: " << tableName << __E__;
-		__SUP_COUT__ << "searchMinThreshold: " << searchMinThreshold << __E__;
 
 		//handleSearchFieldInAllTableVersionsXML(xmlOut, cfgMgr, searchText, tableName);
 		try
