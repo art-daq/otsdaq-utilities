@@ -511,11 +511,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 				         << " Live: " << theDataManager_->getLiveDQMHistos() << std::endl;
 			if(path == "/")
 			{
-				// Add live histos if I am in the main dir.
-				if(theDataManager_ != nullptr &&
-				   theDataManager_->getLiveDQMHistos() == true)
-					xmlOut.addTextElementToData("dir",
-					                            LIVEDQM_DIR + ".root");  // add to xml
+				// Add live histos
+				xmlOut.addTextElementToData("dir",
+				                            LIVEDQM_DIR + ".root");  // add to xml
 
 				// check for ROOT_DISPLAY_CONFIG_PATH
 				DIR* pRtDIR  = opendir(ROOT_DISPLAY_CONFIG_PATH);
@@ -1601,6 +1599,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		xmlOut.addTextElementToData("JSONPayLoad", JSONPayLoad);
 		//         std::ostringstream* out ;
 		//	 xmlOut.outputXmlDocument((std::ostringstream*) out, true);
+	}
+	else if(
+	    requestType ==
+	    "getState")  // ################################################################################################################
+	{
+		std::string fsmName       = theStateMachine_.getCurrentStateName();
+		bool        in_transition = theStateMachine_.isInTransition();
+
+		xmlOut.addTextElementToData("current_state", fsmName);
+		xmlOut.addTextElementToData("in_transition", in_transition ? "1" : "0");
 	}
 	else
 	{
