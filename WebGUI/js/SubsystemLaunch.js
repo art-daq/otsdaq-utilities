@@ -1368,7 +1368,7 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
     this.handleSubsystemActionSelect = function (el, subsystemIndex) {
 		var command = el.value;
-		if(el.tagName = "BUTTON") command = el.innerText;
+		if (el.tagName === "BUTTON") command = el.innerText;
 		Debug.log("handleSubsystemActionSelect()", command, subsystemIndex);
 		if(command == "" || command == "Select an action:") return; //assume user is clearing
 
@@ -1922,7 +1922,7 @@ SubsystemLaunch.create = function() {
 
 			//================
             function localPopUpVerify(req) {
-				lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
+				var lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
 				if(lastLogEntry && lastLogEntry != "")
 					lastLogEntry = decodeURIComponent(lastLogEntry);
 
@@ -2136,7 +2136,7 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 					SubsystemLaunch.system.selectedSystemAlias = "";
 
 				SubsystemLaunch.system.systemAliases = [];
-				var alias, aliasTraslation;
+				var alias;
                 for (var i = 0; i < aliasArr.length; ++i) {
 					alias = aliasArr[i].getAttribute('value');
 
@@ -2193,7 +2193,7 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 
 	var err = DesktopContent.getXMLValue(req,"system_error");
 	var fsmErr = DesktopContent.getXMLValue(req,"current_error");
-    if (fsmErr && fsmErr) {
+    if (fsmErr && fsmErr != "") {
         if (err && err != "") { err += "\n\n"; err += fsmErr; }
 		else
 			err = fsmErr;
@@ -2310,7 +2310,7 @@ SubsystemLaunch.resetConsoleCounts = function (s) {
 			0,"#efeaea",0,"#770000");
 	else //subsystem console reset
 	{
-		targetSubsystem = SubsystemLaunch.subsystems[s].name;
+		var targetSubsystem = SubsystemLaunch.subsystems[s].name;
 
 		DesktopContent.popUpVerification(
 			"Are you sure you want to reset the Subsystem '" +
