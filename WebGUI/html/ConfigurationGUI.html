@@ -5843,19 +5843,28 @@
                         //	if parent is uid link.. then one level back
                         //	if parent is groupid link.. then two levels back
 
-                        var pel = document.getElementById("treeNode-linkTableName-" +
-                            treeEditingNodeParentIdString_);
-                        if (!pel)
-                            pel = document.getElementById("treeNode-linkTableName-" +
-                                (document.getElementById("treeNode-ParentId-" +
-                                    treeEditingNodeParentIdString_).textContent));
-                        else //parent is uid link, so UID from path is wrong, fix it
-                        {
-                            //take uid from parent value, right side
-                            treeEditingTargetUID_ = document.getElementById("treeNode-Value-" +
-                                treeEditingNodeParentIdString_).textContent.
-                                split(')')[0].split('=')[1].substr(1);
-                        }
+						var pel = document.getElementById("treeNode-linkTableName-" +
+							treeEditingNodeParentIdString_);
+						if (!pel)
+						{
+							pel = document.getElementById("treeNode-ParentId-" +
+									treeEditingNodeParentIdString_);
+							if(!pel)
+							{
+								Debug.log("Cannot find parent element for link/value edit!",
+									treeEditingNodeParentIdString_);
+								return;
+							}
+							pel = document.getElementById("treeNode-linkTableName-" +
+								(pel.textContent));
+						}
+						else //parent is uid link, so UID from path is wrong, fix it
+						{
+							//take uid from parent value, right side
+							treeEditingTargetUID_ = document.getElementById("treeNode-Value-" +
+								treeEditingNodeParentIdString_).textContent.
+								split(')')[0].split('=')[1].substr(1);
+						}
 
                         treeEditingTargetTable_ = pel.textContent;
                     }
@@ -10187,17 +10196,22 @@
 
 
 
-                if (e.key == "ArrowUp" || e.key == "ArrowDown")  //re-select self
-                {
-                    Debug.log("Returning to id '" + treeEditingNodeIdString_ + "'", treeEditingNodeType_);
-                    handleTreeNodeClick(
-                        treeEditingNodeIdString_.split('-')[0],
-                        treeEditingNodeIdString_.split('-')[1],
-                        1 /* editClick */,
-                        treeEditingNodeType_.indexOf("value") == 0 ? //convert all value types to 'value'
-                            "value" : treeEditingNodeType_,
-                        true /* waitForOpsToComplete */
-                    );
+				if (e.key == "ArrowUp" || e.key == "ArrowDown")  //re-select self
+				{
+					if(treeEditingNodeType_ == "")
+					{
+						Debug.log("No tree node previously selected, so ignoring arrow key...");
+						return;
+					}
+					Debug.log("Returning to id '" + treeEditingNodeIdString_ + "'", treeEditingNodeType_);
+					handleTreeNodeClick(
+						treeEditingNodeIdString_.split('-')[0],
+						treeEditingNodeIdString_.split('-')[1],
+						1 /* editClick */,
+						treeEditingNodeType_.indexOf("value") == 0 ? //convert all value types to 'value'
+							"value" : treeEditingNodeType_,
+						true /* waitForOpsToComplete */
+					);
 
                     event.stopImmediatePropagation(); // Prevents further listeners on the same element
                     if (e.preventDefault)

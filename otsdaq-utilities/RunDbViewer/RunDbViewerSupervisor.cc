@@ -27,6 +27,7 @@ using namespace ots;
 #define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE "shifter_note"
 #define XML_RUNDBVIEWER_ENTRY_RUN_START_TIME "start_time"
 #define XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME "stop_time"
+#define XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD "subsystem_config_record"
 
 XDAQ_INSTANTIATOR_IMPL(RunDbViewerSupervisor)
 
@@ -236,6 +237,7 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 	unsigned int endTime   = date;
 	unsigned int startTime = endTime - (60 * 60 * 24) * duration;
 	__COUT__ << "Start time " << startTime << " End time " << endTime << __E__;
+	__COUT__ << "Today: " << date << __E__;
 
 	sprintf(dayIndexStr, "%lu", date * 0);
 	if(xmlOut)
@@ -243,9 +245,19 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		                             dayIndexStr);  // send most recent day index
 
 	std::unique_ptr<RunInfoVInterface> runInfoInterface = nullptr;
+
+	auto runInfo = makeRunInfo(pluginName, runInfoUID);
+
+	if(runInfo == nullptr)
+	{
+		__SS__ << "runInfo Db interface plugin construction failed of " << pluginName
+		       << __E__;
+		__SS_THROW__;
+	}
+
 	try
 	{
-		runInfoInterface.reset(makeRunInfo(pluginName, runInfoUID));
+		runInfoInterface.reset(runInfo);
 	}
 	catch(...)
 	{
@@ -262,6 +274,7 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 	std::string filter = "AND run_type.run_type_description like '%" + runType + "%'";
 	std::vector<std::vector<std::string>> runRecords =
 	    runInfoInterface->getRunRecords(startTime, endTime, filter);
+	std::vector<std::vector<std::string>> subsystemConfigRecords;
 
 	if(xmlOut)
 	{
@@ -282,25 +295,71 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			    XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME, runData[4], entryEl);
 			xmlOut->addTextElementToParent(
 			    XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID, runData[5], entryEl);
+			// xmlOut->addTextElementToParent(
+			//     XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME, runData[6], entryEl);
+			// xmlOut->addTextElementToParent(
+			//     XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION, runData[7], entryEl);
+			// xmlOut->addTextElementToParent(
+			//     XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME, runData[8], entryEl);
+			// xmlOut->addTextElementToParent(
+			//     XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION, runData[9], entryEl);
+			// xmlOut->addTextElementToParent(
+			//     XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION, runData[10], entryEl);
 			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_NAME, runData[6], entryEl);
+			    XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE, runData[6], entryEl);
 			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_CONFIGURATION_VERSION, runData[7], entryEl);
+			    XML_RUNDBVIEWER_ENTRY_RUN_START_TIME, runData[7], entryEl);
 			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_NAME, runData[8], entryEl);
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION, runData[9], entryEl);
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION, runData[10], entryEl);
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE, runData[11], entryEl);
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_START_TIME, runData[12], entryEl);
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME, runData[13], entryEl);
+			    XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME, runData[8], entryEl);
 			__COUT__ << "xmlOut getMatchingValue "
 			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
 			i++;
+
+			__COUT__ << "Number of cycles: " << i << __E__;
+
+			try
+			{
+				subsystemConfigRecords =
+				    runInfoInterface->getRunConfigSubsystemInfo(std::stoul(runData[5]));
+			}
+			catch(const std::exception& e)
+			{
+				__COUT__ << "Error getting subsystem configuration info" << __E__;
+				__COUT__ << e.what() << __E__;
+			}
+
+			std::string rows;
+			for(auto subsystemConfRecord : subsystemConfigRecords)
+			{
+				rows.append("<config_record config_record_id= " + subsystemConfRecord[0] +
+				            ">");
+				rows.append("<config_id>" + subsystemConfRecord[0] + "</config_id>");
+				rows.append("<subsystem_id>" + subsystemConfRecord[1] +
+				            "</subsystem_id>");
+				rows.append("<subsystem_config_data>" + subsystemConfRecord[2] +
+				            "</subsystem_config_data>");
+				rows.append("<config_alias>" + subsystemConfRecord[3] +
+				            "</config_alias>");
+				rows.append("<context_name>" + subsystemConfRecord[4] +
+				            "</context_name>");
+				rows.append("<context_key>" + subsystemConfRecord[5] + "</context_key>");
+				rows.append("<context_group_name>" + subsystemConfRecord[6] +
+				            "</context_group_name>");
+				rows.append("<config_group_key>" + subsystemConfRecord[7] +
+				            "</config_group_key>");
+				rows.append("<backbone_name>" + subsystemConfRecord[8] +
+				            "</backbone_name>");
+				rows.append("<backbone_name>" + subsystemConfRecord[9] +
+				            "</backbone_name>");
+				rows.append("<config_db_uri>" + subsystemConfRecord[10] +
+				            "</config_db_uri>");
+				rows.append("<subsystem_sw_version_id>" + subsystemConfRecord[11] +
+				            "</subsystem_sw_version_id>");
+				rows.append("<create_time>" + subsystemConfRecord[12] + "</create_time>");
+				rows.append("</config_record>");
+			}
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD, rows, entryEl);
 		}
 	}
 }  //end refreshRunDbViewer()
