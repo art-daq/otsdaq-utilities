@@ -15551,19 +15551,16 @@
                     }
 
                     var results = req.responseXML.getElementsByTagName("Match");
-                    if(results.length == 0)
-                    {
-                        Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br> Found no matches."));
-                        return;
-                    }
+					if(results.length == 0)
+					{
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>Found no matches."));
+						return;
+					}
 
                     var matchStr = "";
                     var matchColumnMap = new Map();
                     var prevVersion = -1;
                     for (var i = 0; i < results.length; ++i) {
-                        //var cellValue = DesktopContent.getXMLValue(results[i], "Match");
-                        //var matchRow = DesktopContent.getXMLValue(results[i], "MatchRow");
-
                         var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
                         if(matchVersion != prevVersion)
                         {
@@ -15600,7 +15597,7 @@
                     }
 
                     Debug.log("matchStr " + matchStr);
-                    Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>" + matchStr));
+					Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>" + matchStr));
                 }, 0);
         } //end popUpSearchFieldPrompt()
 
