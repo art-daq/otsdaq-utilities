@@ -324,7 +324,7 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			}
 			catch(const std::exception& e)
 			{
-				__COUT__ << "Error getting subsytem configuration info" << __E__;
+				__COUT__ << "Error getting subsystem configuration info" << __E__;
 				__COUT__ << e.what() << __E__;
 			}
 
