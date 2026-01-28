@@ -638,16 +638,30 @@ for p in ${REPO_DIR[@]}; do
 		fi
 
 		# find branches with unpushed commits
-		unpushed=$(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
-		while read -r branch upstream; do
-			[ -z "$upstream" ] && continue
-			ahead=$(git rev-list --count "$upstream..$branch")
-			[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
-		done | paste -sd', ' -)
+		unpushed=$(
+			git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+			while read -r branch upstream; do
+				# no upstream configured at all
+				[ -z "$upstream" ] && {
+					printf "%s(no upstream)\n" "$branch"
+					continue
+				}
+
+				# upstream configured but ref does not exist (e.g. deleted on origin)
+				if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
+					printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
+					continue
+				fi
+
+				ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
+				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
+			done | paste -sd', ' -
+		)
 
 		if [ -n "$unpushed" ]; then
 			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
 		fi
+
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull
