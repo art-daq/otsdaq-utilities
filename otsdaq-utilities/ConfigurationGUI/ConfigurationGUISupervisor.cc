@@ -800,8 +800,8 @@ try
 	{
 		std::string groupAction = StringMacros::decodeURIComponent(
 		    CgiDataUtilities::getData(cgiIn, "groupAction"));  // from GET
-		std::string groupType =
-		    CgiDataUtilities::getData(cgiIn, "groupType");  // from GET
+		std::string groupType = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getData(cgiIn, "groupType"));  // from GET
 
 		__SUP_COUTV__(groupAction);
 		__SUP_COUTV__(groupType);
@@ -1082,7 +1082,7 @@ try
 		{
 			xmlOut.addTextElementToData(
 			    "StructureStatusAsJSON",
-			    cfgMgr->getTableByName(tableName)->getStructureStatusAsJSON(cfgMgr));
+			    cfgMgr->getTableByName(tableName)->getStructureAsJSON(cfgMgr));
 		}
 		catch(const std::runtime_error& e)
 		{
