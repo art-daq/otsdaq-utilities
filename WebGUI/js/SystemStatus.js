@@ -203,7 +203,7 @@ function getAppsArray() {
                 }
                 var appNames, appUrls, appIds, appStatus, appTime,
                     appStale, appClasses, appProgress, appDetail, appContexts,
-                    appSubapps, availableLogSpaceKB, availableDataSpaceKB, logUsageRateKBps, dataUsageRateKBps;
+                    appSubapps, availableLogSpaceGB, availableDataSpaceGB, logUsageRateKBps, dataUsageRateKBps;
 
                 appNames = req.responseXML.getElementsByTagName("name");
                 appIds = req.responseXML.getElementsByTagName("id");
@@ -212,8 +212,8 @@ function getAppsArray() {
                 appStale = req.responseXML.getElementsByTagName("stale");
                 appProgress = req.responseXML.getElementsByTagName("progress");
                 appDetail = req.responseXML.getElementsByTagName("detail");
-                availableLogSpaceKB = req.responseXML.getElementsByTagName("availableLogSpaceKB");
-                availableDataSpaceKB = req.responseXML.getElementsByTagName("availableDataSpaceKB");
+                availableLogSpaceGB = req.responseXML.getElementsByTagName("availableLogSpaceGB");
+                availableDataSpaceGB = req.responseXML.getElementsByTagName("availableDataSpaceGB");
                 logUsageRateKBps = req.responseXML.getElementsByTagName("logUsageRateKBps");
                 dataUsageRateKBps = req.responseXML.getElementsByTagName("dataUsageRateKBps");
                 appClasses = req.responseXML.getElementsByTagName("class");
@@ -267,8 +267,8 @@ function getAppsArray() {
                         "stale": appStale[i].getAttribute("value"),
                         "progress": appProgress[i].getAttribute("value"),
                         "detail": appDetail[i].getAttribute("value"),
-                        "availableLogSpaceKB": availableLogSpaceKB[i].getAttribute("value"),
-                        "availableDataSpaceKB": availableDataSpaceKB[i].getAttribute("value"),
+                        "availableLogSpaceGB": availableLogSpaceGB[i].getAttribute("value"),
+                        "availableDataSpaceGB": availableDataSpaceGB[i].getAttribute("value"),
                         "logUsageRateKBps": logUsageRateKBps[i].getAttribute("value"),
                         "dataUsageRateKBps": dataUsageRateKBps[i].getAttribute("value"),
                         "class": appClasses[i].getAttribute("value"),
@@ -283,8 +283,8 @@ function getAppsArray() {
                         var subappStale = appSubapps[i].getElementsByTagName("subapp_stale");
                         var subappProgress = appSubapps[i].getElementsByTagName("subapp_progress");
                         var subappDetail = appSubapps[i].getElementsByTagName("subapp_detail");
-                        var subappAvailableLogSpaceKB = appSubapps[i].getElementsByTagName("subapp_availableLogSpaceKB");
-                        var subappAvailableDataSpaceKB = appSubapps[i].getElementsByTagName("subapp_availableDataSpaceKB");
+                        var subappAvailableLogSpaceGB = appSubapps[i].getElementsByTagName("subapp_availableLogSpaceGB");
+                        var subappAvailableDataSpaceGB = appSubapps[i].getElementsByTagName("subapp_availableDataSpaceGB");
                         var subappLogUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_logUsageRateKBps");
                         var subappDataUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_dataUsageRateKBps");
                         var subappUrl = appSubapps[i].getElementsByTagName("subapp_url");
@@ -300,8 +300,8 @@ function getAppsArray() {
                                 "stale": subappStale[j].getAttribute("value"),
                                 "progress": subappProgress[j].getAttribute("value"),
                                 "detail": subappDetail[j].getAttribute("value"),
-                                "availableLogSpaceKB": subappAvailableLogSpaceKB[j].getAttribute("value"),
-                                "availableDataSpaceKB": subappAvailableDataSpaceKB[j].getAttribute("value"),
+                                "availableLogSpaceGB": subappAvailableLogSpaceGB[j].getAttribute("value"),
+                                "availableDataSpaceGB": subappAvailableDataSpaceGB[j].getAttribute("value"),
                                 "logUsageRateKBps": subappLogUsageRateKBps[j].getAttribute("value"),
                                 "dataUsageRateKBps": subappDataUsageRateKBps[j].getAttribute("value"),
                                 "class": subappClass[j].getAttribute("value"),
@@ -646,19 +646,19 @@ function displayTable(appsArray) {
                     cell.innerHTML = tmpDetail;
                 }
                 else if (columnKeys[j] == "availableSpace") {
-                    var logSpace = appsArray[i]["availableLogSpaceKB"] | 0;
-                    var dataSpace = appsArray[i]["availableDataSpaceKB"] | 0;
+                    var logSpace = parseFloat(appsArray[i]["availableLogSpaceGB"]) || 0;
+                    var dataSpace = parseFloat(appsArray[i]["availableDataSpaceGB"]) || 0;
                     var logUsage = parseFloat(appsArray[i]["logUsageRateKBps"]) || 0;
                     var dataUsage = parseFloat(appsArray[i]["dataUsageRateKBps"]) || 0;
 
                     if (!logSpace)
                         cell.innerHTML = ""; //leave blank if no value
                     else if (logSpace == dataSpace)
-                        cell.innerHTML = (logSpace / 1024).toFixed(2) + " MB, Usage: " + logUsage.toFixed(1) + " KB/s";
+                        cell.innerHTML = (logSpace).toFixed(2) + " GB, Usage: " + logUsage.toFixed(1) + " KB/s";
                     else
-                        cell.innerHTML = "Log: " + (logSpace / 1024).toFixed(2) + " MB, Log Usage: " +
+                        cell.innerHTML = "Log: " + (logSpace).toFixed(2) + " GB, Log Usage: " +
                             logUsage.toFixed(1) + " KB/s; Data: " +
-                            (dataSpace / 1024).toFixed(2) + " MB, Data Usage: " +
+                            (dataSpace).toFixed(2) + " GB, Data Usage: " +
                             dataUsage.toFixed(1) + " KB/s";
                 }
                 else if (columnKeys[j] == "context") {
@@ -793,19 +793,19 @@ function displayTable(appsArray) {
                         cell.innerHTML = tmpDetail;
                     }
                     else if (columnKeys[j] == "availableSpace") {
-                        var logSpace = subappInfo["availableLogSpaceKB"] | 0;
-                        var dataSpace = subappInfo["availableDataSpaceKB"] | 0;
+                        var logSpace = parseFloat(subappInfo["availableLogSpaceGB"]) || 0;
+                        var dataSpace = parseFloat(subappInfo["availableDataSpaceGB"]) || 0;
                         var logUsage = parseFloat(subappInfo["logUsageRateKBps"]) || 0;
                         var dataUsage = parseFloat(subappInfo["dataUsageRateKBps"]) || 0;
 
                         if (!logSpace)
                             cell.innerHTML = ""; //leave blank if no value
                         else if (logSpace == dataSpace)
-                            cell.innerHTML = (logSpace / 1024).toFixed(2) + " MB, Usage: " + logUsage.toFixed(1) + " KB/s";
+                            cell.innerHTML = (logSpace).toFixed(2) + " GB, Usage: " + logUsage.toFixed(1) + " KB/s";
                         else
-                            cell.innerHTML = "Log: " + (logSpace / 1024).toFixed(2) + " MB, Log Usage:" +
+                            cell.innerHTML = "Log: " + (logSpace).toFixed(2) + " GB, Log Usage:" +
                                 logUsage.toFixed(1) + " KB/s; Data: " +
-                                (dataSpace / 1024).toFixed(2) + " MB, Data Usage:" +
+                                (dataSpace).toFixed(2) + " GB, Data Usage:" +
                                 dataUsage.toFixed(1) + " KB/s";
                     }
                     else if (columnKeys[j] == "context" || columnKeys[j] == "action") {
