@@ -1987,6 +1987,15 @@
 
                 str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
 
+                str += "Search for Keyword in All Tables: ";
+                str += "<br>";
+                str += "<input type='text' id='searchTextInAllTables' " +
+                    "placeholder='Search text in all tables of all groups' " +
+                    "style='width:300px;' " +
+                    "onkeyup='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }' />";
+
+                //if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }'
+
                 str += "<div style='margin-top:0px'>";
                 str += "<hr><b >";
                 str += "Exhaustive Table Group List:";
@@ -3276,13 +3285,6 @@
             str += "<div id='clearDiv'></div>";
             str += "<div id='findAndReplace'></div>";
             str += "<div id='aboveTableDialog'></div>";
-
-            //{
-            //    //search field in all table versions
-            //    str += "Search text in all table versions: ";
-            //    str += "&nbsp;&nbsp;";
-            //    str += "<input type='text' id='searchFieldInTableVersions' placeholder='Enter text' onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }'>";
-            //}
 
             //create table details
             str += "<div id='tableDetails' style='display:none'>Table Details:";
@@ -10263,14 +10265,14 @@
                     const deleteBtn = selectedRows[i].cells[0].querySelectorAll(".tableDeleteRowButton")[0];
                     if (!deleteBtn) return null;
                     deleteBtn.onclick();
-                    Debug.log("Successfully deleted row" + rowIndex);
+                    Debug.log("Successfully deleted row " + rowIndex);
+                    registerOnClickActions();
                 }
                 catch
                 {
                     Debug.log("Failed to delete table row " + rowIndex);
                 }
             }
-            registerOnClickActions();
         } //end deleteBlockRows()
 
         //==============================================================================
@@ -15584,6 +15586,7 @@
 					}
 
                     var matchStr = "";
+                    var columnStr = "";
                     var matchColumnMap = new Map();
                     var prevVersion = -1;
                     for (var i = 0; i < results.length; ++i) {
@@ -15592,14 +15595,19 @@
                         {
                             if(matchColumnMap.size > 0)
                             {
-                                matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
-                                            "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                columnStr = "";
                                 for (let [column, count] of matchColumnMap) {
                                     if(count >= searchMinThreshold)
-                                        matchStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                                        columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                                }
+                                if(columnStr != "")
+                                {
+                                    matchStr += "<br>";
+                                    matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
+                                            "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                    matchStr += columnStr;
                                 }
                             }
-                            matchStr += "<br>";
                             prevVersion = matchVersion;
                             matchColumnMap = new Map();
                         }
@@ -15614,11 +15622,17 @@
                     // for last version looped through
                     if(matchColumnMap.size > 0)
                     {
-                        matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
-                                    "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                        columnStr = "";
                         for (let [column, count] of matchColumnMap) {
                             if(count >= searchMinThreshold)
-                                matchStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                                columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                        }
+                        if(columnStr != "")
+                        {
+                            matchStr += "<br>";
+                            matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
+                                    "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                            matchStr += columnStr;
                         }
                     }
 
