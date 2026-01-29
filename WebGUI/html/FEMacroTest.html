@@ -797,14 +797,16 @@
             //check if not done
             var notDoneID = DesktopContent.getXMLValue(req, "NotDoneID");
             var progress = DesktopContent.getXMLValue(req, "Progress");
+            if (progress == undefined) progress = 0;
 
             Debug.logv({ notDoneID });
             if (notDoneID) {
                 Debug.log("FE Macro run not done", notDoneID);
 
                 //append still running
-                var str = el.innerHTML.substring(0, el.innerHTML.indexOf("waiting for response...") + 23);
-                str += "<br><br>Received response that FE macro is still running... " + "Progress " + progress + " % " + getDateString(new Date);
+                var str = el.innerHTML;
+                str = str.substring(0, str.indexOf("waiting for response...") + 23);
+                str += "<br><br>Received response that FE macro is still running... " + "Progress <b>" + progress + " %</b> " + getDateString(new Date);
                 str += "<br>";
                 el.innerHTML = str;
 

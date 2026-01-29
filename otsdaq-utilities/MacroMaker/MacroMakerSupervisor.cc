@@ -3066,9 +3066,6 @@ try
 				//found
 				__SUP_COUTT__ << "Found NotDoneID = " << NotDoneID << __E__;
 				target_i = i;
-
-				//add one step to bars[i] %
-				bars_[i]->step();
 			}
 			else if(feMacroRunThreadStruct_[i].feMacroRunDone_ &&
 			        now - feMacroRunThreadStruct_[i].parameters_.doneTime_ >
@@ -3088,6 +3085,7 @@ try
 				    << feMacroRunThreadStruct_[i].parameters_.macroName_ << "' at '"
 				    << feMacroRunThreadStruct_[i].parameters_.feUIDSelected_ << ".'"
 				    << __E__;
+					break;
 			}
 		}
 
@@ -3103,6 +3101,7 @@ try
 		if(feMacroRunThreadStruct_[target_i].feMacroRunDone_)
 		{
 			__SUP_COUT__ << "Found done for NotDoneID = " << NotDoneID << __E__;
+			bars_[target_i]->complete();
 
 			if(feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_ != "")
 			{
@@ -3127,6 +3126,10 @@ try
 			__SUP_COUT__ << "Found still going for NotDoneID = " << NotDoneID << __E__;
 			//return same NotDoneID to user for future check
 			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
+	
+			//add one step to bars_[i] % and read it
+			bars_[target_i]->step();
+			xmldoc.addNumberElementToData("Progress", bars_[target_i]->read());
 		}
 
 		return;
@@ -3623,7 +3626,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 		fclose(fp);
 
 	//to comment after progress basr test
-	sleep(10);
+	//sleep(20);
 }  // end runFEMacro()
 
 //==============================================================================
