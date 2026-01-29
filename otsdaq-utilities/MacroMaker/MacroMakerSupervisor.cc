@@ -3066,6 +3066,9 @@ try
 				//found
 				__SUP_COUTT__ << "Found NotDoneID = " << NotDoneID << __E__;
 				target_i = i;
+
+				//add one step to bars[i] %
+				bars_[i]->step();
 			}
 			else if(feMacroRunThreadStruct_[i].feMacroRunDone_ &&
 			        now - feMacroRunThreadStruct_[i].parameters_.doneTime_ >
@@ -3220,6 +3223,12 @@ try
 		__SUP_COUT__ << "FE macro not done, detaching thread="
 		             << feMacroRunThreadStruct_.back().parameters_.threadID_ << __E__;
 		t.detach();
+
+		//add progressbar element to bars_ vector
+		auto bar = std::make_unique<ProgressBar>();
+		bar->reset(macroName, feUIDSelected);
+		bars_.push_back(std::move(bar));
+
 		xmldoc.addNumberElementToData(
 		    "NotDoneID", feMacroRunThreadStruct_.back().parameters_.threadID_);
 
@@ -3613,6 +3622,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	if(fp)
 		fclose(fp);
 
+	//to comment after progress basr test
+	sleep(10);
 }  // end runFEMacro()
 
 //==============================================================================
