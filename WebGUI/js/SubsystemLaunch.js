@@ -67,6 +67,8 @@ SubsystemLaunch.create = function() {
 	//		'private' member functions: -------
 	//	createElements()
 	//	redrawWindow()
+	//	createFSMDisplay()
+	//	handleFSMSelectionSubsystem(selectedValue)
 
 	//	getCurrentStatus()
 	//		- localGetStatusHandler()
@@ -115,7 +117,7 @@ SubsystemLaunch.create = function() {
 
 	//=====================================================================================
 	//init ~~
-    function init() {
+	  function init() {
 		if(_needEventListeners) //only first time landing handling
 		{
 			var windowTooltip = "Welcome to the <b>Subsystem Launch</b> user interface. " +
@@ -138,7 +140,7 @@ SubsystemLaunch.create = function() {
 			if(_fsmWindowName && _fsmWindowName != "")
 				Debug.log("_fsmWindowName=" + _fsmWindowName);
 			else
-				_fsmWindowName = "";
+				_fsmWindowName = "";		
 
 		} //end first time landing handling
 
@@ -154,8 +156,7 @@ SubsystemLaunch.create = function() {
 
 		//get all needed info sequentially
 		SubsystemLaunch.initSubsystemRecords(localHandleInitComplete);
-		// localHandleInitComplete(); //for debugging position, skip initSubsystemRecords
-
+		// localHandleInitComplete(); //for debugging position, skip initSubsystemRecords		
 
 		return;
 
@@ -188,6 +189,77 @@ SubsystemLaunch.create = function() {
 
 			redrawWindow();
 			redrawWindow(); //do twice in case of new scroll bars
+
+
+			//get view mode preferences for user
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=stateMatchinePreferences" +
+				"", "",
+				function (req) {
+					//Same code as StateMachine.html:556
+
+					//	altViewMode not used in SubsystemLaunch
+					// var altViewMode = DesktopContent.getXMLValue(req, "Default_FSM_View");
+					// Debug.log("Loaded altViewMode preference",altViewMode);
+					// if (altViewMode && altViewMode != "")
+					// 	toggleViewMode(altViewMode | 0);  //treat as integer
+					// else //default to js default
+					// 	toggleViewMode(_altStateDrawingMode);
+					
+					//if fsm name not defined by get parameter, create select box
+					if(!DesktopContent.getParameter(0, "fsm_name")) {
+						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
+						Debug.log("Loaded FSM Name preference",_fsmName);
+
+						//get possible state machine names
+						DesktopContent.XMLHttpRequest(
+							"Request?RequestType=getStateMachineNames", "",
+							function(req) {
+								var fsmNameArr = req.responseXML.getElementsByTagName("stateMachineName");
+								_fsmNameArr = [];
+								for(var i=0; i<fsmNameArr.length; ++i)
+									_fsmNameArr.push(fsmNameArr[i].getAttribute('value'));
+								Debug.logv({_fsmNameArr});
+
+								if(_fsmName) //make sure is valid
+								{
+									let found = false;
+									for(var i=0; i<_fsmNameArr.length; ++i)
+										if(_fsmName == _fsmNameArr[i])
+										{ found = true; break; }
+
+									if(!found)
+										_fsmName = ""; //clear
+								}
+								if(!_fsmName && _fsmNameArr.length)
+								{
+									Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
+									if(_fsmNameArr[0] == "No FSM Records")
+										_fsmName = ""; //stick with blank
+									else 
+										_fsmName = _fsmNameArr[0];
+									Debug.logv({_fsmName});
+								}
+
+								// Create and show dropdown for FSM selection
+								createFSMDisplay();
+								
+							},/*returnHandler*/
+							0 /*reqParam*/,
+							0 /*progressHandler*/,
+							0 /*callHandlerOnErr*/,
+							true /*doNotShowLoadingOverlay*/,
+							true /*targetGatewaySupervisor*/); //end getStateMachineNames request
+					} //end handle setup FSM name
+					else
+						createFSMDisplay(); //for GET param selected FSM
+
+				},/*returnHandler*/
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);
 
 		} //end localGetContextRecordsHandler()
 
@@ -1242,6 +1314,137 @@ SubsystemLaunch.create = function() {
 			true /*targetGatewaySupervisor*/);
 	}    //end updateSubsystemNames()
 
+
+	//=====================================================================================
+	//createFSMDisplay ~~
+	// Creates and displays a dropdown for FSM selection when fsm_name is empty
+	function createFSMDisplay(fsmNamesStrArr) {
+		
+		Debug.log("createFSMDisplay()");
+
+		if(DesktopContent.getParameter(0, "fsm_name")) {
+
+			dropdownContainer = document.createElement('div');
+			dropdownContainer.id = 'fsm-dropdown-subsystem';
+			dropdownContainer.style.cssText = `
+				position: absolute;
+				top: 16px;
+				left: 10px;
+				z-index: 1000;
+				display: block;
+				color: white;
+				font-size: 20px;
+    			font-family: "Comfortaa", arial;
+				/* background: rgba(0, 0, 0, 0.8); */
+				padding: 10px;
+				border: 2px solid gray;
+				border-radius: 5px;
+			`;
+			
+			var label = document.createElement('div');
+			label.setAttribute('for', 'fsm-select');
+			label.textContent = 'FSM:';
+			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
+			dropdownContainer.appendChild(label);
+			
+			var select = document.createElement('div');
+			select.id = 'fsm-select';
+			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px; margin-top: 3px;';
+			select.innerText = _fsmName;
+			
+			dropdownContainer.appendChild(select);
+			document.body.appendChild(dropdownContainer);
+
+			return;
+		} //end FSM selected by GET param handling
+
+
+		// Create dropdown container if it doesn't exist
+		var dropdownContainer = document.getElementById('fsm-dropdown-subsystem');
+		if (!dropdownContainer) {
+			dropdownContainer = document.createElement('div');
+			dropdownContainer.id = 'fsm-dropdown-subsystem';
+			dropdownContainer.style.cssText = `
+				position: absolute;
+				top: 16px;
+				left: 10px;
+				z-index: 1000;
+				display: block;
+				color: white;
+				font-size: 20px;
+    			font-family: "Comfortaa", arial;
+				/* background: rgba(0, 0, 0, 0.8); */
+				padding: 10px;
+				border: 2px solid gray;
+				border-radius: 5px;
+			`;
+			
+			var label = document.createElement('div');
+			label.setAttribute('for', 'fsm-select');
+			label.textContent = 'FSM:';
+			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
+			dropdownContainer.appendChild(label);
+			
+			var select = document.createElement('select');
+			select.id = 'fsm-select';
+			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px;';
+			select.onchange = function() {
+				handleFSMSelectionSubsystem(this.value);
+			};
+			
+			dropdownContainer.appendChild(select);
+			document.body.appendChild(dropdownContainer);
+		} 
+
+		// Populate the dropdown
+		var selectElement = document.getElementById('fsm-select');
+		if (selectElement) {
+			// Clear existing options
+			selectElement.innerHTML = "";
+
+			// Add new options
+			for(var i=0; i<_fsmNameArr.length; ++i) {
+				var option = document.createElement('option');
+				option.value = _fsmNameArr[i];
+				if(_fsmNameArr[i] == "")
+					option.text = "No FSM Records";
+				else 
+					option.text = _fsmNameArr[i];
+
+				if(_fsmName == _fsmNameArr[i])
+					option.selected = true;
+
+				selectElement.appendChild(option);
+			}
+		}
+		
+		// Make sure it's visible
+		dropdownContainer.style.display = 'block';
+	} //end createFSMDisplay()
+
+	//=====================================================================================
+	//handleFSMSelectionSubsystem ~~
+	// Handles selection from the FSM dropdown in SubsystemLaunch
+	function handleFSMSelectionSubsystem(selectedValue) {
+		Debug.log("handleFSMSelectionSubsystem()",selectedValue)
+		if (selectedValue) {
+			// Set the fsmName and reload the page with the selected FSM
+			_fsmName = selectedValue;
+
+			//assume this toggle is caused by user
+			//save setting to server for user
+			DesktopContent.XMLHttpRequest("Request?RequestType=stateMatchinePreferences" +
+				"&set=1" +
+				"&Default_FSM_Name=" + _fsmName,
+				"",
+				0 /*returnHandler*/,
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);
+		}
+	} //end handleFSMSelectionSubsystem()
 
 	//=====================================================================================
     this.handleSubsystemConfigAliasSelect = function (value, subsystemIndex) {
@@ -2363,3 +2566,4 @@ SubsystemLaunch.copyText = function (el) {
 			Debug.err("Failed to copy: ", err);
 		});
 } //end SubsystemLaunch.copyText()
+
