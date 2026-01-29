@@ -3085,7 +3085,7 @@ try
 				    << feMacroRunThreadStruct_[i].parameters_.macroName_ << "' at '"
 				    << feMacroRunThreadStruct_[i].parameters_.feUIDSelected_ << ".'"
 				    << __E__;
-					break;
+				break;
 			}
 		}
 
@@ -3126,7 +3126,7 @@ try
 			__SUP_COUT__ << "Found still going for NotDoneID = " << NotDoneID << __E__;
 			//return same NotDoneID to user for future check
 			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
-	
+
 			//add one step to bars_[i] % and read it
 			bars_[target_i]->step();
 			xmldoc.addNumberElementToData("Progress", bars_[target_i]->read());
