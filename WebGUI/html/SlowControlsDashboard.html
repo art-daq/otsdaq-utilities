@@ -234,7 +234,7 @@
 			var gridSnap_;
 			var addPVMenuDiv_;
 			var addPVMenu_;
-			var isReadOnly_;
+			var isReadOnly_ = false;
 			page_.createPage = function(){
 
 				this.name = "MyPage";
@@ -271,8 +271,6 @@
 			var previousPage_ = "";
 			var actualPage_ = "";
 
-			var READ_ONLY_ = false;
-
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -287,7 +285,7 @@
 				if (readOnlyMode !== undefined) //set read mode if parameter
 				{
 					Debug.log("Launching readonly mode to true!");
-					READ_ONLY_ = true; //readOnlyMode | 0;
+					isReadOnly_ = true; //readOnlyMode | 0;
 				}
 
 				//to make an icon on desktop -- DesktopContent.addDesktopIcon(iconName)
@@ -313,7 +311,6 @@
 				editBlock_.name = editBlock_.el.id;
 
 				var datalist = document.getElementById("pvDatalist");//document.createElement("datalist");
-				isReadOnly_ = false;
 
 				elPointer_["addPVMenu"] = document.getElementById("addPVMenu");
 				elPointer_["addPVMenuDiv"] = document.getElementById("addPVMenuDiv");
@@ -3883,9 +3880,9 @@
 
 				// make widget tabledata
 				var counter = 0;
-				for (var i = 0; i < _ySize; i++)
+				for (var i = 0; i < ySize; i++)
 				{
-					for (var j = 0; j < _xSize; j++)
+					for (var j = 0; j < xSize; j++)
 					{
 						//var pv = "x"+j + ",y" + i;
 						var pv = src[i][j];

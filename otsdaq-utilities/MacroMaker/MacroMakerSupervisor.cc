@@ -3085,6 +3085,7 @@ try
 				    << feMacroRunThreadStruct_[i].parameters_.macroName_ << "' at '"
 				    << feMacroRunThreadStruct_[i].parameters_.feUIDSelected_ << ".'"
 				    << __E__;
+				break;
 			}
 		}
 
@@ -3100,6 +3101,7 @@ try
 		if(feMacroRunThreadStruct_[target_i].feMacroRunDone_)
 		{
 			__SUP_COUT__ << "Found done for NotDoneID = " << NotDoneID << __E__;
+			bars_[target_i]->complete();
 
 			if(feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_ != "")
 			{
@@ -3124,6 +3126,10 @@ try
 			__SUP_COUT__ << "Found still going for NotDoneID = " << NotDoneID << __E__;
 			//return same NotDoneID to user for future check
 			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
+
+			//add one step to bars_[i] % and read it
+			bars_[target_i]->step();
+			xmldoc.addNumberElementToData("Progress", bars_[target_i]->read());
 		}
 
 		return;
@@ -3220,6 +3226,12 @@ try
 		__SUP_COUT__ << "FE macro not done, detaching thread="
 		             << feMacroRunThreadStruct_.back().parameters_.threadID_ << __E__;
 		t.detach();
+
+		//add progressbar element to bars_ vector
+		auto bar = std::make_unique<ProgressBar>();
+		bar->reset(macroName, feUIDSelected);
+		bars_.push_back(std::move(bar));
+
 		xmldoc.addNumberElementToData(
 		    "NotDoneID", feMacroRunThreadStruct_.back().parameters_.threadID_);
 
@@ -3613,6 +3625,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	if(fp)
 		fclose(fp);
 
+	//to comment after progress basr test
+	//sleep(20);
 }  // end runFEMacro()
 
 //==============================================================================
