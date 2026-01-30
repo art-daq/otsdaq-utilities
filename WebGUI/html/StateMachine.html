@@ -555,7 +555,7 @@
 
 			//get view mode preferences for user
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=stateMatchinePreferences" +
+				"Request?RequestType=stateMachinePreferences" +
 				"", "",
 				function (req) {
 					var altViewMode = DesktopContent.getXMLValue(req, "Default_FSM_View");
@@ -678,7 +678,7 @@
 
 				//assume this toggle is caused by user
 				//save setting to server for user
-				DesktopContent.XMLHttpRequest("Request?RequestType=stateMatchinePreferences" +
+				DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
 					"&set=1" +
 					"&Default_FSM_View=" + (_altStateDrawingMode ? "1" : "0"),
 					"");
@@ -2949,7 +2949,7 @@
 
 				//assume this toggle is caused by user
 				//save setting to server for user
-				DesktopContent.XMLHttpRequest("Request?RequestType=stateMatchinePreferences" +
+				DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
 					"&set=1" +
 					"&Default_FSM_Name=" + _fsmName,
 					"");
