@@ -220,6 +220,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 
 	std::vector<runFEMacroStruct> 											feMacroRunThreadStruct_;
+	std::vector<std::unique_ptr<ProgressBar>>								bars_;
 
 };  // end MacroMakerSupervisor declaration
 // clang-format on

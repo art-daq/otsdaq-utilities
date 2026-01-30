@@ -1342,10 +1342,12 @@ SubsystemLaunch.create = function() {
 	function createFSMDisplay(fsmNamesStrArr) {
 		
 		Debug.log("createFSMDisplay()");
+		
+		var dropdownContainer;
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
-			dropdownContainer = document.createElement('div');
+			dropdownContainer = document.createElement('div')
 			dropdownContainer.id = 'fsm-dropdown-div';
 			dropdownContainer.style.cssText = `
 				position: absolute;
@@ -1381,7 +1383,7 @@ SubsystemLaunch.create = function() {
 
 
 		// Create dropdown container if it doesn't exist
-		var dropdownContainer = document.getElementById('fsm-dropdown-div');
+		dropdownContainer = document.getElementById('fsm-dropdown-div');
 		if (!dropdownContainer) {
 			dropdownContainer = document.createElement('div');
 			dropdownContainer.id = 'fsm-dropdown-div';
