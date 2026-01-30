@@ -47,7 +47,7 @@
 
 			//showAlarmSetup()
 			//setAlarm(start)
-			//stopAlarm() 
+			//stopAlarm()
 
 			//handleFSMSelection(selectedValue)
 
@@ -563,7 +563,7 @@
 						toggleViewMode(altViewMode | 0);  //treat as integer
 					else //default to js default
 						toggleViewMode(_altStateDrawingMode);
-					
+
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
 						Debug.log("Loaded FSM Name preference",_fsmName);
@@ -577,11 +577,11 @@
 				});
 
 			localFinishInit();
-			
-			return; 
-			
+
+			return;
+
 			//=====================
-			function localFinishInit() {				
+			function localFinishInit() {
 
 				Debug.log("localFinishInit()");
 
@@ -612,7 +612,7 @@
 								Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
 								if(_fsmNameArr[0] == "No FSM Records")
 									_fsmName = ""; //stick with blank
-								else 
+								else
 									_fsmName = _fsmNameArr[0];
 								Debug.logv({_fsmName});
 							}
@@ -629,7 +629,7 @@
 									option.value = _fsmNameArr[i];
 									if(_fsmNameArr[i] == "")
 										option.text = "No FSM Records";
-									else 
+									else
 										option.text = _fsmNameArr[i];
 
 									if(_fsmName == _fsmNameArr[i])
@@ -640,7 +640,7 @@
 								// Show the dropdown
 								document.getElementById('fsm-dropdown').style.display = 'block';
 							}
-							
+
 							// Continue with initialization
 							DesktopContent.XMLHttpRequest(
 								"Request?RequestType=getStateMachine" +
@@ -653,7 +653,7 @@
 						"Request?RequestType=getStateMachine" +
 						"&fsmName=" + _fsmName, "",
 						smRequestHandler);
-					
+
 			} //end localFinishInit()
 
 		} //end init()
@@ -698,18 +698,18 @@
 			if (!req) //first time
 			{
 				_transParamsHtmlStr = ""; //clear
-					
+
 				// ---- add hide/show toggle
-				_transParamsHtmlStr +=`			
+				_transParamsHtmlStr +=`
 					<div
 						style='	margin-top: -7px;
 								margin-bottom: -11px;
 						 '>
 					<center>
-					<a href='Javascript:toggleParameterSetupPane();' 
+					<a href='Javascript:toggleParameterSetupPane();'
 						title='Toggle hide/show of Configuration Alias selection pane'
-						style=' 
-								font-size: 14px; 
+						style='
+								font-size: 14px;
 								'
 					>Hide/Show</a><center>
 					</div>
@@ -724,11 +724,11 @@
     								text-align: left;
 								'>
 				`;
-						
+
 				// ---- add FSM name handlings
 
-				_transParamsHtmlStr += `						
-					<div id='fsm-dropdown' 
+				_transParamsHtmlStr += `
+					<div id='fsm-dropdown'
 						style='	margin-top: 18px; '>
 						<label for='fsm-select'>FSM:</label>
 				`
@@ -737,7 +737,7 @@
 				// 	else just show specified fsm_name
 				if(!DesktopContent.getParameter(0, "fsm_name"))
 				{
-					_transParamsHtmlStr += `	
+					_transParamsHtmlStr += `
 							<select id='fsm-select' onchange='handleFSMSelection(this.value)'
 								style='	font-family: "Donegal One", arial;
 										padding: 2px;
@@ -762,17 +762,17 @@
 						Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
 						if(_fsmNameArr[0] == "No FSM Records")
 							_fsmName = ""; //stick with blank
-						else 
+						else
 							_fsmName = _fsmNameArr[0];
 						Debug.logv({_fsmName});
 					}
 
 					for(var i=0; i<_fsmNameArr.length; ++i)
-						_transParamsHtmlStr += "<option " + 
+						_transParamsHtmlStr += "<option " +
 							(_fsmName == _fsmNameArr[i] ? "selected ": "") +
-							"value='" + _fsmNameArr[i] + 
-							"'>" + 							
-							(_fsmNameArr[i] ? _fsmNameArr[i] : "No FSM Records") + 
+							"value='" + _fsmNameArr[i] +
+							"'>" +
+							(_fsmNameArr[i] ? _fsmNameArr[i] : "No FSM Records") +
 							"</option>";
 					_transParamsHtmlStr += `
 							</select>
@@ -810,8 +810,8 @@
 				_transParamsHtmlStr += "<select onchange='handleTransitionParameterChange(" +
 					_parameterInitCount + ",this);'";
 				_transParamsHtmlStr += ` style='
-					font-family: "Donegal One", arial; 
-					padding: 2px; 
+					font-family: "Donegal One", arial;
+					padding: 2px;
 					font-size: 16px;
 					width: fit-content;              /* default fallback */
 					width: -moz-available;           /* Firefox (older equivalent) */
@@ -2983,7 +2983,7 @@
 	<div id='parameter-setup'>
 		<!-- populated by JavaScript -->
 	</div>
-	
+
 
 	<div id='warn-box'>
 	</div>
