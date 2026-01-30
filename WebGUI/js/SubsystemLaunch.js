@@ -141,7 +141,7 @@ SubsystemLaunch.create = function() {
 			if(_fsmWindowName && _fsmWindowName != "")
 				Debug.log("_fsmWindowName=" + _fsmWindowName);
 			else
-				_fsmWindowName = "";		
+				_fsmWindowName = "";
 
 		} //end first time landing handling
 
@@ -157,7 +157,7 @@ SubsystemLaunch.create = function() {
 
 		//get all needed info sequentially
 		SubsystemLaunch.initSubsystemRecords(localHandleInitComplete);
-		// localHandleInitComplete(); //for debugging position, skip initSubsystemRecords		
+		// localHandleInitComplete(); //for debugging position, skip initSubsystemRecords
 
 		return;
 
@@ -193,7 +193,7 @@ SubsystemLaunch.create = function() {
 
 			//get view mode preferences for user
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=stateMatchinePreferences" +
+				"Request?RequestType=stateMachinePreferences" +
 				"", "",
 				function (req) {
 					//Same code as StateMachine.html:556
@@ -205,7 +205,7 @@ SubsystemLaunch.create = function() {
 					// 	toggleViewMode(altViewMode | 0);  //treat as integer
 					// else //default to js default
 					// 	toggleViewMode(_altStateDrawingMode);
-					
+
 					//if fsm name not defined by get parameter, create select box
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
@@ -236,7 +236,7 @@ SubsystemLaunch.create = function() {
 									Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
 									if(_fsmNameArr[0] == "No FSM Records")
 										_fsmName = ""; //stick with blank
-									else 
+									else
 										_fsmName = _fsmNameArr[0];
 									Debug.logv({_fsmName});
 								}
@@ -245,7 +245,7 @@ SubsystemLaunch.create = function() {
 								createFSMDisplay();
 
 								redrawWindow(); //do twice in case of new scroll bars
-								
+
 							},/*returnHandler*/
 							0 /*reqParam*/,
 							0 /*progressHandler*/,
@@ -812,17 +812,17 @@ SubsystemLaunch.create = function() {
 			sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
 
-		
+
 		//check if need extra new line at top to avoid FSM select
 		var dropdownContainer = document.getElementById('fsm-dropdown-div');
 		var runButtonContainer = document.getElementById('runDivContainer');
 		if(dropdownContainer && runButtonContainer) {
-			if(dropdownContainer.offsetLeft + dropdownContainer.offsetWidth + 20 > 
+			if(dropdownContainer.offsetLeft + dropdownContainer.offsetWidth + 20 >
 					runButtonContainer.offsetLeft) {
 				Debug.log("Need extra space");
 				document.getElementById("runDiv").style.paddingTop = "78px";
 			}
-			else 
+			else
 			{
 				Debug.log("No space");
 				document.getElementById("runDiv").style.paddingTop = "20px";
@@ -1338,44 +1338,56 @@ SubsystemLaunch.create = function() {
 
 
 	//=====================================================================================
+	//createFSMDropdownContainer ~~
+	// Helper function to create the FSM dropdown container with label
+	// If isFormControl is true, adds the 'for' attribute to associate label with form control
+	function createFSMDropdownContainer(isFormControl) {
+		var dropdownContainer = document.createElement('div');
+		dropdownContainer.id = 'fsm-dropdown-div';
+		dropdownContainer.style.cssText = `
+			position: absolute;
+			top: 16px;
+			left: 10px;
+			z-index: 1000;
+			display: block;
+			color: white;
+			font-size: 20px;
+			font-family: "Comfortaa", arial;
+			/* background: rgba(0, 0, 0, 0.8); */
+			padding: 10px;
+			border: 2px solid gray;
+			border-radius: 5px;
+		`;
+
+		var label = document.createElement('label');
+		if (isFormControl) {
+			label.setAttribute('for', 'fsm-dropdown');
+		}
+		label.textContent = 'FSM:';
+		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
+		dropdownContainer.appendChild(label);
+
+		return dropdownContainer;
+	} //end createFSMDropdownContainer()
+
+	//=====================================================================================
 	//createFSMDisplay ~~
 	// Creates and displays a dropdown for FSM selection when fsm_name is empty
 	function createFSMDisplay(fsmNamesStrArr) {
-		
+
 		Debug.log("createFSMDisplay()");
 
 		var dropdownContainer;
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
-			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-div';
-			dropdownContainer.style.cssText = `
-				position: absolute;
-				top: 16px;
-				left: 10px;
-				z-index: 1000;
-				display: block;
-				color: white;
-				font-size: 20px;
-    			font-family: "Comfortaa", arial;
-				/* background: rgba(0, 0, 0, 0.8); */
-				padding: 10px;
-				border: 2px solid gray;
-				border-radius: 5px;
-			`;
-			
-			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-dropdown');
-			label.textContent = 'FSM:';
-			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
-			dropdownContainer.appendChild(label);
-			
+			dropdownContainer = createFSMDropdownContainer(false);  // Display only, not a form control
+
 			var select = document.createElement('div');
 			select.id = 'fsm-dropdown';
 			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px; margin-top: 3px;';
 			select.innerText = _fsmName;
-			
+
 			dropdownContainer.appendChild(select);
 			document.body.appendChild(dropdownContainer);
 
@@ -1386,39 +1398,18 @@ SubsystemLaunch.create = function() {
 		// Create dropdown container if it doesn't exist
 		dropdownContainer = document.getElementById('fsm-dropdown-div');
 		if (!dropdownContainer) {
-			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-div';
-			dropdownContainer.style.cssText = `
-				position: absolute;
-				top: 16px;
-				left: 10px;
-				z-index: 1000;
-				display: block;
-				color: white;
-				font-size: 20px;
-    			font-family: "Comfortaa", arial;
-				/* background: rgba(0, 0, 0, 0.8); */
-				padding: 10px;
-				border: 2px solid gray;
-				border-radius: 5px;
-			`;
-			
-			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-dropdown');
-			label.textContent = 'FSM:';
-			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
-			dropdownContainer.appendChild(label);
-			
+			dropdownContainer = createFSMDropdownContainer(true);  // Interactive form control
+
 			var select = document.createElement('select');
 			select.id = 'fsm-dropdown';
 			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px;';
 			select.onchange = function() {
 				handleFSMSelectionSubsystem(this.value);
 			};
-			
+
 			dropdownContainer.appendChild(select);
 			document.body.appendChild(dropdownContainer);
-		} 
+		}
 
 		// Populate the dropdown
 		var selectElement = document.getElementById('fsm-dropdown');
@@ -1432,7 +1423,7 @@ SubsystemLaunch.create = function() {
 				option.value = _fsmNameArr[i];
 				if(_fsmNameArr[i] == "")
 					option.text = "No FSM Records";
-				else 
+				else
 					option.text = _fsmNameArr[i];
 
 				if(_fsmName == _fsmNameArr[i])
@@ -1441,7 +1432,7 @@ SubsystemLaunch.create = function() {
 				selectElement.appendChild(option);
 			}
 		}
-		
+
 		// Make sure it's visible
 		dropdownContainer.style.display = 'block';
 	} //end createFSMDisplay()
@@ -1457,7 +1448,7 @@ SubsystemLaunch.create = function() {
 
 			//assume this toggle is caused by user
 			//save setting to server for user
-			DesktopContent.XMLHttpRequest("Request?RequestType=stateMatchinePreferences" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
 				"&set=1" +
 				"&Default_FSM_Name=" + _fsmName,
 				"",
@@ -2590,4 +2581,3 @@ SubsystemLaunch.copyText = function (el) {
 			Debug.err("Failed to copy: ", err);
 		});
 } //end SubsystemLaunch.copyText()
-
