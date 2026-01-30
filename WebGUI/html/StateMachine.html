@@ -576,8 +576,6 @@
 						}, 1000);
 				});
 
-			localFinishInit();
-
 			//=====================
 			//validateAndSetFsmName
 			//	Helper function to validate _fsmName against _fsmNameArr
@@ -604,6 +602,8 @@
 					Debug.logv({_fsmName});
 				}
 			}
+
+			localFinishInit();
 
 			return;
 
