@@ -1358,7 +1358,7 @@ SubsystemLaunch.create = function() {
 				display: block;
 				color: white;
 				font-size: 20px;
-    			font-family: "Comfortaa", arial;
+				font-family: "Comfortaa", arial;
 				/* background: rgba(0, 0, 0, 0.8); */
 				padding: 10px;
 				border: 2px solid gray;
@@ -1396,7 +1396,7 @@ SubsystemLaunch.create = function() {
 				display: block;
 				color: white;
 				font-size: 20px;
-    			font-family: "Comfortaa", arial;
+				font-family: "Comfortaa", arial;
 				/* background: rgba(0, 0, 0, 0.8); */
 				padding: 10px;
 				border: 2px solid gray;
@@ -2590,4 +2590,3 @@ SubsystemLaunch.copyText = function (el) {
 			Debug.err("Failed to copy: ", err);
 		});
 } //end SubsystemLaunch.copyText()
-
