@@ -193,7 +193,7 @@ SubsystemLaunch.create = function() {
 
 			//get view mode preferences for user
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=stateMatchinePreferences" +
+				"Request?RequestType=stateMachinePreferences" +
 				"", "",
 				function (req) {
 					//Same code as StateMachine.html:556
@@ -1457,7 +1457,7 @@ SubsystemLaunch.create = function() {
 
 			//assume this toggle is caused by user
 			//save setting to server for user
-			DesktopContent.XMLHttpRequest("Request?RequestType=stateMatchinePreferences" +
+			DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
 				"&set=1" +
 				"&Default_FSM_Name=" + _fsmName,
 				"",
