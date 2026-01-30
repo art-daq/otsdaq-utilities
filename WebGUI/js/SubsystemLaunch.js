@@ -1348,7 +1348,7 @@ SubsystemLaunch.create = function() {
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
-			dropdownContainer = document.createElement('div')
+			dropdownContainer = document.createElement('div');
 			dropdownContainer.id = 'fsm-dropdown-div';
 			dropdownContainer.style.cssText = `
 				position: absolute;
