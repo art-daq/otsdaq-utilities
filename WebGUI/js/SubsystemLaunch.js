@@ -1340,7 +1340,8 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
 	//createFSMDropdownContainer ~~
 	// Helper function to create the FSM dropdown container with label
-	function createFSMDropdownContainer() {
+	// If isFormControl is true, adds the 'for' attribute to associate label with form control
+	function createFSMDropdownContainer(isFormControl) {
 		var dropdownContainer = document.createElement('div');
 		dropdownContainer.id = 'fsm-dropdown-div';
 		dropdownContainer.style.cssText = `
@@ -1359,7 +1360,9 @@ SubsystemLaunch.create = function() {
 		`;
 
 		var label = document.createElement('label');
-		label.setAttribute('for', 'fsm-dropdown');
+		if (isFormControl) {
+			label.setAttribute('for', 'fsm-dropdown');
+		}
 		label.textContent = 'FSM:';
 		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
 		dropdownContainer.appendChild(label);
@@ -1378,7 +1381,7 @@ SubsystemLaunch.create = function() {
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
-			dropdownContainer = createFSMDropdownContainer();
+			dropdownContainer = createFSMDropdownContainer(false);  // Display only, not a form control
 
 			var select = document.createElement('div');
 			select.id = 'fsm-dropdown';
@@ -1395,7 +1398,7 @@ SubsystemLaunch.create = function() {
 		// Create dropdown container if it doesn't exist
 		dropdownContainer = document.getElementById('fsm-dropdown-div');
 		if (!dropdownContainer) {
-			dropdownContainer = createFSMDropdownContainer();
+			dropdownContainer = createFSMDropdownContainer(true);  // Interactive form control
 
 			var select = document.createElement('select');
 			select.id = 'fsm-dropdown';
