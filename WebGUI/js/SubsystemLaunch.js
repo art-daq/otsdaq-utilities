@@ -188,7 +188,6 @@ SubsystemLaunch.create = function() {
 			_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
 			redrawWindow();
-			redrawWindow(); //do twice in case of new scroll bars
 
 
 			//get view mode preferences for user
@@ -243,6 +242,8 @@ SubsystemLaunch.create = function() {
 
 								// Create and show dropdown for FSM selection
 								createFSMDisplay();
+
+								redrawWindow(); //do twice in case of new scroll bars
 								
 							},/*returnHandler*/
 							0 /*reqParam*/,
@@ -252,7 +253,11 @@ SubsystemLaunch.create = function() {
 							true /*targetGatewaySupervisor*/); //end getStateMachineNames request
 					} //end handle setup FSM name
 					else
+					{
 						createFSMDisplay(); //for GET param selected FSM
+
+						redrawWindow(); //do twice in case of new scroll bars
+					}
 
 				},/*returnHandler*/
 				0 /*reqParam*/,
@@ -806,6 +811,22 @@ SubsystemLaunch.create = function() {
 			sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
 
+		
+		//check if need extra new line at top to avoid FSM select
+		var dropdownContainer = document.getElementById('fsm-dropdown-div');
+		var runButtonContainer = document.getElementById('runDivContainer');
+		if(dropdownContainer && runButtonContainer) {
+			if(dropdownContainer.offsetLeft + dropdownContainer.offsetWidth + 20 > 
+					runButtonContainer.offsetLeft) {
+				Debug.log("Need extra space");
+				document.getElementById("runDiv").style.paddingTop = "78px";
+			}
+			else 
+			{
+				Debug.log("No space");
+				document.getElementById("runDiv").style.paddingTop = "20px";
+			}
+		} //end check if need extra new line at top to avoid FSM select
 
 	} //end redrawWindow()
 
@@ -1325,7 +1346,7 @@ SubsystemLaunch.create = function() {
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
 			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-subsystem';
+			dropdownContainer.id = 'fsm-dropdown-div';
 			dropdownContainer.style.cssText = `
 				position: absolute;
 				top: 16px;
@@ -1342,13 +1363,13 @@ SubsystemLaunch.create = function() {
 			`;
 			
 			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-select');
+			label.setAttribute('for', 'fsm-dropdown');
 			label.textContent = 'FSM:';
 			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
 			dropdownContainer.appendChild(label);
 			
 			var select = document.createElement('div');
-			select.id = 'fsm-select';
+			select.id = 'fsm-dropdown';
 			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px; margin-top: 3px;';
 			select.innerText = _fsmName;
 			
@@ -1360,10 +1381,10 @@ SubsystemLaunch.create = function() {
 
 
 		// Create dropdown container if it doesn't exist
-		var dropdownContainer = document.getElementById('fsm-dropdown-subsystem');
+		var dropdownContainer = document.getElementById('fsm-dropdown-div');
 		if (!dropdownContainer) {
 			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-subsystem';
+			dropdownContainer.id = 'fsm-dropdown-div';
 			dropdownContainer.style.cssText = `
 				position: absolute;
 				top: 16px;
@@ -1380,13 +1401,13 @@ SubsystemLaunch.create = function() {
 			`;
 			
 			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-select');
+			label.setAttribute('for', 'fsm-dropdown');
 			label.textContent = 'FSM:';
 			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
 			dropdownContainer.appendChild(label);
 			
 			var select = document.createElement('select');
-			select.id = 'fsm-select';
+			select.id = 'fsm-dropdown';
 			select.style.cssText = 'float: left; margin-left: 10px; padding: 4px; font-size: 14px;';
 			select.onchange = function() {
 				handleFSMSelectionSubsystem(this.value);
@@ -1397,7 +1418,7 @@ SubsystemLaunch.create = function() {
 		} 
 
 		// Populate the dropdown
-		var selectElement = document.getElementById('fsm-select');
+		var selectElement = document.getElementById('fsm-dropdown');
 		if (selectElement) {
 			// Clear existing options
 			selectElement.innerHTML = "";
