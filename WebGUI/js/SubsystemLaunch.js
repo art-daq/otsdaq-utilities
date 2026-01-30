@@ -1358,7 +1358,7 @@ SubsystemLaunch.create = function() {
 			border-radius: 5px;
 		`;
 
-		var label = document.createElement('div');
+		var label = document.createElement('label');
 		label.setAttribute('for', 'fsm-dropdown');
 		label.textContent = 'FSM:';
 		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
