@@ -581,6 +581,33 @@
 			return;
 
 			//=====================
+			//validateAndSetFsmName
+			//	Helper function to validate _fsmName against _fsmNameArr
+			//	If _fsmName is not found in _fsmNameArr, it is cleared
+			//	If _fsmName is empty, it is set to the first element in _fsmNameArr
+			function validateAndSetFsmName() {
+				if(_fsmName) //make sure is valid
+				{
+					let found = false;
+					for(var i=0; i<_fsmNameArr.length; ++i)
+						if(_fsmName == _fsmNameArr[i])
+						{ found = true; break; }
+
+					if(!found)
+						_fsmName = ""; //clear
+				}
+				if(!_fsmName && _fsmNameArr.length)
+				{
+					Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
+					if(_fsmNameArr[0] == "No FSM Records")
+						_fsmName = ""; //stick with blank
+					else
+						_fsmName = _fsmNameArr[0];
+					Debug.logv({_fsmName});
+				}
+			}
+
+			//=====================
 			function localFinishInit() {
 
 				Debug.log("localFinishInit()");
@@ -597,25 +624,7 @@
 								_fsmNameArr.push(fsmNameArr[i].getAttribute('value'));
 							Debug.logv({_fsmNameArr});
 
-							if(_fsmName) //make sure is valid
-							{
-								let found = false;
-								for(var i=0; i<_fsmNameArr.length; ++i)
-									if(_fsmName == _fsmNameArr[i])
-									{ found = true; break; }
-
-								if(!found)
-									_fsmName = ""; //clear
-							}
-							if(!_fsmName && _fsmNameArr.length)
-							{
-								Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
-								if(_fsmNameArr[0] == "No FSM Records")
-									_fsmName = ""; //stick with blank
-								else
-									_fsmName = _fsmNameArr[0];
-								Debug.logv({_fsmName});
-							}
+							validateAndSetFsmName();
 
 							// Populate the dropdown
 							var selectElement = document.getElementById('fsm-select');
@@ -747,25 +756,7 @@
 							>
 					`;
 
-					if(_fsmName) //make sure is valid
-					{
-						let found = false;
-						for(var i=0; i<_fsmNameArr.length; ++i)
-							if(_fsmName == _fsmNameArr[i])
-							{ found = true; break; }
-
-						if(!found)
-							_fsmName = ""; //clear
-					}
-					if(!_fsmName && _fsmNameArr.length)
-					{
-						Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
-						if(_fsmNameArr[0] == "No FSM Records")
-							_fsmName = ""; //stick with blank
-						else
-							_fsmName = _fsmNameArr[0];
-						Debug.logv({_fsmName});
-					}
+					validateAndSetFsmName();
 
 					for(var i=0; i<_fsmNameArr.length; ++i)
 						_transParamsHtmlStr += "<option " +
