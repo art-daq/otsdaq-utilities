@@ -426,6 +426,7 @@
 
 		//=====================================================================================
 		//init called once body has loaded
+		//validateAndSetFsmName validates _fsmName and sets default if needed
 		function init() {
 			DesktopContent.setWindowTooltip(
 				"Welcome to the State Machine web app!\n\n" +
@@ -576,33 +577,6 @@
 						}, 1000);
 				});
 
-			//=====================
-			//validateAndSetFsmName
-			//	Helper function to validate _fsmName against _fsmNameArr
-			//	If _fsmName is not found in _fsmNameArr, it is cleared
-			//	If _fsmName is empty, it is set to the first element in _fsmNameArr
-			function validateAndSetFsmName() {
-				if(_fsmName) //make sure is valid
-				{
-					let found = false;
-					for(var i=0; i<_fsmNameArr.length; ++i)
-						if(_fsmName == _fsmNameArr[i])
-						{ found = true; break; }
-
-					if(!found)
-						_fsmName = ""; //clear
-				}
-				if(!_fsmName && _fsmNameArr.length)
-				{
-					Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
-					if(_fsmNameArr[0] == "No FSM Records")
-						_fsmName = ""; //stick with blank
-					else
-						_fsmName = _fsmNameArr[0];
-					Debug.logv({_fsmName});
-				}
-			}
-
 			localFinishInit();
 
 			return;
@@ -666,6 +640,33 @@
 			} //end localFinishInit()
 
 		} //end init()
+
+		//=====================================================================================
+		//validateAndSetFsmName
+		//	Helper function to validate _fsmName against _fsmNameArr
+		//	If _fsmName is not found in _fsmNameArr, it is cleared
+		//	If _fsmName is empty, it is set to the first element in _fsmNameArr
+		function validateAndSetFsmName() {
+			if(_fsmName) //make sure is valid
+			{
+				let found = false;
+				for(var i=0; i<_fsmNameArr.length; ++i)
+					if(_fsmName == _fsmNameArr[i])
+					{ found = true; break; }
+
+				if(!found)
+					_fsmName = ""; //clear
+			}
+			if(!_fsmName && _fsmNameArr.length)
+			{
+				Debug.log("Taking first in FSM records array:", _fsmNameArr[0]);
+				if(_fsmNameArr[0] == "No FSM Records")
+					_fsmName = ""; //stick with blank
+				else
+					_fsmName = _fsmNameArr[0];
+				Debug.logv({_fsmName});
+			}
+		} //end validateAndSetFsmName()
 
 		//=====================================================================================
 		//toggleViewMode ~~
