@@ -1338,6 +1338,39 @@ SubsystemLaunch.create = function() {
 
 
 	//=====================================================================================
+	//createFSMDropdownContainer ~~
+	// Helper function to create the FSM dropdown container with label
+	// If isFormControl is true, adds the 'for' attribute to associate label with form control
+	function createFSMDropdownContainer(isFormControl) {
+		var dropdownContainer = document.createElement('div');
+		dropdownContainer.id = 'fsm-dropdown-div';
+		dropdownContainer.style.cssText = `
+			position: absolute;
+			top: 16px;
+			left: 10px;
+			z-index: 1000;
+			display: block;
+			color: white;
+			font-size: 20px;
+			font-family: "Comfortaa", arial;
+			/* background: rgba(0, 0, 0, 0.8); */
+			padding: 10px;
+			border: 2px solid gray;
+			border-radius: 5px;
+		`;
+
+		var label = document.createElement('label');
+		if (isFormControl) {
+			label.setAttribute('for', 'fsm-dropdown');
+		}
+		label.textContent = 'FSM:';
+		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
+		dropdownContainer.appendChild(label);
+
+		return dropdownContainer;
+	} //end createFSMDropdownContainer()
+
+	//=====================================================================================
 	//createFSMDisplay ~~
 	// Creates and displays a dropdown for FSM selection when fsm_name is empty
 	function createFSMDisplay(fsmNamesStrArr) {
@@ -1348,28 +1381,7 @@ SubsystemLaunch.create = function() {
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
 
-			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-div';
-			dropdownContainer.style.cssText = `
-				position: absolute;
-				top: 16px;
-				left: 10px;
-				z-index: 1000;
-				display: block;
-				color: white;
-				font-size: 20px;
-				font-family: "Comfortaa", arial;
-				/* background: rgba(0, 0, 0, 0.8); */
-				padding: 10px;
-				border: 2px solid gray;
-				border-radius: 5px;
-			`;
-
-			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-dropdown');
-			label.textContent = 'FSM:';
-			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
-			dropdownContainer.appendChild(label);
+			dropdownContainer = createFSMDropdownContainer(false);  // Display only, not a form control
 
 			var select = document.createElement('div');
 			select.id = 'fsm-dropdown';
@@ -1386,28 +1398,7 @@ SubsystemLaunch.create = function() {
 		// Create dropdown container if it doesn't exist
 		dropdownContainer = document.getElementById('fsm-dropdown-div');
 		if (!dropdownContainer) {
-			dropdownContainer = document.createElement('div');
-			dropdownContainer.id = 'fsm-dropdown-div';
-			dropdownContainer.style.cssText = `
-				position: absolute;
-				top: 16px;
-				left: 10px;
-				z-index: 1000;
-				display: block;
-				color: white;
-				font-size: 20px;
-				font-family: "Comfortaa", arial;
-				/* background: rgba(0, 0, 0, 0.8); */
-				padding: 10px;
-				border: 2px solid gray;
-				border-radius: 5px;
-			`;
-
-			var label = document.createElement('div');
-			label.setAttribute('for', 'fsm-dropdown');
-			label.textContent = 'FSM:';
-			label.style.cssText = 'float: left; margin: 3px 0 0 0;';
-			dropdownContainer.appendChild(label);
+			dropdownContainer = createFSMDropdownContainer(true);  // Interactive form control
 
 			var select = document.createElement('select');
 			select.id = 'fsm-dropdown';
