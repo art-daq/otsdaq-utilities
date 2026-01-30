@@ -105,6 +105,7 @@ SubsystemLaunch.create = function() {
 	var _needEventListeners = true;
 
 	var _fsmName, _fsmWindowName;
+	var _fsmNameArr;
 	var _getStatusTimer = 0;
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
@@ -1342,7 +1343,7 @@ SubsystemLaunch.create = function() {
 	function createFSMDisplay(fsmNamesStrArr) {
 		
 		Debug.log("createFSMDisplay()");
-		
+
 		var dropdownContainer;
 
 		if(DesktopContent.getParameter(0, "fsm_name")) {
