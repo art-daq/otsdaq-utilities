@@ -1954,49 +1954,6 @@
 			//Debug.log("r,c " + r + "," + c);
 
 			return -1;
-
-
-			//start in upper left of upper left state
-			//	and break into _ALT_GRID_WIDTH places
-			var sx = _canvas.width / 2 - (_ALT_GRID_WIDTH * _perimeterRadius) / 2
-				+ _perimeterRadius / 2 - _stateOvalRadius * 2;
-			//sx is equivalent to _MARGIN
-			var sy = _canvas.height / 2 - (_altStateGrid.length * _perimeterRadius) / 2
-				+ _perimeterRadius / 2 - _stateOvalRadius;
-
-			var c = (x - sx);
-			var r = (y - sy);
-			if (r < 0 || c < 0) return -1;//return none if off the grid
-
-			c = c / _perimeterRadius | 0;
-			r = r / _perimeterRadius | 0;
-
-			//Debug.log("_perimeterRadius " + _perimeterRadius);
-			//Debug.log("x,y " + (x - sx) + "," + (y - sy));
-			//Debug.log("r,c " + r + "," + c);
-
-			//return none if off the grid
-			if (r >= _altStateGrid.length ||
-				c >= _ALT_GRID_WIDTH) return -1;
-
-			//Debug.log("_stateOvalRadius*2 " + _stateOvalRadius*2);
-			//Debug.log("x,y " + (x - sx - c*_perimeterRadius) + "," + (y - sy - r*_perimeterRadius));
-			//return if close enough to target state
-			var match = x - sx - c * _perimeterRadius < _stateOvalRadius * 4 &&
-				y - sy - r * _perimeterRadius < _stateOvalRadius * 2;
-			//Debug.log("match " + match);
-			if (!match) return -1;
-
-			//here we know the mouse is over grid state r,c at this point
-
-			//search curr transitions for one pointing to that state
-			for (var i = 0; i < _currStateTransArr.length; ++i)
-				if (_transitions[_currStateTransArr[i]][1] ==
-					_altStateGrid[r][c])
-					return i;
-
-			//if here, then there were no transitions to the state with the mouse over
-			return -1;
 		} //end getAltTransitionSelection()
 
 		//=====================================================================================
