@@ -235,6 +235,7 @@
 			var addPVMenuDiv_;
 			var addPVMenu_;
 			var isReadOnly_ = false;
+			var isStandAlone_ = false;
 			page_.createPage = function(){
 
 				this.name = "MyPage";
@@ -281,12 +282,8 @@
 			{
 				Debug.log("init() was called");
 
-				var readOnlyMode = DesktopContent.getParameter(0, "readOnlyMode"); // for &readOnlyMode=1
-				if (readOnlyMode !== undefined) //set read mode if parameter
-				{
-					Debug.log("Launching readonly mode to true!");
-					isReadOnly_ = true; //readOnlyMode | 0;
-				}
+				isReadOnly_ = DesktopContent._readOnlyMode;
+				isStandAlone_ = DesktopContent._standAloneMode;
 
 				//to make an icon on desktop -- DesktopContent.addDesktopIcon(iconName)
 
