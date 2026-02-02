@@ -7463,31 +7463,33 @@
 
 			console.log("vpel", vpel.value, "ivpel", ivpel.value);
 
-            if (document.body.style.cursor == painterSource ||
-                document.body.style.cursor == selectorSource) {
+			if (document.body.style.cursor == painterSource ||
+				document.body.style.cursor == selectorSource) {
 				console.log("Disabling paint cell value mode");
-                document.body.style.cursor = "default";
-                vpel.value = "Copy and Paint a Cell";
-                vpel.title = "Click to enable choosing a cell value to copy" +
-                    " and paint into other cells by dragging the mouse cursor.";
-                ivpel.value = "Copy and Paint a Cell" + " Incrementally";
-                ivpel.title = "Click to enable choosing a cell value to copy" +
-                    ", increment," +
-                    " and paint into other cells by dragging the mouse cursor.";
+				document.body.style.cursor = "default";
+				vpel.value = "Copy and Paint a Cell";
+				vpel.title = "Click to enable choosing a cell value to copy" +
+					" and paint into other cells by dragging the mouse cursor.";
+				ivpel.value = "Copy and Paint a Cell" + " Incrementally";
+				ivpel.title = "Click to enable choosing a cell value to copy" +
+					", increment," +
+					" and paint into other cells by dragging the mouse cursor.";
 
-                //return table to selectable text
-                var tel = document.getElementById("SubSystemTable");
-                tel.className = "";
-            }
-            else {
-                vpel.value = "Cancel Cell Value Selection";
-                vpel.title = "Click to cancel cell value selection mode.";
-                ivpel.value = "Cancel Cell Value Selection";
-                ivpel.title = "Click to cancel cell value selection mode.";
-                document.body.style.cursor = selectorSource;
-                _doCopyAndPaintIncrementally = doIncrement;
-            }
-        } //end togglePaintCellValue()
+				//return table to selectable text
+				var tel = document.getElementById("SubSystemTable");
+				tel.className = "";
+			}
+			else {
+				console.log("Enabling paint cell value mode, doIncrement=", doIncrement);
+				//make table unselectable text
+				vpel.value = "Cancel Cell Value Selection";
+				vpel.title = "Click to cancel cell value selection mode.";
+				ivpel.value = "Cancel Cell Value Selection";
+				ivpel.title = "Click to cancel cell value selection mode.";
+				document.body.style.cursor = selectorSource;
+				_doCopyAndPaintIncrementally = doIncrement;
+			}
+		} //end togglePaintCellValue()
 
         //==============================================================================
         //tableVersionDiff
