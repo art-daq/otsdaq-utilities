@@ -338,7 +338,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUsergetAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
