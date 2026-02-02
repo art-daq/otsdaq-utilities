@@ -329,6 +329,7 @@
 										 0 /*callHandlerOnErr*/,
 										 true /*doNoShowLoadingOverlay*/);
 				pagesList_ = "Loading";
+				if (!isStandAlone_)
 				DesktopContent.XMLHttpRequest(
 									"Request?RequestType=isUserAdmin",
 									"",
@@ -475,15 +476,11 @@
 			{
 				Debug.log("getPermissionHandler() was called. " + req.responseText);//Req: " + req.responseText);
 
-				isAdmin = JSON.parse(decodeURIComponent(DesktopContent.getXMLValue(req, "JSON")))["message"];
+				var isAdmin = JSON.parse(decodeURIComponent(DesktopContent.getXMLValue(req, "JSON")))["message"];
 				console.log("User Permission: " + isAdmin);
 				console.log(isAdmin);
 
-				if(isAdmin == "Yes")
-				{
-					isReadOnly_ = false;
-				}
-				else
+				if(isAdmin != "Yes")
 				{
 					isReadOnly_ = true;
 				}
