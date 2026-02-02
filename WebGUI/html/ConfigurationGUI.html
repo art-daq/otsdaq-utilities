@@ -7488,21 +7488,6 @@
                 _doCopyAndPaintIncrementally = doIncrement;
             }
         } //end togglePaintCellValue()
-				//return table to selectable text
-				var tel = document.getElementById("SubSystemTable");
-				tel.className = "";
-			}
-			else {
-				console.log("Enabling paint cell value mode, doIncrement=", doIncrement);
-				//make table unselectable text
-				vpel.value = "Cancel Cell Value Selection";
-				vpel.title = "Click to cancel cell value selection mode.";
-				ivpel.value = "Cancel Cell Value Selection";
-				ivpel.title = "Click to cancel cell value selection mode.";
-				document.body.style.cursor = selectorSource;
-				_doCopyAndPaintIncrementally = doIncrement;
-			}
-		} //end togglePaintCellValue()
 
         //==============================================================================
         //tableVersionDiff
