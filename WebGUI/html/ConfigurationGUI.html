@@ -1985,16 +1985,30 @@
                     "'>" +
                     "View Latest Key for Selected Group</button>";
 
-                str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
-
+                str += "<div style='margin-top:10px; margin-bottom:10px;'>";
+                str += "    <label style='margin-right:20px;'>";
+                str += "        <input type='radio' name='tableGroupFilter' value='all' checked>";
+                str += "        All";
+                str += "    </label>";
+                str += "    <label style='margin-right:20px;'>";
+                str += "        <input type='radio' name='tableGroupFilter' value='active'>";
+                str += "        Active Only";
+                str += "    </label>";
+                str += "    <label>";
+                str += "        <input type='radio' name='tableGroupFilter' value='cache'>";
+                str += "        Cache Only";
+                str += "    </label>";
+                str += "</div>";
+                    
                 str += "Search for Keyword in All Tables: ";
                 str += "<br>";
                 str += "<input type='text' id='searchTextInAllTables' " +
                     "placeholder='Search text in all tables of all groups' " +
                     "style='width:300px;' " +
-                    "onkeyup='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }' />";
-
-                //if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }'
+                    "onkeyup='if(event.key==\"Enter\") { searchTextInGroup(\"" + tableName + "\"); }' />";
+                    
+                str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
+                    //if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }'
 
                 str += "<div style='margin-top:0px'>";
                 str += "<hr><b >";
@@ -2284,6 +2298,91 @@
 
             return str;
         } //end makeGroupInfoDisplayString()
+
+        //==============================================================================
+        //searchTextInGroup
+        function searchTextInGroup(tableName) {
+            console.log("CfgGUI popUpSearchFieldPrompt");
+            console.log("TableName " + tableName);
+
+            var el = document.getElementById("searchTextInAllTables");
+            var searchText = el ? el.value : "";
+            console.log("Search field value: " + searchText);
+
+            var selectedFilter = document.querySelector('input[name="tableGroupFilter"]:checked');
+            var filterValue = selectedFilter ? selectedFilter.value : null;
+            console.log("Selected filter: " + filterValue);
+
+            var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
+            var groupType = typeName[_groupViewFilterIndex + 1];
+            console.log("Group type for search: " + groupType);
+
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
+                "&searchText=" + searchText +
+                "&filterValue=" + filterValue +
+                "&groupType=" + groupType,
+                "",
+                function(req){
+                    var req = arguments[0];
+                    var errStr = arguments[2];
+                    if (errStr) {
+                        Debug.err(errStr);
+                        return;
+                    }
+
+                    const groupTableMap = new Map();
+
+                    var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
+                    for (var i = 0; i < groupTableMatches.length; i++) {
+                        var groupTable = groupTableMatches[i];
+                        var groupTableInfo = groupTable.getAttribute("value").split("/");
+                        var groupName = groupTableInfo[0];
+                        var tableName = groupTableInfo[1];
+                        var matchRow = DesktopContent.getXMLValue(groupTable, "MatchRow");
+                        var matchColumn = DesktopContent.getXMLValue(groupTable, "MatchColumn");
+                        var matchTableVersion = DesktopContent.getXMLValue(groupTable, "MatchTableVersion");
+                        var matchGroupVersion = DesktopContent.getXMLValue(groupTable, "MatchGroupVersion");
+                        // Process each match...
+
+                        console.log("Match found:", { groupName: groupName, groupVersion: matchGroupVersion, tableName: tableName, tableVersion: matchTableVersion, row: matchRow, column: matchColumn });
+                        var mapKey = groupName+"-"+tableName+"-"+matchColumn+"-"+matchTableVersion+"-"+matchGroupVersion;
+                        if (!groupTableMap.has(mapKey))
+                            groupTableMap.set(mapKey, 0);
+                        else
+                            groupTableMap.set(mapKey, groupTableMap.get(mapKey) + 1);
+                    } // end groupTableMatches loop
+
+                    // Display results
+                    var resultStr = "Search Results for '" + searchText + "':\n\n";
+                    if (groupTableMap.size === 0) {
+                        resultStr += "No matches found.";
+                    } else {
+                        var previousGroupName = "";
+                        var previousTableName = "";
+                        for(var i=0; i<groupTableMap.size; i++)
+                        {
+                            var parts = Array.from(groupTableMap.keys())[i].split("-");
+                            if(parts[0] != previousGroupName)
+                            {
+                                resultStr += "Group: " + parts[0] + " v" + parts[4] + "\n";
+                                previousGroupName = parts[0];
+                                previousTableName = "";
+                            }
+                            if(parts[1] != previousTableName)
+                            {
+                                resultStr += "\tTable: " + parts[1] + " v" + parts[3] + "\n";
+                                previousTableName = parts[1];
+                            }
+                            resultStr += "\t\tColumn: " + parts[2] +
+                                ", Occurrences: " + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) +
+                                "\n";
+                        } // end groupTableMap loop
+                    }
+                    Debug.info(DesktopContent.tooltipConditionString(resultStr));
+                },
+                "searchTextInGroup"
+            );
+        } //end searchTextInGroup()
 
         //==============================================================================
         //gotoSelectedMSGroup ~~

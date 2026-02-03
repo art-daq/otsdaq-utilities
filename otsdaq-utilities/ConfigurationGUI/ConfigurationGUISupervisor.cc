@@ -1156,6 +1156,102 @@ try
 		handleGetAffectedGroupsXML(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
 	}
+	else if(requestType == "SearchFieldInGroup")
+	{
+		std::string searchText = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string filterValue  = CgiDataUtilities::getData(cgiIn, "filterValue");
+		std::string groupType  = CgiDataUtilities::getData(cgiIn, "groupType");
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "filterValue: " << filterValue << __E__;
+		__SUP_COUT__ << "groupType: " << groupType << __E__;
+
+		const std::map<std::string, GroupInfo>& allGroupInfo = cfgMgr->getAllGroupInfo();
+
+		auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
+
+		for(auto& groupInfo : allGroupInfo)
+		{
+			__COUT__ << "Checking group: " << groupInfo.first << " v" << groupInfo.second.getLatestKey() << " group type : " 
+				<< groupInfo.second.getLatestKeyGroupTypeString() << __E__;
+			if(groupInfo.second.getLatestKeyGroupTypeString() != groupType)
+				continue;
+			__COUT__ << "\tProcessing group: " << groupInfo.first << " v" << groupInfo.second.getLatestKey() << __E__;
+
+			// Get the member map for this group
+			std::map<std::string /*name*/, TableVersion /*version*/> memberMap;
+			try
+			{
+				cfgMgr->loadTableGroup(groupInfo.first,
+									   groupInfo.second.getLatestKey(),
+									   false /*doActivate*/,
+									   &memberMap,
+									   0 /*progressBar*/,
+									   0 /*accumulateErrors*/,
+									   0 /*groupComment*/,
+									   0 /*groupAuthor*/,
+									   0 /*groupCreationTime*/,
+									   true /*doNotLoadMembers*/);
+
+				// Process each table in the group
+				for(auto& tablePair : memberMap)
+				{
+					__COUT__ << "\t\tTable: " << tablePair.first << " v" << tablePair.second << __E__;
+
+					// Load the table for this specific version
+					TableBase* memberTable = cfgMgr->getTableByName(tablePair.first);
+					try
+					{
+
+						if(allTableInfo.find(tablePair.first) == allTableInfo.end())
+						{
+							__COUT_WARN__ << "Table '" << tablePair.first << "' not found in allTableInfo, skipping." << __E__;
+							continue;
+						}
+						cfgMgr->getVersionedTableByName(tablePair.first, tablePair.second);
+
+						// Get the table view
+						const TableView& tableView = memberTable->getView();
+
+						// Loop through all rows and columns to search for searchText
+						for(unsigned int row = 0; row < tableView.getNumberOfRows(); ++row)
+						{
+							for(unsigned int col = 0; col < tableView.getNumberOfColumns(); ++col)
+							{
+								const std::string& cellValue = tableView.getDataView()[row][col];
+								
+								// Check if searchText is found in cell value
+								if(cellValue.find(searchText) != std::string::npos)
+								{
+									__COUT__ << "\t\t\tMatch found in " << tablePair.first << " v" << tablePair.second
+										<< " row " << row << " column " << col << " value: " << cellValue << __E__;
+									// Separate match element by group/table for better organization
+									auto groupTableEl = xmlOut.addTextElementToParent(
+										"GroupTableMatch", groupInfo.first + "/" + tablePair.first, parentEl);
+									xmlOut.addTextElementToParent("MatchRow", std::to_string(row), groupTableEl);
+									xmlOut.addTextElementToParent(
+										"MatchColumn", tableView.getColumnInfo(col).getName(), groupTableEl);
+									xmlOut.addTextElementToParent("MatchGroupVersion", groupInfo.second.getLatestKey().toString(), groupTableEl);
+									xmlOut.addTextElementToParent("MatchTableVersion", tablePair.second.toString(), groupTableEl);
+								}
+							} // end columns
+						} // end rows
+					} // end try load versioned table
+					catch(const std::runtime_error& e)
+					{
+						__COUT_WARN__ << "Failed to search table " << tablePair.first << " v" << tablePair.second
+							<< ": " << e.what() << __E__;
+					}
+				} // end try load table group members
+			}
+			catch(const std::runtime_error& e)
+			{
+				__COUT_WARN__ << "Failed to load group members for " << groupInfo.first 
+							 << ": " << e.what() << __E__;
+			}
+		}
+
+	}
 	else if(requestType == "SearchFieldInAllTableVersions")
 	{
 		std::string searchText = CgiDataUtilities::getData(cgiIn, "searchText");
@@ -2246,7 +2342,7 @@ try
 	// construct specially ordered table name set
 	std::set<std::string, StringMacros::IgnoreCaseCompareStruct> orderedTableSet;
 	for(const auto& tablePair : allActivePairs)
-		orderedTableSet.emplace(tablePair.first);
+		orderedTableSet.emplace(tablePair.first);     
 
 	std::map<std::string, TableInfo>::const_iterator tableInfoIt;
 	for(auto& orderedTableName : orderedTableSet)
