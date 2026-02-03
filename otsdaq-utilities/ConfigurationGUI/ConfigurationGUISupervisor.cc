@@ -1156,6 +1156,399 @@ try
 		handleGetAffectedGroupsXML(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
 	}
+	else if(requestType == "checkAffectedActiveGroups")
+	{
+		std::string groupName      = CgiDataUtilities::getData(cgiIn, "groupName");
+		std::string groupKey       = CgiDataUtilities::getData(cgiIn, "groupKey");
+		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
+		__SUP_COUT__ << "modifiedTables: " << modifiedTables << __E__;
+		__SUP_COUT__ << "groupName: " << groupName << __E__;
+		__SUP_COUT__ << "groupKey: " << groupKey << __E__;
+
+		handleGetAffectedGroupsXML(
+		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
+	}
+	else if(requestType == "SearchFieldInGroup")
+	{
+		std::string searchText   = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string filterValue  = CgiDataUtilities::getData(cgiIn, "filterValue");
+		std::string groupType    = CgiDataUtilities::getData(cgiIn, "groupType");
+		std::string optionGroups = CgiDataUtilities::getData(cgiIn, "optionGroups");
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "filterValue: " << filterValue << __E__;
+		__SUP_COUT__ << "groupType: " << groupType << __E__;
+		__SUP_COUT__ << "optionGroups: " << optionGroups << __E__;
+
+		bool searchAllGroups = false;
+		if(optionGroups.size() == 0)
+		{
+			__COUT__ << "No optionGroups specified, searching all groups of type "
+			         << groupType << __E__;
+			searchAllGroups = true;
+		}
+		std::vector<std::string> optionGroupsList =
+		    StringMacros::getVectorFromString(optionGroups, {','});
+
+		const std::map<std::string, GroupInfo>& allGroupInfo = cfgMgr->getAllGroupInfo();
+
+		auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
+
+		for(auto& groupInfo : allGroupInfo)
+		{
+			__COUT__ << "Checking group: " << groupInfo.first << " v"
+			         << groupInfo.second.getLatestKey()
+			         << " group type : " << groupInfo.second.getLatestKeyGroupTypeString()
+			         << __E__;
+
+			if(groupInfo.second.getLatestKeyGroupTypeString() != groupType)
+				continue;
+
+			// Check if groupInfo.first is in optionGroups
+			if(!searchAllGroups && std::find(optionGroupsList.begin(),
+			                                 optionGroupsList.end(),
+			                                 groupInfo.first) == optionGroupsList.end())
+			{
+				__COUT__ << "\tSkipping group not in optionGroups list." << __E__;
+				continue;  // skip this group
+			}
+			__COUT__ << "\tProcessing group: " << groupInfo.first << " v"
+			         << groupInfo.second.getLatestKey() << __E__;
+
+			// Get the member map for this group
+			std::map<std::string /*name*/, TableVersion /*version*/> memberMap;
+			try
+			{
+				cfgMgr->loadTableGroup(groupInfo.first,
+				                       groupInfo.second.getLatestKey(),
+				                       false /*doActivate*/,
+				                       &memberMap,
+				                       0 /*progressBar*/,
+				                       0 /*accumulateErrors*/,
+				                       0 /*groupComment*/,
+				                       0 /*groupAuthor*/,
+				                       0 /*groupCreationTime*/,
+				                       true /*doNotLoadMembers*/);
+
+				// Process each table in the group
+				for(auto& tablePair : memberMap)
+				{
+					__COUT__ << "\t\tTable: " << tablePair.first << " v"
+					         << tablePair.second << __E__;
+
+					// Load the table for this specific version
+					TableBase* memberTable = cfgMgr->getTableByName(tablePair.first);
+					try
+					{
+						cfgMgr->getVersionedTableByName(tablePair.first,
+						                                tablePair.second);
+
+						// Get the table view
+						const TableView& tableView = memberTable->getView();
+
+						// Loop through all rows and columns to search for searchText
+						for(unsigned int row = 0; row < tableView.getNumberOfRows();
+						    ++row)
+						{
+							for(unsigned int col = 0;
+							    col < tableView.getNumberOfColumns();
+							    ++col)
+							{
+								const std::string& cellValue =
+								    tableView.getDataView()[row][col];
+
+								// Check if searchText is found in cell value
+								if(cellValue.find(searchText) != std::string::npos)
+								{
+									__COUT__ << "\t\t\tMatch found in " << tablePair.first
+									         << " v" << tablePair.second << " row " << row
+									         << " column " << col
+									         << " value: " << cellValue << __E__;
+									// Separate match element by group/table for better organization
+									auto groupTableEl = xmlOut.addTextElementToParent(
+									    "GroupTableMatch",
+									    groupInfo.first + "/" + tablePair.first,
+									    parentEl);
+									xmlOut.addTextElementToParent(
+									    "MatchRow", std::to_string(row), groupTableEl);
+									xmlOut.addTextElementToParent(
+									    "MatchColumn",
+									    tableView.getColumnInfo(col).getName(),
+									    groupTableEl);
+									xmlOut.addTextElementToParent(
+									    "MatchGroupVersion",
+									    groupInfo.second.getLatestKey().toString(),
+									    groupTableEl);
+									xmlOut.addTextElementToParent(
+									    "MatchTableVersion",
+									    tablePair.second.toString(),
+									    groupTableEl);
+								}
+							}  // end columns
+						}      // end rows
+					}          // end try load versioned table
+					catch(const std::runtime_error& e)
+					{
+						__COUT_WARN__ << "Failed to search table " << tablePair.first
+						              << " v" << tablePair.second << ": " << e.what()
+						              << __E__;
+					}
+				}  // end try load table group members
+			}
+			catch(const std::runtime_error& e)
+			{
+				__COUT_WARN__ << "Failed to load group members for " << groupInfo.first
+				              << ": " << e.what() << __E__;
+			}
+		}
+	}
+	else if(requestType == "SearchFieldInAllTableVersions")
+	{
+		std::string searchText = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string tableName  = CgiDataUtilities::getData(cgiIn, "tableName");
+		std::string searchVersionToCheck =
+		    CgiDataUtilities::getData(cgiIn, "searchVersionToCheck");
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "tableName: " << tableName << __E__;
+		__SUP_COUT__ << "searchVersionToCheck: " << searchVersionToCheck << __E__;
+
+		const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
+
+		int searchMinThreshold = 0;
+		int searchMaxThreshold = 0;
+
+		// Parse searchVersionToCheck for version range
+		if(searchVersionToCheck.find('-') != std::string::npos)
+		{
+			size_t dashPos = searchVersionToCheck.find('-');
+
+			if(dashPos == 0)
+			{
+				// Dash is first position: "-N" means (maxVersion - N) to maxVersion
+				std::string offsetStr = searchVersionToCheck.substr(1);
+				int         offset =
+				    atoi(offsetStr.c_str()) - 1;  // -1 to include the max version itself
+
+				__SUP_COUT__ << "searchVersionToCheck offset from end: " << offset
+				             << __E__;
+
+				// Find the max version from allTableInfo
+				if(allTableInfo.find(tableName) != allTableInfo.end())
+				{
+					const TableInfo& tableInfo = allTableInfo.at(tableName);
+					if(tableInfo.versions_.size() > 0)
+					{
+						auto maxVersionIter = tableInfo.versions_.rbegin();
+						int  maxVersionNum  = maxVersionIter->version();
+						int  minVersionNum  = std::max(0, maxVersionNum - offset);
+
+						searchMinThreshold = minVersionNum;
+						searchMaxThreshold = maxVersionNum;
+
+						__SUP_COUT__ << "Version range: " << searchMinThreshold << " to "
+						             << searchMaxThreshold << __E__;
+					}
+				}
+			}
+			else
+			{
+				// Format: "N-M" means version N to version M
+				std::string minStr = searchVersionToCheck.substr(0, dashPos);
+				std::string maxStr = searchVersionToCheck.substr(dashPos + 1);
+
+				searchMinThreshold = atoi(minStr.c_str());
+				searchMaxThreshold = atoi(maxStr.c_str());
+			}
+		}
+		else if(searchVersionToCheck != "")
+		{
+			// Single version specified
+			searchMinThreshold = atoi(searchVersionToCheck.c_str());
+			searchMaxThreshold = INT_MAX;  // effectively no upper limit
+		}
+		__SUP_COUT__ << "searchVersionToCheck range: " << searchMinThreshold << " to "
+		             << searchMaxThreshold << __E__;
+
+		try
+		{
+			if(allTableInfo.find(tableName) == allTableInfo.end())
+			{
+				__SUP_SS__ << "Table '" << tableName << "' not found." << __E__;
+				xmlOut.addTextElementToData("Error", ss.str());
+				return;
+			}
+
+			const TableInfo& tableInfo = allTableInfo.at(tableName);
+			__COUT__ << "tableInfo versions length " << tableInfo.versions_.size()
+			         << __E__;
+
+			unsigned int matchCount          = 0;
+			bool         allowIllegalColumns = true;
+			bool         getRawData          = true;
+			// Create a parent element for search results
+			auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
+
+			// Loop through all versions of the table
+			for(const auto& version : tableInfo.versions_)
+			{
+				try
+				{
+					if(std::stoi(version.toString()) < searchMinThreshold ||
+					   std::stoi(version.toString()) > searchMaxThreshold)
+					{
+						__COUT__ << "Skipping version " << version << " out of range "
+						         << searchMinThreshold << " to " << searchMaxThreshold
+						         << __E__;
+						continue;
+					}
+					TableBase* table = cfgMgr->getTableByName(tableName);
+
+					// get view pointer
+					TableView* tableViewPtr;
+					if(version.isInvalid())  // use mock-up
+					{
+						__COUT__ << "Using mock-up for table " << tableName << " version "
+						         << version << __E__;
+						tableViewPtr = table->getMockupViewP();
+					}
+					else  // use view version
+					{
+						try
+						{
+							// locally accumulate 'manageable' errors getting the version to avoid
+							// reverting to mockup
+							std::string localAccumulatedErrors = "";
+							tableViewPtr =
+							    cfgMgr
+							        ->getVersionedTableByName(
+							            tableName,
+							            version,
+							            allowIllegalColumns /*looseColumnMatching*/,
+							            &localAccumulatedErrors,
+							            getRawData)
+							        ->getViewP();
+
+							if(getRawData)
+							{
+								__COUT__ << "Adding raw data for table " << tableName
+								         << " version " << version << __E__;
+
+								const std::set<std::string>& srcColNames =
+								    tableViewPtr->getSourceColumnNames();
+								for(auto& srcColName : srcColNames)
+									xmlOut.addTextElementToData("ColumnHeader",
+									                            srcColName);
+
+								if(!version.isTemporaryVersion())
+								{
+									__COUT__ << "Table is temporary, reloading view to "
+									            "clear raw data"
+									         << __E__;
+									// if version is temporary, view is already ok
+									table->eraseView(
+									    version);  // clear so that the next get will fill the table
+									tableViewPtr =
+									    cfgMgr
+									        ->getVersionedTableByName(
+									            tableName,
+									            version,
+									            allowIllegalColumns /*looseColumnMatching*/
+									            ,
+									            &localAccumulatedErrors,
+									            false /* getRawData */)
+									        ->getViewP();
+								}
+							}  // end rawData handling
+
+							if(localAccumulatedErrors != "")
+								xmlOut.addTextElementToData("Error",
+								                            localAccumulatedErrors);
+						}
+						catch(const std::runtime_error& e)
+						{
+							__COUT__ << "Error loading version " << version
+							         << " for table " << tableName << ": " << e.what()
+							         << __E__;
+							__SUP_COUT_WARN__ << "Could not load version " << version
+							                  << " for table " << tableName << ": "
+							                  << e.what() << __E__;
+							// fallback to mockup
+							tableViewPtr = table->getMockupViewP();
+						}
+					}
+
+					__COUT__ << "Getting table " << tableName << " version " << version
+					         << __E__;
+
+					// Search through all rows and columns
+					for(unsigned int row = 0; row < tableViewPtr->getNumberOfRows();
+					    ++row)
+					{
+						for(unsigned int col = 0;
+						    col < tableViewPtr->getNumberOfColumns();
+						    ++col)
+						{
+							const std::string& cellValue =
+							    tableViewPtr->getDataView()[row][col];
+							// Check if searchText is found in cell value
+							if(cellValue.find(searchText) != std::string::npos)
+							{
+								__COUT__ << "Match found in row " << row << " column "
+								         << col << " value: " << cellValue << __E__;
+								auto matchEl = xmlOut.addTextElementToParent(
+								    "Match", cellValue, parentEl);
+								xmlOut.addTextElementToParent(
+								    "MatchVersion", version.toString(), matchEl);
+								xmlOut.addTextElementToParent(
+								    "MatchRow", std::to_string(row), matchEl);
+								xmlOut.addTextElementToParent(
+								    "MatchColumn",
+								    tableViewPtr->getColumnInfo(col).getName(),
+								    matchEl);
+
+								++matchCount;
+							}
+						}
+					}  // end for rows and columns
+				}
+				catch(const std::runtime_error& e)
+				{
+					__COUT__ << "Error searching in version " << version << " for table "
+					         << tableName << ": " << e.what() << __E__;
+					__SUP_COUT_WARN__ << "Could not load version " << version
+					                  << " for table " << tableName << ": " << e.what()
+					                  << __E__;
+				}
+			}  //emd for version loop
+
+			xmlOut.addTextElementToData("MatchCount", std::to_string(matchCount));
+		}
+		catch(std::runtime_error& e)
+		{
+			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n "
+			           << e.what() << __E__;
+			__SUP_COUT_ERR__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+		catch(...)
+		{
+			__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " << __E__;
+			try
+			{
+				throw;
+			}
+			catch(const std::exception& e)
+			{
+				ss << "Exception message: " << e.what();
+			}
+			catch(...)
+			{
+			}
+			__SUP_COUT_ERR__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+	}
 	else if(requestType == "saveTreeNodeEdit")
 	{
 		std::string editNodeType = CgiDataUtilities::getData(cgiIn, "editNodeType");
