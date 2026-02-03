@@ -333,10 +333,19 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
-		CorePropertySupervisorBase::setSupervisorProperty(
-		    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
-		    "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");  // block users from writing if no write access
+		CorePropertySupervisorBase::
+		    setSupervisorProperty(  // block users from writing if no write access
+		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
+		            .UserPermissionsThreshold,
+		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");
+
+		CorePropertySupervisorBase::
+		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
+		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
+		            .AllowNoLoginRequestTypes,
+		        "getPages | getList | loadPhoebusPage | generateUID | poll | "
+		        "getPVSettings");
 		__COUT_INFO__ << "readOnly true in setSupervisorProperty" << __E__;
 	}
 }  //end forceSupervisorPropertyValues()
@@ -347,6 +356,8 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
                                               HttpXmlDocument&   xmlOut,
                                               const WebUsers::RequestUserInfo& userInfo)
 {
+	__SUP_COUT__ << "requestType: " << requestType << ", "
+	             << "userInfo.username_: " << userInfo.username_ << __E__;
 	try
 	{
 		if(requestType != "getPages" && !pluginBusyMutex_.try_lock())

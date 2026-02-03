@@ -242,7 +242,8 @@ DesktopContent._pageInitCalled = false;
 DesktopContent._windowMessagingInactive = undefined;
 
 DesktopContent._sequence = 0;
-DesktopContent._standAloneMode = 0; //1  means do not expect any login credentials, set by window parameter
+DesktopContent._readOnlyMode    = 0; //1  means do not expect (i.e. server should reject writes, but server still checks credentials) any server modification/write requests at server, set by window parameter
+DesktopContent._standAloneMode  = 0; //1  means do not expect any login credentials (i.e. server should not check credentials), set by window parameter
 
 //=====================================================================================
 //initialize content's place in the world
@@ -345,7 +346,9 @@ DesktopContent.init = function (onloadFunction) {
         Debug.log("Remote Gateway Application Origin = " + DesktopContent._remoteServerOrigin);
     }
 
-    DesktopContent._standAloneMode = DesktopContent.getParameter(0, "standAloneMode") | 0;
+    DesktopContent._readOnlyMode = 1 == (DesktopContent.getParameter(0, "readOnlyMode") | 0);
+    Debug.log("Read-only mode = " + DesktopContent._readOnlyMode);
+    DesktopContent._standAloneMode = 1 == (DesktopContent.getParameter(0, "standAloneMode") | 0);
     Debug.log("Stand-alone mode = " + DesktopContent._standAloneMode);
 
     //get Wizard sequence (if in Wizard mode)
@@ -1591,12 +1594,17 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 
         var cc = DesktopContent._cookieCodeMailbox;//DesktopContent._cookieCodeMailbox?DesktopContent._cookieCodeMailbox.innerHTML:""; //get cookie code from mailbox if available
         reqData = "RequestOrigin=" + DesktopContent._serverOrigin +
-            "&CookieCode=" + cc + ((data == "" || data === undefined) ? "" : ("&" + data));
+            "&CookieCode=" + cc;
     }
     else //wiz mode
     {
-        reqData = "sequence=" + sequence + ((data == "" || data === undefined) ? "" : ("&" + data));
+        reqData = "sequence=" + sequence;
     }
+
+    reqData +=
+        (DesktopContent._standAloneMode?"&standAloneMode=1":"") +
+        (DesktopContent._readOnlyMode?"&readOnlyMode=1":"") +
+        ((data == "" || data === undefined) ? "" : ("&" + data));
 
 
     var urn = DesktopContent._localUrnLid;

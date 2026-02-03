@@ -377,15 +377,8 @@ CodeEditor.create = function (standAlone) {
             _viewMode = parameterViewMode | 0;
         }
 
+        _READ_ONLY = DesktopContent._readOnlyMode;
 
-        var readOnlyMode = DesktopContent.getParameter(0, "readOnlyMode");
-        if (readOnlyMode !== undefined) //set read mode if parameter
-        {
-            Debug.log("Launching readonly mode to true!");
-            _READ_ONLY = true; //readOnlyMode | 0;
-
-
-        }
         console.log("parameterStartFile", parameterStartFile);
         console.log("parameterGotoLine", parameterGotoLine);
         for (var ii = 0; ii < 2; ++ii) //for both files, get goto line and cleanup leading :
