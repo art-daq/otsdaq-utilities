@@ -1598,10 +1598,10 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
     }
     else //wiz mode
     {
-        reqData = "sequence=" + sequence; 
+        reqData = "sequence=" + sequence;
     }
 
-    reqData += 
+    reqData +=
         (DesktopContent._standAloneMode?"&standAloneMode=1":"") +
         (DesktopContent._readOnlyMode?"&readOnlyMode=1":"") +
         ((data == "" || data === undefined) ? "" : ("&" + data));

@@ -344,7 +344,8 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .AllowNoLoginRequestTypes,
-		        "getPages | getList | loadPhoebusPage | generateUID | poll | getPVSettings");
+		        "getPages | getList | loadPhoebusPage | generateUID | poll | "
+		        "getPVSettings");
 		__COUT_INFO__ << "readOnly true in setSupervisorProperty" << __E__;
 	}
 }  //end forceSupervisorPropertyValues()
