@@ -711,6 +711,7 @@
 		var lastSelectedIndex = null;
 		var isDragging = false;
 		var dragModeSelect = true; // true => selecting, false => deselecting
+		var windowMouseupRegistered = false; // track if window mouseup listener is registered
 
 		//==============================================================================
 		//init called once body has loaded
@@ -3551,12 +3552,6 @@
                     setSelectedByIndex(idx, dragModeSelect);
                 });
 
-                tableRow.addEventListener('mouseup', () => {
-                    isDragging = false;
-                    document.body.classList.remove('no-select');
-                    window.getSelection().removeAllRanges();
-                });
-
                 tableRow.addEventListener('click', (e) => {
                     e.stopPropagation(); // Stops other handlers
                     e.preventDefault();
@@ -3575,6 +3570,16 @@
                     lastSelectedIndex = idx;
                 });
             }); //end foreach loop
+
+			// Attach mouseup listener to window to handle drag end anywhere (only once)
+			if (!windowMouseupRegistered) {
+				window.addEventListener('mouseup', () => {
+					isDragging = false;
+					document.body.classList.remove('no-select');
+					window.getSelection().removeAllRanges();
+				});
+				windowMouseupRegistered = true;
+			}
 		} //end registerOnClickActions()
 
 		//==============================================================================
