@@ -655,6 +655,7 @@
 		var _tableViewBackLinkStr;
 		var _tableUploadStr = "";
 		var _doCopyAndPaintIncrementally = false;
+		var _copyAndPaintLastCellKey = "";
 
 		var _displayTargetEl = 0;
 
@@ -3436,7 +3437,7 @@
 			else
 				str += "style='display:none' ";
 			str += "title='Append a new row to the table.' ";
-			str += "class='tableAddRowButton' onclick='addRow(" + r + "); return false;'>";
+			str += "class='tableAddRowButton' onclick='addRow(" + r + "); registerOnClickActions(); return false;'>";
 			str += "+";
 			str += "</a>";
 
@@ -3450,7 +3451,7 @@
 			else
 				str += "style='display:none' ";
 			str += "title='Append a new row to the table.' ";
-			str += "class='tableAddRowButton' onclick='addRow(" + r + "); return false;'>";
+			str += "class='tableAddRowButton' onclick='addRow(" + r + "); registerOnClickActions(); return false;'>";
 			str += "+";
 			str += "</a>";
 
@@ -3500,74 +3501,80 @@
 		function registerOnClickActions() {
 			var tbody = document.getElementById("SubSystemTable");
 
-			tbody.addEventListener('mousedown', (e) => {
-				const tr = e.target.closest('tr');
-				if (!tr || e.button !== 0) return; // only left click
+			// Ignore the first two <tr> tags (header rows)
+            const _CONFIG_DATA_ROW_OFFSET = 2;
+            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET, tbody.rows.length);
 
-				const idx = indexOfRow(tr);
-				if (idx === -1 || idx == 0) return;
+			dataRows.forEach((tableRow) => {
+                tableRow.addEventListener('mousedown', (e) => {
+                    const tr = e.target.closest('tr');
+                    if (!tr || e.button !== 0) return; // only left click
 
-				// SHIFT RANGE (works without Ctrl)
-				if (e.shiftKey && lastSelectedIndex !== null) {
-					selectRange(lastSelectedIndex, idx, true);
-					lastSelectedIndex = idx;
-					e.preventDefault();
-					return;
-				}
+                    const idx = indexOfRow(tr);
+                    if (idx === -1 || idx == 0) return;
 
-				// CTRL/Meta required for selection actions
-				if (!(e.ctrlKey || e.metaKey)) {
-					// no selection if not holding ctrlreturn;
-					return;
-				}
+                    // SHIFT RANGE (works without Ctrl)
+                    if (e.shiftKey && lastSelectedIndex !== null) {
+                        selectRange(lastSelectedIndex, idx, true);
+                        lastSelectedIndex = idx;
+                        e.preventDefault();
+                        return;
+                    }
 
-				// also stop the context menu that would appear afterwards
-				document.addEventListener("contextmenu", blockContextMenu, { once: true });
+                    // CTRL/Meta required for selection actions
+                    if (!(e.ctrlKey || e.metaKey)) {
+                        // no selection if not holding ctrlreturn;
+                        return;
+                    }
 
-				// CTRL Click or CTRL Drag Starts
-				const currentlySelected = tr.classList.contains('selected');
-				dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
-				isDragging = true;
-				document.body.classList.add('no-select');
-				setSelectedByIndex(idx, dragModeSelect);
-				lastSelectedIndex = idx;
-				e.preventDefault();
-			});
+                    // also stop the context menu that would appear afterwards
+                    document.addEventListener("contextmenu", blockContextMenu, { once: true });
 
-			tbody.addEventListener('mouseover', (e) => {
-				if (!isDragging) return;
-				if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
+                    // CTRL Click or CTRL Drag Starts
+                    const currentlySelected = tr.classList.contains('selected');
+                    dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
+                    isDragging = true;
+                    document.body.classList.add('no-select');
+                    setSelectedByIndex(idx, dragModeSelect);
+                    lastSelectedIndex = idx;
+                    e.preventDefault();
+                });
 
-				const tr = e.target.closest('tr');
-				if (!tr) return;
-				const idx = indexOfRow(tr);
-				if (idx === -1) return;
-				setSelectedByIndex(idx, dragModeSelect);
-			});
+                tableRow.addEventListener('mouseover', (e) => {
+                    if (!isDragging) return;
+                    if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
 
-			window.addEventListener('mouseup', () => {
-				isDragging = false;
-				document.body.classList.remove('no-select');
-				window.getSelection().removeAllRanges();
-			});
+                    const tr = e.target.closest('tr');
+                    if (!tr) return;
+                    const idx = indexOfRow(tr);
+                    if (idx === -1) return;
+                    setSelectedByIndex(idx, dragModeSelect);
+                });
 
-			tbody.addEventListener('click', (e) => {
-				event.stopPropagation(); // Stops other handlers
-				event.preventDefault();
-				const tr = e.target.closest('tr');
-				if (!tr) return;
-				const idx = indexOfRow(tr);
+                tableRow.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    document.body.classList.remove('no-select');
+                    window.getSelection().removeAllRanges();
+                });
 
-				// SHIFT does nothing here (handled in mousedown)
-				if (e.shiftKey) return;
+                tableRow.addEventListener('click', (e) => {
+                    event.stopPropagation(); // Stops other handlers
+                    event.preventDefault();
+                    const tr = e.target.closest('tr');
+                    if (!tr) return;
+                    const idx = indexOfRow(tr);
 
-				// Normal click does nothing
-				if (!(e.ctrlKey || e.metaKey)) return;
+                    // SHIFT does nothing here (handled in mousedown)
+                    if (e.shiftKey) return;
 
-				// CTRL click toggle (final guarantee)
-				tr.classList.toggle('selected');
-				lastSelectedIndex = idx;
-			});
+                    // Normal click does nothing
+                    if (!(e.ctrlKey || e.metaKey)) return;
+
+                    // CTRL click toggle (final guarantee)
+                    tr.classList.toggle('selected');
+                    lastSelectedIndex = idx;
+                });
+            }); //end foreach loop
 		} //end registerOnClickActions()
 
 		//==============================================================================
@@ -7448,6 +7455,7 @@
 
 			if (document.body.style.cursor == painterSource ||
 				document.body.style.cursor == selectorSource) {
+				//disable paint mode
 				document.body.style.cursor = "default";
 				vpel.value = "Copy and Paint a Cell";
 				vpel.title = "Click to enable choosing a cell value to copy" +
@@ -7462,12 +7470,16 @@
 				tel.className = "";
 			}
 			else {
+				//enable paint mode
 				vpel.value = "Cancel Cell Value Selection";
 				vpel.title = "Click to cancel cell value selection mode.";
 				ivpel.value = "Cancel Cell Value Selection";
 				ivpel.title = "Click to cancel cell value selection mode.";
 				document.body.style.cursor = selectorSource;
 				_doCopyAndPaintIncrementally = doIncrement;
+				// Add paint mode class to table cells to override cursor
+				var tel = document.getElementById("SubSystemTable");
+				tel.className = "paintModeActive";
 			}
 		} //end togglePaintCellValue()
 
@@ -9132,11 +9144,6 @@
 
 			if (paintMode) {
 				if (event.buttons && document.body.style.cursor == painterSource) {
-					if (el.innerText == _editingCellElOldValue ||
-						(_doCopyAndPaintIncrementally &&
-							ConfigurationAPI.incrementName(el.innerText) == _editingCellElOldValue))
-						return; //already same value
-
 					Debug.log(r, c, "paint mode", event.buttons);
 					var tableEl = document.getElementById("SubSystemTable");
 					var rows = tableEl.getElementsByTagName("tr");
@@ -9155,8 +9162,18 @@
 					}
 					var selVal = _editingCellElOldValue;
 
-					if (_doCopyAndPaintIncrementally)
-						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+					// Track current cell and reset increment state if cursor left and re-entered
+					var currentCellKey = r + "," + c;
+					if (currentCellKey !== _copyAndPaintLastCellKey) {
+						// Cursor entered a new cell (or re-entered after leaving)
+						_copyAndPaintLastCellKey = currentCellKey;
+						
+						// Only increment if not already incremented in this visit to the cell
+						// This ensures the value increases only once until cursor leaves and re-enters
+						if (_doCopyAndPaintIncrementally) {
+							_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+						}
+					}
 
 					//assume coloring yes/no is good enough until table is saved
 					var boolTypeTrues = ["On", "True", "Yes"];
@@ -9195,9 +9212,6 @@
 					ivpel.value = "End Cell Value Painting";
 					ivpel.title = "Click to end cell value painting mode.";
 
-					if (_doCopyAndPaintIncrementally)
-						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
-
 					Debug.log("Value-to-paint", _editingCellElOldValue);
 				}
 				else
@@ -9208,10 +9222,6 @@
 				return;
 			}
 			else if (document.body.style.cursor == painterSource) {
-				if (el.innerText == _editingCellElOldValue ||
-					(_doCopyAndPaintIncrementally &&
-						ConfigurationAPI.incrementName(el.innerText) == _editingCellElOldValue))
-					return; //already same value
 				//do painting
 				Debug.log("Painting value", _editingCellElOldValue);
 				var tableEl = document.getElementById("SubSystemTable");
@@ -9230,8 +9240,19 @@
 					el.appendChild(document.createTextNode(_editingCellElOldValue));
 				}
 				var selVal = _editingCellElOldValue;
-				if (_doCopyAndPaintIncrementally)
-					_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+
+				// Track current cell and reset increment state if cursor left and re-entered
+				var currentCellKey = r + "," + c;
+				if (currentCellKey !== _copyAndPaintLastCellKey || !event.buttons) {
+					// Cursor entered a new cell (or re-entered after leaving)
+					_copyAndPaintLastCellKey = currentCellKey;
+					
+					// Only increment if not already incremented in this visit to the cell
+					// This ensures the value increases only once until cursor leaves and re-enters
+					if (_doCopyAndPaintIncrementally) {
+						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+					}
+				}
 
 				//assume coloring yes/no is good enough until table is saved
 				var boolTypeTrues = ["On", "True", "Yes"];
@@ -10187,10 +10208,12 @@
 			else if (e.ctrlKey && e.key.toLowerCase() == "v") {
 				Debug.log("Copying table rows");
 				copyAndPasteBlockRows();
+				registerOnClickActions();
 			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d") {
 				Debug.log("Deleting block of table rows");
 				deleteBlockRows();
+				registerOnClickActions();
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
@@ -18824,7 +18847,7 @@
 						str += "/";
 						str += "<a  class='tableDeleteRowButton' " +
 							"title='Delete this row.' " +
-							"onclick='deleteRow(" + ro + "); return false;'>";
+							"onclick='deleteRow(" + ro + "); registerOnClickActions(); return false;'>";
 						str += "-";
 						str += "</a>";
 						str += "</center>";
