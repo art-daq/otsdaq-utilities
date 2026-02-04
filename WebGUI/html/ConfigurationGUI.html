@@ -1932,9 +1932,7 @@
 			var str = "";
 			str += "<div style='display:none'>Group View</div>"; //Note: this is children[0] tag is used in some place to determine mode after a series of events
 
-			var tableNames, tableVersions;
 			var backLinkStr;
-			var tableName, tableVersion;
 
 			backLinkStr = "setupGroupViewMode();";
 
@@ -2014,7 +2012,7 @@
                 str += "<input type='text' id='searchTextInAllTables' " +
                     "placeholder='Search text' " +
                     "style='width:399px;' " +
-                    "onkeyup='if(event.key==\"Enter\") { searchTextInGroup(\"" + tableName + "\"); }' />";
+                    "onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
 
 				str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
 
@@ -2172,11 +2170,11 @@
 					Debug.log("keyArr.length:" + keyArr.length +
 						" _msChosenGroupName:" + _msChosenGroupName +
 						" _msChosenGroupKey:" + _msChosenGroupKey);
-					
+
 					//copy selected div and show as selected
 					var srcEl = document.getElementById("groupViewGroupDiv-" +
 						_msChosenGroupName + "-" + _msChosenGroupKey);
-					
+
 					str += "<b class='bold-header'>";
 					str += "Selected Group: " + _msChosenGroupName;
 					str += "</b><br>";
@@ -2314,9 +2312,8 @@
 
         //==============================================================================
         //searchTextInGroup
-        function searchTextInGroup(tableName) {
+        function searchTextInGroup() {
             Debug.log("CfgGUI popUpSearchFieldPrompt");
-            Debug.log("TableName " + tableName);
 
             var el = document.getElementById("searchTextInAllTables");
             var searchText = el ? el.value : "";
@@ -7672,7 +7669,7 @@
             str += "<br>";
             str += "<input type='text' id='searchMinThreshold' value='1'" +
                     "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
-				
+
 			str += "<br>Version to check... ";
             str += "<br>";
             str += "<input type='text' id='searchVersionToCheck' value='1'" +
