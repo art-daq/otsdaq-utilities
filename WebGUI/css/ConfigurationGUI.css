@@ -103,7 +103,7 @@ b, h3, h1 {
         background-color: rgb(210, 193, 193);
     }
 
-    #SubSystemTable td:not(.paintModeActive) {
+    #SubSystemTable.paintModeActive td {
         cursor: url("/WebPath/images/iconImages/cursor-PaintRoller.png");
     }
 
