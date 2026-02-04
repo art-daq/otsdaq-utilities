@@ -3551,12 +3551,6 @@
                     setSelectedByIndex(idx, dragModeSelect);
                 });
 
-                tableRow.addEventListener('mouseup', () => {
-                    isDragging = false;
-                    document.body.classList.remove('no-select');
-                    window.getSelection().removeAllRanges();
-                });
-
                 tableRow.addEventListener('click', (e) => {
                     e.stopPropagation(); // Stops other handlers
                     e.preventDefault();
@@ -3575,6 +3569,13 @@
                     lastSelectedIndex = idx;
                 });
             }); //end foreach loop
+
+			// Attach mouseup listener to window to handle drag end anywhere
+			window.addEventListener('mouseup', () => {
+				isDragging = false;
+				document.body.classList.remove('no-select');
+				window.getSelection().removeAllRanges();
+			});
 		} //end registerOnClickActions()
 
 		//==============================================================================
