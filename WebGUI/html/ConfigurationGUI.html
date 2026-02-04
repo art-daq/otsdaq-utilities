@@ -2313,7 +2313,7 @@
         //==============================================================================
         //searchTextInGroup
         function searchTextInGroup() {
-            Debug.log("CfgGUI popUpSearchFieldPrompt");
+            Debug.log("CfgGUI searchTextInGroup");
 
             var el = document.getElementById("searchTextInAllTables");
             var searchText = el ? el.value : "";
@@ -3306,7 +3306,7 @@
 
 			//display config name and version
 			str += "<div style='float:left;'>";
-			str += "<b id='tableName'>" + tableName + "</b> (version: " + (version == -1 ? _MOCKUP_VIEW_NAME :
+			str += "<b>" + tableName + "</b> (version: " + (version == -1 ? _MOCKUP_VIEW_NAME :
 				(version == ConfigurationAPI._SCRATCH_VERSION ? _SCRATCH_VIEW_NAME : version)) + ")";
 			str += "</div>";
 
@@ -7660,10 +7660,6 @@
             var i = el.innerText.indexOf("Minimum");
             if (i >= 0 && i < 5) { el.innerHTML = ""; return; } //hide if already shown
 
-            var tableName = document.getElementById("tableName").innerText;
-
-            Debug.log("tableName: " + tableName);
-
             var str = "";
             str += "<br>Minimum threshold value... ";
             str += "<br>";
@@ -7678,7 +7674,7 @@
             str += "<br>Search all Table Versions for... ";
             str += "<br>";
             str += "<input type='text' id='searchTextInAllTableVersions' value='' " +
-                "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + tableName + "\"); }' " +
+                "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
                 "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
             str += "<br><br>";
             el.innerHTML = str;
@@ -15665,7 +15661,7 @@
 		} //end popUpClearVersionsPrompt()
 
 		//==============================================================================
-        //popUpSaveNewTableForm
+        //popUpSearchFieldPrompt
         function popUpSearchFieldPrompt(tableName) {
             console.log("CfgGUI popUpSearchFieldPrompt");
             console.log("TableName " + tableName);
