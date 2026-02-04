@@ -3558,8 +3558,8 @@
                 });
 
                 tableRow.addEventListener('click', (e) => {
-                    event.stopPropagation(); // Stops other handlers
-                    event.preventDefault();
+                    e.stopPropagation(); // Stops other handlers
+                    e.preventDefault();
                     const tr = e.target.closest('tr');
                     if (!tr) return;
                     const idx = indexOfRow(tr);
