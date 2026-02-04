@@ -655,6 +655,7 @@
 		var _tableViewBackLinkStr;
 		var _tableUploadStr = "";
 		var _doCopyAndPaintIncrementally = false;
+		var _copyAndPaintLastCellKey = "";
 
 		var _displayTargetEl = 0;
 
@@ -710,6 +711,7 @@
 		var lastSelectedIndex = null;
 		var isDragging = false;
 		var dragModeSelect = true; // true => selecting, false => deselecting
+		var windowMouseupRegistered = false; // track if window mouseup listener is registered
 
 		//==============================================================================
 		//init called once body has loaded
@@ -3551,7 +3553,7 @@
 			else
 				str += "style='display:none' ";
 			str += "title='Append a new row to the table.' ";
-			str += "class='tableAddRowButton' onclick='addRow(" + r + "); return false;'>";
+			str += "class='tableAddRowButton' onclick='addRow(" + r + "); registerOnClickActions(); return false;'>";
 			str += "+";
 			str += "</a>";
 
@@ -3565,7 +3567,7 @@
 			else
 				str += "style='display:none' ";
 			str += "title='Append a new row to the table.' ";
-			str += "class='tableAddRowButton' onclick='addRow(" + r + "); return false;'>";
+			str += "class='tableAddRowButton' onclick='addRow(" + r + "); registerOnClickActions(); return false;'>";
 			str += "+";
 			str += "</a>";
 
@@ -3617,8 +3619,7 @@
 
 			// Ignore the first two <tr> tags (header rows)
             const _CONFIG_DATA_ROW_OFFSET = 2;
-            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET, tbody.rows.length);
-            console.log(dataRows.length + " data rows found for click actions.");
+            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET);
 
 			dataRows.forEach((tableRow) => {
                 tableRow.addEventListener('mousedown', (e) => {
@@ -3666,15 +3667,9 @@
                     setSelectedByIndex(idx, dragModeSelect);
                 });
 
-                tableRow.addEventListener('mouseup', () => {
-                    isDragging = false;
-                    document.body.classList.remove('no-select');
-                    window.getSelection().removeAllRanges();
-                });
-
                 tableRow.addEventListener('click', (e) => {
-                    event.stopPropagation(); // Stops other handlers
-                    event.preventDefault();
+                    e.stopPropagation(); // Stops other handlers
+                    e.preventDefault();
                     const tr = e.target.closest('tr');
                     if (!tr) return;
                     const idx = indexOfRow(tr);
@@ -3690,6 +3685,16 @@
                     lastSelectedIndex = idx;
                 });
             }); //end foreach loop
+
+			// Attach mouseup listener to window to handle drag end anywhere (only once)
+			if (!windowMouseupRegistered) {
+				window.addEventListener('mouseup', () => {
+					isDragging = false;
+					document.body.classList.remove('no-select');
+					window.getSelection().removeAllRanges();
+				});
+				windowMouseupRegistered = true;
+			}
 		} //end registerOnClickActions()
 
 		//==============================================================================
@@ -7570,6 +7575,7 @@
 
 			if (document.body.style.cursor == painterSource ||
 				document.body.style.cursor == selectorSource) {
+				//disable paint mode
 				document.body.style.cursor = "default";
 				vpel.value = "Copy and Paint a Cell";
 				vpel.title = "Click to enable choosing a cell value to copy" +
@@ -7584,12 +7590,16 @@
 				tel.className = "";
 			}
 			else {
+				//enable paint mode
 				vpel.value = "Cancel Cell Value Selection";
 				vpel.title = "Click to cancel cell value selection mode.";
 				ivpel.value = "Cancel Cell Value Selection";
 				ivpel.title = "Click to cancel cell value selection mode.";
 				document.body.style.cursor = selectorSource;
 				_doCopyAndPaintIncrementally = doIncrement;
+				// Add paint mode class to table cells to override cursor
+				var tel = document.getElementById("SubSystemTable");
+				tel.className = "paintModeActive";
 			}
 		} //end togglePaintCellValue()
 
@@ -9284,11 +9294,6 @@
 
 			if (paintMode) {
 				if (event.buttons && document.body.style.cursor == painterSource) {
-					if (el.innerText == _editingCellElOldValue ||
-						(_doCopyAndPaintIncrementally &&
-							ConfigurationAPI.incrementName(el.innerText) == _editingCellElOldValue))
-						return; //already same value
-
 					Debug.log(r, c, "paint mode", event.buttons);
 					var tableEl = document.getElementById("SubSystemTable");
 					var rows = tableEl.getElementsByTagName("tr");
@@ -9307,8 +9312,18 @@
 					}
 					var selVal = _editingCellElOldValue;
 
-					if (_doCopyAndPaintIncrementally)
-						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+					// Track current cell and reset increment state if cursor left and re-entered
+					var currentCellKey = r + "," + c;
+					if (currentCellKey !== _copyAndPaintLastCellKey) {
+						// Cursor entered a new cell (or re-entered after leaving)
+						_copyAndPaintLastCellKey = currentCellKey;
+
+						// Only increment if not already incremented in this visit to the cell
+						// This ensures the value increases only once until cursor leaves and re-enters
+						if (_doCopyAndPaintIncrementally) {
+							_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+						}
+					}
 
 					//assume coloring yes/no is good enough until table is saved
 					var boolTypeTrues = ["On", "True", "Yes"];
@@ -9347,9 +9362,6 @@
 					ivpel.value = "End Cell Value Painting";
 					ivpel.title = "Click to end cell value painting mode.";
 
-					if (_doCopyAndPaintIncrementally)
-						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
-
 					Debug.log("Value-to-paint", _editingCellElOldValue);
 				}
 				else
@@ -9360,10 +9372,6 @@
 				return;
 			}
 			else if (document.body.style.cursor == painterSource) {
-				if (el.innerText == _editingCellElOldValue ||
-					(_doCopyAndPaintIncrementally &&
-						ConfigurationAPI.incrementName(el.innerText) == _editingCellElOldValue))
-					return; //already same value
 				//do painting
 				Debug.log("Painting value", _editingCellElOldValue);
 				var tableEl = document.getElementById("SubSystemTable");
@@ -9382,8 +9390,19 @@
 					el.appendChild(document.createTextNode(_editingCellElOldValue));
 				}
 				var selVal = _editingCellElOldValue;
-				if (_doCopyAndPaintIncrementally)
-					_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+
+				// Track current cell and reset increment state if cursor left and re-entered
+				var currentCellKey = r + "," + c;
+				if (currentCellKey !== _copyAndPaintLastCellKey || !event.buttons) {
+					// Cursor entered a new cell (or re-entered after leaving)
+					_copyAndPaintLastCellKey = currentCellKey;
+
+					// Only increment if not already incremented in this visit to the cell
+					// This ensures the value increases only once until cursor leaves and re-enters
+					if (_doCopyAndPaintIncrementally) {
+						_editingCellElOldValue = ConfigurationAPI.incrementName(_editingCellElOldValue);
+					}
+				}
 
 				//assume coloring yes/no is good enough until table is saved
 				var boolTypeTrues = ["On", "True", "Yes"];
@@ -10339,10 +10358,12 @@
 			else if (e.ctrlKey && e.key.toLowerCase() == "v") {
 				Debug.log("Copying table rows");
 				copyAndPasteBlockRows();
+				registerOnClickActions();
 			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "d") {
 				Debug.log("Deleting block of table rows");
 				deleteBlockRows();
+				registerOnClickActions();
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
@@ -19074,7 +19095,7 @@
 						str += "/";
 						str += "<a  class='tableDeleteRowButton' " +
 							"title='Delete this row.' " +
-							"onclick='deleteRow(" + ro + "); return false;'>";
+							"onclick='deleteRow(" + ro + "); registerOnClickActions(); return false;'>";
 						str += "-";
 						str += "</a>";
 						str += "</center>";
