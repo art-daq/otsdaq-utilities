@@ -3503,7 +3503,7 @@
 
 			// Ignore the first two <tr> tags (header rows)
             const _CONFIG_DATA_ROW_OFFSET = 2;
-            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET, tbody.rows.length);
+            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET);
 
 			dataRows.forEach((tableRow) => {
                 tableRow.addEventListener('mousedown', (e) => {
