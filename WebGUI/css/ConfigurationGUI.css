@@ -103,8 +103,8 @@ b, h3, h1 {
         background-color: rgb(210, 193, 193);
     }
 
-    #SubSystemTable td {
-        cursor: crosshair;
+    #SubSystemTable.paintModeActive td {
+        cursor: url("/WebPath/images/iconImages/cursor-PaintRoller.png");
     }
 
 .tableAddRowButton, .tableDeleteRowButton {
