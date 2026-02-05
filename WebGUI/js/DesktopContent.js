@@ -1136,8 +1136,9 @@ DesktopContent.hideLoading = function () {
     /////////////////////////
     function localHideLoadBox() {
         //console.log("DesktopContent.hideLoading",DesktopContent._loadBoxRequestStack);
-        if (--DesktopContent._loadBoxRequestStack) //subtract from stack, but dont hide if stack remains
+        if (--DesktopContent._loadBoxRequestStack > 0) //subtract from stack, but dont hide if stack remains
             return;
+        DesktopContent._loadBoxRequestStack = 0; //make sure it is not negative
 
         window.clearInterval(DesktopContent._loadBoxTimer); //kill loading animation
         //console.log("DesktopContent.hideLoading");

@@ -366,7 +366,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	#scan for top-level git repos and check those
 	scan_dir="${OTS_SOURCE}/../"
 
-	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
+	find "$scan_dir" -maxdepth 3 -type d -name ".git" 2>/dev/null |
 	while IFS= read -r gitdir; do
 		repo_dir="$(dirname "$gitdir")"
 		echo -e "UpdateOTS.sh:${LINENO}  check found: $repo_dir"
@@ -383,7 +383,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
 				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
 			else
 				#find unmerged branches
