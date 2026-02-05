@@ -612,55 +612,58 @@ for p in ${REPO_DIR[@]}; do
 		echo -e "UpdateOTS.sh:${LINENO}  \t Fetching updates from $p"
 		git fetch
 	elif [ $WARN_ONLY = 1 ]; then
-		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p" >&2 #take stderr for warn result
-		# else
-		# 	echo "Working tree is clean."
-		fi
 
-		#find unmerged branches
-		branch="$(git rev-parse --abbrev-ref HEAD)"
-		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
-			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
-		# else
-		# 	echo "You are on main or develop"
-		fi
+		# already handled by depth 3 above!
 
-		#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
-		missing=$(comm -23 \
-			<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
-			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
-			| paste -sd', ' -)
-		if [ -n "$missing" ]; then
-			echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
-		# else
-			# echo "All local branches are represented on origin."
-		fi
+		# if ! git diff --quiet || ! git diff --cached --quiet; then
+		# 	echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p" >&2 #take stderr for warn result
+		# # else
+		# # 	echo "Working tree is clean."
+		# fi
 
-		# find branches with unpushed commits
-		unpushed=$(
-			git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
-			while read -r branch upstream; do
-				# no upstream configured at all
-				[ -z "$upstream" ] && {
-					printf "%s(no upstream)\n" "$branch"
-					continue
-				}
+		# #find unmerged branches
+		# branch="$(git rev-parse --abbrev-ref HEAD)"
+		# if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
+		# 	echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
+		# # else
+		# # 	echo "You are on main or develop"
+		# fi
 
-				# upstream configured but ref does not exist (e.g. deleted on origin)
-				if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
-					printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
-					continue
-				fi
+		# #find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
+		# missing=$(comm -23 \
+		# 	<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
+		# 	<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
+		# 	| paste -sd', ' -)
+		# if [ -n "$missing" ]; then
+		# 	echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
+		# # else
+		# 	# echo "All local branches are represented on origin."
+		# fi
 
-				ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
-				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
-			done | paste -sd', ' -
-		)
+		# # find branches with unpushed commits
+		# unpushed=$(
+		# 	git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+		# 	while read -r branch upstream; do
+		# 		# no upstream configured at all
+		# 		[ -z "$upstream" ] && {
+		# 			printf "%s(no upstream)\n" "$branch"
+		# 			continue
+		# 		}
 
-		if [ -n "$unpushed" ]; then
-			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
-		fi
+		# 		# upstream configured but ref does not exist (e.g. deleted on origin)
+		# 		if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
+		# 			printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
+		# 			continue
+		# 		fi
+
+		# 		ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
+		# 		[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
+		# 	done | paste -sd', ' -
+		# )
+
+		# if [ -n "$unpushed" ]; then
+		# 	echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
+		# fi
 
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
