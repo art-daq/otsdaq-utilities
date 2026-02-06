@@ -375,6 +375,12 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
 
 			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
+
+			if [[ "$repo_dir" == *"../archive"* ]]; then
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping archived repos."
+				continue
+			fi
+
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
 				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
@@ -383,7 +389,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
 				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
 			else
 				#find unmerged branches
@@ -407,15 +413,28 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			# find branches with unpushed commits
-			unpushed=$(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
-			while read -r branch upstream; do
-				[ -z "$upstream" ] && continue
-				ahead=$(git rev-list --count "$upstream..$branch")
-				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
-			done | paste -sd', ' -)
+			unpushed=$(
+				git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+				while read -r branch upstream; do
+					# no upstream configured at all
+					[ -z "$upstream" ] && {
+						printf "%s(no upstream)\n" "$branch"
+						continue
+					}
+
+					# upstream configured but ref does not exist (e.g. deleted on origin)
+					if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
+						printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
+						continue
+					fi
+
+					ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
+					[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
+				done | paste -sd', ' -
+			)
 
 			if [ -n "$unpushed" ]; then
-				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
+				echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
 			fi
 
 			#done checking repo, return to previous directory
@@ -614,7 +633,7 @@ for p in ${REPO_DIR[@]}; do
 	elif [ $WARN_ONLY = 1 ]; then
 
 		# already handled by depth 3 above!
-
+		echo -e "UpdateOTS.sh:${LINENO}  \t Already did git warnings from $p"
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull
