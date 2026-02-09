@@ -441,13 +441,13 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 
 	#now diff and copy back (ignore whitespace)
 	diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
-	
+
 	rm -rf $USER_DATA
 	USER_DATA=$SAVE_USER_DATA
-	
-	
+
+
 #end warn handling
-else 
+else
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
 	echo -e "UpdateOTS.sh:${LINENO}  "
@@ -683,7 +683,7 @@ for p in ${REPO_DIR[@]}; do
 			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
 		fi
 
-		
+
 
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
