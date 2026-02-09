@@ -706,7 +706,7 @@ for p in ${REPO_DIR[@]}; do
 			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
 		fi
 
-		
+
 
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"

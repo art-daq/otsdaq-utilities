@@ -7550,7 +7550,7 @@
 		//groupsWithTable
 		function groupsWithTable() {
 			Debug.log("groupsWithTable()",_currentTableName,_version);
-		
+
 			// var allowIllegalColumns = false;
 			DesktopContent.XMLHttpRequest("Request?RequestType=findGroupsWithTable" +
 				"&tableName=" + _currentTableName +
@@ -7561,9 +7561,9 @@
 					var groupsSplit = [];
 					if(groupsCSV)
 						groupsSplit = groupsCSV.split(',');
-					
+
 					let str = "";
-					str += "The table <b>'" + _currentTableName + "-v" + _version + 
+					str += "The table <b>'" + _currentTableName + "-v" + _version +
 						"'</b> was found to be in <b>" + groupsSplit.length + " group(s)</b>: ";
 					str += "\n<TAB><ol>";
 
@@ -7589,9 +7589,9 @@
 						for(let groupKey in orderSet[groupName])
 						{
 							str += "\n<li style='font-family:Incosolata,monospace;'><a style='font-family:Incosolata,monospace;' onclick='setupSpecificTableGroup(\"" +
-									groupName + "\",\"" + 
-									groupKey + "\")'>" + 
-									groupName + "(" + groupKey + ")" + 
+									groupName + "\",\"" +
+									groupKey + "\")'>" +
+									groupName + "(" + groupKey + ")" +
 									"</a>";
 							++count;
 						}

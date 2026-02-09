@@ -88,7 +88,7 @@ Debug.OS_TYPE = Debug.OS_TYPE_OTHER;
 }
 console.log("OS type = ", Debug.OS_TYPE == Debug.OS_TYPE_LINUX ? "Linux" :
     (Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS ? "Windows" : (Debug.OS_TYPE == Debug.OS_TYPE_MAC ? "MacOS" : "Other")), " <== ", tmp,
-    "... Showing Levels masked by 0x" + 
+    "... Showing Levels masked by 0x" +
     (Debug.level >>> 0).toString(16).padStart(8, "0")); //force to unsigned then pad to 8 hex chars
 //Debug.level = (~(1<<31))  //to enable all but min priority printouts
 
@@ -263,8 +263,8 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                 str = Debug.prependMessage + str; //add prepend message
 
                 var type = num <= Debug.TIP_PRIORITY_LVL ?
-                        (num == Debug.HIGH_PRIORITY_LVL ? "High" : 
-                            (num == Debug.WARN_PRIORITY_LVL ? "Warn" : 
+                        (num == Debug.HIGH_PRIORITY_LVL ? "High" :
+                            (num == Debug.WARN_PRIORITY_LVL ? "Warn" :
                                 (num == Debug.INFO_PRIORITY_LVL ? "Info" : "Tip")))
                         : (num < Debug.LOW_PRIORITY_LVL ? "Med" : "Low");
 
@@ -583,7 +583,7 @@ else	//IF DEBUG MODE IS OFF!
 
 
 // living and breathing examples:
-Debug.log("Debug mode is on with level mask: 0x" + 
+Debug.log("Debug mode is on with level mask: 0x" +
     (Debug.level >>> 0).toString(16).padStart(8, "0")); //force to unsigned and then pad to 8 hex chars
 Debug.log("This is an example for posterity that is the lowest debug priority.", { "DEBUG_PRIORITY": 31 });
 
