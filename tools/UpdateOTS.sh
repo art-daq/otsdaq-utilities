@@ -429,8 +429,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 
 	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
     # A colon in the filesystem name indicates a remote mount (like NFS)
-    
-	# Detect if we are on a host with NFS mounted (in this case, TableInfo manipulations may be too slow, so skip!) 
+
+	# Detect if we are on a host with NFS mounted (in this case, TableInfo manipulations may be too slow, so skip!)
 	# ... by checking for colon in Filesystem column of df -h | grep home
 	# A colon in the filesystem name indicates a remote mount (like NFS)
 	IS_NFS_MOUNTED=false
@@ -449,7 +449,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
-	
+
         # Run the table warning code only on NFS host nodes
         SAVE_USER_DATA=$USER_DATA
         rm -rf $USER_DATA.warn
@@ -463,12 +463,12 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 
         #now diff and copy back (ignore whitespace)
         diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
-        
+
         rm -rf $USER_DATA
         USER_DATA=$SAVE_USER_DATA
     fi
-	
-	
+
+
 #end warn handling
 else
 	echo -e "UpdateOTS.sh:${LINENO}  "
