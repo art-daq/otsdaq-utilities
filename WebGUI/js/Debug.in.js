@@ -7,9 +7,9 @@
 //
 //	Since different browser have different console print statements, all ots code
 // 		should use Debug.log(str,num[optional, default=0]). Where str is the string to print to console and
-// 		num is the priority number 0 being highest.
+// 		num is the priority level (in a 32-bit mask, bit-0 being highest priority).
 //
-//	Debug.log(args) 		will print to console if Debug.mode = 1 and if num < Debug.level
+//	Debug.log(args) 		will print to console if Debug.mode = 1 and if (1 << num) bitwise-AND Debug.level != 0
 //	Debug.logv({var}) 		will decorate a variable and print to console with Debug.log()
 //
 //	Debug.err(args) 		will colorize console and Error popup
@@ -27,7 +27,7 @@ var Debug = Debug || {}; //define Debug namespace
 
 Debug.mode = 1; 		//0 - debug off, 1 - debug on (note: all popups will turn off)
 Debug.simple = 0; 		//0 - use priority (more detail in printout), 1 - simple, no priority
-Debug.level = 4 + @OTS_DEBUG_MODE@ * 96; //100;		//priority level, (100 should be all, 0 only high priority)
+Debug.level = 0xF | @OTS_DEBUG_MODE@ * (~(1<<31))// 4 + @OTS_DEBUG_MODE@ * (96); //100;		//priority level, (100 should be all, 0 only high priority)
 //all logs with lower priority level are printed
 
 Debug.lastLog = "";
@@ -35,13 +35,22 @@ Debug.lastLogger = "";
 
 Debug.prependMessage = ""; //use to have a message always show up before log messages
 
-//setup default priorities
-Debug.HIGH_PRIORITY = { "DEBUG_PRIORITY": 0 };
-Debug.WARN_PRIORITY = { "DEBUG_PRIORITY": 1 }; //1;
-Debug.INFO_PRIORITY = { "DEBUG_PRIORITY": 2 }; //2;
-Debug.TIP_PRIORITY = { "DEBUG_PRIORITY": 3 }; //3;
-Debug.MED_PRIORITY = { "DEBUG_PRIORITY": 50 };// 50;
-Debug.LOW_PRIORITY = { "DEBUG_PRIORITY": 100 }; //100;
+//setup default priorities (treat as 32-bit level mask similar to TRACE)
+Debug.HIGH_PRIORITY_LVL = 0;
+Debug.WARN_PRIORITY_LVL = 1;
+Debug.INFO_PRIORITY_LVL = 2;
+Debug.TIP_PRIORITY_LVL  = 3;
+Debug.MED_PRIORITY_LVL  = 15; // 50;
+Debug.LOW_PRIORITY_LVL  = 30; //100;
+Debug.MIN_PRIORITY_LVL  = 31; //100;
+
+Debug.HIGH_PRIORITY = { "DEBUG_PRIORITY": Debug.HIGH_PRIORITY_LVL };
+Debug.WARN_PRIORITY = { "DEBUG_PRIORITY": Debug.WARN_PRIORITY_LVL };
+Debug.INFO_PRIORITY = { "DEBUG_PRIORITY": Debug.INFO_PRIORITY_LVL };
+Debug.TIP_PRIORITY  = { "DEBUG_PRIORITY": Debug.TIP_PRIORITY_LVL  };
+Debug.MED_PRIORITY  = { "DEBUG_PRIORITY": Debug.MED_PRIORITY_LVL  };
+Debug.LOW_PRIORITY  = { "DEBUG_PRIORITY": Debug.LOW_PRIORITY_LVL  };
+Debug.MIN_PRIORITY  = { "DEBUG_PRIORITY": Debug.MIN_PRIORITY_LVL  };
 
 
 //determine if chrome or firefox or other
@@ -79,8 +88,9 @@ Debug.OS_TYPE = Debug.OS_TYPE_OTHER;
 }
 console.log("OS type = ", Debug.OS_TYPE == Debug.OS_TYPE_LINUX ? "Linux" :
     (Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS ? "Windows" : (Debug.OS_TYPE == Debug.OS_TYPE_MAC ? "MacOS" : "Other")), " <== ", tmp,
-    "... Showing Levels < ", Debug.level);
-
+    "... Showing Levels masked by 0x" + 
+    (Debug.level >>> 0).toString(16).padStart(8, "0")); //force to unsigned then pad to 8 hex chars
+//Debug.level = (~(1<<31))  //to enable all but min priority printouts
 
 if (Debug.mode) //IF DEBUG MODE IS ON!
 {
@@ -248,13 +258,15 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                 str += arguments[i] + ' ';
 
 
-            if (Debug.level < 0) Debug.level = 0; //check for crazies, 0 is min level
-            if (Debug.mode && num <= Debug.level) {
+            if (!(Debug.level & 0xF)) Debug.level |= 0xF; //check for crazies, 0xF is forced on (to always enable, err, warn, info, tip)
+            if (Debug.mode && ((1<<num) & Debug.level)) {
                 str = Debug.prependMessage + str; //add prepend message
 
-                var type = num < 4 ?
-                    (num == 0 ? "High" : (num == 1 ? "Warn" : (num == 2 ? "Info" : "Tip")))
-                    : (num < 99 ? "Med" : "Low");
+                var type = num <= Debug.TIP_PRIORITY_LVL ?
+                        (num == Debug.HIGH_PRIORITY_LVL ? "High" : 
+                            (num == Debug.WARN_PRIORITY_LVL ? "Warn" : 
+                                (num == Debug.INFO_PRIORITY_LVL ? "Info" : "Tip")))
+                        : (num < Debug.LOW_PRIORITY_LVL ? "Med" : "Low");
 
                 //if not pre-poulated, get caller info
                 if (!Debug.lastLogger || Debug.lastLogger.length == 0) {
@@ -286,18 +298,19 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                     console.log("%c" + type + "-Priority" +
                         ":\t " + Debug.lastLog + " from " + source + ":\n" +
                         Debug.lastLogger + "::\t" + str,
-                        num == 0 ? "color:#F30;"	//chrome/firefox allow css styling
-                            : (num == 1 ? "color:#F70" //warn
-                                : (num < 99 ? "color:#092" : "color:#333")));
+                        num == Debug.HIGH_PRIORITY_LVL ? "color:#F30;"	//chrome/firefox allow css styling
+                            : ( num == Debug.WARN_PRIORITY_LVL ? "color:#F70" //warn
+                                : (num < Debug.LOW_PRIORITY_LVL ? "color:#092" : "color:#333")));
                 }
                 else {
                     var consoleArguments = [];
                     consoleArguments.push("%c" + type + "-Priority" +
                         ":\t " + Debug.lastLog + " from " + source + ":\n" +
                         Debug.lastLogger + "::\t");
-                    consoleArguments.push(num == 0 ? "color:#F30;"	//chrome/firefox allow css styling
-                        : (num == 1 ? "color:#F70" //warn
-                            : (num < 99 ? "color:#092" : "color:#333")));
+                    consoleArguments.push(
+                        num == Debug.HIGH_PRIORITY_LVL ? "color:#F30;"	//chrome/firefox allow css styling
+                            : ( num == Debug.WARN_PRIORITY_LVL ? "color:#F70" //warn
+                                : (num < Debug.LOW_PRIORITY_LVL ? "color:#092" : "color:#333")));
 
                     for (var i = 0; i < argsInStr; ++i)
                         consoleArguments.push(arguments[i]);
@@ -308,12 +321,12 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
                 Debug.lastLog = str;
 
-                if (num < 4) //show all high priorities as popup!
+                if (num <= Debug.TIP_PRIORITY_LVL) //show all high priorities as popup!
                 {
                     //add call out labels to file [line] text blobs
 
                     //also add web source file for call out if not tooltip
-                    if (num < 3) {
+                    if (num < Debug.TIP_PRIORITY_LVL) {
                         source = Debug.lastLogger.substr(Debug.lastLogger.lastIndexOf('/WebPath/'));
                         var i = source.indexOf('?');
                         if (i > 0) source = source.substr(0, i);
@@ -570,8 +583,9 @@ else	//IF DEBUG MODE IS OFF!
 
 
 // living and breathing examples:
-Debug.log("Debug mode is on at level: " + Debug.level);
-Debug.log("This is an example for posterity that is not printed due to debug priority.", { "DEBUG_PRIORITY": Debug.level + 1 });
+Debug.log("Debug mode is on with level mask: 0x" + 
+    (Debug.level >>> 0).toString(16).padStart(8, "0")); //force to unsigned and then pad to 8 hex chars
+Debug.log("This is an example for posterity that is the lowest debug priority.", { "DEBUG_PRIORITY": 31 });
 
 
 
@@ -726,7 +740,7 @@ Debug.errorPop = function (err, severity) {
             body.appendChild(el); //add element to body of page
             el.focus();
             el.onmousemove = function () {
-                //console.log("mm");
+                Debug.log("Debug mousemove()", Debug.MIN_PRIORITY);
                 DesktopContent.mouseMove(event, true /*onlyDesktopFunction*/); //allow only desktop movement functionality
 
                 //if doing some resize or movement, then stop blocking event propagation
@@ -1092,7 +1106,7 @@ Debug.handleErrorMoveStop = function (e) {
 
 //=====================================================================================
 Debug.handleErrorMove = function (e) {
-    //console.log("moving",e);
+    Debug.log("moving",e,Debug.MIN_PRIORITY);
 
     if (Debug._errBoxOffMoveStartX == -1 &&
         Debug._errBoxOffResizeStartY == -1) return; //do nothing, not moving

@@ -150,6 +150,7 @@
 		//togglePaintCellValue()
 		//tableVersionDiff()
 		//setupTableVersionDiff()
+		//groupsWithTable()
 		//setupCopyAndMoveRows()
 		//configCopyView(sourceVersion)
 		//tableCopyOrMoveRow(deleteSrc)					//copy/move row from source to destination row
@@ -7544,6 +7545,70 @@
 			str += "<br><br>";
 			el.innerHTML = str;
 		} //end setupTableVersionDiff()
+
+		//==============================================================================
+		//groupsWithTable
+		function groupsWithTable() {
+			Debug.log("groupsWithTable()",_currentTableName,_version);
+		
+			// var allowIllegalColumns = false;
+			DesktopContent.XMLHttpRequest("Request?RequestType=findGroupsWithTable" +
+				"&tableName=" + _currentTableName +
+				"&tableVersion=" + _version,
+				"",
+				function (req) {
+					var groupsCSV = DesktopContent.getXMLValue(req, "GroupsContainingCSV");
+					var groupsSplit = [];
+					if(groupsCSV)
+						groupsSplit = groupsCSV.split(',');
+					
+					let str = "";
+					str += "The table <b>'" + _currentTableName + "-v" + _version + 
+						"'</b> was found to be in <b>" + groupsSplit.length + " group(s)</b>: ";
+					str += "\n<TAB><ol>";
+
+					let orderSet = {}; //reorder in group alpha order, and key numeric order
+					for(let i=0;i<groupsSplit.length; ++i)
+					{
+						let groupKeySplit = groupsSplit[i].split("_v");
+						let groupName = groupKeySplit[0].trim();
+						let groupKey = (groupKeySplit[1].trim()) | 0; //force integer key
+
+						if(!orderSet[groupName]) orderSet[groupName] = {};
+
+						if(orderSet[groupName][groupKey] !== undefined)
+							Debug.err("Impossible Group Repeat?",groupsSplit[i],i,groupName,groupKey,"vs",orderSet[groupName][groupKey]);
+
+						orderSet[groupName][groupKey] = i;
+
+					} //end group parse loop
+
+					let count = 0;
+					for(let groupName in orderSet)
+					{
+						for(let groupKey in orderSet[groupName])
+						{
+							str += "\n<li style='font-family:Incosolata,monospace;'><a style='font-family:Incosolata,monospace;' onclick='setupSpecificTableGroup(\"" +
+									groupName + "\",\"" + 
+									groupKey + "\")'>" + 
+									groupName + "(" + groupKey + ")" + 
+									"</a>";
+							++count;
+						}
+					}
+					Debug.logv({count});
+					if(count != groupsSplit.length)
+						Debug.err("Impossible count mismatch!",groupsSplit.length,count);
+
+					str += "\n</ol></TAB>";
+
+					Debug._errTruncLen = -1; //avoid truncation of Debug message
+					Debug.info(str);
+					Debug._errTruncLen = undefined; //return truncation setting to normal
+				}, //end req handler
+				0, 0, true  //reqParam, progressHandler, callHandlerOnErr
+			); //end diffWithActiveGroup
+		} //end groupsWithTable()
 
 		//==============================================================================
 		//setupCopyAndMoveRows
@@ -17777,6 +17842,7 @@
 				"Find and Replace",
 				"Copy and Move",
 				"Diff Table Versions",
+				"Groups with this Table",
 				_showTableDetails ?
 					"Hide Table Details" :
 					"Show Table Details",
@@ -17805,6 +17871,7 @@
 				"setupFindAndReplace()",
 				"setupCopyAndMoveRows()",
 				"setupTableVersionDiff()",
+				"groupsWithTable()",
 				"toggleTableDetails()",
 				"transposeTableView()",
 				"DesktopContent.openNewBrowserTab(" +
