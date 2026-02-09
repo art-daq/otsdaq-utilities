@@ -1404,7 +1404,7 @@ try
 		__SUP_COUTV__(subsystem);
 		handleOtherSubsystemActiveGroups(
 		    xmlOut, cfgMgr, true /* getFullList */, subsystem);
-	} //end getSubsytemTableGroups
+	}  //end getSubsytemTableGroups
 	else if(requestType == "diffWithActiveGroup")
 	{
 		std::string groupName =
@@ -1415,7 +1415,7 @@ try
 
 		handleGroupDiff(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey));  //diff with active group
-	} //end diffWithActiveGroup
+	}  //end diffWithActiveGroup
 	else if(requestType == "diffWithGroupKey")
 	{
 		std::string groupName =
@@ -1435,7 +1435,7 @@ try
 		                TableGroupKey(groupKey),
 		                TableGroupKey(diffKey),
 		                diffGroupName);
-	} //end diffWithGroupKey
+	}  //end diffWithGroupKey
 	else if(requestType == "diffTableVersions")
 	{
 		std::string tableName =
@@ -1514,31 +1514,31 @@ try
 		__SUP_COUTV__(versionB);
 
 		handleTableDiff(xmlOut, cfgMgr, tableName, versionA, versionB);
-	} //end diffTableVersions
+	}  //end diffTableVersions
 	else if(requestType == "findGroupsWithTable")
 	{
 		std::string tableName =
-		    CgiDataUtilities::getData(cgiIn, "tableName");        // from GET
-		std::string tableVersion = CgiDataUtilities::getData(cgiIn, "tableVersion");  // from GET
-		
+		    CgiDataUtilities::getData(cgiIn, "tableName");  // from GET
+		std::string tableVersion =
+		    CgiDataUtilities::getData(cgiIn, "tableVersion");  // from GET
+
 		__SUP_COUTV__(tableName);
 		__SUP_COUTV__(tableVersion);
 
 		std::set<std::string> groupsContainingTable =
-			    cfgMgr->getConfigurationInterface()->findGroupsWithTable(tableName,
-			                                       TableVersion(tableVersion));
-		__SUP_COUT__ << "Groups containing " << tableName << "-v"
-						<< tableVersion
-						<< " count: " << groupsContainingTable.size() << __E__;
-		std::string groupsContainingTableString = StringMacros::setToString(groupsContainingTable);		
+		    cfgMgr->getConfigurationInterface()->findGroupsWithTable(
+		        tableName, TableVersion(tableVersion));
+		__SUP_COUT__ << "Groups containing " << tableName << "-v" << tableVersion
+		             << " count: " << groupsContainingTable.size() << __E__;
+		std::string groupsContainingTableString =
+		    StringMacros::setToString(groupsContainingTable);
 		__SUP_COUTTV__(groupsContainingTableString);
 
 		xmlOut.addNumberElementToData("GroupsContainingCount",
-			                            groupsContainingTable.size());
-		xmlOut.addTextElementToData("GroupsContainingCSV",
-			                        	groupsContainingTableString);
+		                              groupsContainingTable.size());
+		xmlOut.addTextElementToData("GroupsContainingCSV", groupsContainingTableString);
 
-	} //end findGroupsWithTable
+	}  //end findGroupsWithTable
 	else if(requestType == "savePlanCommandSequence")
 	{
 		std::string planName = CgiDataUtilities::getData(cgiIn, "planName");  // from GET
