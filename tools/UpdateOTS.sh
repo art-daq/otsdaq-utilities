@@ -449,7 +449,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
-
+	
+		echo "Checking for uncommitted TableInfo..." >&2
         # Run the table warning code only on NFS host nodes
         SAVE_USER_DATA=$USER_DATA
         rm -rf $USER_DATA.warn
