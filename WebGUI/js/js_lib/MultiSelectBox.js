@@ -289,8 +289,7 @@ MultiSelectBox.createSelectBox = function (el, name, title, vals, keys, types,
         throw new Error("Invalid Element given to MultiSelectBox: " + el); return;
     }
 
-    console.log("el.style.width", el.style.width);
-    console.log("el.offsetWidth", el.offsetWidth);
+    console.log("el.style.width", el.style.width,"el.offsetWidth", el.offsetWidth);
     if (!el.offsetWidth)
         el.style.width = "400px";
 
