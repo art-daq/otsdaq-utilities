@@ -18,8 +18,6 @@ CURRENT_AWESOME_BASE=$PWD
 CHECKIN_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_pull.log
 UPDATE_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_push.log
 
-
-
 if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
 
 	echo -e "UpdateOTS.sh:${LINENO}  "
@@ -445,6 +443,53 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		fi
 	done
 
+	#done with warning on repos
+	#now warn on tables
+
+	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
+    # A colon in the filesystem name indicates a remote mount (like NFS)
+
+	# Detect if we are on a host with NFS mounted (in this case, TableInfo manipulations may be too slow, so skip!)
+	# ... by checking for colon in Filesystem column of df -h | grep home
+	# A colon in the filesystem name indicates a remote mount (like NFS)
+	IS_NFS_MOUNTED=false
+	# Skip the header line and check each filesystem entry
+	while IFS= read -r line; do
+		# Extract the filesystem column (first field) and check if it contains a colon
+		filesystem=$(echo "$line" | awk '{print $1}')
+		if [[ "$filesystem" == *:* ]]; then
+			IS_NFS_MOUNTED=true
+			break
+		fi
+	done < <(df -h | grep /home)
+
+	# Only run table warning code on NFS hosts
+	if [ "$IS_NFS_MOUNTED" = true ]; then
+		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
+	else
+		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
+
+		echo "Checking for uncommitted TableInfo..." >&2
+        # Run the table warning code only on NFS host nodes
+        SAVE_USER_DATA=$USER_DATA
+        rm -rf $USER_DATA.warn
+        mkdir $USER_DATA.warn
+        mkdir $USER_DATA.warn/TableInfo
+        mkdir $USER_DATA.warn/ServiceData
+        USER_DATA=$USER_DATA.warn
+        cp ${SAVE_USER_DATA}/ServiceData/CoreTableInfoNames.dat ${USER_DATA}/ServiceData/CoreTableInfoNames.dat
+
+        updateUserData
+
+        #now diff and copy back (ignore whitespace)
+        diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
+
+        rm -rf $USER_DATA
+        USER_DATA=$SAVE_USER_DATA
+    fi
+
+
+#end warn handling
 else
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
