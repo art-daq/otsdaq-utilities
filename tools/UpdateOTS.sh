@@ -432,7 +432,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			)
 
 			if [ -n "$unpushed" ]; then
-				echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
+				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
 			fi
 
 			#done checking repo, return to previous directory

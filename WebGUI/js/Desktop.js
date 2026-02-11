@@ -774,7 +774,7 @@ Desktop.createDesktop = function (security) {
         //at this point windows are in standard Z arrangement
 
         if(tmpFgWinId != _windows[_windows.length - 1].getWindowId())
-            Debug.log("Foreground window changed om sort from",tmpFgWinId,
+            Debug.log("Foreground window changed on sort from",tmpFgWinId,
                 "to",_windows[_windows.length - 1].getWindowId());
 
 
