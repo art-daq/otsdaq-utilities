@@ -185,7 +185,7 @@ SubsystemLaunch.create = function() {
 				DesktopContent._loginNotifyHandler = function () {
 					Debug.log("Handling login notification...");
 					Debug.closeErrorPop();
-					DesktopContent.showLoading(); //to indicat to user the 5 seconds
+					DesktopContent.showLoading(); //to indicate to user the 5 seconds
 
 					_getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 					window.clearTimeout(_getStatusTimer);
