@@ -377,7 +377,8 @@ CodeEditor.create = function (standAlone) {
             _viewMode = parameterViewMode | 0;
         }
 
-        _READ_ONLY = DesktopContent._readOnlyMode;
+        if(!_READ_ONLY) //do not oscillate back and forth if already in read-only mode
+            _READ_ONLY = DesktopContent._readOnlyMode;
 
         console.log("parameterStartFile", parameterStartFile);
         console.log("parameterGotoLine", parameterGotoLine);
@@ -466,7 +467,11 @@ CodeEditor.create = function (standAlone) {
                     else
                         CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
                     Debug.log(CodeEditor.showTooltipPrepend);
-                    _READ_ONLY = true;
+                    if(!req && !_READ_ONLY)
+                    {
+                        _READ_ONLY = true;
+                        Debug.warn("Reverting to read-only mode for Code Editor.");
+                    }
 
                     CodeEditor.showTooltip(_STAND_ALONE);
                     init();
