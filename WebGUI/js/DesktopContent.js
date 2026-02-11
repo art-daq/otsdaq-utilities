@@ -489,7 +489,7 @@ DesktopContent.init = function (onloadFunction) {
     //The first message is initiated by the Desktop once the window frame has been loaded.
     DesktopContent._theWindow.addEventListener('message', event => {
 
-        console.log(window.location.href,
+        Debug.log(window.location.href,
             "Desktop Window event.data", event.data);
 
 

@@ -1,6 +1,12 @@
 
 #include "test/ots_mm_udp_interface.h"
 
+///==============================================================================
+/// To access Macro Maker with this tool
+///  	first export...
+/// export OTS_MACROMAKER_UDP_PORT=<YOUR_PORT>
+/// export OTS_MACROMAKER_UDP_IP=127.0.0.1 #or the IP of the machine running Macro Maker
+///		then run... Macro Maker app
 int main(int argc, char* argv[])
 try
 {
