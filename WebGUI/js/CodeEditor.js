@@ -467,11 +467,10 @@ CodeEditor.create = function (standAlone) {
                     else
                         CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
                     Debug.log(CodeEditor.showTooltipPrepend);
-                    if(!req && !_READ_ONLY)
-                    {
-                        _READ_ONLY = true;
+                    
+                    _READ_ONLY = true;
+                    if(!_STAND_ALONE)
                         Debug.warn("Reverting to read-only mode for Code Editor.");
-                    }
 
                     CodeEditor.showTooltip(_STAND_ALONE);
                     init();
