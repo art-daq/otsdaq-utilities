@@ -388,7 +388,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 
 			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
 			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
-				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
 			else
 				#find unmerged branches
 				branch="$(git rev-parse --abbrev-ref HEAD)"
