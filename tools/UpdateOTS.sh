@@ -468,7 +468,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
-		
+
 		echo -e "\nUpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
         # Run the table warning code only on NFS host nodes
         SAVE_USER_DATA=$USER_DATA
@@ -906,4 +906,3 @@ echo -e "UpdateOTS.sh:${LINENO}  \t ots update script done"
 echo -e "UpdateOTS.sh:${LINENO}  \t Note: if you have issues with this script, please notify us by opening a ticket here:\n\t\t https://github.com/art-daq/otsdaq_utilities/issues/new/choose"
 echo -e "UpdateOTS.sh:${LINENO}  \t *******************************"
 echo -e "UpdateOTS.sh:${LINENO}  \t *******************************"
-

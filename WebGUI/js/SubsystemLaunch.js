@@ -173,7 +173,7 @@ SubsystemLaunch.create = function() {
 		//////////////////////////////
         function localHandleInitComplete() {
 			Debug.log("localHandleInitComplete()");
-			
+
 			//proceed with rest of init
 			createElements(_lastRedrawMode);
 
@@ -454,7 +454,7 @@ SubsystemLaunch.create = function() {
 				str += SubsystemLaunch.system.state;
 				str += "</td><td id='systemStatusTimeInState'>";
 				str += "</td><td id='systemStatus_runNumber'>";
-				str += "</td><td style='cursor: pointer; white-space: nowrap;' id='systemStatusActiveUsers' " + 
+				str += "</td><td style='cursor: pointer; white-space: nowrap;' id='systemStatusActiveUsers' " +
 					"onclick='SubsystemLaunch.openChatWindow();' title='Click to open Chat window'>";
 				str += "</td></tr>";
 				str += "<tr><td>";
@@ -465,7 +465,7 @@ SubsystemLaunch.create = function() {
 						"onchange='SubsystemLaunch.launcher.handleSystemConfigAliasSelect(this.value);'>";
                     if (SubsystemLaunch.system.systemAliases.length == 0) {
 						str += "<option ></option>"; //empty option to start
-						Debug.warn("No System Configure Aliases were found. " + 
+						Debug.warn("No System Configure Aliases were found. " +
 							"Please make sure you have a Backbone Group activated with at least one valid Group Alias to a Configure-type group, " +
 							"And make sure the SystemAliasFilter field associated with selected Active State Machine record (in the StateMachineTable) accurately selects the desired Group Aliases.");
 					}
@@ -1492,7 +1492,7 @@ SubsystemLaunch.create = function() {
 				true /*targetGatewaySupervisor*/);
 
 			//re-init for fsmName change
-			init(); 
+			init();
 		}
 	} //end handleFSMSelectionSubsystem()
 
@@ -2059,7 +2059,7 @@ SubsystemLaunch.create = function() {
 							function(req) //start handler
 							{
 						Debug.log("startTargetIterationPlan handler");
-						
+
 						//resume updating
 						window.clearTimeout(_getStatusTimer);
 						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
@@ -2174,7 +2174,7 @@ SubsystemLaunch.create = function() {
 						//resume updating
 						window.clearTimeout(_getStatusTimer);
 						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
-						
+
 						var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
 						if(!success)
 						{
