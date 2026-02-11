@@ -749,10 +749,10 @@ Desktop.createDesktop = function (security) {
         let tmpFgWinId = _windows[_windows.length - 1].getWindowId();
 
         //try to debug weird issue where clicking and moving window.. moves another window
-        if(_debugLastWindowMouseDown != win && 
-            win != _windows[_windows.length - 1])        
+        if(_debugLastWindowMouseDown != win &&
+            win != _windows[_windows.length - 1])
         {
-            Debug.log("DEBUG -- Foreground window has changed as is not last window clicked!");            
+            Debug.log("DEBUG -- Foreground window has changed as is not last window clicked!");
         }
 
         //re-sort by z and renumber - windows with Z out of range of array are due to iframe onFocus solution
@@ -777,7 +777,7 @@ Desktop.createDesktop = function (security) {
             Debug.log("Foreground window changed om sort from",tmpFgWinId,
                 "to",_windows[_windows.length - 1].getWindowId());
 
-        
+
 
         //find win in windows array then bring to "top"
         var found = 0;

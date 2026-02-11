@@ -912,7 +912,7 @@
 					groupType = "Iterate";
 				else if (ael.innerText.indexOf("Last Attempted") >= 0) { groupAction = "Attempted Configure"; groupType = "Configuration"; }
 				else if (ael.innerText.indexOf("Last Configured") >= 0) { groupAction = "Configured"; groupType = "Configuration"; }
-				else if (ael.innerText.indexOf("Last Run Started") >= 0) { groupAction = "Started"; groupType = "Configuration"; }				
+				else if (ael.innerText.indexOf("Last Run Started") >= 0) { groupAction = "Started"; groupType = "Configuration"; }
 
 			} //else keep from input params
 
@@ -1029,9 +1029,9 @@
 									"\"" + returnToHereLink + "\"" +
 									"); return false;'>" +
 									groupHistory[i].groupName +
-									"</a>(" + groupHistory[i].groupKey + ")" +								
-									"</td>"; 
-							
+									"</a>(" + groupHistory[i].groupKey + ")" +
+									"</td>";
+
 								str += "<td style='border-left: 0; white-space:nowrap;'>" +
 
 									//add tree-view link
@@ -1045,22 +1045,22 @@
 									">Tree-view</a>&nbsp;&nbsp;" +
 
 									//add Activate link
-									" <a href='#' onclick='activateSystemConfig(\"" + 
-									groupHistory[i].groupName + "\",\"" + 
+									" <a href='#' onclick='activateSystemConfig(\"" +
+									groupHistory[i].groupName + "\",\"" +
 									groupHistory[i].groupKey + "\"); return false;' title='" +
-									"Activate the group &apos;" + 
-									groupHistory[i].groupName +	" (" + 
+									"Activate the group &apos;" +
+									groupHistory[i].groupName +	" (" +
 									groupHistory[i].groupKey + ").&apos;'" +
 									">Activate</a>&nbsp;&nbsp;" +
 
 									//add Alias link
-									" <a href='#' onclick='popUpGroupViewAliasForm(\"" + 
-									groupHistory[i].groupName + "\",\"" + 
+									" <a href='#' onclick='popUpGroupViewAliasForm(\"" +
+									groupHistory[i].groupName + "\",\"" +
 									groupHistory[i].groupKey + "\"); return false;' title='" +
 									"Create a System Alias that refers to the group &apos;" +
-									groupHistory[i].groupName + " (" + 
+									groupHistory[i].groupName + " (" +
 									groupHistory[i].groupKey + ").&apos;'" +
-									">Alias</a>" +		
+									">Alias</a>" +
 
 									"</td>";
 							} //end group column
@@ -1119,7 +1119,7 @@
 						//extra alias info (must be less than 3 fields!)
 						DesktopContent.getXMLValue(req, "LastConfiguredAliasGroupName"),
 						DesktopContent.getXMLValue(req, "LastAttemptedAliasGroupName"),
-						
+
 
 					];
 					//console.log(_lastTableGroups);
@@ -1469,7 +1469,7 @@
 					var extraPadding = "";
 					for (var i = 0; i + 2 < _lastTableGroups.length; i += 3) {
 
-						
+
 						//						if(((i/3)|0) == 5) //add padding to last
 						//							extraPadding = "padding-bottom:10px;";
 						//						else
