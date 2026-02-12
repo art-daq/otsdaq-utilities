@@ -1671,10 +1671,10 @@ SubsystemLaunch.create = function() {
 
 					Debug.log("iterateHalt handler");
 
-					var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+					var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 					if(!success)
 					{
-						var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+						var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 						if(err)
 							Debug.log(err,Debug.HIGH_PRIORITY);
 						Debug.err("Server indicated failure to attempt state transition.");
@@ -1705,10 +1705,10 @@ SubsystemLaunch.create = function() {
 						{
 					Debug.log(command,"StateMachineXgiHandler FSM command handler");
 
-					var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+					var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 					if(!success)
 					{
-						var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+						var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 						if(err)
 							Debug.log(err,Debug.HIGH_PRIORITY);
 						Debug.err("Server indicated failure to attempt state transition.");
@@ -1990,10 +1990,10 @@ SubsystemLaunch.create = function() {
 
 					Debug.log("iterateHalt handler");
 
-					var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+					var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 					if(!success)
 					{
-						var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+						var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 						if(err)
 							Debug.log(err,Debug.HIGH_PRIORITY);
 						Debug.err("Server indicated failure to attempt state transition.");
@@ -2066,7 +2066,7 @@ SubsystemLaunch.create = function() {
 
 						var error_message		= DesktopContent.getXMLValue(req,"error_message");
 						if(!error_message || error_message == "")
-							error_message		= DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+							error_message		= DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 
 						if(error_message && error_message != "")
 							Debug.log(error_message,Debug.HIGH_PRIORITY);
@@ -2124,10 +2124,10 @@ SubsystemLaunch.create = function() {
 							window.clearTimeout(_getStatusTimer);
 							_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
-							var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+							var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 							if(!success)
 							{
-								var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+								var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 								if(err)
 									Debug.log(err,Debug.HIGH_PRIORITY);
 								Debug.err("Server indicated failure to attempt state transition.");
@@ -2175,10 +2175,10 @@ SubsystemLaunch.create = function() {
 						window.clearTimeout(_getStatusTimer);
 						_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
-						var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+						var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 						if(!success)
 						{
-							var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+							var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 							if(err)
 								Debug.log(err,Debug.HIGH_PRIORITY);
 							Debug.err("Server indicated failure to attempt state transition.");
@@ -2300,10 +2300,10 @@ SubsystemLaunch.create = function() {
 				window.clearTimeout(_getStatusTimer);
 				_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
-				var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+				var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 				if(!success)
 				{
-					var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+					var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 					if(err)
 						Debug.log(err,Debug.HIGH_PRIORITY);
 					Debug.err("Server indicated failure to attempt state transition.");
