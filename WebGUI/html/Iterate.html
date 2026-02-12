@@ -4191,7 +4191,7 @@
 
 				var error_message		= DesktopContent.getXMLValue(req,"error_message");
 				if(!error_message || error_message == "")
-					error_message		= DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+					error_message		= DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 
 				if(error_message && error_message != "")
 					Debug.log(error_message,Debug.HIGH_PRIORITY);
@@ -4226,7 +4226,7 @@
 				Debug.log("pauseTargetIterationPlan handler ");
 
 				var error_message		= DesktopContent.getXMLValue(req,"error_message");
-				var fsm_error_message 	= DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+				var fsm_error_message 	= DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 
 				if(error_message && error_message != "")
 				{

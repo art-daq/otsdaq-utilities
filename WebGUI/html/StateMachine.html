@@ -401,6 +401,7 @@
 		var _transitionFadeAlpha, _transitionFadeAlphaInc, _transitionTimer, _transitionProgress,
 			_transitionResultingState;
 
+		var _activeFsmName;
 		var _fsmName, _fsmWindowName;
 		var _fsmNameArr;
 		var _hideShutdownState;
@@ -1187,6 +1188,7 @@
 				return;
 			}
 
+			_activeFsmName = DesktopContent.getXMLValue(req, "active_fsmName");
 			var cs = DesktopContent.getXMLValue(req, "current_state");
 			var inTrans = DesktopContent.getXMLValue(req, "in_transition") == "1";
 
@@ -1377,9 +1379,9 @@
 
 			//Debug.log("Physics physicsLaunchHandler " + req.responseText);
 			if (transitionAttempted) {
-				var success = DesktopContent.getXMLValue(req, "state_tranisition_attempted") == "1";
+				var success = DesktopContent.getXMLValue(req, "state_transition_attempted") == "1";
 				if (!success) {
-					var err = DesktopContent.getXMLValue(req, "state_tranisition_attempted_err");
+					var err = DesktopContent.getXMLValue(req, "state_transition_attempted_err");
 					if (err)
 						Debug.err(err);
 					Debug.err("Server indicated failure to attempt state transition. Attempting to refresh state machine...");
@@ -1736,6 +1738,7 @@
 			var progress = DesktopContent.getXMLValue(req, "transition_progress");
 
 			_transitionResultingState = DesktopContent.getXMLValue(req, "current_state");
+			_activeFsmName = DesktopContent.getXMLValue(req, "active_fsmName");
 
 			if (!inTransition) {
 				_transitionProgress = 100;
@@ -2206,6 +2209,12 @@
 						else //just show parameter
 							_context.fillText(transitionParameterName +
 								" = '" + transitionParameterValue + "'", x, y);
+					}
+					else //show active state machine info
+					{
+						y += f + 8;
+						_context.fillText("Active State Machine: " +
+								" '" + _activeFsmName + "'", x, y);
 					}
 				}
 				else {

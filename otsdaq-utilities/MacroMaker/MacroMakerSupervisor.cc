@@ -138,7 +138,7 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 
 		if(enableRemoteControl)
 		{
-			__SUP_COUT__ << "Enabling remote control over UDP..." << __E__;
+			__SUP_COUT_INFO__ << "Enabling remote control over UDP..." << __E__;
 			// start state changer UDP listener thread
 			std::thread(
 			    [](MacroMakerSupervisor* s) {
@@ -148,7 +148,7 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 			    .detach();
 		}
 		else
-			__SUP_COUT__ << "Remote control over UDP is disabled." << __E__;
+			__SUP_COUT_INFO__ << "Remote control over UDP is disabled." << __E__;
 	}  // end setting up thread for UDP drive of state machine
 
 	__SUP_COUT__ << "Constructed." << __E__;
