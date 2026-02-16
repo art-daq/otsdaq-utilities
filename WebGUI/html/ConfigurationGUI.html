@@ -1994,24 +1994,22 @@
 					"'>" +
 					"View Latest Key for Selected Group</button>";
 
-				str += "<div style='margin-top:10px; margin-bottom:10px;'>";
-                str += "    <label style='margin-right:20px;'>";
-                str += "        <input type='radio' name='tableGroupFilter' value='all' checked>";
-                str += "        All";
-                str += "    </label>";
-                str += "    <label style='margin-right:20px;'>";
-                str += "        <input type='radio' name='tableGroupFilter' value='active'>";
-                str += "        Active Only";
-                str += "    </label>";
-                str += "    <label>";
-                str += "        <input type='radio' name='tableGroupFilter' value='cache'>";
-                str += "        Cache Only";
-                str += "    </label>";
-                str += "</div>";
+				str += "<br>";
+				str += "<br>";
+				str += "<label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' name='activeGroupFilter' value='active'> Active Groups Only</label>";
 
-                str += "Search for Keyword in All Tables: ";
-                str += "<br>";
-                str += "<input type='text' id='searchTextInAllTables' " +
+				str += "<br>Minimum threshold value... ";
+				str += "<br><input type='text' id='searchMinThreshold' value='1'" +
+					"style='margin:0;width:399px; height:" + (17) + "px'/>";
+
+				str += "<br>Version to check... ";
+				str += "<br><input type='text' id='searchVersionToCheck' value=''" +
+                    "style='margin:0;width:399px; height:" + (17) + "px'/>";
+
+				str += "<br>";
+				str += "Search for Keyword in Group(s): ";
+				str += "<br>";
+                str += "<input type='text' id='searchTextInGroups' " +
                     "placeholder='Search text' " +
                     "style='width:399px;' " +
                     "onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
@@ -2317,38 +2315,50 @@
         function searchTextInGroup() {
             Debug.log("CfgGUI searchTextInGroup");
 
-            var el = document.getElementById("searchTextInAllTables");
+            var el = document.getElementById("searchTextInGroups");
             var searchText = el ? el.value : "";
-            Debug.log("Search field value: " + searchText);
+            Debug.log("searchTextInGroups: " + searchText);
 
-            var selectedFilter = document.querySelector('input[name="tableGroupFilter"]:checked');
-            var filterValue = selectedFilter ? selectedFilter.value : null;
-            Debug.log("Selected filter: " + filterValue);
+			var el = document.getElementById("searchMinThreshold");
+            var searchMinThreshold = el ? el.value : 1;
+            console.log("searchMinThreshold: " + searchMinThreshold);
+
+			var el = document.getElementById("searchVersionToCheck");
+            var searchVersionToCheck = el ? el.value : "";
+            console.log("searchVersionToCheck: " + searchVersionToCheck);
+			
+			var activeOnlyEl = document.getElementById("activeOnlyFilter");
+			var isActiveOnlyChecked = activeOnlyEl ? activeOnlyEl.checked : false;
+			console.log("activeGroupFilter checked: " + isActiveOnlyChecked);
 
             var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
             var groupType = typeName[_groupViewFilterIndex + 1];
-            Debug.log("Group type for search: " + groupType);
+            console.log("groupType: " + groupType);
 
 			var optionElements = document.querySelectorAll('.myOption.optionhighlighted');
 			var optionGroups = Array.from(optionElements).map(el => el.textContent).join(',');
-			Debug.log("optionGroups " + optionGroups);
+			console.log("optionGroups: " + optionGroups);
 
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
                 "&searchText=" + searchText +
-                "&filterValue=" + filterValue +
+                "&filterValue=" + isActiveOnlyChecked +
                 "&groupType=" + groupType +
-				"&optionGroups=" + optionGroups,
-                "",
+				"&optionGroups=" + optionGroups +
+				"&versionsToCheck=" + searchVersionToCheck,
+				"",
                 function(req){
                     var req = arguments[0];
                     var errStr = arguments[2];
                     if (errStr) {
-                        Debug.err(errStr);
+                        console.error(errStr);
                         return;
                     }
 
                     const groupTableMap = new Map();
                     var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
+
+					console.log("Request XML:", req.responseXML);
+					console.log("GroupTableMatch elements found:", groupTableMatches.length);
 
                     for (var i = 0; i < groupTableMatches.length; i++) {
                         var groupTable = groupTableMatches[i];
@@ -2375,15 +2385,17 @@
                         resultStr += "No matches found.";
                     } else {
                         var previousGroupName = "";
+						var previousGroupKey = "";
                         var previousTableName = "";
                         for(var i=0; i<groupTableMap.size; i++)
                         {
+							var tmpStr = "";
                             var parts = Array.from(groupTableMap.keys())[i].split("-");
-                            if(parts[0] != previousGroupName)
+                            if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
                             {
-								resultStr += "\n";
-                                resultStr += "Group: " + parts[0] + " (" + parts[4] + ")\n";
+                                resultStr += "\nGroup: " + parts[0] + " (" + parts[4] + ")\n";
                                 previousGroupName = parts[0];
+                                previousGroupKey = parts[4];
                                 previousTableName = "";
                             }
                             if(parts[1] != previousTableName)
@@ -2391,6 +2403,10 @@
                                 resultStr += "\tTable: " + parts[1] + " v" + parts[3] + "\n";
                                 previousTableName = parts[1];
                             }
+							if(parts[1] == "")
+								console.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
+							if((groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) < searchMinThreshold)
+								continue;
                             resultStr += "\t\tColumn: " + parts[2] +
                                 ", Occurrences: " + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) +
                                 "\n";
@@ -7645,12 +7661,12 @@
 
 			var str = "";
 			str += "<br>Table Version A to compare... ";
-			str += "<input type='text' id='tableVersionDiffA' style='margin:0;width:" +
-				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='" + _version + "'>";
+			str += "<br><input type='text' id='tableVersionDiffA' style='margin:0;width:" +
+				(el.offsetWidth / 6) + "px; height:" + (17) + "px' value='" + _version + "'>";
 			str += "<br>";
 			str += "Table Version B to compare... ";
-			str += "<input type='text' id='tableVersionDiffB' style='margin:0;width:" +
-				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='" + ((_version | 0) - 1) + "'>";
+			str += "<br><input type='text' id='tableVersionDiffB' style='margin:0;width:" +
+				(el.offsetWidth / 6) + "px; height:" + (17) + "px' value='" + ((_version | 0) - 1) + "'>";
 			str += "<br>";
 			str += "<br>";
 			str += "<input type='button' onmouseup='tableVersionDiff()' value='Diff A and B' title='" +
@@ -7674,18 +7690,18 @@
             str += "<br>Minimum threshold value... ";
             str += "<br>";
             str += "<input type='text' id='searchMinThreshold' value='1'" +
-                    "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
+                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
 			str += "<br>Version to check... ";
             str += "<br>";
-            str += "<input type='text' id='searchVersionToCheck' value='1'" +
-                    "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
+            str += "<input type='text' id='searchVersionToCheck' value=''" +
+                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
             str += "<br>Search all Table Versions for... ";
             str += "<br>";
             str += "<input type='text' id='searchTextInAllTableVersions' value='' " +
                 "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
-                "style='margin:0;width:" + (el.offsetWidth - 6) + "px; height:" + (17) + "px'/>";
+                "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
             str += "<br><br>";
             el.innerHTML = str;
         } //end setupSearchAllTableVersions()
@@ -7703,17 +7719,16 @@
 
 			var str = "";
 			str += "<br>Source starting row or Source Version... ";
-			str += "<input type='text' id='copyAndMoveRowsSrc' style='margin:0;width:" +
-				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='0'>";
+			str += "<br><input type='text' id='copyAndMoveRowsSrc' style='margin:0;width:" +
+				(el.offsetWidth / 6) + "px; height:" + (17) + "px' value='0'>";
 			str += "<br>";
 			str += "Number of rows to Copy or Move... ";
-			str += "<input type='text' id='copyAndMoveRowsSrcCount' style='margin:0;width:" +
-				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='1'>";
+			str += "<br><input type='text' id='copyAndMoveRowsSrcCount' style='margin:0;width:" +
+				(el.offsetWidth / 6) + "px; height:" + (17) + "px' value='1'>";
 			str += "<br>";
 			str += "Destination row (-1 for new last row)... ";
-			str += "<input type='text' id='copyAndMoveRowsDest' style='margin:0;width:" +
-				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='-1'>";
-
+			str += "<br><input type='text' id='copyAndMoveRowsDest' style='margin:0;width:" +
+				(el.offsetWidth / 6) + "px; height:" + (17) + "px' value='-1'>";
 			//make div for translating innerHTML and value
 			str += "<div id='copyAndMoveRowsHTML' style='display:none'></div>";
 
@@ -7983,13 +7998,13 @@
 			_lastFindRow = _lastFindCol = -1; //initialize find location
 			var str = "";
 			str += "<br>Search in column ('*' for all)... <br>";
-			str += "<input type='text' id='findAndReplaceTarget' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='*'>";
+			str += "<input type='text' id='findAndReplaceTarget' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth / 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='*'>";
 			str += "<br>";
 			str += "For text... <br>";
-			str += "<input type='text' id='findAndReplaceNeedle' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
+			str += "<input type='text' id='findAndReplaceNeedle' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth / 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
 			str += "<br>";
 			str += "Replace with... <br>";
-			str += "<input type='text' id='findAndReplaceWith' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
+			str += "<input type='text' id='findAndReplaceWith' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth / 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
 
 			//make div for translating innerHTML and value
 			str += "<div id='findAndReplaceHTML' style='display:none'></div>";
@@ -15692,7 +15707,7 @@
             Debug.log("Search field value: " + searchText);
 
             var el = document.getElementById("searchMinThreshold");
-            var searchMinThreshold = el ? el.value : "";
+            var searchMinThreshold = el ? el.value : 1;
             Debug.log("Search field value: " + searchMinThreshold);
 
 			var el = document.getElementById("searchVersionToCheck");

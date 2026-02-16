@@ -248,7 +248,20 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      tableName,
 																	const TableVersion&     vA,
 																	const TableVersion&     vB);
-
+	void 					handleSearchFieldInGroupXML				(HttpXmlDocument&       xmlOut,
+																	ConfigurationManagerRW* cfgMgr,
+																	const std::string&      searchText,
+																	const bool				activeGroupsOnly,
+																	const std::string&    	groupType,
+																	const std::string&      optionGroups,
+																	std::string&      versionsToCheck);
+	void 					searchFieldInTableVersionXML			(HttpXmlDocument& xmlOut,
+																	ConfigurationManagerRW* cfgMgr,
+																	const std::string&      tableName,
+																	const TableVersion&     version,
+																	const std::string&      searchText,
+																	bool                    allowIllegalColumns,
+																	bool                    getRawData);
 
 
 	void  					testXDAQContext							(void);
