@@ -489,7 +489,7 @@ DesktopContent.init = function (onloadFunction) {
     //The first message is initiated by the Desktop once the window frame has been loaded.
     DesktopContent._theWindow.addEventListener('message', event => {
 
-        console.log(window.location.href,
+        Debug.log(window.location.href,
             "Desktop Window event.data", event.data);
 
 
@@ -1136,8 +1136,9 @@ DesktopContent.hideLoading = function () {
     /////////////////////////
     function localHideLoadBox() {
         //console.log("DesktopContent.hideLoading",DesktopContent._loadBoxRequestStack);
-        if (--DesktopContent._loadBoxRequestStack) //subtract from stack, but dont hide if stack remains
+        if (--DesktopContent._loadBoxRequestStack > 0) //subtract from stack, but dont hide if stack remains
             return;
+        DesktopContent._loadBoxRequestStack = 0; //make sure it is not negative
 
         window.clearInterval(DesktopContent._loadBoxTimer); //kill loading animation
         //console.log("DesktopContent.hideLoading");

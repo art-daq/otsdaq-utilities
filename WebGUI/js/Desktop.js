@@ -746,8 +746,16 @@ Desktop.createDesktop = function (security) {
     //	handle bringing window to front
     this.setForeWindow = function (win) {
         //console.log("setForeWindow",win?win.getWindowId():-1);
+        let tmpFgWinId = _windows[_windows.length - 1].getWindowId();
 
-        //resort by z and renumber - windows with Z out of range of array are due to iframe onFocus solution
+        //try to debug weird issue where clicking and moving window.. moves another window
+        if(_debugLastWindowMouseDown != win &&
+            win != _windows[_windows.length - 1])
+        {
+            Debug.log("DEBUG -- Foreground window has changed as is not last window clicked!");
+        }
+
+        //re-sort by z and renumber - windows with Z out of range of array are due to iframe onFocus solution
         var tmp;
         for (var i = 0; i < _windows.length - 1; ++i) {
             var min = i;
@@ -764,6 +772,12 @@ Desktop.createDesktop = function (security) {
         _windows[_windows.length - 1].setWindowZ(_windows.length - 1 + _defaultWindowMinZindex); // last window still needs z-fixed
         //_windowZmailbox = _defaultWindowMaxZindex;        //reset windowZmailbox for next set of foci
         //at this point windows are in standard Z arrangement
+
+        if(tmpFgWinId != _windows[_windows.length - 1].getWindowId())
+            Debug.log("Foreground window changed on sort from",tmpFgWinId,
+                "to",_windows[_windows.length - 1].getWindowId());
+
+
 
         //find win in windows array then bring to "top"
         var found = 0;
@@ -1825,6 +1839,7 @@ Desktop.handleTouchMove = function (touchEvent) {
 //==============================================================================
 //Desktop.handleWindowMouseDown ~~
 //  determine starting mouse position of move or resize
+var _debugLastWindowMouseDown;
 Desktop.handleWindowMouseDown = function (mouseEvent) {
     var winId = this.id.split('-')[1]; //get id string from div container id
     var isDashboard = (winId == "windowDashboard");
@@ -1839,7 +1854,7 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
         if (Desktop.desktop.getForeWindow() != win)
             Desktop.desktop.setForeWindow(win);
     }
-
+    _debugLastWindowMouseDown = win; //save for debugging
     Desktop.handleWindowMouseMove(mouseEvent,this); //update cursor and mode, in case there hasn't been a mouse move
 
     //touches can disable window mouse ops

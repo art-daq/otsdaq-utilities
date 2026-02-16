@@ -150,6 +150,7 @@
 		//togglePaintCellValue()
 		//tableVersionDiff()
 		//setupTableVersionDiff()
+		//groupsWithTable()
 		//setupCopyAndMoveRows()
 		//configCopyView(sourceVersion)
 		//tableCopyOrMoveRow(deleteSrc)					//copy/move row from source to destination row
@@ -909,6 +910,7 @@
 					groupType = "Backbone";
 				else if (ael.innerText.indexOf("Iterat") >= 0)
 					groupType = "Iterate";
+				else if (ael.innerText.indexOf("Last Attempted") >= 0) { groupAction = "Attempted Configure"; groupType = "Configuration"; }
 				else if (ael.innerText.indexOf("Last Configured") >= 0) { groupAction = "Configured"; groupType = "Configuration"; }
 				else if (ael.innerText.indexOf("Last Run Started") >= 0) { groupAction = "Started"; groupType = "Configuration"; }
 
@@ -935,20 +937,35 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=getGroupHistory&groupAction=" +
 				groupAction + "&groupType=" +
 				groupType, "",
-				function (req) {
+				function (req, param, err) {
+
+					if(err)
+						Debug.err(err);
+					err = DesktopContent.getXMLValue(req, "Error");
+					if(err)
+						Debug.err(err);
+
 					Debug.log("got group history response for action =", groupAction,
 						"... type =", groupType);
 					var groupHistory = [];
-					var groupHistoryEls = req.responseXML.getElementsByTagName("GroupHistoryEntry");
-					for (var i = 0; i < groupHistoryEls.length; ++i) {
-						var entry = {
-							groupName: DesktopContent.getXMLValue(groupHistoryEls[i], "groupName"),
-							groupKey: DesktopContent.getXMLValue(groupHistoryEls[i], "groupKey"),
-							time: DesktopContent.getXMLValue(groupHistoryEls[i], "time"),
-							user: DesktopContent.getXMLValue(groupHistoryEls[i], "user")
-						};
-						groupHistory.push(entry);
+					try
+					{
+						var groupHistoryEls = req.responseXML.getElementsByTagName("GroupHistoryEntry");
+						for (var i = 0; i < groupHistoryEls.length; ++i) {
+							var entry = {
+								groupName: DesktopContent.getXMLValue(groupHistoryEls[i], "groupName"),
+								groupKey: DesktopContent.getXMLValue(groupHistoryEls[i], "groupKey"),
+								time: DesktopContent.getXMLValue(groupHistoryEls[i], "time"),
+								user: DesktopContent.getXMLValue(groupHistoryEls[i], "user")
+							};
+							groupHistory.push(entry);
+						}
 					}
+					catch(e)
+					{
+						Debug.log("Powering through error:",e);
+					}
+
 					Debug.logv({ groupHistory });
 
 					var str = "";
@@ -956,7 +973,7 @@
 					//header for likning to each group history entry
 					str += "<div style='margin-bottom:10px;'>Click on a group history entry below to view the associated group of tables.</div>";
 
-					var groupActions = ["Activated", "Configured", "Started", "Configured or Started"];
+					var groupActions = ["Activated", "Attempted Configure", "Configured", "Started", "Configured or Started"];
 					var groupTypes = ["Configuration", "Context", "Backbone", "Iterate", "Config Alias"];
 					//dropdown for each group action
 					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
@@ -989,40 +1006,76 @@
 
 						str += "<table id='groupHistoryTable' style='border-collapse:collapse; margin-left:20px;'>";
 						str += "<tr><th colspan='2' style='text-align:center; border-bottom:1px solid black; border-left: 0;'>" +  //hide first column border-left
-							groupAction + " Group</th>" +
+							groupAction;
+						if(groupType == "Config Alias")
+							str += " Alias";
+						else
+							str += " Group";
+						str += "</th>" +
 							"<th style='text-align:center; border-bottom:1px solid black;'>Time</th>" +
 							"<th style='text-align:center; border-bottom:1px solid black;'>User</th></tr>";
 						for (var i = groupHistory.length - 1; i >= 0; --i) {
-							str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
-								"<a href='#' onclick='setupSpecificTableGroup(\"" +
-								groupHistory[i].groupName + "\",\"" +
-								groupHistory[i].groupKey + "\", " +
-								"\"" + returnToHereLink + "\"" +
-								"); return false;'>" +
-								groupHistory[i].groupName +
-								"</a>(" + groupHistory[i].groupKey + ")" +
-								"&nbsp;&nbsp;" +
 
-								"</td><td style='border-left: 0;'>" +
+							if(groupType == "Config Alias")
+								str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
+									"&quot;" + groupHistory[i].groupName + "&quot;" + //groupName is alias, no groupKey
+									"</td><td style='border-left: 0;'></td>"; //empty links (for now)
+							else
+							{
+								str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
+									"<a href='#' onclick='setupSpecificTableGroup(\"" +
+									groupHistory[i].groupName + "\",\"" +
+									groupHistory[i].groupKey + "\", " +
+									"\"" + returnToHereLink + "\"" +
+									"); return false;'>" +
+									groupHistory[i].groupName +
+									"</a>(" + groupHistory[i].groupKey + ")" +
+									"</td>";
 
-								//tree-view
-								"<a href='#' onclick='setupTableGroupTreeView(\"" +
-								groupHistory[i].groupName + "\",\"" +
-								groupHistory[i].groupKey + "\", " +
-								"\"" + returnToHereLink + "\"); return false;' " +
-								" title='Open the tree-view for " +
-								groupHistory[i].groupName + "(" +
-								groupHistory[i].groupKey + ")'>Tree-view</a>" +
-								"</td>" +
+								str += "<td style='border-left: 0; white-space:nowrap;'>" +
+
+									//add tree-view link
+									"<a href='#' onclick='setupTableGroupTreeView(\"" +
+									groupHistory[i].groupName + "\",\"" +
+									groupHistory[i].groupKey + "\", " +
+									"\"" + returnToHereLink + "\"); return false;' " +
+									" title='Open the tree-view for the group  &apos;" +
+									groupHistory[i].groupName + "(" +
+									groupHistory[i].groupKey + ").&apos;'" +
+									">Tree-view</a>&nbsp;&nbsp;" +
+
+									//add Activate link
+									" <a href='#' onclick='activateSystemConfig(\"" +
+									groupHistory[i].groupName + "\",\"" +
+									groupHistory[i].groupKey + "\"); return false;' title='" +
+									"Activate the group &apos;" +
+									groupHistory[i].groupName +	" (" +
+									groupHistory[i].groupKey + ").&apos;'" +
+									">Activate</a>&nbsp;&nbsp;" +
+
+									//add Alias link
+									" <a href='#' onclick='popUpGroupViewAliasForm(\"" +
+									groupHistory[i].groupName + "\",\"" +
+									groupHistory[i].groupKey + "\"); return false;' title='" +
+									"Create a System Alias that refers to the group &apos;" +
+									groupHistory[i].groupName + " (" +
+									groupHistory[i].groupKey + ").&apos;'" +
+									">Alias</a>" +
+
+									"</td>";
+							} //end group column
+
+							str +=
 								//time and user:
-								"<td>" + groupHistory[i].time + "</td>" +
-								"<td>" + groupHistory[i].user + "</td></tr>";
+								"<td style='white-space:nowrap;'>" + groupHistory[i].time + "</td>" +
+								"<td style='white-space:nowrap;'>" + groupHistory[i].user + "</td></tr>";
 						}
 						str += "</table>";
 					}
 
 					el.innerHTML = str;
-				}); //end getGroupHistory request handler
+				}, //end getGroupHistory request handler
+				0,0,true); //param, progressHandler, callHandlerOnErr
 		} //end setupGroupHistory()
 
 		//==============================================================================
@@ -1040,6 +1093,9 @@
 
 					//extract last config groups
 					_lastTableGroups = [
+						DesktopContent.getXMLValue(req, "LastAttemptedConfigGroupName"),
+						DesktopContent.getXMLValue(req, "LastAttemptedConfigGroupKey"),
+						DesktopContent.getXMLValue(req, "LastAttemptedConfigGroupTime"),
 						DesktopContent.getXMLValue(req, "LastConfiguredGroupName"),
 						DesktopContent.getXMLValue(req, "LastConfiguredGroupKey"),
 						DesktopContent.getXMLValue(req, "LastConfiguredGroupTime"),
@@ -1058,7 +1114,12 @@
 						DesktopContent.getXMLValue(req, "LastActivatedBackboneGroupTime"),
 						DesktopContent.getXMLValue(req, "LastActivatedContextGroupName"),
 						DesktopContent.getXMLValue(req, "LastActivatedContextGroupKey"),
-						DesktopContent.getXMLValue(req, "LastActivatedContextGroupTime")
+						DesktopContent.getXMLValue(req, "LastActivatedContextGroupTime"),
+
+						//extra alias info (must be less than 3 fields!)
+						DesktopContent.getXMLValue(req, "LastConfiguredAliasGroupName"),
+						DesktopContent.getXMLValue(req, "LastAttemptedAliasGroupName"),
+
 
 					];
 					//console.log(_lastTableGroups);
@@ -1406,7 +1467,8 @@
 				function insertLocalLastConfigGroups() {
 					//last config groups for "Configured" and "Started:
 					var extraPadding = "";
-					for (var i = 0; i < _lastTableGroups.length; i += 3) {
+					for (var i = 0; i + 2 < _lastTableGroups.length; i += 3) {
+
 
 						//						if(((i/3)|0) == 5) //add padding to last
 						//							extraPadding = "padding-bottom:10px;";
@@ -1423,7 +1485,10 @@
 						if (!_lastTableGroups[i] || _lastTableGroups[i] == "") {
 							//no last group
 
-							switch ((i / 3) | 0) {
+							switch (((i - 3) / 3) | 0) { //insert last attempted group at start with hacky i index subtraction						i -= 3;
+								case -1:
+									str += "Last Attempted by FSM: ";
+									break;
 								case 0:
 									str += "Last Configured by FSM: ";
 									break;
@@ -1447,7 +1512,10 @@
 						else {
 							//there is a last group, so show time
 
-							switch ((i / 3) | 0) {
+							switch (((i-3) / 3) | 0) { //insert last attempted group at start with hacky i index subtraction
+								case -1:
+									str += "Last Attempted by FSM ";
+									break;
 								case 0:
 									str += "Last Configured by FSM ";
 									break;
@@ -1470,6 +1538,10 @@
 
 							str += "<label style='font-size:10px;white-space:nowrap;'>[" +
 								_lastTableGroups[i + 2] + "]</label>: ";
+							if((((i-3) / 3) | 0) == -1) //insert attempted alias
+								str += "&quot;" + _lastTableGroups[_lastTableGroups.length - 1] + "&quot;";
+							if((((i-3) / 3) | 0) == 0) //insert configured alias
+								str += "&quot;" + _lastTableGroups[_lastTableGroups.length - 2] + "&quot;";
 						}
 						str += "</a>";
 
@@ -1498,6 +1570,7 @@
 
 						str += "</td></tr>";
 
+						i -= 3; //change expected value to hacky i
 						if (((i / 3) | 0) == 5 ||
 							((i / 3) | 0) == 1) //add extra rows for spacing
 							str += "<tr style='background-color: rgb(140, 86, 86);height:2px;'>" +
@@ -1506,7 +1579,9 @@
 							((i / 3) | 0) == 1) //swap odd even coloring
 							str += "<tr style='background-color: rgb(140, 86, 86);height:0px;'>" +
 								"<td colspan=3></td></tr>";
-					}
+
+						i += 3; //return expected value to hacky i
+					} //end loop through last groups
 				}  //end insertLocalLastConfigGroups()
 
 
@@ -2776,7 +2851,7 @@
 			//add Alias link
 			str += " <a href='#' onclick='popUpGroupViewAliasForm(\"" + groupName +
 				"\",\"" + groupKey + "\"); return false;' title='" +
-				"Create a System to Alias that refers to the current group &apos;" +
+				"Create a System Alias that refers to the current group &apos;" +
 				groupName +
 				" (" + groupKey + ").&apos;'" +
 				">";
@@ -5797,7 +5872,7 @@
 		function handleTreeNodeClick(depth, uid, editClick, type, waitForOpsToComplete) {
 			if (DesktopContent.isLoading()) {
 				Debug.log("Please wait for Loading... to complete.");
-				//stack up latest user click for when Loading... is completed
+				//stack up latest user click or keypress for when Loading... is completed
 				if (!waitForOpsToComplete) //only stack up user clicks
 				{
 					window.clearTimeout(waitForPrevOpsTimer_);
@@ -7675,6 +7750,70 @@
 			str += "<br><br>";
 			el.innerHTML = str;
 		} //end setupTableVersionDiff()
+
+		//==============================================================================
+		//groupsWithTable
+		function groupsWithTable() {
+			Debug.log("groupsWithTable()",_currentTableName,_version);
+
+			// var allowIllegalColumns = false;
+			DesktopContent.XMLHttpRequest("Request?RequestType=findGroupsWithTable" +
+				"&tableName=" + _currentTableName +
+				"&tableVersion=" + _version,
+				"",
+				function (req) {
+					var groupsCSV = DesktopContent.getXMLValue(req, "GroupsContainingCSV");
+					var groupsSplit = [];
+					if(groupsCSV)
+						groupsSplit = groupsCSV.split(',');
+
+					let str = "";
+					str += "The table <b>'" + _currentTableName + "-v" + _version +
+						"'</b> was found to be in <b>" + groupsSplit.length + " group(s)</b>: ";
+					str += "\n<TAB><ol>";
+
+					let orderSet = {}; //reorder in group alpha order, and key numeric order
+					for(let i=0;i<groupsSplit.length; ++i)
+					{
+						let groupKeySplit = groupsSplit[i].split("_v");
+						let groupName = groupKeySplit[0].trim();
+						let groupKey = (groupKeySplit[1].trim()) | 0; //force integer key
+
+						if(!orderSet[groupName]) orderSet[groupName] = {};
+
+						if(orderSet[groupName][groupKey] !== undefined)
+							Debug.err("Impossible Group Repeat?",groupsSplit[i],i,groupName,groupKey,"vs",orderSet[groupName][groupKey]);
+
+						orderSet[groupName][groupKey] = i;
+
+					} //end group parse loop
+
+					let count = 0;
+					for(let groupName in orderSet)
+					{
+						for(let groupKey in orderSet[groupName])
+						{
+							str += "\n<li style='font-family:Inconsolata,monospace;'><a style='font-family:Inconsolata,monospace;' onclick='setupSpecificTableGroup(\"" +
+									groupName + "\",\"" +
+									groupKey + "\")'>" +
+									groupName + "(" + groupKey + ")" +
+									"</a>";
+							++count;
+						}
+					}
+					Debug.logv({count});
+					if(count != groupsSplit.length)
+						Debug.err("Impossible count mismatch!",groupsSplit.length,count);
+
+					str += "\n</ol></TAB>";
+
+					Debug._errTruncLen = -1; //avoid truncation of Debug message
+					Debug.info(str);
+					Debug._errTruncLen = undefined; //return truncation setting to normal
+				}, //end req handler
+				0, 0, true  //reqParam, progressHandler, callHandlerOnErr
+			); //end diffWithActiveGroup
+		} //end groupsWithTable()
 
 		//==============================================================================
         function setupSearchAllTableVersions() {
@@ -10613,8 +10752,7 @@
 									idString.split('-')[0],
 									idString.split('-')[1],
 									1 /* editClick */,
-									nodeType,
-									true /* waitForOpsToComplete */
+									nodeType
 								);
 								Debug.logv({ treeEditingNodeType_ });
 								break;
@@ -10628,8 +10766,7 @@
 									idString.split('-')[0],
 									idString.split('-')[1],
 									1 /* editClick */,
-									nodeType,
-									true /* waitForOpsToComplete */
+									nodeType
 								);
 								break;
 							}
@@ -10649,8 +10786,7 @@
 											lastFoundSubElIdString.split('-')[0],
 											lastFoundSubElIdString.split('-')[1],
 											1 /* editClick */,
-											lastFoundSubElType,
-											true /* waitForOpsToComplete */
+											lastFoundSubElType
 										);
 									}
 
@@ -18033,6 +18169,7 @@
 				"Find and Replace",
 				"Copy and Move",
 				"Diff Table Versions",
+				"Groups with this Table",
 				"Search All Table Versions",
 				_showTableDetails ?
 					"Hide Table Details" :
@@ -18062,6 +18199,7 @@
 				"setupFindAndReplace()",
 				"setupCopyAndMoveRows()",
 				"setupTableVersionDiff()",
+				"groupsWithTable()",
 				"setupSearchAllTableVersions()",
 				"toggleTableDetails()",
 				"transposeTableView()",

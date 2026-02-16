@@ -73,8 +73,8 @@
 
         .consoleLink {
             font-size: 12px;
-            font-face: arial;
             font-weight: 400;
+            white-space: nowrap;
         }
 
 
@@ -1634,6 +1634,7 @@
         //clearConsoleMessages ~
         //	clear console messages and counts
         function clearConsoleMessages() {
+            Debug.log("clearConsoleMessages()");
             _consoleEl.innerHTML = "";
 
             for (var f in _FIELDS_TO_OBSERVE) //for each field type
@@ -4361,7 +4362,7 @@
 
         <div id='navLatestControlsLink'>
             <a onclick='navToLatest();' title='Scroll to latest console messages, and continue to scroll with new chats.'
-               class='consoleLink' id='pauseControlsLinkText'>Nav to Latest</a>
+               class='consoleLink' id='pauseControlsLinkText'>Latest</a>
         </div>
 
         <div id='navOldestControlsLink'>

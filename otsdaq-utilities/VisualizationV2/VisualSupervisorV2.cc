@@ -106,41 +106,7 @@ void VisualSupervisorV2::transitionConfiguring(toolbox::Event::Reference /*e*/)
 {
 	__SUP_COUT__ << "Configuring..." << __E__;
 
-	{  // do like start of CoreSupervisorBase::transitionConfiguring
-		// activate the configuration tree (the first iteration)
-		if(RunControlStateMachine::getIterationIndex() == 0 &&
-		   RunControlStateMachine::getSubIterationIndex() == 0)
-		{
-			std::pair<std::string /*group name*/, TableGroupKey> theGroup(
-			    SOAPUtilities::translate(theStateMachine_.getCurrentMessage())
-			        .getParameters()
-			        .getValue("ConfigurationTableGroupName"),
-			    TableGroupKey(
-			        SOAPUtilities::translate(theStateMachine_.getCurrentMessage())
-			            .getParameters()
-			            .getValue("ConfigurationTableGroupKey")));
-
-			__SUP_COUT__ << "Configuration table group name: " << theGroup.first
-			             << " key: " << theGroup.second << __E__;
-
-			//disable version tracking to accept untracked versions to be selected by the FSM transition source
-			theConfigurationManager_->loadTableGroup(
-			    theGroup.first,
-			    theGroup.second,
-			    true /*doActivate*/,
-			    0,
-			    0,
-			    0,
-			    0,
-			    0,
-			    0,
-			    false,
-			    0,
-			    0,
-			    ConfigurationManager::LoadGroupType::ALL_TYPES,
-			    true /*ignoreVersionTracking*/);
-		}
-	}  // end start like CoreSupervisorBase::transitionConfiguring
+	CoreSupervisorBase::configureInit();
 
 	__COUTV__(theConfigurationManager_->__GET_CONFIG__(XDAQContextTable)->getTableName());
 	__COUTV__(theConfigurationManager_

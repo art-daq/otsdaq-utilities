@@ -1150,10 +1150,10 @@ SmartLaunch.create = function() {
 					function(req)
 					{
 
-				var success = DesktopContent.getXMLValue(req,"state_tranisition_attempted") == "1";
+				var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
 				if(!success)
 				{
-					var err = DesktopContent.getXMLValue(req,"state_tranisition_attempted_err");
+					var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 					if(err)
 						Debug.log(err,Debug.HIGH_PRIORITY);
 					Debug.log("Server indicated failure to attempt state transition. " +

@@ -18,8 +18,6 @@ CURRENT_AWESOME_BASE=$PWD
 CHECKIN_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_pull.log
 UPDATE_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_push.log
 
-
-
 if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
 
 	echo -e "UpdateOTS.sh:${LINENO}  "
@@ -366,7 +364,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	#scan for top-level git repos and check those
 	scan_dir="${OTS_SOURCE}/../"
 
-	find "$scan_dir" -maxdepth 2 -type d -name ".git" 2>/dev/null |
+	find "$scan_dir" -maxdepth 3 -type d -name ".git" 2>/dev/null |
 	while IFS= read -r gitdir; do
 		repo_dir="$(dirname "$gitdir")"
 		echo -e "UpdateOTS.sh:${LINENO}  check found: $repo_dir"
@@ -375,6 +373,12 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
 
 			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
+
+			if [[ "$repo_dir" == *"../archive"* ]]; then
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping archived repos."
+				continue
+			fi
+
 			cd $repo_dir
 			if ! git diff --quiet || ! git diff --cached --quiet; then
 				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
@@ -383,8 +387,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-			if [[ "$repo_dir" == *"../spack"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
-				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmmerged branch check for centrally managed repo"
+			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
 			else
 				#find unmerged branches
 				branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -407,12 +411,25 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			# find branches with unpushed commits
-			unpushed=$(git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
-			while read -r branch upstream; do
-				[ -z "$upstream" ] && continue
-				ahead=$(git rev-list --count "$upstream..$branch")
-				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
-			done | paste -sd', ' -)
+			unpushed=$(
+				git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
+				while read -r branch upstream; do
+					# no upstream configured at all
+					[ -z "$upstream" ] && {
+						printf "%s(no upstream)\n" "$branch"
+						continue
+					}
+
+					# upstream configured but ref does not exist (e.g. deleted on origin)
+					if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
+						printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
+						continue
+					fi
+
+					ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
+					[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
+				done | paste -sd', ' -
+			)
 
 			if [ -n "$unpushed" ]; then
 				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
@@ -426,7 +443,55 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 		fi
 	done
 
-else
+	#done with warning on repos
+	#now warn on tables
+
+	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
+    # A colon in the filesystem name indicates a remote mount (like NFS)
+
+	# Detect if we are on a host with NFS mounted (in this case, TableInfo manipulations may be too slow, so skip!)
+	# ... by checking for colon in Filesystem column of df -h | grep home
+	# A colon in the filesystem name indicates a remote mount (like NFS)
+	IS_NFS_MOUNTED=false
+	# Skip the header line and check each filesystem entry
+	while IFS= read -r line; do
+		# Extract the filesystem column (first field) and check if it contains a colon
+		filesystem=$(echo "$line" | awk '{print $1}')
+		if [[ "$filesystem" == *:* ]]; then
+			IS_NFS_MOUNTED=true
+			break
+		fi
+	done < <(df -h | grep /home)
+
+	# Only run table warning code on NFS hosts
+	if [ "$IS_NFS_MOUNTED" = true ]; then
+		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
+	else
+		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
+
+		echo -e "\nUpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
+        # Run the table warning code only on NFS host nodes
+        SAVE_USER_DATA=$USER_DATA
+        rm -rf $USER_DATA.warn
+        mkdir $USER_DATA.warn
+        mkdir $USER_DATA.warn/TableInfo
+        mkdir $USER_DATA.warn/ServiceData
+        USER_DATA=$USER_DATA.warn
+        cp ${SAVE_USER_DATA}/ServiceData/CoreTableInfoNames.dat ${USER_DATA}/ServiceData/CoreTableInfoNames.dat
+
+        updateUserData
+
+        #now diff and copy back (ignore whitespace)
+        diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
+
+        rm -rf $USER_DATA
+        USER_DATA=$SAVE_USER_DATA
+    fi
+
+
+	echo -e "\nUpdateOTS.sh:${LINENO}  \t change warnings complete *******************************" >&2
+	exit
+else #end warn handling
 	echo -e "UpdateOTS.sh:${LINENO}  "
 	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
 	echo -e "UpdateOTS.sh:${LINENO}  "
@@ -612,56 +677,9 @@ for p in ${REPO_DIR[@]}; do
 		echo -e "UpdateOTS.sh:${LINENO}  \t Fetching updates from $p"
 		git fetch
 	elif [ $WARN_ONLY = 1 ]; then
-		if ! git diff --quiet || ! git diff --cached --quiet; then
-			echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository $p" >&2 #take stderr for warn result
-		# else
-		# 	echo "Working tree is clean."
-		fi
 
-		#find unmerged branches
-		branch="$(git rev-parse --abbrev-ref HEAD)"
-		if [ "$branch" != "main" ] && [ "$branch" != "develop" ]; then
-			echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository $p ==> ${branch}" >&2 #take stderr for warn result
-		# else
-		# 	echo "You are on main or develop"
-		fi
-
-		#find orphaned branches, ignoring 'no branch' and 'HEAD detached...'
-		missing=$(comm -23 \
-			<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
-			<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
-			| paste -sd', ' -)
-		if [ -n "$missing" ]; then
-			echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository $p ==> ${missing}" >&2 #take stderr for warn result
-		# else
-			# echo "All local branches are represented on origin."
-		fi
-
-		# find branches with unpushed commits
-		unpushed=$(
-			git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads |
-			while read -r branch upstream; do
-				# no upstream configured at all
-				[ -z "$upstream" ] && {
-					printf "%s(no upstream)\n" "$branch"
-					continue
-				}
-
-				# upstream configured but ref does not exist (e.g. deleted on origin)
-				if ! git show-ref --verify --quiet "refs/remotes/$upstream"; then
-					printf "%s(upstream missing: %s)\n" "$branch" "$upstream"
-					continue
-				fi
-
-				ahead=$(git rev-list --count "$upstream..$branch" 2>/dev/null || echo 0)
-				[ "$ahead" -gt 0 ] && printf "%s(%d ahead)\n" "$branch" "$ahead"
-			done | paste -sd', ' -
-		)
-
-		if [ -n "$unpushed" ]; then
-			echo -e " ===|>  WARNING!!! Found unpushed commits in repository $p ==> ${unpushed}" >&2
-		fi
-
+		# already handled by depth 3 above!
+		echo -e "UpdateOTS.sh:${LINENO}  \t Already did git warnings from $p"
 	else
 		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull

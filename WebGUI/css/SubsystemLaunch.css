@@ -7,7 +7,7 @@
 		}
 
 		/* make links have a hand cursor */
-		a {
+		a, input, select, button {
 			cursor: pointer;
 		}
 
@@ -157,6 +157,11 @@
 		#systemStatusTimeInState {
 			width: 200px; /* prevent minor size changes from number char variations */
 		}
+
+		.systemFsmActionButton {
+			margin:	5px;
+		}
+
 		/* ===================== end System status div section  */
 
 
