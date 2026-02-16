@@ -10349,6 +10349,20 @@
 				editCellCancel();
 				return false;
 			}
+			else if (e.key == "Escape") {
+				//check if paint mode is active and cancel it
+				var painterSource = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
+				var selectorSource = "crosshair";
+				if (document.body.style.cursor == painterSource ||
+					document.body.style.cursor == selectorSource) {
+					Debug.log("Cancelling paint mode");
+					togglePaintCellValue();
+					event.stopImmediatePropagation();
+					if (e.preventDefault)
+						e.preventDefault();
+					return false;
+				}
+			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "v") {
 				Debug.log("Copying table rows");
 				copyAndPasteBlockRows();
