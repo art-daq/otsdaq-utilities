@@ -2665,6 +2665,7 @@ ConfigurationAPI.newWizBackboneMemberHandler = function (req, params, errStr) {
         if (name == aliasTableName) {
             tableMap += name + "," +
                 aliasTableVersion + ",";
+
             if(aliasTableVersion == tableVersions[i].getAttribute("value"))
                 Debug.info("No change to backbone table <b>" + aliasTableName + "</b>");
             else
