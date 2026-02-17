@@ -9380,7 +9380,7 @@
 		//==============================================================================
 		//selectThisCell ~~
 		function selectThisCell(r, c, el, event, paintMode) {
-			if (event.ctrlKey || event.metaKey) {
+			if (event && (event.ctrlKey || event.metaKey)) {
 				if (isDragging) {
 					// also stop the context menu that would appear afterwards
 					document.addEventListener("contextmenu", blockContextMenu, { once: true });
