@@ -2668,6 +2668,29 @@
 			var tableVersions = req.responseXML.getElementsByTagName("MemberVersion");
 			var configComments = req.responseXML.getElementsByTagName("MemberComment");
 
+			var warnings = req.responseXML.getElementsByTagName("Warning");
+			var versionAliasWarning = false;
+			for(var i = 0; i < warnings.length; ++i)
+			{
+				let warning = warnings[i].getAttribute("value");
+				if(warning.indexOf("alias mismatch") > 0)
+				{
+					versionAliasWarning = true;
+					Debug.warn("Click " +
+						"<a href='#' id='updateAliasTranslationsLink' onclick='Debug.warn(" +
+						"\"Group save dialog box has been opened. Closing this pop-up may help to find it.\"); popUpSaveNewGroupForm(" +
+						"\"" + groupName + "\",\"" + groupKey + "\",2); return false;'  title='Re-evaluate this group's member table " +
+						" aliases based on the lastest Table Aliases in the active Backbone group.'" +
+						">" +
+						"Update Alias Translations for this Group" +
+						"</a>" +
+						" to re-evaluate this group's member table " +
+						" aliases based on the lastest Table Aliases in the active Backbone group."
+					);
+				}
+				Debug.warn(warning);
+			}
+
 			var key, version, tableName, configComment;
 			var el = document.getElementById("display");
 
@@ -2800,6 +2823,7 @@
 			str += "Rename Group or Add/Remove/Modify Member Tables</a> for group '" + groupName + "(" + groupKey + ")'";
 
 			str += "<br>";
+
 			var setMembersToDefaultReq =
 				"DesktopContent.XMLHttpRequest(\"Request?RequestType=setAliasOfGroupMembers" +
 				"&versionAlias=Default" +
@@ -2817,6 +2841,7 @@
 				">";
 			str += "Set all Members' chosen Version to the 'Default' table-Alias";
 			str += "</a>";
+
 			str += "<br>";
 
 			str += "<a href='#' onclick='popUpVersionAliasSpecificGroupForm(" +
@@ -2827,6 +2852,26 @@
 			str += "Set all Members' chosen Versions to a table-Alias";
 			str += "</a>";
 
+			if(versionAliasWarning) //if warnings, then they are related to stale aliases
+			{
+				str += "<br>";
+
+				//fill global var for type 2 save, if user wants to reevaluate aliases
+				_memberMapForGroupSave = {}; //clear global variable
+				for (var i = 0; i < tableNames.length && i < tableVersions.length; ++i)
+				{
+					tableName = tableNames[i].getAttribute("value");
+					version = tableVersions[i].getAttribute("value"); //will be original table alias name
+					_memberMapForGroupSave[tableName] = version;
+				}
+				//save with type 2 to reevaluate aliases based on currently active backbone (spec'd in _memberMapForGroupSave, filled above)
+				str += "<a href='#' id='updateAliasTranslationsLink' style='color:red;' onclick='popUpSaveNewGroupForm(" +
+					"\"" + groupName + "\",\"" + groupKey + "\",2); return false;' title='Re-evaluate this group's member table " +
+					" aliases based on the lastest Table Aliases in the active Backbone group.'" +
+					">";
+				str += "Update Alias Translations for this Group";
+				str += "</a>";
+			}
 
 			//add Download link
 			str += "<br>";
@@ -2892,7 +2937,8 @@
 			str += "<table cellpadding='0' cellspacing='0' border='0' style='float:left;'>";
 
 			//Debug.log("CfgGUI specificTableRequestHandler Member length " + tableNames.length + " - " + tableVersions.length);
-			for (var i = 0; i < tableNames.length && i < tableVersions.length; ++i) {
+			for (var i = 0; i < tableNames.length && i < tableVersions.length; ++i)
+			{
 				tableName = tableNames[i].getAttribute("value");
 				version = tableVersions[i].getAttribute("value");
 				if (configComments[i])
@@ -2900,6 +2946,20 @@
 				else
 					configComment = "UNKNOWN";
 
+				let isTableAliasMismatch = false;
+				let provenanceVersion, activeBackboneAliasVersion, mismatchAlias;
+				if(version.indexOf(ConfigurationAPI._VERSION_ALIAS_PREPEND) == 0)
+				{
+					provenanceVersion = DesktopContent.getXMLValue(tableVersions[i], "ProvenanceMemberVersion");
+					activeBackboneAliasVersion = DesktopContent.getXMLValue(tableVersions[i], "ActiveBackboneAliasVersion");
+					if(activeBackboneAliasVersion !== undefined && //not sent if currently a match (-1 if alias doesnt exist)
+						activeBackboneAliasVersion != provenanceVersion) //then mismatch, so use provenance version as primary version (for group modifying)
+					{
+						isTableAliasMismatch = true;
+						mismatchAlias = version; //save the mismatch alias
+						version = provenanceVersion; //force use a valid table version!
+					}
+				}
 
 				backLinkStr = "setupSpecificTableGroup(\\\"" + groupName + "\\\",\\\"" +
 					groupKey + "\\\",undefined,\\\"anchorTag-" +
@@ -2927,7 +2987,24 @@
 				str += "<label id='" + tableName + "-currentVersion'>";
 				str += ((version | 0) == ConfigurationAPI._SCRATCH_VERSION ?
 					_SCRATCH_VIEW_NAME : version);
-				str += "</label>";
+
+				if(provenanceVersion === undefined) //normal unaliased table
+				{
+					str += "</label>";
+				}
+				else //show provenance version and current backbone alias if is an alias
+				{
+					if(isTableAliasMismatch) //then mismatch, so use provenance version as primary version (for group modifying)
+					{
+						str += "</label>";
+						str += " <font color='red'>!= Backbone:" + mismatchAlias + ":" + activeBackboneAliasVersion + "</font>";
+					}
+					else //alias still is accurate, so keep alias string as primary version
+					{
+						str += "</label>";
+						str += " --&gt; v" + provenanceVersion;
+					}
+				}
 
 				str += ")";
 				str += "</a>";
@@ -3054,7 +3131,7 @@
 				str += "</td></tr>";
 
 				cfgNameStr += tableName + ",";
-			}
+			} //end primary member table loop
 
 			str += "</table>";
 
@@ -3578,73 +3655,73 @@
 			var tbody = document.getElementById("SubSystemTable");
 
 			// Ignore the first two <tr> tags (header rows)
-            const _CONFIG_DATA_ROW_OFFSET = 2;
-            const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET);
+			const _CONFIG_DATA_ROW_OFFSET = 2;
+			const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET);
 
 			dataRows.forEach((tableRow) => {
-                tableRow.addEventListener('mousedown', (e) => {
-                    const tr = e.target.closest('tr');
-                    if (!tr || e.button !== 0) return; // only left click
+				tableRow.addEventListener('mousedown', (e) => {
+					const tr = e.target.closest('tr');
+					if (!tr || e.button !== 0) return; // only left click
 
-                    const idx = indexOfRow(tr);
-                    if (idx === -1 || idx == 0) return;
+					const idx = indexOfRow(tr);
+					if (idx === -1 || idx == 0) return;
 
-                    // SHIFT RANGE (works without Ctrl)
-                    if (e.shiftKey && lastSelectedIndex !== null) {
-                        selectRange(lastSelectedIndex, idx, true);
-                        lastSelectedIndex = idx;
-                        e.preventDefault();
-                        return;
-                    }
+					// SHIFT RANGE (works without Ctrl)
+					if (e.shiftKey && lastSelectedIndex !== null) {
+						selectRange(lastSelectedIndex, idx, true);
+						lastSelectedIndex = idx;
+						e.preventDefault();
+						return;
+					}
 
-                    // CTRL/Meta required for selection actions
-                    if (!(e.ctrlKey || e.metaKey)) {
-                        // no selection if not holding ctrlreturn;
-                        return;
-                    }
+					// CTRL/Meta required for selection actions
+					if (!(e.ctrlKey || e.metaKey)) {
+						// no selection if not holding ctrlreturn;
+						return;
+					}
 
-                    // also stop the context menu that would appear afterwards
-                    document.addEventListener("contextmenu", blockContextMenu, { once: true });
+					// also stop the context menu that would appear afterwards
+					document.addEventListener("contextmenu", blockContextMenu, { once: true });
 
-                    // CTRL Click or CTRL Drag Starts
-                    const currentlySelected = tr.classList.contains('selected');
-                    dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
-                    isDragging = true;
-                    document.body.classList.add('no-select');
-                    setSelectedByIndex(idx, dragModeSelect);
-                    lastSelectedIndex = idx;
-                    e.preventDefault();
-                });
+					// CTRL Click or CTRL Drag Starts
+					const currentlySelected = tr.classList.contains('selected');
+					dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
+					isDragging = true;
+					document.body.classList.add('no-select');
+					setSelectedByIndex(idx, dragModeSelect);
+					lastSelectedIndex = idx;
+					e.preventDefault();
+				});
 
-                tableRow.addEventListener('mouseover', (e) => {
-                    if (!isDragging) return;
-                    if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
+				tableRow.addEventListener('mouseover', (e) => {
+					if (!isDragging) return;
+					if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
 
-                    const tr = e.target.closest('tr');
-                    if (!tr) return;
-                    const idx = indexOfRow(tr);
-                    if (idx === -1) return;
-                    setSelectedByIndex(idx, dragModeSelect);
-                });
+					const tr = e.target.closest('tr');
+					if (!tr) return;
+					const idx = indexOfRow(tr);
+					if (idx === -1) return;
+					setSelectedByIndex(idx, dragModeSelect);
+				});
 
-                tableRow.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Stops other handlers
-                    e.preventDefault();
-                    const tr = e.target.closest('tr');
-                    if (!tr) return;
-                    const idx = indexOfRow(tr);
+				tableRow.addEventListener('click', (e) => {
+					e.stopPropagation(); // Stops other handlers
+					e.preventDefault();
+					const tr = e.target.closest('tr');
+					if (!tr) return;
+					const idx = indexOfRow(tr);
 
-                    // SHIFT does nothing here (handled in mousedown)
-                    if (e.shiftKey) return;
+					// SHIFT does nothing here (handled in mousedown)
+					if (e.shiftKey) return;
 
-                    // Normal click does nothing
-                    if (!(e.ctrlKey || e.metaKey)) return;
+					// Normal click does nothing
+					if (!(e.ctrlKey || e.metaKey)) return;
 
-                    // CTRL click toggle (final guarantee)
-                    tr.classList.toggle('selected');
-                    lastSelectedIndex = idx;
-                });
-            }); //end foreach loop
+					// CTRL click toggle (final guarantee)
+					tr.classList.toggle('selected');
+					lastSelectedIndex = idx;
+				});
+			}); //end foreach loop
 
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered) {
@@ -6671,6 +6748,32 @@
 					el.innerHTML = "Configuration Editor" + " <label style='font-size:12px'>user: " + ConfigurationAPI._configUsername + "</label>";
 			}
 
+			//Backbone and Iterator are not normally in active printout, see if they should be!
+			var nowActiveBackbone = [
+				DesktopContent.getXMLValue(req, "Backbone-ActiveGroupName"),
+				DesktopContent.getXMLValue(req, "Backbone-ActiveGroupKey")];
+			var nowActiveIterator = [
+				DesktopContent.getXMLValue(req, "Iterate-ActiveGroupName"),
+				DesktopContent.getXMLValue(req, "Iterate-ActiveGroupKey")];
+			if(_activeTableGroups && _activeTableGroups[2] &&
+				(nowActiveBackbone[0] != _activeTableGroups[2] ||
+					nowActiveBackbone[1] != _activeTableGroups[3]))
+			{
+				Debug.info("The Active <b>Backbone</b> group has changed from <b>" +
+						_activeTableGroups[2] + " (" + _activeTableGroups[3] + ")</b>" +
+						" to <b>" +
+						nowActiveBackbone[0] + " (" + nowActiveBackbone[1] + ")</b>");
+			}
+			if(_activeTableGroups && _activeTableGroups[4] &&
+				(nowActiveIterator[0] != _activeTableGroups[4] ||
+					nowActiveIterator[1] != _activeTableGroups[5]))
+			{
+				Debug.info("The Active <b>Iterate</b> group has changed from <b>" +
+						_activeTableGroups[4] + " (" + _activeTableGroups[5] + ")</b>" +
+						" to <b>" +
+						nowActiveIterator[0] + " (" + nowActiveIterator[1] + ")</b>");
+			}
+
 			_activeTableGroups = [
 				DesktopContent.getXMLValue(req, "Context-ActiveGroupName"),
 				DesktopContent.getXMLValue(req, "Context-ActiveGroupKey"),
@@ -6756,7 +6859,7 @@
 			if (withWarningsStr != "") {
 				document.getElementById("activateConfigWithWarnings").innerHTML = withWarningsStr;
 
-				Debug.log("Group " + name + "(" + key + ") was not activated.\n\n" +
+				Debug.err("Group <b>'" + name + " (" + key + ")'</b> was not activated.\n\n" +
 					"Please see detailed Warnings and Errors below. " +
 					"You can try to activate " +
 					"with warnings ignored " +
@@ -6770,7 +6873,7 @@
 					"Activate " +
 					name + "(" + key + ") w/warnings ignored</a>' " +
 
-					"at the top of the page.", Debug.HIGH_PRIORITY);
+					"at the top of the page.");
 				//Debug.log(_OTS_RELAUNCH_STR,Debug.INFO_PRIORITY);
 
 			}
@@ -7399,14 +7502,15 @@
 						//find ALIAS:Default or else first that is not temporary and not an ALIAS:
 						defaultToSel = -1;
 						for (var i = 0; i < options.length; ++i)
-							if (options[i].value == "ALIAS:Default") {
+							if (options[i].value == ConfigurationAPI._VERSION_ALIAS_PREPEND +
+									"Default") {
 								//done!
 								defaultToSel = i;
 								break;
 							}
 							else if (defaultToSel == -1 &&
-								options[i].value[0] != '-' &&  //assume leading '-' means temporary
-								options[i].value.indexOf("ALIAS:") != 0) //skip aliases
+									options[i].value[0] != '-' &&  //assume leading '-' means temporary
+									options[i].value.indexOf(ConfigurationAPI._VERSION_ALIAS_PREPEND) != 0) //skip aliases
 								defaultToSel = i; //found backup default, keep looking for ALIAS:Default
 
 						if (defaultToSel >= 0)
@@ -7425,14 +7529,15 @@
 						//find ALIAS:Default or else first that is not temporary
 						defaultToSel = -1;
 						for (var i = 0; i < options.length; ++i)
-							if (options[i].value == "ALIAS:" + alias) {
+							if (options[i].value == ConfigurationAPI._VERSION_ALIAS_PREPEND + alias) {
 								//done!
 								defaultToSel = i;
 								break;
 							}
 							else if (defaultToSel == -1 &&
-								options[i].value[0] != '-') //assume leading '-' means temporary
-								defaultToSel = i; //found backup default, keep looking for ALIAS:Default
+									options[i].value[0] != '-' &&  //assume leading '-' means temporary
+									options[i].value.indexOf(ConfigurationAPI._VERSION_ALIAS_PREPEND) != 0) //skip aliases
+								defaultToSel = i; //found backup default, keep looking for matching alias
 
 						if (defaultToSel >= 0)
 							options[defaultToSel].selected = true;
@@ -11364,23 +11469,23 @@
 					function (retParams) {
 						if (retParams) {
 							if (!retParams.foundEquivalentKey)
-								Debug.log("Successfully modified the active Backbone group " +
-									" to set the System Alias '" + groupAlias + "' to " +
-									" refer to the current group '" + groupName +
-									" (" + groupKey + ").'" +
+								Debug.log("Successfully modified the active <b>Backbone</b> group " +
+									" to set the System Alias <b>'" + groupAlias + "'</b> to " +
+									" refer to the current group <b>'" + groupName +
+									" (" + groupKey + ").'</b>" +
 									"\n\n" +
 									"Backbone group '" + retParams.groupName + " (" +
 									retParams.groupKey + ")' was created and activated.",
 									Debug.INFO_PRIORITY);
 							else
 								Debug.log("Success, but no need to create a new Backbone group. " +
-									"An existing Backbone group " +
-									" already has the System Alias '" + groupAlias + "' " +
-									" referring to the current group '" + groupName +
-									" (" + groupKey + ").'" +
+									"An existing <b>Backbone</b> group " +
+									" already has the System Alias <b>'" + groupAlias + "'</b> " +
+									" referring to the current group <b>'" + groupName +
+									" (" + groupKey + ").'</b>" +
 									"\n\n" +
-									"Backbone group '" + retParams.groupName + " (" +
-									retParams.groupKey + ")' was activated.",
+									"<b>Backbone</b> group <b>'" + retParams.groupName + " (" +
+									retParams.groupKey + ")'</b> was activated.",
 									Debug.INFO_PRIORITY);
 						}
 						else {
