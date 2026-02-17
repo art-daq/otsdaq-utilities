@@ -364,7 +364,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 
 
 	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
-    # A colon in the filesystem name indicates a remote mount (like NFS)
+	# A colon in the filesystem name indicates a remote mount (like NFS)
 	IS_NFS_MOUNTED=false
 	# Skip the header line and check each filesystem entry
 	while IFS= read -r line; do
