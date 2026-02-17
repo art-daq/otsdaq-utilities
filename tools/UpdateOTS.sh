@@ -456,7 +456,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
 				for stash in $(git stash list | cut -d: -f1); do
 					if ! git diff --quiet "$stash"^1 "$stash"; then
-						if declare -F ots_stash_diff > /dev/null; then						
+						if declare -F ots_stash_diff > /dev/null; then
 							echo -e " ===|>  WARNING!!! Found stashed code in repository ${repo_dir} --> ots_stash_diff ${stash}" >&2
 						else
 							echo -e " ===|>  WARNING!!! Found stashed code in repository ${repo_dir} --> git diff ${stash} stash@{0}^1 ... or drop ${stash}" >&2
@@ -476,7 +476,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	#done with warning on repos
 	#now warn on tables
 
-	# If we are on a host with NFS mounted, in this case, TableInfo manipulations may be too slow, so skip!)	
+	# If we are on a host with NFS mounted, in this case, TableInfo manipulations may be too slow, so skip!)
 
 	# Only run table warning code on NFS hosts
 	if [ "$IS_NFS_MOUNTED" = true ]; then

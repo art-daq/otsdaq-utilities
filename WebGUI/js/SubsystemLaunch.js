@@ -219,7 +219,7 @@ SubsystemLaunch.create = function() {
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						let lastFsmName = _fsmName;
 						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
-						Debug.log("Loaded FSM Name preference",_fsmName);						
+						Debug.log("Loaded FSM Name preference",_fsmName);
 						if(!_fsmName)
 						{
 							Debug.log("No FSM Name preference was found for the user! " +
