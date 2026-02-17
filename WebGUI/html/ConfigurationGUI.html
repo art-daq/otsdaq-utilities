@@ -10357,7 +10357,7 @@
 					document.body.style.cursor == selectorSource) {
 					Debug.log("Cancelling paint mode");
 					togglePaintCellValue();
-					event.stopImmediatePropagation();
+					e.stopImmediatePropagation();
 					if (e.preventDefault)
 						e.preventDefault();
 					return false;
