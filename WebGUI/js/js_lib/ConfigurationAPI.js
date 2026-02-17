@@ -2105,7 +2105,6 @@ ConfigurationAPI.saveModifiedTables = function (modifiedTables, responseHandler,
 
                             var groupAlias, groupName, groupKey;
                             var setAliasCheckboxIndex = -1;
-                            var groupAliasName, groupAliasVersion;
 
                             var affectedGroupAliases = [];
 
@@ -2648,11 +2647,11 @@ ConfigurationAPI.newWizBackboneMemberHandler = function (req, params, errStr) {
     }
 
 
-    var groupAliasName = DesktopContent.getXMLValue(req, "savedName");
-    var groupAliasVersion = DesktopContent.getXMLValue(req, "savedVersion");
+    var aliasTableName = DesktopContent.getXMLValue(req, "savedName");
+    var aliasTableVersion = DesktopContent.getXMLValue(req, "savedVersion");
 
-    Debug.log("groupAliasName=" + groupAliasName);
-    Debug.log("groupAliasVersion=" + groupAliasVersion);
+    Debug.log("aliasTableName=" + aliasTableName);
+    Debug.log("aliasTableVersion=" + aliasTableVersion);
 
     var configNames = req.responseXML.getElementsByTagName("oldBackboneName");
     var tableVersions = req.responseXML.getElementsByTagName("oldBackboneVersion");
@@ -2663,14 +2662,20 @@ ConfigurationAPI.newWizBackboneMemberHandler = function (req, params, errStr) {
     for (var i = 0; i < configNames.length; ++i) {
         name = configNames[i].getAttribute("value");
 
-        if (name == groupAliasName) {
+        if (name == aliasTableName) {
             tableMap += name + "," +
-                groupAliasVersion + ",";
+                aliasTableVersion + ",";
+
+            if(aliasTableVersion == tableVersions[i].getAttribute("value"))
+                Debug.info("No change to backbone table <b>" + aliasTableName + "</b>");
+            else
+                Debug.info("New backbone table saved as <b>" + aliasTableName + "-v" + aliasTableVersion + "</b>");
             continue;
         }
         //else use old member
         tableMap += name + "," +
             tableVersions[i].getAttribute("value") + ",";
+
     }
 
     console.log("backbone tableMap", tableMap);
