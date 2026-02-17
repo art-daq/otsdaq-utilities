@@ -219,7 +219,13 @@ SubsystemLaunch.create = function() {
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						let lastFsmName = _fsmName;
 						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
-						Debug.log("Loaded FSM Name preference",_fsmName);
+						Debug.log("Loaded FSM Name preference",_fsmName);						
+						if(!_fsmName)
+						{
+							Debug.log("No FSM Name preference was found for the user! " +
+								"Defaulting to first FSM in list.");
+							_fsmName = lastFsmName;
+						}
 
 						if(lastFsmName != _fsmName)
 						{
@@ -745,7 +751,9 @@ SubsystemLaunch.create = function() {
 							str += "<select id='subsystem_" + fieldIds[i] +
 								"_select_" + s + "' style='padding: 4px; font-size: 14px; margin-right:20px;' "+
 								"onchange='SubsystemLaunch.launcher.handleSubsystemConfigAliasSelect(this.value, " + s + ");'>";
-							var csvSplit = SubsystemLaunch.subsystems[s].configAliasChoices.split(',');
+							var csvSplit = [];
+							if(SubsystemLaunch.subsystems[s].configAliasChoices)
+								csvSplit = SubsystemLaunch.subsystems[s].configAliasChoices.split(',');
 							Debug.logv({csvSplit});
 							str += "<option ></option>"; //empty option to start
 							for(var c=0; c < csvSplit.length; ++c)
@@ -1163,7 +1171,7 @@ SubsystemLaunch.create = function() {
 					el = document.getElementById("subsystem_" + fieldIds[i] +
 						"_select_" + s);
 					if (el.value != SubsystemLaunch.subsystems[s][fieldIds[i]]) {
-						if(SubsystemLaunch.subsystems[s].configAliasChoices && SubsystemLaunch.subsystems[s].configAliasChoices != "")
+						if(SubsystemLaunch.subsystems[s].configAliasChoices)
 							Debug.warn("The selected " + fieldIds[i] + " for Subsystem '" +
 								SubsystemLaunch.subsystems[s].name + "' has changed from '" +
 								el.value + "' to '" + SubsystemLaunch.subsystems[s][fieldIds[i]] + ".'");
