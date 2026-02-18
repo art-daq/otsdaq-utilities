@@ -401,7 +401,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				continue
 			fi
 
-			cd $repo_dir
+			cd "$repo_dir"
 			repo_name=$(basename "$repo_dir")
 			allowed_branch="${ALLOWED_BRANCHES[$repo_name]}"
 			if ! git diff --quiet || ! git diff --cached --quiet; then
