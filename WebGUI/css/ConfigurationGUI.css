@@ -147,3 +147,7 @@ th {
     text-align: center;
     font-weight: bold;
 }
+
+.currentMemberVersionLink, .currentMemberVersionLink label {
+    cursor: pointer;
+}
