@@ -432,11 +432,20 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
 				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 				| paste -sd', ' -)
-			# Skip warning if this repo has allowed branches configured
-			if [ -n "$missing" ] && [ -z "$allowed_branch" ]; then
-				echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
-			# else
-				# echo "All local branches are represented on origin."
+			# Warn about local branches not on origin, but ignore the configured allowed branch (if any)
+			if [ -n "$missing" ]; then
+				if [ -n "$allowed_branch" ]; then
+					filtered_missing=$(
+						printf '%s\n' "$missing" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -Fxv "$allowed_branch" | paste -sd', ' -
+					)
+				else
+					filtered_missing="$missing"
+				fi
+				if [ -n "$filtered_missing" ]; then
+					echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${filtered_missing}" >&2 #take stderr for warn result
+				# else
+					# echo "All local branches are represented on origin (ignoring allowed branch)."
+				fi
 			fi
 
 			# find branches with unpushed commits
