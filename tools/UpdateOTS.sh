@@ -1,4 +1,10 @@
 #!/bin/bash
+# Allowed branches for specific repositories
+declare -A ALLOWED_BRANCHES
+# Example: ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
+ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
+ALLOWED_BRANCHES["otsdaq_demo_data_repo"]="first_demo"
+# Add more repo/branch pairs as needed
 #
 # This script is expected to be in otsdaq utilities repository in a specific directory
 # but it can be executed from any path (do not source it, execute with ./ )
@@ -392,10 +398,12 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			else
 				#find unmerged branches
 				branch="$(git rev-parse --abbrev-ref HEAD)"
+				repo_name=$(basename "$repo_dir")
+				allowed_branch="${ALLOWED_BRANCHES[$repo_name]}"
 				if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
-					echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
-				# else
-				# 	echo "You are on main or develop"
+					if [ "$allowed_branch" != "$branch" ]; then
+						echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+					fi
 				fi
 			fi
 
@@ -404,7 +412,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
 				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 				| paste -sd', ' -)
-			if [ -n "$missing" ]; then
+			# Skip warning if this repo has allowed branches configured
+			if [ -n "$missing" ] && [ -z "$allowed_branch" ]; then
 				echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
 			# else
 				# echo "All local branches are represented on origin."
@@ -431,7 +440,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				done | paste -sd', ' -
 			)
 
-			if [ -n "$unpushed" ]; then
+			# Only warn if unpushed commits exist and this repo doesn't have allowed branches configured
+			if [ -n "$unpushed" ] && [ -z "$allowed_branch" ]; then
 				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
 			fi
 
@@ -489,7 +499,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
     fi
 
 
-	echo -e "\nUpdateOTS.sh:${LINENO}  \t change warnings complete *******************************" >&2
+	echo -e "\nUpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
 	exit
 else #end warn handling
 	echo -e "UpdateOTS.sh:${LINENO}  "
