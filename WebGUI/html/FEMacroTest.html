@@ -197,7 +197,7 @@
         .export-btns {
             cursor: pointer;
             float: right;
-            margin: 10px 65px -35px 15px;
+            margin: -40px 5px -35px 15px;
             position: relative;
             z-index: 10;
         }
@@ -786,11 +786,13 @@
             var err = DesktopContent.getXMLValue(req, "Error");
             if (err && err != "")
                 errStr += "\n" + err;
-            if (errStr != "") {
+            if (errStr != "") 
+            {
                 str += "Received error... " + getDateString(new Date);
                 str += "<br>";
                 Debug.err("Error while running FE Macro: " + errStr);
-                el.innerHTML = str;
+                el.innerHTML = "<br><br><br>" + 
+                    str + "<br><br>Error while running FE Macro: " + errStr;
                 return;
             }
 
@@ -1297,6 +1299,7 @@ Here is the json string received:
                             "class": "macroModule",
                             "rowspan": maxRow,
                             "width": "400px",
+                            "style": "white-space:normal"
                         },
                         "<h3 style='display: flex; align-items: center;justify-content: center;'>" +
                         "Macro output will be displayed here" +
