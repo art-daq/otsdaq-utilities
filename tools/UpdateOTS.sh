@@ -402,6 +402,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			cd $repo_dir
+			repo_name=$(basename "$repo_dir")
+			allowed_branch="${ALLOWED_BRANCHES[$repo_name]}"
 			if ! git diff --quiet || ! git diff --cached --quiet; then
 				echo -e  " ===|>  WARNING!!! Found * uncommitted * changes in repository ${repo_dir}" >&2 #take stderr for warn result
 			# else
@@ -416,7 +418,9 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 					#find unmerged branches
 					branch="$(git rev-parse --abbrev-ref HEAD)"
 					if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
-						echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+						if [ -z "$allowed_branch" ] || [ "$allowed_branch" != "$branch" ]; then
+							echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+						fi
 					# else
 					# 	echo "You are on main or develop"
 					fi
