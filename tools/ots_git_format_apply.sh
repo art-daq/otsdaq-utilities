@@ -73,11 +73,12 @@ if [ -n "$whitespace_files" ]; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Files with whitespace issues:"
 	echo
 	# echo "$whitespace_files"
-	fileParam=""
+	fileParam=()
 	readarray -t files <<<"$whitespace_files"
 	for f in "${files[@]}"; do
+		[ -f "$f" ] || continue
 		echo "          $f"
-		fileParam="$fileParam $f" #append
+		fileParam+=("$f") #append
 	done
 	echo
 	echo
@@ -91,7 +92,7 @@ if [ -n "$whitespace_files" ]; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Doing whitespace cleanup..."
 	echo
 
-	ots_whitespace_cleanup.sh $fileParam
+	ots_whitespace_cleanup.sh "${fileParam[@]}"
 
 	echo
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Whitespace cleanup complete."
