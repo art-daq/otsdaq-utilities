@@ -7,8 +7,8 @@
 
 # Prevent the script from being sourced
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    echo "This script must be executed and not sourced!" >&2
-    exit 1
+	echo "This script must be executed and not sourced!" >&2
+	exit 1
 fi
 
 excluded_dirs="" #could space-separate excluded directories
@@ -71,7 +71,7 @@ done
 
 if [ $rc -ne 0 ] ; then
 	echo "White-space check detected excess whitespace!"
-else 
+else
 	echo "White-space check found no excess whitespace."
 fi
 #   exit $rc
