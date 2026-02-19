@@ -19,20 +19,20 @@ if [[ $called != $0 ]]; then
 	echo "This script must be executed and not sourced!"
 
 
-	echo -e "quick_ots_install.sh [${LINENO}]  "
-	echo -e "quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
-	echo -e "quick_ots_install.sh [${LINENO}]  "
-	echo -e "quick_ots_install.sh [${LINENO}]  \t usage: ./quick_ots_install.sh"
-	echo -e "quick_ots_install.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t usage: ./quick_ots_install.sh"
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
 	return 1
 fi
 
 
-echo -e "quick_ots_install.sh [${LINENO}]  "
-echo -e "quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
-echo -e "quick_ots_install.sh [${LINENO}]  "
-echo -e "quick_ots_install.sh [${LINENO}]  \t usage: ./quick_ots_install.sh"
-echo -e "quick_ots_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t ~~ quick_ots_install ~~ "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t usage: ./quick_ots_install.sh"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
 
 #clear environment
 unsetup_all >/dev/null 2>&1
@@ -54,7 +54,7 @@ if [ "x$SKIP_REDMINE_LOGIN" != "x1" ]; then
 	export REDMINE_LOGIN_LISTF=/tmp/redmine_list_p$$
 	export REDMINE_LOGIN_COOKIEF=/tmp/redmine_cookies_p$$
 	export REDMINE_LOGIN_RLVERBOSEF=${REDMINE_LOGIN_RLVERBOSEF:=false}
-	trap 'echo -e "quick_ots_install.sh [${LINENO}]  \t Exit detected. Cleaning up..."; rm -f /tmp/postdata_p$$ /tmp/at_p$$ $REDMINE_LOGIN_COOKIEF $REDMINE_LOGIN_LISTF*; unset SKIP_REDMINE_LOGIN' EXIT
+	trap 'echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Exit detected. Cleaning up..."; rm -f /tmp/postdata_p$$ /tmp/at_p$$ $REDMINE_LOGIN_COOKIEF $REDMINE_LOGIN_LISTF*; unset SKIP_REDMINE_LOGIN' EXIT
 fi
 
 #
@@ -73,7 +73,7 @@ do_login() {
 	if grep '>Sign in' $REDMINE_LOGIN_LISTF > /dev/null;then
 
 		echo
-		echo -e "quick_ots_install.sh [${LINENO}]  \t Login failed."
+		echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Login failed."
 		unset user #force new login attempt
 		unset pass
 		export REDMINE_LOGIN_WORKED=0
@@ -177,7 +177,7 @@ post_url() {
 } # post_url
 
 echo
-echo -e "quick_ots_install.sh [${LINENO}]  \t Attempting login... $SKIP_REDMINE_LOGIN"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Attempting login... $SKIP_REDMINE_LOGIN"
 
 if [ "x$SKIP_REDMINE_LOGIN" != "x1" ]; then
 	do_login $REDMINE_LOGIN_SITE
@@ -186,15 +186,15 @@ fi
 
 if [ $REDMINE_LOGIN_WORKED == 0 ]; then
 	echo
-	echo -e "quick_ots_install.sh [${LINENO}]  \t !!!!!!!!!!"
-	echo -e "quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
-	echo -e "quick_ots_install.sh [${LINENO}]  \t !!!!!!!!!!"
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t !!!!!!!!!!"
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t !!!!!!!!!!"
 	echo
 	exit 1
 fi
 
 echo
-echo -e "quick_ots_install.sh [${LINENO}]  \t Login successful."
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Login successful."
 echo
 
 
@@ -233,7 +233,7 @@ echo
 #        "login=Login ?"
 # 	if grep '>Sign in' $listf > /dev/null;then
 # 		echo
-#         echo -e "quick_ots_install.sh [${LINENO}]  \t Login failed."
+#         echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Login failed."
 # 		unset user #force new login attempt
 # 		unset pass
 # 		LOGIN_WORKED=0
@@ -337,15 +337,15 @@ echo
 # } # post_url
 
 # echo
-# echo -e "quick_ots_install.sh [${LINENO}]  \t Attempting login..."
+# echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Attempting login..."
 # do_login https://cdcvs.fnal.gov/redmine
 
 # if [ $LOGIN_WORKED == 0 ]; then
-# 	echo -e "quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
+# 	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Check your Fermilab Services name and password!"
 # 	exit 1
 # fi
 
-# echo -e "quick_ots_install.sh [${LINENO}]  \t Login successful."
+# echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Login successful."
 
 
 ####################################### end redmine login code
@@ -359,12 +359,12 @@ FOR_USER=$(stat -c "%U" $INSTALL_DIR)
 FOR_GROUP=$(stat -c "%G" $INSTALL_DIR)
 
 echo
-echo -e "quick_ots_install.sh [${LINENO}]  \t Identified user '$USER' installing ots with permissions for group:$FOR_GROUP and user:$FOR_USER"
-echo -e "quick_ots_install.sh [${LINENO}]  \t (note: target user is set based on the owner of $INSTALL_DIR)"
-echo -e "quick_ots_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Identified user '$USER' installing ots with permissions for group:$FOR_GROUP and user:$FOR_USER"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t (note: target user is set based on the owner of $INSTALL_DIR)"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  "
 
-echo -e "quick_ots_install.sh [${LINENO}]  \t The installation will be at $INSTALL_DIR/ots"
-echo -e "quick_ots_install.sh [${LINENO}]  \t If there currently is a $INSTALL_DIR/ots directory it will be moved to $INSTALL_DIR/oldOts"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t The installation will be at $INSTALL_DIR/ots"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t If there currently is a $INSTALL_DIR/ots directory it will be moved to $INSTALL_DIR/oldOts"
 echo
 
 printf "Are you sure you would like to proceed with the install (y/n): "
@@ -372,9 +372,9 @@ read DO_INSTALL
 
 echo
 if [ $DO_INSTALL == "y" ]; then
-	echo -e "quick_ots_install.sh [${LINENO}]  \t Proceeding with ots install..."
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Proceeding with ots install..."
 else
-	echo -e "quick_ots_install.sh [${LINENO}]  \t User chose not to proceed with ots install."
+	echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t User chose not to proceed with ots install."
 	exit
 fi
 
@@ -437,7 +437,7 @@ for p in ${REPO_DIR[@]}; do
 
 			bp=$(basename $p)
 			subfolder=${bp//-/_}
-			echo -e "UpdateOTS.sh [${LINENO}]  \t Repo directory found as: $bp $subfolder"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh [${LINENO}]  \t Repo directory found as: $bp $subfolder"
 
 			cd $p
 			git checkout . # fix repo by checking out missing folders
@@ -462,7 +462,7 @@ mrb uc
 source setup_ots.sh
 mz || exit 1
 
-echo -e "quick_ots_install.sh [${LINENO}]  \t Finished compiling attempt, now updating user data and databases..."
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Finished compiling attempt, now updating user data and databases..."
 
 UpdateOTS.sh --tables #update tables and get reset_ots_tutorial.sh
 
@@ -489,21 +489,21 @@ unset SKIP_TUTORIAL_LAUNCH
 unset KDIALOG_ALWAYS_YES
 UpdateOTS.sh --tables
 
-echo -e "quick_ots_install.sh [${LINENO}]  \t =================="
-echo -e "quick_ots_install.sh [${LINENO}]  \t quick_ots_install script done!"
-echo -e "quick_ots_install.sh [${LINENO}]  \t"
-echo -e "quick_ots_install.sh [${LINENO}]  \t Now and Next time..."
-echo -e "quick_ots_install.sh [${LINENO}]  \t            cd ${INSTALL_DIR}/ots "
-echo -e "quick_ots_install.sh [${LINENO}]  \t            source setup_ots.sh            ### to setup ots"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            mb                             ### for incremental build"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            mz                             ### for clean build"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            UpdateOTS.sh                   ### to see update options"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            ./reset_ots_tutorial.sh --list ###	to see tutorial options"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            ots -w                         ### to run ots in wiz(safe) mode"
-echo -e "quick_ots_install.sh [${LINENO}]  \t            ots                            ### to run ots in normal mode"
-echo -e "quick_ots_install.sh [${LINENO}]  \t"
-echo -e "quick_ots_install.sh [${LINENO}]  \t *******************************"
-echo -e "quick_ots_install.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t =================="
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t quick_ots_install script done!"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Now and Next time..."
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            cd ${INSTALL_DIR}/ots "
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            source setup_ots.sh            ### to setup ots"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            mb                             ### for incremental build"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            mz                             ### for clean build"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            UpdateOTS.sh                   ### to see update options"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            ./reset_ots_tutorial.sh --list ###	to see tutorial options"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            ots -w                         ### to run ots in wiz(safe) mode"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t            ots                            ### to run ots in normal mode"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t *******************************"
 echo
 echo
 
@@ -515,7 +515,7 @@ fi
 
 
 #cleanup any remaining credentials
-echo -e "quick_ots_install.sh [${LINENO}]  \t Cleaning up...";
+echo -e "$(date +%d%b%y.%T) quick_ots_install.sh [${LINENO}]  \t Cleaning up...";
 rm -f /tmp/postdata$$ /tmp/at_p$$ $REDMINE_LOGIN_COOKIEF $REDMINE_LOGIN_LISTF*; unset SKIP_REDMINE_LOGIN >/dev/null 2>&1
 
 #remove self so users do not install twice!

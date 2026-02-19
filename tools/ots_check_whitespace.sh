@@ -1,64 +1,77 @@
-  #!/bin/bash
-  # Use results to find extra white-space
-  #   ...then in VS code, for example, find with .* regular expressions '[ \t]+$' and replace with empty ''
+#!/bin/bash
+# Use results to find extra white-space
+#   ...then in VS code, for example, find with .* regular expressions '[ \t]+$' and replace with empty ''
 
-  excluded_dirs="" #could space-separate excluded directories
-  exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
+# Developer note: ots_git_format_apply.sh parses the stdout result from this script execution, so do not do leading printout decoratation
+#  File difference callouts have to be first in the printout!
 
-  for dir in $excluded_dirs;do
-    if [ -d $dir ]; then
-      exclude_regex="${exclude_regex}|$dir"
-    fi
-  done
-  exclude_regex="(${exclude_regex}))"
-  echo "Excluding files from checks via ${exclude_regex}"
+# Prevent the script from being sourced
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    echo "This script must be executed and not sourced!" >&2
+    exit 1
+fi
 
-  against=0
-  if [ "x$against" == "x" ] || [ "x$against" == "x0" ]; then
-      against=$(git hash-object -t tree /dev/null)
-  fi
-  echo "Checking for whitespace differences introduced since commit $against"
+excluded_dirs="" #could space-separate excluded directories
+exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
 
-  # Cross platform projects tend to avoid non-ASCII filenames; prevent
-  # them from being added to the repository. We exploit the fact that the
-  # printable range starts at the space character and ends with tilde.
-  badchar=$(git diff --cached --name-only --diff-filter=A  $against | grep -vE "${exclude_regex}" |   LC_ALL=C tr -d 'A-Za-z0-9/\n_.@+-' | wc -c)
-  if [ $badchar != 0 ]
-  then
-      echo "Check failed: cannot add a file name with non-ASCII or blank char."
-      exit 1
-  fi
+for dir in $excluded_dirs;do
+if [ -d $dir ]; then
+	exclude_regex="${exclude_regex}|$dir"
+fi
+done
+exclude_regex="(${exclude_regex}))"
+echo "Excluding files from checks via ${exclude_regex}"
+
+against=0
+if [ "x$against" == "x" ] || [ "x$against" == "x0" ]; then
+	against=$(git hash-object -t tree /dev/null)
+fi
+echo "Checking for whitespace differences introduced since commit $against"
+
+# Cross platform projects tend to avoid non-ASCII filenames; prevent
+# them from being added to the repository. We exploit the fact that the
+# printable range starts at the space character and ends with tilde.
+badchar=$(git diff --cached --name-only --diff-filter=A  $against | grep -vE "${exclude_regex}" |   LC_ALL=C tr -d 'A-Za-z0-9/\n_.@+-' | wc -c)
+if [ $badchar != 0 ]
+then
+	echo "Check failed: cannot add a file name with non-ASCII or blank char."
+	exit 1
+fi
 
 
-  names=$( git diff --cached --name-only --diff-filter=AM  $against | grep -vE "${exclude_regex}" )
+names=$( git diff --cached --name-only --diff-filter=AM  $against | grep -vE "${exclude_regex}" )
 
-  rc=0
-  geomReg1=".*/geom[^/]*\.txt$"
-  geomReg2="Mu2eG4/geom/.*\.txt$"
-  for name in $names
-  do
-      #echo "Checking whitespace for $name"
-      bname=$( basename $name )
-      ext=$(echo $bname | awk -F. '{if(NF==1) print ""; else print $NF};' )
-      if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl" \
-            || "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc" \
-            || "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"  \
-            || "$bname" == "SConscript"  \
-            || "$name" =~ $geomReg1 || "$name" =~ $geomReg2 ]]; then
+rc=0
+geomReg1=".*/geom[^/]*\.txt$"
+geomReg2="Mu2eG4/geom/.*\.txt$"
+for name in $names
+do
+	#echo "Checking whitespace for $name"
+	bname=$( basename $name )
+	ext=$(echo $bname | awk -F. '{if(NF==1) print ""; else print $NF};' )
+	if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl" \
+		|| "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc" \
+		|| "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"  \
+		|| "$bname" == "SConscript"  \
+		|| "$name" == *"tools/"*  \
+		|| "$name" == *"test/"*  \
+		|| "$name" =~ $geomReg1 || "$name" =~ $geomReg2 ]]; then
 
-          # check whitespace and return non-zero if not allowed
+		# check whitespace and return non-zero if not allowed
 
-          git diff-index --check --cached $against $name
-          [ $? -ne 0 ] && rc=1
+		git diff-index --check --cached $against $name
+		[ $? -ne 0 ] && rc=1
 
-          if [[ -e "$name" && $(tail -c1 "$name" | wc -l) -eq 0 ]]; then
-              echo "Commit check failed: $name does not have a terminal newline"
-              rc=1
-          fi
-      fi
-  done
+		if [[ -e "$name" && $(tail -c1 "$name" | wc -l) -eq 0 ]]; then
+			echo "$name: does not have a terminal newline"
+			rc=1
+		fi
+	fi
+done
 
-  if [ $rc -ne 0 ] ; then
-      echo "Github CI detected format errors!"
-  fi
+if [ $rc -ne 0 ] ; then
+	echo "White-space check detected excess whitespace!"
+else 
+	echo "White-space check found no excess whitespace."
+fi
 #   exit $rc

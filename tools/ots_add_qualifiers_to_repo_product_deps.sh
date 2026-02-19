@@ -11,10 +11,10 @@ ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Note: for wildcard se
 #
 
 
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ~~ ots_add_qualifiers_to_repo_product_deps ~~ "
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ~~ ots_add_qualifiers_to_repo_product_deps ~~ "
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
 
 #Steps:
 #	1. get target repo folders and names
@@ -22,33 +22,33 @@ echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
 repo=$1
 QUALS=$2
 
-#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  0=$0 1=$1 2=$2 3=$3"
+#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  0=$0 1=$1 2=$2 3=$3"
 
 IFS=':' read -r -a QUAL_PIECES <<< "$QUALS"
 QUAL_ARR_COUNT=(${#QUAL_PIECES[@]})
-#echo -e "ots_get_and_fix_repo.sh [${LINENO}]  \t\t QUAL_ARR_COUNT=${QUAL_ARR_COUNT}"
+#echo -e "$(date +%d%b%y.%T) ots_get_and_fix_repo.sh [${LINENO}]  \t\t QUAL_ARR_COUNT=${QUAL_ARR_COUNT}"
 
 if [[ "x$repo" == "x" || "x$QUALS" == "x" || $QUAL_ARR_COUNT != 3 ]]; then
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Note: this script should be sourced."
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t User did not input a valid repository name or search string (must be in single quotes) or qualifiers (must be 3 parts, e.g. e19:s94:prof). Exiting."
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t USAGE:"
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t $USAGE"
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Note: this script should be sourced."
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t User did not input a valid repository name or search string (must be in single quotes) or qualifiers (must be 3 parts, e.g. e19:s94:prof). Exiting."
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t USAGE:"
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t $USAGE"
 	return #for sourcing
 	exit #for executing
 fi
 
 FIRST_CHAR=${QUAL_PIECES[0]:0:1}
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t FIRST_CHAR=${FIRST_CHAR}"
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t FIRST_CHAR=${FIRST_CHAR}"
 
 if [[ "$FIRST_CHAR" != "e" ]]; then
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Note: this script should be sourced."
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t User did not input a valid repository name or search string (must be in single quotes) or qualifiers (must be 3 parts, e.g. e19:s94:prof). Exiting."
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t USAGE:"
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t $USAGE"
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Note: this script should be sourced."
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t User did not input a valid repository name or search string (must be in single quotes) or qualifiers (must be 3 parts, e.g. e19:s94:prof). Exiting."
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t USAGE:"
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t $USAGE"
 	return #for sourcing
 	exit #for executing
 fi
@@ -58,10 +58,10 @@ fi
 # function to display otsdaq versions and qualifiers
 function fixTargetRepos
 {
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Adding new qualifiers ${QUALS} to ${REPO_COUNT} target repo(s)!"
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t Adding new qualifiers ${QUALS} to ${REPO_COUNT} target repo(s)!"
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
 
 	#fix all REPO_DIR
 
@@ -71,7 +71,7 @@ function fixTargetRepos
 
 				bp=$(basename $p)
 
-				echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ================== Repo directory to fix found as: $MRB_SOURCE/$bp"
+				echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ================== Repo directory to fix found as: $MRB_SOURCE/$bp"
 
 				cd $p
 
@@ -84,13 +84,13 @@ function fixTargetRepos
 				NUM_OF_LINES=$(wc -l ups/product_deps)
 				IFS=' ' read -r -a NUM_OF_LINES <<< "${NUM_OF_LINES}"
 				NUM_OF_LINES=${NUM_OF_LINES[0]}
-				echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t NUM_OF_LINES = $NUM_OF_LINES"
+				echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t NUM_OF_LINES = $NUM_OF_LINES"
 
 				QUAL_START_LINE="$(cat ups/product_deps | grep -n qualifier\ )"
 				IFS=':' read -r -a QUAL_START_LINE <<< "${QUAL_START_LINE}"
 				QUAL_START_LINE=${QUAL_START_LINE[0]}
 				QUAL_START_LINE=$(( $QUAL_START_LINE + 1 ))
-				echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t QUAL_START_LINE = $QUAL_START_LINE"
+				echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t QUAL_START_LINE = $QUAL_START_LINE"
 
 				#clear tmp file
 				TMP_OUT_FILE="ups/product_deps.tmp"
@@ -104,20 +104,20 @@ function fixTargetRepos
 
 					if [ $i == $QUAL_START_LINE ]; then
 						echo
-						#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t line = $line"
+						#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t line = $line"
 						IFS=' ' read -r -a LINE_ARR <<< "$line"
 
 						NEW_QUAL_LINE="" #init to blank and build it
 
 						for line_arr_piece in ${LINE_ARR[@]}; do
-							#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t line_arr_piece = $line_arr_piece"
+							#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t line_arr_piece = $line_arr_piece"
 
 							IFS=':' read -r -a LINE_QUAL_ARR <<< "$line_arr_piece"
 							LINE_QUAL_ARR_COUNT=(${#LINE_QUAL_ARR[@]})
-							#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t LINE_QUAL_ARR=${LINE_QUAL_ARR}"
+							#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t LINE_QUAL_ARR=${LINE_QUAL_ARR}"
 
 							FIRST_CHAR=${LINE_QUAL_ARR:0:1}
-							#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t FIRST_CHAR=${FIRST_CHAR}"
+							#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t\t FIRST_CHAR=${FIRST_CHAR}"
 
 							if [[ $LINE_QUAL_ARR_COUNT == 2 && "${LINE_QUAL_ARR[0]:0:1}" == "e" ]]; then
 								NEW_QUAL_LINE="${NEW_QUAL_LINE}${QUAL_PIECES[0]}:${QUAL_PIECES[2]}\t\t"
@@ -133,7 +133,7 @@ function fixTargetRepos
 
 						done
 
-						#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t NEW_QUAL_LINE=${NEW_QUAL_LINE}"
+						#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t NEW_QUAL_LINE=${NEW_QUAL_LINE}"
 						echo -e "$NEW_QUAL_LINE" >> $TMP_OUT_FILE  #-e to prevent whitespace changes
 					fi
 					echo -e "$line" >> $TMP_OUT_FILE  #-e to prevent whitespace changes
@@ -150,22 +150,22 @@ function fixTargetRepos
 		fi
 	done
 
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ================== Done fixing target repo(s)."
-	echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ================== Done fixing target repo(s)."
+	echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  "
 } #end fixTargetRepos
 #######################################################
 
 #if repo points to an existing folder, then no checkout needed
 
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t repo search = ${repo}"
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t repo search = ${repo}"
 REPO_DIR="$(find $MRB_SOURCE -maxdepth 1 -iname "${repo}")"
 if [ -z "${REPO_DIR}" ]; then #check empty, because empty was showing up as 1 for blank line count
 	REPO_COUNT=0
 else
 	REPO_COUNT=(${#REPO_DIR[@]})
 fi
-#echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t REPO_COUNT=$REPO_COUNT"
+#echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t REPO_COUNT=$REPO_COUNT"
 
 repoProject=$2
 if [ "x$repoProject" == "x" ]; then
@@ -176,7 +176,7 @@ fi
 
 fixTargetRepos #function call
 
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t =================="
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ots_add_qualifiers_to_repo_product_deps script done!"
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t *******************************"
-echo -e "ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t =================="
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t ots_add_qualifiers_to_repo_product_deps script done!"
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) ots_add_qualifiers_to_repo_product_deps.sh [${LINENO}]  \t *******************************"
