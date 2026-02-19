@@ -83,13 +83,13 @@ fi
 if [[ "x${OTSDAQ_DIR}" == "x" ]]; then
 	spack cd -i otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd -
+	cd
 fi
 #try one more time for otsdaq in srcs/, if did not find spack dir
 if [[ "x${OTSDAQ_DIR}" == "x${PWD}" ]]; then
 	cd srcs/otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd -
+	cd
 fi
 
 #############################
