@@ -601,7 +601,7 @@ fi
 if [ "$1"  == "--develop" ]; then
 	ALL_REPOS=1
 	DEVELOP_ONLY=1
-	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout devleop in all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout develop in all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--main" ]; then
 	ALL_REPOS=1
