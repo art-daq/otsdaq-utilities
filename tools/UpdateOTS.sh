@@ -1,4 +1,10 @@
 #!/bin/bash
+# Allowed branches for specific repositories
+declare -A ALLOWED_BRANCHES
+# Example: ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
+ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
+ALLOWED_BRANCHES["otsdaq_demo_data_repo"]="first_demo"
+# Add more repo/branch pairs as needed
 #
 # This script is expected to be in otsdaq utilities repository in a specific directory
 # but it can be executed from any path (do not source it, execute with ./ )
@@ -17,6 +23,7 @@
 CURRENT_AWESOME_BASE=$PWD
 CHECKIN_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_pull.log
 UPDATE_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_push.log
+
 
 if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
 
@@ -361,6 +368,21 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	WARN_ONLY=1
 	echo -e  "\n" >&2 #take stderr for warn result
 
+
+	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
+	# A colon in the filesystem name indicates a remote mount (like NFS)
+	IS_NFS_MOUNTED=false
+	# Skip the header line and check each filesystem entry
+	while IFS= read -r line; do
+		# Extract the filesystem column (first field) and check if it contains a colon
+		filesystem=$(echo "$line" | awk '{print $1}')
+		if [[ "$filesystem" == *:* ]]; then
+			IS_NFS_MOUNTED=true
+			break
+		fi
+	done < <(df -h | grep /home)
+
+
 	#scan for top-level git repos and check those
 	scan_dir="${OTS_SOURCE}/../"
 
@@ -380,22 +402,28 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			fi
 
 			cd $repo_dir
+			repo_name=$(basename "$repo_dir")
+			allowed_branch="${ALLOWED_BRANCHES[$repo_name]}"
 			if ! git diff --quiet || ! git diff --cached --quiet; then
-				echo -e  " ===|>  WARNING!!! Found uncommitted changes in repository ${repo_dir}" >&2 #take stderr for warn result
+				echo -e  " ===|>  WARNING!!! Found * uncommitted * changes in repository ${repo_dir}" >&2 #take stderr for warn result
 			# else
 			# 	echo "Working tree is clean."
 			fi
 
-			#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-			if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
-				echo -e "UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
-			else
-				#find unmerged branches
-				branch="$(git rev-parse --abbrev-ref HEAD)"
-				if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
-					echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
-				# else
-				# 	echo "You are on main or develop"
+			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
+				#skip centrally managed (e.g., spack and fermi-spack-tools) repos
+				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+					echo -e "UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
+				else
+					#find unmerged branches
+					branch="$(git rev-parse --abbrev-ref HEAD)"
+					if [ "$branch" != "main" ] && [ "$branch" != "develop" ] && [ "$branch" != "HEAD" ]; then
+						if [ -z "$allowed_branch" ] || [ "$allowed_branch" != "$branch" ]; then
+							echo -e  " ===|>  WARNING!!! Found unmerged BRANCH in repository ${repo_dir} ==> ${branch}" >&2 #take stderr for warn result
+						fi
+					# else
+					# 	echo "You are on main or develop"
+					fi
 				fi
 			fi
 
@@ -404,10 +432,20 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				<(git branch --format='%(refname:short)' | grep -v '^(' | sort) \
 				<(git branch -r --format='%(refname:short)' | sed 's|origin/||' | sort) \
 				| paste -sd', ' -)
+			# Warn about local branches not on origin, but ignore the configured allowed branch (if any)
 			if [ -n "$missing" ]; then
-				echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${missing}" >&2 #take stderr for warn result
-			# else
-				# echo "All local branches are represented on origin."
+				if [ -n "$allowed_branch" ]; then
+					filtered_missing=$(
+						printf '%s\n' "$missing" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -Fxv "$allowed_branch" | paste -sd', ' -
+					)
+				else
+					filtered_missing="$missing"
+				fi
+				if [ -n "$filtered_missing" ]; then
+					echo -e  " ===|>  WARNING!!! Found local branches not represented on ORIGIN in repository ${repo_dir} ==> ${filtered_missing}" >&2 #take stderr for warn result
+				# else
+					# echo "All local branches are represented on origin (ignoring allowed branch)."
+				fi
 			fi
 
 			# find branches with unpushed commits
@@ -431,8 +469,21 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				done | paste -sd', ' -
 			)
 
-			if [ -n "$unpushed" ]; then
+			# Only warn if unpushed commits exist and this repo doesn't have allowed branches configured
+			if [ -n "$unpushed" ] && [ -z "$allowed_branch" ]; then
 				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
+			fi
+
+			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
+				for stash in $(git stash list | cut -d: -f1); do
+					if ! git diff --quiet "$stash"^1 "$stash"; then
+						if declare -F ots_stash_diff > /dev/null; then
+							echo -e " ===|>  WARNING!!! Found stashed code in repository ${repo_dir} --> ots_stash_diff ${stash}" >&2
+						else
+							echo -e " ===|>  WARNING!!! Found stashed code in repository ${repo_dir} --> git diff ${stash} stash@{0}^1 ... or drop ${stash}" >&2
+						fi
+					fi
+				done
 			fi
 
 			#done checking repo, return to previous directory
@@ -446,22 +497,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	#done with warning on repos
 	#now warn on tables
 
-	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
-    # A colon in the filesystem name indicates a remote mount (like NFS)
-
-	# Detect if we are on a host with NFS mounted (in this case, TableInfo manipulations may be too slow, so skip!)
-	# ... by checking for colon in Filesystem column of df -h | grep home
-	# A colon in the filesystem name indicates a remote mount (like NFS)
-	IS_NFS_MOUNTED=false
-	# Skip the header line and check each filesystem entry
-	while IFS= read -r line; do
-		# Extract the filesystem column (first field) and check if it contains a colon
-		filesystem=$(echo "$line" | awk '{print $1}')
-		if [[ "$filesystem" == *:* ]]; then
-			IS_NFS_MOUNTED=true
-			break
-		fi
-	done < <(df -h | grep /home)
+	# If we are on a host with NFS mounted, in this case, TableInfo manipulations may be too slow, so skip!)
 
 	# Only run table warning code on NFS hosts
 	if [ "$IS_NFS_MOUNTED" = true ]; then
@@ -489,7 +525,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
     fi
 
 
-	echo -e "\nUpdateOTS.sh:${LINENO}  \t change warnings complete *******************************" >&2
+	echo -e "\nUpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
 	exit
 else #end warn handling
 	echo -e "UpdateOTS.sh:${LINENO}  "
