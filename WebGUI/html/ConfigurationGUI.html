@@ -657,6 +657,8 @@
 		var _tableUploadStr = "";
 		var _doCopyAndPaintIncrementally = false;
 		var _copyAndPaintLastCellKey = "";
+		const _CURSOR_PAINTER_SOURCE = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
+		const _CURSOR_SELECTOR_SOURCE = "crosshair";
 
 		var _displayTargetEl = 0;
 
@@ -7630,16 +7632,13 @@
 		function togglePaintCellValue(doIncrement) {
 			Debug.log("togglePaintCellValue", document.body.style.cursor);
 
-			var painterSource = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
-			var selectorSource = "crosshair";
-
 			var vpel = document.getElementById("valuePainterButton");
 			var ivpel = document.getElementById("valuePainterButtonInc");
 
 			if (!vpel || !ivpel) return;
 
-			if (document.body.style.cursor == painterSource ||
-				document.body.style.cursor == selectorSource) {
+			if (document.body.style.cursor == _CURSOR_PAINTER_SOURCE ||
+				document.body.style.cursor == _CURSOR_SELECTOR_SOURCE) {
 				//disable paint mode
 				document.body.style.cursor = "default";
 				vpel.value = "Copy and Paint a Cell";
@@ -7660,7 +7659,7 @@
 				vpel.title = "Click to cancel cell value selection mode.";
 				ivpel.value = "Cancel Cell Value Selection";
 				ivpel.title = "Click to cancel cell value selection mode.";
-				document.body.style.cursor = selectorSource;
+				document.body.style.cursor = _CURSOR_SELECTOR_SOURCE;
 				_doCopyAndPaintIncrementally = doIncrement;
 				// Add paint mode class to table cells to override cursor
 				var tel = document.getElementById("SubSystemTable");
@@ -9388,11 +9387,9 @@
 				return;
 			}
 
-			var painterSource = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
-			var selectorSource = "crosshair";
 
 			if (paintMode) {
-				if (event.buttons && document.body.style.cursor == painterSource) {
+				if (event.buttons && document.body.style.cursor == _CURSOR_PAINTER_SOURCE) {
 					Debug.log(r, c, "paint mode", event.buttons);
 					var tableEl = document.getElementById("SubSystemTable");
 					var rows = tableEl.getElementsByTagName("tr");
@@ -9449,13 +9446,13 @@
 				}
 				return;
 			}
-			else if (document.body.style.cursor == selectorSource) {
+			else if (document.body.style.cursor == _CURSOR_SELECTOR_SOURCE) {
 				//start painting mode
 				var vpel = document.getElementById("valuePainterButton");
 				var ivpel = document.getElementById("valuePainterButtonInc");
 				if (vpel && ivpel) {
 					_editingCellElOldValue = el.textContent;
-					document.body.style.cursor = painterSource;
+					document.body.style.cursor = _CURSOR_PAINTER_SOURCE;
 					vpel.value = "End Cell Value Painting";
 					vpel.title = "Click to end cell value painting mode.";
 					ivpel.value = "End Cell Value Painting";
@@ -9470,7 +9467,7 @@
 				tel.className = "noUserSelect";
 				return;
 			}
-			else if (document.body.style.cursor == painterSource) {
+			else if (document.body.style.cursor == _CURSOR_PAINTER_SOURCE) {
 				//do painting
 				Debug.log("Painting value", _editingCellElOldValue);
 				var tableEl = document.getElementById("SubSystemTable");
@@ -10456,10 +10453,8 @@
 			}
 			else if (e.key == "Escape") {
 				//check if paint mode is active and cancel it
-				var painterSource = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
-				var selectorSource = "crosshair";
-				if (document.body.style.cursor == painterSource ||
-					document.body.style.cursor == selectorSource) {
+				if (document.body.style.cursor == _CURSOR_PAINTER_SOURCE ||
+					document.body.style.cursor == _CURSOR_SELECTOR_SOURCE) {
 					Debug.log("Cancelling paint mode");
 					togglePaintCellValue();
 					e.stopImmediatePropagation();
