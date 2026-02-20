@@ -32,7 +32,7 @@
 		//setupSpecificTableGroup(groupName,groupKey,backLinkStr,anchorTarget)	//setup editor for specific table group
 		//specificGroupRequestHandler(req,param,errStr)
 
-		//setupSpecificTable(tableName,version,backLinkStr,allowIllegalColumns)			//setup editor for specific table
+		//setupSpecificTable(tableName,version,backLinkStr,allowIllegalColumns,refreshVersions)			//setup editor for specific table
 		//setupSpecificTableInRight(tableName,version)
 		//specificTableRequestHandler(req,backLinkStr)
 		//toggleTableDetails(setVal)
@@ -1253,7 +1253,10 @@
 		//==============================================================================
 		//setupSpecificTable ~
 		//	undefined version gives latest
-		function setupSpecificTable(tableName, version, backLinkStr, allowIllegalColumns) {
+		function setupSpecificTable(tableName, version, backLinkStr, allowIllegalColumns, refreshVersions) {
+			
+			Debug.logv({refreshVersions});
+
 			var el;
 			if (_displayTargetEl && backLinkStr == "special display target") {
 				el = _displayTargetEl;
@@ -1270,6 +1273,7 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=getSpecificTable" +
 				"&dataOffset=0&chunkSize=" + _MAX_CHUNK_SIZE +
 				(allowIllegalColumns ? "&allowIllegalColumns=1" : "") +
+				(refreshVersions ? "&refresh=1" : "") + //force hard refresh of all table versions from db!
 				"&tableName=" + tableName +
 				v,
 				"",
@@ -3309,11 +3313,13 @@
 			}
 			else backLinkStr = "";
 
-			var refreshLinkStr = "setupSpecificTable(\"" +
-				tableName + "\",\"" +
-				version + "\",\"" + backLinkStr + "\");";
-			str += "<a href='#' onclick='" + refreshLinkStr +
-				"; return false;'>Refresh</a>";
+			{	//refresh table (and table versions!)
+				var refreshLinkStr = "setupSpecificTable(\"" +
+					tableName + "\",\"" +
+					version + "\",\"" + backLinkStr + "\", 0 , 1);"; //allowIllegalColumns, refreshVersions
+				str += "<a href='#' onclick='" + refreshLinkStr +
+					"; return false;'>Refresh</a>";
+			}
 
 			{
 				//clear cached versions
@@ -15753,6 +15759,7 @@
 			if (clearTemporary)
 				clearLinkStr = "DesktopContent.XMLHttpRequest(" +
 					"\"Request?RequestType=clearTableTemporaryVersions" +
+					"&refresh=1" + //force hard refresh of all table versions from db!
 					"&tableName=" + _currentTableName + "\",\"\"," +
 					" function(req) { " +
 					refreshLinkStr +
@@ -15760,7 +15767,7 @@
 					");";
 			else
 				clearLinkStr = "DesktopContent.XMLHttpRequest(" +
-					"\"Request?RequestType=clearTableCachedVersions" +
+					"\"Request?RequestType=clearTableCachedVersions" +					
 					"&tableName=" + _currentTableName + "\",\"\"," +
 					" function(req) { " +
 					refreshLinkStr +
