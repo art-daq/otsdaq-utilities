@@ -15,34 +15,34 @@ excluded_dirs="WebGUI/js/js_lib WebGUI/js/visualizers_lib" #could space-separate
 exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
 
 #copied from otdsaq-utilities Check Git whitespace / Check Git whitespace on 20-Feb-2026
-for dir in \$excluded_dirs;do
-if [ -d \$dir ] || [ -f \$dir ]; then
-	exclude_regex="\${exclude_regex}|\$dir"
+for dir in $excluded_dirs;do
+if [ -d $dir ] || [ -f $dir ]; then
+	exclude_regex="${exclude_regex}|$dir"
 fi
 done
 if [ -f .git_whitespace_exclude ];then
 while read entry;do
-	if [ "x\$entry" == "x" ]; then continue; fi
-	if [ -d \$entry ] || [ -f \$entry ]; then
-	exclude_regex="\${exclude_regex}|\$entry"
+	if [ "x$entry" == "x" ]; then continue; fi
+	if [ -d $entry ] || [ -f $entry ]; then
+	exclude_regex="${exclude_regex}|$entry"
 	fi
 done < .git_whitespace_exclude
 fi
-exclude_regex="\${exclude_regex})"
-echo "Excluding files from checks via \${exclude_regex}"
+exclude_regex="${exclude_regex})"
+echo "Excluding files from checks via ${exclude_regex}"
 
-against=ab8055f50d452954d26e4e02ca60df40f98c9b8d
-if [ "x\$against" == "x" ] || [ "x\$against" == "x0" ]; then
-	against=\$(git hash-object -t tree /dev/null)
+against=0
+if [ "x$against" == "x" ] || [ "x$against" == "x0" ]; then
+	against=$(git hash-object -t tree /dev/null)
 fi
-echo "Checking for whitespace differences introduced since commit \$against"
+echo "Checking for whitespace differences introduced since commit $against"
 
 # Cross platform projects tend to avoid non-ASCII filenames; prevent
 # them from being added to the repository. We exploit the fact that the
 # printable range starts at the space character and ends with tilde.
-badchar=\$(git diff --cached --name-only --diff-filter=A  \$against | grep -vE "\${exclude_regex}" | \
+badchar=$(git diff --cached --name-only --diff-filter=A  $against | grep -vE "${exclude_regex}" | \
 LC_ALL=C tr -d 'A-Za-z0-9/\n_ .@+-' | wc -c)
-if [ \$badchar != 0 ]
+if [ $badchar != 0 ]
 then
 	echo "Check failed: cannot add a file name with non-ASCII or blank char."
 	exit 1
