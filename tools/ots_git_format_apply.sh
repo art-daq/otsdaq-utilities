@@ -20,9 +20,16 @@ if [[ "$answer" != "Y" && "$answer" != "y" ]]; then
 fi
 echo
 
-echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
-# clang-format -i `find . -type f -name *.cc -o -name *.c -o -name *.cpp -o -name *.cxx -o -name *.h -o -name *.hh -o -name *.hxx -o -name *.icc`
-echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Clang format rules applied."
+if command -v clang-format >/dev/null 2>&1; then
+	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
+	if ! clang-format -i `find . -type f -name *.cc -o -name *.c -o -name *.cpp -o -name *.cxx -o -name *.h -o -name *.hh -o -name *.hxx -o -name *.icc`; then
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
+		exit 1
+	fi
+	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Clang format rules applied."
+else
+	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t clang-format not found; skipping Clang formatting."
+fi
 
 GIT_TEST_MSG="WIP test white-space snapshot commit for white-space check $(date +%d%b%y.%T)"
 git_reset_before_msg() {
@@ -73,11 +80,12 @@ if [ -n "$whitespace_files" ]; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Files with whitespace issues:"
 	echo
 	# echo "$whitespace_files"
-	fileParam=""
+	fileParam=()
 	readarray -t files <<<"$whitespace_files"
 	for f in "${files[@]}"; do
+		[ -f "$f" ] || continue
 		echo "          $f"
-		fileParam="$fileParam $f" #append
+		fileParam+=("$f") #append
 	done
 	echo
 	echo
@@ -91,7 +99,7 @@ if [ -n "$whitespace_files" ]; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Doing whitespace cleanup..."
 	echo
 
-	ots_whitespace_cleanup.sh $fileParam
+	ots_whitespace_cleanup.sh "${fileParam[@]}"
 
 	echo
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Whitespace cleanup complete."

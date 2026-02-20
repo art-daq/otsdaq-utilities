@@ -84,4 +84,4 @@ if [ $rc -ne 0 ] ; then
 else
 	echo "White-space check found no excess whitespace."
 fi
-#   exit $rc
+exit $rc
