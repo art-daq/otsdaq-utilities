@@ -1823,7 +1823,7 @@
 			{
 				id = id.split('-')[1];
 				var actualTime = Math.floor(Date.now())/1000;
-				var xPollTime = 1000.; //PV poll time moltiplicator 
+				var xPollTime = 1000.; //PV poll time moltiplicator
 				var time2compare = pvTime*1. + parseFloat(xPollTime)*page_.widgets[id].pvList[pvName]/1000;
 				console.log(
 							  "thermometer date now: "
