@@ -11,7 +11,7 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 	exit 1
 fi
 
-excluded_dirs="" #could space-separate excluded directories
+excluded_dirs="WebGUI/js/js_lib WebGUI/js/visualizers_lib" #could space-separate excluded directories
 exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
 
 for dir in $excluded_dirs;do
@@ -52,6 +52,7 @@ do
 	if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl" \
 		|| "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc" \
 		|| "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"  \
+		|| "$ext" == "html" || "$ext" == "htm" || "$ext" == "css" || "$ext" == "js"
 		|| "$bname" == "SConscript"  \
 		|| "$name" == *"tools/"*  \
 		|| "$name" == *"test/"*  \
