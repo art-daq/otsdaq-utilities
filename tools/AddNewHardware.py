@@ -9,11 +9,11 @@
 import argparse
 import os #for isdir abspath dirname
 
-print
-print "***********************\n"
-print "Setting up and Installing...\n" + \
-    "Look for 'Success!' at end of print out.\n"
-print
+print()
+print("***********************\n")
+print("Setting up and Installing...\n" + \
+    "Look for 'Success!' at end of print out.\n")
+print()
 
 
 parser = argparse.ArgumentParser(description='Setup Firmware Component')
@@ -25,11 +25,11 @@ parser.add_argument('-n','--name',
 
 args = parser.parse_args()
 
-print
-print 'Arguments parsed...'
-print args
-print
-print
+print()
+print('Arguments parsed...')
+print(args)
+print()
+print()
 
 ########
 # at this point call is legal according to argparse
@@ -37,29 +37,29 @@ print
 scriptDir = os.path.dirname(os.path.abspath(__file__))
 
 
-print 'Script directory is:'
-print scriptDir
-print
+print('Script directory is:')
+print(scriptDir)
+print()
 
 dest = scriptDir + "/../hdl" #default destination path
 if (args.dest): #if option used, then use args.dest
     dest = args.dest
 
-print 'Destination directory is:'
-print  dest
-print
-print
+print('Destination directory is:')
+print(dest)
+print()
+print()
 
 #validate destination directory
 if ((not os.path.isdir(dest + "/"))):
-    print "Error!\n Check usage. "
+    print("Error!\n Check usage. ")
     parser.print_help()
-    print
-    print "****************"
+    print()
+    print("****************")
     exit("Error: Invalid destination path '" + (args.dest) + "')\n\n")
 
 
-print  'Copy files...'
+print('Copy files...')
 
 srcFile = scriptDir + "/../../otsdaq/otsdaq/DAQHardware/FrontEndHardwareTemplate.cc"
 os.system("cp " + srcFile + " " + args.dest + "/" + args.name + ".cc");
@@ -74,8 +74,8 @@ os.system("sed -i s/FrontEndHardwareTemplate/" + args.name + "/g " + \
 
 
 
-print
-print "***********************\n"
-print 'Success!'
-print
-print
+print()
+print("***********************\n")
+print('Success!')
+print()
+print()
