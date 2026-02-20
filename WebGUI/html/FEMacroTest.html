@@ -194,10 +194,10 @@
 			width: 650px;
 		}
 
-		.export-btns {
+		.copyOutput-button {
 			cursor: pointer;
 			float: right;
-			margin: -40px 5px -35px 15px;
+			margin: -20px -20px -35px 15px;
 			position: relative;
 			z-index: 10;
 		}
@@ -725,6 +725,8 @@
 			else
 				el = document.getElementById(
 					"macroResults-row-" + r + "-col-" + c);
+			
+			el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
 			el.innerHTML = str;
 
 			// if I am building a sequence I do not have to run
@@ -775,9 +777,11 @@
 			else
 				el = document.getElementById("macroResults-row-" + row + "-col-" + col);	// r is not defined
 
+			el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
+
 			var str = "";
 
-			str += "<div class='export-btns' onclick='copyOutput()'>" +
+			str += "<div class='copyOutput-button' onclick='copyOutput()'>" +
 				"<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png' alt='Copy Macro Output' title='Copy macro execution text output to clipboard.'>" +
 				"</div>";
 
@@ -793,6 +797,7 @@
 				Debug.err("Error while running FE Macro: " + errStr);
 				el.innerHTML = "<br><br><br>" +
 					str + "<br><br>Error while running FE Macro: " + errStr;
+				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				return;
 			}
 
@@ -810,6 +815,7 @@
 				str = str.substring(0, str.indexOf("waiting for response...") + 23);
 				str += "<br><br>Received response that FE macro is still running... " + "Progress <b>" + progress + " %</b> " + getDateString(new Date);
 				str += "<br>";
+				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				el.innerHTML = str;
 
 				window.setTimeout(function () {
@@ -841,6 +847,7 @@
 						"style": "overflow:auto; width:" +
 							verticalOutputDivSize_[0] + "px; height:" +
 							verticalOutputDivSize_[1] + "px; resize: both;" +
+							"white-space: nowrap" + // to keep line breaks where developer intended
 							"border-bottom: 1px solid lightgray;",	//without bottom-border, too hard to tell why output is cutoff at times
 					},
 					"" /*innerHTML*/,
@@ -2159,7 +2166,7 @@ Here is the json string received:
 
 			str += DesktopContent.htmlOpen("div", {
 				"id": "macroResults-row-" + r + "-col-" + c,
-				"class": "macroResults",
+				"class": "macroResults",				
 			}, "" /*innerHTML*/, true /*doCloseTag*/);
 
 
