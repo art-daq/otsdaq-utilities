@@ -3,6 +3,7 @@
 declare -A ALLOWED_BRANCHES
 # Example: ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
 ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
+ALLOWED_BRANCHES["mu2e-spack"]="artdaq/Spack0.28"
 ALLOWED_BRANCHES["otsdaq_demo_data_repo"]="first_demo"
 # Add more repo/branch pairs as needed
 #
@@ -25,45 +26,45 @@ CHECKIN_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_pull.log
 UPDATE_LOG_PATH=$CURRENT_AWESOME_BASE/.UpdateOTS_push.log
 
 
-if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
+if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--warnfast" && "$1" != "--share" && "$1" != "--develop" && "$1" != "--main" && "$1" != "--fetch" && "$1" != "--fetchcore" && "$1" != "--fetchall" && "$1" != "--pull" && "$1" != "--push" && "$1" != "--pullcore" && "$1" != "--pushcore" && "$1" != "--pullall" && "$1" != "--pushall" && "$1" != "--tables" ]]; then
 
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Usage: Parameter 1 is the operation and, for pushes, Parameter 2 is the comment for git commit"
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Note: git status will be logged here: $CHECKIN_LOG_PATH"
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Parameter 1 operations:"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --share               \t #will mark as shared (multi-owner) all repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --develop             \t #will checkout develop  repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --main                \t #will checkout main  repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --fetch               \t #will fetch otsdaq repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pull                \t #will pull  otsdaq user repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --push \"comment\"    \t #will push  otsdaq user repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --fetchcore           \t #will fetch otsdaq core repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pullcore            \t #will pull  otsdaq core repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pushcore \"comment\"\t #will push  otsdaq core repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --fetchall            \t #will fetch all    repositories in srcs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pullall             \t #will pull  all    repositories in srcs/ (i.e. not just otsdaq)."
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --pushall \"comment\" \t #will push  all    repositories in srcs/ (i.e. not just otsdaq)."
-	echo -e "UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables based on your table dependencies at \${USER_DATA}/ServiceData/CoreTableInfoNames.dat."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Usage: Parameter 1 is the operation and, for pushes, Parameter 2 is the comment for git commit"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Note: git status will be logged here: $CHECKIN_LOG_PATH"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Parameter 1 operations:"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --share               \t #will mark as shared (multi-owner) all repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --develop             \t #will checkout develop  repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --main                \t #will checkout main  repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --fetch               \t #will fetch otsdaq repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --pull                \t #will pull  otsdaq user repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --push \"comment\"    \t #will push  otsdaq user repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --fetchcore           \t #will fetch otsdaq core repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --pullcore            \t #will pull  otsdaq core repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --pushcore \"comment\"\t #will push  otsdaq core repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --fetchall            \t #will fetch all    repositories in srcs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --pullall             \t #will pull  all    repositories in srcs/ (i.e. not just otsdaq)."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --pushall \"comment\" \t #will push  all    repositories in srcs/ (i.e. not just otsdaq)."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t\t --tables              \t #will not pull or push; it will just update tables based on your table dependencies at \${USER_DATA}/ServiceData/CoreTableInfoNames.dat."
 	# Note: --warn is used by ots script to warn users that there are uncommitted changes in srcs/
 	# 		warn usage to display only stderr: UpdateOTS.sh --warn 2>&1 >/dev/null &
-	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
 
 
 	#copy tutorial launching scripts
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t updating tutorial launch scripts..."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t updating tutorial launch scripts..."
 	chmod 755 $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #make sure permissions allow deleting
 	chmod 755 $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #make sure permissions allow deleting
 	chmod 755 $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #make sure permissions allow deleting
 	timeout 1 rm $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
 	timeout 1 rm $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
 	timeout 1 rm $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
-	# echo -e "UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
 	#cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh
 	wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
 	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh #for safety, prevent accidental execution by users
@@ -71,7 +72,7 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--share" && "$1" != "--de
 	rm $OTS_SOURCE/../reset_ots_artdaq_tutorial.sh &>/dev/null 2>&1 #hide output
 	#now there is only one reset_tutorial script (that includes the artdaq tutorial), so cleanup old systems and do not download script
 
-	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
 
 	exit
 fi
@@ -79,10 +80,17 @@ fi
 # at this point, there must have been a valid option
 
 #OTSDAQ_DIR is not always defined in early AL9 usage
+STARTING_DIR=$(pwd)
 if [[ "x${OTSDAQ_DIR}" == "x" ]]; then
-	spack cd -i otsdaq
+	spack cd -i otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd -
+	cd "${STARTING_DIR}"
+fi
+#try one more time for otsdaq in srcs/, if did not find spack dir
+if [[ "x${OTSDAQ_DIR}" == "x${PWD}" ]]; then
+	cd srcs/otsdaq &>/dev/null
+	OTSDAQ_DIR=$(echo $PWD)
+	cd "${STARTING_DIR}"
 fi
 
 #############################
@@ -98,7 +106,7 @@ fi
 function updateTable
 {
 	line=$1
-	# echo -e "UpdateOTS.sh:${LINENO}  \t Updating table... $line"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating table... $line"
 
 
 	LOC_OTS_DIR=$OTSDAQ_DIR
@@ -108,17 +116,17 @@ function updateTable
 
 	# echo
 	# echo
-	# echo -e "UpdateOTS.sh:${LINENO}  \t line=$line"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t OTSDAQ_DIR=$LOC_OTS_DIR"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t OTS_SOURCE=$OTS_SOURCE"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t line=$line"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t OTSDAQ_DIR=$LOC_OTS_DIR"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t OTS_SOURCE=$OTS_SOURCE"
 	BACK_COUNT=$(echo $line | sed s/\\\.\\\./\\\n/g | grep -c .)
-	# echo -e "UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
 	BACK_COUNT=$((BACK_COUNT+1))
-	# echo -e "UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
 
 	SLASH_COUNT=$(echo $line | sed s/\\//\\\n/g | grep -c .)
 	SLASH_COUNT=$((SLASH_COUNT-1))
-	# echo -e "UpdateOTS.sh:${LINENO}  \t SLASH_COUNT=$SLASH_COUNT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t SLASH_COUNT=$SLASH_COUNT"
 
 
 	#steps:
@@ -134,7 +142,7 @@ function updateTable
 	elif [[ $BACK_COUNT > 3 ]]; then
 
 		repo_of_line=$(echo $line | cut -d '/' -f$BACK_COUNT)
-		# echo -e "UpdateOTS.sh:${LINENO}  \t repo_of_line=$repo_of_line"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t repo_of_line=$repo_of_line"
 
 		if [[ "${last_repo_of_line}" != "${repo_of_line}" ]]; then #need to search for repo install path
 			OTS_INSTALL_PATH=$(spack cd -i $repo_of_line >/dev/null 2>&1 && echo $PWD && cd - || echo "NOT FOUND");
@@ -144,14 +152,14 @@ function updateTable
 		OTS_SOURCE_PATH="$OTS_SOURCE/$repo_of_line/"
 		lineRepoSed=$(echo $repo_of_line | sed s/_/-/g) #need to convert repo names from _ to - for backward compatibility of .dat files
 		OTS_SOURCE_PATH_MOD="$OTS_SOURCE/$lineRepoSed/"
-		# echo -e "UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t BACK_COUNT=$BACK_COUNT"
 		INDEX_OF_CHAR_BACK=$(echo $line | grep -ob "/" | sed ''"$BACK_COUNT"'q;d' | cut -d ':' -f1)
-		# echo -e "UpdateOTS.sh:${LINENO}  \t INDEX_OF_CHAR_BACK=$INDEX_OF_CHAR_BACK"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t INDEX_OF_CHAR_BACK=$INDEX_OF_CHAR_BACK"
 		mod_line=$(echo ${line:$INDEX_OF_CHAR_BACK})
 	fi
 	# echo $OTS_INSTALL_PATH | sed s/__spack_path_placeholder__//g | sed s/\\\[padded-to-255-chars\\\]//g | sed s/\\\/tdaq-v......../\\\/tdaq-v_\ \ \ \\\//g
 	# echo $OTS_SOURCE_PATH | sed s/__spack_path_placeholder__//g | sed s/\\\[padded-to-255-chars\\\]//g | sed s/\\\/tdaq-v......../\\\/tdaq-v_\ \ \ \\\//g
-	# echo -e "UpdateOTS.sh:${LINENO}  \t DID_IT=$DID_IT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t DID_IT=$DID_IT"
 
 	DID_IT=0
 	DID_IT_SOURCE="Error: NOT FOUND"
@@ -159,27 +167,27 @@ function updateTable
 
 	if [[ "$OTS_INSTALL_PATH" != "NOT FOUND" ]]; then
 		cp $OTS_INSTALL_PATH/${mod_line}Info.xml $USER_DATA/TableInfo/ &>/dev/null && DID_IT=1 && DID_IT_SOURCE="Installed"
-		# echo -e "UpdateOTS.sh:${LINENO}  \t install DID_IT=$DID_IT"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t install DID_IT=$DID_IT"
 	fi
 
-	# echo -e "UpdateOTS.sh:${LINENO}  \t DID_IT=$DID_IT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t DID_IT=$DID_IT"
 	cp $OTS_SOURCE_PATH/${mod_line}Info.xml $USER_DATA/TableInfo/ &>/dev/null && DID_IT=1 && DID_IT_SOURCE="Source"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t source  DID_IT=$DID_IT"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t source  DID_IT=$DID_IT"
 
 
 	if [ $DID_IT == 0 ]; then #try modified path as last resort!
 		cp $OTS_SOURCE_PATH_MOD/${mod_line}Info.xml $USER_DATA/TableInfo/ &>/dev/null && DID_IT=1 && DID_IT_SOURCE="-Source"
-		# echo -e "UpdateOTS.sh:${LINENO}  \t modsource  DID_IT=$DID_IT"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t modsource  DID_IT=$DID_IT"
 	fi
 	if [[ $DID_IT == 0 && $BACK_COUNT > 4 ]]; then #try above srcs modified path as last resort!
 		cp $OTS_SOURCE/../${repo_of_line}/${mod_line}Info.xml $USER_DATA/TableInfo/ &>/dev/null && DID_IT=1 && DID_IT_SOURCE="..Source"
-		# echo -e "UpdateOTS.sh:${LINENO}  \t unmodsource  DID_IT=$DID_IT $OTS_SOURCE/../${repo_of_line}/${mod_line}Info.xml"
+		# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t unmodsource  DID_IT=$DID_IT $OTS_SOURCE/../${repo_of_line}/${mod_line}Info.xml"
 	fi
 
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t ============= from $DID_IT_SOURCE, Table Dependency = $repo_of_line/$mod_line"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ============= from $DID_IT_SOURCE, Table Dependency = $repo_of_line/$mod_line"
 	if [ $DID_IT == 0 ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t Error, table dependency copy failed! Could not find table source for ${line}"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Error, table dependency copy failed! Could not find table source for ${line}"
 	fi
 
 } #end updateTable()
@@ -189,7 +197,7 @@ function updateTable
 # function to update USER DATA configuration files and table definitions
 function updateUserData
 {
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating tables..."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating tables..."
 
 	LOC_OTS_DIR=$OTSDAQ_DIR
 	if [ ! -d $LOC_OTS_DIR/data-core ]; then
@@ -206,34 +214,34 @@ function updateUserData
 	fi
 
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating USER_DATA path ${USER_DATA}..."
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t     LOC_OTS_DIR=$LOC_OTS_DIR"
-	echo -e "UpdateOTS.sh:${LINENO}  \t     OTS_SOURCE=$OTS_SOURCE"
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Table info is updated based on the list in..."
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t \t ${USER_DATA}/ServiceData/CoreTableInfoNames.dat"
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t ... each line will be copied into user data relative to installed path LOC_OTS_DIR/data-core/TableInfo/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t ... 			       and then, if it exists, relative to source path OTS_SOURCE/otsdaq/data-core/TableInfo/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t If CoreTableInfoNames.dat doesn't exist the whole directory OTSDAQ_DIR/data-core/TableInfo/ will be copied!"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating USER_DATA path ${USER_DATA}..."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t     LOC_OTS_DIR=$LOC_OTS_DIR"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t     OTS_SOURCE=$OTS_SOURCE"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Table info is updated based on the list in..."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t \t ${USER_DATA}/ServiceData/CoreTableInfoNames.dat"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ... each line will be copied into user data relative to installed path LOC_OTS_DIR/data-core/TableInfo/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ... 			       and then, if it exists, relative to source path OTS_SOURCE/otsdaq/data-core/TableInfo/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t If CoreTableInfoNames.dat doesn't exist the whole directory OTSDAQ_DIR/data-core/TableInfo/ will be copied!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 	echo
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/TableInfo.xsd $USER_DATA/TableInfo/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/TableInfo.xsd $USER_DATA/TableInfo/"
 	mkdir -p $USER_DATA/TableInfo >/dev/null 2>&1 #make table directory in case of startup clean slate
 	cp $LOC_OTS_DIR/data-core/TableInfo/TableInfo.xsd $USER_DATA/TableInfo/
 
 	if [ -e "$USER_DATA/ServiceData/CoreTableInfoNames.dat" ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t $USER_DATA/ServiceData/CoreTableInfoNames.dat exists!"
-		echo -e "UpdateOTS.sh:${LINENO}  \t Loading updated info for core tables (relative paths and wildcards are allowed) from OTSDAQ_DIR/data-core/TableInfo/ ..."
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t $USER_DATA/ServiceData/CoreTableInfoNames.dat exists!"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Loading updated info for core tables (relative paths and wildcards are allowed) from OTSDAQ_DIR/data-core/TableInfo/ ..."
 		echo
 
 
@@ -246,7 +254,7 @@ function updateUserData
 		cat $USER_DATA/ServiceData/CoreTableInfoNames.dat
 		echo
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp -r $USER_DATA/TableInfo $USER_DATA/TableInfo.updateots.bk.<timestamp>"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp -r $USER_DATA/TableInfo $USER_DATA/TableInfo.updateots.bk.<timestamp>"
 		# rm -rf $USER_DATA/TableInfo.updateots.bk
 		cp -r $USER_DATA/TableInfo $USER_DATA/TableInfo.updateots.bk.$(date +"%Y%m%d_%H%M%S")
 
@@ -274,23 +282,23 @@ function updateUserData
 		fi
 
 	else
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp -r $USER_DATA/TableInfo $USER_DATA/TableInfo_update_bk"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp -r $USER_DATA/TableInfo $USER_DATA/TableInfo_update_bk"
 		rm -rf $USER_DATA/TableInfo_update_bk
 		cp -r $USER_DATA/TableInfo/ $USER_DATA/TableInfo_update_bk
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ARTDAQ/*Info.xml $USER_DATA/TableInfo/"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ARTDAQ/*Info.xml $USER_DATA/TableInfo/"
 		cp $LOC_OTS_DIR/data-core/TableInfo/ARTDAQ/*Info.xml $USER_DATA/TableInfo/ 		# undo c++ style comment for Eclipse viewing*/
 		cp $OTS_SOURCE/otsdaq/data-core/TableInfo/ARTDAQ/*Info.xml $USER_DATA/TableInfo/ &>/dev/null 		# undo c++ style comment for Eclipse viewing*/
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/BackboneGroup/*Info.xml $USER_DATA/TableInfo/"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/BackboneGroup/*Info.xml $USER_DATA/TableInfo/"
 		cp $LOC_OTS_DIR/data-core/TableInfo/BackboneGroup/*Info.xml $USER_DATA/TableInfo/			# undo c++ style comment for Eclipse viewing*/
 		cp $OTS_SOURCE/otsdaq/data-core/TableInfo/BackboneGroup/*Info.xml $USER_DATA/TableInfo/ &>/dev/null			# undo c++ style comment for Eclipse viewing*/
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ConfigCore/*Info.xml $USER_DATA/TableInfo/"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ConfigCore/*Info.xml $USER_DATA/TableInfo/"
 		cp $LOC_OTS_DIR/data-core/TableInfo/ConfigCore/*Info.xml $USER_DATA/TableInfo/ 		# undo c++ style comment for Eclipse viewing*/
 		cp $OTS_SOURCE/otsdaq/data-core/TableInfo/ConfigCore/*Info.xml $USER_DATA/TableInfo/ &>/dev/null 		# undo c++ style comment for Eclipse viewing*/
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ContextGroup/*Info.xml $USER_DATA/TableInfo/"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/ContextGroup/*Info.xml $USER_DATA/TableInfo/"
 		cp $LOC_OTS_DIR/data-core/TableInfo/ContextGroup/*Info.xml $USER_DATA/TableInfo/			# undo c++ style comment for Eclipse viewing*/
 		cp $OTS_SOURCE/otsdaq/data-core/TableInfo/ContextGroup/*Info.xml $USER_DATA/TableInfo/ &>/dev/null			# undo c++ style comment for Eclipse viewing*/
-		echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/IterateGroup/*Info.xml $USER_DATA/TableInfo/"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/TableInfo/IterateGroup/*Info.xml $USER_DATA/TableInfo/"
 		cp $LOC_OTS_DIR/data-core/TableInfo/IterateGroup/*Info.xml $USER_DATA/TableInfo/ 		# undo c++ style comment for Eclipse viewing*/
 		cp $OTS_SOURCE/otsdaq/data-core/TableInfo/IterateGroup/*Info.xml $USER_DATA/TableInfo/ &>/dev/null 		# undo c++ style comment for Eclipse viewing*/
 
@@ -299,39 +307,39 @@ function updateUserData
 	if ! [ -d $USER_DATA/XDAQConfigurations ]; then
 		mkdir $USER_DATA/XDAQConfigurations
 	fi
-	echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_CMake.xml $USER_DATA/XDAQConfigurations/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_CMake.xml $USER_DATA/XDAQConfigurations/"
 	cp $LOC_OTS_DIR/data-core/XDAQConfigurations/otsConfiguration_CMake.xml $USER_DATA/XDAQConfigurations/
 	cp $OTS_SOURCE/otsdaq/data-core/XDAQConfigurations/otsConfiguration_CMake.xml $USER_DATA/XDAQConfigurations/ &>/dev/null
-	echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_Wizard_CMake.xml $USER_DATA/XDAQConfigurations/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_Wizard_CMake.xml $USER_DATA/XDAQConfigurations/"
 	cp $LOC_OTS_DIR/data-core/XDAQConfigurations/otsConfiguration_Wizard_CMake.xml $USER_DATA/XDAQConfigurations/
 	cp $OTS_SOURCE/otsdaq/data-core/XDAQConfigurations/otsConfiguration_Wizard_CMake.xml $USER_DATA/XDAQConfigurations/ &>/dev/null
-	echo -e "UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_MacroMaker_CMake.xml $USER_DATA/XDAQConfigurations/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp OTSDAQ_DIR/data-core/XDAQConfigurations/otsConfiguration_MacroMaker_CMake.xml $USER_DATA/XDAQConfigurations/"
 	cp $LOC_OTS_DIR/data-core/XDAQConfigurations/otsConfiguration_MacroMaker_CMake.xml $USER_DATA/XDAQConfigurations/
 	cp $OTS_SOURCE/otsdaq/data-core/XDAQConfigurations/otsConfiguration_MacroMaker_CMake.xml $USER_DATA/XDAQConfigurations/ &>/dev/null
 
 	if ! [ -d $USER_DATA/MessageFacilityConfigurations ]; then
 		mkdir $USER_DATA/MessageFacilityConfigurations
 	fi
-	echo -e "UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/"
 	cp $LOC_OTS_DIR/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/ # undo c++ style comment for Eclipse viewing*/
 	cp $OTS_SOURCE/otsdaq/data-core/MessageFacilityConfigurations/* $USER_DATA/MessageFacilityConfigurations/ &>/dev/null # undo c++ style comment for Eclipse viewing*/
 
 	#make sure permissions are usable
-	echo -e "UpdateOTS.sh:${LINENO}  \t chmod 755 $USER_DATA/TableInfo/*.xml"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t chmod 755 $USER_DATA/TableInfo/*.xml"
 	chmod 755 $USER_DATA/TableInfo/*.xml #*/ just resetting comment coloring
-	echo -e "UpdateOTS.sh:${LINENO}  \t chmod 755 $USER_DATA/TableInfo/*Info.xsd"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t chmod 755 $USER_DATA/TableInfo/*Info.xsd"
 	chmod 755 $USER_DATA/TableInfo/*Info.xsd #*/ just resetting comment coloring
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t Reminder, table info is updated based on the list in..."
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
-	echo -e "UpdateOTS.sh:${LINENO}  \t \t ${USER_DATA}/ServiceData/CoreTableInfoNames.dat"
-	echo -e "UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Reminder, table info is updated based on the list in..."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t \t ${USER_DATA}/ServiceData/CoreTableInfoNames.dat"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t "
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t Done updating USER DATA."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Done updating USER DATA."
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 	echo
 
 } # end updateUserData function
@@ -362,11 +370,15 @@ DEVELOP_ONLY=0
 MAIN_ONLY=0
 WARN_ONLY=0
 
-echo -e "UpdateOTS.sh:${LINENO}  1= $1"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  1= $1"
 
-if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there are uncommitted changes, then output to stderr for capture
+if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quiet unless (on stderr) there are uncommitted changes, then output to stderr for capture
 	WARN_ONLY=1
-	echo -e  "\n" >&2 #take stderr for warn result
+	WARNFAST_ONLY=0
+	if [ "$1"  == "--warnfast" ]; then
+		WARNFAST_ONLY=1
+	fi
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \n" >&2 #take stderr for warn result
 
 
 	# Detect if we're on an NFS host by checking for colon in Filesystem column of df -h
@@ -389,15 +401,15 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	find "$scan_dir" -maxdepth 3 -type d -name ".git" 2>/dev/null |
 	while IFS= read -r gitdir; do
 		repo_dir="$(dirname "$gitdir")"
-		echo -e "UpdateOTS.sh:${LINENO}  check found: $repo_dir"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  check found: $repo_dir"
 		remote_url="$(git -C "$repo_dir" remote get-url origin 2>/dev/null)"
 		if [[ "$remote_url" == *github.com* ]]; then
-			echo -e "UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  GitHub repo found: $repo_dir"
 
-			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}    → $remote_url"
 
 			if [[ "$repo_dir" == *"../archive"* ]]; then
-				echo -e "UpdateOTS.sh:${LINENO}  Skipping archived repos."
+				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping archived repos."
 				continue
 			fi
 
@@ -413,7 +425,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
 				#skip centrally managed (e.g., spack and fermi-spack-tools) repos
 				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
-					echo -e "UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
+					echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
 				else
 					#find unmerged branches
 					branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -474,7 +486,7 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 				echo -e " ===|>  WARNING!!! Found unpushed commits in repository ${repo_dir} ==> ${unpushed}" >&2
 			fi
 
-			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
+			if [ "$IS_NFS_MOUNTED" = false ] && [ "$WARNFAST_ONLY" = 0 ]; then #skip if not primary compile host (too verbose) or if warnfast mode
 				for stash in $(git stash list | cut -d: -f1); do
 					if ! git diff --quiet "$stash"^1 "$stash"; then
 						if declare -F ots_stash_diff > /dev/null; then
@@ -489,8 +501,8 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 			#done checking repo, return to previous directory
 			cd -
 		else
-			echo -e "UpdateOTS.sh:${LINENO}  NOT GitHub repo found: $repo_dir"
-			echo -e "UpdateOTS.sh:${LINENO}    → $remote_url"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  NOT GitHub repo found: $repo_dir"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}    → $remote_url"
 		fi
 	done
 
@@ -500,42 +512,42 @@ if [ "$1"  == "--warn" ]; then #warn should be quiet unless (on stderr) there ar
 	# If we are on a host with NFS mounted, in this case, TableInfo manipulations may be too slow, so skip!)
 
 	# Only run table warning code on NFS hosts
-	if [ "$IS_NFS_MOUNTED" = true ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
+	if [ "$IS_NFS_MOUNTED" = true ] || [ "$WARNFAST_ONLY" = 1 ]; then
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  this host has a remote mounted home area, skip TableInfo test."
 	else
-		echo -e "UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
 
-		echo -e "\nUpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
-        # Run the table warning code only on NFS host nodes
-        SAVE_USER_DATA=$USER_DATA
-        rm -rf $USER_DATA.warn
-        mkdir $USER_DATA.warn
-        mkdir $USER_DATA.warn/TableInfo
-        mkdir $USER_DATA.warn/ServiceData
-        USER_DATA=$USER_DATA.warn
-        cp ${SAVE_USER_DATA}/ServiceData/CoreTableInfoNames.dat ${USER_DATA}/ServiceData/CoreTableInfoNames.dat
+		echo -e "$(date +%d%b%y.%T) \nUpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
+		# Run the table warning code only on NFS host nodes
+		SAVE_USER_DATA=$USER_DATA
+		rm -rf $USER_DATA.warn
+		mkdir $USER_DATA.warn
+		mkdir $USER_DATA.warn/TableInfo
+		mkdir $USER_DATA.warn/ServiceData
+		USER_DATA=$USER_DATA.warn
+		cp ${SAVE_USER_DATA}/ServiceData/CoreTableInfoNames.dat ${USER_DATA}/ServiceData/CoreTableInfoNames.dat
 
-        updateUserData
+		updateUserData
 
-        #now diff and copy back (ignore whitespace)
-        diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
+		#now diff and copy back (ignore whitespace)
+		diff -qr -w $SAVE_USER_DATA/TableInfo $USER_DATA/TableInfo >&2
 
-        rm -rf $USER_DATA
-        USER_DATA=$SAVE_USER_DATA
-    fi
+		rm -rf $USER_DATA
+		USER_DATA=$SAVE_USER_DATA
+	fi
 
 
-	echo -e "\nUpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
+	echo -e "$(date +%d%b%y.%T) \nUpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
 	exit
 else #end warn handling
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
-	echo -e "UpdateOTS.sh:${LINENO}  "
-	echo -e "UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ~~ UpdateOTS ~~ "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "
 fi
 
 if [ "$1"  == "--tables" ]; then
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating tables only!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating tables only!"
 	updateUserData
 
 	displayVersionsAndQualifiers
@@ -544,90 +556,90 @@ if [ "$1"  == "--tables" ]; then
 fi
 if [ "$1"  == "--pullall" ]; then
 	ALL_REPOS=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--pushall" ]; then
 	ALL_REPOS=1
 	GIT_COMMENT=$2
 	if [ "x$2" == "x" ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
 		exit
 	fi
-	echo -e "UpdateOTS.sh:${LINENO}  \t Pushing all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pushing all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--push" ]; then
 	SKIP_CORE=1
 	GIT_COMMENT=$2
 	if [ "x$2" == "x" ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
 		exit
 	fi
-	echo -e "UpdateOTS.sh:${LINENO}  \t Pushing otsdaq user repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pushing otsdaq user repositories!"
 fi
 if [ "$1"  == "--pull" ]; then
 	SKIP_CORE=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Pulling otsdaq user repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pulling otsdaq user repositories!"
 fi
 if [ "$1"  == "--pushcore" ]; then
 	ONLY_CORE=1
 	GIT_COMMENT=$2
 	if [ "x$2" == "x" ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t For git push, a comment must be placed in Parameter 2!"
 		exit
 	fi
-	echo -e "UpdateOTS.sh:${LINENO}  \t Pushing otsdaq core repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pushing otsdaq core repositories!"
 fi
 if [ "$1"  == "--pullcore" ]; then
 	ONLY_CORE=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Pulling otsdaq core repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pulling otsdaq core repositories!"
 fi
 
 if [ "$1"  == "--share" ]; then
 	ALL_REPOS=1
 	SHARE_ONLY=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--develop" ]; then
 	ALL_REPOS=1
 	DEVELOP_ONLY=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Doing checkout devleop in all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout develop in all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--main" ]; then
 	ALL_REPOS=1
 	MAIN_ONLY=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Doing checkout main in all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout main in all repositories (i.e. not only otsdaq)!"
 fi
 
 
 if [ "$1"  == "--fetchall" ]; then
 	ALL_REPOS=1
 	FETCH_ONLY=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Fetching all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Fetching all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--fetchcore" ]; then
 	ONLY_CORE=1
 	FETCH_ONLY=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Fetching otsdaq core repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Fetching otsdaq core repositories!"
 fi
 if [ "$1"  == "--fetch" ]; then
 	FETCH_ONLY=1
 	SKIP_CORE=1
-	echo -e "UpdateOTS.sh:${LINENO}  \t Fetching otsdaq repositories!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Fetching otsdaq repositories!"
 fi
 
 
-echo -e "UpdateOTS.sh:${LINENO}  \t REPO_FILTER = ${REPO_FILTER}"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t REPO_FILTER = ${REPO_FILTER}"
 echo
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t Finding paths..."
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Finding paths..."
 
 SCRIPT_DIR="$(
   cd "$(dirname "$(readlink "$0" || printf %s "$0")")"
   pwd -P
 )"
 
-echo -e "UpdateOTS.sh:${LINENO}  \t Script directory found as: $SCRIPT_DIR"
-echo -e "UpdateOTS.sh:${LINENO}  \t Finding target repositories..."
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Script directory found as: $SCRIPT_DIR"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Finding target repositories..."
 
 #if not done with compile setup, then OTS_SOURCE may not be defined
 DEREFENCED_OTS_SOURCE="$SCRIPT_DIR/../../../srcs"
@@ -638,7 +650,7 @@ if [ $SHARE_ONLY = 1 ]; then
 	OTS_SOURCE="${DEREFENCED_OTS_SOURCE%%/otsdaq_utilities/tools*}"  #strip path back to /srcs without ../.. in path
 fi
 
-echo -e "UpdateOTS.sh:${LINENO}  \t Source directory found as OTS_SOURCE = ${OTS_SOURCE}"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Source directory found as OTS_SOURCE = ${OTS_SOURCE}"
 echo
 echo
 
@@ -660,7 +672,7 @@ for p in ${REPO_DIR[@]}; do
 			continue #skip non-core repos
 		fi
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t Repo directory found as: $bp"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Repo directory found as: $bp"
 
 	fi
 	fi
@@ -671,19 +683,19 @@ done
 #######################################################################################################################
 
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t =================="
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
 
-echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
-echo -e "UpdateOTS.sh:${LINENO}  \t Status will be logged here: $CHECKIN_LOG_PATH"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Status will be logged here: $CHECKIN_LOG_PATH"
 
 if [ $SHARE_ONLY = 1 ]; then
 	echo "List of srcs repos:" > $CURRENT_AWESOME_BASE/list_of_repos.txt
 fi
 
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t =================="
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
 
-echo -e "UpdateOTS.sh:${LINENO}  \t log start:" > $CHECKIN_LOG_PATH
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t log start:" > $CHECKIN_LOG_PATH
 for p in ${REPO_DIR[@]}; do
 	if [ -d $p ]; then
 	if [ -d $p/.git ]; then
@@ -699,43 +711,43 @@ for p in ${REPO_DIR[@]}; do
 	cd $p
 
 	if [ $SHARE_ONLY = 1 ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Sharing (marking as multi-user) $p"
 
 		git remote -v | grep fetch | sed -E 's/^origin[[:space:]]+([^[:space:]]+).*/\1/' >> $CURRENT_AWESOME_BASE/list_of_repos.txt
 		git config --global --add safe.directory $p
 	elif [ $DEVELOP_ONLY = 1 ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t Doing checkout develop from $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout develop from $p"
 		git checkout develop
 	elif [ $MAIN_ONLY = 1 ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t Doing checkout main from $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout main from $p"
 		git checkout main
 	elif [ $FETCH_ONLY = 1 ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t Fetching updates from $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Fetching updates from $p"
 		git fetch
 	elif [ $WARN_ONLY = 1 ]; then
 
 		# already handled by depth 3 above!
-		echo -e "UpdateOTS.sh:${LINENO}  \t Already did git warnings from $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Already did git warnings from $p"
 	else
-		echo -e "UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Pulling updates from $p"
 		git pull
 		git submodule update --init
 	fi
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t ==================" >> $CHECKIN_LOG_PATH
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ==================" >> $CHECKIN_LOG_PATH
 	pwd >> $CHECKIN_LOG_PATH
 	git status &>> $CHECKIN_LOG_PATH
 
 	if [ "x$GIT_COMMENT" != "x" ]; then
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t Checking in $p"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Checking in $p"
 		git commit -m "$GIT_COMMENT " .  &>> $CHECKIN_LOG_PATH  #add space in comment for user
 		git push # || git push origin-ssh
 	fi
 
 	cd $CURRENT_AWESOME_BASE
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t =================="
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
 
 	fi
 	fi
@@ -744,33 +756,33 @@ done
 
 
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t =================="
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
 
 
 #######################################################################################################################
 #handle manual updates that should take place ONLY if it is UPDATING not committing
 if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 
-	echo -e "UpdateOTS.sh:${LINENO}  \t Update status will be logged here: $UPDATE_LOG_PATH"
-	echo -e "UpdateOTS.sh:${LINENO}  \t Update log start:" > $UPDATE_LOG_PATH
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Update status will be logged here: $UPDATE_LOG_PATH"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Update log start:" > $UPDATE_LOG_PATH
 
 	#updateUserData #do not call function during git pulls, have user explicitly call --tables to avoid unexepcted table changes
 
 
 
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating installed Repositories,"
-	echo -e "UpdateOTS.sh:${LINENO}  \t based on the list in $USER_DATA/ServiceData/InstalledRepoNames.dat."
-	echo -e "UpdateOTS.sh:${LINENO}  \t If InstalledRepoNames.dat doesn't exist, then nothing happens"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating installed Repositories,"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t based on the list in $USER_DATA/ServiceData/InstalledRepoNames.dat."
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t If InstalledRepoNames.dat doesn't exist, then nothing happens"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 	echo
 
 	if [ -e "$USER_DATA/ServiceData/InstalledRepoNames.dat" ]; then
-		echo -e "UpdateOTS.sh:${LINENO}  \t $USER_DATA/ServiceData/InstalledRepoNames.dat exists!"
-		echo -e "UpdateOTS.sh:${LINENO}  \t Loading list of repos to update..."
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t $USER_DATA/ServiceData/InstalledRepoNames.dat exists!"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Loading list of repos to update..."
 		cat $USER_DATA/ServiceData/InstalledRepoNames.dat
 		echo
 
@@ -778,39 +790,39 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 		#NOTE: relative paths are allowed from otsdaq/../
 		while read line; do
 			echo
-			echo -e "UpdateOTS.sh:${LINENO}  \t updating ${line} repository...."
-			echo -e "UpdateOTS.sh:${LINENO}  \t running script $OTS_SOURCE/${line}/tools/update_ots_repo.sh"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t updating ${line} repository...."
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t running script $OTS_SOURCE/${line}/tools/update_ots_repo.sh"
 			$OTS_SOURCE/${line}/tools/update_ots_repo.sh
 		done < $USER_DATA/ServiceData/InstalledRepoNames.dat
 
 		#do one more time after loop to make sure last line is read (even if user did not put new line)
 		echo
-		echo -e "UpdateOTS.sh:${LINENO}  \t updating ${line} repository...."
-		echo -e "UpdateOTS.sh:${LINENO}  \t running script $OTS_SOURCE/${line}/tools/update_ots_repo.sh"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t updating ${line} repository...."
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t running script $OTS_SOURCE/${line}/tools/update_ots_repo.sh"
 		$OTS_SOURCE/${line}/tools/update_ots_repo.sh
 
 	fi
 
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 
 
 
 
 	# echo
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t Upgrading database (if needed)..."
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Upgrading database (if needed)..."
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 	# echo
 
 	# #TODO by lukhanin
 
 	# echo
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	# echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 
 
 
@@ -821,11 +833,11 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 
 
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t Updating ups products based on .bz2 files in $OTS_SOURCE/otsdaq/tarballs/"
-	echo -e "UpdateOTS.sh:${LINENO}  \t PRODUCTS path found as: $PRODUCTS"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Updating ups products based on .bz2 files in $OTS_SOURCE/otsdaq/tarballs/"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t PRODUCTS path found as: $PRODUCTS"
 	IFS=':' read -r -a array <<< "$PRODUCTS"
 	UPS_DIR=${array[@]: -1:1}
-	echo -e "UpdateOTS.sh:${LINENO}  \t Unzipping any extra products from otsdaq to: $UPS_DIR"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Unzipping any extra products from otsdaq to: $UPS_DIR"
 
 	cd $UPS_DIR
 	for file in $OTS_SOURCE/otsdaq/tarballs/*.bz2 	# undo c++ style comment for Eclipse viewing*/
@@ -834,11 +846,11 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 		UPS_FILE_NAME=${array[@]: -1:1}
 		IFS='-' read -r -a array <<< "$UPS_FILE_NAME"
 		UPS_FILE_NAME_FIELDS="${#array[@]}"
-		#echo -e "UpdateOTS.sh:${LINENO}  \t $UPS_FILE_NAME_FIELDS fields found"
+		#echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t $UPS_FILE_NAME_FIELDS fields found"
 		if [ $UPS_FILE_NAME_FIELDS -lt 7 ]; then
-			echo -e "UpdateOTS.sh:${LINENO}  \t 	$file skipping, (7 fields expected) too few fields in name to identify name, version, qualifier..."
-			echo -e "UpdateOTS.sh:${LINENO}  \t   Would like to do this command, but not sure it is necessary:"
-			echo -e "UpdateOTS.sh:${LINENO}  \t    tar -xf $file"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t 	$file skipping, (7 fields expected) too few fields in name to identify name, version, qualifier..."
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t   Would like to do this command, but not sure it is necessary:"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t    tar -xf $file"
 			continue
 		fi
 
@@ -851,21 +863,21 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 		IFS='.' read -r -a array <<< "${array[6]}"
 		UPS_PRODUCT_QUAL="$UPS_PRODUCT_QUAL.${array[0]}"
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t Checking $UPS_PRODUCT_NAME/v$UPS_PRODUCT_VERSION/$UPS_PRODUCT_QUAL..."
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Checking $UPS_PRODUCT_NAME/v$UPS_PRODUCT_VERSION/$UPS_PRODUCT_QUAL..."
 
 		if [ ! -d "$UPS_PRODUCT_NAME/v$UPS_PRODUCT_VERSION/$UPS_PRODUCT_QUAL" ]; then
-			echo -e "UpdateOTS.sh:${LINENO}  \t    $file unzipping..."
-			echo -e "UpdateOTS.sh:${LINENO}  \t    tar -xf $file"
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t    $file unzipping..."
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t    tar -xf $file"
 			tar -xf $file &>> $UPDATE_LOG_PATH
 
 			if [ ! -d "$UPS_PRODUCT_NAME/v$UPS_PRODUCT_VERSION/$UPS_PRODUCT_QUAL" ]; then
-				echo -e "UpdateOTS.sh:${LINENO}  \t    Something went wrong. Unzip was not successful. (Are special permissions required for products area?)"
+				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t    Something went wrong. Unzip was not successful. (Are special permissions required for products area?)"
 				echo
-				echo -e "UpdateOTS.sh:${LINENO}  \t 	 Pausing for 3 seconds (so you read this!)..."
+				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t 	 Pausing for 3 seconds (so you read this!)..."
 				sleep 3s
 			fi
 		else
-			echo -e "UpdateOTS.sh:${LINENO}  \t 	...already found in ups products."
+			echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t 	...already found in ups products."
 		fi
 
 	done
@@ -874,18 +886,18 @@ if [[ "x$GIT_COMMENT" == "x" && $FETCH_ONLY = 0 && $WARN_ONLY = 0 ]]; then
 
 	#done updating ups products from otsdaq repo /tarballs
 	echo
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
-	echo -e "UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t #######################################################################################################################"
 
 fi
 
 
-echo -e "UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
-echo -e "UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
-echo -e "UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Git comment '$GIT_COMMENT'"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
 echo
 if [ "$WARN_ONLY" = 0 ]; then
-	echo -e "UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t log dump in 2 seconds... #######################################################"
 	sleep 2s
 	echo
 fi
@@ -894,9 +906,9 @@ fi
 
 COUNT_OF_DATA=`cat $CHECKIN_LOG_PATH | grep -c Data_`
 COUNT_OF_DATABASES=`cat $CHECKIN_LOG_PATH | grep -c databases_`
-HIDING_COUNT_MESSAGE=`echo -e "UpdateOTS.sh:${LINENO}  \t Hiding verbose Data_* and databases_* entries of counts respectively: $COUNT_OF_DATA and $COUNT_OF_DATABASES"`
-#echo -e "UpdateOTS.sh:${LINENO}  \t Hiding verbose Data_* entries in log of count: $COUNT_OF_DATA"
-#echo -e "UpdateOTS.sh:${LINENO}  \t Hiding verbose databases_* entries in log of count: $COUNT_OF_DATABASE"
+HIDING_COUNT_MESSAGE=`echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Hiding verbose Data_* and databases_* entries of counts respectively: $COUNT_OF_DATA and $COUNT_OF_DATABASES"`
+#echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Hiding verbose Data_* entries in log of count: $COUNT_OF_DATA"
+#echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Hiding verbose databases_* entries in log of count: $COUNT_OF_DATABASE"
 echo $HIDING_COUNT_MESSAGE
 #cat $CHECKIN_LOG_PATH | grep -v Data_ | grep -v databases_
 
@@ -908,12 +920,12 @@ sed -i "s/.*HIDING_COUNT_MESSAGE.*/${HIDING_COUNT_MESSAGE}/g" ${CHECKIN_LOG_PATH
 cat ${CHECKIN_LOG_PATH}.bk 2>/dev/null;
 rm ${CHECKIN_LOG_PATH}.bk &>/dev/null
 
-echo -e "UpdateOTS.sh:${LINENO}  \t end log dump... #######################################################"
-echo -e "UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
-echo -e "UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t end log dump... #######################################################"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Git actions were logged here: $CHECKIN_LOG_PATH"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Product update was logged here: $UPDATE_LOG_PATH"
 
 echo
-echo -e "UpdateOTS.sh:${LINENO}  \t =================="
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
 echo
 
 for p in ${REPO_DIR[@]}; do
@@ -922,14 +934,14 @@ for p in ${REPO_DIR[@]}; do
 
 
 		bp=$(basename $p)
-		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" || $bp = "otsdaq-utilities" || $bp = "otsdaq-components" || $bp = "otsdaq-epics" || $bp = "otsdaq-suite" ]]; then
+		if [ $SKIP_CORE = 1 ] && [[ $bp = "otsdaq" || $bp = "otsdaq_utilities" || $bp = "otsdaq_components" || $bp = "otsdaq-utilities" || $bp = "otsdaq-components" || $bp = "otsdaq-epics" || $bp = "otsdaq-suite"		|| $bp = "artdaq-core" || $bp = "artdaq-daqinterface" || $bp = "artdaq-database" || $bp = "artdaq-suite" || $bp = "artdaq" ]]; then
 			continue #skip core repos
 		fi
-		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" && $bp != "otsdaq-utilities" && $bp != "otsdaq-components" && $bp != "otsdaq-epics" && $bp != "otsdaq-suite" ]]; then
+		if [ $ONLY_CORE = 1 ] && [[ $bp != "otsdaq" && $bp != "otsdaq_utilities" && $bp != "otsdaq_components" && $bp != "otsdaq-utilities" && $bp != "otsdaq-components" && $bp != "otsdaq-epics" && $bp != "otsdaq-suite" && $bp != "artdaq-core" && $bp != "artdaq-daqinterface" && $bp != "artdaq-database" && $bp != "artdaq-suite" && $bp != "artdaq" ]]; then
 			continue #skip non-core repos
 		fi
 
-		echo -e "UpdateOTS.sh:${LINENO}  \t Repo directory handled: $bp"
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Repo directory handled: $bp"
 	fi
 	fi
 done
@@ -937,8 +949,8 @@ done
 displayVersionsAndQualifiers
 
 
-echo -e "UpdateOTS.sh:${LINENO}  \t =================="
-echo -e "UpdateOTS.sh:${LINENO}  \t ots update script done"
-echo -e "UpdateOTS.sh:${LINENO}  \t Note: if you have issues with this script, please notify us by opening a ticket here:\n\t\t https://github.com/art-daq/otsdaq_utilities/issues/new/choose"
-echo -e "UpdateOTS.sh:${LINENO}  \t *******************************"
-echo -e "UpdateOTS.sh:${LINENO}  \t *******************************"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t =================="
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t ots update script done"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Note: if you have issues with this script, please notify us by opening a ticket here:\n\t\t https://github.com/art-daq/otsdaq_utilities/issues/new/choose"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t *******************************"
+echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t *******************************"
