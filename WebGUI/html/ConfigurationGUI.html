@@ -1254,7 +1254,7 @@
 		//setupSpecificTable ~
 		//	undefined version gives latest
 		function setupSpecificTable(tableName, version, backLinkStr, allowIllegalColumns, refreshVersions) {
-			
+
 			Debug.logv({refreshVersions});
 
 			var el;
@@ -15767,7 +15767,7 @@
 					");";
 			else
 				clearLinkStr = "DesktopContent.XMLHttpRequest(" +
-					"\"Request?RequestType=clearTableCachedVersions" +					
+					"\"Request?RequestType=clearTableCachedVersions" +
 					"&tableName=" + _currentTableName + "\",\"\"," +
 					" function(req) { " +
 					refreshLinkStr +
