@@ -80,16 +80,17 @@ fi
 # at this point, there must have been a valid option
 
 #OTSDAQ_DIR is not always defined in early AL9 usage
+STARTING_DIR=$(pwd)
 if [[ "x${OTSDAQ_DIR}" == "x" ]]; then
 	spack cd -i otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd -
+	cd "${STARTING_DIR}"
 fi
 #try one more time for otsdaq in srcs/, if did not find spack dir
 if [[ "x${OTSDAQ_DIR}" == "x${PWD}" ]]; then
 	cd srcs/otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd -
+	cd "${STARTING_DIR}"
 fi
 
 #############################
@@ -601,7 +602,7 @@ fi
 if [ "$1"  == "--develop" ]; then
 	ALL_REPOS=1
 	DEVELOP_ONLY=1
-	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout devleop in all repositories (i.e. not only otsdaq)!"
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t Doing checkout develop in all repositories (i.e. not only otsdaq)!"
 fi
 if [ "$1"  == "--main" ]; then
 	ALL_REPOS=1
