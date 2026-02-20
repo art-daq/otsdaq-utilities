@@ -9,6 +9,8 @@ cet_script(ALWAYS_COPY
 	UpdateOTS.sh
 	# AddNewInterface.py #Deprecated
 	ots_check_whitespace.sh
+	ots_git_format_apply.sh
+	ots_whitespace_cleanup.sh
 	# ots_create_repo_from_demo.sh #Deprecated
 	# ots_get_and_fix_repo.sh #Deprecated
 	# ots_add_qualifiers_to_repo_product_deps.sh #Deprecated
