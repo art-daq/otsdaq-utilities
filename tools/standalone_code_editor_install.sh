@@ -15,10 +15,10 @@
 
 
 
-echo -e "standalone_code_editor_install.sh [${LINENO}]  "
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t ~~ Code Editor stand-alone installation ~~ "
-echo -e "standalone_code_editor_install.sh [${LINENO}]  "
-echo -e "standalone_code_editor_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t ~~ Code Editor stand-alone installation ~~ "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  "
 
 mkdir otsCodeEditor
 mkdir otsCodeEditor/html
@@ -62,10 +62,10 @@ wget https://cdcvs.fnal.gov/redmine/projects/otsdaq/repository/utilities/revisio
 sed -i '' 's/\/WebPath/\.\./g' otsCodeEditor/css/*.css
 sed -i '' 's/\/WebPath/\.\./g' otsCodeEditor/js/*.js
 
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t =================="
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t Code Editor stand-alone installation done"
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t "
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t Now open this file in your browser: otsCodeEditor/html/CodeEditor_standalone.html"
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t "
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
-echo -e "standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t =================="
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t Code Editor stand-alone installation done"
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t Now open this file in your browser: otsCodeEditor/html/CodeEditor_standalone.html"
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t "
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
+echo -e "$(date +%d%b%y.%T) standalone_code_editor_install.sh [${LINENO}]  \t *******************************"
