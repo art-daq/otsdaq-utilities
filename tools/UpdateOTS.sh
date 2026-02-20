@@ -80,16 +80,17 @@ fi
 # at this point, there must have been a valid option
 
 #OTSDAQ_DIR is not always defined in early AL9 usage
+STARTING_DIR=$(pwd)
 if [[ "x${OTSDAQ_DIR}" == "x" ]]; then
 	spack cd -i otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd
+	cd "${STARTING_DIR}"
 fi
 #try one more time for otsdaq in srcs/, if did not find spack dir
 if [[ "x${OTSDAQ_DIR}" == "x${PWD}" ]]; then
 	cd srcs/otsdaq &>/dev/null
 	OTSDAQ_DIR=$(echo $PWD)
-	cd
+	cd "${STARTING_DIR}"
 fi
 
 #############################
