@@ -125,6 +125,19 @@
 				margin: 0 0 10px 0;
 				border-radius: 3px;
 				position: absolute;
+				overflow-y: auto;
+				word-wrap: break-word;
+			}
+
+			#inputArea img {
+				max-width: 200px;
+				max-height: 200px;
+				height: auto;
+				width: auto;
+				display: block;
+				margin: 5px 0;
+				border: 1px solid #9C774F;
+				border-radius: 3px;
 			}
 
 			/* ***************** USER AREA ******************************************/
@@ -293,6 +306,7 @@
 				_muteSoundsCheckbox.onmouseup = toggleMuteSounds;
 
 				_inputEl.onkeydown = handleKeyInput;
+				_inputEl.contentEditable = true;
 				_inputEl.focus();
 
 				_displayName = DesktopContent.getUsername();
@@ -333,6 +347,42 @@
 				}
 				else
 					_muteSoundsCheckbox.disabled = true;
+
+
+				document.addEventListener('paste', async (e) => {
+				e.preventDefault();
+				const clipboardItems = typeof navigator?.clipboard?.read === 'function' ? await navigator.clipboard.read() : e.clipboardData.files;
+
+				const appendImageToInputArea = (blob) => {
+					const img = document.createElement('img');
+					img.src = URL.createObjectURL(blob);
+					// Insert at cursor position or at the end
+					const selection = window.getSelection();
+					if (selection.rangeCount > 0 && _inputEl.contains(selection.anchorNode)) {
+						const range = selection.getRangeAt(0);
+						range.insertNode(img);
+						range.collapse(false);
+					} else {
+						_inputEl.appendChild(img);
+					}
+				};
+
+				for (const clipboardItem of clipboardItems) {
+					let blob;
+					if (clipboardItem.type?.startsWith('image/')) {
+						// For files from `e.clipboardData.files`.
+						blob = clipboardItem;
+						appendImageToInputArea(blob);
+					} else {
+						// For files from `navigator.clipboard.read()`.
+						const imageTypes = clipboardItem.types?.filter(type => type.startsWith('image/'));
+						for (const imageType of imageTypes) {
+							blob = await clipboardItem.getType(imageType);
+							appendImageToInputArea(blob);
+						}
+					}
+				}
+				});	
 			} //end init()
 
 			//============================================================
@@ -451,10 +501,20 @@
 			// 	send chat to server
 			function sendChat()
 			{
-				if(_inputEl.value == "" || _lastSentChat == _inputEl.value)
+				// Get text content from contenteditable div (excluding images)
+				var textContent = _inputEl.innerText || _inputEl.textContent || "";
+				var textTrimmed = textContent.trim();
+
+				// Check if there are any images in the input area
+				var images = _inputEl.querySelectorAll('img');
+				var hasImages = images.length > 0;
+				Debug.log("Chat sendChat  textContent: '" + textContent + "'  hasImages: " + hasImages);
+
+				// Allow sending if there's text OR images
+				if((textTrimmed === "" && !hasImages) || (!hasImages && _lastSentChat == textContent))
 				{
-					_lastTypedChat = _inputEl.value; //restore to compensate for swaps
-					_inputEl.value = "";
+					_lastTypedChat = textContent; //restore to compensate for swaps
+					_inputEl.innerHTML = "";
 					_chatEl.innerHTML += "<div>--- No empty or repeat messages are sent ---</div>";
 					return;
 				}//do nothing for empty or repeat
@@ -463,28 +523,59 @@
 					clearTimeout(_chatUpdateTimer);
 				_chatUpdateTimer = window.setTimeout(getChatUpdates,5000); //schedule next update in case of error
 
+
 				//add place holder chat for immediate user feedback
+				var messagePreview = hasImages ? "[Image" + (images.length > 1 ? "s: " + images.length : "") + "] " + textTrimmed : textTrimmed;
 				_chatEl.innerHTML += "<div class='chatEntry newTemporarySelfChat' style='color:" + getColorForUser(_displayName) + "'>" +
 					"<b>(" + formatTime(0) + ") " +
 					_displayName + ":</b> " +
-					"..." + "</div>"; //important to only have one /div> per entry for truncate
+					messagePreview + "</div>"; //important to only have one /div> per entry for truncate
 
+				Debug.log("Chat sendChat  messagePreview: '" + messagePreview + "'  textTrimmed: '" + textTrimmed + "'  hasImages: " + hasImages);
 
-				var chat = convertForServer(_inputEl.value);
-				Debug.log("Chat sendChat  ");
+				// Process images: convert to base64 for sending
+				var chat = textTrimmed;
+				var imageMarkers = "";
+				if (hasImages) {
+					// For now, append image info as special markers
+					// In a full implementation, you'd upload images and include URLs
+					for (var i = 0; i < images.length; i++) {
+						var imgSrc = images[i].src;
+						if (imgSrc.startsWith("blob:")) {
+							var canvas = document.createElement("canvas");
+							var ctx = canvas.getContext("2d");
+							var imgEl = images[i];
+							canvas.width = imgEl.naturalWidth || imgEl.width;
+							canvas.height = imgEl.naturalHeight || imgEl.height;
+							if (canvas.width && canvas.height) {
+								ctx.drawImage(imgEl, 0, 0);
+								imgSrc = canvas.toDataURL("image/png");
+							}
+						}
+						imageMarkers += "[IMAGE]" + imgSrc + "[/IMAGE]";
+						Debug.log("Chat sendChat  processing image " + i + ": src=" + images[i].src);
+						if (images[i].src.startsWith('data:')) {
+							Debug.log("Chat sendChat  image " + i + " is base64 data URL, including in chat");
+							imageMarkers += "[IMAGE]" + images[i].src;
+						}
+					}
+				}
+
+				var chat = convertForServer(chat);
+				Debug.log("Chat sendChat  chat: " + chat);
 
 				//send chat to server
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=SendChat",
-					"chat="+chat+"&user="+_displayName,
+					"chat="+textTrimmed+"&user="+_displayName+"&image="+imageMarkers,
 					getChatUpdates /*returnHandler*/,
 					0 /*reqParam*/,
 					0 /*progressHandler*/,
 					0 /*callHandlerOnErr*/,
 					true /*doNoShowLoadingOverlay*/);
 
-				_lastSentChat = _lastTypedChat = _inputEl.value;
-				_inputEl.value = ""; 	//clear input
+				_lastSentChat = _lastTypedChat = textContent;
+				_inputEl.innerHTML = ""; 	//clear input
 			} //end sendChat()
 
 			//============================================================
@@ -868,7 +959,7 @@
 			<div id='usersArea'>
 			</div></div>
 
-			<textarea id='inputArea'></textarea>
+			<div id='inputArea' contenteditable='true'></div>
 
 			<div id='controlsContainer'>
 			<div id='controlsArea'>

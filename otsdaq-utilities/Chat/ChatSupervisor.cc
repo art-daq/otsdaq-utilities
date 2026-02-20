@@ -21,6 +21,13 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);
 
 	ChatLastUpdateIndex = 1;  // skip 0
+
+	const char* env = std::getenv("OTS_SOURCE");
+	chatSupervisorPath_ = env ? env : "";
+	if(!chatSupervisorPath_.empty() && chatSupervisorPath_.back() != '/')
+		chatSupervisorPath_ += '/';
+	chatSupervisorPath_ += "otsdaq-utilities/tools/";
+	__COUT__ << "ChatSupervisor path: " << chatSupervisorPath_ << __E__;
 }
 
 //==============================================================================
@@ -89,10 +96,15 @@ void ChatSupervisor::request(const std::string& requestType,
 	{
 		std::string chat = CgiDataUtilities::postData(cgiIn, "chat");
 		std::string user = CgiDataUtilities::postData(cgiIn, "user");
+		std::string image = CgiDataUtilities::postData(cgiIn, "image");
+
+		__COUT__ << "chat: " << chat << __E__;
+		__COUT__ << "user: " << user << __E__;
+		__COUT__ << "image: " << image << __E__;
 
 		escapeChat(chat);
 
-		newChat(chat, user);
+		newChat(chat, user, image);
 	}
 	else if(requestType == "PageUser")
 	{
@@ -209,12 +221,13 @@ void ChatSupervisor::newUser(const std::string& user)
 //==============================================================================
 /// ChatSupervisor::newChat()
 ///	create new chat, and increment update
-void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
+void ChatSupervisor::newChat(const std::string& chat, const std::string& user, const std::string& image)
 {
 	ChatHistoryEntry_.push_back(chat);
 	ChatHistoryAuthor_.push_back(user);
 	ChatHistoryTime_.push_back(time(0));
 	ChatHistoryIndex_.push_back(incrementAndGetLastUpdate());
+	sendToSlack("127.0.0.1", user, chat, image);
 }
 
 //==============================================================================
@@ -286,4 +299,34 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 	        "ots");  // add status message to chat, increment update
 	ChatUsers_.erase(ChatUsers_.begin() + i);
 	ChatUsersTime_.erase(ChatUsersTime_.begin() + i);
+}
+
+//==============================================================================
+/// ChatSupervisor::sendToSlack()
+bool ChatSupervisor::sendToSlack(const std::string& host,
+                		const std::string& user,
+						const std::string& message, 
+						const std::string& image)
+{
+	__COUT__ << "Sending UDP packet from " << host << " with payload: " << message << __E__;
+
+	std::string command = "python3 " + chatSupervisorPath_ + "ots-slack.py " + "--message \"" + message + "\" --user " + user;
+	if(!image.empty())
+		command += " --image \"" + image + "\"";
+
+	__COUT__ << "Executing command: " << command << __E__;
+	auto result = StringMacros::exec(command.c_str());
+
+	if(!result.empty())
+	{
+		if(result.find("Error:") != std::string::npos)
+		{
+			__COUT__ << "Error from ots-slack.py: " << result << __E__;
+			return false;
+		}
+		else
+			__COUT__ << "Response from ots-slack.py: " << result << __E__;
+	}
+
+	return true;
 }
