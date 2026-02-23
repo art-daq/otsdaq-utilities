@@ -22,7 +22,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 
 	ChatLastUpdateIndex = 1;  // skip 0
 
-	const char* env = std::getenv("OTS_SOURCE");
+	const char* env     = std::getenv("OTS_SOURCE");
 	chatSupervisorPath_ = env ? env : "";
 	if(!chatSupervisorPath_.empty() && chatSupervisorPath_.back() != '/')
 		chatSupervisorPath_ += '/';
@@ -94,8 +94,8 @@ void ChatSupervisor::request(const std::string& requestType,
 	}
 	else if(requestType == "SendChat")
 	{
-		std::string chat = CgiDataUtilities::postData(cgiIn, "chat");
-		std::string user = CgiDataUtilities::postData(cgiIn, "user");
+		std::string chat  = CgiDataUtilities::postData(cgiIn, "chat");
+		std::string user  = CgiDataUtilities::postData(cgiIn, "user");
 		std::string image = CgiDataUtilities::postData(cgiIn, "image");
 
 		__COUT__ << "chat: " << chat << __E__;
@@ -221,7 +221,9 @@ void ChatSupervisor::newUser(const std::string& user)
 //==============================================================================
 /// ChatSupervisor::newChat()
 ///	create new chat, and increment update
-void ChatSupervisor::newChat(const std::string& chat, const std::string& user, const std::string& image)
+void ChatSupervisor::newChat(const std::string& chat,
+                             const std::string& user,
+                             const std::string& image)
 {
 	ChatHistoryEntry_.push_back(chat);
 	ChatHistoryAuthor_.push_back(user);
@@ -304,13 +306,15 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 //==============================================================================
 /// ChatSupervisor::sendToSlack()
 bool ChatSupervisor::sendToSlack(const std::string& host,
-                		const std::string& user,
-						const std::string& message, 
-						const std::string& image)
+                                 const std::string& user,
+                                 const std::string& message,
+                                 const std::string& image)
 {
-	__COUT__ << "Sending UDP packet from " << host << " with payload: " << message << __E__;
+	__COUT__ << "Sending UDP packet from " << host << " with payload: " << message
+	         << __E__;
 
-	std::string command = "python3 " + chatSupervisorPath_ + "ots-slack.py " + "--message \"" + message + "\" --user " + user;
+	std::string command = "python3 " + chatSupervisorPath_ + "ots-slack.py " +
+	                      "--message \"" + message + "\" --user " + user;
 	if(!image.empty())
 		command += " --image \"" + image + "\"";
 

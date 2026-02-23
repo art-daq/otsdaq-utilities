@@ -57,8 +57,13 @@ class ChatSupervisor : public CoreSupervisorBase
 	bool     isChatOld(uint64_t chatIndex, uint64_t last);
 
 	void newUser(const std::string& user);
-	void newChat(const std::string& chat, const std::string& user, const std::string& image = "");
-	bool sendToSlack(const std::string& host, const std::string& user, const std::string& message, const std::string& image = "");
+	void newChat(const std::string& chat,
+	             const std::string& user,
+	             const std::string& image = "");
+	bool sendToSlack(const std::string& host,
+	                 const std::string& user,
+	                 const std::string& message,
+	                 const std::string& image = "");
 	void removeChatHistoryEntry(uint64_t i);
 	void removeChatUserEntry(uint64_t i);
 	void cleanupExpiredChats(void);
