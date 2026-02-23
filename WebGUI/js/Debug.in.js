@@ -419,6 +419,10 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                     fileStr /*innerHTML*/ +
                                     "</label>",
                                     true /*doCloseTag*/);
+                            returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
+                                "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                                "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                                "</div></span>";
 
                             i = ff + ("</FILE>").length; //proceed after filename
                         } //end <FILE> callout handling
@@ -499,6 +503,10 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                     fileStr /*innerHTML*/ +
                                     "</label>",
                                     true /*doCloseTag*/);
+                            returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
+                                "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                                "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                                "</div></span>";
 
                             //add end label
                             returnStr += "<br>";
@@ -548,6 +556,10 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                 fileStr /*innerHTML*/ +
                                 "</label>",
                                 true /*doCloseTag*/);
+                        returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
+                            "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                            "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                            "</div></span>";
 
                         i = ff + ("</FILE>").length; //proceed after filename
                     } //end <FILE> callout handling
