@@ -342,7 +342,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
                     var returnStr;
                     //modify string for popup
-                    returnStr = localCallOutDebugLocales(
+                    returnStr = Debug.callOutDebugLocales(
                         source + str);
                     if (returnStr) //in case of failure, leave alone
                         str = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
@@ -354,216 +354,6 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                 }
                 Debug.lastLogger = ""; //clear for next
 
-            }
-
-            /////////////////////////////////
-            //localCallOutDebugLocales ~~
-            //	add call out labels to file [line] text blobs
-            //	returns undefined if no change
-            function localCallOutDebugLocales(str) {
-                var i = 0;
-                var j, k, l;
-                var returnStr;
-                var fileStr;
-                var labelStr;
-                var numOfIndents = 0; //indent for each Error decoration
-                var numOfLabels = 0;
-                try {
-                    while ((k = str.indexOf(" |", i)) > 0) {
-                        if (!returnStr) //check if need to define for the first time
-                            returnStr = "";
-
-                        //check if : is in a place that make sense (i.e., ":LINE |")
-                        if ((j = str.lastIndexOf(':', k - 2)) <= i || //use k-2 to avoid selecting "err: |" scenarios
-                            j < 6) {
-                            //not a callout, so skip ahead
-                            //previous chunk
-                            returnStr += str.substr(i, k - i);
-                            i = k + 1;
-                            continue;
-                        }
-
-                        //found new possible call out
-                        //console.log(str.substr(j,k-j+1));
-
-
-                        //first, check for inline <FILE>filename</FILE> callouts
-                        var f;
-                        var ff;
-                        while ((f = str.indexOf("<FILE>", i)) > 0 &&
-                            f < j &&
-                            (ff = str.indexOf("</FILE>", f + 10)) > 0 &&
-                            ff < j) //found a FILE callout
-                        {
-                            //console.log("Found file call out at",f);//str.substr(f,ff-f));
-
-                            //previous chunk
-                            returnStr += str.substr(i, f - i);
-
-                            fileStr = str.substr(f + ("<FILE>").length,
-                                ff - f - ("<FILE>").length);
-
-                            returnStr += //if filename, add link to CodeEditor
-                                DesktopContent.htmlOpen("a", //start macro module table
-                                    {
-                                        "title": "Open file in a new browser tab: \n" +
-                                            fileStr,
-                                        "onclick": "DesktopContent.openNewBrowserTab(" +
-                                            "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
-                                            "\"?" +
-                                            "startFilePrimary=" +
-                                            fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
-                                    },
-                                    "<label class='" +
-                                    Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
-                                    fileStr /*innerHTML*/ +
-                                    "</label>",
-                                    true /*doCloseTag*/);
-
-                            i = ff + ("</FILE>").length; //proceed after filename
-                        } //end <FILE> callout handling
-
-                        //look for icc, .cc, .cpp, .hh, and .h; and .js/.html
-                        if ((str[j - 2] == '.' && str[j - 1] == 'h') ||
-                            (str[j - 3] == '.' && (str[j - 2] == 'h' || str[j - 2] == 'c' || str[j - 2] == 'j')) ||
-                            (str[j - 4] == '.' && (str[j - 3] == 'c' || str[j - 3] == 'i') && (str[j - 2] == 'p' || str[j - 2] == 'c')) ||
-                            (str[j - 5] == '.' && (str[j - 4] == 'h'))) {
-                            //find beginning of blob (first non-file/c++ character)
-                            for (l = j - 3; l >= i; --l)
-                                if (!((str[l] >= 'a' && str[l] <= 'z') ||
-                                    (str[l] >= 'A' && str[l] <= 'Z') ||
-                                    (str[l] >= '0' && str[l] <= '9') ||
-                                    (str[l] == '.') ||
-                                    (str[l] == '_') ||
-                                    (str[l] == '-') ||
-                                    (str[l] == '/') ||
-                                    (str[l] == ':')))
-                                    break; //found beginning (-1)
-
-                            ++l; //increment to first character of blob
-
-                            fileStr = str.substr(l, k - l);
-
-                            //attempt to extract label
-                            labelStr = undefined;
-                            if ((f = str.lastIndexOf('|', l)) >= i) //must be >= for previous misfires on | find
-                            {
-                                labelStr = str.substr(f, l - f);
-                                l = f;
-                            }
-
-                            //previous chunk
-                            returnStr += str.substr(i, l - i);
-
-                            //if "Error: " is immediate previous chunk, then indent
-                            if (returnStr.length > ("Error:").length &&
-                                returnStr.indexOf("Error:",
-                                    returnStr.length - ("Error:").length) > 0) {
-                                console.log("Found 'Error:' decoration");
-                                returnStr += "<div style='margin-left:60px;margin-top:-5px;'>"; //open indent
-                                ++numOfIndents;
-                            }
-
-                            if (i > 10 && returnStr[returnStr.length - 1] != '\n'
-                                && !(returnStr[returnStr.length - 4] == '<' &&
-                                    returnStr[returnStr.length - 3] == 'b' &&
-                                    returnStr[returnStr.length - 2] == 'r' &&
-                                    returnStr[returnStr.length - 1] == '>'))
-                                returnStr += "<br>"; //make sure there is new line before label
-
-                            //add start label
-                            if (labelStr) {
-                                ++numOfLabels;
-
-                                if (numOfLabels % 2 == 0 && numOfIndents < 3) //every other, indent
-                                {
-                                    returnStr += "<div style='margin-left:60px;margin-top:15px;'>"; //open indent
-                                    ++numOfIndents;
-                                }
-                                returnStr += (i > 10 ? "<b>" : "") + labelStr + "</b>";
-                            }
-
-                            returnStr += //if filename, add link to CodeEditor
-                                DesktopContent.htmlOpen("a", //start macro module table
-                                    {
-                                        "title": "Open file in a new browser tab: \n" +
-                                            fileStr,
-                                        "onclick": "DesktopContent.openNewBrowserTab(" +
-                                            "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
-                                            "\"?" +
-                                            "startFilePrimary=" +
-                                            fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
-                                    },
-                                    "<label class='" +
-                                    Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
-                                    fileStr /*innerHTML*/ +
-                                    "</label>",
-                                    true /*doCloseTag*/);
-
-                            //add end label
-                            returnStr += "<br>";
-
-                            //skip any tabs and new lines (so that the next content is right below line #)
-                            ++k; //skip |
-                            while (k + 1 < str.length &&
-                                (str[k + 1] == '\n' || str[k + 1] == '\t')) ++k;
-
-                        }
-                        else //not a callout so grab previous chunk
-                            returnStr += str.substr(i, k + 1 - i);
-
-                        i = k + 1;
-                    }
-
-                    //look for file callouts one last time, for last chunk
-                    var f;
-                    var ff;
-                    while ((f = str.indexOf("<FILE>", i)) > 0 &&
-                        (ff = str.indexOf("</FILE>", f + 10)) > 0) //found a FILE callout
-                    {
-                        Debug.log("Found file call out at", f);//str.substr(f,ff-f));
-
-                        if (!returnStr) //check if need to define for the first time
-                            returnStr = "";
-
-                        //previous chunk
-                        returnStr += str.substr(i, f - i);
-
-                        fileStr = str.substr(f + ("<FILE>").length,
-                            ff - f - ("<FILE>").length);
-
-                        returnStr += //if filename, add link to CodeEditor
-                            DesktopContent.htmlOpen("a", //start macro module table
-                                {
-                                    "title": "Open file in a new browser tab: \n" +
-                                        fileStr,
-                                    "onclick": "DesktopContent.openNewBrowserTab(" +
-                                        "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
-                                        "\"?" +
-                                        "startFilePrimary=" +
-                                        fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
-                                },
-                                "<label class='" +
-                                Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
-                                fileStr /*innerHTML*/ +
-                                "</label>",
-                                true /*doCloseTag*/);
-
-                        i = ff + ("</FILE>").length; //proceed after filename
-                    } //end <FILE> callout handling
-
-                }
-                catch (e) {
-                    return undefined; //give up on errors
-                }
-
-                if (returnStr) //finish last chunk
-                    returnStr += str.substr(i);
-
-                for (var i = 0; i < numOfIndents; ++i)
-                    returnStr += "</div>"; //close indents
-
-                return returnStr; //if untouched, undefined return
             }
         }; //end Debug.log()
     } //end Debug normal
@@ -1270,3 +1060,218 @@ Debug.copyMessagesToClipboard = function () {
 
 
 } //end Debug.copyMessagesToClipboard
+
+//=====================================================================================
+//Debug.callOutDebugLocales ~~
+//	add call out labels to file [line] text blobs
+//	returns undefined if no change
+Debug.callOutDebugLocales = function (str) {
+    var i = 0;
+    var j, k, l;
+    var returnStr;
+    var fileStr;
+    var labelStr;
+    var numOfIndents = 0; //indent for each Error decoration
+    var numOfLabels = 0;
+    try {
+        while ((k = str.indexOf(" |", i)) > 0) {
+            if (!returnStr) //check if need to define for the first time
+                returnStr = "";
+
+            //check if : is in a place that make sense (i.e., ":LINE |")
+            if ((j = str.lastIndexOf(':', k - 2)) <= i || //use k-2 to avoid selecting "err: |" scenarios
+                j < 6) {
+                //not a callout, so skip ahead
+                //previous chunk
+                returnStr += str.substr(i, k - i);
+                i = k + 1;
+                continue;
+            }
+
+            //found new possible call out
+            //console.log(str.substr(j,k-j+1));
+
+
+            //first, check for inline <FILE>filename</FILE> callouts
+            var f;
+            var ff;
+            var fileFlagStart = ["<FILE>","&lt;FILE&gt;"]; //allow for encoded version!
+            var fileFlagEnd = ["</FILE>","&lt;/FILE&gt;"]; //allow for encoded version!
+            for(let fi = 0; fi < fileFlagStart.length; ++ fi)
+            {
+                while ((f = str.indexOf(fileFlagStart[fi], i)) > 0 &&
+                    f < j &&
+                    (ff = str.indexOf(fileFlagEnd[fi], f + 10)) > 0 &&
+                    ff < j) //found a FILE callout
+                {
+                    //console.log("Found file call out at",f);//str.substr(f,ff-f));
+
+                    //previous chunk
+                    returnStr += str.substr(i, f - i);
+
+                    fileStr = str.substr(f + fileFlagStart[fi].length,
+                        ff - f - fileFlagStart[fi].length);
+
+                    returnStr += //if filename, add link to CodeEditor
+                        DesktopContent.htmlOpen("a", //start macro module table
+                            {
+                                "title": "Open file in a new browser tab: \n" +
+                                    fileStr,
+                                "onclick": "DesktopContent.openNewBrowserTab(" +
+                                    "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
+                                    "\"?" +
+                                    "startFilePrimary=" +
+                                    fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
+                            },
+                            "<label class='" +
+                            Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
+                            fileStr /*innerHTML*/ +
+                            "</label>",
+                            true /*doCloseTag*/);
+
+                    i = ff + fileFlagEnd[fi].length; //proceed after filename
+                } //end <FILE> callout handling
+            } //end all <FILE> type handling
+
+            //look for icc, .cc, .cpp, .hh, and .h; and .js/.html
+            if ((str[j - 2] == '.' && str[j - 1] == 'h') ||
+                (str[j - 3] == '.' && (str[j - 2] == 'h' || str[j - 2] == 'c' || str[j - 2] == 'j')) ||
+                (str[j - 4] == '.' && (str[j - 3] == 'c' || str[j - 3] == 'i') && (str[j - 2] == 'p' || str[j - 2] == 'c')) ||
+                (str[j - 5] == '.' && (str[j - 4] == 'h'))) {
+                //find beginning of blob (first non-file/c++ character)
+                for (l = j - 3; l >= i; --l)
+                    if (!((str[l] >= 'a' && str[l] <= 'z') ||
+                        (str[l] >= 'A' && str[l] <= 'Z') ||
+                        (str[l] >= '0' && str[l] <= '9') ||
+                        (str[l] == '.') ||
+                        (str[l] == '_') ||
+                        (str[l] == '-') ||
+                        (str[l] == '/') ||
+                        (str[l] == ':')))
+                        break; //found beginning (-1)
+
+                ++l; //increment to first character of blob
+
+                fileStr = str.substr(l, k - l);
+
+                //attempt to extract label
+                labelStr = undefined;
+                if ((f = str.lastIndexOf('|', l)) >= i) //must be >= for previous misfires on | find
+                {
+                    labelStr = str.substr(f, l - f);
+                    l = f;
+                }
+
+                //previous chunk
+                returnStr += str.substr(i, l - i);
+
+                //if "Error: " is immediate previous chunk, then indent
+                if (returnStr.length > ("Error:").length &&
+                    returnStr.indexOf("Error:",
+                        returnStr.length - ("Error:").length) > 0) {
+                    console.log("Found 'Error:' decoration");
+                    returnStr += "<div style='margin-left:60px;margin-top:-5px;'>"; //open indent
+                    ++numOfIndents;
+                }
+
+                if (i > 10 && returnStr[returnStr.length - 1] != '\n'
+                    && !(returnStr[returnStr.length - 4] == '<' &&
+                        returnStr[returnStr.length - 3] == 'b' &&
+                        returnStr[returnStr.length - 2] == 'r' &&
+                        returnStr[returnStr.length - 1] == '>'))
+                    returnStr += "<br>"; //make sure there is new line before label
+
+                //add start label
+                if (labelStr) {
+                    ++numOfLabels;
+
+                    if (numOfLabels % 2 == 0 && numOfIndents < 3) //every other, indent
+                    {
+                        returnStr += "<div style='margin-left:60px;margin-top:15px;'>"; //open indent
+                        ++numOfIndents;
+                    }
+                    returnStr += (i > 10 ? "<b>" : "") + labelStr + "</b>";
+                }
+
+                returnStr += //if filename, add link to CodeEditor
+                    DesktopContent.htmlOpen("a", //start macro module table
+                        {
+                            "title": "Open file in a new browser tab: \n" +
+                                fileStr,
+                            "onclick": "DesktopContent.openNewBrowserTab(" +
+                                "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
+                                "\"?" +
+                                "startFilePrimary=" +
+                                fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
+                        },
+                        "<label class='" +
+                        Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
+                        fileStr /*innerHTML*/ +
+                        "</label>",
+                        true /*doCloseTag*/);
+
+                //add end label
+                returnStr += "<br>";
+
+                //skip any tabs and new lines (so that the next content is right below line #)
+                ++k; //skip |
+                while (k + 1 < str.length &&
+                    (str[k + 1] == '\n' || str[k + 1] == '\t')) ++k;
+
+            }
+            else //not a callout so grab previous chunk
+                returnStr += str.substr(i, k + 1 - i);
+
+            i = k + 1;
+        }
+
+        //look for file callouts one last time, for last chunk
+        var f;
+        var ff;
+        while ((f = str.indexOf("<FILE>", i)) > 0 &&
+            (ff = str.indexOf("</FILE>", f + 10)) > 0) //found a FILE callout
+        {
+            Debug.log("Found file call out at", f);//str.substr(f,ff-f));
+
+            if (!returnStr) //check if need to define for the first time
+                returnStr = "";
+
+            //previous chunk
+            returnStr += str.substr(i, f - i);
+
+            fileStr = str.substr(f + ("<FILE>").length,
+                ff - f - ("<FILE>").length);
+
+            returnStr += //if filename, add link to CodeEditor
+                DesktopContent.htmlOpen("a", //start macro module table
+                    {
+                        "title": "Open file in a new browser tab: \n" +
+                            fileStr,
+                        "onclick": "DesktopContent.openNewBrowserTab(" +
+                            "\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
+                            "\"?" +
+                            "startFilePrimary=" +
+                            fileStr + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
+                    },
+                    "<label class='" +
+                    Debug._errBoxId + "-localCallOut' style='cursor:pointer'>" +
+                    fileStr /*innerHTML*/ +
+                    "</label>",
+                    true /*doCloseTag*/);
+
+            i = ff + ("</FILE>").length; //proceed after filename
+        } //end <FILE> callout handling
+
+    }
+    catch (e) {
+        return undefined; //give up on errors
+    }
+
+    if (returnStr) //finish last chunk
+        returnStr += str.substr(i);
+
+    for (var i = 0; i < numOfIndents; ++i)
+        returnStr += "</div>"; //close indents
+
+    return returnStr; //if untouched, undefined return
+}
