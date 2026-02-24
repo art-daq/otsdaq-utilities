@@ -22,12 +22,19 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 
 	ChatLastUpdateIndex = 1;  // skip 0
 
-	const char* env = std::getenv("OTS_SOURCE");
-	chatSupervisorPath_ = env ? env : "";
-	if(!chatSupervisorPath_.empty() && chatSupervisorPath_.back() != '/')
-		chatSupervisorPath_ += '/';
-	chatSupervisorPath_ += "otsdaq-utilities/tools/";
-	__COUT__ << "ChatSupervisor path: " << chatSupervisorPath_ << __E__;
+	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr && std::string(std::getenv("OTS_EN_SLACK")) == "1");
+	if(enableSlackChat)
+	{
+		__COUT__ << "ChatSupervisor: Slack chat enabled." << __E__;
+		
+		const char* env = std::getenv("OTS_SOURCE");
+		chatSupervisorPath_ = env ? env : "";
+
+		if(!chatSupervisorPath_.empty() && chatSupervisorPath_.back() != '/')
+			chatSupervisorPath_ += '/';
+		chatSupervisorPath_ += "otsdaq-utilities/tools/";
+		__COUT__ << "ChatSupervisor path: " << chatSupervisorPath_ << __E__;
+	}
 }
 
 //==============================================================================
@@ -96,15 +103,10 @@ void ChatSupervisor::request(const std::string& requestType,
 	{
 		std::string chat = CgiDataUtilities::postData(cgiIn, "chat");
 		std::string user = CgiDataUtilities::postData(cgiIn, "user");
-		std::string image = CgiDataUtilities::postData(cgiIn, "image");
-
-		__COUT__ << "chat: " << chat << __E__;
-		__COUT__ << "user: " << user << __E__;
-		__COUT__ << "image: " << image << __E__;
 
 		escapeChat(chat);
 
-		newChat(chat, user, image);
+		newChat(chat, user);
 	}
 	else if(requestType == "PageUser")
 	{
@@ -221,13 +223,14 @@ void ChatSupervisor::newUser(const std::string& user)
 //==============================================================================
 /// ChatSupervisor::newChat()
 ///	create new chat, and increment update
-void ChatSupervisor::newChat(const std::string& chat, const std::string& user, const std::string& image)
+void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
 {
 	ChatHistoryEntry_.push_back(chat);
 	ChatHistoryAuthor_.push_back(user);
 	ChatHistoryTime_.push_back(time(0));
 	ChatHistoryIndex_.push_back(incrementAndGetLastUpdate());
-	sendToSlack("127.0.0.1", user, chat, image);
+	if(enableSlackChat)
+		sendToSlack(user, chat);
 }
 
 //==============================================================================
@@ -303,30 +306,22 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 
 //==============================================================================
 /// ChatSupervisor::sendToSlack()
-bool ChatSupervisor::sendToSlack(const std::string& host,
-                		const std::string& user,
-						const std::string& message, 
-						const std::string& image)
+void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
 {
-	__COUT__ << "Sending UDP packet from " << host << " with payload: " << message << __E__;
-
-	std::string command = "python3 " + chatSupervisorPath_ + "ots-slack.py " + "--message \"" + message + "\" --user " + user;
-	if(!image.empty())
-		command += " --image \"" + image + "\"";
-
+	std::string command = "python3 " + chatSupervisorPath_ + "SendSlackChat.py " + "--message \"" + message + "\" --user " + user;
 	__COUT__ << "Executing command: " << command << __E__;
-	auto result = StringMacros::exec(command.c_str());
 
-	if(!result.empty())
+	try
 	{
-		if(result.find("Error:") != std::string::npos)
-		{
-			__COUT__ << "Error from ots-slack.py: " << result << __E__;
-			return false;
-		}
-		else
-			__COUT__ << "Response from ots-slack.py: " << result << __E__;
-	}
+		auto result = StringMacros::exec(command.c_str());
 
-	return true;
+		if(!result.empty() && result.find("Error:") != std::string::npos)
+			__COUT__ << "Error from SendSlackChat.py: " << result << __E__;
+		else if (!result.empty())
+			__COUT__ << "Response from SendSlackChat.py: " << result << __E__;
+	}
+	catch(const std::exception& e)
+	{
+		__COUT__ << "Exception while executing command: " << e.what() << __E__;
+	}
 }
