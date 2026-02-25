@@ -24,11 +24,6 @@ from urllib.parse import unquote
 
 # import non standard libraries
 try:
-    import requests
-except ImportError:
-    raise ImportError("Install requests with 'pip install requests' to use this script.")
-
-try:
     from slack_sdk import WebClient
     from slack_sdk.errors import SlackApiError
 except ImportError:
