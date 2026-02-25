@@ -1053,8 +1053,8 @@ Here is the json string received:
 							.replace(/&nbsp; /g, "&nbsp;&nbsp;")
 							;
 
-						str += name + " = " +
-							Debug.callOutDebugLocales(value) + "<br>";
+						let calloutStr = Debug.callOutDebugLocales(value);
+						str += name + " = " + (calloutStr?calloutStr:value) + "<br>";
 					}
 				}
 				str += "<br>";

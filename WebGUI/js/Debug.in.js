@@ -339,17 +339,19 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                         console.log("source:", source);
                     }
                     else source = "";
-
-                    var returnStr;
+                  
+                    
                     //modify string for popup
+                    let returnStr;
                     returnStr = Debug.callOutDebugLocales(
                         source + str);
-                    if (returnStr) //in case of failure, leave alone
-                        str = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
-                            "<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
-                                "</div>").replace(/<TAB>/g,
-                                    "<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
-                                        "</div>");
+                    if (returnStr) //in case of failure, leave alone (avoid copy)
+                        str = returnStr;
+                        // str = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
+                        //     "<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
+                        //         "</div>").replace(/<TAB>/g,
+                        //             "<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
+                        //                 "</div>");
                     Debug.errorPop(str, num);
                 }
                 Debug.lastLogger = ""; //clear for next
@@ -1064,7 +1066,7 @@ Debug.copyMessagesToClipboard = function () {
 //=====================================================================================
 //Debug.callOutDebugLocales ~~
 //	add call out labels to file [line] text blobs
-//	returns undefined if no change
+//	returns undefined if no change (to allow user to avoid copy)
 Debug.callOutDebugLocales = function (str) {
     var i = 0;
     var j, k, l;
@@ -1267,11 +1269,20 @@ Debug.callOutDebugLocales = function (str) {
         return undefined; //give up on errors
     }
 
-    if (returnStr) //finish last chunk
-        returnStr += str.substr(i);
+    //finish last chunk and finishing touches
+    if(returnStr)
+    {
+        returnStr += str.substr(i); //last chunk
 
-    for (var i = 0; i < numOfIndents; ++i)
-        returnStr += "</div>"; //close indents
+        for (var i = 0; i < numOfIndents; ++i)
+            returnStr += "</div>"; //close indents
+
+        returnStr = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
+            "<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
+                "</div>").replace(/<TAB>/g,
+                    "<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
+                        "</div>");
+    }
 
     return returnStr; //if untouched, undefined return
-}
+} //end Debug.callOutDebugLocales()

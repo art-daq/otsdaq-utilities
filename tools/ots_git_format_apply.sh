@@ -22,7 +22,11 @@ echo
 
 if command -v clang-format >/dev/null 2>&1; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
-	if ! clang-format -i `find . -type f -name *.cc -o -name *.c -o -name *.cpp -o -name *.cxx -o -name *.h -o -name *.hh -o -name *.hxx -o -name *.icc`; then
+	if ! clang-format -i `find . -type f -name *.cc -o -name *.c -o -name *.cpp -o -name *.cxx -o -name *.icc`; then
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
+		exit 1
+	fi
+	if ! clang-format -i -style=file:.clang-format-hpp `find . -type f -name *.h -o -name *.hh -o -name *.hxx -o -name *.hpp`; then
 		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
 		exit 1
 	fi
@@ -96,7 +100,7 @@ if [ -n "$whitespace_files" ]; then
 	fi
 
 	echo
-	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Doing whitespace cleanup..."
+	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Doing whitespace cleanup... calling ots_whitespace_cleanup.sh"
 	echo
 
 	ots_whitespace_cleanup.sh "${fileParam[@]}"
