@@ -18,7 +18,6 @@
 
 import os
 import sys
-import base64
 from time import sleep
 from urllib.parse import unquote
 
