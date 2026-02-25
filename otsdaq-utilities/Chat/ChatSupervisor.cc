@@ -26,7 +26,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 	if(enableSlackChat)
 	{
 		__COUT__ << "ChatSupervisor: Slack chat enabled." << __E__;
-		
+
 		const char* env = std::getenv("OTS_SOURCE");
 		chatSupervisorPath_ = env ? env : "";
 

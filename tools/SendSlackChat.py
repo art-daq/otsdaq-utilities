@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #____________________________________________________________
-# 
+#
 # Utility script to post messages to a Slack channel via the Slack Web API.
 # Reads SLACK_CHANNEL and SLACK_BOT_TOKEN from the environment, validates input,
 # and sends a provided message using slack_sdk, raising clear errors for missing
@@ -89,7 +89,7 @@ def main() -> None:
     if "--help" in sys.argv or "-h" in sys.argv:
         print("Usage: sendSlackChat.py --message <message> --user <user>")
         raise SystemExit(0)
-    
+
     args = sys.argv[1:]
     i = 0
     message = None
