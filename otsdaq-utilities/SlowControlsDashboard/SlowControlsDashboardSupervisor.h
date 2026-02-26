@@ -82,7 +82,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void listFiles(std::string baseDir, bool recursive, std::vector<std::string>* pages);
 
   private:
-	std::string PollChannels_(std::set<std::string>& channels, bool resubscibe = true);
+	std::string                          PollChannels_(std::set<std::string>& channels, bool resubscibe = true);
 	std::map<int, std::set<std::string>> channelDependencyLookupMap_;
 	std::map<int, long int>              uidPollTimeMap_;
 	int                                  UID_;

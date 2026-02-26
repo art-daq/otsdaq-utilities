@@ -23,20 +23,20 @@
 
 #define __COUT_HDR__ ""
 
-#define Q(X) #X
+#define Q(X)     #X
 #define QUOTE(X) Q(X)
 
 #define __FILENAME__ \
 	(__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 #define __MF_SUBJECT__ __FILENAME__
-#define __MF_DECOR__ (__MF_SUBJECT__)
+#define __MF_DECOR__   (__MF_SUBJECT__)
 
-#define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
+#define __COUT_HDR_L__  ":" << std::dec << __LINE__ << " |\t"
 #define __COUT_HDR_FL__ __FILENAME__ << "" << __COUT_HDR_L__
-#define TLOG(X) std::cout << QUOTE(X) << ": " << __COUT_HDR_FL__  //__LINE__ << ": "
-#define __COUT_ERR__ TLOG(TLVL_ERROR) << __COUT_HDR__
-#define __COUT_WARN__ TLOG(TLVL_WARN) << __COUT_HDR__
-#define __COUT_INFO__ TLOG(TLVL_INFO) << __COUT_HDR__
+#define TLOG(X)         std::cout << QUOTE(X) << ": " << __COUT_HDR_FL__  //__LINE__ << ": "
+#define __COUT_ERR__    TLOG(TLVL_ERROR) << __COUT_HDR__
+#define __COUT_WARN__   TLOG(TLVL_WARN) << __COUT_HDR__
+#define __COUT_INFO__   TLOG(TLVL_INFO) << __COUT_HDR__
 #define __COUT__ \
 	if(0)        \
 	TLOG(TLVL_DEBUG) << __COUT_HDR__
@@ -49,7 +49,8 @@
 	ss << "|" << __MF_DECOR__ << ": " << __COUT_HDR_FL__ << __COUT_HDR__
 #define __SS_THROW__                        \
 	{                                       \
-		__COUT_ERR__ << "\n" << ss.str();   \
+		__COUT_ERR__ << "\n"                \
+		             << ss.str();           \
 		throw std::runtime_error(ss.str()); \
 	}  //put in {}'s to prevent surprises, e.g. if ... else __SS_THROW__;
 #define __SS_THROW_ONLY__                   \
@@ -66,9 +67,9 @@ std::string              vectorToString(const std::vector<std::string>& setToRet
                                         const std::string&              delimeter = ", ");
 void                     getVectorFromString(const std::string&        inputString,
                                              std::vector<std::string>& listToReturn,
-                                             const std::set<char>&     delimiter = {',', '|', '&'},
-                                             const std::set<char>&     whitespace = {' ', '\t', '\n', '\r'},
-                                             std::vector<char>*        listOfDelimiters = 0,
+                                             const std::set<char>&     delimiter           = {',', '|', '&'},
+                                             const std::set<char>&     whitespace          = {' ', '\t', '\n', '\r'},
+                                             std::vector<char>*        listOfDelimiters    = 0,
                                              bool                      decodeURIComponents = false);
 std::vector<std::string> getVectorFromString(
     const std::string&    inputString,
@@ -87,17 +88,17 @@ class ots_mm_udp_interface
 	const std::string& getFrontendMacroInfo(void);
 	std::string        getFrontendList(void);
 	std::string        getCommandList(const std::string& targetFE);
-	int getCommandInputCount(const std::string& targetFE, const std::string& command);
-	int getCommandOutputCount(const std::string& targetFE, const std::string& command);
-	std::string getCommandInputName(const std::string& targetFE,
-	                                const std::string& command,
-	                                int                inputIndex);
-	std::string getCommandOutputName(const std::string& targetFE,
-	                                 const std::string& command,
-	                                 int                outputIndex);
-	std::string runCommand(const std::string& targetFE,
-	                       const std::string& command,
-	                       const std::string& inputs);
+	int                getCommandInputCount(const std::string& targetFE, const std::string& command);
+	int                getCommandOutputCount(const std::string& targetFE, const std::string& command);
+	std::string        getCommandInputName(const std::string& targetFE,
+	                                       const std::string& command,
+	                                       int                inputIndex);
+	std::string        getCommandOutputName(const std::string& targetFE,
+	                                        const std::string& command,
+	                                        int                outputIndex);
+	std::string        runCommand(const std::string& targetFE,
+	                              const std::string& command,
+	                              const std::string& inputs);
 
 	// static const int        MAXBUFLEN = 5000;
 
