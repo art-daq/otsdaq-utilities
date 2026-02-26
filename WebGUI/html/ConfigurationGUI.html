@@ -2406,23 +2406,23 @@
 
 			var el = document.getElementById("searchMinThreshold");
             var searchMinThreshold = el ? el.value : 1;
-            console.log("searchMinThreshold: " + searchMinThreshold);
+            Debug.log("searchMinThreshold: " + searchMinThreshold);
 
 			var el = document.getElementById("searchVersionToCheck");
             var searchVersionToCheck = el ? el.value : "";
-            console.log("searchVersionToCheck: " + searchVersionToCheck);
+            Debug.log("searchVersionToCheck: " + searchVersionToCheck);
 
 			var activeOnlyEl = document.getElementById("activeOnlyFilter");
 			var isActiveOnlyChecked = activeOnlyEl ? activeOnlyEl.checked : false;
-			console.log("activeGroupFilter checked: " + isActiveOnlyChecked);
+			Debug.log("activeGroupFilter checked: " + isActiveOnlyChecked);
 
             var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
             var groupType = typeName[_groupViewFilterIndex + 1];
-            console.log("groupType: " + groupType);
+            Debug.log("groupType: " + groupType);
 
 			var optionElements = document.querySelectorAll('.myOption.optionhighlighted');
 			var optionGroups = Array.from(optionElements).map(el => el.textContent).join(',');
-			console.log("optionGroups: " + optionGroups);
+			Debug.log("optionGroups: " + optionGroups);
 
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
                 "&searchText=" + searchText +
@@ -2442,8 +2442,7 @@
                     const groupTableMap = new Map();
                     var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
 
-					console.log("Request XML:", req.responseXML);
-					console.log("GroupTableMatch elements found:", groupTableMatches.length);
+					Debug.log("GroupTableMatch elements found:", groupTableMatches.length);
 
                     for (var i = 0; i < groupTableMatches.length; i++) {
                         var groupTable = groupTableMatches[i];
@@ -2465,7 +2464,7 @@
                     } // end groupTableMatches loop
 
                     // Display results
-                    var resultStr = "Search Results for '" + searchText + "':\n";
+                    var resultStr = "Search Results for: <b>" + searchText + "</b>\n";
                     if (groupTableMap.size === 0) {
                         resultStr += "<br>No matches found.";
                     } else {
@@ -2489,13 +2488,15 @@
                                 previousTableName = parts[1];
                             }
 							if(parts[1] == "")
-								console.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
-                            resultStr += "\t\tColumn: " + parts[2] +
-                                ", Count: " + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) +
+								Debug.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
+                            resultStr += "\t\tColumn: <b>" + parts[2] + "</b>" +
+                                ", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) + "</b>" +
                                 "\n";
                         } // end groupTableMap loop
                     }
+					Debug._errTruncLen = -1;
                     Debug.info(DesktopContent.tooltipConditionString(resultStr));
+					Debug._errTruncLen = undefined;
                 },
                 "searchTextInGroup"
             );
@@ -16000,7 +16001,7 @@
                     var results = req.responseXML.getElementsByTagName("Match");
 					if(results.length == 0)
 					{
-						Debug.info(DesktopContent.tooltipConditionString("Search Results For: '" + searchText + "'<br><br>No matches found."));
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br><br>No matches found."));
 						return;
 					}
 
@@ -16023,7 +16024,7 @@
                                 {
                                     matchStr += "<br>";
                                     matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
-                                            "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                            "Table " + tableName + "-v" + prevVersion + "</a><br>";
                                     matchStr += columnStr;
                                 }
                             }
@@ -16050,13 +16051,17 @@
                         {
                             matchStr += "<br>";
                             matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\"); return false;\");'>" +
-                                    "Go to Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                    "Table " + tableName + "-v" + prevVersion + "</a><br>";
                             matchStr += columnStr;
                         }
                     }
 
-                    Debug.log("matchStr " + matchStr);
-					Debug.info(DesktopContent.tooltipConditionString("Search Results For: '" + searchText + "'<br><br>" + matchStr));
+					resultStr = "Search Results For: <b>" + searchText + "</b><br><br>" + matchStr;
+                    Debug.log("resultStr " + resultStr);
+
+					Debug._errTruncLen = -1;
+					Debug.info(DesktopContent.tooltipConditionString(resultStr));
+					Debug._errTruncLen = undefined;
                 }, 0);
         } //end popUpSearchFieldPrompt()
 
