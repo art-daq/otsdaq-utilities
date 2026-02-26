@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#____________________________________________________________
+# ____________________________________________________________
 #
 # Utility script to post messages to a Slack channel via the Slack Web API.
 # Reads SLACK_CHANNEL and SLACK_BOT_TOKEN from the environment, validates input,
@@ -8,12 +8,12 @@
 #
 #  sendSlackChat.py --help
 #
-#____________________________________________________________
+# ____________________________________________________________
 #
 
-#//For example:
-#//		./sendSlackChat.py --message "Hello, Slack!" --user "admin"
-#//			-- sends the message "Hello, Slack!" to the configured Slack channel
+# //For example:
+# //		./sendSlackChat.py --message "Hello, Slack!" --user "admin"
+# //			-- sends the message "Hello, Slack!" to the configured Slack channel
 
 
 import os
@@ -26,19 +26,25 @@ try:
     from slack_sdk import WebClient
     from slack_sdk.errors import SlackApiError
 except ImportError:
-    raise ImportError("Install slack_sdk with 'pip install slack_sdk' to use this script.")
+    raise ImportError(
+        "Install slack_sdk with 'pip install slack_sdk' to use this script."
+    )
 
 
 # Environment variables for Slack configuration, defined in ots_setup_slack.sh
 USER_DATA = os.environ.get("USER_DATA")
 if not USER_DATA:
-    raise RuntimeError("Set USER_DATA environment variable to the current user's data directory.")
+    raise RuntimeError(
+        "Set USER_DATA environment variable to the current user's data directory."
+    )
 
 SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
 if not SLACK_BOT_TOKEN or not SLACK_CHANNEL or not SLACK_CHANNEL_ID:
-    raise RuntimeError(f"Environment variables SLACK_BOT_TOKEN {SLACK_BOT_TOKEN}, SLACK_CHANNEL {SLACK_CHANNEL}, and SLACK_CHANNEL_ID {SLACK_CHANNEL_ID} must be set.")
+    raise RuntimeError(
+        f"Environment variables SLACK_BOT_TOKEN {SLACK_BOT_TOKEN}, SLACK_CHANNEL {SLACK_CHANNEL}, and SLACK_CHANNEL_ID {SLACK_CHANNEL_ID} must be set."
+    )
 
 
 def connectToClient() -> WebClient:
@@ -51,10 +57,14 @@ def connectToClient() -> WebClient:
             client.auth_test()
             return client
         except SlackApiError as e:
-            _root_logger.error(f"Attempt {attempt} of {number_of_tries} failed: {e.response['error']}")
+            _root_logger.error(
+                f"Attempt {attempt} of {number_of_tries} failed: {e.response['error']}"
+            )
             sleep(2)  # Wait before retrying
             if attempt == number_of_tries:
-                raise RuntimeError("Failed to connect to Slack API after multiple attempts.") from e
+                raise RuntimeError(
+                    "Failed to connect to Slack API after multiple attempts."
+                ) from e
     return WebClient(token=SLACK_BOT_TOKEN)
 
 
@@ -62,7 +72,7 @@ def cleanMessage(message: str) -> str:
     """Sanitize the message to prevent issues with Slack formatting."""
     # Basic sanitization: escape &, <, > characters
     message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    #replace all %20 with space
+    # replace all %20 with space
     message = message.replace("%20", " ")
     # replace all %0A%0D with newlines
     message = message.replace("%0A%0D", "\n")
@@ -124,9 +134,12 @@ def main() -> None:
     print(f"Parsed arguments - message: {message}, user: {user}")
 
     if not user and not message:
-        raise SystemExit("Error: No message or user provided. Usage: sendSlackChat.py --message <message> --user <user>")
+        raise SystemExit(
+            "Error: No message or user provided. Usage: sendSlackChat.py --message <message> --user <user>"
+        )
 
     sendToSlack(user, message)
+
 
 if __name__ == "__main__":
     main()
