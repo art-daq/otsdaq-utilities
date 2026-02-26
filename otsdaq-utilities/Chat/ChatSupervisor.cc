@@ -25,15 +25,17 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr && std::string(std::getenv("OTS_EN_SLACK")) == "1");
 	if(enableSlackChat)
 	{
-		__COUT__ << "ChatSupervisor: Slack chat enabled." << __E__;
+		const char* env = std::getenv("OTSDAQ_UTILITIES_DIR");
+		chatSupervisorToolsPath_ = env ? env : "";
 
-		const char* env = std::getenv("OTS_SOURCE");
-		chatSupervisorPath_ = env ? env : "";
+		if(chatSupervisorToolsPath_.empty())
+			enableSlackChat = false;
+		if(chatSupervisorToolsPath_.back() != '/')
+			chatSupervisorToolsPath_ += '/';
+		chatSupervisorToolsPath_ += "tools/";
 
-		if(!chatSupervisorPath_.empty() && chatSupervisorPath_.back() != '/')
-			chatSupervisorPath_ += '/';
-		chatSupervisorPath_ += "otsdaq-utilities/tools/";
-		__COUT__ << "ChatSupervisor path: " << chatSupervisorPath_ << __E__;
+		__COUT__ << "ChatSupervisor: Slack chat " << (enableSlackChat ? "enabled" : "disabled") << __E__;
+		__COUT__ << "ChatSupervisor path: " << chatSupervisorToolsPath_ << __E__;
 	}
 }
 
@@ -308,7 +310,7 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 /// ChatSupervisor::sendToSlack()
 void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
 {
-	std::string command = "python3 " + chatSupervisorPath_ + "SendSlackChat.py " + "--message \"" + message + "\" --user " + user;
+	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " + "--message \"" + message + "\" --user " + user;
 	__COUT__ << "Executing command: " << command << __E__;
 
 	try

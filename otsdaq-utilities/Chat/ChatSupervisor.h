@@ -44,7 +44,7 @@ class ChatSupervisor : public CoreSupervisorBase
 	std::vector<std::string> ChatUsers_;
 	std::vector<time_t>      ChatUsersTime_;
 
-	std::string chatSupervisorPath_;
+	std::string chatSupervisorToolsPath_;
 	bool        enableSlackChat;
 
 	enum
