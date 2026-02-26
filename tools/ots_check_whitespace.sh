@@ -57,7 +57,7 @@ for name in $names
 do
 	#echo "Checking whitespace for $name"
 	bname=$( basename $name )
-	ext=$(echo $bname | awk -F. '{if(NF==1) print ""; else print $NF};' )
+	ext=$(echo $bname | awk -F. '{if(NF==1) print ""; else print $NF};' )	
 	if [[ "$ext" == "hh" || "$ext" == "cc" || "$ext" == "fcl" \
 		|| "$ext" == "C" ||  "$ext" == "h" || "$ext" == "icc" \
 		|| "$ext" == "mac" || "$ext" == "sh" || "$ext" == "py" || "$ext" == "pl"  \
