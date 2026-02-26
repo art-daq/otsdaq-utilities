@@ -2075,9 +2075,7 @@
 					"'>" +
 					"View Latest Key for Selected Group</button>";
 
-				str += "<br>";
-				str += "<br>";
-				str += "<label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' name='activeGroupFilter' value='active'> Active Groups Only</label>";
+				str += "<br><br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
 
 				str += "<br>Minimum threshold value... ";
 				str += "<br><input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
@@ -7944,10 +7942,12 @@
             var el = document.getElementById('findAndReplace');
             el.innerHTML = ""; //clear the other type of controls
             var el = document.getElementById('aboveTableDialog'); //share with copyAndMove and tableVersionDiff
-            var i = el.innerText.indexOf("Minimum");
+            var i = el.innerText.indexOf("Active ");
             if (i >= 0 && i < 5) { el.innerHTML = ""; return; } //hide if already shown
 
             var str = "";
+			str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
+
             str += "<br>Minimum threshold value... ";
             str += "<br>";
             str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
@@ -15977,6 +15977,10 @@
             var searchText = el ? el.value : "";
             Debug.log("Search field value: " + searchText);
 
+			var el = document.getElementById("activeOnlyFilter");
+			var activeOnlyFilter = el.checked;
+			console.log("activeOnlyFilter " + activeOnlyFilter);
+
             var el = document.getElementById("searchMinThreshold");
             var searchMinThreshold = el ? el.value : 1;
             Debug.log("Search field value: " + searchMinThreshold);
@@ -15988,7 +15992,8 @@
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
                 "&searchText=" + searchText +
                 "&tableName=" + tableName +
-				"&searchVersionToCheck=" + searchVersionToCheck,
+				"&searchVersionToCheck=" + searchVersionToCheck +
+				"&activeOnly=" + activeOnlyFilter,
                 "",
                 function(req){
                     var req = arguments[0];
@@ -16001,7 +16006,7 @@
                     var results = req.responseXML.getElementsByTagName("Match");
 					if(results.length == 0)
 					{
-						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br>No matches found."));
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br><br>No matches found."));
 						return;
 					}
 
