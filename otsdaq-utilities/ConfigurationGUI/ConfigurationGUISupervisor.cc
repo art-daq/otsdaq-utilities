@@ -1159,18 +1159,6 @@ try
 		handleGetAffectedGroupsXML(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
 	}
-	else if(requestType == "checkAffectedActiveGroups")
-	{
-		std::string groupName      = CgiDataUtilities::getData(cgiIn, "groupName");
-		std::string groupKey       = CgiDataUtilities::getData(cgiIn, "groupKey");
-		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
-		__SUP_COUT__ << "modifiedTables: " << modifiedTables << __E__;
-		__SUP_COUT__ << "groupName: " << groupName << __E__;
-		__SUP_COUT__ << "groupKey: " << groupKey << __E__;
-
-		handleGetAffectedGroupsXML(
-		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
-	}
 	else if(requestType == "SearchFieldInGroup")
 	{
 		std::string searchText   	= CgiDataUtilities::getData(cgiIn, "searchText");
