@@ -2080,20 +2080,24 @@
 				str += "<label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' name='activeGroupFilter' value='active'> Active Groups Only</label>";
 
 				str += "<br>Minimum threshold value... ";
-				str += "<br><input type='text' id='searchMinThreshold' value='1'" +
+				str += "<br><input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
 					"style='margin:0;width:399px; height:" + (17) + "px'/>";
 
 				str += "<br>Version to check... ";
-				str += "<br><input type='text' id='searchVersionToCheck' value=''" +
+				str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
                     "style='margin:0;width:399px; height:" + (17) + "px'/>";
 
 				str += "<br>";
 				str += "Search for Keyword in Group(s): ";
 				str += "<br>";
-                str += "<input type='text' id='searchTextInGroups' " +
-                    "placeholder='Search text' " +
-                    "style='width:399px;' " +
-                    "onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
+				str += "<input type='text' id='searchTextInGroups' " +
+					"placeholder='Search text' " +
+					"style='width:399px;' " +
+					"autocomplete='off' " +
+					"autocorrect='off' " +
+					"autocapitalize='off' " +
+					"spellcheck='false' " +
+					"onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
 
 				str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
 
@@ -2407,7 +2411,7 @@
 			var el = document.getElementById("searchVersionToCheck");
             var searchVersionToCheck = el ? el.value : "";
             console.log("searchVersionToCheck: " + searchVersionToCheck);
-			
+
 			var activeOnlyEl = document.getElementById("activeOnlyFilter");
 			var isActiveOnlyChecked = activeOnlyEl ? activeOnlyEl.checked : false;
 			console.log("activeGroupFilter checked: " + isActiveOnlyChecked);
@@ -2463,7 +2467,7 @@
                     // Display results
                     var resultStr = "Search Results for '" + searchText + "':\n";
                     if (groupTableMap.size === 0) {
-                        resultStr += "No matches found.";
+                        resultStr += "<br>No matches found.";
                     } else {
                         var previousGroupName = "";
 						var previousGroupKey = "";
@@ -2473,22 +2477,21 @@
                             var parts = Array.from(groupTableMap.keys())[i].split("-");
                             if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
                             {
-                                resultStr += "\nGroup: " + parts[0] + " (" + parts[4] + ")\n";
+                                resultStr += "\nGroup: " + parts[0] + " v" + parts[4] + "\n";
                                 previousGroupName = parts[0];
                                 previousGroupKey = parts[4];
                                 previousTableName = "";
                             }
                             if(parts[1] != previousTableName)
                             {
-                                resultStr += "\tTable: " + parts[1] + " v" + parts[3] + "\n";
+								resultStr += "\t<a href='#' onclick='setupSpecificTable(\"" + parts[1] + "\",\"" + parts[3] + "\", \"setupTableViewMode(\\\"anchorTag-" + parts[1] + "\\\"); return false;\");'>" +
+                                            "Table " + parts[1] + "-v" + parts[3] + "</a><br>";
                                 previousTableName = parts[1];
                             }
 							if(parts[1] == "")
 								console.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
-							if((groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) < searchMinThreshold)
-								continue;
                             resultStr += "\t\tColumn: " + parts[2] +
-                                ", Occurrences: " + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) +
+                                ", Count: " + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) +
                                 "\n";
                         } // end groupTableMap loop
                     }
@@ -3864,6 +3867,15 @@
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered) {
 				window.addEventListener('mouseup', () => {
+					// do not interrupt highlighting and text input
+					const activeEl = document.activeElement;
+					const hasTextSelection = window.getSelection && !window.getSelection().isCollapsed;
+					if (_mouseIsSelecting || hasTextSelection ||
+						(activeEl && (activeEl.tagName === "INPUT" ||
+							activeEl.tagName === "TEXTAREA" ||
+							activeEl.isContentEditable))) {
+						return;
+					}
 					isDragging = false;
 					document.body.classList.remove('no-select');
 					window.getSelection().removeAllRanges();
@@ -7937,19 +7949,19 @@
             var str = "";
             str += "<br>Minimum threshold value... ";
             str += "<br>";
-            str += "<input type='text' id='searchMinThreshold' value='1'" +
+            str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
                     "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
 			str += "<br>Version to check... ";
             str += "<br>";
-            str += "<input type='text' id='searchVersionToCheck' value=''" +
+            str += "<input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
                     "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
             str += "<br>Search all Table Versions for... ";
             str += "<br>";
-            str += "<input type='text' id='searchTextInAllTableVersions' value='' " +
-                "onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
-                "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
+			str += "<input type='text' id='searchTextInAllTableVersions' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
+				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
             str += "<br><br>";
             el.innerHTML = str;
         } //end setupSearchAllTableVersions()
@@ -8812,7 +8824,7 @@
 
 						str += "<div onkeydown='keyHandler(event)' " +
 							"onmouseup='event.stopPropagation();' " +
-							"onclick='event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 							"style='" +
 							"white-space:nowrap;" +
 							"margin:-3px -2px -2px -1px;" +
@@ -8821,7 +8833,7 @@
 						str += "<select  onkeydown='keyHandler(event)' " +
 							"id='fixedChoice-editSelectBox' " +
 							"onmouseup='event.stopPropagation();' " +
-							"onclick='event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 							"style='" +
 							"float:left;" +
 							"margin: -2px 1px 0px 0px; " +
@@ -8880,7 +8892,7 @@
 								"id='fixedChoice-editTextBox' " +
 								"onkeydown='keyHandler(event)' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"style='display:none;" +
 								"float:left;" +
 								"margin:-2px 0 -" + (el.offsetHeight + 6) + "px 0;" +
@@ -9135,7 +9147,7 @@
 
 							str += "<table cellpadding='0' cellspacing='0' border='0' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"><tr>";
 							str += "<td style='text-align:right'>Table:</td><td>";
 							str += "<select  onkeydown='keyHandler(event,this)' " +
@@ -9868,7 +9880,7 @@
 								"id='fixedChoice-editTextBox' " +
 								"onkeydown='keyHandler(event)' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"style='display:none;" +
 								"float:left;" +
 								"margin:-2px 0 -" + (el.offsetHeight - 10) + "px 0;" +
@@ -10038,7 +10050,7 @@
 									"id='fixedChoice-editTextBox' " +
 									"onkeydown='keyHandler(event)' " +
 									"onmouseup='event.stopPropagation();' " +
-									"onclick='event.stopPropagation();' " +
+								"onclick='event.stopPropagation();' " +
 									"style='display:none;" +
 									"float:left;" +
 									"margin:-2px 0 -" + (el.offsetHeight - 10) + "px 0;" +
@@ -10377,7 +10389,8 @@
 					((el.offsetWidth > 150 ? el.offsetWidth : 150) - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='";
 				str += encodeHTML(_editingCellElOldValue); //replace single quotes since within html
 				str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
-					"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting);' " +
+					"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting); event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 					">";
 
 			}
@@ -10392,7 +10405,8 @@
 						((el.offsetWidth > 150 ? el.offsetWidth : 150) - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='";
 					str += encodeHTML(_editingCellElOldValue); //replace single quotes since within html
 					str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
-						"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting);' " +
+						"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting); event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 						">";
 				}
 
@@ -15970,7 +15984,7 @@
             var searchVersionToCheck = el ? el.value : "";
             Debug.log("Search field value: " + searchVersionToCheck);
 
-            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInAllTableVersions" +
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
                 "&searchText=" + searchText +
                 "&tableName=" + tableName +
 				"&searchVersionToCheck=" + searchVersionToCheck,
@@ -15986,7 +16000,7 @@
                     var results = req.responseXML.getElementsByTagName("Match");
 					if(results.length == 0)
 					{
-						Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>Found no matches."));
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: '" + searchText + "'<br><br>No matches found."));
 						return;
 					}
 
@@ -16042,7 +16056,7 @@
                     }
 
                     Debug.log("matchStr " + matchStr);
-					Debug.info(DesktopContent.tooltipConditionString("Search Results For: " + searchText + "<br><br>" + matchStr));
+					Debug.info(DesktopContent.tooltipConditionString("Search Results For: '" + searchText + "'<br><br>" + matchStr));
                 }, 0);
         } //end popUpSearchFieldPrompt()
 
