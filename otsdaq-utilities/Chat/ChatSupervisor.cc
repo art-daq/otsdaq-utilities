@@ -22,10 +22,11 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 
 	ChatLastUpdateIndex = 1;  // skip 0
 
-	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr && std::string(std::getenv("OTS_EN_SLACK")) == "1");
+	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr &&
+	                   std::string(std::getenv("OTS_EN_SLACK")) == "1");
 	if(enableSlackChat)
 	{
-		const char* env = std::getenv("OTSDAQ_UTILITIES_DIR");
+		const char* env          = std::getenv("OTSDAQ_UTILITIES_DIR");
 		chatSupervisorToolsPath_ = env ? env : "";
 
 		if(chatSupervisorToolsPath_.empty())
@@ -34,7 +35,8 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 			chatSupervisorToolsPath_ += '/';
 		chatSupervisorToolsPath_ += "tools/";
 
-		__COUT__ << "ChatSupervisor: Slack chat " << (enableSlackChat ? "enabled" : "disabled") << __E__;
+		__COUT__ << "ChatSupervisor: Slack chat "
+		         << (enableSlackChat ? "enabled" : "disabled") << __E__;
 		__COUT__ << "ChatSupervisor path: " << chatSupervisorToolsPath_ << __E__;
 	}
 }
@@ -310,7 +312,8 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 /// ChatSupervisor::sendToSlack()
 void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
 {
-	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " + "--message \"" + message + "\" --user " + user;
+	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " +
+	                      "--message \"" + message + "\" --user " + user;
 	__COUT__ << "Executing command: " << command << __E__;
 
 	try
@@ -319,7 +322,7 @@ void ChatSupervisor::sendToSlack(const std::string& user, const std::string& mes
 
 		if(!result.empty() && result.find("Error:") != std::string::npos)
 			__COUT__ << "Error from SendSlackChat.py: " << result << __E__;
-		else if (!result.empty())
+		else if(!result.empty())
 			__COUT__ << "Response from SendSlackChat.py: " << result << __E__;
 	}
 	catch(const std::exception& e)
