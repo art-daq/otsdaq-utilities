@@ -2476,7 +2476,7 @@
                             var parts = Array.from(groupTableMap.keys())[i].split("-");
                             if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
                             {
-                                resultStr += "\nGroup: " + parts[0] + " v" + parts[4] + "\n";
+                                resultStr += "\nGroup: <b>" + parts[0] + "</b> v" + parts[4] + "\n";
                                 previousGroupName = parts[0];
                                 previousGroupKey = parts[4];
                                 previousTableName = "";
@@ -16001,7 +16001,7 @@
                     var results = req.responseXML.getElementsByTagName("Match");
 					if(results.length == 0)
 					{
-						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br><br>No matches found."));
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br>No matches found."));
 						return;
 					}
 
@@ -16056,7 +16056,7 @@
                         }
                     }
 
-					resultStr = "Search Results For: <b>" + searchText + "</b><br><br>" + matchStr;
+					resultStr = "Search Results For: <b>" + searchText + "</b><br>" + matchStr;
                     Debug.log("resultStr " + resultStr);
 
 					Debug._errTruncLen = -1;
