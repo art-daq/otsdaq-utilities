@@ -412,6 +412,10 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping archived repos."
 				continue
 			fi
+			if [[ "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping scd recipes."
+				continue
+			fi
 
 			cd $repo_dir
 			repo_name=$(basename "$repo_dir")
