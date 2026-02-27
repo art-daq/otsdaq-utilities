@@ -724,7 +724,7 @@ class ECLEntry_t : public ::xml_schema::type
 ::std::unique_ptr< ::ECLEntry_t> entry(
     ::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> d,
     ::xml_schema::flags                                    f = 0,
-    const ::xml_schema::properties& p = ::xml_schema::properties());
+    const ::xml_schema::properties&                        p = ::xml_schema::properties());
 
 #include <iosfwd>
 

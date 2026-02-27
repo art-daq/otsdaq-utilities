@@ -64,7 +64,7 @@ do
 		|| "$ext" == "html" || "$ext" == "htm" || "$ext" == "css" || "$ext" == "js"
 		|| "$bname" == "SConscript"  \
 		|| "$name" == *"tools/"*  \
-		|| "$name" == *"test/"*  \
+		|| ("$name" == *"test/"* && "$ext" != "bin")  \
 		|| "$name" =~ $geomReg1 || "$name" =~ $geomReg2 ]]; then
 
 		# check whitespace and return non-zero if not allowed
