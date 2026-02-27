@@ -22,6 +22,9 @@ for file in "$@"; do
 	| sed 's/[[:space:]]\+$//' \
 	> "$tmp"
 
+	# Remove all trailing blank lines, then add exactly one newline
+	sed -i -e :a -e '/^\s*$/{$d;N;ba' -e '}' "$tmp"
+
 	# 3) Ensure exactly one terminal newline
 	# If file does not end with newline, add one
 	if [ -s "$tmp" ] && [ "$(tail -c1 "$tmp" | wc -l)" -eq 0 ]; then
