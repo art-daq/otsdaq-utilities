@@ -1383,7 +1383,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 					ConfigurationAPI.getFieldValuesForRecords(
 							_XDAQ_BASE_PATH,
 							name,
-							["Address","Port","ApplicationGroupID"],
+							["Address","Port","LinkToApplicationGroupID"],
 							function(objArr)
 							{
 						console.log(objArr);
@@ -2609,7 +2609,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 							var fieldArr = ["Status",
 											"LinkToApplicationTable",
-											"ApplicationGroupID",
+											"LinkToApplicationGroupID",
 											"Address",
 											"Port",
 											"CommentDescription"
@@ -2617,7 +2617,7 @@ RecordWiz.createWiz = function(doneHandler, recordsAliasFastForward) {
 
 							var valueArr = ["1",//"Status",
 											_XDAQAPP_BASE_PATH,//"LinkToApplicationTable",
-											appGroupId,//"ApplicationGroupID",
+											appGroupId,//"LinkToApplicationGroupID",
 											address,//"Address"
 											port,//"Port"
 											_DEFAULT_WIZ_COMMENT//"CommentDescription"
