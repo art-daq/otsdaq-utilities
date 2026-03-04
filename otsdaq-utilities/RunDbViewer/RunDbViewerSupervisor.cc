@@ -271,9 +271,8 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		__SS_THROW__;
 	}
 
-	std::string filter = "AND run_type.run_type_description like '%" + runType + "%'";
 	std::vector<std::vector<std::string>> runRecords =
-	    runInfoInterface->getRunRecords(startTime, endTime, filter);
+	    runInfoInterface->getRunRecords(startTime, endTime, "", runType);
 	std::vector<std::vector<std::string>> subsystemConfigRecords;
 
 	if(xmlOut)
