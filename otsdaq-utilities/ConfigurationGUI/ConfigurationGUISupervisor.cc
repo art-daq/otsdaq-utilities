@@ -75,15 +75,17 @@ void ConfigurationGUISupervisor::init(void)
 		              << "Check the active context group from within Wizard Mode."
 		              << __E__;
 	}
-	
+
 	//initialize first config manager (pre-load for first user)
 	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
 	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
 
 	if(CorePropertySupervisorBase::allSupervisorInfo_.isWizardMode())
 	{
-		__SUP_COUT_INFO__ << "After successfull Config GUI init, marking alive for wiz mode!" << __E__;
-		CorePropertySupervisorBase::indicateOtsAlive(); // no parameters for wiz mode indication
+		__SUP_COUT_INFO__
+		    << "After successfull Config GUI init, marking alive for wiz mode!" << __E__;
+		CorePropertySupervisorBase::
+		    indicateOtsAlive();  // no parameters for wiz mode indication
 	}
 }  // end init()
 
@@ -4581,9 +4583,11 @@ try
 					        ->getView(),
 					    TableVersion() /* destinationVersion*/,
 					    author,
-					    mergeApproach == "Rename"? 
-							TableBase::MergeApproach::RENAME : 
-							( mergeApproach == "Replace"? TableBase::MergeApproach::REPLACE : TableBase::MergeApproach::SKIP),
+					    mergeApproach == "Rename"
+					        ? TableBase::MergeApproach::RENAME
+					        : (mergeApproach == "Replace"
+					               ? TableBase::MergeApproach::REPLACE
+					               : TableBase::MergeApproach::SKIP),
 					    uidConversionMap,
 					    groupidConversionMap,
 					    i == 0 /* fillRecordConversionMaps */,

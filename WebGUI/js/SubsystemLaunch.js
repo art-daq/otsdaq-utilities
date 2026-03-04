@@ -1228,7 +1228,7 @@ SubsystemLaunch.create = function() {
 					{
 						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
 						const tel = document.createElement("textarea");
-						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);						
+						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
 
 						el.innerText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
