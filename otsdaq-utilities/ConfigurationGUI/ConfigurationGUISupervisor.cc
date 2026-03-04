@@ -83,7 +83,7 @@ void ConfigurationGUISupervisor::init(void)
 	if(CorePropertySupervisorBase::allSupervisorInfo_.isWizardMode())
 	{
 		__SUP_COUT_INFO__
-		    << "After successfull Config GUI init, marking alive for wiz mode!" << __E__;
+		    << "After successful Config GUI init, marking alive for wiz mode!" << __E__;
 		CorePropertySupervisorBase::
 		    indicateOtsAlive();  // no parameters for wiz mode indication
 	}
