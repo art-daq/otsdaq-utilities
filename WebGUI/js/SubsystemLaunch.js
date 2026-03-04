@@ -1225,8 +1225,14 @@ SubsystemLaunch.create = function() {
 
 					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusTime &&
 							SubsystemLaunch.subsystems[s].lastStatusTime != "0")
-						el.innerText = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]) + " ( " +
+					{
+						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
+						const tel = document.createElement("textarea");
+						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);						
+
+						el.innerText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
+					}
 					else if(fieldIds[i] == "status")
 						localDisplayState(el,
 							SubsystemLaunch.subsystems[s].status,
