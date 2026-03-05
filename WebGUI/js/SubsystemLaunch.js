@@ -1024,12 +1024,21 @@ SubsystemLaunch.create = function() {
 		//Run Launch Status ---------
 		el = document.getElementById("startButtonDiv");
 		if(SubsystemLaunch.system.state != "Running" &&
-			SubsystemLaunch.iterator.activePlan == "" &&
 			(
-			SubsystemLaunch.iterator.activePlanStatus === undefined ||
-			SubsystemLaunch.iterator.activePlanStatus == "" ||
-			SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
-				SubsystemLaunch.iterator.activePlanStatus == "Error")) {
+				SubsystemLaunch.iterator.activePlan == "" ||
+				(
+					SubsystemLaunch.system.progress == 100 && 
+					SubsystemLaunch.system.state == "Configured"
+				)
+			) 
+			&&
+			(
+				SubsystemLaunch.iterator.activePlanStatus === undefined ||
+				SubsystemLaunch.iterator.activePlanStatus == "" ||
+				SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
+				SubsystemLaunch.iterator.activePlanStatus == "Error"
+			)) 
+		{
 			el.innerHTML = "Start";
 			el.setAttribute("class","greenBigButton");
 
@@ -1099,7 +1108,7 @@ SubsystemLaunch.create = function() {
 			}
 			else if(inRun) //likely, Iterator left open-ended run
 				str += "In open-ended Run";
-			else if(SubsystemLaunch.system.activeFsm == "iterator")
+			else if(SubsystemLaunch.system.activeFsmWindow == "iterator")
 				str += "Command #" + SubsystemLaunch.iterator.currentCommandIndex +
 					" of " + SubsystemLaunch.iterator.currentNumberOfCommands +
 					", Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
@@ -1156,7 +1165,11 @@ SubsystemLaunch.create = function() {
 		for (var i = 0; i < fieldIds.length; ++i) {
 			el = document.getElementById("systemStatus_" + fieldIds[i]);
 			if(!el) continue; //some fields might not exist
-			el.innerText = SubsystemLaunch.system[fieldIds[i]];
+			if(fieldIds[i] == "activeFsm")
+				el.innerText = SubsystemLaunch.system.activeFsm + 					
+					" (" + SubsystemLaunch.system.activeFsmWindow + ")";
+			else
+				el.innerText = SubsystemLaunch.system[fieldIds[i]];
 		}
 
 
@@ -1647,7 +1660,9 @@ SubsystemLaunch.create = function() {
 		}
 
 		if (subsystemIndex == -1) {
-			Debug.log("System action - activeFsm", SubsystemLaunch.system.activeFsm);
+			Debug.log("System action - activeFsm", SubsystemLaunch.system.activeFsm,
+				SubsystemLaunch.system.activeFsmWindow
+			);
 
 			var configAlias;
 			if(command == "Configure") //at config alias
@@ -1666,7 +1681,9 @@ SubsystemLaunch.create = function() {
 			SubsystemLaunch.system.progress = 0;
 			displayStatus();
 
-			if (command == "Halt" && SubsystemLaunch.system.activeFsm == "iterator") {
+			if (command == "Halt" && 
+					SubsystemLaunch.system.activeFsmWindow == "iterator")				 
+			{
 				Debug.log("Do haltIterator");
 
 				//resume statusing and clear action
@@ -2109,8 +2126,10 @@ SubsystemLaunch.create = function() {
 
 		if(SubsystemLaunch.system.state != "Running" && (
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
-			SubsystemLaunch.iterator.activePlanStatus == "Error")) {
-			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") {
+			SubsystemLaunch.iterator.activePlanStatus == "Error")) 
+		{
+			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") 
+			{
 				DesktopContent.popUpVerification(
 					"There does not appear to be an active Run; do you want to Halt anyway?",
 					function () {
@@ -2519,6 +2538,7 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 //=====================================================================================
 SubsystemLaunch.extractSystemStatus = function (req) {
 	SubsystemLaunch.system.activeFsm = DesktopContent.getXMLValue(req,"active_fsmName");
+	SubsystemLaunch.system.activeFsmWindow = DesktopContent.getXMLValue(req,"active_fsmWindowName");
 	SubsystemLaunch.system.state = DesktopContent.getXMLValue(req,"current_state");
 	SubsystemLaunch.system.inTransition = DesktopContent.getXMLValue(req,"in_transition") == "1";
 	SubsystemLaunch.system.transition = DesktopContent.getXMLValue(req,"current_transition");

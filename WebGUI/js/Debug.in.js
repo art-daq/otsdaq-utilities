@@ -481,18 +481,30 @@ Debug.errorPop = function (err, severity) {
 				"></div>" +
 				"<br>" +
 				str + "<br>" +
-				"<div style='color:white;font-size:16px;padding-bottom:5px;'>" +
+				"<div style='color:white;font-size:16px;padding-bottom:5px;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
 				"Note: Newest messages are at the top.<br>" +
-				"<label style='color:white;font-size:11px;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</label>" +
+				"<label style='color:white;font-size:11px;-webkit-user-select:none;-moz-user-select:none;user-select:none;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</label>" +
 
-				"<div id='downloadIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
-				"style='float: right; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;'>" +
-				//make copy tex icon
-				"&#10697;" +
+				"<div id='dockIconDiv' onclick='Debug.dockPopup(0)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to bottom.' " +
+				"style='float: right; position: relative; padding: 0 10px; background: #003163; margin: -16px 150px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+				"&#8595;" + //south arrow
+				"</div>" +
+				"<div id='expandIconDiv' onclick='Debug.dockPopup(1)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Expand popup to corner.' " +
+				"style='float: right; position: relative; padding: 0 3px; background: #003163; margin: -16px 120px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+				"&#8600;" + //southeast arrow
+				"</div>" +
+				"<div id='sideIconDiv' onclick='Debug.dockPopup(2)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to side.' " +
+				"style='float: right; position: relative; padding: 0 1px; background: #003163; margin: -16px 90px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+				"&#8594;" + //east arrow
+				"</div>" +
+				
+				"<div id='copyTextIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
+				"style='float: right; position: relative; padding: 0 1px; background: #003163; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+				"&#10697;" + //copy icon
 				"</div>" +
 
 				"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' " +
-				"style='float: right; margin: -10px 30px -100px -100px; cursor: pointer;'>" +
+				"style='float: right; position: relative; padding: 0 1px; background: #003163; margin: -10px 30px -100px -100px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
 
 				downloadArrowStr +
 
@@ -1005,9 +1017,13 @@ Debug.handleErrorResize = function () {
 	el.style.top = (h + 6 - 10) + "px";
 
 	el = document.getElementsByClassName(Debug._errBoxId + "-err")[0];
-	el.style.height = (h - 130) + "px";
+	if (w < 300) //take more off height because of wraparound height loss
+		el.style.height = (h - 170) + "px";
+	else if (w < 700)
+		el.style.height = (h - 150) + "px";
+	else 
+		el.style.height = (h - 130) + "px";
 } //end handleErrorResize()
-
 
 //=====================================================================================
 Debug.downloadMessages = function () {
@@ -1286,3 +1302,76 @@ Debug.callOutDebugLocales = function (str) {
 
 	return returnStr; //if untouched, undefined return
 } //end Debug.callOutDebugLocales()
+
+//=====================================================================================
+Debug.dockPopup = function (dockMode) 
+{
+	Debug.log("Debug.dockPopup()",dockMode);
+	var el = document.getElementById(Debug._errBoxId);
+	if (!el) return;
+
+	var w;
+	var h;
+	
+	//and, set width properly so error box is scrollable for long winded errors
+	if (typeof DesktopContent != 'undefined') //define width using DesktopContent
+	{
+		w = (DesktopContent.getWindowWidth() - 16 - 14); //scroll width is 14px
+		h = (DesktopContent.getWindowHeight() - 16 - 14);
+	}
+	else if (typeof Desktop != 'undefined' && Desktop.desktop) //define width using Desktop
+	{
+		w = (Desktop.desktop.getDesktopWidth() - 16 - 14); //scroll width is 14px
+		h = (Desktop.desktop.getDesktopHeight() - 16 - 14);
+	}
+
+	var sv = [Debug._errBoxOffX, Debug._errBoxOffY, Debug._errBoxOffW, Debug._errBoxOffH];
+
+	switch(dockMode) {
+		case 0: // lower 25% of parent window
+			Debug._errBoxOffX = 0;
+			Debug._errBoxOffY = h * 0.75;
+			Debug._errBoxOffW = 0;
+			if (w > 900) //if enough space, counter 10% margins
+			{
+				Debug._errBoxOffW += w * 0.20;
+				Debug._errBoxOffX -= w * 0.10;
+			}
+			Debug._errBoxOffW += 5; //to reduce margin
+			Debug._errBoxOffH = -h * 0.75;
+			Debug._errBoxOffH += 50; //to reduce margin
+			break;
+		case 1: // bottom right quadrant
+			Debug._errBoxOffX = w * 0.70;
+			Debug._errBoxOffY = h * 0.75;
+			Debug._errBoxOffW = -w * 0.70;
+			if (w > 900) //if enough space, counter 10% margins
+				Debug._errBoxOffW += w * 0.10;
+			Debug._errBoxOffW += 5; //to reduce margin
+			Debug._errBoxOffH = -h * 0.75;
+			Debug._errBoxOffH += 50; //to reduce margin
+			break;
+		case 2: // right 25% of parent window
+			Debug._errBoxOffX = w * 0.70;
+			Debug._errBoxOffY = 0;
+			Debug._errBoxOffW = -w * 0.70;
+			if (w > 900) //if enough space, counter 10% margins
+				Debug._errBoxOffW += w * 0.10;
+			Debug._errBoxOffW += 5; //to reduce margin
+			Debug._errBoxOffH = 25; //to reduce margin
+			break;
+	}
+
+	//toggle back to normal if already in that position
+	if(Debug._errBoxOffX == sv[0] && Debug._errBoxOffY == sv[1] &&
+		 Debug._errBoxOffW == sv[2] && Debug._errBoxOffH == sv[3])
+	{
+		Debug._errBoxOffX = 0;
+		Debug._errBoxOffY = 0;
+		Debug._errBoxOffW = 0;
+		Debug._errBoxOffH = 0;
+	}
+
+	Debug.handleErrorResize();
+
+} //end Debug.dockPopup()

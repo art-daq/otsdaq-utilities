@@ -1164,7 +1164,12 @@ DesktopContent.scrollIntoViewY = function (targetID, doHighlight) {
     if (!el)
         throw new Error("Scroll-into-view target element '" + targetID + "' not found!");
 
-    el.scrollIntoView({ block: 'nearest', inline: 'start' });
+    el.scrollIntoView({// block: 'nearest', inline: 'start' 
+        block: "nearest",
+        inline: "nearest",
+        behavior: "instant"
+    });
+    
 
     if (window.scrollX != 0)
         window.scroll({ left: 0 });
