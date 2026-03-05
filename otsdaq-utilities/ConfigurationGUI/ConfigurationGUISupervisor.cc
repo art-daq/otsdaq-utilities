@@ -80,6 +80,13 @@ void ConfigurationGUISupervisor::init(void)
 	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
 	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
 
+	if(CorePropertySupervisorBase::allSupervisorInfo_.isWizardMode())
+	{
+		__SUP_COUT_INFO__
+		    << "After successful Config GUI init, marking alive for wiz mode!" << __E__;
+		CorePropertySupervisorBase::
+		    indicateOtsAlive();  // no parameters for wiz mode indication
+	}
 }  // end init()
 
 //==============================================================================
@@ -4620,7 +4627,11 @@ try
 					        ->getView(),
 					    TableVersion() /* destinationVersion*/,
 					    author,
-					    mergeApproach /*Rename,Replace,Skip*/,
+					    mergeApproach == "Rename"
+					        ? TableBase::MergeApproach::RENAME
+					        : (mergeApproach == "Replace"
+					               ? TableBase::MergeApproach::REPLACE
+					               : TableBase::MergeApproach::SKIP),
 					    uidConversionMap,
 					    groupidConversionMap,
 					    i == 0 /* fillRecordConversionMaps */,
@@ -6466,7 +6477,7 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 	}
 	else if(userLastUseTime_.find(mapKey) == userLastUseTime_.end())
 	{
-		__SUP_SS__ << "Fatal error managing userLastUseTime_! Check the logs for "
+		__SUP_SS__ << "Fatal error managing user sessions! Check the logs for "
 		              "Configuration Interface failure."
 		           << __E__;
 		__SUP_COUT_ERR__ << "\n" << ss.str();
