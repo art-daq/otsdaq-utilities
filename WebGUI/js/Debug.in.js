@@ -497,7 +497,7 @@ Debug.errorPop = function (err, severity) {
 				"style='float: right; position: relative; padding: 0 1px; background: #003163; margin: -16px 90px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
 				"&#8594;" + //east arrow
 				"</div>" +
-				
+
 				"<div id='copyTextIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
 				"style='float: right; position: relative; padding: 0 1px; background: #003163; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
 				"&#10697;" + //copy icon
@@ -1021,7 +1021,7 @@ Debug.handleErrorResize = function () {
 		el.style.height = (h - 170) + "px";
 	else if (w < 700)
 		el.style.height = (h - 150) + "px";
-	else 
+	else
 		el.style.height = (h - 130) + "px";
 } //end handleErrorResize()
 
@@ -1304,7 +1304,7 @@ Debug.callOutDebugLocales = function (str) {
 } //end Debug.callOutDebugLocales()
 
 //=====================================================================================
-Debug.dockPopup = function (dockMode) 
+Debug.dockPopup = function (dockMode)
 {
 	Debug.log("Debug.dockPopup()",dockMode);
 	var el = document.getElementById(Debug._errBoxId);
@@ -1312,7 +1312,7 @@ Debug.dockPopup = function (dockMode)
 
 	var w;
 	var h;
-	
+
 	//and, set width properly so error box is scrollable for long winded errors
 	if (typeof DesktopContent != 'undefined') //define width using DesktopContent
 	{

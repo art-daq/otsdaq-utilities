@@ -1027,17 +1027,17 @@ SubsystemLaunch.create = function() {
 			(
 				SubsystemLaunch.iterator.activePlan == "" ||
 				(
-					SubsystemLaunch.system.progress == 100 && 
+					SubsystemLaunch.system.progress == 100 &&
 					SubsystemLaunch.system.state == "Configured"
 				)
-			) 
+			)
 			&&
 			(
 				SubsystemLaunch.iterator.activePlanStatus === undefined ||
 				SubsystemLaunch.iterator.activePlanStatus == "" ||
 				SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
 				SubsystemLaunch.iterator.activePlanStatus == "Error"
-			)) 
+			))
 		{
 			el.innerHTML = "Start";
 			el.setAttribute("class","greenBigButton");
@@ -1166,7 +1166,7 @@ SubsystemLaunch.create = function() {
 			el = document.getElementById("systemStatus_" + fieldIds[i]);
 			if(!el) continue; //some fields might not exist
 			if(fieldIds[i] == "activeFsm")
-				el.innerText = SubsystemLaunch.system.activeFsm + 					
+				el.innerText = SubsystemLaunch.system.activeFsm +
 					" (" + SubsystemLaunch.system.activeFsmWindow + ")";
 			else
 				el.innerText = SubsystemLaunch.system[fieldIds[i]];
@@ -1681,8 +1681,8 @@ SubsystemLaunch.create = function() {
 			SubsystemLaunch.system.progress = 0;
 			displayStatus();
 
-			if (command == "Halt" && 
-					SubsystemLaunch.system.activeFsmWindow == "iterator")				 
+			if (command == "Halt" &&
+					SubsystemLaunch.system.activeFsmWindow == "iterator")
 			{
 				Debug.log("Do haltIterator");
 
@@ -2126,9 +2126,9 @@ SubsystemLaunch.create = function() {
 
 		if(SubsystemLaunch.system.state != "Running" && (
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
-			SubsystemLaunch.iterator.activePlanStatus == "Error")) 
+			SubsystemLaunch.iterator.activePlanStatus == "Error"))
 		{
-			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") 
+			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
 			{
 				DesktopContent.popUpVerification(
 					"There does not appear to be an active Run; do you want to Halt anyway?",
