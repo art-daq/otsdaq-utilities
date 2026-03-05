@@ -22,6 +22,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 
 	ChatLastUpdateIndex = 1;  // skip 0
 
+	// run ots_setup_slack.sh to enable OTS_EN_SLACK environment variable
 	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr &&
 	                   std::string(std::getenv("OTS_EN_SLACK")) == "1");
 	if(enableSlackChat)
