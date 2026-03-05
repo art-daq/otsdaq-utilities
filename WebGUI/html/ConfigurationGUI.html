@@ -667,6 +667,7 @@
 		var _msChosenGroupName;
 		var _msChosenGroupKey;
 		var _groupViewFilterIndex = 2; //-1=all, 0=context, 1=backbone, 2=configuration
+		var showGroupSearch = false;
 
 		var _mouseIsSelecting = false;	//to block switching cells when selecting text
 
@@ -2043,9 +2044,14 @@
 			str += "<a href='#' onclick='" +
 				"setupGroupCreator(\"&backLinkStr=" + backLinkStr +
 				"\");' title='" +
-				"Goto the group creator interface." +
+				"Go to the group creator interface." +
 				"'>" +
-				"Create a new Group</a>";
+				"Create a new Group</a> ";
+			str += "<a href='#' onclick='" +
+                "showGroupSearch = !showGroupSearch; setupGroupViewMode(); return false;' title='" +
+                "Toggle group search controls." +
+                "'>" +
+                "Search in Groups</a>";
 			str += "<br>";
 
 
@@ -2075,20 +2081,11 @@
 					"'>" +
 					"View Latest Key for Selected Group</button>";
 
-				str += "<br><br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
+				str += "<div id='groupSearchControls' style='display:" + (showGroupSearch ? "block" : "none") + ";'>";
+				str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Latest Keys Only</label>";
 
-				str += "<br>Minimum threshold value... ";
-				str += "<br><input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-					"style='margin:0;width:399px; height:" + (17) + "px'/>";
-
-				str += "<br>Version to check... ";
-				str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-                    "style='margin:0;width:399px; height:" + (17) + "px'/>";
-
-				str += "<br>";
-				str += "Search for Keyword in Group(s): ";
-				str += "<br>";
-				str += "<input type='text' id='searchTextInGroups' " +
+				str += "<br>Keyword to search for... ";
+				str += "<br><input type='text' id='searchTextInGroups' " +
 					"placeholder='Search text' " +
 					"style='width:399px;' " +
 					"autocomplete='off' " +
@@ -2096,6 +2093,17 @@
 					"autocapitalize='off' " +
 					"spellcheck='false' " +
 					"onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
+
+				str += "<br>Range of group keys... ";
+				str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+                    "style='margin:0;width:399px; height:" + (17) + "px'" +
+					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys' />";
+
+				str += "<br>Minimum occurrence threshold... ";
+				str += "<br><input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+					"style='margin:0;width:399px; height:" + (17) + "px'/>";
+
+				str += "</div>";
 
 				str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
 
@@ -7948,22 +7956,21 @@
             var str = "";
 			str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
 
-            str += "<br>Minimum threshold value... ";
+			str += "<br>Keyword to search for... ";
+			str += "<br><input type='text' id='searchTextInAllTableVersions' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
+				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
+
+			str += "<br>Version to search for... ";
+            str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'" +
+					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys'/>";
+
+			str += "<br>Minimum occurrence threshold... ";
             str += "<br>";
             str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
                     "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
-
-			str += "<br>Version to check... ";
             str += "<br>";
-            str += "<input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
-
-            str += "<br>Search all Table Versions for... ";
-            str += "<br>";
-			str += "<input type='text' id='searchTextInAllTableVersions' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
-				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
-            str += "<br><br>";
             el.innerHTML = str;
         } //end setupSearchAllTableVersions()
 
