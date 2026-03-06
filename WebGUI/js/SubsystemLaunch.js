@@ -511,9 +511,9 @@ SubsystemLaunch.create = function() {
 					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 					// 	">Start</button>";
-					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
-					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
-					// 	">Stop</button>";
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						">Stop</button>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Halt</button>";
@@ -1717,7 +1717,36 @@ SubsystemLaunch.create = function() {
 						0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 						true /*targetGatewaySupervisor*/);
 			}
-			else {
+			else if (command == "Stop"  &&
+					SubsystemLaunch.system.activeFsmWindow == "iterator")
+			{
+				Debug.log("Do stop launcher");
+				SubsystemLaunch.launcher.stop()
+			}
+			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left in runs
+			{
+				Debug.log("Do Stop fsmName",_fsmName);
+				
+				//send Stop to all checked subsystems individually
+
+				//make temporary command element
+				const el = document.createElement("textarea");
+				el.value = command;
+
+				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+				{
+					if(SubsystemLaunch.subsystems[s].fsmIncluded && 
+						!SubsystemLaunch.system.inTransition && 
+						SubsystemLaunch.system.state == "Running"
+					)
+					{
+						Debug.log("Sending stop to subsystem",i);
+						SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
+					}					
+				}
+			} 
+			else 
+			{
 				Debug.log("Do fsmName",_fsmName);
 
 				//resume statusing and clear action
