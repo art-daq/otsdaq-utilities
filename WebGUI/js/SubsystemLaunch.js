@@ -1652,7 +1652,7 @@ SubsystemLaunch.create = function() {
 		Debug.log("handleSubsystemActionSelect()", command, subsystemIndex);
 		if(command == "" || command == "Select an action:") return; //assume user is clearing
 
-		if (subsystemIndex === undefined || subsystemIndex >= SubsystemLaunch.subsystems.length) 
+		if (subsystemIndex === undefined || subsystemIndex >= SubsystemLaunch.subsystems.length)
 		{
 			Debug.err("Illegal subsystem index:",subsystemIndex,"ouf of",
 				SubsystemLaunch.subsystems.length);
@@ -1677,7 +1677,7 @@ SubsystemLaunch.create = function() {
 					SubsystemLaunch.system.activeFsmWindow == "iterator")
 			{
 				Debug.log("Do haltIterator");
-			
+
 				window.clearTimeout(_getStatusTimer);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
@@ -1685,7 +1685,7 @@ SubsystemLaunch.create = function() {
 				SubsystemLaunch.system.transition = "Launching " + command;
 				SubsystemLaunch.system.progress = 0;
 				displayStatus();
-				
+
 				//resume statusing and clear action
 				window.clearTimeout(_getStatusTimer);
 				_getStatusTimer = window.setTimeout(
@@ -1719,11 +1719,11 @@ SubsystemLaunch.create = function() {
 						true /*targetGatewaySupervisor*/);
 			}
 			else if (command == "Stop"  &&
-					SubsystemLaunch.system.activeFsmWindow == "iterator" && 
+					SubsystemLaunch.system.activeFsmWindow == "iterator" &&
 					SubsystemLaunch.system.state == "Running")
 			{
 				Debug.log("Do stop launcher");
-			
+
 				window.clearTimeout(_getStatusTimer);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
@@ -1737,40 +1737,40 @@ SubsystemLaunch.create = function() {
 			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left in runs
 			{
 				Debug.log("Do batch Stop fsmName",_fsmName);
-				
+
 				//send Stop to all checked subsystems individually
 
 				DesktopContent.popUpVerification(
 					"There does not appear to be an active top-level Run; do you want to attempt to Stop individual selected subsystems anyway?",
 					function () {
 						Debug.log("User chose to stop individual subsystems!");
-						
+
 						//make temporary command element
 						const el = document.createElement("textarea");
 						el.value = command;
 
 						for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 						{
-							if(SubsystemLaunch.subsystems[s].fsmIncluded && 
-								!SubsystemLaunch.subsystems[s].inTransition && 
+							if(SubsystemLaunch.subsystems[s].fsmIncluded &&
+								!SubsystemLaunch.subsystems[s].inTransition &&
 								SubsystemLaunch.subsystems[s].status == "Running")
 							{
 								Debug.log("Sending stop to subsystem",s,SubsystemLaunch.subsystems[s]);
 								SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
-							}					
+							}
 						}
 
 					},
 					0,"#efeaea",0,"#770000"); //end popUpVerification
-			} 
+			}
 			else if (command == "Halt" && //likely this means state machines were moved independently, and user wants to do a batch 'Halt'
 				(SubsystemLaunch.system.state == "Halted" ||
 					SubsystemLaunch.system.state == "Failed"))
 			{
 				Debug.log("Do batch Halt fsmName",_fsmName);
-				
+
 				//send Halt to all checked subsystems individually
-						
+
 
 				window.clearTimeout(_getStatusTimer);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -1787,13 +1787,13 @@ SubsystemLaunch.create = function() {
 
 				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
-					if(SubsystemLaunch.subsystems[s].fsmIncluded && 
+					if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 						!SubsystemLaunch.subsystems[s].inTransition)
 					{
 						Debug.log("Sending halt to subsystem",s,SubsystemLaunch.subsystems[s]);
 						SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
-					}					
-				}				
+					}
+				}
 
 				//every 2 seconds, check if subsystems are halted
 				if(SubsystemLaunch.system.state == "Failed")
@@ -1814,7 +1814,7 @@ SubsystemLaunch.create = function() {
 						SubsystemLaunch.system.transition = "Launching " + command;
 						SubsystemLaunch.system.progress = 0;
 						displayStatus();
-						
+
 						window.setTimeout(
 							function () {
 								getCurrentStatus();
@@ -1825,25 +1825,25 @@ SubsystemLaunch.create = function() {
 								SubsystemLaunch.system.transition = "Launching " + command;
 								SubsystemLaunch.system.progress = 0;
 								displayStatus();
-								
+
 								var allSubsystemsHalted = true;
 								for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 								{
-									if(SubsystemLaunch.subsystems[s].fsmIncluded && 
-										(SubsystemLaunch.subsystems[s].inTransition || 
+									if(SubsystemLaunch.subsystems[s].fsmIncluded &&
+										(SubsystemLaunch.subsystems[s].inTransition ||
 											SubsystemLaunch.subsystems[s].status != "Halted"))
 									{
 										Debug.log("Not yet halted at subsystem",s,SubsystemLaunch.subsystems[s]);
 										allSubsystemsHalted = false;
 										break;
-									}					
-								}	
+									}
+								}
 
 								if(allSubsystemsHalted)
 								{
 									Debug.log("All subsystems halted, so now halting top-level");
 									//send Halt to top-level system
-									
+
 									DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
 												"fsmName=" + _fsmName +
 												"&StateMachine=" + command, //end get data
@@ -1865,7 +1865,7 @@ SubsystemLaunch.create = function() {
 											}, //end handler
 											0, //handler param
 											0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
-											true /*targetGatewaySupervisor*/);							
+											true /*targetGatewaySupervisor*/);
 								}
 								else if(moveTopLevelAttempts > 10)
 								{
@@ -1877,12 +1877,12 @@ SubsystemLaunch.create = function() {
 							},2000); //in 2 sec
 					} //end localMoveTopLevelToHalted()
 				}
-			} 
-			else 
+			}
+			else
 			{
 				Debug.log("Do fsmName",_fsmName);
 
-							
+
 				window.clearTimeout(_getStatusTimer);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
@@ -1890,7 +1890,7 @@ SubsystemLaunch.create = function() {
 				SubsystemLaunch.system.transition = "Launching " + command;
 				SubsystemLaunch.system.progress = 0;
 				displayStatus();
-				
+
 				//resume statusing and clear action
 				window.clearTimeout(_getStatusTimer);
 				_getStatusTimer = window.setTimeout(
@@ -2733,14 +2733,14 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 		{
 			//there appears to be a date/timestamp in the error
 			//ots data/timestamp string is fixed length (28 chars)
-			
+
 			const s = err.substr(errDateIndex-24,28); //"Fri Mar  6 10:46:02 2026 CST";
 			const past = new Date(s);
 			secondsAgo = Math.floor((Date.now() - past.getTime()) / 1000);
 
 			Debug.logv({secondsAgo});
 		}
-				
+
 		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old
 		{
 			let agoStr = "";
@@ -2753,11 +2753,11 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 				agoStr = ` <b>(${hours}h ${minutes}m ${secs}s ago)</b>`;
 			}
 
-			Debug.warn("Here is the <b>last error</b> that occurred " + agoStr + 
+			Debug.warn("Here is the <b>last error</b> that occurred " + agoStr +
 				" for reference:\n\n" + err);
 		}
 		else if(secondsAgo == -1 || secondsAgo < 60 /* 1 minute */)
-			Debug.err(err);				
+			Debug.err(err);
 	}
 
 	SubsystemLaunch.system.error = err;
