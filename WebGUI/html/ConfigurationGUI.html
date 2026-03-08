@@ -1270,6 +1270,16 @@
 			el.innerHTML = "Loading...";
 			var v = "";
 			if (version !== undefined && version != "") v = "&version=" + version;
+			else if(version == "" && treeMemberNames_)
+			{				
+				var _treeIdx = treeMemberNames_.indexOf(tableName);
+				if(_treeIdx != -1) 
+				{
+					Debug.log("Found recent group member table to target = ", 
+						treeMemberNames_[_treeIdx],treeMemberVersions_[_treeIdx]);
+					v = "&version=" + treeMemberVersions_[_treeIdx];
+				}
+			}
 			DesktopContent.XMLHttpRequest("Request?RequestType=getSpecificTable" +
 				"&dataOffset=0&chunkSize=" + _MAX_CHUNK_SIZE +
 				(allowIllegalColumns ? "&allowIllegalColumns=1" : "") +
@@ -2936,7 +2946,7 @@
 			str += "<div style='margin-left:30px'>";
 
 			var cfgVersionStr;
-			var cfgNameStr = "";
+			var memberTableList = "";
 			var replaceScreenJS, newWindowStr, newWindowJS, newTabJS;
 			var groupMemberNavContextMenuItemHandlers = [];
 
@@ -2951,6 +2961,15 @@
 					configComment = configComments[i].getAttribute("value");
 				else
 					configComment = "UNKNOWN";
+
+				//if table name/version/comment is not in treeMemberNames_/Versions_/Comments, add it
+				if(!treeMemberNames_ || treeMemberNames_.indexOf(tableName) == -1)
+				{
+					if(!treeMemberNames_) { treeMemberNames_ = []; treeMemberVersions_ = []; treeMemberComments_ = []; }
+					treeMemberNames_.push(tableName);
+					treeMemberVersions_.push(version);
+					treeMemberComments_.push(configComment);
+				}
 
 				let isTableAliasMismatch = false;
 				let provenanceVersion, activeBackboneAliasVersion, mismatchAlias;
@@ -3136,7 +3155,7 @@
 				str += "<br>";
 				str += "</td></tr>";
 
-				cfgNameStr += tableName + ",";
+				memberTableList += tableName + ",";
 			} //end primary member table loop
 
 			str += "</table>";
@@ -3144,7 +3163,7 @@
 			str += "</div>";
 
 			str += "<div id='GroupMember-names' style='display:none'>";
-			str += cfgNameStr;
+			str += memberTableList;
 			str += "</div>";
 
 
@@ -5524,7 +5543,7 @@
 				if (tableComment != "") {
 					var ci = tableComment.indexOf(": ");
 					if (ci > 2) { //skip past repeated author
-						Debug.logv({ tableComment });
+						Debug.log("tableComment",tableComment,Debug.MIN_PRIORITY);
 						var commentAuthorSubstr = tableComment.substr(0, ci + 2); //include +2 in size for ": "
 						ci = tableComment.lastIndexOf(commentAuthorSubstr);
 						if (ci < 0) ci = 0; //if not found again, keep single author name
@@ -15816,8 +15835,12 @@
 
 			var str = "<br><a id='" +
 				"popUpDialog" +
-				"-header' onclick='var el = document.getElementById(" +
-				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); return false;'>Cancel</a><br><br>";
+				"-header' onclick='" +
+				"_cachedTableComment = document.getElementById(" +
+				"\"popUpDialog-comment\").value; " +
+				"var el = document.getElementById(" +
+				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); " +
+				"return false;'>Cancel</a><br><br>";
 
 			str += "<div id='popUpDialog-div'>";
 
@@ -17208,9 +17231,10 @@
 
 			var el = document.getElementById("popUpDialog-comment");
 			var comment;
-			if (el)
+			if (el) {
+				_cachedTableComment = el.value;
 				comment = encodeURIComponent(el.value);
-			else
+			} else
 				comment = "This is a temporary table.";
 
 			//create data string from html table
