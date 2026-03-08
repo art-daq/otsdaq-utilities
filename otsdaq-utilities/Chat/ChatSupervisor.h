@@ -44,6 +44,9 @@ class ChatSupervisor : public CoreSupervisorBase
 	std::vector<std::string> ChatUsers_;
 	std::vector<time_t>      ChatUsersTime_;
 
+	std::string chatSupervisorToolsPath_;
+	bool        enableSlackChat;
+
 	enum
 	{
 		CHAT_HISTORY_EXPIRATION_TIME = 30 * 60,  ///< 30 minutes
@@ -56,6 +59,7 @@ class ChatSupervisor : public CoreSupervisorBase
 
 	void newUser(const std::string& user);
 	void newChat(const std::string& chat, const std::string& user);
+	void sendToSlack(const std::string& user, const std::string& message);
 	void removeChatHistoryEntry(uint64_t i);
 	void removeChatUserEntry(uint64_t i);
 	void cleanupExpiredChats(void);

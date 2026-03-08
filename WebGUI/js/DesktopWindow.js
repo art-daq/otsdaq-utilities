@@ -558,7 +558,7 @@ else {
         _winfrm.setAttribute("name", "DesktopWindowFrame-" + _id);
         _winfrm.setAttribute(
             "allow",  //allow sounds without user clicking page first
-            "autoplay; clipboard-read; clipboard-write" //allow copy to clipboard from iframe (in some browsers)
+            "autoplay; clipboard-write" //allow copy to clipboard from iframe (in some browsers); avoid high-privilege clipboard-read
             );
         _winfrm.onload = _handleWindowContentLoading; //event to delete "Loading"
         _winfrm.onerror = _handleWindowContentLoading; //event to delete "Loading"
