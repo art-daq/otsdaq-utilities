@@ -1271,11 +1271,11 @@
 			var v = "";
 			if (version !== undefined && version != "") v = "&version=" + version;
 			else if(version == "" && treeMemberNames_)
-			{				
+			{
 				var _treeIdx = treeMemberNames_.indexOf(tableName);
-				if(_treeIdx != -1) 
+				if(_treeIdx != -1)
 				{
-					Debug.log("Found recent group member table to target = ", 
+					Debug.log("Found recent group member table to target = ",
 						treeMemberNames_[_treeIdx],treeMemberVersions_[_treeIdx]);
 					v = "&version=" + treeMemberVersions_[_treeIdx];
 				}
