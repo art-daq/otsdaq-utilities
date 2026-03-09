@@ -1147,13 +1147,10 @@ Debug.callOutDebugLocales = function (str) {
 							fileStr /*innerHTML*/ +
 							"</label>",
 							true /*doCloseTag*/);
-<<<<<<< HEAD
                             returnStr += "<span style='cursor:pointer; margin:5px'" +
                                 "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
                                 "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                                 "</div></span>";
-=======
->>>>>>> 72e6014ec751441e1c765a4314901097f008fed8
 
 					i = ff + fileFlagEnd[fi].length; //proceed after filename
 				} //end <FILE> callout handling
@@ -1235,13 +1232,10 @@ Debug.callOutDebugLocales = function (str) {
 						fileStr /*innerHTML*/ +
 						"</label>",
 						true /*doCloseTag*/);
-<<<<<<< HEAD
                         returnStr += "<span style='cursor:pointer; margin:5px'" +
                             "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
                             "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                             "</div></span>";
-=======
->>>>>>> 72e6014ec751441e1c765a4314901097f008fed8
 
 				//add end label
 				returnStr += "<br>";
@@ -1291,13 +1285,10 @@ Debug.callOutDebugLocales = function (str) {
 					fileStr /*innerHTML*/ +
 					"</label>",
 					true /*doCloseTag*/);
-<<<<<<< HEAD
                     returnStr += "<span style='cursor:pointer; margin:5px'" +
                         "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
                         "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                         "</div></span>";
-=======
->>>>>>> 72e6014ec751441e1c765a4314901097f008fed8
 
 			i = ff + ("</FILE>").length; //proceed after filename
 		} //end <FILE> callout handling
