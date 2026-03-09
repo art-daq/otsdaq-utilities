@@ -242,6 +242,7 @@ DesktopContent._pageInitCalled = false;
 DesktopContent._windowMessagingInactive = undefined;
 
 DesktopContent._sequence = 0;
+DesktopContent._forcedWizMode	= 0;
 DesktopContent._readOnlyMode    = 0; //1  means do not expect (i.e. server should reject writes, but server still checks credentials) any server modification/write requests at server, set by window parameter
 DesktopContent._standAloneMode  = 0; //1  means do not expect any login credentials (i.e. server should not check credentials), set by window parameter
 
@@ -355,7 +356,16 @@ DesktopContent.init = function (onloadFunction) {
 	try {
 		DesktopContent._sequence = DesktopContent.getDesktopParameter(0, "code");
 		if (!DesktopContent._sequence || DesktopContent._sequence == "")
-			DesktopContent._sequence = 0; //normal desktop mode
+		{
+			DesktopContent._sequence = DesktopContent.getParameter(0, "forcedWizMode");
+			if (!DesktopContent._sequence || DesktopContent._sequence == "")
+				DesktopContent._sequence = 0; //normal desktop mode
+			else
+			{
+				DesktopContent._forcedWizMode = true;
+				Debug.log("In forced Wizard Mode with Sequence=" + DesktopContent._sequence);
+			}
+		}
 		else
 			Debug.log("In Wizard Mode with Sequence=" + DesktopContent._sequence);
 	}
@@ -758,7 +768,7 @@ DesktopContent.getParameter = function (index, name) {
 				return decodeURIComponent(vs[1]);
 		}
 
-		Debug.log("name", name, " not found in window.location.search:", window.location.search);
+		Debug.log("name '" + name + "' not found in window.location.search:", window.location.search);
 		return; //return undefined .. name not found
 	}
 
@@ -1374,6 +1384,9 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 					if (!doNotOfferSequenceChange && DesktopContent._sequence) {
 						Debug.log("In wiz mode, attempting to fix access code on the fly...");
 
+						if(callHandlerOnErr < 2)
+							Debug.err("Do you need to enter a new Wiz Mode access code? (the access code displayed in terminal when Wiz mode starts)");
+
 						DesktopContent.popUpVerification(
 							/*prompt*/ errStr + "<br><br>Please enter a valid access code: ",
 							/*func*/
@@ -1387,14 +1400,21 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 										reqParam, progressHandler, callHandlerOnErr, doNotShowLoadingOverlay,
 										targetGatewaySupervisor, ignoreSystemBlock);
 
-									Debug.log("Saving new access code to parent...");
+									if(!DesktopContent._forcedWizMode)
+									{
+										Debug.log("Saving new access code to parent...");
 
-									DesktopContent._theDesktopWindow.postMessage(
-										{
-											"windowId": DesktopContent._theWindowId,
-											"request": "updateSequence",
-											"sequence": DesktopContent._sequence,
-										}, "*");
+										DesktopContent._theDesktopWindow.postMessage(
+											{
+												"windowId": DesktopContent._theWindowId,
+												"request": "updateSequence",
+												"sequence": DesktopContent._sequence,
+											}, "*");
+									}
+									else
+									{
+										Debug.log("In forced wiz mode, so no parent expected...");
+									}
 									return;
 								}
 

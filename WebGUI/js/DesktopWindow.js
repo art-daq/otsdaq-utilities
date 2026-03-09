@@ -331,7 +331,7 @@ else {
 
             this.windiv.style.display = "inline"; //make sure is visible
             this.setWindowSizeAndPosition(_x + 10, _y, _w, _h);
-            window.parent.document.title = _name;
+            window.parent.document.title = (Desktop.desktop.icons.getFolderFocus() ? Desktop.desktop.icons.getFolderFocus().substr(0,4).trim() + "../" : "") + _name;
 
             Debug.log(document.title, _name, "maximize()");
         } //end maximize()
@@ -353,7 +353,7 @@ else {
         //	minimize window toggles visible or not (does not affect current position/size)
         this.minimize = function () {
             if (_isMaximized)
-                window.parent.document.title = _name;
+                window.parent.document.title = (Desktop.desktop.icons.getFolderFocus() ? Desktop.desktop.icons.getFolderFocus().substr(0,4).trim() + "../" : "") + _name;
             else
                 window.parent.document.title = (Desktop.isWizardMode() ? "ots wiz" : "ots") +
                     (Desktop.desktop.icons.getFolderFocus() ? " - " + Desktop.desktop.icons.getFolderFocus() : "");
@@ -367,7 +367,7 @@ else {
         this.unminimize = function () {
 
             if (_isMaximized)
-                window.parent.document.title = _name;
+                window.parent.document.title = (Desktop.desktop.icons.getFolderFocus() ? Desktop.desktop.icons.getFolderFocus().substr(0,4).trim() + "../" : "") + _name;
             else
                 window.parent.document.title = (Desktop.isWizardMode() ? "ots wiz" : "ots") +
                     (Desktop.desktop.icons.getFolderFocus() ? " - " + Desktop.desktop.icons.getFolderFocus() : "");

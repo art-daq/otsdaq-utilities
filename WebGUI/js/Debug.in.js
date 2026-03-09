@@ -485,30 +485,31 @@ Debug.errorPop = function (err, severity) {
 				"Note: Newest messages are at the top.<br>" +
 				"<label style='color:white;font-size:11px;-webkit-user-select:none;-moz-user-select:none;user-select:none;'><br>(Press [ESC] to close and [SHIFT + ESC] to re-open)</label>" +
 
-				"<div id='dockIconDiv' onclick='Debug.dockPopup(0)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to bottom.' " +
-				"style='float: right; position: relative; padding: 0 10px; margin: -16px 150px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
-				"&#8595;" + //south arrow
-				"</div>" +
-				"<div id='expandIconDiv' onclick='Debug.dockPopup(1)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Expand popup to corner.' " +
-				"style='float: right; position: relative; padding: 0 3px; margin: -16px 120px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
-				"&#8600;" + //southeast arrow
-				"</div>" +
-				"<div id='sideIconDiv' onclick='Debug.dockPopup(2)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to side.' " +
-				"style='float: right; position: relative; padding: 0 1px; margin: -16px 90px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
-				"&#8594;" + //east arrow
-				"</div>" +
+				"<div id='popupActionIconContainer' style='float:right;'>" +
+					"<div id='dockIconDiv' onclick='Debug.dockPopup(0)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to bottom.' " +
+					"style='float: right; position: relative; padding: 0 10px; margin: -56px 70px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					"&#8595;" + //south arrow
+					"</div>" +
+					"<div id='expandIconDiv' onclick='Debug.dockPopup(1)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Expand popup to corner.' " +
+					"style='float: right; position: relative; padding: 0 3px; margin: -56px 40px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					"&#8600;" + //southeast arrow
+					"</div>" +
+					"<div id='sideIconDiv' onclick='Debug.dockPopup(2)' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Dock popup to side.' " +
+					"style='float: right; position: relative; padding: 0 1px; margin: -56px 10px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					"&#8594;" + //east arrow
+					"</div>" +
 
-				"<div id='copyTextIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
-				"style='float: right; position: relative; padding: 0 1px; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
-				"&#10697;" + //copy icon
-				"</div>" +
+					"<div id='copyTextIconDiv' onclick='Debug.copyMessagesToClipboard()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Copy messages to clipboard.' " +
+					"style='float: right; position: relative; padding: 0 1px; margin: -16px 60px -100px -100px; color: white; font-size: 30px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					"&#10697;" + //copy icon
+					"</div>" +
 
-				"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' " +
-				"style='float: right; position: relative; padding: 0 1px; margin: -10px 30px -100px -100px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					"<div id='downloadIconDiv' onclick='Debug.downloadMessages()' onmouseup='event.stopPropagation();' onmousedown='event.stopPropagation();' title='Download messages to text file.' " +
+					"style='float: right; position: relative; padding: 0 1px; margin: -10px 30px -100px -100px; cursor: pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;'>" +
+					downloadArrowStr +
+					"</div>" +
+				"</div>" + //end popupActionIconContainer
 
-				downloadArrowStr +
-
-				"</div>" +
 				"<div id='" +
 				Debug._errBoxId +
 				"-err' class='" +

@@ -5540,7 +5540,7 @@
 					"\"); event.stopPropagation();' " +
 					">";
 
-				if (tableComment != "") {
+				if (tableComment != "" && !/no comment.{0,2}$/i.test(tableComment)) { //e.g. "No comment", "No comment.", "no comment!?" are all hidden
 					var ci = tableComment.indexOf(": ");
 					if (ci > 2) { //skip past repeated author
 						Debug.log("tableComment",tableComment,Debug.MIN_PRIORITY);
@@ -5553,7 +5553,7 @@
 					treeViewHandlerStr_ += //"<td style='font-size:14px; white-space: nowrap;'>" +
 						"//" + tableComment;
 				}
-				else if (comment && comment != "") {
+				else if (comment && comment != "" && !/no comment.{0,2}$/i.test(comment)) { //e.g. "No comment", "No comment.", "no comment!?" are all hidden
 					var ci = comment.indexOf(": ");
 					if (ci > 2) { //skip past repeated author
 						Debug.logv({ comment });
