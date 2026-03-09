@@ -2942,7 +2942,6 @@ DesktopContent.parseCSV = function (text) {
 				rows.push(currentRow);
 				currentRow = [];
 				currentValue = '';
-				prevChar = '';
 			}
 		}
 		else {
