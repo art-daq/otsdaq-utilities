@@ -419,9 +419,9 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                     fileStr /*innerHTML*/ +
                                     "</label>",
                                     true /*doCloseTag*/);
-                            returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
-                                "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                                "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                            returnStr += "<span style='cursor:pointer; margin:5px'" + 
+                                "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                                "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                                 "</div></span>";
 
                             i = ff + ("</FILE>").length; //proceed after filename
@@ -503,9 +503,9 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                     fileStr /*innerHTML*/ +
                                     "</label>",
                                     true /*doCloseTag*/);
-                            returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
-                                "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                                "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                            returnStr += "<span style='cursor:pointer; margin:5px'" +
+                                "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                                "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                                 "</div></span>";
 
                             //add end label
@@ -556,9 +556,9 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
                                 fileStr /*innerHTML*/ +
                                 "</label>",
                                 true /*doCloseTag*/);
-                        returnStr += "<span style='display:inline-flex;align-items:center;gap:6px'>" +
-                            "<div style='display:inline-block; cursor:pointer' title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                            "<img id='copybtn' src='/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png'>" +
+                        returnStr += "<span style='cursor:pointer; margin:5px'" +
+                            "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+                            "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
                             "</div></span>";
 
                         i = ff + ("</FILE>").length; //proceed after filename
