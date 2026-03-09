@@ -1147,10 +1147,10 @@ Debug.callOutDebugLocales = function (str) {
 							fileStr /*innerHTML*/ +
 							"</label>",
 							true /*doCloseTag*/);
-                            returnStr += "<span style='cursor:pointer; margin:5px'" +
-                                "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                                "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
-                                "</div></span>";
+							returnStr += "<span style='cursor:pointer; margin:5px'" +
+								"title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+								"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+								"</span>";
 
 					i = ff + fileFlagEnd[fi].length; //proceed after filename
 				} //end <FILE> callout handling
@@ -1232,10 +1232,10 @@ Debug.callOutDebugLocales = function (str) {
 						fileStr /*innerHTML*/ +
 						"</label>",
 						true /*doCloseTag*/);
-                        returnStr += "<span style='cursor:pointer; margin:5px'" +
-                            "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                            "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
-                            "</div></span>";
+						returnStr += "<span style='cursor:pointer; margin:5px'" +
+							"title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+							"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+							"</span>";
 
 				//add end label
 				returnStr += "<br>";
@@ -1285,10 +1285,10 @@ Debug.callOutDebugLocales = function (str) {
 					fileStr /*innerHTML*/ +
 					"</label>",
 					true /*doCloseTag*/);
-                    returnStr += "<span style='cursor:pointer; margin:5px'" +
-                        "title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
-                        "<img id='copybtn' style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
-                        "</div></span>";
+					returnStr += "<span style='cursor:pointer; margin:5px'" +
+						"title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+						"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+						"</span>";
 
 			i = ff + ("</FILE>").length; //proceed after filename
 		} //end <FILE> callout handling
