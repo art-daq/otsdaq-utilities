@@ -505,16 +505,16 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Configure</button>";
 					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 					// 	">Start</button>";
-					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
-					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
-					// 	">Stop</button>";
-					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Stop' " +
+						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						">Stop</button>";
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Halt' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Halt</button>";
 					str += "</td></tr>";
@@ -1024,12 +1024,21 @@ SubsystemLaunch.create = function() {
 		//Run Launch Status ---------
 		el = document.getElementById("startButtonDiv");
 		if(SubsystemLaunch.system.state != "Running" &&
-			SubsystemLaunch.iterator.activePlan == "" &&
 			(
-			SubsystemLaunch.iterator.activePlanStatus === undefined ||
-			SubsystemLaunch.iterator.activePlanStatus == "" ||
-			SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
-				SubsystemLaunch.iterator.activePlanStatus == "Error")) {
+				SubsystemLaunch.iterator.activePlan == "" ||
+				(
+					SubsystemLaunch.system.progress == 100 &&
+					SubsystemLaunch.system.state == "Configured"
+				)
+			)
+			&&
+			(
+				SubsystemLaunch.iterator.activePlanStatus === undefined ||
+				SubsystemLaunch.iterator.activePlanStatus == "" ||
+				SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
+				SubsystemLaunch.iterator.activePlanStatus == "Error"
+			))
+		{
 			el.innerHTML = "Start";
 			el.setAttribute("class","greenBigButton");
 
@@ -1099,7 +1108,7 @@ SubsystemLaunch.create = function() {
 			}
 			else if(inRun) //likely, Iterator left open-ended run
 				str += "In open-ended Run";
-			else if(SubsystemLaunch.system.activeFsm == "iterator")
+			else if(SubsystemLaunch.system.activeFsmWindow == "iterator")
 				str += "Command #" + SubsystemLaunch.iterator.currentCommandIndex +
 					" of " + SubsystemLaunch.iterator.currentNumberOfCommands +
 					", Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
@@ -1156,7 +1165,11 @@ SubsystemLaunch.create = function() {
 		for (var i = 0; i < fieldIds.length; ++i) {
 			el = document.getElementById("systemStatus_" + fieldIds[i]);
 			if(!el) continue; //some fields might not exist
-			el.innerText = SubsystemLaunch.system[fieldIds[i]];
+			if(fieldIds[i] == "activeFsm")
+				el.innerText = SubsystemLaunch.system.activeFsm +
+					" (" + SubsystemLaunch.system.activeFsmWindow + ")";
+			else
+				el.innerText = SubsystemLaunch.system[fieldIds[i]];
 		}
 
 
@@ -1225,8 +1238,14 @@ SubsystemLaunch.create = function() {
 
 					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusTime &&
 							SubsystemLaunch.subsystems[s].lastStatusTime != "0")
-						el.innerText = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]) + " ( " +
+					{
+						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
+						const tel = document.createElement("textarea");
+						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
+
+						el.innerText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
+					}
 					else if(fieldIds[i] == "status")
 						localDisplayState(el,
 							SubsystemLaunch.subsystems[s].status,
@@ -1633,7 +1652,8 @@ SubsystemLaunch.create = function() {
 		Debug.log("handleSubsystemActionSelect()", command, subsystemIndex);
 		if(command == "" || command == "Select an action:") return; //assume user is clearing
 
-		if (subsystemIndex >= SubsystemLaunch.subsystems.length) {
+		if (subsystemIndex === undefined || subsystemIndex >= SubsystemLaunch.subsystems.length)
+		{
 			Debug.err("Illegal subsystem index:",subsystemIndex,"ouf of",
 				SubsystemLaunch.subsystems.length);
 			el.selectedIndex = 0; //reset command select box
@@ -1641,7 +1661,9 @@ SubsystemLaunch.create = function() {
 		}
 
 		if (subsystemIndex == -1) {
-			Debug.log("System action - activeFsm", SubsystemLaunch.system.activeFsm);
+			Debug.log("System action - activeFsm", SubsystemLaunch.system.activeFsm,
+				SubsystemLaunch.system.activeFsmWindow
+			);
 
 			var configAlias;
 			if(command == "Configure") //at config alias
@@ -1651,17 +1673,18 @@ SubsystemLaunch.create = function() {
 			//at this point, ready to send command!
 			//but need to determine target request
 
-			window.clearTimeout(_getStatusTimer);
-
-			SubsystemLaunch.system.error = ""; //clear error for next command response
-			//force state display for user feedback
-			SubsystemLaunch.system.inTransition = true;
-			SubsystemLaunch.system.transition = "Launching " + command;
-			SubsystemLaunch.system.progress = 0;
-			displayStatus();
-
-			if (command == "Halt" && SubsystemLaunch.system.activeFsm == "iterator") {
+			if (command == "Halt" &&
+					SubsystemLaunch.system.activeFsmWindow == "iterator")
+			{
 				Debug.log("Do haltIterator");
+
+				window.clearTimeout(_getStatusTimer);
+				SubsystemLaunch.system.error = ""; //clear error for next command response
+				//force state display for user feedback
+				SubsystemLaunch.system.inTransition = true;
+				SubsystemLaunch.system.transition = "Launching " + command;
+				SubsystemLaunch.system.progress = 0;
+				displayStatus();
 
 				//resume statusing and clear action
 				window.clearTimeout(_getStatusTimer);
@@ -1672,6 +1695,7 @@ SubsystemLaunch.create = function() {
 					},2000); //in 2 sec
 
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
+						"fsmName=" + _fsmName +
 						"&StateMachine=iterateHalt", //end get data
 						"", //end post data
 						function(req) //start handler
@@ -1694,8 +1718,178 @@ SubsystemLaunch.create = function() {
 						0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 						true /*targetGatewaySupervisor*/);
 			}
-			else {
+			else if (command == "Stop"  &&
+					SubsystemLaunch.system.activeFsmWindow == "iterator" &&
+					SubsystemLaunch.system.state == "Running")
+			{
+				Debug.log("Do stop launcher");
+
+				window.clearTimeout(_getStatusTimer);
+				SubsystemLaunch.system.error = ""; //clear error for next command response
+				//force state display for user feedback
+				SubsystemLaunch.system.inTransition = true;
+				SubsystemLaunch.system.transition = "Launching " + command;
+				SubsystemLaunch.system.progress = 0;
+				displayStatus();
+
+				SubsystemLaunch.launcher.stop()
+			}
+			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left in runs
+			{
+				Debug.log("Do batch Stop fsmName",_fsmName);
+
+				//send Stop to all checked subsystems individually
+
+				DesktopContent.popUpVerification(
+					"There does not appear to be an active top-level Run; do you want to attempt to Stop individual selected subsystems anyway?",
+					function () {
+						Debug.log("User chose to stop individual subsystems!");
+
+						//make temporary command element
+						const el = document.createElement("textarea");
+						el.value = command;
+
+						for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+						{
+							if(SubsystemLaunch.subsystems[s].fsmIncluded &&
+								!SubsystemLaunch.subsystems[s].inTransition &&
+								SubsystemLaunch.subsystems[s].status == "Running")
+							{
+								Debug.log("Sending stop to subsystem",s,SubsystemLaunch.subsystems[s]);
+								SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
+							}
+						}
+
+					},
+					0,"#efeaea",0,"#770000"); //end popUpVerification
+			}
+			else if (command == "Halt" && //likely this means state machines were moved independently, and user wants to do a batch 'Halt'
+				(SubsystemLaunch.system.state == "Halted" ||
+					SubsystemLaunch.system.state == "Failed"))
+			{
+				Debug.log("Do batch Halt fsmName",_fsmName);
+
+				//send Halt to all checked subsystems individually
+
+
+				window.clearTimeout(_getStatusTimer);
+				SubsystemLaunch.system.error = ""; //clear error for next command response
+				//force state display for user feedback
+				SubsystemLaunch.system.inTransition = true;
+				SubsystemLaunch.system.transition = "Launching " + command;
+				SubsystemLaunch.system.progress = 0;
+				displayStatus();
+
+
+				//make temporary command element
+				const el = document.createElement("textarea");
+				el.value = command;
+
+				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+				{
+					if(SubsystemLaunch.subsystems[s].fsmIncluded &&
+						!SubsystemLaunch.subsystems[s].inTransition)
+					{
+						Debug.log("Sending halt to subsystem",s,SubsystemLaunch.subsystems[s]);
+						SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
+					}
+				}
+
+				//every 2 seconds, check if subsystems are halted
+				if(SubsystemLaunch.system.state == "Failed")
+				{
+					var moveTopLevelAttempts = 0;
+					localMoveTopLevelToHalted();
+
+					//===================
+					function localMoveTopLevelToHalted()
+					{
+						++moveTopLevelAttempts,
+						Debug.log("Trying to move top-level to Halted",_fsmName,
+								"moveTopLevelAttempts",moveTopLevelAttempts);
+						window.clearTimeout(_getStatusTimer);
+						SubsystemLaunch.system.error = ""; //clear error for next command response
+						//force state display for user feedback
+						SubsystemLaunch.system.inTransition = true;
+						SubsystemLaunch.system.transition = "Launching " + command;
+						SubsystemLaunch.system.progress = 0;
+						displayStatus();
+
+						window.setTimeout(
+							function () {
+								getCurrentStatus();
+
+								window.clearTimeout(_getStatusTimer);
+								//force state display for user feedback
+								SubsystemLaunch.system.inTransition = true;
+								SubsystemLaunch.system.transition = "Launching " + command;
+								SubsystemLaunch.system.progress = 0;
+								displayStatus();
+
+								var allSubsystemsHalted = true;
+								for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+								{
+									if(SubsystemLaunch.subsystems[s].fsmIncluded &&
+										(SubsystemLaunch.subsystems[s].inTransition ||
+											SubsystemLaunch.subsystems[s].status != "Halted"))
+									{
+										Debug.log("Not yet halted at subsystem",s,SubsystemLaunch.subsystems[s]);
+										allSubsystemsHalted = false;
+										break;
+									}
+								}
+
+								if(allSubsystemsHalted)
+								{
+									Debug.log("All subsystems halted, so now halting top-level");
+									//send Halt to top-level system
+
+									DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
+												"fsmName=" + _fsmName +
+												"&StateMachine=" + command, //end get data
+												(configAlias?("ConfigurationAlias=" + configAlias):""), //end post data
+											function(req) //start handler
+											{
+										Debug.log(command,"StateMachineXgiHandler FSM command handler");
+
+										var success = DesktopContent.getXMLValue(req,"state_transition_attempted") == "1";
+										if(!success)
+										{
+											var err = DesktopContent.getXMLValue(req,"state_transition_attempted_err");
+											if(err)
+												Debug.log(err,Debug.HIGH_PRIORITY);
+											Debug.err("Server indicated failure to attempt state transition.");
+											return;
+										}
+
+											}, //end handler
+											0, //handler param
+											0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+											true /*targetGatewaySupervisor*/);
+								}
+								else if(moveTopLevelAttempts > 10)
+								{
+									Debug.err("Could not move top-level to Halted! Timeout waiting for selected subsystems to halt...");
+									getCurrentStatus();
+								}
+								else //try again
+									localMoveTopLevelToHalted();
+							},2000); //in 2 sec
+					} //end localMoveTopLevelToHalted()
+				}
+			}
+			else
+			{
 				Debug.log("Do fsmName",_fsmName);
+
+
+				window.clearTimeout(_getStatusTimer);
+				SubsystemLaunch.system.error = ""; //clear error for next command response
+				//force state display for user feedback
+				SubsystemLaunch.system.inTransition = true;
+				SubsystemLaunch.system.transition = "Launching " + command;
+				SubsystemLaunch.system.progress = 0;
+				displayStatus();
 
 				//resume statusing and clear action
 				window.clearTimeout(_getStatusTimer);
@@ -1706,7 +1900,7 @@ SubsystemLaunch.create = function() {
 					},2000); //in 2 sec
 
 				DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
-							"&fsmName=" + _fsmName +
+							"fsmName=" + _fsmName +
 							"&StateMachine=" + command, //end get data
 							(configAlias?("ConfigurationAlias=" + configAlias):""), //end post data
 						function(req) //start handler
@@ -1745,7 +1939,6 @@ SubsystemLaunch.create = function() {
 
 		window.clearTimeout(_getStatusTimer);
 
-		SubsystemLaunch.system.error = ""; //clear error for next command response
 		//force state display for user feedback
 		SubsystemLaunch.subsystems[subsystemIndex].status = "Launching " + command;
 		SubsystemLaunch.subsystems[subsystemIndex].progress = 0;
@@ -2103,8 +2296,10 @@ SubsystemLaunch.create = function() {
 
 		if(SubsystemLaunch.system.state != "Running" && (
 			SubsystemLaunch.iterator.activePlanStatus == "Inactive" ||
-			SubsystemLaunch.iterator.activePlanStatus == "Error")) {
-			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") {
+			SubsystemLaunch.iterator.activePlanStatus == "Error"))
+		{
+			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---")
+			{
 				DesktopContent.popUpVerification(
 					"There does not appear to be an active Run; do you want to Halt anyway?",
 					function () {
@@ -2513,6 +2708,7 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 //=====================================================================================
 SubsystemLaunch.extractSystemStatus = function (req) {
 	SubsystemLaunch.system.activeFsm = DesktopContent.getXMLValue(req,"active_fsmName");
+	SubsystemLaunch.system.activeFsmWindow = DesktopContent.getXMLValue(req,"active_fsmWindowName");
 	SubsystemLaunch.system.state = DesktopContent.getXMLValue(req,"current_state");
 	SubsystemLaunch.system.inTransition = DesktopContent.getXMLValue(req,"in_transition") == "1";
 	SubsystemLaunch.system.transition = DesktopContent.getXMLValue(req,"current_transition");
@@ -2530,9 +2726,37 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 	}
 	if(err && err != "" && SubsystemLaunch.system.error != err)
 	{
+		//do not show if err is old
+		let errDateIndex = err.indexOf(" CST:");
+		let secondsAgo = -1;
+		if(errDateIndex > 0)
+		{
+			//there appears to be a date/timestamp in the error
+			//ots data/timestamp string is fixed length (28 chars)
+
+			const s = err.substr(errDateIndex-24,28); //"Fri Mar  6 10:46:02 2026 CST";
+			const past = new Date(s);
+			secondsAgo = Math.floor((Date.now() - past.getTime()) / 1000);
+
+			Debug.logv({secondsAgo});
+		}
+
 		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old
-			Debug.warn("Here is the last error that occurred for reference:\n\n" + err);
-		else
+		{
+			let agoStr = "";
+			if(secondsAgo != -1)
+			{
+				const hours = Math.floor(secondsAgo / 3600);
+				const minutes = Math.floor((secondsAgo % 3600) / 60);
+				const secs = secondsAgo % 60;
+
+				agoStr = ` <b>(${hours}h ${minutes}m ${secs}s ago)</b>`;
+			}
+
+			Debug.warn("Here is the <b>last error</b> that occurred " + agoStr +
+				" for reference:\n\n" + err);
+		}
+		else if(secondsAgo == -1 || secondsAgo < 60 /* 1 minute */)
 			Debug.err(err);
 	}
 

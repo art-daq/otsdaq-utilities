@@ -21,6 +21,25 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);
 
 	ChatLastUpdateIndex = 1;  // skip 0
+
+	// run ots_setup_slack.sh to enable OTS_EN_SLACK environment variable
+	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr &&
+	                   std::string(std::getenv("OTS_EN_SLACK")) == "1");
+	if(enableSlackChat)
+	{
+		const char* env          = std::getenv("OTSDAQ_UTILITIES_DIR");
+		chatSupervisorToolsPath_ = env ? env : "";
+
+		if(chatSupervisorToolsPath_.empty())
+			enableSlackChat = false;
+		if(chatSupervisorToolsPath_.back() != '/')
+			chatSupervisorToolsPath_ += '/';
+		chatSupervisorToolsPath_ += "tools/";
+
+		__COUT__ << "ChatSupervisor: Slack chat "
+		         << (enableSlackChat ? "enabled" : "disabled") << __E__;
+		__COUT__ << "ChatSupervisor path: " << chatSupervisorToolsPath_ << __E__;
+	}
 }
 
 //==============================================================================
@@ -215,6 +234,8 @@ void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
 	ChatHistoryAuthor_.push_back(user);
 	ChatHistoryTime_.push_back(time(0));
 	ChatHistoryIndex_.push_back(incrementAndGetLastUpdate());
+	if(enableSlackChat)
+		sendToSlack(user, chat);
 }
 
 //==============================================================================
@@ -286,4 +307,27 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 	        "ots");  // add status message to chat, increment update
 	ChatUsers_.erase(ChatUsers_.begin() + i);
 	ChatUsersTime_.erase(ChatUsersTime_.begin() + i);
+}
+
+//==============================================================================
+/// ChatSupervisor::sendToSlack()
+void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
+{
+	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " +
+	                      "--message \"" + message + "\" --user " + user;
+	__COUT__ << "Executing command: " << command << __E__;
+
+	try
+	{
+		auto result = StringMacros::exec(command.c_str());
+
+		if(!result.empty() && result.find("Error:") != std::string::npos)
+			__COUT__ << "Error from SendSlackChat.py: " << result << __E__;
+		else if(!result.empty())
+			__COUT__ << "Response from SendSlackChat.py: " << result << __E__;
+	}
+	catch(const std::exception& e)
+	{
+		__COUT__ << "Exception while executing command: " << e.what() << __E__;
+	}
 }

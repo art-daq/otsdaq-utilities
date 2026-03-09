@@ -412,6 +412,10 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping archived repos."
 				continue
 			fi
+			if [[ "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping scd recipes."
+				continue
+			fi
 
 			cd $repo_dir
 			repo_name=$(basename "$repo_dir")
@@ -424,7 +428,7 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 
 			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
 				#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../spack-mpd" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
 					echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
 				else
 					#find unmerged branches
@@ -517,7 +521,7 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 	else
 		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  this host does not have a remote mounted home area, do TableInfo test."
 
-		echo -e "$(date +%d%b%y.%T) \nUpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
+		echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Checking for uncommitted TableInfo...\n" >&2
 		# Run the table warning code only on NFS host nodes
 		SAVE_USER_DATA=$USER_DATA
 		rm -rf $USER_DATA.warn
@@ -537,7 +541,7 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 	fi
 
 
-	echo -e "$(date +%d%b%y.%T) \nUpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
+	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t **************** change warnings complete ****************" >&2
 	exit
 else #end warn handling
 	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  "

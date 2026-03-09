@@ -630,6 +630,7 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	{
 		__COUT__ << "Unauthorized Request made, security sequence doesn't match! "
 		         << time(0) << __E__;
+		*out << WebUsers::REQ_NO_PERMISSION_RESPONSE.c_str();
 		return;
 	}
 	else
@@ -936,16 +937,69 @@ try
 
 		rxParameters.addParameter("groupName");
 		rxParameters.addParameter("groupKey");
+		rxParameters.addParameter("SubsystemCommonList");
+		rxParameters.addParameter("SubsystemCommonOverrideList");
 		SOAPUtilities::receive(message, rxParameters);
 
-		std::string groupName = rxParameters.getValue("groupName");
-		std::string groupKey  = rxParameters.getValue("groupKey");
+		std::string groupName           = rxParameters.getValue("groupName");
+		std::string groupKey            = rxParameters.getValue("groupKey");
+		std::string subsystemCommonList = rxParameters.getValue("SubsystemCommonList");
+		std::string subsystemCommonOverrideList =
+		    rxParameters.getValue("SubsystemCommonOverrideList");
 
 		__SUP_COUTV__(groupName);
 		__SUP_COUTV__(groupKey);
+		__SUP_COUTV__(subsystemCommonList);
+		__SUP_COUTV__(subsystemCommonOverrideList);
+
+		// Assemble Subsystem Common Table List ----------------
+		std::map<std::string /* tableName */, TableVersion> mergeInTables, overrideTables;
+		{
+			{  //handle common merge-in list
+				if(!subsystemCommonList.empty())
+				{
+					subsystemCommonList =
+					    StringMacros::decodeURIComponent(subsystemCommonList);
+					__COUT__ << "Transition parameter SubsystemCommonList: "
+					         << subsystemCommonList << __E__;
+					StringMacros::getMapFromString(subsystemCommonList, mergeInTables);
+					__COUTV__(StringMacros::mapToString(mergeInTables));
+				}
+			}  //end handle common merge-in list
+
+			{  //handle common override list
+				if(!subsystemCommonOverrideList.empty())
+				{
+					subsystemCommonOverrideList =
+					    StringMacros::decodeURIComponent(subsystemCommonOverrideList);
+					__COUT__ << "Transition parameter SubsystemCommonOverrideList: "
+					         << subsystemCommonOverrideList << __E__;
+					StringMacros::getMapFromString(subsystemCommonOverrideList,
+					                               overrideTables);
+					__COUTV__(StringMacros::mapToString(overrideTables));
+				}
+			}  //end handle common override list
+		}      // end Assemble Subsystem Common Table List ----------------
 
 		ConfigurationManager cfgMgr;
-		cfgMgr.loadTableGroup(groupName, TableGroupKey(groupKey), true);
+		cfgMgr.loadTableGroup(groupName,
+		                      TableGroupKey(groupKey),
+		                      true,
+
+		                      0 /*groupMembers      */,
+		                      0 /*progressBar       */,
+		                      0 /*accumulateWarnings*/,
+		                      0 /*groupComment      */,
+		                      0 /*groupAuthor       */,
+		                      0 /*groupCreateTime   */,
+		                      false /*doNotLoadMember */,
+		                      0 /*groupTypeString */,
+		                      0 /*groupAliases */,
+		                      ConfigurationManager::LoadGroupType::ALL_TYPES,
+		                      true /*ignoreVersionTracking*/,
+		                      mergeInTables /* mergeInTables */,
+		                      overrideTables /* overrideTables */
+		);
 
 		// for each FESupervisor
 		// get all front end children
