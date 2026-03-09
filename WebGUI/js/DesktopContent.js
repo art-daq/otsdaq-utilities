@@ -2526,9 +2526,9 @@ DesktopContent.getInvertedColor = function (hexOrRGB) {
 	var rgb = [];
 	if (hexOrRGB.indexOf("#") == 0) {
 		rgb = [
-			parseInt(hex.substring(1, 3), 16),
-			parseInt(hex.substring(3, 5), 16),
-			parseInt(hex.substring(5, 7), 16),
+			parseInt(hexOrRGB.substring(1, 3), 16),
+			parseInt(hexOrRGB.substring(3, 5), 16),
+			parseInt(hexOrRGB.substring(5, 7), 16),
 		];
 	}
 	else if (hexOrRGB.indexOf("rgb(") == 0) {
