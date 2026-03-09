@@ -1628,7 +1628,7 @@ Desktop.createDesktop = function (security) {
                 Debug.logv({ newSearch });
                 var ii = newSearch.indexOf("code=");
                 if (ii < 0) {
-                    Debug.err("Cannot find code= paramaeter! Notify admins.");
+                    Debug.err("Cannot find code= parameter! Notify admins.");
                     return;
                 }
                 newSearch = newSearch.substr(0, ii + ("code=").length) +
