@@ -505,16 +505,16 @@ SubsystemLaunch.create = function() {
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
 					str += "</td><td  >";
-					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Configure</button>";
 					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 					// 	">Start</button>";
-					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Stop' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Stop</button>";
-					str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
+					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Halt' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						">Halt</button>";
 					str += "</td></tr>";
