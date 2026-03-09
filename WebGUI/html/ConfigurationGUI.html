@@ -5413,9 +5413,16 @@
 				treeViewHandlerStr_ += ">";
 				treeViewHandlerStr_ += value;
 				if (nodeStatusValue !== undefined) {
-					var dotColor = nodeStatusValue === "1" ? "rgb(16, 204, 16)" : "rgb(255, 0, 0)";
-					treeViewHandlerStr_ += "<div style='width:10px;height:10px;background-color:" + dotColor +
-						";float:left;border-radius:7px;border:2px solid white;margin:2px 4px 0 2px;' title='Status: " +
+					var dotColor = nodeStatusValue === "1" ? "rgb(16, 204, 16)" : "white";
+					var borderColor = nodeStatusValue === "1" ? "white" : "rgb(255, 0, 0)";
+					var dotSize = nodeStatusValue === "1" ? "10px" : "5px";
+					var dotBorderRadius = nodeStatusValue === "1" ? "7px" : "3px";
+					var dotMargin = nodeStatusValue === "1" ? "2px 4px 0 2px" : "4px 7px 0 4px";
+					treeViewHandlerStr_ += "<div style='width:" + dotSize + ";height:" + dotSize +
+						";background-color:" + dotColor +
+						";float:left;border-radius:" + dotBorderRadius +
+						";border:2px solid " + borderColor +
+						";margin:" + dotMargin + ";' title='Status: " +
 						(nodeStatusValue === "1" ? "Enabled" : "Disabled") + "'></div>";
 				}
 				treeViewHandlerStr_ += "</div>"; //end treeNode Value
