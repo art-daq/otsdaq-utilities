@@ -2735,14 +2735,23 @@ DesktopContent.addDesktopIcon = function (caption, altText,
 	imageURL, windowContentURL, linkedApp, parameters) {
 
 	var iconParameters = "";
-	if (parameters && parameters.length) {
-		if (typeof parameters === "string")
-			iconParameters = parameters; //just take string, if not object
-		else //take parameters from object
-			for (var i in parametersObject) {
-				iconParameters += encodeURIComponent(i) + "=" +
-					encodeURIComponent(iconParameters[i]) + "&";
+	if (parameters) {
+		if (typeof parameters === "string") {
+			iconParameters = parameters; // just take string, if not object
+		}
+		else {
+			// take parameters from object
+			var firstParam = true;
+			for (var key in parameters) {
+				if (!Object.prototype.hasOwnProperty.call(parameters, key))
+					continue;
+				if (!firstParam)
+					iconParameters += "&";
+				iconParameters += encodeURIComponent(key) + "=" +
+					encodeURIComponent(parameters[key]);
+				firstParam = false;
 			}
+		}
 	}
 
 	Debug.log("iconParameters = " + iconParameters);
