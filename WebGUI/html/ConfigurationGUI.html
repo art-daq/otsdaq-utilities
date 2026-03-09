@@ -4935,6 +4935,15 @@
 					++offset; //skip to next child
 				}
 
+				//node status for UID records (after comment, before nodeDiff)
+				var nodeStatusValue;
+				if (childrenLength &&
+					(value = nodes[i].children[offset]).nodeName == "nodeStatus") {
+					nodeStatusValue = value.getAttribute("value");
+					--childrenLength;
+					++offset; //skip to next child
+				}
+
 				//node diff should always be first child
 				var diffValueStr = "";
 				if (childrenLength &&
@@ -5403,6 +5412,12 @@
 
 				treeViewHandlerStr_ += ">";
 				treeViewHandlerStr_ += value;
+				if (nodeStatusValue !== undefined) {
+					var dotColor = nodeStatusValue === "1" ? "rgb(16, 204, 16)" : "rgb(255, 0, 0)";
+					treeViewHandlerStr_ += "<div style='width:10px;height:10px;background-color:" + dotColor +
+						";float:left;border-radius:7px;border:2px solid white;margin:2px 4px 0 2px;' title='Status: " +
+						(nodeStatusValue === "1" ? "Enabled" : "Disabled") + "'></div>";
+				}
 				treeViewHandlerStr_ += "</div>"; //end treeNode Value
 
 				treeViewHandlerStr_ += "</td><td>";
