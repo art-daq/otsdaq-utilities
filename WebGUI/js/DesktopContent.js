@@ -1755,8 +1755,8 @@ DesktopContent.getXMLNode = function (req, name) {
 
 //=====================================================================================
 //returns xml entry node (first node with name DATA)
-DesktopContent.getXMLDataNode = function (req, name) {
-	return DesktopContent.getXMLNode("DATA");
+DesktopContent.getXMLDataNode = function (req) {
+	return DesktopContent.getXMLNode(req, "DATA");
 }
 
 //=====================================================================================
