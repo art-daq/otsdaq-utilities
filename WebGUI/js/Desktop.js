@@ -175,7 +175,7 @@ Desktop.createDesktop = function (security) {
 	var _sysMsgAlarmSound = new Audio(_SYS_MSG_ALARM_SOUND_PATH);
 	var _sysMsgSound = new Audio(_SYS_MSG_SOUND_PATH);
 	_sysMsgSound.volume = 0.25; // Set volume to 25% (range: 0.0 to 1.0)
-	_sysMsgAlarmSound.volume = 1.0; // Set volume to 100% (range: 0.0 to 1.0)
+	_sysMsgAlarmSound.volume = 0.75; // Set volume to 75% (range: 0.0 to 1.0)
 
 	var _winId = 1000; //running window id number
 
