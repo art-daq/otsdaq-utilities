@@ -428,7 +428,7 @@ if [ "$1"  == "--warn" ] || [ "$1"  == "--warnfast" ]; then #warn should be quie
 
 			if [ "$IS_NFS_MOUNTED" = false ]; then #skip if not primary compile host (too verbose)
 				#skip centrally managed (e.g., spack and fermi-spack-tools) repos
-				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
+				if [[ "$repo_dir" == *"../spack" || "$repo_dir" == *"../spack-mpd" || "$repo_dir" == *"../archive"* || "$repo_dir" == *"../fermi-spack-tools"*  || "$repo_dir" == *"../spack-repos/fnal_art"*  || "$repo_dir" == *"../spack-repos/scd_recipes"* ]]; then
 					echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  Skipping unmerged branch check for centrally managed repo"
 				else
 					#find unmerged branches

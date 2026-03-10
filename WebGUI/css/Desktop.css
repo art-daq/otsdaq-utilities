@@ -496,13 +496,30 @@ legend {
     z-index: 9999;
     pointer-events: auto;
 }
-
 #scroll-reset-button {
     width: 100vw;
     background-color: red;
     color: black;
     cursor: pointer;
     font-weight: bold;
+    padding: 20px;
+}
+
+#scroll-reset-container-horiz {
+    position: absolute;
+    top: 50%;
+    left: 100vw;
+    transform: translateY(-50%);
+    z-index: 9999;
+    pointer-events: auto;
+}
+#scroll-reset-button-horiz {
+    height: 100vh;
+    background-color: red;
+    color: black;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 20px;
 }
 
 /*firefox seems to put an extra pixel of letter-spacing in bold words*/

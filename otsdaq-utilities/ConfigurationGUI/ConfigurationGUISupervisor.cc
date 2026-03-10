@@ -4231,8 +4231,12 @@ void ConfigurationGUISupervisor::recursiveTreeToXML(
 				parentEl =
 				    xmlOut.addTextElementToParent("node", t.getValueAsString(), parentEl);
 				if(t.isUIDNode())
+				{
 					xmlOut.addTextElementToParent(
 					    "comment", t.getAuthor() + ": " + t.getComment(), parentEl);
+					xmlOut.addTextElementToParent(
+					    "nodeStatus", t.isEnabled() ? "1" : "0", parentEl);
+				}
 
 				if(diffTree.has_value())
 				{

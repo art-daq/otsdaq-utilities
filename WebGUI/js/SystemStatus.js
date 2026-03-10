@@ -765,16 +765,18 @@ function displayTable(appsArray) {
                                 cell.style.background = "radial-gradient(circle at 50% 120%, rgb(255, 124, 124), rgb(255, 159, 159) 10%, rgb(218, 0, 0) 80%, rgb(144, 1, 1) 100%)";
 
                                 cell.style.cursor = "pointer";
-                                cell.id = "cell-" + i + "-" + j;
+                                cell.id = "cell-" + i + "-" + subapp + "-" + j;
                                 cell.onclick =
                                     function () {
                                         Debug.log("Cell " + this.id);
 
-                                        var i = this.id.split('-');
-                                        var j = i[2] | 0;
-                                        var i = i[1] | 0;
+                                        var isplit = this.id.split('-');
+                                        var j = isplit[3] | 0;
+                                        var i = isplit[1] | 0;
+                                        var subapp = isplit[2] | 0;
                                         Debug.log(
-                                            subappInfo[columnKeys[j]],
+                                            appsArray[i].subappStatus[subapp][columnKeys[j]],
+                                            //subappInfo[columnKeys[j]],
                                             Debug.HIGH_PRIORITY);
                                     }; //end onclick()
                                 break;

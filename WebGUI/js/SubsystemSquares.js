@@ -545,6 +545,7 @@ SubsystemSquares.create = function() {
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";
 					}
+					else
 					{
 						sdivs[i].style.color = "black";
 						sdivs[i].style.textShadow = "";
@@ -631,6 +632,7 @@ SubsystemSquares.create = function() {
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";
 					}
+					else
 					{
 						sdivs[i].style.color = "black";
 						sdivs[i].style.textShadow = "";

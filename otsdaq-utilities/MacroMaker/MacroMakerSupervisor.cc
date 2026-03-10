@@ -630,6 +630,7 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	{
 		__COUT__ << "Unauthorized Request made, security sequence doesn't match! "
 		         << time(0) << __E__;
+		*out << WebUsers::REQ_NO_PERMISSION_RESPONSE.c_str();
 		return;
 	}
 	else
