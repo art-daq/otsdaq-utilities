@@ -1081,6 +1081,24 @@ Debug.copyMessagesToClipboard = function () {
 } //end Debug.copyMessagesToClipboard
 
 //=====================================================================================
+//Debug.copyPathToClipboard ~~
+//	copy a file path to the clipboard and show popup confirmation
+Debug.copyPathToClipboard = function (path) {
+	navigator.clipboard.writeText(path)
+		.then(() => {
+			DesktopContent.popUpVerification(
+				"Text copied!", 0,
+				0, "#efeaea", 0, "black",
+				0, 0, 0, 0, 0, 0, 0, 0,
+				true /* justDisplayAndTimeoutPopup */,
+				2147483646 + 1 /* z-index on top of Debug popup */);
+		})
+		.catch(err => {
+			Debug.err("Failed to copy: ", err);
+		});
+} //end Debug.copyPathToClipboard
+
+//=====================================================================================
 //Debug.callOutDebugLocales ~~
 //	add call out labels to file [line] text blobs
 //	returns undefined if no change (to allow user to avoid copy)
@@ -1147,6 +1165,10 @@ Debug.callOutDebugLocales = function (str) {
 							fileStr /*innerHTML*/ +
 							"</label>",
 							true /*doCloseTag*/);
+							returnStr += "<span style='cursor:pointer; margin:5px'" +
+								"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
+								"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+								"</span>";
 
 					i = ff + fileFlagEnd[fi].length; //proceed after filename
 				} //end <FILE> callout handling
@@ -1228,6 +1250,10 @@ Debug.callOutDebugLocales = function (str) {
 						fileStr /*innerHTML*/ +
 						"</label>",
 						true /*doCloseTag*/);
+						returnStr += "<span style='cursor:pointer; margin:5px'" +
+							"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
+							"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+							"</span>";
 
 				//add end label
 				returnStr += "<br>";
@@ -1277,6 +1303,10 @@ Debug.callOutDebugLocales = function (str) {
 					fileStr /*innerHTML*/ +
 					"</label>",
 					true /*doCloseTag*/);
+					returnStr += "<span style='cursor:pointer; margin:5px'" +
+						"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
+						"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+						"</span>";
 
 			i = ff + ("</FILE>").length; //proceed after filename
 		} //end <FILE> callout handling
