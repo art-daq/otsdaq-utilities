@@ -174,8 +174,8 @@ Desktop.createDesktop = function (security) {
     var _SYS_MSG_SOUND_PATH = "/WebPath/sounds/fx-System-Message.wav"; // "http://www.soundjay.com/button/button-35.wav"; //must be .wav for firefox incompatibility
     var _sysMsgAlarmSound = new Audio(_SYS_MSG_ALARM_SOUND_PATH);
     var _sysMsgSound = new Audio(_SYS_MSG_SOUND_PATH);
-    _sysMsgSound.volume = 0.25; // Set volume to 50% (range: 0.0 to 1.0)
-    _sysMsgAlarmSound.volume = 1.0; // Set volume to 50% (range: 0.0 to 1.0)
+    _sysMsgSound.volume = 0.25; // Set volume to 25% (range: 0.0 to 1.0)
+    _sysMsgAlarmSound.volume = 1.0; // Set volume to 100% (range: 0.0 to 1.0)
 
     var _winId = 1000; //running window id number
 
