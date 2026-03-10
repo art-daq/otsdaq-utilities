@@ -582,7 +582,7 @@ Desktop.createDesktop = function (security) {
             "title='Click here to dismiss system message'>Dismiss</a></div>";
 
         //check if alarm message and play alarm sound
-        if (str.toLowerCase().indexOf("alarm") >= 0) 
+        if (tmp.toLowerCase().indexOf("alarm") >= 0) 
         {
              //play sound alert (play() is a promise, which can reject, after processing)
             //do not load over and over: _sysMsgAlarmSound.src = _SYS_MSG_ALARM_SOUND_PATH; // buffers automatically when created            
