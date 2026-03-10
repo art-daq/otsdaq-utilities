@@ -1286,7 +1286,11 @@ Debug.callOutDebugLocales = function (str) {
 					"</label>",
 					true /*doCloseTag*/);
 					returnStr += "<span style='cursor:pointer; margin:5px'" +
-						"title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')\">" +
+						"title='Copy path' onclick=\"navigator.clipboard.writeText('" + fileStr + "')" +
+							".then(function(){ DesktopContent.popUpVerification(" +
+								"'Text copied!', 0, 0, '#efeaea', 0, 'black', 0, 0, 0, 0, 0, 0, 0, 0," +
+								"true, 2147483647); })" +
+							".catch(function(e){ Debug.err('Failed to copy text to clipboard: ', e); })\">" +
 						"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
 						"</span>";
 
