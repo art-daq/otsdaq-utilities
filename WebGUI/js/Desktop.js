@@ -585,7 +585,7 @@ Desktop.createDesktop = function (security) {
         if (str.toLowerCase().indexOf("alarm") >= 0) 
         {
              //play sound alert (play() is a promise, which can reject, after processing)
-            //do not load over and over: _sysMsgAlarmSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created            
+            //do not load over and over: _sysMsgAlarmSound.src = _SYS_MSG_ALARM_SOUND_PATH; // buffers automatically when created            
              _sysMsgAlarmSound.play().catch(e => {
                 Debug.log("System Message Alarm Sound Play() error", e);
                 str += "<br><br><div style='font-size:12px'>(Could not play alert sound because the uesr must interact with the page first)</div>";
