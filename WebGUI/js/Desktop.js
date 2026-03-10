@@ -170,8 +170,12 @@ Desktop.createDesktop = function (security) {
         _settingsLayoutMailbox;
     var _MAILBOX_TIMER_PERIOD = 500; //timer period for checking mailbox and system messages: 500 ms
     var _sysMsgId = 0; //running counter to identify system message pop-ups
-    var _SYS_MSG_SOUND_PATH = "/WebPath/sounds/fx-System-Message.wav"; // "http://www.soundjay.com/button/button-2.wav"; //must be .wav for firefox incompatibility
+    var _SYS_MSG_ALARM_SOUND_PATH = "/WebPath/sounds/fx-System-Message-Alarm.wav"; // "http://www.soundjay.com/button/button-2.wav"; //must be .wav for firefox incompatibility
+    var _SYS_MSG_SOUND_PATH = "/WebPath/sounds/fx-System-Message.wav"; // "http://www.soundjay.com/button/button-35.wav"; //must be .wav for firefox incompatibility
+    var _sysMsgAlarmSound = new Audio(_SYS_MSG_ALARM_SOUND_PATH);
     var _sysMsgSound = new Audio(_SYS_MSG_SOUND_PATH);
+    _sysMsgSound.volume = 0.25; // Set volume to 50% (range: 0.0 to 1.0)
+    _sysMsgAlarmSound.volume = 1.0; // Set volume to 50% (range: 0.0 to 1.0)
 
     var _winId = 1000; //running window id number
 
@@ -577,14 +581,27 @@ Desktop.createDesktop = function (security) {
         str += "<a href='Javascript:Desktop.closeSystemMessage(" + _sysMsgId + ");' " +
             "title='Click here to dismiss system message'>Dismiss</a></div>";
 
-
-        //play sound alert (play() is a promise, which can reject, after processing)
-        //do not load over and over: _sysMsgSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created
-        _sysMsgSound.play().catch(e => {
-            Debug.log("System Message Sound Play() error", e);
-            str += "<br><br><div style='font-size:12px'>(Could not play alert sound because the uesr must interact with the page first)</div>";
-            sysMsgEl.innerHTML = str;
-        });
+        //check if alarm message and play alarm sound
+        if (str.toLowerCase().indexOf("alarm") >= 0) 
+        {
+             //play sound alert (play() is a promise, which can reject, after processing)
+            //do not load over and over: _sysMsgAlarmSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created            
+             _sysMsgAlarmSound.play().catch(e => {
+                Debug.log("System Message Alarm Sound Play() error", e);
+                str += "<br><br><div style='font-size:12px'>(Could not play alert sound because the uesr must interact with the page first)</div>";
+                sysMsgEl.innerHTML = str;
+            });
+        }
+        else
+        {
+            //play sound alert (play() is a promise, which can reject, after processing)
+            //do not load over and over: _sysMsgSound.src = _SYS_MSG_SOUND_PATH; // buffers automatically when created
+            _sysMsgSound.play().catch(e => {
+                Debug.log("System Message Sound Play() error", e);
+                str += "<br><br><div style='font-size:12px'>(Could not play alert sound because the uesr must interact with the page first)</div>";
+                sysMsgEl.innerHTML = str;
+            });
+        }
 
         sysMsgEl.innerHTML = str;
 
