@@ -14,7 +14,6 @@ ViewerRoot.createHud = function() {
 	//	findDir(path,currDir,currPath)
 	//	redrawDirectoryDisplay(currDir,tabSz,path,str)
 	//	this.collapseDirectory(dirPath)
-	//  this.currStateRequestHandler(req,paths)
 	//	this.changeDirectory(dirPath)
 	//	animateDropDown()
 	//	mouseOverDropDown()
@@ -34,7 +33,6 @@ ViewerRoot.createHud = function() {
 	var hudDirBrowserDiv;
 	var hudAdminSettingsDiv;
 	var hudPopUpDiv = 0;
-	var _fsmName;
 
 	var displayingControls = false;
 	var PRE_MADE_ROOT_CFG_DIR = "Pre-made Views";
@@ -258,7 +256,7 @@ ViewerRoot.createHud = function() {
 			//Debug.log("ViewerRoot Hud findDir path to find " + path);
 		}
 
-		if(currDir[TUPLE_TYPE] & TUPLE_TYPE_DIR == 0) return 0; //current path is not a directory, path not found
+		if ((currDir[TUPLE_TYPE] & TUPLE_TYPE_DIR) == 0) return 0; //current path is not a directory, path not found
 		if(path == currPath) return currDir; //path is found
 		if(!currDir[TUPLE_CONTENT]) return 0;	//no structure to current path, path not found
 
@@ -266,7 +264,7 @@ ViewerRoot.createHud = function() {
 		var retVal = 0;
 		for(var i=0;i<currDir[TUPLE_CONTENT].length;++i)
 		{
-			if(currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR == 0) continue; //child is not a directory so skip
+			if ((currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR) == 0) continue; //child is not a directory so skip
 
 			retVal = findDir(path,currDir[TUPLE_CONTENT][i],currPath + currDir[TUPLE_CONTENT][i][TUPLE_NAME] + "/");
 			if(retVal) return retVal;
@@ -400,58 +398,10 @@ ViewerRoot.createHud = function() {
 		redrawDirectoryDisplay(); //redraw current directory
 	} //end collapseDirectory()
 
-	// currStateRequestHandler ~~
-	this.currStateRequestHandler = function(req,paths) {
-		Debug.log("ViewerRoot Hud currStateRequestHandler");
-
-		if(!req) //error! stop handler
-		{
-			window.clearTimeout(_verifyStateTimeout);
-			window.clearInterval(_timeUpdateTimeout);
-			Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
-			return;
-		}
-
-		var cs = DesktopContent.getXMLValue(req,"current_state");
-		var inTransition = DesktopContent.getXMLValue(req,"in_transition");
-
-		const [dirPath, currDir] = paths;
-
-		if (cs == "Running" && inTransition == "1") {
-			Debug.log("Detected transition out of the 'Running' state. Resume run to continue LIVE DQM.", Debug.WARN_PRIORITY);
-		}
-		else if(cs != "Running") {
-			var str = "State needs to be Running to use Live DQM.\n"
-			if(currDir != "")
-				str += "Click <a onclick='javascript:Debug.closeErrorPop();Javascript:ViewerRoot.hud.changeDirectory(\"/\");'>here</a> to return to root directory"
-			Debug.log(str, Debug.WARN_PRIORITY);
-		}
-		else {
-			currDirPtr = findDir(dirPath);
-			ViewerRoot.getDirectoryContents(dirPath);
-		}
-	} // end currStateRequestHandler()
-
-	// changeDirectory ~~
 	this.changeDirectory = function(dirPath) {
 		Debug.log("ViewerRoot Hud changeDirectory  " + dirPath);
-
-		if (dirPath.includes("LIVE_DQM.root")) {
-			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=getState",
-				"",
-				ViewerRoot.hud.currStateRequestHandler,
-				[dirPath, currDirPtr[1]] /*reqParam*/,
-				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
-				true /*doNotShowLoadingOverlay*/,
-				0 /*targetGatewaySupervisor*/,
-				true /*ignoreSystemBlock*/
-			);
-		} else {
-			currDirPtr = findDir(dirPath);
-			ViewerRoot.getDirectoryContents(dirPath);
-		}
+		currDirPtr = findDir(dirPath);
+		ViewerRoot.getDirectoryContents(dirPath);
 	} // end changeDirectory()
 
 
@@ -726,7 +676,7 @@ ViewerRoot.createHud = function() {
 					");' " + chkDefaults[i] + "><label for='hudCheckbox" + i + "' >" + chkLabels[i] + "</label>";
 	str += "</div>";
 
-	var radioLabels = ["Tile","Replace"]; //FIXME superimpose is broken in jsroot v5.9.0 and v7.9.0 usage of this gui, "Superimpose"];
+    var radioLabels = ["Tile","Replace","Superimpose"]; //FIXME superimpose is broken in jsroot v5.9.0 and v7.9.0 usage of this gui, "Superimpose"];
 	var radioDefault = ViewerRoot.nextObjectMode;
 	for(var i=0;i<radioLabels.length;++i)
 		str += "<input type='radio' id='newRootObjectModeRadio" + i + "' " + (i==radioDefault?"checked":"") +
