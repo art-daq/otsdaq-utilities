@@ -74,7 +74,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	TableVersion            version,
 																	bool                    allowIllegalColumns = false,
 																	bool                    getRawData = false,
-																	bool					descriptionOnly = false);
+																	bool                    descriptionOnly = false);
 
 	void 					setupActiveTablesXML					(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
