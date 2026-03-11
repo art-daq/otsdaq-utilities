@@ -10578,6 +10578,10 @@
 				Debug.log("Copying and pasting table rows");
 				copyAndPasteBlockRows();
 				registerOnClickActions();
+				e.stopImmediatePropagation();
+				if (e.preventDefault)
+					e.preventDefault();
+				return false;
 			}
 			else if ((e.ctrlKey && e.key.toLowerCase() == "d") ||
 				e.keyCode == 8 || //BACKSPACE
@@ -10586,6 +10590,10 @@
 				Debug.log("Deleting block of table rows");
 				deleteBlockRows();
 				registerOnClickActions();
+				e.stopImmediatePropagation();
+				if (e.preventDefault)
+					e.preventDefault();
+				return false;
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
