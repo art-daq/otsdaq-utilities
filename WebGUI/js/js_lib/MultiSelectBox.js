@@ -478,8 +478,9 @@ MultiSelectBox.initMySelectBoxes = function (clearPreviousSelections, targetId) 
                 if (MultiSelectBox.mySelects_[id][opt]) {
                     //MultiSelectBox.dbg(opt);
                     MultiSelectBox.addClass(options[opt], "optionhighlighted");
-                    options[opt].scrollIntoView({// this breaks desktop window scrolling: block: 'nearest', inline: 'start' });
-                        // so highlighted are visible to user
+                    // previously used: block: 'nearest', inline: 'start' (broke desktop window scrolling)
+                    options[opt].scrollIntoView({
+                        // ensure highlighted options are visible to the user
                         block: "nearest",
                         inline: "nearest",
                         behavior: "instant"
