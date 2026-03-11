@@ -3752,9 +3752,9 @@
 					setSelectedByIndex(idx, dragModeSelect_);
 				});
 
-				tableRow.addEventListener('mouseup', (e) => {			
+				tableRow.addEventListener('mouseup', (e) => {
 					Debug.log("Table row mouse up");
-					suppressNextMouseup_ = false;		
+					suppressNextMouseup_ = false;
 					if (e.shiftKey || e.ctrlKey || e.metaKey)
 						e.stopPropagation();
 				});
@@ -7303,7 +7303,7 @@
 				"Create the new Group</button>";
 			str += createButtonStr;
 			str += "<br><br>";
-			str += "Group Name: <input id='newConfigName' " +			
+			str += "Group Name: <input id='newConfigName' " +
 								"onmousedown='event.stopPropagation();' " +
 								"onmouseup='event.stopPropagation();' " +
 								"onclick='event.stopPropagation();' " +
@@ -10579,7 +10579,7 @@
 				copyAndPasteBlockRows();
 				registerOnClickActions();
 			}
-			else if ((e.ctrlKey && e.key.toLowerCase() == "d") || 
+			else if ((e.ctrlKey && e.key.toLowerCase() == "d") ||
 				e.keyCode == 8 || //BACKSPACE
 				e.keyCode == 46) //DELETE
 			{
@@ -10597,7 +10597,7 @@
 			const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
 			Debug.log("Number of selected rows " + selectedRows.length);
 
-			for (var i = 0; i < selectedRows.length; ++i) 
+			for (var i = 0; i < selectedRows.length; ++i)
 			{
 				let rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
 				tableCopyOrMoveRow(0, rowIndex, true);
@@ -19593,12 +19593,12 @@
 			var sel = document.getElementById("editTree-groupIdFreeform-select");
 			var tel = document.getElementById("editTree-groupIdFreeform-input");
 			Debug.log("sel.style.display  " + sel.style.display);
-			if (sel.style.display == "none") 
+			if (sel.style.display == "none")
 			{
 				sel.style.display = "block";
 				tel.style.display = "none";
 			}
-			else 
+			else
 			{
 				DesktopContent.tooltip(
 					"Link Group IDs",
@@ -19611,7 +19611,7 @@
 					+ "Note that the child record <b>Group ID</b> may include the wildcard <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label>, which matches parent <b>Group ID</b> values where the <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label> represents any sequence of characters. "
 					+ "<br><br>For example, <i>Tracker*_Board*</i> as a child <b>Group ID</b> would match the parent <b>Link Group ID</b> <i>TrackerROC3_Board201</i>."
 				);
-				
+
 				tel.style.width = ((sel.offsetWidth > 150 ? sel.offsetWidth : 150) - 2) + "px";
 				sel.style.display = "none";
 				tel.style.display = "block";

@@ -2868,7 +2868,7 @@ SubsystemLaunch.extractIteratorStatus = function (req) {
 		let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(err);
 		Debug.logv({secondsAgo});
 
-		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old		
+		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old
 		{
 			let agoStr = "";
 			if(secondsAgo != -1)
