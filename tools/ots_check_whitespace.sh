@@ -11,7 +11,7 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 	exit 1
 fi
 
-excluded_dirs="WebGUI/js/js_lib WebGUI/js/visualizers_lib" #could space-separate excluded directories
+excluded_dirs="WebGUI/js/js_lib WebGUI/js/visualizers_lib/ViewerRoot_lib" #could space-separate excluded directories
 exclude_regex="^(nothingtoseehere|Data_.*|databases_.*"
 
 #copied from otdsaq-utilities Check Git whitespace / Check Git whitespace on 20-Feb-2026

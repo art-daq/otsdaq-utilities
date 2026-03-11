@@ -391,6 +391,7 @@ Debug._errBoxOffX = 0;
 Debug._errBoxOffY = 0;
 Debug._errBoxOffW = 0;
 Debug._errBoxOffH = 0;
+Debug._errBoxOffPosSv = [0,0,0,0];
 
 
 Debug._AVOID_TITLE_NEW_LINE_LENGTH = ("title='Open file in a new browser tab: \n").length;
@@ -1356,7 +1357,7 @@ Debug.dockPopup = function (dockMode)
 		h = (Desktop.desktop.getDesktopHeight() - 16 - 14);
 	}
 
-	var sv = [Debug._errBoxOffX, Debug._errBoxOffY, Debug._errBoxOffW, Debug._errBoxOffH];
+
 
 	switch(dockMode) {
 		case 0: // lower 25% of parent window
@@ -1394,15 +1395,18 @@ Debug.dockPopup = function (dockMode)
 	}
 
 	//toggle back to normal if already in that position
-	if(Debug._errBoxOffX == sv[0] && Debug._errBoxOffY == sv[1] &&
-		 Debug._errBoxOffW == sv[2] && Debug._errBoxOffH == sv[3])
+	if((Debug._errBoxOffX | 0) == Debug._errBoxOffPosSv[0] && (Debug._errBoxOffY | 0) == Debug._errBoxOffPosSv[1] &&
+		 (Debug._errBoxOffW | 0) == Debug._errBoxOffPosSv[2] && (Debug._errBoxOffH | 0) == Debug._errBoxOffPosSv[3])
 	{
 		Debug._errBoxOffX = 0;
 		Debug._errBoxOffY = 0;
 		Debug._errBoxOffW = 0;
 		Debug._errBoxOffH = 0;
-	}
 
-	Debug.handleErrorResize();
+	}
+	Debug._errBoxOffPosSv = [Debug._errBoxOffX | 0, Debug._errBoxOffY | 0, Debug._errBoxOffW | 0, Debug._errBoxOffH | 0];
+
+	Debug.handleErrorResize(); //can modify Debug._errBoxOffX/Y/W/H, so save last position before updating position
+
 
 } //end Debug.dockPopup()

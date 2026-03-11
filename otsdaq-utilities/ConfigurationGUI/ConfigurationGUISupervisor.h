@@ -73,7 +73,8 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const std::string&      tableName,
 																	TableVersion            version,
 																	bool                    allowIllegalColumns = false,
-																	bool                    getRawData = false);
+																	bool                    getRawData = false,
+																	bool                    descriptionOnly = false);
 
 	void 					setupActiveTablesXML					(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
