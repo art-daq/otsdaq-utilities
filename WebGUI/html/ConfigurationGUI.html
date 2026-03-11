@@ -19220,19 +19220,19 @@
 					//cell value
 					//first column is row numbers
 					if (c == 0 && r >= _CONFIG_DATA_ROW_OFFSET) {
-						str += "<center title='Use Ctrl + click/drag to select a block or rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.'>";
+						str += "<center title='Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.'>";
 						str += (_dataOffset + ro);	//insert row index column
 						str += "<br>";
 
 						//add +/- row controls
 						str += "<a class='tableAddRowButton' " +
-							"title='Add a row before this row. Use Ctrl + click/drag to select a block or rows; then Ctrl + V to paste rows.' " +
+							"title='Add a row before this row. Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows.' " +
 							"onclick='addRow(" + ro + "); return false;'>";
 						str += "+";
 						str += "</a>";
 						str += "/";
 						str += "<a  class='tableDeleteRowButton' " +
-							"title='Delete this row. Use Ctrl + click/drag to select a block or rows; then Ctrl + D/delete/backspace to delete rows.' " +
+							"title='Delete this row. Use Ctrl + click/drag to select a block of rows; then Ctrl + D/delete/backspace to delete rows.' " +
 							"onclick='deleteRow(" + ro + "); registerOnClickActions(); return false;'>";
 						str += "-";
 						str += "</a>";
