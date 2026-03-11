@@ -23,7 +23,7 @@
 //	public function list:
 //		ViewerRoot.launch()
 //
-//  2025 from web, updating to 7.9.0 from 5.8.0: 
+//  2025 from web, updating to 7.9.0 from 5.8.0:
 //				https://root.cern/js/latest/api.htm#custom_html_th2_src
 //				https://github.com/root-project/jsroot/blob/master/docs/JSROOT.md#migration-v6---v7
 //
@@ -71,7 +71,8 @@ ViewerRoot.launch = function() {
 		loadScript(source_dir+'jsroot-7.9.0/scripts/JSRoot.core.js',function(){
 				// JSROOT.AssertPrerequisites('2d;io;3d;',ViewerRoot.init);
 				ViewerRoot.init();
-		}); });
+        });
+    });
 
 	///	Drawing Strategy
 	//		- if rootCanvas not created, clear omni and create, full window
@@ -187,12 +188,13 @@ ViewerRoot.iterSaveAutoRefreshDefault;
 //ViewerRoot.rootConfigReq
 //ViewerRoot.getRootConfigHandler
 //ViewerRoot.iterativeConfigLoader
+//ViewerRoot.currStateRequestHandler
+//ViewerRoot.haltRefresh
 //ViewerRoot.getRootDataHandler
 //ViewerRoot.interpretObjectBuffer
 
 //=====================================================================================
-ViewerRoot.init = function()
-{
+ViewerRoot.init = function () {
 	Debug.log("ViewerRoot.init");
 	//JSROOT.redraw('object_draw', histo, "colz");
 
@@ -250,8 +252,7 @@ ViewerRoot.autoRefreshMatchArr = []; //use array to match request returns to ind
 //		For each root object that is in refresh mode, push index,path to an array
 //		and send req. When req returns match path to array and remove entry.
 //		When array is empty auto refresh complete.
-ViewerRoot.autoRefreshTick = function()
-{
+ViewerRoot.autoRefreshTick = function () {
 	//Debug.log("ViewerRoot autoRefreshTick pause=" + ViewerRoot.pauseRefresh);
 	if(ViewerRoot.pauseRefresh) return;
 
@@ -270,8 +271,7 @@ ViewerRoot.autoRefreshTick = function()
 
 	ViewerRoot.autoRefreshMatchArr = []; //insert [<index>, <path>] tuples
 	for(var j=0;j<ViewerRoot.rootPosArr.length;++j)
-		if(ViewerRoot.rootIsAutoRefreshArr[j])
-		{
+        if (ViewerRoot.rootIsAutoRefreshArr[j]) {
 			Debug.log("ViewerRoot autoRefreshTick " + j + " " + ViewerRoot.rootObjNameArr[j]);
 			ViewerRoot.autoRefreshMatchArr.push([j, ViewerRoot.rootObjNameArr[j]]);
 			ViewerRoot.rootReq(ViewerRoot.rootObjNameArr[j],j);
@@ -291,8 +291,7 @@ ViewerRoot.autoRefreshTick = function()
 //		based on RADIO: Tile, Replace, Superimpose. The div id
 //		will be "histogram"+ViewerRoot.objIndex.. this is the div
 //		the root js library will draw to.
-ViewerRoot.prepareNextLocation = function(objName, objTitle)
-{
+ViewerRoot.prepareNextLocation = function (objName, objTitle) {
 	Debug.log("ViewerRoot prepareNextLocation for ViewerRoot.objIndex " + "mode " + ViewerRoot.nextObjectMode +
 			": " + ViewerRoot.objIndex + ": " + objName);
 
@@ -313,21 +312,18 @@ ViewerRoot.prepareNextLocation = function(objName, objTitle)
 	ViewerRoot.rootContainer.appendChild(ViewerRoot.rootElArr[ri]);
 
 	var drawTransparently = false;
-	if(!ViewerRoot.numPositionsTiled || ViewerRoot.nextObjectMode == ViewerRoot.TILE_MODE)
-	{
+    if (!ViewerRoot.numPositionsTiled || ViewerRoot.nextObjectMode == ViewerRoot.TILE_MODE) {
 		//next tile position (or first tile)
 		ViewerRoot.rootPosArr.push(ViewerRoot.numPositionsTiled++);
 	}
-	else if(ViewerRoot.nextObjectMode == ViewerRoot.REPLACE_MODE)
-	{
+    else if (ViewerRoot.nextObjectMode == ViewerRoot.REPLACE_MODE) {
 		//replace tile(s) at position ViewerRoot.rootTargetIndex, if -1 then replace last tile(s)
 		var repi = ViewerRoot.rootTargetIndex == -1? ViewerRoot.numPositionsTiled-1:ViewerRoot.rootTargetIndex;
 		ViewerRoot.removeAllAtPosition(repi);	//remove all tiles that match repi
 
 		ViewerRoot.rootPosArr.push(repi); //assign new report to position
 	}
-	else if(ViewerRoot.nextObjectMode == ViewerRoot.SUPERIMPOSE_MODE)
-	{
+    else if (ViewerRoot.nextObjectMode == ViewerRoot.SUPERIMPOSE_MODE) {
 		//add tile at position ViewerRoot.rootTargetIndex, if -1 then at last tile(s)
 		var supi = ViewerRoot.rootTargetIndex == -1? ViewerRoot.numPositionsTiled-1:ViewerRoot.rootTargetIndex;
 
@@ -338,7 +334,21 @@ ViewerRoot.prepareNextLocation = function(objName, objTitle)
 	ViewerRoot.rootIsTransparentArr.push(drawTransparently); //keep for transparent drawing
 	ViewerRoot.rootIsAutoRefreshArr.push(ViewerRoot.autoRefreshDefault);
 	ViewerRoot.rootObjNameArr.push(objName);	//assign new report to position
-	ViewerRoot.rootObjTitleArr.push(objTitle);
+
+	//look for .root name other blank
+	let prependName = "";
+	{
+		let splitPath = objName.split('/');
+        for (let i = 0; i < splitPath.length; ++i) {
+			let ii = splitPath[i].indexOf(".root");
+            if (ii > 0) {
+				prependName = splitPath[i].substr(0,ii) + ": ";
+				break;
+			}
+		}
+		Debug.logv({prependName});
+	}
+	ViewerRoot.rootObjTitleArr.push(prependName + objTitle);
 
 	ViewerRoot.manageRootHeaders(); 	//manage headers for all positions
 	ViewerRoot.resizeRootObjects(true); 	//resize all root objects as a result of new element
@@ -372,8 +382,7 @@ ViewerRoot.removeAllAtPosition = function(posi, isClosingPosition) {
 		else if(isClosingPosition && ViewerRoot.rootPosArr[i] > posi) //renumber position
 			--ViewerRoot.rootPosArr[i];
 
-	if(isClosingPosition)
-	{
+    if (isClosingPosition) {
 		--ViewerRoot.numPositionsTiled;
 		ViewerRoot.manageRootHeaders();
 		if(ViewerRoot.rootTargetIndex > posi) --ViewerRoot.rootTargetIndex;
@@ -385,8 +394,7 @@ ViewerRoot.removeAllAtPosition = function(posi, isClosingPosition) {
 //=====================================================================================
 // ViewerRoot.manageRootHeaders ~~
 //	handle adding/removing/drawing of root object headers
-ViewerRoot.manageRootHeaders = function()
-{
+ViewerRoot.manageRootHeaders = function () {
 	Debug.log("ViewerRoot manageRootHeaders");
 
 	var tmpdiv;
@@ -412,12 +420,12 @@ ViewerRoot.manageRootHeaders = function()
 	var name, fullPath;
 	var str;
 	var isAtLeastOneRefreshing;
-	for(var i=0;i<ViewerRoot.rootHeaderElArr.length;++i)
-	{
+    for (var i = 0; i < ViewerRoot.rootHeaderElArr.length; ++i) {
 		found = 0;
 		isAtLeastOneRefreshing = false;
 		for(var j=0;j<ViewerRoot.rootPosArr.length;++j)
-			if(ViewerRoot.rootPosArr[j] == i) { ++found; fullPath = ViewerRoot.rootObjNameArr[j];
+            if (ViewerRoot.rootPosArr[j] == i) {
+                ++found; fullPath = ViewerRoot.rootObjNameArr[j];
 				//name = (fullPath.length > 20)?("..." + fullPath.substr(fullPath.length-18)):fullPath;
 				name=ViewerRoot.rootObjTitleArr[j];
 				if(ViewerRoot.rootIsAutoRefreshArr[j]) isAtLeastOneRefreshing = true; //this root object is set to autorefresh
@@ -458,17 +466,14 @@ ViewerRoot.manageRootHeaders = function()
 //	Superimposed position is a special case
 //		if any of superimposed are true, then all should go false
 //		else all go true
-ViewerRoot.toggleAllAtPositionAutoRefresh = function(i)
-{
+ViewerRoot.toggleAllAtPositionAutoRefresh = function (i) {
 	Debug.log("ViewerRoot toggleAllAtPositionAutoRefresh " + i);
 	var found = 0;
 	var v = true, lastv;
 	var doover = false;
-	do
-	{
+    do {
 		for(var j=0;j<ViewerRoot.rootPosArr.length;++j)
-			if(ViewerRoot.rootPosArr[j] == i)
-			{
+            if (ViewerRoot.rootPosArr[j] == i) {
 				if(!doover && ViewerRoot.rootIsAutoRefreshArr[j]) v = false;
 				ViewerRoot.rootIsAutoRefreshArr[j] = v;                       //---------------------------------------->This is all this function does!
 
@@ -486,8 +491,7 @@ ViewerRoot.toggleAllAtPositionAutoRefresh = function(i)
 
 //=====================================================================================
 // ViewerRoot.handleRootPositionSelect ~~
-ViewerRoot.handleRootPositionSelect = function(event)
-{
+ViewerRoot.handleRootPositionSelect = function (event) {
 	event.cancelBubble = true;
 	var i = parseInt(this.id.substr(this.id.indexOf("-")+1))
 	Debug.log("ViewerRoot handleRootPositionSelect " + i);
@@ -498,13 +502,12 @@ ViewerRoot.handleRootPositionSelect = function(event)
 //=====================================================================================
 // ViewerRoot.clearAll ~~
 //		remove all root objects
-ViewerRoot.clearAll = function()
-{
+ViewerRoot.clearAll = function () {
 	Debug.log("ViewerRoot clearAll");
 
 	ViewerRoot.rootTargetIndex = -1;
 	//ViewerRoot.numPositionsTiled will be 0 at end
-	for(ViewerRoot.numPositionsTiled; ViewerRoot.numPositionsTiled>0; --ViewerRoot.numPositionsTiled)
+	for(; ViewerRoot.numPositionsTiled>0; --ViewerRoot.numPositionsTiled)
 		ViewerRoot.removeAllAtPosition(ViewerRoot.numPositionsTiled-1);
 	ViewerRoot.manageRootHeaders();
 	ViewerRoot.resizeRootObjects();
@@ -541,8 +544,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 	ViewerRoot.rootContainer.style.width = ViewerRoot.w + "px";
 	ViewerRoot.rootContainer.style.height = ViewerRoot.h + "px";
 
-	if(ViewerRoot.numPositionsTiled < 1)
-	{ 	//if no rootObjects, invisible container
+    if (ViewerRoot.numPositionsTiled < 1) { 	//if no rootObjects, invisible container
 		ViewerRoot.rootContainer.style.backgroundColor = "rgba(0,0,0,0)";
 		return;
 	}
@@ -577,8 +579,8 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 		ViewerRoot.rootElArr[i].style.left = w*(ViewerRoot.rootPosArr[i]%c) + (w-rootw)/2 + "px";
 		ViewerRoot.rootElArr[i].style.top = ViewerRoot.ROOT_CONTAINER_OFFY + ViewerRoot.ROOT_HEADER_HEIGHT +
 			h*Math.floor(ViewerRoot.rootPosArr[i]/c) + "px";
-
             ViewerRoot.rootElArr[i].style.zIndex = ViewerRoot.rootIsTransparentArr[i] ? (1000 + i) : i;
+            
 		//		Debug.log("ViewerRoot resizeRootObjects x y " + i + " at pos " + ViewerRoot.rootPosArr[i] +
 		//				":" + ViewerRoot.rootElArr[i].style.left  + "-" + ViewerRoot.rootElArr[i].style.top );
 
@@ -587,8 +589,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 			//Debug.log("ViewerRoot resizeRootObjects redraw " + i  + "-" + ViewerRoot.rootObjIndexArr[i] );
 			//JSROOTPainter.drawObject(ViewerRoot.rootObjArr[i], ViewerRoot.rootObjIndexArr[i]);
 
-			try
-			{
+            try {
 				// TTree NTuples should be handled special
 				// _typename
 				// fBranches
@@ -599,14 +600,12 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 				// 4: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'i', fTitle: 'i', …}
 
 				Debug.log("ROOT type",ViewerRoot.rootObjArr[i]._typename);
-				if(ViewerRoot.rootObjArr[i]._typename == "TNtuple")
-				{
+                if (ViewerRoot.rootObjArr[i]._typename == "TNtuple") {
 					var ret = JSROOT.redraw('histogram'+
 							ViewerRoot.rootObjIndexArr[i],
 							ViewerRoot.rootObjArr[i], "px:py::pz>5"); //last arg, root draw option
 					Debug.logv({ret});
-					ret.catch(err => 
-						{
+                    ret.catch(err => {
 							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
 								"' failed to draw: " + err);
 							document.getElementById("histogram" +
@@ -615,14 +614,12 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 										//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 						});
 				}
-				else
-				{
+                else {
 					var ret = JSROOT.redraw('histogram'+
 							ViewerRoot.rootObjIndexArr[i],
 							ViewerRoot.rootObjArr[i], "colz"); //last arg, root draw option
 					Debug.logv({ret});
-					ret.catch(err => 
-						{
+                    ret.catch(err => {
 							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
 								"' failed to draw: " + err);
 							document.getElementById("histogram" +
@@ -632,8 +629,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 						});
 				}
 			}
-			catch(e)
-			{
+            catch (e) {
 				Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
 						"' failed to draw: " + e);//, Debug.HIGH_PRIORITY);
 				document.getElementById("histogram" +
@@ -646,8 +642,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 	}
 
 	//position headers
-	for(var i=0;i<ViewerRoot.rootHeaderElArr.length;++i)
-	{
+    for (var i = 0; i < ViewerRoot.rootHeaderElArr.length; ++i) {
 		ViewerRoot.rootHeaderElArr[i].style.width = w-2 + "px";
 		ViewerRoot.rootHeaderElArr[i].style.height = ViewerRoot.ROOT_HEADER_HEIGHT  + "px";
 		ViewerRoot.rootHeaderElArr[i].style.left = w*(i%c)  + "px";
@@ -665,29 +660,28 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 //		refresh the transparency state of histogram i and svg components
 ViewerRoot.refreshTransparency = function(i) {
     if (!ViewerRoot.rootIsTransparentArr[i]) return;
-
+    //if need be, make transparent
     var target = ViewerRoot.rootElArr[i] && ViewerRoot.rootElArr[i].children[0];
     if (!target) return;
+		//Debug.log("superimpose draw " + i);
+		//histogram div bgColor
+		target.style.backgroundColor = "rgba(0,0,0,0)";
+		//svg bgColor
+		var svgs = target.getElementsByTagName('svg');
+    for (var s = 0; s < svgs.length; ++s)
+        svgs[s].style.backgroundColor = "rgba(0,0,0,0)";
+    //rect fill
+        var rects = target.getElementsByTagName("rect");
+		if(rects.length > 0)
+			rects[0].style.fill = "rgba(0,0,0,0)";
 
-    target.style.backgroundColor = "rgba(0,0,0,0)";
-
-    var svgs = target.getElementsByTagName("svg");
-    for (var s = 0; s < svgs.length; ++s) {
-	svgs[s].style.backgroundColor = "rgba(0,0,0,0)";
-    }
-
-    // only first rect, which is usually the background
-    var rects = target.getElementsByTagName("rect");
-    if (rects.length > 0) {
-	rects[0].style.fill = "rgba(0,0,0,0)";
-    }
-    //structure:
+		//structure:
 			//<div id='histogram#'><svg><g>
 			//<rect x="0" y="0" width="461.48" height="281.70663849600004" fill="rgba(0,0,0,0)" style="stroke: #000000; stroke-width: 1px;"></rect>
 			//<svg>..root drawing..</svg>
 			//</g>
 			//</svg>
-}
+	} //end refreshTransparency()
 
 //=====================================================================================
 // ViewerRoot.checkStreamerInfoLoaded ~~
@@ -735,8 +729,7 @@ ViewerRoot.getDirContentsHandler = function(req) {
 	var permissions = DesktopContent.getXMLValue(req,'permissions');
 	if(!permissions)
 		Debug.log("ViewerRoot getDirContentsHandler permissions missing");
-	else if(ViewerRoot.userPermissions != permissions)
-	{
+    else if (ViewerRoot.userPermissions != permissions) {
 		Debug.log("ViewerRoot getDirContentsHandler user permissions = " + permissions);
 		ViewerRoot.userPermissions = permissions;
 		ViewerRoot.hud.handleWindowResize();
@@ -752,11 +745,13 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 
 	if(refreshIndex === undefined) refreshIndex = -1;
 
+	var objHandler = [rootPath,refreshIndex];
+
 	Debug.log("ViewerRoot.rootReq " + rootPath );
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot",
 			"RootPath="+rootPath,
 			ViewerRoot.getRootDataHandler,
-			refreshIndex /*reqParam*/,
+			objHandler /*reqParam*/,
 			 0 /*progressHandler*/,
 			 0 /*callHandlerOnErr*/,
 			 refreshIndex<0?false:true /*doNoShowLoadingOverlay*/);
@@ -764,8 +759,7 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 
 //=====================================================================================
 //ViewerRoot.rootConfigReq ~~
-ViewerRoot.rootConfigReq = function(rootConfigPath)
-{
+ViewerRoot.rootConfigReq = function (rootConfigPath) {
 	//Debug.log("ViewerRoot.rootReq");
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRootConfig",
 			"RootConfigPath="+rootConfigPath,
@@ -779,13 +773,11 @@ ViewerRoot.rootConfigReq = function(rootConfigPath)
 //=====================================================================================
 //ViewerRoot.getRootConfigHandler ~~
 //	receives saved configuration and rebuilds the view based on the configuration
-ViewerRoot.getRootConfigHandler = function(req)
-{
+ViewerRoot.getRootConfigHandler = function (req) {
 	Debug.log("ViewerRoot getRootConfigHandler " + req.responseText );
 
 	var status = DesktopContent.getXMLValue(req,"status");
-	if(status != "1")
-	{ alert("Loading Root Pre-Made Configuration Failed: " + status); return }
+    if (status != "1") { alert("Loading Root Pre-Made Configuration Failed: " + status); return }
 
 	ViewerRoot.iterNumPositionsTiled = DesktopContent.getXMLValue(req,"numPositionsTiled");
 	ViewerRoot.iterRunWildcard = DesktopContent.getXMLValue(req,"runNumWildcard");  //TODO replace obj names with current run number!
@@ -851,20 +843,56 @@ ViewerRoot.iterativeConfigLoader = function() {
 
 } //end iterativeConfigLoader()
 
+//=====================================================================================
+// ViewerRoot.currStateRequestHandler ~~
+ViewerRoot.currStateRequestHandler = function(req, rootName)
+{
+	Debug.log("ViewerRoot Hud currStateRequestHandler");
+
+	if(!req) //error! stop handler
+	{
+		window.clearTimeout(_verifyStateTimeout);
+		window.clearInterval(_timeUpdateTimeout);
+		Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
+		return;
+	}
+
+	var cs = DesktopContent.getXMLValue(req,"current_state");
+	var in_transition = DesktopContent.getXMLValue(req,"in_transition");
+
+	if(cs != "Running" || in_transition == "1") {
+		Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
+		ViewerRoot.haltRefresh(rootName, Debug.WARN_PRIORITY);
+	}
+}//end currStateRequestHandler()
+
+//=====================================================================================
+// ViewerRoot.haltRefresh ~~
+ViewerRoot.haltRefresh = function(rootName, debugLevel) {
+	Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors or resumme run. Then uncheck the 'Pause Refresh' in the bottom right.", debugLevel);
+	var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
+	chk.checked = true;
+	ViewerRoot.pauseRefresh = true;
+
+	Debug.log("Error reading Root object from server - Name: " + rootName, debugLevel);
+	ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
+}//end haltRefresh()
 
 //=====================================================================================
 // ViewerRoot.getRootDataHandler ~~
 //	receives streamed root object from server and prepares it for js structures
-ViewerRoot.getRootDataHandler = function(req, refreshIndex)
+ViewerRoot.getRootDataHandler = function(req, objHandler)
 {
 
 	//Debug.log("ViewerRoot getRootDataHandler " + req.responseText );
 
 	var rootType = DesktopContent.getXMLValue(req,"rootType");
-	var rootStr = DesktopContent.getXMLValue(req,"rootData");
 	var rootName = DesktopContent.getXMLValue(req,"path");//
 	//"my" + rootType + ViewerRoot.objIndex;// DesktopContent.getXMLValue(req,"path");// + ViewerRoot.objIndex;
 	//if(rootName.length > 20) rootName = "..." + rootName.substr(rootName.length-18);
+
+	const rootPath = objHandler[0];
+	let refreshIndex = objHandler[1];
 
 	var rootJSON = DesktopContent.getXMLValue(req,"rootJSON");
 
@@ -874,14 +902,24 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 
 	if(!object || !rootType || !rootName)
 	{
-		Debug.log("Pausing auto-refresh! \n\nPlease resolve the errors before resuming refreshes.", Debug.HIGH_PRIORITY);
-
-		var chk = document.getElementById("hudCheckbox" + 2); //pause refresh checkbox
-		chk.checked = true;
-		ViewerRoot.pauseRefresh = true;
-
-		Debug.log("Error reading Root object from server - Name: " + rootName, Debug.HIGH_PRIORITY);
-		ViewerRoot.autoRefreshMatchArr = [];	//clearing the array so that future refreshes work
+		if(rootPath.includes("LIVE_DQM.root"))
+		{
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getState",
+				"",
+				ViewerRoot.currStateRequestHandler,
+				rootName /*reqParam*/,
+				0 /*progressHandler*/,
+				0 /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				0 /*targetGatewaySupervisor*/,
+				true /*ignoreSystemBlock*/
+			);
+		}
+		else
+		{
+			ViewerRoot.haltRefresh(rootName, Debug.HIGH_PRIORITY);
+		}
 		return;
 	}
 
@@ -893,10 +931,8 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 	if(ViewerRoot.autoRefreshMatchArr.length &&
 			refreshIndex >= 0) //check if request matches auto refresh entry
 	{
-		for(var i=0;i<ViewerRoot.autoRefreshMatchArr.length;++i)
-		{
-			if(refreshIndex == ViewerRoot.autoRefreshMatchArr[i][0])
-			{
+        for (var i = 0; i < ViewerRoot.autoRefreshMatchArr.length; ++i) {
+            if (refreshIndex == ViewerRoot.autoRefreshMatchArr[i][0]) {
 				Debug.log("ViewerRoot handling refresh " +
 						refreshIndex + " " + rootName);
 
@@ -907,14 +943,12 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 				//if name in js structures has changed,
 				//	assume it is users fault and throw out this refreshed object
 				if(refreshIndex >= ViewerRoot.rootObjNameArr.length ||
-					ViewerRoot.rootObjNameArr[refreshIndex] != rootName)
-				{
+                    ViewerRoot.rootObjNameArr[refreshIndex] != rootName) {
 					Debug.log("ViewerRoot getRootDataHandler weird unmatch!?#$@%");
 					return; //throw out object, since incomplete match
 				}
 
-				if(ViewerRoot.autoRefreshMatchArr.length == 0)
-				{
+                if (ViewerRoot.autoRefreshMatchArr.length == 0) {
 					//reset interval if, all requests handled now
 					window.clearInterval(ViewerRoot.autoRefreshTimer);
 					ViewerRoot.autoRefreshTimer = window.setInterval(
@@ -932,8 +966,7 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 			" ViewerRoot.rootTargetIndex=" + ViewerRoot.rootTargetIndex);
 
 	if(refreshIndex < 0) ViewerRoot.prepareNextLocation(rootName, rootTitle);
-	else
-	{
+    else {
 		//refreshIndex is the location to target
 		//prepare a new location as though it is replace with auto-refresh on
 		//
@@ -979,16 +1012,14 @@ ViewerRoot.getRootDataHandler = function(req, refreshIndex)
 //=====================================================================================
 // ViewerRoot.interpretObjectJSON ~~
 //	interpret and draw
-ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
-{
+ViewerRoot.interpretObjectJSON = function (object, rootType, objName, refreshIndex) {
 
 	if(refreshIndex == undefined) refreshIndex = -1;
 
 
 	if(ViewerRoot.hardRefresh) //"Hard" refresh, reloads axes for example
 	{
-		if(refreshIndex < 0)
-		{
+        if (refreshIndex < 0) {
 			ViewerRoot.rootObjArr.push(object);
 			ViewerRoot.rootObjIndexArr.push(ViewerRoot.objIndex);
 		}
@@ -1009,8 +1040,7 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 
 		//draw based on refresh index
 		var targetEl = document.getElementById("histogram" + ViewerRoot.objIndex);
-		try
-		{
+        try {
 
 			if(rootType == "JSON")
 				throw "Doing JSON only";
@@ -1022,35 +1052,29 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 
 			if(isFirstTime) //try again, to see if there are errors (because async causes craziness)
 			{
-				if(targetEl.innerHTML == "")
-				{
+                if (targetEl.innerHTML == "") {
 					Debug.log("Empty first time handling!");
 
 					//==============
-					function localMakeAsyncCheckerFunction(obji, type, obj)
-					{
+                    function localMakeAsyncCheckerFunction(obji, type, obj) {
 						Debug.log("Async Empty first time handling for histogram" +
 								obji + " type=" + type);
 						//return a function, so that the constants are stable
-						return function()
-								{
+                        return function () {
 							Debug.log("Async Empty first time handling for histogram" +
 									obji);
-							if(targetEl.innerHTML != "")
-							{
+                            if (targetEl.innerHTML != "") {
 								Debug.log("histogram" +
 									obji + " is OK, must have just taken a while");
 								return;
 							}
 
-							try
-							{
+                            try {
 								JSROOT.redraw("histogram" +
 										obji,
 										obj, "colz"); //last arg, root draw option
 							}
-							catch(e)
-							{
+                            catch (e) {
 								Debug.log("ROOT Object type '" + type +
 										"' failed to draw histogram" +
 										obji + ": " + e);//, Debug.HIGH_PRIORITY);
@@ -1068,8 +1092,7 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 				} //end empty first time handling
 			} //end special first time handling
 		}
-		catch(e)
-		{
+        catch (e) {
 			Debug.log("ROOT Object type '" + object._typename +
 					"' failed to draw: " + e);//, Debug.HIGH_PRIORITY);
 			targetEl.textContent = object.JSON;// JSON.stringify(object); //fill with text
@@ -1080,21 +1103,18 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 	else		//"Soft" refresh, doesn't reload axes for example
 	{
 		//draw based on refresh index
-		try
-		{
+        try {
 			Debug.log("ROOT type",object._typename,
 				"refreshIndex", refreshIndex,
 				"ViewerRoot.objIndex", ViewerRoot.objIndex
 				);
 			var objectIndex = refreshIndex < 0 ? ViewerRoot.objIndex:
 				ViewerRoot.rootObjIndexArr[refreshIndex];
-			if(object._typename == "TNtuple")
-			{
+            if (object._typename == "TNtuple") {
 				var ret = JSROOT.redraw('histogram' + objectIndex,
 					object, "px:py::pz>5"); //last arg, root draw option
 				Debug.logv({ret});
-				ret.catch(err => 
-					{
+                ret.catch(err => {
 						Debug.log("ROOT Object type '" + object._typename +
 							"' failed to draw: " + err, "objectIndex",objectIndex);
 						document.getElementById("histogram" + objectIndex).textContent =
@@ -1102,33 +1122,29 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 					});
 			}
-			else
-			{
+            else {
 				var ret = JSROOT.redraw('histogram'+
 						(refreshIndex<0?ViewerRoot.objIndex:
 						ViewerRoot.rootObjIndexArr[refreshIndex]),
 						object, "colz"); //last arg, root draw option
 				Debug.logv({ret});
-				ret.catch(err => 
-					{
+                ret.catch(err => {
 						Debug.log("ROOT Object type '" + object._typename +
 							"' failed to draw: " + err, "objectIndex",objectIndex);
 						document.getElementById("histogram" + objectIndex).textContent =
 								object.JSON;
 									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
 					});
-			}			
+			}
 		}
-		catch(e)
-		{
+        catch (e) {
 			Debug.err("ROOT Object type '" + object._typename +
 					"' failed to draw: " + e, "objectIndex",objectIndex);
 					document.getElementById("histogram" + objectIndex).textContent =
 							object.JSON;
 		}
 
-		if(refreshIndex < 0)
-		{
+        if (refreshIndex < 0) {
 			ViewerRoot.rootObjArr.push(object);
 			ViewerRoot.rootObjIndexArr.push(ViewerRoot.objIndex);
 			ViewerRoot.objIndex++;
@@ -1147,8 +1163,7 @@ ViewerRoot.interpretObjectJSON = function(object,rootType,objName,refreshIndex)
 } //end interpretObjectJSON()
 
 //=====================================================================================
-function loadScript(url, callback)
-{
+function loadScript(url, callback) {
    // dynamic script loader using callback
    // (as loading scripts may be asynchronous)
    var script = document.createElement("script")
@@ -1166,7 +1181,7 @@ function loadScript(url, callback)
 		 callback();
 	  };
    }
-   var rnd = Math.floor(Math.random()*80000);
+   //var rnd = Math.floor(Math.random()*80000); //keeping in case we need to bring back cache breaking behavior in the future
    script.src = url;//+ "?r=" + rnd;
    document.getElementsByTagName("head")[0].appendChild(script);
 } //end loadScript()
