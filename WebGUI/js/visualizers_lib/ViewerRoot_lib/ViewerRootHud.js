@@ -258,7 +258,7 @@ ViewerRoot.createHud = function() {
 			//Debug.log("ViewerRoot Hud findDir path to find " + path);
 		}
 
-		if(currDir[TUPLE_TYPE] & TUPLE_TYPE_DIR == 0) return 0; //current path is not a directory, path not found
+	    if((currDir[TUPLE_TYPE] & TUPLE_TYPE_DIR) == 0) return 0; //current path is not a directory, path not found
 		if(path == currPath) return currDir; //path is found
 		if(!currDir[TUPLE_CONTENT]) return 0;	//no structure to current path, path not found
 
@@ -266,7 +266,7 @@ ViewerRoot.createHud = function() {
 		var retVal = 0;
 		for(var i=0;i<currDir[TUPLE_CONTENT].length;++i)
 		{
-			if(currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR == 0) continue; //child is not a directory so skip
+		    if((currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR) == 0) continue; //child is not a directory so skip
 
 			retVal = findDir(path,currDir[TUPLE_CONTENT][i],currPath + currDir[TUPLE_CONTENT][i][TUPLE_NAME] + "/");
 			if(retVal) return retVal;
@@ -529,7 +529,7 @@ ViewerRoot.createHud = function() {
 
 			str += "<br><div id='hudAdminControlStatus'></div>";
 			str += "<br>";
-			str += "<a href='javascript:ViewerRoot.hud.toggleControls();' title='Return to ROOT Browser' " +
+			str += "<a href='javascript:ViewerRoot.hud.toggleControls();' title='Return to ROOT Browser'> " +
 					"<u>Return to Browser</u></a>";
 			hudDirBrowserDiv.innerHTML = str;
 		}
@@ -726,7 +726,7 @@ ViewerRoot.createHud = function() {
 					");' " + chkDefaults[i] + "><label for='hudCheckbox" + i + "' >" + chkLabels[i] + "</label>";
 	str += "</div>";
 
-	var radioLabels = ["Tile","Replace"]; //FIXME superimpose is broken in jsroot v5.9.0 and v7.9.0 usage of this gui, "Superimpose"];
+    var radioLabels = ["Tile","Replace","Superimpose"]; // Note: Superimpose had issues in JSROOT v5.9.0 and v7.9.0, but is now supported.
 	var radioDefault = ViewerRoot.nextObjectMode;
 	for(var i=0;i<radioLabels.length;++i)
 		str += "<input type='radio' id='newRootObjectModeRadio" + i + "' " + (i==radioDefault?"checked":"") +
