@@ -777,7 +777,10 @@ ViewerRoot.getRootConfigHandler = function (req) {
 	Debug.log("ViewerRoot getRootConfigHandler " + req.responseText );
 
 	var status = DesktopContent.getXMLValue(req,"status");
-	if (status != "1") { alert("Loading Root Pre-Made Configuration Failed: " + status); return }
+	if (status != "1") { 
+		alert("Loading Root Pre-Made Configuration Failed: " + status); 
+		return; 
+	}
 
 	ViewerRoot.iterNumPositionsTiled = DesktopContent.getXMLValue(req,"numPositionsTiled");
 	ViewerRoot.iterRunWildcard = DesktopContent.getXMLValue(req,"runNumWildcard");  //TODO replace obj names with current run number!
