@@ -671,7 +671,7 @@ ViewerRoot.refreshTransparency = function(i) {
     for (var s = 0; s < svgs.length; ++s)
         svgs[s].style.backgroundColor = "rgba(0,0,0,0)";
     //rect fill
-        var rects = target.getElementsByTagName("rect");
+    var rects = target.getElementsByTagName("rect");
 		if(rects.length > 0)
 			rects[0].style.fill = "rgba(0,0,0,0)";
 
