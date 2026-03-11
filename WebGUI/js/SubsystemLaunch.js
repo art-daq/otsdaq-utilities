@@ -2706,6 +2706,30 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 } //end SubsystemLaunch.initSubsystemRecords()
 
 //=====================================================================================
+//extractErrorSecondsAgo
+// Returns seconds since the most recent ots-style timestamp found in the string,
+// e.g. "Fri Mar  6 10:46:02 2026 CST:"
+// or -1 if no parseable timestamp is present.
+SubsystemLaunch.extractErrorSecondsAgo = function (message) {
+	if(!message)
+		return -1;
+
+	const timestampMatch = message.match(/([A-Z][a-z]{2} [A-Z][a-z]{2}\s+\d{1,2} \d{2}:\d{2}:\d{2} \d{4})(?:\s+([A-Za-z_+\/-]+|[+-]\d{4}))?:/);
+	if(!timestampMatch)
+		return -1;
+
+	const timestampCore = timestampMatch[1].replace(/\s+/g, ' ').trim();
+	const timezone = timestampMatch[2] ? timestampMatch[2].trim() : "";
+	const parsedTime = Date.parse(
+		timezone ? (timestampCore + " " + timezone) : timestampCore);
+
+	if(Number.isNaN(parsedTime))
+		return -1;
+
+	return Math.floor((Date.now() - parsedTime) / 1000);
+} //end SubsystemLaunch.extractErrorSecondsAgo()
+
+//=====================================================================================
 SubsystemLaunch.extractSystemStatus = function (req) {
 	SubsystemLaunch.system.activeFsm = DesktopContent.getXMLValue(req,"active_fsmName");
 	SubsystemLaunch.system.activeFsmWindow = DesktopContent.getXMLValue(req,"active_fsmWindowName");
@@ -2727,19 +2751,8 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 	if(err && err != "" && SubsystemLaunch.system.error != err)
 	{
 		//do not show if err is old
-		let errDateIndex = err.indexOf(" CST:");
-		let secondsAgo = -1;
-		if(errDateIndex > 0)
-		{
-			//there appears to be a date/timestamp in the error
-			//ots data/timestamp string is fixed length (28 chars)
-
-			const s = err.substr(errDateIndex-24,28); //"Fri Mar  6 10:46:02 2026 CST";
-			const past = new Date(s);
-			secondsAgo = Math.floor((Date.now() - past.getTime()) / 1000);
-
-			Debug.logv({secondsAgo});
-		}
+		let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(err);
+		Debug.logv({secondsAgo});
 
 		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old
 		{
@@ -2851,9 +2864,26 @@ SubsystemLaunch.extractIteratorStatus = function (req) {
 	var err = DesktopContent.getXMLValue(req,"error_message");
 	if(err && err != "" && SubsystemLaunch.iterator.error != err)
 	{
-		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old
-			Debug.warn("Here is the last error that occurred for reference:\n\n" + err);
-		else
+		//do not show if err is old
+		let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(err);
+		Debug.logv({secondsAgo});
+
+		if(SubsystemLaunch.isFirstTime()) //then is first time, so indicate this error may be old		
+		{
+			let agoStr = "";
+			if(secondsAgo != -1)
+			{
+				const hours = Math.floor(secondsAgo / 3600);
+				const minutes = Math.floor((secondsAgo % 3600) / 60);
+				const secs = secondsAgo % 60;
+
+				agoStr = ` <b>(${hours}h ${minutes}m ${secs}s ago)</b>`;
+			}
+
+			Debug.warn("Here is the <b>last error</b> that occurred " + agoStr +
+				" for reference:\n\n" + err);
+		}
+		else if(secondsAgo == -1 || secondsAgo < 5*60 /* 5 minutes */)
 			Debug.err(err);
 	}
 

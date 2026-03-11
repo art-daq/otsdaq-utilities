@@ -711,10 +711,13 @@
 
 		var _codeEditorAppId; //Code Editor Supervisor LID
 
-		var lastSelectedIndex = null;
-		var isDragging = false;
-		var dragModeSelect = true; // true => selecting, false => deselecting
-		var windowMouseupRegistered = false; // track if window mouseup listener is registered
+		var lastSelectedIndex_ = null;
+		var isDragging_ = false;
+		var dragModeSelect_ = true; // true => selecting, false => deselecting
+		var dragStartIndex_ = -1;
+		var hasDragMoved_ = false;
+		var windowMouseupRegistered_ = false; // track if window mouseup listener is registered
+		var suppressNextMouseup_ = false;
 
 		//==============================================================================
 		//init called once body has loaded
@@ -2514,6 +2517,7 @@
 			Debug.log("showTableTooltip() " + tableName);
 
 			DesktopContent.XMLHttpRequest("Request?RequestType=getSpecificTable" +
+				"&descriptionOnly=1" + //for tooltip info only
 				"&tableName=" + tableName, "",
 				function (req) {
 					var tableDescription = DesktopContent.getXMLValue(req, "TableDescription");
@@ -3680,13 +3684,20 @@
 		//registerOnClickActions ~~
 		function registerOnClickActions() {
 			var tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
 
 			// Ignore the first two <tr> tags (header rows)
 			const _CONFIG_DATA_ROW_OFFSET = 2;
 			const dataRows = Array.from(tbody.querySelectorAll('tr')).slice(_CONFIG_DATA_ROW_OFFSET);
 
 			dataRows.forEach((tableRow) => {
+				// Avoid duplicate listeners when this function is called repeatedly.
+				if (tableRow.dataset.selectionHandlersBound === "1") return;
+				tableRow.dataset.selectionHandlersBound = "1";
+
 				tableRow.addEventListener('mousedown', (e) => {
+					Debug.log("Table row mouse down");
+
 					const tr = e.target.closest('tr');
 					if (!tr || e.button !== 0) return; // only left click
 
@@ -3694,9 +3705,13 @@
 					if (idx === -1 || idx == 0) return;
 
 					// SHIFT RANGE (works without Ctrl)
-					if (e.shiftKey && lastSelectedIndex !== null) {
-						selectRange(lastSelectedIndex, idx, true);
-						lastSelectedIndex = idx;
+					if (e.shiftKey && lastSelectedIndex_ !== null) {
+						const currentlySelected = tr.classList.contains('selected');
+						Debug.log("Shift+click row selection", "anchor=", lastSelectedIndex_, "target=", idx, "targetWasSelected=", currentlySelected, "applyState=", !currentlySelected);
+						selectRange(lastSelectedIndex_, idx, !currentlySelected);
+						lastSelectedIndex_ = idx;
+						suppressNextMouseup_ = true;
+						e.stopPropagation();
 						e.preventDefault();
 						return;
 					}
@@ -3712,52 +3727,73 @@
 
 					// CTRL Click or CTRL Drag Starts
 					const currentlySelected = tr.classList.contains('selected');
-					dragModeSelect = !currentlySelected; // true = selecting, false = deselecting
-					isDragging = true;
+					dragModeSelect_ = !currentlySelected; // true = selecting, false = deselecting
+					Debug.log("Ctrl/Meta+click row selection", "row=", idx, "rowWasSelected=", currentlySelected, "dragModeSelect_=", dragModeSelect_);
+					isDragging_ = true;
+					dragStartIndex_ = idx;
+					hasDragMoved_ = false;
+					suppressNextMouseup_ = true;
 					document.body.classList.add('no-select');
-					setSelectedByIndex(idx, dragModeSelect);
-					lastSelectedIndex = idx;
+					setSelectedByIndex(idx, dragModeSelect_);
+					lastSelectedIndex_ = idx;
+					e.stopPropagation();
 					e.preventDefault();
 				});
 
 				tableRow.addEventListener('mouseover', (e) => {
-					if (!isDragging) return;
+					if (!isDragging_) return;
 					if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
 
 					const tr = e.target.closest('tr');
 					if (!tr) return;
 					const idx = indexOfRow(tr);
 					if (idx === -1) return;
-					setSelectedByIndex(idx, dragModeSelect);
+						if (idx !== dragStartIndex_) hasDragMoved_ = true;
+					setSelectedByIndex(idx, dragModeSelect_);
+				});
+
+				tableRow.addEventListener('mouseup', (e) => {			
+					Debug.log("Table row mouse up");
+					suppressNextMouseup_ = false;		
+					if (e.shiftKey || e.ctrlKey || e.metaKey)
+						e.stopPropagation();
 				});
 
 				tableRow.addEventListener('click', (e) => {
+					Debug.log("Table row click");
 					e.stopPropagation(); // Stops other handlers
 					e.preventDefault();
+					if (e.shiftKey || e.ctrlKey || e.metaKey)
+						e.stopImmediatePropagation();
 					const tr = e.target.closest('tr');
 					if (!tr) return;
-					const idx = indexOfRow(tr);
+					if (indexOfRow(tr) === -1) return;
 
 					// SHIFT does nothing here (handled in mousedown)
 					if (e.shiftKey) return;
 
-					// Normal click does nothing
-					if (!(e.ctrlKey || e.metaKey)) return;
+					// If this click ended a drag-selection, do not toggle the anchor row.
+					if (hasDragMoved_) {
+						hasDragMoved_ = false;
+						return;
+					}
 
-					// CTRL click toggle (final guarantee)
-					tr.classList.toggle('selected');
-					lastSelectedIndex = idx;
+					// Selection state is handled on mousedown to avoid click-phase double toggles.
+					return;
 				});
 			}); //end foreach loop
 
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
-			if (!windowMouseupRegistered) {
+			if (!windowMouseupRegistered_) {
 				window.addEventListener('mouseup', () => {
-					isDragging = false;
+					Debug.log("Window mouse up");
+					isDragging_ = false;
+					dragStartIndex_ = -1;
+					suppressNextMouseup_ = false;
 					document.body.classList.remove('no-select');
 					window.getSelection().removeAllRanges();
 				});
-				windowMouseupRegistered = true;
+				windowMouseupRegistered_ = true;
 			}
 		} //end registerOnClickActions()
 
@@ -7267,7 +7303,11 @@
 				"Create the new Group</button>";
 			str += createButtonStr;
 			str += "<br><br>";
-			str += "Group Name: <input id='newConfigName'/>";
+			str += "Group Name: <input id='newConfigName' " +			
+								"onmousedown='event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"onclick='event.stopPropagation();' " +
+							"/>";
 			str += "<br><br>";
 
 			var tableNames = req.responseXML.getElementsByTagName("TableName");
@@ -7756,11 +7796,11 @@
 
 			var str = "";
 			str += "<br>Table Version A to compare... ";
-			str += "<input type='text' id='tableVersionDiffA' style='margin:0;width:" +
+			str += "<input type='text' id='tableVersionDiffA' onmousedown='event.stopPropagation();' onmouseup='event.stopPropagation();' onclick='event.stopPropagation();' style='margin:0;width:" +
 				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='" + _version + "'>";
 			str += "<br>";
 			str += "Table Version B to compare... ";
-			str += "<input type='text' id='tableVersionDiffB' style='margin:0;width:" +
+			str += "<input type='text' id='tableVersionDiffB' onmousedown='event.stopPropagation();' onmouseup='event.stopPropagation();' onclick='event.stopPropagation();' style='margin:0;width:" +
 				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='" + ((_version | 0) - 1) + "'>";
 			str += "<br>";
 			str += "<br>";
@@ -7848,15 +7888,24 @@
 
 			var str = "";
 			str += "<br>Source starting row or Source Version... ";
-			str += "<input type='text' id='copyAndMoveRowsSrc' style='margin:0;width:" +
+			str += "<input type='text' id='copyAndMoveRowsSrc' " +
+				"onmousedown='event.stopPropagation();' " +
+				"onmouseup='event.stopPropagation();' " +
+				"onclick='event.stopPropagation();' style='margin:0;width:" +
 				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='0'>";
 			str += "<br>";
 			str += "Number of rows to Copy or Move... ";
-			str += "<input type='text' id='copyAndMoveRowsSrcCount' style='margin:0;width:" +
+			str += "<input type='text' id='copyAndMoveRowsSrcCount' " +
+				"onmousedown='event.stopPropagation();' " +
+				"onmouseup='event.stopPropagation();' " +
+				"onclick='event.stopPropagation();' style='margin:0;width:" +
 				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='1'>";
 			str += "<br>";
 			str += "Destination row (-1 for new last row)... ";
-			str += "<input type='text' id='copyAndMoveRowsDest' style='margin:0;width:" +
+			str += "<input type='text' id='copyAndMoveRowsDest' " +
+				"onmousedown='event.stopPropagation();' " +
+				"onmouseup='event.stopPropagation();' " +
+				"onclick='event.stopPropagation();' style='margin:0;width:" +
 				(el.offsetWidth - 6) + "px; height:" + (17) + "px' value='-1'>";
 
 			//make div for translating innerHTML and value
@@ -7921,11 +7970,7 @@
 				Debug.logv({ numberOfCopies });
 			}
 
-			var src = isCopyShortCut ? rowSrc : document.getElementById("copyAndMoveRowsSrc").value | 0;
-			var dest = isCopyShortCut ? (rowSrc + 1) : document.getElementById("copyAndMoveRowsDest").value | 0;
 			var srcCount = isCopyShortCut ? 1 : document.getElementById("copyAndMoveRowsSrcCount").value | 0;
-
-			Debug.log("tableCopyOrMoveRow src=" + src + " srcCount=" + srcCount + " dest=" + dest);
 
 			if (srcCount < 1) {
 				Debug.log("Error: Illegal Number of Rows '" + (srcCount) +
@@ -7936,6 +7981,12 @@
 
 			var el = document.getElementById("SubSystemTable");
 			var rows = el.getElementsByTagName("tr");
+
+			var src = isCopyShortCut ? rowSrc : document.getElementById("copyAndMoveRowsSrc").value | 0;
+			var dest = isCopyShortCut ? (rows.length - _CONFIG_DATA_ROW_OFFSET) //add to end
+				: document.getElementById("copyAndMoveRowsDest").value | 0;
+			Debug.log("tableCopyOrMoveRow src=" + src + " srcCount=" + srcCount + " dest=" + dest);
+
 			var str = "";
 			var cols = [];
 			var newCols = [];
@@ -8128,13 +8179,13 @@
 			_lastFindRow = _lastFindCol = -1; //initialize find location
 			var str = "";
 			str += "<br>Search in column ('*' for all)... <br>";
-			str += "<input type='text' id='findAndReplaceTarget' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='*'>";
+			str += "<input type='text' id='findAndReplaceTarget' onmousedown='event.stopPropagation();' onmouseup='event.stopPropagation();' onclick='event.stopPropagation();' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='*'>";
 			str += "<br>";
 			str += "For text... <br>";
-			str += "<input type='text' id='findAndReplaceNeedle' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
+			str += "<input type='text' id='findAndReplaceNeedle' onmousedown='event.stopPropagation();' onmouseup='event.stopPropagation();' onclick='event.stopPropagation();' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
 			str += "<br>";
 			str += "Replace with... <br>";
-			str += "<input type='text' id='findAndReplaceWith' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
+			str += "<input type='text' id='findAndReplaceWith' onmousedown='event.stopPropagation();' onmouseup='event.stopPropagation();' onclick='event.stopPropagation();' style='margin:-4px -2px -4px -1px;width:" + (el.offsetWidth - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value=''>";
 
 			//make div for translating innerHTML and value
 			str += "<div id='findAndReplaceHTML' style='display:none'></div>";
@@ -9426,8 +9477,8 @@
 		//==============================================================================
 		//selectThisCell ~~
 		function selectThisCell(r, c, el, event, paintMode) {
-			if (event && (event.ctrlKey || event.metaKey)) {
-				if (isDragging) {
+			if (event && (event.ctrlKey || event.metaKey || suppressNextMouseup_)) {
+				if (isDragging_) {
 					// also stop the context menu that would appear afterwards
 					document.addEventListener("contextmenu", blockContextMenu, { once: true });
 				}
@@ -9615,6 +9666,19 @@
 			_editingCellEl = el;
 			_editingCellPos = [r, c];
 			_editingCellType = colType;
+
+			if(colType.indexOf("GroupID-") == 0)
+				DesktopContent.tooltip(
+					"Link Group IDs",
+					"The <b>Link Group ID</b> joins a set of child records with a parent record. "
+					+ "There can be zero, one, or many child records that match the <b>Group ID</b>. "
+					+ "There can be zero, one, or many parents with a <b>Link Group ID</b> that matches a child record <b>Group ID</b>. "
+					+ "The the child table, pointed to by the parent Link Table, must have a <b>GroupID</b> column with a <b>LinkIndex</b> that matches the parent table's <b>LinkIndex</b>."
+					+ "<br><br>"
+					+ "<b><u>Wildcard matching of Group IDs</u></b><br>"
+					+ "Note that the child record <b>Group ID</b> may include the wildcard <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label>, which matches parent <b>Group ID</b> values where the <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label> represents any sequence of characters. "
+					+ "<br><br>For example, <i>Tracker*_Board*</i> as a child <b>Group ID</b> would match the parent <b>Link Group ID</b> <i>TrackerROC3_Board201</i>."
+				);
 
 			_editingCellElOldValue = el.textContent;
 			var str = "";
@@ -10511,11 +10575,14 @@
 				}
 			}
 			else if (e.ctrlKey && e.key.toLowerCase() == "v") {
-				Debug.log("Copying table rows");
+				Debug.log("Copying and pasting table rows");
 				copyAndPasteBlockRows();
 				registerOnClickActions();
 			}
-			else if (e.ctrlKey && e.key.toLowerCase() == "d") {
+			else if ((e.ctrlKey && e.key.toLowerCase() == "d") || 
+				e.keyCode == 8 || //BACKSPACE
+				e.keyCode == 46) //DELETE
+			{
 				Debug.log("Deleting block of table rows");
 				deleteBlockRows();
 				registerOnClickActions();
@@ -10530,7 +10597,8 @@
 			const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
 			Debug.log("Number of selected rows " + selectedRows.length);
 
-			for (var i = selectedRows.length - 1; i >= 0; i--) {
+			for (var i = 0; i < selectedRows.length; ++i) 
+			{
 				let rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
 				tableCopyOrMoveRow(0, rowIndex, true);
 			}
@@ -19144,19 +19212,19 @@
 					//cell value
 					//first column is row numbers
 					if (c == 0 && r >= _CONFIG_DATA_ROW_OFFSET) {
-						str += "<center>";
+						str += "<center title='Use Ctrl + click/drag to select a block or rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.'>";
 						str += (_dataOffset + ro);	//insert row index column
 						str += "<br>";
 
 						//add +/- row controls
 						str += "<a class='tableAddRowButton' " +
-							"title='Add a row before this row.' " +
+							"title='Add a row before this row. Use Ctrl + click/drag to select a block or rows; then Ctrl + V to paste rows.' " +
 							"onclick='addRow(" + ro + "); return false;'>";
 						str += "+";
 						str += "</a>";
 						str += "/";
 						str += "<a  class='tableDeleteRowButton' " +
-							"title='Delete this row.' " +
+							"title='Delete this row. Use Ctrl + click/drag to select a block or rows; then Ctrl + D/delete/backspace to delete rows.' " +
 							"onclick='deleteRow(" + ro + "); registerOnClickActions(); return false;'>";
 						str += "-";
 						str += "</a>";
@@ -19525,11 +19593,25 @@
 			var sel = document.getElementById("editTree-groupIdFreeform-select");
 			var tel = document.getElementById("editTree-groupIdFreeform-input");
 			Debug.log("sel.style.display  " + sel.style.display);
-			if (sel.style.display == "none") {
+			if (sel.style.display == "none") 
+			{
 				sel.style.display = "block";
 				tel.style.display = "none";
 			}
-			else {
+			else 
+			{
+				DesktopContent.tooltip(
+					"Link Group IDs",
+					"The <b>Link Group ID</b> joins a set of child records with a parent record. "
+					+ "There can be zero, one, or many child records that match the <b>Group ID</b>. "
+					+ "There can be zero, one, or many parents with a <b>Link Group ID</b> that matches a child record <b>Group ID</b>. "
+					+ "The the child table, pointed to by the parent Link Table, must have a <b>GroupID</b> column with a <b>LinkIndex</b> that matches the parent table's <b>LinkIndex</b>."
+					+ "<br><br>"
+					+ "<b><u>Wildcard matching of Group IDs</u></b><br>"
+					+ "Note that the child record <b>Group ID</b> may include the wildcard <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label>, which matches parent <b>Group ID</b> values where the <label style='font-size:24px; line-height:1; vertical-align:baseline; display:inline-block;'>*</label> represents any sequence of characters. "
+					+ "<br><br>For example, <i>Tracker*_Board*</i> as a child <b>Group ID</b> would match the parent <b>Link Group ID</b> <i>TrackerROC3_Board201</i>."
+				);
+				
 				tel.style.width = ((sel.offsetWidth > 150 ? sel.offsetWidth : 150) - 2) + "px";
 				sel.style.display = "none";
 				tel.style.display = "block";
