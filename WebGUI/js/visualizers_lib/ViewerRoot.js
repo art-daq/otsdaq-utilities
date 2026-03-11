@@ -579,7 +579,7 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 		ViewerRoot.rootElArr[i].style.left = w*(ViewerRoot.rootPosArr[i]%c) + (w-rootw)/2 + "px";
 		ViewerRoot.rootElArr[i].style.top = ViewerRoot.ROOT_CONTAINER_OFFY + ViewerRoot.ROOT_HEADER_HEIGHT +
 			h*Math.floor(ViewerRoot.rootPosArr[i]/c) + "px";
-			ViewerRoot.rootElArr[i].style.zIndex = ViewerRoot.rootIsTransparentArr[i] ? (1000 + i) : i;
+			ViewerRoot.rootElArr[i].style.zIndex = ViewerRoot.rootIsTransparentArr[i] ? (50 + i) : i;
 
 		//		Debug.log("ViewerRoot resizeRootObjects x y " + i + " at pos " + ViewerRoot.rootPosArr[i] +
 		//				":" + ViewerRoot.rootElArr[i].style.left  + "-" + ViewerRoot.rootElArr[i].style.top );
