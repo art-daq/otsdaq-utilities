@@ -726,7 +726,7 @@ ViewerRoot.createHud = function() {
 					");' " + chkDefaults[i] + "><label for='hudCheckbox" + i + "' >" + chkLabels[i] + "</label>";
 	str += "</div>";
 
-    var radioLabels = ["Tile","Replace","Superimpose"]; //FIXME superimpose is broken in jsroot v5.9.0 and v7.9.0 usage of this gui, "Superimpose"];
+    var radioLabels = ["Tile","Replace","Superimpose"]; // Note: Superimpose had issues in JSROOT v5.9.0 and v7.9.0, but is now supported.
 	var radioDefault = ViewerRoot.nextObjectMode;
 	for(var i=0;i<radioLabels.length;++i)
 		str += "<input type='radio' id='newRootObjectModeRadio" + i + "' " + (i==radioDefault?"checked":"") +
