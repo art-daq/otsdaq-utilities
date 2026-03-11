@@ -1357,7 +1357,7 @@ Debug.dockPopup = function (dockMode)
 		h = (Desktop.desktop.getDesktopHeight() - 16 - 14);
 	}
 
-	
+
 
 	switch(dockMode) {
 		case 0: // lower 25% of parent window
