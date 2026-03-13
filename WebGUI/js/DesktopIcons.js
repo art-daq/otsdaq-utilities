@@ -182,6 +182,8 @@ else {
             }
 
             Debug.log("icon Array split: " + iconArray);
+            if(!iconArray)
+                return;
             //Debug.log(_permissions);
 
             //an icon is 7 fields.. give comma-separated

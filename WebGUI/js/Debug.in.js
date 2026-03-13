@@ -558,8 +558,10 @@ Debug.errorPop = function (err, severity) {
 			el.onmousedown = function () { console.log("debug down"); event.stopPropagation(); }
 			el.onmouseup = function () { console.log("debug up"); event.stopPropagation(); }
 
-			document.body.removeEventListener("keydown", Debug.KeyDownListener);
-			document.body.addEventListener("keydown", Debug.KeyDownListener);
+			// Use capture on window so ESC handling runs before body key listeners
+			// that may have been registered earlier.
+			window.removeEventListener("keydown", Debug.KeyDownListener, true);
+			window.addEventListener("keydown", Debug.KeyDownListener, true);
 
 
 			//add style for error to page HEAD tag

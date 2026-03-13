@@ -10574,26 +10574,37 @@
 					return false;
 				}
 			}
-			else if (e.ctrlKey && e.key.toLowerCase() == "v") {
-				Debug.log("Copying and pasting table rows");
-				copyAndPasteBlockRows();
-				registerOnClickActions();
-				e.stopImmediatePropagation();
-				if (e.preventDefault)
-					e.preventDefault();
-				return false;
+			else if (e.ctrlKey && e.key.toLowerCase() == "v") 
+			{
+				const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
+				Debug.log("Number of selected rows " + selectedRows.length);
+				if(selectedRows.length)
+				{
+					Debug.log("Copying and pasting table rows");
+					copyAndPasteBlockRows();
+					registerOnClickActions();
+					e.stopImmediatePropagation();
+					if (e.preventDefault)
+						e.preventDefault();
+					return false;
+				}
 			}
 			else if ((e.ctrlKey && e.key.toLowerCase() == "d") ||
 				e.keyCode == 8 || //BACKSPACE
 				e.keyCode == 46) //DELETE
 			{
-				Debug.log("Deleting block of table rows");
-				deleteBlockRows();
-				registerOnClickActions();
-				e.stopImmediatePropagation();
-				if (e.preventDefault)
-					e.preventDefault();
-				return false;
+				const selectedRows = document.querySelectorAll("#SubSystemTable tr.selected");
+				Debug.log("Number of selected rows " + selectedRows.length);
+				if(selectedRows.length)
+				{
+					Debug.log("Deleting block of table rows");
+					deleteBlockRows();
+					registerOnClickActions();
+					e.stopImmediatePropagation();
+					if (e.preventDefault)
+						e.preventDefault();
+					return false;
+				}
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
 
