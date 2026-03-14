@@ -1167,7 +1167,10 @@ SubsystemLaunch.create = function() {
 			if(!el) continue; //some fields might not exist
 			if(fieldIds[i] == "activeFsm")
 				el.innerText = SubsystemLaunch.system.activeFsm +
-					" (" + SubsystemLaunch.system.activeFsmWindow + ")";
+					(SubsystemLaunch.system.activeFsmWindow != ""?
+						(" (" + SubsystemLaunch.system.activeFsmWindow + ")"):"") + 
+					((SubsystemLaunch.system.activeFsmStatus && SubsystemLaunch.system.inTransition)?
+						(" - " + SubsystemLaunch.system.activeFsmStatus):"");
 			else
 				el.innerText = SubsystemLaunch.system[fieldIds[i]];
 		}
@@ -2733,6 +2736,7 @@ SubsystemLaunch.extractErrorSecondsAgo = function (message) {
 SubsystemLaunch.extractSystemStatus = function (req) {
 	SubsystemLaunch.system.activeFsm = DesktopContent.getXMLValue(req,"active_fsmName");
 	SubsystemLaunch.system.activeFsmWindow = DesktopContent.getXMLValue(req,"active_fsmWindowName");
+	SubsystemLaunch.system.activeFsmStatus = DesktopContent.getXMLValue(req,"active_fsmStatus");
 	SubsystemLaunch.system.state = DesktopContent.getXMLValue(req,"current_state");
 	SubsystemLaunch.system.inTransition = DesktopContent.getXMLValue(req,"in_transition") == "1";
 	SubsystemLaunch.system.transition = DesktopContent.getXMLValue(req,"current_transition");
