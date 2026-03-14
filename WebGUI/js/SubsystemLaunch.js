@@ -1168,7 +1168,7 @@ SubsystemLaunch.create = function() {
 			if(fieldIds[i] == "activeFsm")
 				el.innerText = SubsystemLaunch.system.activeFsm +
 					(SubsystemLaunch.system.activeFsmWindow != ""?
-						(" (" + SubsystemLaunch.system.activeFsmWindow + ")"):"") + 
+						(" (" + SubsystemLaunch.system.activeFsmWindow + ")"):"") +
 					((SubsystemLaunch.system.activeFsmStatus && SubsystemLaunch.system.inTransition)?
 						(" - " + SubsystemLaunch.system.activeFsmStatus):"");
 			else
