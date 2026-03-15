@@ -395,7 +395,7 @@ Debug._errBoxOffPosSv = [0,0,0,0];
 
 
 Debug._AVOID_TITLE_NEW_LINE_LENGTH = ("title='Open file in a new browser tab: \n").length;
-Debug._ERR_TRUNCATION_LENGTH = 10000;
+Debug._ERR_TRUNCATION_LENGTH = 15000;
 
 //=====================================================================================
 //Note: effectively doing this: str.replace(/\n/g , "<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -425,7 +425,15 @@ Debug.errorPopConditionString = function (str, truncLenIn) {
 		else
 			rstr += str[i];
 	if (truncLenIn !== -1 && str.length > truncLen)
+	{
+		//if there is a tag closing, run to the end of it
+		if(str.indexOf("</", truncLen) >= 0)
+			rstr += str.substr(truncLen, str.indexOf(">", truncLen+1) - truncLen);
+		else if(str.indexOf(">", truncLen) >= 0)
+			rstr += str.substr(truncLen, str.indexOf(">", truncLen) - truncLen);
+		
 		rstr += "<br>...&lt;&lt;&lt; MESSAGE TRUNCATED &gt;&gt;&gt;";
+	}
 
 	return rstr;
 } //end errorPopConditionString()
