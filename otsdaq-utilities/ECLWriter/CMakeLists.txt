@@ -24,7 +24,6 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(XSD
 
 if(XSD_FOUND)
   set(XSD_INCLUDE_DIRS ${XSD_INCLUDE_DIR})
-	#endif(XSD_FOUND)
 
 	message("otsdaq_utilities looking for CURL for ECLWriter...")
 	find_package(CURL)
@@ -34,7 +33,6 @@ if(XSD_FOUND)
 		message("otsdaq_utilities Found CURL, so building ECLWriter")
 
 		include_directories(${CURL_INCLUDE_DIRS})
-		#endif(CURL_FOUND)
 		cet_make_library( LIBRARY_NAME ECLWriterCore
 		SOURCE ECLConnection.cpp  ECL.cxx
 			LIBRARIES PUBLIC
