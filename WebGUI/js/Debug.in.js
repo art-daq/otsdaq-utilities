@@ -431,7 +431,7 @@ Debug.errorPopConditionString = function (str, truncLenIn) {
 			rstr += str.substr(truncLen, str.indexOf(">", truncLen+1) - truncLen);
 		else if(str.indexOf(">", truncLen) >= 0)
 			rstr += str.substr(truncLen, str.indexOf(">", truncLen) - truncLen);
-		
+
 		rstr += "<br>...&lt;&lt;&lt; MESSAGE TRUNCATED &gt;&gt;&gt;";
 	}
 
