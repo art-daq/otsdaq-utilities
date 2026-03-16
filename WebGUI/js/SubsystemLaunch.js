@@ -1722,7 +1722,7 @@ SubsystemLaunch.create = function() {
 						true /*targetGatewaySupervisor*/);
 			}
 			else if (command == "Stop"  &&
-					SubsystemLaunch.system.activeFsmWindow == "iterator" &&
+					// SubsystemLaunch.system.activeFsmWindow == "iterator" && //ignore window name, if Running at top level, try to stop at top level
 					SubsystemLaunch.system.state == "Running")
 			{
 				Debug.log("Do stop launcher");
@@ -1737,7 +1737,7 @@ SubsystemLaunch.create = function() {
 
 				SubsystemLaunch.launcher.stop()
 			}
-			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left in runs
+			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left Running
 			{
 				Debug.log("Do batch Stop fsmName",_fsmName);
 
