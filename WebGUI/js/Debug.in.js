@@ -427,10 +427,15 @@ Debug.errorPopConditionString = function (str, truncLenIn) {
 	if (truncLenIn !== -1 && str.length > truncLen)
 	{
 		//if there is a tag closing, run to the end of it
-		if(str.indexOf("</", truncLen) >= 0)
-			rstr += str.substr(truncLen, str.indexOf(">", truncLen+1) - truncLen);
-		else if(str.indexOf(">", truncLen) >= 0)
-			rstr += str.substr(truncLen, str.indexOf(">", truncLen) - truncLen);
+		if (str.indexOf("</", truncLen) >= 0) {
+			var endIndexClose = str.indexOf(">", truncLen + 1);
+			if (endIndexClose >= 0)
+				rstr += str.substr(truncLen, endIndexClose - truncLen + 1);
+		} else {
+			var endIndex = str.indexOf(">", truncLen);
+			if (endIndex >= 0)
+				rstr += str.substr(truncLen, endIndex - truncLen + 1);
+		}
 
 		rstr += "<br>...&lt;&lt;&lt; MESSAGE TRUNCATED &gt;&gt;&gt;";
 	}
