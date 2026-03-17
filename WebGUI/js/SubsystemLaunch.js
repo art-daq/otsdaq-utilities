@@ -1167,7 +1167,10 @@ SubsystemLaunch.create = function() {
 			if(!el) continue; //some fields might not exist
 			if(fieldIds[i] == "activeFsm")
 				el.innerText = SubsystemLaunch.system.activeFsm +
-					" (" + SubsystemLaunch.system.activeFsmWindow + ")";
+					(SubsystemLaunch.system.activeFsmWindow ?
+						(" (" + SubsystemLaunch.system.activeFsmWindow + ")"):"") +
+					((SubsystemLaunch.system.activeFsmStatus && SubsystemLaunch.system.inTransition)?
+						(" - " + SubsystemLaunch.system.activeFsmStatus):"");
 			else
 				el.innerText = SubsystemLaunch.system[fieldIds[i]];
 		}
@@ -1719,7 +1722,7 @@ SubsystemLaunch.create = function() {
 						true /*targetGatewaySupervisor*/);
 			}
 			else if (command == "Stop"  &&
-					SubsystemLaunch.system.activeFsmWindow == "iterator" &&
+					// SubsystemLaunch.system.activeFsmWindow == "iterator" && //ignore window name, if Running at top level, try to stop at top level
 					SubsystemLaunch.system.state == "Running")
 			{
 				Debug.log("Do stop launcher");
@@ -1734,7 +1737,7 @@ SubsystemLaunch.create = function() {
 
 				SubsystemLaunch.launcher.stop()
 			}
-			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left in runs
+			else if (command == "Stop") //likely this means Gateway failed somehow(?), but subsystems are left Running
 			{
 				Debug.log("Do batch Stop fsmName",_fsmName);
 
@@ -2733,6 +2736,7 @@ SubsystemLaunch.extractErrorSecondsAgo = function (message) {
 SubsystemLaunch.extractSystemStatus = function (req) {
 	SubsystemLaunch.system.activeFsm = DesktopContent.getXMLValue(req,"active_fsmName");
 	SubsystemLaunch.system.activeFsmWindow = DesktopContent.getXMLValue(req,"active_fsmWindowName");
+	SubsystemLaunch.system.activeFsmStatus = DesktopContent.getXMLValue(req,"active_fsmStatus");
 	SubsystemLaunch.system.state = DesktopContent.getXMLValue(req,"current_state");
 	SubsystemLaunch.system.inTransition = DesktopContent.getXMLValue(req,"in_transition") == "1";
 	SubsystemLaunch.system.transition = DesktopContent.getXMLValue(req,"current_transition");
