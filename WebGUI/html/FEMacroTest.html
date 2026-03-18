@@ -960,7 +960,7 @@
 					var outputArgValues = req.responseXML.getElementsByTagName("outputArgs_value");
 
 					let oldStr = el.innerHTML;
-					let oldStrPos = oldStr.indexOf("waiting for response...")
+					let oldStrPos = oldStr.indexOf("waiting for response...");
 					if(oldStrPos > 0)
 						str += oldStr.substring(0, oldStrPos - 3) + "<br>";
 					str += "Last ran... " + getDateString(new Date) + "<br>";
