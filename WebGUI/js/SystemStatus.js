@@ -852,7 +852,7 @@ function displayTable(appsArray) {
 		}
 	} // done with adding data rows
 
-	collapsibleList()
+	collapsibleList();
 
 	// add table to appStatusDiv
 	statusDivElement.appendChild(table);
