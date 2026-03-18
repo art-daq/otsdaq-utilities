@@ -385,8 +385,8 @@ ViewerRoot.renderPosition = async function(target) {
     }
     catch (err) {
 	Debug.log("ViewerRoot.renderPosition failed: " + err, Debug.HIGH_PRIORITY);
-        target.textContent =
-            firstObj.JSON ? firstObj.JSON : String(err);
+	target.textContent =
+	    firstObj.JSON ? firstObj.JSON : String(err);
     }
 };
 
