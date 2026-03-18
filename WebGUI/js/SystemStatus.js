@@ -900,7 +900,10 @@ function createFilterList() {
 			cb_input.setAttribute("value", "selectAll");
 
 			//stop normal checkbox behavior by re-inverting it
-			cb_input.onclick = function (e) { console.log("cb"); this.checked = !this.checked; }
+			cb_input.onclick = function (e) {
+				console.log("cb");
+				this.checked = !this.checked;
+			};
 
 			li.setAttribute('class', 'item');
 			li.appendChild(cb_input);
@@ -921,8 +924,10 @@ function createFilterList() {
 			cb_input.setAttribute("value", key);
 
 			//stop normal checkbox behavior by re-inverting it
-			cb_input.onclick = function (e) { console.log("cb"); this.checked = !this.checked; }
-
+			cb_input.onclick = function (e) {
+				console.log("cb");
+				this.checked = !this.checked;
+			};
 
 			li.setAttribute('class', 'item');
 			li.appendChild(cb_input);
