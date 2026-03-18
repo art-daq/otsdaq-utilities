@@ -377,7 +377,6 @@ ViewerRoot.renderPosition = async function(target) {
                         (obj._typename || "unknown"),
                     Debug.WARN_PRIORITY
                 );
-
 		continue;
 	    }
 
