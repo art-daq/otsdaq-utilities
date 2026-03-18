@@ -3131,14 +3131,16 @@ try
 						latestDone = t->parameters_.doneTime_;
 				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 minutes */)
 				{
-					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_ << __E__;
+					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_
+					              << __E__;
 					feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
 					--i;  //rewind
 				}
 			}
 			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 minutes */)
 			{
-				__SUP_COUT_WARN__ << "Found old FE Macro group " << group->groupID_ << __E__;
+				__SUP_COUT_WARN__ << "Found old FE Macro group " << group->groupID_
+				                  << __E__;
 				break;
 			}
 		}
@@ -3157,7 +3159,8 @@ try
 		{
 			__SUP_COUT__ << "Found all done for group NotDoneID = " << NotDoneID << __E__;
 			for(auto& task : targetGroup->tasks_)
-				if(task->bar_) task->bar_->complete();
+				if(task->bar_)
+					task->bar_->complete();
 
 			// check for any errors
 			for(auto& task : targetGroup->tasks_)
@@ -3182,16 +3185,16 @@ try
 		}
 		else
 		{
-			__SUP_COUT__ << "Found still going for group NotDoneID = " << NotDoneID << __E__;
+			__SUP_COUT__ << "Found still going for group NotDoneID = " << NotDoneID
+			             << __E__;
 			//return same NotDoneID to user for future check
 			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
 
 			//report per-UID progress
 			for(auto& task : targetGroup->tasks_)
 			{
-				DOMElement* progParent =
-				    xmldoc.addTextElementToData("feMacroProgress",
-				                               task->parameters_.feUIDSelected_);
+				DOMElement* progParent = xmldoc.addTextElementToData(
+				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
 					xmldoc.addTextElementToParent("progress", "100", progParent);
@@ -3202,12 +3205,10 @@ try
 					{
 						task->bar_->step();
 						xmldoc.addTextElementToParent(
-						    "progress",
-						    std::to_string(task->bar_->read()),
-						    progParent);
+						    "progress", std::to_string(task->bar_->read()), progParent);
 					}
 				}
-			} //end report per-UID progress
+			}  //end report per-UID progress
 		}
 
 		return;
@@ -3361,9 +3362,8 @@ try
 			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 			for(auto& task : group->tasks_)
 			{
-				DOMElement* progParent =
-					xmldoc.addTextElementToData("feMacroProgress",
-												task->parameters_.feUIDSelected_);
+				DOMElement* progParent = xmldoc.addTextElementToData(
+				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
 					xmldoc.addTextElementToParent("progress", "100", progParent);
@@ -3374,13 +3374,11 @@ try
 					{
 						task->bar_->step();
 						xmldoc.addTextElementToParent(
-							"progress",
-							std::to_string(task->bar_->read()),
-							progParent);
+						    "progress", std::to_string(task->bar_->read()), progParent);
 					}
 				}
 			}
-		} //end report per-UID progress started
+		}  //end report per-UID progress started
 	}
 	else  //all done synchronously
 	{
@@ -3455,8 +3453,8 @@ catch(...)
 //==============================================================================
 /// static thread version of runFEMacro
 void MacroMakerSupervisor::runFEMacroThread(
-	std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
-	MacroMakerSupervisor*             mmSupervisor)
+    std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
+    MacroMakerSupervisor*             mmSupervisor)
 try
 {
 	__COUT__ << "runFEMacro thread started... threadid = " << std::this_thread::get_id()
@@ -3519,8 +3517,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
                                       const std::string  outputArgs,
                                       bool               saveOutputs,
                                       const std::string& username,
-									  const std::string& userGroupPermissions,
-									  bool               saveToHistory)
+                                      const std::string& userGroupPermissions,
+                                      bool               saveToHistory)
 {
 	__SUP_COUTV__(feClassSelected);
 	__SUP_COUTV__(feUIDSelected);

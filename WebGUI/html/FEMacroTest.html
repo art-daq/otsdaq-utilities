@@ -804,18 +804,18 @@
 			}
 
 			//check if not done
-			var notDoneID = DesktopContent.getXMLValue(req, "NotDoneID");			
+			var notDoneID = DesktopContent.getXMLValue(req, "NotDoneID");
 			Debug.logv({ notDoneID });
-			if (notDoneID) 
+			if (notDoneID)
 			{
 				Debug.log("FE Macro run not done", notDoneID);
 
 				//append still running
 				var str = el.innerHTML;
-				str = str.substring(0, str.indexOf("waiting for response...") + 23);				
+				str = str.substring(0, str.indexOf("waiting for response...") + 23);
 				str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
 				str += "<br><br>Received response that FE macro is still running...";
-				
+
 				var progress = DesktopContent.getXMLChildren(req, "feMacroProgress");
 				if(progress && progress.length)
 				{
@@ -825,10 +825,10 @@
 						let progressPct = DesktopContent.getXMLValue(progress[p],
 							"progress");
 						if (progressPct == undefined) progressPct = 0;
-						str += "<br>Target: <b>" + progressUID + 
+						str += "<br>Target: <b>" + progressUID +
 							"</b> ==&gt; Progress <b>" + progressPct + " %</b> " + getDateString(new Date);
 					}
-					
+
 				}
 
 				str += "<br>";
@@ -927,7 +927,7 @@
 					var outputArgNames = feExecs[f].getElementsByTagName("outputArgs_name");
 					var outputArgValues = feExecs[f].getElementsByTagName("outputArgs_value");
 
-					if (f == 0) 
+					if (f == 0)
 					{
 						let oldStr = el.innerHTML;
 						let oldStrPos = oldStr.indexOf("waiting for response...");
@@ -1745,8 +1745,8 @@ Here is the json string received:
 					var selectionAray = MultiSelectBox.getSelectionArray(sel);
 					for(var i = 0; i < selectionAray.length; ++i)
 					{
-						if(macroModules_[r][c].feUIDSelected == "*" || 
-								macroModules_[r][c].feUIDSelected == 
+						if(macroModules_[r][c].feUIDSelected == "*" ||
+								macroModules_[r][c].feUIDSelected ==
 									MultiSelectBox.getSelectionElementByIndex(sel, i).innerText)
 							MultiSelectBox.setSelectionElementByIndex(sel, i, true);
 					}
@@ -2390,7 +2390,7 @@ Here is the json string received:
 				var str = "";
 				str += "Launched '" + recordObj["macroName"] +
 					"'... " + getDateString(new Date) +
-					".. waiting for response...";			
+					".. waiting for response...";
 				str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
 				el.innerHTML = str;
 			}
