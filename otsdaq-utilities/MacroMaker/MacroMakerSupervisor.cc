@@ -3104,41 +3104,41 @@ try
 	uint64_t NotDoneID = CgiDataUtilities::getDataAsUint64_t(cgi, "NotDoneID");
 	if(NotDoneID)
 	{
-		__SUP_COUT__ << "Checking if recent FE macro run has completed for NotDoneID = "
+		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+
+		__SUP_COUT__ << "Checking if recent FE macro group has completed for NotDoneID = "
 		             << NotDoneID << __E__;
 
-		for(const auto& feMacroRunThreadStruct : feMacroRunThreadStruct_)
-			__SUP_COUTT__ << "[] threadID_ = "
-			              << feMacroRunThreadStruct.parameters_.threadID_ << __E__;
+		for(const auto& g : feMacroRunThreadStruct_)
+			__SUP_COUTT__ << "[] groupID_ = " << g->groupID_ << __E__;
 
 		time_t now      = time(0);
 		size_t target_i = -1;
 		for(size_t i = 0; i < feMacroRunThreadStruct_.size(); ++i)
 		{
-			if(feMacroRunThreadStruct_[i].parameters_.threadID_ == NotDoneID)
+			auto& group = feMacroRunThreadStruct_[i];
+			if(group->groupID_ == NotDoneID)
 			{
-				//found
-				__SUP_COUTT__ << "Found NotDoneID = " << NotDoneID << __E__;
+				__SUP_COUTT__ << "Found group NotDoneID = " << NotDoneID << __E__;
 				target_i = i;
 			}
-			else if(feMacroRunThreadStruct_[i].feMacroRunDone_ &&
-			        now - feMacroRunThreadStruct_[i].parameters_.doneTime_ >
-			            5 * 60 * 60 /* 5 minutes*/)
+			else if(group->allDone())
 			{
-				__SUP_COUTT__ << "Cleaning up completed NotDoneID = " << NotDoneID
-				              << __E__;
-				//clean up old structs
-				feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
-				--i;  //rewind
+				// compute latest task doneTime to determine age
+				time_t latestDone = 0;
+				for(const auto& t : group->tasks_)
+					if(t->parameters_.doneTime_ > latestDone)
+						latestDone = t->parameters_.doneTime_;
+				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 minutes */)
+				{
+					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_ << __E__;
+					feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
+					--i;  //rewind
+				}
 			}
-			else if(now - feMacroRunThreadStruct_[i].parameters_.startTime_ >
-			        5 * 60 * 60 /* 5 minutes*/)
+			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 minutes */)
 			{
-				__SUP_COUT_WARN__
-				    << "Found old FE Macro exectution of '"
-				    << feMacroRunThreadStruct_[i].parameters_.macroName_ << "' at '"
-				    << feMacroRunThreadStruct_[i].parameters_.feUIDSelected_ << ".'"
-				    << __E__;
+				__SUP_COUT_WARN__ << "Found old FE Macro group " << group->groupID_ << __E__;
 				break;
 			}
 		}
@@ -3152,38 +3152,62 @@ try
 			__SUP_SS_THROW__;
 		}
 
-		if(feMacroRunThreadStruct_[target_i].feMacroRunDone_)
+		auto& targetGroup = feMacroRunThreadStruct_[target_i];
+		if(targetGroup->allDone())
 		{
-			__SUP_COUT__ << "Found done for NotDoneID = " << NotDoneID << __E__;
-			bars_[target_i]->complete();
+			__SUP_COUT__ << "Found all done for group NotDoneID = " << NotDoneID << __E__;
+			for(auto& task : targetGroup->tasks_)
+				if(task->bar_) task->bar_->complete();
 
-			if(feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_ != "")
+			// check for any errors
+			for(auto& task : targetGroup->tasks_)
 			{
-				__SUP_SS__
-				    << feMacroRunThreadStruct_[target_i].parameters_.feMacroRunError_;
-				__SUP_SS_THROW__;
+				if(task->parameters_.feMacroRunError_ != "")
+				{
+					__SUP_SS__ << task->parameters_.feMacroRunError_;
+					__SUP_SS_THROW__;
+				}
 			}
-			//copy result back to user
+			// aggregate results from all per-UID xmldocs
 			if(TTEST(1))
 			{
 				std::ostringstream oss;
-				feMacroRunThreadStruct_.back().parameters_.xmldoc_.outputXmlDocument(
-				    &oss);
+				for(auto& task : targetGroup->tasks_)
+					task->parameters_.xmldoc_.outputXmlDocument(&oss);
 				__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
 			}
-			xmldoc.copyDataChildren(
-			    feMacroRunThreadStruct_[target_i].parameters_.xmldoc_);
-			__SUP_COUT__ << "FE macro complete." << __E__;
+			for(auto& task : targetGroup->tasks_)
+				xmldoc.copyDataChildren(task->parameters_.xmldoc_);
+			__SUP_COUT__ << "FE macro group complete." << __E__;
 		}
 		else
 		{
-			__SUP_COUT__ << "Found still going for NotDoneID = " << NotDoneID << __E__;
+			__SUP_COUT__ << "Found still going for group NotDoneID = " << NotDoneID << __E__;
 			//return same NotDoneID to user for future check
 			xmldoc.addNumberElementToData("NotDoneID", NotDoneID);
 
-			//add one step to bars_[i] % and read it
-			bars_[target_i]->step();
-			xmldoc.addNumberElementToData("Progress", bars_[target_i]->read());
+			//report per-UID progress
+			for(auto& task : targetGroup->tasks_)
+			{
+				DOMElement* progParent =
+				    xmldoc.addTextElementToData("feMacroProgress",
+				                               task->parameters_.feUIDSelected_);
+				if(task->feMacroRunDone_)
+				{
+					xmldoc.addTextElementToParent("progress", "100", progParent);
+				}
+				else
+				{
+					if(task->bar_)
+					{
+						task->bar_->step();
+						xmldoc.addTextElementToParent(
+						    "progress",
+						    std::to_string(task->bar_->read()),
+						    progParent);
+					}
+				}
+			}
 		}
 
 		return;
@@ -3209,127 +3233,172 @@ try
 	__SUP_COUTTV__(userInfo.username_);
 	__SUP_COUTTV__(StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
 
-	feMacroRunThreadStruct_.emplace_back(  //runFEMacroStruct constructor
-	    xmldoc,
-	    feClassSelected,
-	    feUIDSelected,
-	    macroType,
-	    macroName,
-	    inputArgs,
-	    outputArgs,
-	    saveOutputs,
-	    userInfo.username_,
-	    StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+	// Save one history record per user launch request, preserving aggregate FE selection
+	appendCommandToHistory(feClassSelected.empty() ? "*" : feClassSelected,
+	                       feUIDSelected.empty() ? "*" : feUIDSelected,
+	                       macroType,
+	                       macroName,
+	                       inputArgs,
+	                       outputArgs,
+	                       saveOutputs,
+	                       userInfo.username_);
 
-	// Old single-threaded call:
-	// 		runFEMacro(
-	//			  xmldoc,
-	//            feClassSelected,
-	//            feUIDSelected,
-	//            macroType,
-	//            macroName,
-	//            inputArgs,
-	//            outputArgs,
-	//            saveOutputs,
-	//            userInfo.username_,
-	//            StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+	// Expand feUIDSelected CSV into individual per-UID tasks
+	std::set<std::string> feUIDs;
+	{
+		std::string expandUID = feUIDSelected.empty() ? "*" : feUIDSelected;
+		if(expandUID != "*")
+		{
+			StringMacros::getSetFromString(expandUID, feUIDs);
+		}
+		else
+		{
+			// wildcard: collect all UIDs for the selected class (or all classes)
+			for(auto& feTypePair : FEPluginTypetoFEsMap_)
+			{
+				if(feClassSelected.empty() || feClassSelected == "*" ||
+				   feClassSelected == feTypePair.first)
+					for(auto& uid : feTypePair.second)
+						feUIDs.emplace(uid);
+			}
+		}
+		if(feUIDs.empty())
+			feUIDs.emplace(feUIDSelected);  // fallback: let work overload handle error
+	}
+	__SUP_COUTV__(StringMacros::setToString(feUIDs));
 
-	std::thread t(
-	    [](runFEMacroStruct* s, MacroMakerSupervisor* mm) {
-		    MacroMakerSupervisor::runFEMacroThread(s, mm);
-	    },
-	    &feMacroRunThreadStruct_.back(),
-	    this);
+	// Create one runFEMacroStruct per UID, grouped under a single runFEMacroGroupStruct
+	auto group = std::make_shared<runFEMacroGroupStruct>();
+	for(const std::string& uid : feUIDs)
+	{
+		group->tasks_.push_back(std::make_shared<runFEMacroStruct>(
+		    xmldoc,
+		    feClassSelected,
+		    uid,
+		    macroType,
+		    macroName,
+		    inputArgs,
+		    outputArgs,
+		    saveOutputs,
+		    userInfo.username_,
+		    StringMacros::mapToString(userInfo.getGroupPermissionLevels())));
+	}
+	{
+		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+		feMacroRunThreadStruct_.emplace_back(group);
+	}
+
+	// Launch one thread per UID
+	std::vector<std::thread> threads;
+	threads.reserve(group->tasks_.size());
+	for(auto& task : group->tasks_)
+	{
+		threads.emplace_back(
+		    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
+			    MacroMakerSupervisor::runFEMacroThread(s, mm);
+		    },
+		    task,
+		    this);
+	}
 
 	size_t sleepTime = 10 * 1000;  //10ms
 	usleep(sleepTime);
-	//if not done in 5 seconds, track in "not-done" queue
+	//if not all done quickly, track in "not-done" queue
 	for(int i = 0; i < 6; ++i)
 	{
-		if(feMacroRunThreadStruct_.back().feMacroRunDone_)
+		if(group->allDone())
 		{
-			__SUP_COUTT__ << "FE macro marked done" << __E__;
+			__SUP_COUTT__ << "All FE macro tasks marked done" << __E__;
 			break;
 		}
 		else
 		{
-			__SUP_COUTT__ << "FE macro not done, sleeping..." << __E__;
+			__SUP_COUTT__ << "FE macros not all done, sleeping..." << __E__;
 			sleepTime *= 5;  //50ms, 250ms, 1s
-			if(sleepTime > 1000 * 1000 /* seconds*/)
-				sleepTime = 1000 * 1000;  //max 1 sec
+			if(sleepTime > 1000 * 1000 /* 1 second */)
+				sleepTime = 1000 * 1000;
 			usleep(sleepTime);
 		}
 	}  //end wait loop
 
-	if(!feMacroRunThreadStruct_.back().feMacroRunDone_)  //macro not done...
+	if(!group->allDone())  //not all done - go async
 	{
-		if(t.get_id() == std::thread::id())
+		if(threads.empty() || threads[0].get_id() == std::thread::id())
 		{
 			__SUP_SS__ << "Invalid thread ID. Contact system admins!" << __E__;
 			__SUP_SS_THROW__;
 		}
-		feMacroRunThreadStruct_.back().parameters_.threadID_ =
-		    std::hash<std::thread::id>{}(t.get_id());
-
-		if(feMacroRunThreadStruct_.back().parameters_.threadID_ == 0)
+		uint64_t groupID = std::hash<std::thread::id>{}(threads[0].get_id());
+		if(groupID == 0)
 		{
 			__SUP_SS__ << "Invalid thread ID hash. Contact system admins!" << __E__;
 			__SUP_SS_THROW__;
 		}
 
-		__SUP_COUT__ << "FE macro not done, detaching thread="
-		             << feMacroRunThreadStruct_.back().parameters_.threadID_ << __E__;
-		t.detach();
+		__SUP_COUT__ << "FE macros not all done, detaching " << threads.size()
+		             << " thread(s) for group=" << groupID << __E__;
 
-		//add progressbar element to bars_ vector
-		auto bar = std::make_unique<ProgressBar>();
-		bar->reset(macroName, feUIDSelected);
-		bars_.push_back(std::move(bar));
-
-		xmldoc.addNumberElementToData(
-		    "NotDoneID", feMacroRunThreadStruct_.back().parameters_.threadID_);
-
-		if(TTEST(1))
 		{
-			std::ostringstream oss;
-			xmldoc.outputXmlDocument(
-			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
-			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+			group->groupID_ = groupID;
+			for(size_t ti = 0; ti < threads.size() && ti < group->tasks_.size(); ++ti)
+			{
+				group->tasks_[ti]->parameters_.threadID_ =
+				    std::hash<std::thread::id>{}(threads[ti].get_id());
+				group->tasks_[ti]->bar_ = std::make_unique<ProgressBar>();
+				group->tasks_[ti]->bar_->reset(
+				    macroName, group->tasks_[ti]->parameters_.feUIDSelected_);
+			}
 		}
+
+		for(auto& t : threads)
+			t.detach();
+
+		xmldoc.addNumberElementToData("NotDoneID", groupID);
 	}
-	else  //macro done!
+	else  //all done synchronously
 	{
-		__SUP_COUTT__ << "FE macro marked done - joining threads." << __E__;
-		t.join();  //make sure thread fully complete
-		if(feMacroRunThreadStruct_.back().parameters_.feMacroRunError_ != "")
+		for(auto& t : threads)
+			t.join();
+
+		for(auto& task : group->tasks_)
 		{
-			__SUP_SS__ << feMacroRunThreadStruct_.back().parameters_.feMacroRunError_;
-			__SUP_SS_THROW__;
+			if(task->parameters_.feMacroRunError_ != "")
+			{
+				__SUP_SS__ << task->parameters_.feMacroRunError_;
+				__SUP_SS_THROW__;
+			}
 		}
 		//copy result back to user
 		if(TTEST(1))
 		{
 			std::ostringstream oss;
-			feMacroRunThreadStruct_.back().parameters_.xmldoc_.outputXmlDocument(
-			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
+			for(auto& task : group->tasks_)
+				task->parameters_.xmldoc_.outputXmlDocument(
+				    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
 			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
 		}
-		xmldoc.copyDataChildren(feMacroRunThreadStruct_.back().parameters_.xmldoc_);
+		for(auto& task : group->tasks_)
+			xmldoc.copyDataChildren(task->parameters_.xmldoc_);
 
-		if(TTEST(1))
 		{
-			std::ostringstream oss;
-			xmldoc.outputXmlDocument(
-			    &oss, false /* dispStdOut */, true /* allowWhiteSpace */);
-			__SUP_COUTT__ << "xmldoc: " << oss.str() << __E__;
+			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+			for(size_t i = 0; i < feMacroRunThreadStruct_.size(); ++i)
+			{
+				if(feMacroRunThreadStruct_[i].get() == group.get())
+				{
+					feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
+					break;
+				}
+			}
 		}
-
-		feMacroRunThreadStruct_.pop_back();  //drop the completed struct
-		__SUP_COUT__ << "FE macro complete." << __E__;
+		__SUP_COUT__ << "All FE macros complete." << __E__;
 	}
-	for(const auto& feMacroRunThreadStruct : feMacroRunThreadStruct_)
-		__SUP_COUTT__ << "[] threadID_ = " << feMacroRunThreadStruct.parameters_.threadID_
-		              << __E__;
+	{
+		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+		for(const auto& g : feMacroRunThreadStruct_)
+			__SUP_COUTT__ << "[] groupID_ = " << g->groupID_ << __E__;
+	}
 
 }  //end runFEMacro()
 catch(const std::runtime_error& e)
@@ -3359,8 +3428,9 @@ catch(...)
 
 //==============================================================================
 /// static thread version of runFEMacro
-void MacroMakerSupervisor::runFEMacroThread(runFEMacroStruct*     feMacroRunThreadStruct,
-                                            MacroMakerSupervisor* mmSupervisor)
+void MacroMakerSupervisor::runFEMacroThread(
+	std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
+	MacroMakerSupervisor*             mmSupervisor)
 try
 {
 	__COUT__ << "runFEMacro thread started... threadid = " << std::this_thread::get_id()
@@ -3376,7 +3446,8 @@ try
 	                         feMacroRunThreadStruct->parameters_.outputArgs_,
 	                         feMacroRunThreadStruct->parameters_.saveOutputs_,
 	                         feMacroRunThreadStruct->parameters_.runningUsername_,
-	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_);
+	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_,
+	                         false /* saveToHistory */);
 
 	feMacroRunThreadStruct->parameters_.doneTime_ = time(0);
 	feMacroRunThreadStruct->feMacroRunDone_       = true;
@@ -3422,7 +3493,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
                                       const std::string  outputArgs,
                                       bool               saveOutputs,
                                       const std::string& username,
-                                      const std::string& userGroupPermissions)
+									  const std::string& userGroupPermissions,
+									  bool               saveToHistory)
 {
 	__SUP_COUTV__(feClassSelected);
 	__SUP_COUTV__(feUIDSelected);
@@ -3434,14 +3506,15 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	__SUP_COUTV__(username);
 	__SUP_COUTV__(userGroupPermissions);
 
-	appendCommandToHistory(feClassSelected,
-	                       feUIDSelected,
-	                       macroType,
-	                       macroName,
-	                       inputArgs,
-	                       outputArgs,
-	                       saveOutputs,
-	                       username);
+	if(saveToHistory)
+		appendCommandToHistory(feClassSelected,
+		                       feUIDSelected,
+		                       macroType,
+		                       macroName,
+		                       inputArgs,
+		                       outputArgs,
+		                       saveOutputs,
+		                       username);
 
 	std::set<std::string /*feUID*/> feUIDs;
 
@@ -3630,6 +3703,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				DOMElement* feMacroExecParent =
 				    xmldoc.addTextElementToData("feMacroExec", macroName);
 
+				__SUP_COUTT__ << "runFEMacro() chk0." << __E__;
 				xmldoc.addTextElementToParent(
 				    "exec_time", StringMacros::getTimestampString(), feMacroExecParent);
 				xmldoc.addTextElementToParent("fe_uid", feUID, feMacroExecParent);
@@ -3642,6 +3716,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				xmldoc.addTextElementToParent(
 				    "fe_hostname", it->second.getHostname(), feMacroExecParent);
 
+				__SUP_COUTT__ << "runFEMacro() chk1." << __E__;
 				std::istringstream inputStream(outputResults);
 				std::string        splitVal, argName, argValue;
 				while(getline(inputStream, splitVal, ';'))
@@ -3650,6 +3725,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					getline(pairInputStream, argName, ',');
 					getline(pairInputStream, argValue, ',');
 
+					__SUP_COUTT__ << "runFEMacro() chk2." << __E__;
 					if(saveOutputs)
 					{
 						fprintf(fp,
@@ -3667,6 +3743,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					__SUP_COUT__ << argName << ": " << argValue << __E__;
 				}
 			}
+
+			__SUP_COUTT__ << "runFEMacro() chk3." << __E__;
 		}  // end target front-end loop
 	}
 	catch(...)  // handle file close on error
@@ -3679,7 +3757,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	if(fp)
 		fclose(fp);
 
-	//to comment after progress basr test
+	__SUP_COUT__ << "runFEMacro() done." << __E__;
+	//to comment after progress bar test
 	//sleep(20);
 }  // end runFEMacro()
 

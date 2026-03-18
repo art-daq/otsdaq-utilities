@@ -2,6 +2,10 @@
 #define _ots_MacroMakerSupervisor_h_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+#include "otsdaq/ProgressBar/ProgressBar.h"
+
+#include <memory>
+#include <mutex>
 
 // clang-format off
 namespace ots
@@ -89,7 +93,24 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 		runFEMacroParameterStruct parameters_;
 		std::atomic<bool> feMacroRunDone_ = false;
+		std::unique_ptr<ProgressBar> bar_;
 	}; //end runFEMacroStruct struct
+
+	/// runFEMacroGroupStruct groups per-UID tasks launched in parallel under one NotDoneID
+	struct runFEMacroGroupStruct
+	{
+		uint64_t groupID_   = 0;
+		time_t   startTime_ = time(0);
+		std::vector<std::shared_ptr<runFEMacroStruct>> tasks_;
+
+		bool allDone() const
+		{
+			for(const auto& t : tasks_)
+				if(!t->feMacroRunDone_) return false;
+			return !tasks_.empty();
+		}
+	}; //end runFEMacroGroupStruct struct
+
 
 	MacroMakerSupervisor									(xdaq::ApplicationStub* s);
 	virtual ~MacroMakerSupervisor							(void);
@@ -194,9 +215,10 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 															 const std::string  outputArgs,
 															 bool               saveOutputs,
 															 const std::string& username,
-															 const std::string& userGroupPermissions);
-	static void 	runFEMacroThread						(runFEMacroStruct*  feMacroRunThreadStruct,
-															 MacroMakerSupervisor* mmSupervisor);
+												 const std::string& userGroupPermissions,
+												 bool               saveToHistory = true);
+	static void 	runFEMacroThread						(std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
+											 MacroMakerSupervisor* mmSupervisor);
 
 	std::string 	generateHexArray						(const std::string& sourceHexString, int& numOfBytes);
 	bool        	isArgumentVariable						(const std::string& argumentString);
@@ -219,8 +241,9 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 		std::vector<std::string> /* last command */>					    lastFeCommandToHistory_;  ///<prevent repeats to history
 
 
-	std::vector<runFEMacroStruct> 											feMacroRunThreadStruct_;
-	std::vector<std::unique_ptr<ProgressBar>>								bars_;
+	std::vector<std::shared_ptr<runFEMacroGroupStruct>> 					feMacroRunThreadStruct_;
+
+	std::mutex															feMacroRunThreadStructMutex_;
 
 };  // end MacroMakerSupervisor declaration
 // clang-format on
