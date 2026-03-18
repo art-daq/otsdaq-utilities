@@ -494,6 +494,8 @@ function displayTable(appsArray) {
         headerCell.innerHTML = columnNames[i];
         if (columnNames[i] == "Detail")
             headerCell.style = 'text-align: left; padding-left: 50px;';
+        else if(columnNames[i] == "Status")
+            headerCell.style = "max-width: 120px; min-width: 120px;";
         row.appendChild(headerCell);
     }
 
@@ -816,7 +818,8 @@ function displayTable(appsArray) {
                     else
                         cell.innerHTML = subappInfo[columnKeys[j]];
 
-                    if (columnKeys[j] == "status") {
+                    if (columnKeys[j] == "status") 
+                    {
                         cell.style.textAlign = "center";
                         cell.className = "statusCell";
 
@@ -843,6 +846,7 @@ function displayTable(appsArray) {
 
                 var cell = row.insertCell(-1);
                 cell.innerHTML = "UNKNOWN";
+                cell.style.textAlign = "center";
                 cell.className = "statusCell";
             }
         }

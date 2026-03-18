@@ -3207,7 +3207,7 @@ try
 						    progParent);
 					}
 				}
-			}
+			} //end report per-UID progress
 		}
 
 		return;
@@ -3355,6 +3355,32 @@ try
 			t.detach();
 
 		xmldoc.addNumberElementToData("NotDoneID", groupID);
+
+		//report per-UID progress started
+		{
+			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
+			for(auto& task : group->tasks_)
+			{
+				DOMElement* progParent =
+					xmldoc.addTextElementToData("feMacroProgress",
+												task->parameters_.feUIDSelected_);
+				if(task->feMacroRunDone_)
+				{
+					xmldoc.addTextElementToParent("progress", "100", progParent);
+				}
+				else
+				{
+					if(task->bar_)
+					{
+						task->bar_->step();
+						xmldoc.addTextElementToParent(
+							"progress",
+							std::to_string(task->bar_->read()),
+							progParent);
+					}
+				}
+			}
+		} //end report per-UID progress started
 	}
 	else  //all done synchronously
 	{
