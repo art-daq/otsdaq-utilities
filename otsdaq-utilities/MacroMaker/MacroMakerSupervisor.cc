@@ -3300,6 +3300,9 @@ try
 	{
 		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 		group->groupID_ = ++feMacroRunGroupIDCounter_;
+		if(feMacroRunGroupIDCounter_ == 0)
+			group->groupID_ =
+			    ++feMacroRunGroupIDCounter_;  // avoid 0 for better error detection
 
 		for(auto& task : group->tasks_)
 		{
