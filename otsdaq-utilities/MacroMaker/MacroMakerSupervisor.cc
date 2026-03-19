@@ -3139,9 +3139,21 @@ try
 			}
 			else if(now - group->startTime_ > 5 * 60 /* 5 minutes */)
 			{
-				__SUP_COUT_WARN__ << "Found old FE Macro group " << group->groupID_
-				                  << __E__;
-				break;
+				std::string targets;
+				std::string feMacroName;
+				for(const auto& t : group->tasks_)
+				{
+					if(!targets.empty())
+						targets += ", ";
+					targets += t->parameters_.feUIDSelected_;
+					if(feMacroName.empty())
+						feMacroName = t->parameters_.macroName_;
+				}
+				__SUP_COUT_WARN__ << "Found old FE Macro group that has not completed"
+				                  << " (groupID=" << group->groupID_
+				                  << ", targets=[" << targets
+				                  << "], FE macro name=" << feMacroName << ")" << __E__;
+				continue;
 			}
 		}
 
