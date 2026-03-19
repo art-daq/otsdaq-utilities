@@ -1112,7 +1112,7 @@ function getFilteredArray(filterName, type) {
 //=====================================================================================
 // generic function that can be used to get union/intersection of two arrays of objects
 function setIntersection(list1, list2) {
-	result = [];
+	var result = [];
 	for (let i = 0; i < list1.length; i++) {
 
 		for (let j = 0; j < list2.length; j++) {
