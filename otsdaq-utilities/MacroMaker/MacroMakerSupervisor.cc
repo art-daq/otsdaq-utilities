@@ -3129,7 +3129,7 @@ try
 				for(const auto& t : group->tasks_)
 					if(t->parameters_.doneTime_ > latestDone)
 						latestDone = t->parameters_.doneTime_;
-				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 minutes */)
+				if(latestDone >= 0 && now - latestDone > 5 * 60 /* 5 minutes */)
 				{
 					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_
 					              << __E__;
@@ -3137,7 +3137,7 @@ try
 					--i;  //rewind
 				}
 			}
-			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 minutes */)
+			else if(now - group->startTime_ > 5 * 60 /* 5 minutes */)
 			{
 				__SUP_COUT_WARN__ << "Found old FE Macro group " << group->groupID_
 				                  << __E__;
