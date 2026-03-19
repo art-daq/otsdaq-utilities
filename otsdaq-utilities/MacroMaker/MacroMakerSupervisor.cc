@@ -3289,17 +3289,42 @@ try
 		feMacroRunThreadStruct_.emplace_back(group);
 	}
 
-	// Launch one thread per UID
-	std::vector<std::thread> threads;
-	threads.reserve(group->tasks_.size());
-	for(auto& task : group->tasks_)
+	// Launch threads for FE macros with a cap on concurrent threads
+	if(!group->tasks_.empty())
 	{
-		threads.emplace_back(
-		    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
-			    MacroMakerSupervisor::runFEMacroThread(s, mm);
-		    },
-		    task,
-		    this);
+		std::vector<std::thread> threads;
+
+		// Determine maximum number of concurrent threads.
+		std::size_t maxThreads = std::thread::hardware_concurrency();
+		if(maxThreads == 0)
+			maxThreads = 4;  // reasonable fallback if hardware_concurrency is not available
+		if(maxThreads > group->tasks_.size())
+			maxThreads = group->tasks_.size();
+
+		for(auto& task : group->tasks_)
+		{
+			threads.emplace_back(
+			    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
+				    MacroMakerSupervisor::runFEMacroThread(s, mm);
+			    },
+			    task,
+			    this);
+
+			// If we've reached the concurrency limit, wait for all current threads
+			// before launching more, to avoid unbounded thread creation.
+			if(threads.size() >= maxThreads)
+			{
+				for(auto& t : threads)
+					if(t.joinable())
+						t.join();
+				threads.clear();
+			}
+		}
+
+		// Join any remaining threads.
+		for(auto& t : threads)
+			if(t.joinable())
+				t.join();
 	}
 
 	size_t sleepTime = 10 * 1000;  //10ms
