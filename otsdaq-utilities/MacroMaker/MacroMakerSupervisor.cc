@@ -3129,7 +3129,7 @@ try
 				for(const auto& t : group->tasks_)
 					if(t->parameters_.doneTime_ > latestDone)
 						latestDone = t->parameters_.doneTime_;
-				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 hours */)
+				if(latestDone >= 0 && now - latestDone > 5 * 60 /* 5 minutes */)
 				{
 					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_
 					              << __E__;
@@ -3137,7 +3137,7 @@ try
 					--i;  //rewind
 				}
 			}
-			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 hours */)
+			else if(now - group->startTime_ > 5 * 60 /* 5 minutes */)
 			{
 				std::string targets;
 				std::string feMacroName;
@@ -3301,17 +3301,42 @@ try
 		feMacroRunThreadStruct_.emplace_back(group);
 	}
 
-	// Launch one thread per UID
-	std::vector<std::thread> threads;
-	threads.reserve(group->tasks_.size());
-	for(auto& task : group->tasks_)
+	// Launch threads for FE macros with a cap on concurrent threads
+	if(!group->tasks_.empty())
 	{
-		threads.emplace_back(
-		    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
-			    MacroMakerSupervisor::runFEMacroThread(s, mm);
-		    },
-		    task,
-		    this);
+		std::vector<std::thread> threads;
+
+		// Determine maximum number of concurrent threads.
+		std::size_t maxThreads = std::thread::hardware_concurrency();
+		if(maxThreads == 0)
+			maxThreads = 4;  // reasonable fallback if hardware_concurrency is not available
+		if(maxThreads > group->tasks_.size())
+			maxThreads = group->tasks_.size();
+
+		for(auto& task : group->tasks_)
+		{
+			threads.emplace_back(
+			    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
+				    MacroMakerSupervisor::runFEMacroThread(s, mm);
+			    },
+			    task,
+			    this);
+
+			// If we've reached the concurrency limit, wait for all current threads
+			// before launching more, to avoid unbounded thread creation.
+			if(threads.size() >= maxThreads)
+			{
+				for(auto& t : threads)
+					if(t.joinable())
+						t.join();
+				threads.clear();
+			}
+		}
+
+		// Join any remaining threads.
+		for(auto& t : threads)
+			if(t.joinable())
+				t.join();
 	}
 
 	size_t sleepTime = 10 * 1000;  //10ms
@@ -3739,7 +3764,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				DOMElement* feMacroExecParent =
 				    xmldoc.addTextElementToData("feMacroExec", macroName);
 
-				__SUP_COUTT__ << "runFEMacro() chk0." << __E__;
 				xmldoc.addTextElementToParent(
 				    "exec_time", StringMacros::getTimestampString(), feMacroExecParent);
 				xmldoc.addTextElementToParent("fe_uid", feUID, feMacroExecParent);
@@ -3752,7 +3776,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				xmldoc.addTextElementToParent(
 				    "fe_hostname", it->second.getHostname(), feMacroExecParent);
 
-				__SUP_COUTT__ << "runFEMacro() chk1." << __E__;
 				std::istringstream inputStream(outputResults);
 				std::string        splitVal, argName, argValue;
 				while(getline(inputStream, splitVal, ';'))
@@ -3761,7 +3784,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					getline(pairInputStream, argName, ',');
 					getline(pairInputStream, argValue, ',');
 
-					__SUP_COUTT__ << "runFEMacro() chk2." << __E__;
 					if(saveOutputs)
 					{
 						fprintf(fp,
