@@ -3129,7 +3129,7 @@ try
 				for(const auto& t : group->tasks_)
 					if(t->parameters_.doneTime_ > latestDone)
 						latestDone = t->parameters_.doneTime_;
-				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 minutes */)
+				if(latestDone >= 0 && now - latestDone > 5 * 60 * 60 /* 5 hours */)
 				{
 					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_
 					              << __E__;
@@ -3137,10 +3137,10 @@ try
 					--i;  //rewind
 				}
 			}
-			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 minutes */)
+			else if(now - group->startTime_ > 5 * 60 * 60 /* 5 hours */)
 			{
-				std::string targets = "";
-				std::string feMacroName = "";
+				std::string targets;
+				std::string feMacroName;
 				for(const auto& t : group->tasks_)
 				{
 					if(!targets.empty())
