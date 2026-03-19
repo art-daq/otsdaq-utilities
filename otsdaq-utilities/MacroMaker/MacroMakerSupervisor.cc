@@ -3152,9 +3152,9 @@ try
 						feMacroName = t->parameters_.macroName_;
 				}
 				__SUP_COUT_WARN__ << "Found old FE Macro group that has not completed"
-				                  << " (groupID=" << group->groupID_
-				                  << ", targets=[" << targets
-				                  << "], FE macro name=" << feMacroName << ")" << __E__;
+				                  << " (groupID=" << group->groupID_ << ", targets=["
+				                  << targets << "], FE macro name=" << feMacroName << ")"
+				                  << __E__;
 				continue;
 			}
 		}
@@ -3429,8 +3429,7 @@ catch(...)
 //==============================================================================
 /// static scheduler thread version for FE macro groups
 void MacroMakerSupervisor::runFEMacroGroupSchedulerThread(
-    std::shared_ptr<runFEMacroGroupStruct> group,
-    MacroMakerSupervisor*                   mmSupervisor)
+    std::shared_ptr<runFEMacroGroupStruct> group, MacroMakerSupervisor* mmSupervisor)
 try
 {
 	if(!group || !mmSupervisor || group->tasks_.empty())
@@ -3450,12 +3449,10 @@ try
 	std::size_t nextTaskIndex = 0;
 
 	auto launchTask = [&](std::shared_ptr<runFEMacroStruct> task) {
-		active.emplace_back(
-		    task,
-		    std::async(std::launch::async,
-		               [task, mmSupervisor]() {
-			               MacroMakerSupervisor::runFEMacroThread(task, mmSupervisor);
-		               }));
+		active.emplace_back(task, std::async(std::launch::async, [task, mmSupervisor]() {
+			                    MacroMakerSupervisor::runFEMacroThread(task,
+			                                                           mmSupervisor);
+		                    }));
 	};
 
 	while(nextTaskIndex < group->tasks_.size() || !active.empty())
@@ -3478,8 +3475,9 @@ try
 			   std::future_status::ready)
 			{
 				__COUTT__ << "FE macro group scheduler task complete. groupID="
-				         << group->groupID_ << " uid="
-				         << active[i].first->parameters_.feUIDSelected_ << __E__;
+				          << group->groupID_
+				          << " uid=" << active[i].first->parameters_.feUIDSelected_
+				          << __E__;
 				active[i].second.get();
 				active.erase(active.begin() + i);
 				anyFinished = true;
@@ -3492,9 +3490,8 @@ try
 			usleep(10 * 1000);  // 10ms poll interval to keep scheduler lightweight
 	}
 
-	__COUT__ << "FE macro group scheduler ended. groupID=" << group->groupID_
-	         << __E__;
-} //end runFEMacroGroupSchedulerThread()
+	__COUT__ << "FE macro group scheduler ended. groupID=" << group->groupID_ << __E__;
+}  //end runFEMacroGroupSchedulerThread()
 catch(const std::exception& e)
 {
 	__SS__ << "Error during FE macro group scheduler thread: " << e.what() << __E__;
@@ -3503,7 +3500,7 @@ catch(const std::exception& e)
 catch(...)
 {
 	__COUT_ERR__ << "Unknown error during FE macro group scheduler thread." << __E__;
-} //end runFEMacroGroupSchedulerThread() catch
+}  //end runFEMacroGroupSchedulerThread() catch
 
 //==============================================================================
 /// static thread version of runFEMacro
