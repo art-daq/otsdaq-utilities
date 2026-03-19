@@ -3752,7 +3752,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				DOMElement* feMacroExecParent =
 				    xmldoc.addTextElementToData("feMacroExec", macroName);
 
-				__SUP_COUTT__ << "runFEMacro() chk0." << __E__;
 				xmldoc.addTextElementToParent(
 				    "exec_time", StringMacros::getTimestampString(), feMacroExecParent);
 				xmldoc.addTextElementToParent("fe_uid", feUID, feMacroExecParent);
@@ -3765,7 +3764,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				xmldoc.addTextElementToParent(
 				    "fe_hostname", it->second.getHostname(), feMacroExecParent);
 
-				__SUP_COUTT__ << "runFEMacro() chk1." << __E__;
 				std::istringstream inputStream(outputResults);
 				std::string        splitVal, argName, argValue;
 				while(getline(inputStream, splitVal, ';'))
@@ -3774,7 +3772,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					getline(pairInputStream, argName, ',');
 					getline(pairInputStream, argValue, ',');
 
-					__SUP_COUTT__ << "runFEMacro() chk2." << __E__;
 					if(saveOutputs)
 					{
 						fprintf(fp,
