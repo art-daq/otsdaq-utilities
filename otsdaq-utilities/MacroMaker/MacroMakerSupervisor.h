@@ -4,10 +4,10 @@
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 #include "otsdaq/ProgressBar/ProgressBar.h"
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 
-// clang-format off
 namespace ots
 {
 /// MacroMakerSupervisor
@@ -217,6 +217,8 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 															 const std::string& username,
 												 const std::string& userGroupPermissions,
 												 bool               saveToHistory = true);
+	static void 	runFEMacroGroupSchedulerThread					(std::shared_ptr<runFEMacroGroupStruct> group,
+														 MacroMakerSupervisor*                mmSupervisor);
 	static void 	runFEMacroThread						(std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
 											 MacroMakerSupervisor* mmSupervisor);
 
@@ -242,11 +244,11 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 
 	std::vector<std::shared_ptr<runFEMacroGroupStruct>> 					feMacroRunThreadStruct_;
+	std::atomic<uint64_t>												feMacroRunGroupIDCounter_{0};
 
 	std::mutex															feMacroRunThreadStructMutex_;
 
 };  // end MacroMakerSupervisor declaration
-// clang-format on
 }  // namespace ots
 
 #endif

@@ -9,9 +9,11 @@
 #include <dirent.h>    //for DIR
 #include <stdio.h>     //for file rename
 #include <sys/stat.h>  //for mkdir
+#include <chrono>
 #include <cstdio>
 #include <filesystem>  //for std::filesytem
 #include <fstream>
+#include <future>  //to track active worker completions
 #include <thread>  //for std::thread
 #include "otsdaq/TableCore/TableGroupKey.h"
 
@@ -3215,7 +3217,6 @@ try
 				{
 					if(task->bar_)
 					{
-						task->bar_->step();
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
 					}
@@ -3298,46 +3299,19 @@ try
 	}
 	{
 		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
-		feMacroRunThreadStruct_.emplace_back(group);
-	}
-
-	// Launch threads for FE macros with a cap on concurrent threads
-	if(!group->tasks_.empty())
-	{
-		std::vector<std::thread> threads;
-
-		// Determine maximum number of concurrent threads.
-		std::size_t maxThreads = std::thread::hardware_concurrency();
-		if(maxThreads == 0)
-			maxThreads = 4;  // reasonable fallback if hardware_concurrency is not available
-		if(maxThreads > group->tasks_.size())
-			maxThreads = group->tasks_.size();
+		group->groupID_ = ++feMacroRunGroupIDCounter_;
 
 		for(auto& task : group->tasks_)
 		{
-			threads.emplace_back(
-			    [](std::shared_ptr<runFEMacroStruct> s, MacroMakerSupervisor* mm) {
-				    MacroMakerSupervisor::runFEMacroThread(s, mm);
-			    },
-			    task,
-			    this);
-
-			// If we've reached the concurrency limit, wait for all current threads
-			// before launching more, to avoid unbounded thread creation.
-			if(threads.size() >= maxThreads)
-			{
-				for(auto& t : threads)
-					if(t.joinable())
-						t.join();
-				threads.clear();
-			}
+			task->bar_ = std::make_unique<ProgressBar>();
+			task->bar_->reset(macroName, task->parameters_.feUIDSelected_);
 		}
-
-		// Join any remaining threads.
-		for(auto& t : threads)
-			if(t.joinable())
-				t.join();
+		feMacroRunThreadStruct_.emplace_back(group);
 	}
+
+	std::thread([group, this]() {
+		MacroMakerSupervisor::runFEMacroGroupSchedulerThread(group, this);
+	}).detach();
 
 	size_t sleepTime = 10 * 1000;  //10ms
 	usleep(sleepTime);
@@ -3361,38 +3335,7 @@ try
 
 	if(!group->allDone())  //not all done - go async
 	{
-		if(threads.empty() || threads[0].get_id() == std::thread::id())
-		{
-			__SUP_SS__ << "Invalid thread ID. Contact system admins!" << __E__;
-			__SUP_SS_THROW__;
-		}
-		uint64_t groupID = std::hash<std::thread::id>{}(threads[0].get_id());
-		if(groupID == 0)
-		{
-			__SUP_SS__ << "Invalid thread ID hash. Contact system admins!" << __E__;
-			__SUP_SS_THROW__;
-		}
-
-		__SUP_COUT__ << "FE macros not all done, detaching " << threads.size()
-		             << " thread(s) for group=" << groupID << __E__;
-
-		{
-			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
-			group->groupID_ = groupID;
-			for(size_t ti = 0; ti < threads.size() && ti < group->tasks_.size(); ++ti)
-			{
-				group->tasks_[ti]->parameters_.threadID_ =
-				    std::hash<std::thread::id>{}(threads[ti].get_id());
-				group->tasks_[ti]->bar_ = std::make_unique<ProgressBar>();
-				group->tasks_[ti]->bar_->reset(
-				    macroName, group->tasks_[ti]->parameters_.feUIDSelected_);
-			}
-		}
-
-		for(auto& t : threads)
-			t.detach();
-
-		xmldoc.addNumberElementToData("NotDoneID", groupID);
+		xmldoc.addNumberElementToData("NotDoneID", group->groupID_);
 
 		//report per-UID progress started
 		{
@@ -3409,7 +3352,6 @@ try
 				{
 					if(task->bar_)
 					{
-						task->bar_->step();
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
 					}
@@ -3419,9 +3361,6 @@ try
 	}
 	else  //all done synchronously
 	{
-		for(auto& t : threads)
-			t.join();
-
 		for(auto& task : group->tasks_)
 		{
 			if(task->parameters_.feMacroRunError_ != "")
@@ -3488,12 +3427,94 @@ catch(...)
 }  // end runFEMacro() catch
 
 //==============================================================================
+/// static scheduler thread version for FE macro groups
+void MacroMakerSupervisor::runFEMacroGroupSchedulerThread(
+    std::shared_ptr<runFEMacroGroupStruct> group,
+    MacroMakerSupervisor*                   mmSupervisor)
+try
+{
+	if(!group || !mmSupervisor || group->tasks_.empty())
+		return;
+
+	__COUT__ << "FE macro group scheduler started. groupID=" << group->groupID_
+	         << " tasks=" << group->tasks_.size() << __E__;
+
+	std::size_t maxThreads = std::thread::hardware_concurrency();
+	if(maxThreads == 0)
+		maxThreads = 4;
+	if(maxThreads > group->tasks_.size())
+		maxThreads = group->tasks_.size();
+
+	std::vector<std::pair<std::shared_ptr<runFEMacroStruct>, std::future<void>>> active;
+	active.reserve(maxThreads);
+	std::size_t nextTaskIndex = 0;
+
+	auto launchTask = [&](std::shared_ptr<runFEMacroStruct> task) {
+		active.emplace_back(
+		    task,
+		    std::async(std::launch::async,
+		               [task, mmSupervisor]() {
+			               MacroMakerSupervisor::runFEMacroThread(task, mmSupervisor);
+		               }));
+	};
+
+	while(nextTaskIndex < group->tasks_.size() || !active.empty())
+	{
+		while(nextTaskIndex < group->tasks_.size() && active.size() < maxThreads)
+			launchTask(group->tasks_[nextTaskIndex++]);
+
+		{
+			std::lock_guard<std::mutex> lock(mmSupervisor->feMacroRunThreadStructMutex_);
+			for(const auto& activeTask : active)
+				if(activeTask.first && !activeTask.first->feMacroRunDone_ &&
+				   activeTask.first->bar_)
+					activeTask.first->bar_->step();
+		}
+
+		bool anyFinished = false;
+		for(size_t i = 0; i < active.size();)
+		{
+			if(active[i].second.wait_for(std::chrono::milliseconds(0)) ==
+			   std::future_status::ready)
+			{
+				__COUTT__ << "FE macro group scheduler task complete. groupID="
+				         << group->groupID_ << " uid="
+				         << active[i].first->parameters_.feUIDSelected_ << __E__;
+				active[i].second.get();
+				active.erase(active.begin() + i);
+				anyFinished = true;
+			}
+			else
+				++i;
+		}
+
+		if(!anyFinished)
+			usleep(10 * 1000);  // 10ms poll interval to keep scheduler lightweight
+	}
+
+	__COUT__ << "FE macro group scheduler ended. groupID=" << group->groupID_
+	         << __E__;
+} //end runFEMacroGroupSchedulerThread()
+catch(const std::exception& e)
+{
+	__SS__ << "Error during FE macro group scheduler thread: " << e.what() << __E__;
+	__COUT_ERR__ << ss.str();
+}
+catch(...)
+{
+	__COUT_ERR__ << "Unknown error during FE macro group scheduler thread." << __E__;
+} //end runFEMacroGroupSchedulerThread() catch
+
+//==============================================================================
 /// static thread version of runFEMacro
 void MacroMakerSupervisor::runFEMacroThread(
     std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
     MacroMakerSupervisor*             mmSupervisor)
 try
 {
+	feMacroRunThreadStruct->parameters_.threadID_ =
+	    std::hash<std::thread::id>{}(std::this_thread::get_id());
+
 	__COUT__ << "runFEMacro thread started... threadid = " << std::this_thread::get_id()
 	         << " " << mmSupervisor << " getpid()=" << getpid()
 	         << " gettid()=" << gettid() << __E__;
