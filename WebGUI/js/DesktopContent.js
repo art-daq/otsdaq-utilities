@@ -2089,7 +2089,7 @@ DesktopContent.popUpVerification = function (prompt, continueFunc, replaceVal, b
 			window.clearTimeout(DesktopContent.popUpVerificationTimeout)
 		DesktopContent.popUpVerificationTimeout = window.setTimeout(
 			function () {
-				Debug.log("Timeout close of DesktopContent.popUpVerification");				
+				Debug.log("Timeout close of DesktopContent.popUpVerification");
 				if (DesktopContent._verifyPopUp) {
 					DesktopContent._verifyPopUp.parentNode.removeChild(DesktopContent._verifyPopUp);
 					DesktopContent._verifyPopUp = 0;
