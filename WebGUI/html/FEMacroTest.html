@@ -110,9 +110,40 @@
 			resize: horizontal;
 		}
 
+		.history-group {
+			display: flex;
+			align-items: stretch;
+			gap: 3px;
+			margin: 2px 0;
+		}
+
+		.history-group-bar {
+			background-color: #4a4a4a;
+			color: white;
+			min-width: 32px;
+			width: 32px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			font-weight: bold;
+			user-select: none;
+			cursor: pointer;
+			margin-right: -2px;
+		}
+
+		.history-group-content {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.history-record-label {
+			display: block;
+		}
+
 		.record, .component {
 			text-align: left;
-			padding: 2px;
+			padding: 4px 6px;
 			/* font-weight: bold; */
 			/* white-space: initial; */
 			text-overflow: clip;
@@ -2252,10 +2283,168 @@ Here is the json string received:
 
 		//=====================================================================================
 		//loadHistory ~~
-		var numRecords = 0;
-		var lastMacro = "";
+		var historyRecords_ = []; // chronological order: oldest -> newest
+		var historyRenderRecordMap_ = {};
+		var historyRenderGroupMap_ = {};
+		var historyRenderRecordId_ = 0;
+		var historyRenderGroupId_ = 0;
+
+		function normalizeHistoryRecord(record) {
+			return (typeof record === "string") ? JSON.parse(record) : record;
+		}
+
+		function getHistoryRecordSignature(recordObj) {
+			return JSON.stringify(recordObj);
+		}
+
+		function getHistoryRecordDescription(recordObj, useHtmlBreaks) {
+			var lineBreak = useHtmlBreaks ? "<br>&nbsp;&nbsp;&nbsp;&nbsp;" : "\n    ";
+			var recordName = "";
+			var inputArgs = recordObj["inputArgs"].split(";");
+			for (var j = 0; j < inputArgs.length; j++) {
+				var tuple = inputArgs[j].split(",");
+				if (j)
+					recordName += lineBreak;
+				if (tuple[0] !== "")
+					recordName += decodeURIComponent(tuple[0]) + "=" + decodeURIComponent(tuple[1]) + ";";
+			}
+
+			var recordText = "";
+			if (recordObj["feUID"] === "*" && recordObj["feClass"] !== "*")
+				recordText = "(all " + recordObj["feClass"] + ") ";
+			else
+				recordText = "(" + recordObj["feUID"] + ") ";
+			recordText += recordObj["macroName"] + ": ";
+
+			return recordText + (recordName === "" ? "No arguments" : recordName);
+		}
+
+		function escapeHistoryHtml(text) {
+			return text
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/\"/g, "&quot;")
+				.replace(/'/g, "&#39;");
+		}
+
+		function historySlicesMatch(records, startIndex, blockLength, repeatIndex) {
+			var baseIndex = startIndex;
+			var compareIndex = startIndex + repeatIndex * blockLength;
+			for (var i = 0; i < blockLength; ++i)
+				if (getHistoryRecordSignature(records[baseIndex + i]) !==
+					getHistoryRecordSignature(records[compareIndex + i]))
+					return false;
+			return true;
+		}
+
+		function historySlicesMatchFromEnd(records, endIndex, blockLength, repeatIndex) {
+			var newestBlockStart = endIndex - blockLength;
+			var compareStart = newestBlockStart - repeatIndex * blockLength;
+			for (var i = 0; i < blockLength; ++i)
+				if (getHistoryRecordSignature(records[newestBlockStart + i]) !==
+					getHistoryRecordSignature(records[compareStart + i]))
+					return false;
+			return true;
+		}
+
+		function buildCompressedHistoryNodes(records) {
+			var nodes = [];
+			for (var endIndex = records.length; endIndex > 0;) {
+				var bestMatch = null;
+				for (var blockLength = 1; 2 * blockLength <= endIndex; ++blockLength) {
+					var repeatCount = 1;
+					while ((repeatCount + 1) * blockLength <= endIndex &&
+						historySlicesMatchFromEnd(records, endIndex, blockLength, repeatCount))
+						++repeatCount;
+
+					if (repeatCount > 1) {
+						var span = blockLength * repeatCount;
+						if (!bestMatch || span > bestMatch.span ||
+							(span === bestMatch.span && blockLength < bestMatch.blockLength))
+							bestMatch = {
+								blockLength: blockLength,
+								repeatCount: repeatCount,
+								span: span
+							};
+					}
+				}
+
+				if (bestMatch) {
+					var blockStart = endIndex - bestMatch.blockLength;
+					var blockRecords = records.slice(blockStart, endIndex);
+					nodes.unshift({
+						type: "group",
+						repeatCount: bestMatch.repeatCount,
+						records: blockRecords,
+						children: buildCompressedHistoryNodes(blockRecords)
+					});
+					endIndex -= bestMatch.span;
+				}
+				else
+					nodes.unshift({ type: "record", record: records[--endIndex] });
+			}
+			return nodes;
+		}
+
+		function getHistoryGroupTitle(records, repeatCount) {
+			var title = "Run this repeated command group once (currently " + repeatCount + "x):";
+			for (var i = 0; i < records.length; ++i)
+				title += "\n" + (i + 1) + ". " + getHistoryRecordDescription(records[i], false);
+			return title;
+		}
+
+		function renderHistoryNode(node, renderState) {
+			if (node.type === "record") {
+				var recordId = historyRenderRecordId_++;
+				historyRenderRecordMap_[recordId] = node.record;
+				var className = "record " + ((renderState.rowIndex++ % 2 === 0) ? "light" : "dark");
+				return DesktopContent.htmlOpen(
+					"div",
+					{
+						"id": "historyRecord" + recordId,
+						"class": className,
+						"onClick": "onClickHistoryRecordByIndex(" + recordId + ")"
+					},
+					"<span class='history-record-label'>" + getHistoryRecordDescription(node.record, true) + "</span>",
+					true);
+			}
+
+			var groupId = historyRenderGroupId_++;
+			historyRenderGroupMap_[groupId] = node.records;
+			var groupTitle = escapeHistoryHtml(getHistoryGroupTitle(node.records, node.repeatCount));
+			var childHtml = renderHistoryNodes(node.children, renderState);
+			return "<div class='history-group'>" +
+				"<div class='history-group-bar' title='" + groupTitle + "' onClick='onClickHistoryGroup(" + groupId + ");'>" +
+				"<span>" + node.repeatCount + "x</span></div>" +
+				"<div class='history-group-content'>" + childHtml + "</div>" +
+				"</div>";
+		}
+
+		function renderHistoryNodes(nodes, renderState) {
+			var html = "";
+			for (var i = nodes.length - 1; i >= 0; --i)
+				html += renderHistoryNode(nodes[i], renderState);
+			return html;
+		}
+
+		function renderHistoryDisplay() {
+			var historyContent = document.getElementById("historyContent");
+			if (!historyContent)
+				return;
+
+			historyRenderRecordMap_ = {};
+			historyRenderGroupMap_ = {};
+			historyRenderRecordId_ = 0;
+			historyRenderGroupId_ = 0;
+
+			var nodes = buildCompressedHistoryNodes(historyRecords_);
+			historyContent.innerHTML = renderHistoryNodes(nodes, { rowIndex: 0 });
+		}
+
 		function loadHistory() {
 			Debug.log("loadHistory()");
+			historyRecords_ = [];
 			var historyModule = document.getElementById("macroModule-history");
 			// append the header of the module
 			var str = DesktopContent.htmlOpen(
@@ -2294,12 +2483,13 @@ Here is the json string received:
 					Debug.log("History is empty!");
 					return;
 				}
-				var historyContent = document.getElementById("historyContent");
 				// split the commands
 				var commandList = historyString.split("#");
 				for (var i = 0; i < commandList.length; i++) {
-					appendHistoryRecord(commandList[i]);
+					if (commandList[i])
+						historyRecords_.push(normalizeHistoryRecord(commandList[i]));
 				}
+				renderHistoryDisplay();
 			});
 
 		} //end loadHistory()
@@ -2308,58 +2498,26 @@ Here is the json string received:
 		//appendHistoryRecord ~~
 		function appendHistoryRecord(record) {
 			Debug.log("appendHistoryRecord()");
-			var historyContent = document.getElementById("historyContent");
-			var command = JSON.parse(record);
-			var counter = document.getElementById(numRecords + "-counter");
-			if (counter && lastMacro === record) {
-				// increment the number
-				if (counter.innerText === "") counter.innerText = 1;
-				counter.innerText = String(parseInt(counter.innerText) + 1);
-				counter.innerText += "x";
-				return;
-			}
-
-			lastMacro = record;
-			// check the i to alternate the colors
-			var className = "record ";
-			if (numRecords % 2 == 0)
-				className += "light";
-			else
-				className += "dark";
-			numRecords++;
-
-			// create the record name
-			var recordName = "";
-			var inputArgs = command["inputArgs"].split(";");
-			for (var j = 0; j < inputArgs.length; j++) {
-				var tuple = inputArgs[j].split(",");
-				if (j)
-					recordName += "<br>&nbsp;&nbsp;&nbsp;&nbsp;"
-				if (tuple[0] !== "")
-					recordName += decodeURIComponent(tuple[0]) + "=" + decodeURIComponent(tuple[1]) + ";";
-			}
-
-			// build the record text
-			var recordText = ""
-			if (command["feUID"] === "*" && command["feClass"] !== "*") {
-				recordText = "(all " + command["feClass"] + ") ";
-			}
-			else {
-				recordText = "(" + command["feUID"] + ") ";
-			}
-			recordText += command["macroName"] + ": ";
-
-			// put the new history in head
-			historyContent.innerHTML = DesktopContent.htmlOpen(
-				"div",
-				{
-					"id": "historyRecord" + numRecords,
-					"class": className,
-					"onClick": "onClickHistoryRecord(" + record + ")"
-				},
-				"<span><i id='" + numRecords + "-counter'></i> " + recordText + "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + (recordName === "" ? "No arguments" : recordName) + "</span>",
-				true) + historyContent.innerHTML;
+			historyRecords_.push(normalizeHistoryRecord(record));
+			renderHistoryDisplay();
 		} //end appendHistoryRecord()
+
+		function onClickHistoryRecordByIndex(recordId) {
+			onClickHistoryRecord(historyRenderRecordMap_[recordId]);
+		}
+
+		function onClickHistoryGroup(groupId) {
+			Debug.log("onClickHistoryGroup()", groupId);
+			var groupRecords = historyRenderGroupMap_[groupId];
+			if (!groupRecords || !groupRecords.length)
+				return false;
+
+			for (var i = 0; i < groupRecords.length; ++i)
+				setTimeout((function (recordObj) {
+					return function () { onClickHistoryRecord(recordObj); };
+				})(groupRecords[i]), i * 100);
+			return false;
+		}
 
 		//=====================================================================================
 		//onClickHistoryRecord ~~
