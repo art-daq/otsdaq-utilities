@@ -371,12 +371,12 @@ ViewerRoot.renderPosition = async function(target) {
 
 	    let opt = ViewerRoot.getOverlayDrawOpt(firstObj, obj);
 	    if (opt === null) {
-                Debug.log(
-                    "Overlay skipped for unsupported SAME combination: " +
-                        (firstObj._typename || "unknown") + " + " +
-                        (obj._typename || "unknown"),
-                    Debug.WARN_PRIORITY
-                );
+		Debug.log(
+		    "Overlay skipped for unsupported SAME combination: " +
+			(firstObj._typename || "unknown") + " + " +
+			(obj._typename || "unknown"),
+		    Debug.WARN_PRIORITY
+		);
 		continue;
 	    }
 
