@@ -105,7 +105,7 @@ ViewerRoot.createHud = function() {
 	    else if(i==1)
 	    {
 		ViewerRoot.hudAutoHide = chk.checked; 				//auto hide
-		self.handleWindowResize();
+		self.handleWindowResize();  //use the HUD instance directly inside this callback
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=setUserPreferences&autoHide="+
 					      (chk.checked?1:0),
@@ -726,7 +726,7 @@ ViewerRoot.createHud = function() {
 	");' " + chkDefaults[i] + "><label for='hudCheckbox" + i + "' >" + chkLabels[i] + "</label>";
     str += "</div>";
 
-    var radioLabels = ["Tile","Replace","Superimpose (1D/Profile/Graph)"]; //test; FIXME superimpose is broken in jsroot v5.9.0 and v7.9.0 usage of this gui, "Superimpose"];
+    var radioLabels = ["Tile","Replace","Superimpose (1D/Profile/Graph)"]; // overlay supported for compatible 1D-like objects
     var radioDefault = ViewerRoot.nextObjectMode;
     for(var i=0;i<radioLabels.length;++i)
 	str += "<input type='radio' id='newRootObjectModeRadio" + i + "' " + (i==radioDefault?"checked":"") +
