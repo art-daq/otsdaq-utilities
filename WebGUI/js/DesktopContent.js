@@ -1383,7 +1383,7 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 						requestType = " '" + requestURL.substr(requestType + ("RequestType=").length) + "'";
 					else
 						requestType = "";
-					errStr = "Request " + requestType + " failed due to insufficient account permissions.";
+					errStr = "Request " + requestType + " failed due to <b>insufficient account permissions</b>. Re-login or check your access code.";
 					if (callHandlerOnErr && callHandlerOnErr < 2)
 						Debug.err(errStr);
 
