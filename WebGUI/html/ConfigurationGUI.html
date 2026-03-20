@@ -15970,7 +15970,10 @@
 					var j = comment.lastIndexOf(commentAuthorSubstr);
 					if (j > 0) {
 						j += commentAuthorSubstr.length;
-						i = j;
+						i = j; // i now points just after the repeated author substring (including ": ")
+					} else {
+						// No repeated author; move i past the single ": " to the start of the body
+						i += 2;
 					}
 					Debug.log("commentAuthorSubstr", commentAuthorSubstr, i, j);
 					comment = comment.substr(i);

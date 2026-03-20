@@ -805,17 +805,32 @@
 
 			//check if not done
 			var notDoneID = DesktopContent.getXMLValue(req, "NotDoneID");
-			var progress = DesktopContent.getXMLValue(req, "Progress");
-			if (progress == undefined) progress = 0;
-
 			Debug.logv({ notDoneID });
-			if (notDoneID) {
+			if (notDoneID)
+			{
 				Debug.log("FE Macro run not done", notDoneID);
 
 				//append still running
 				var str = el.innerHTML;
 				str = str.substring(0, str.indexOf("waiting for response...") + 23);
-				str += "<br><br>Received response that FE macro is still running... " + "Progress <b>" + progress + " %</b> " + getDateString(new Date);
+				str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
+				str += "<br><br>Received response that FE macro is still running...";
+
+				var progress = DesktopContent.getXMLChildren(req, "feMacroProgress");
+				if(progress && progress.length)
+				{
+					for(var p = 0; p < progress.length; ++p)
+					{
+						let progressUID = progress[p].getAttribute("value");
+						let progressPct = DesktopContent.getXMLValue(progress[p],
+							"progress");
+						if (progressPct == undefined) progressPct = 0;
+						str += "<br>Target: <b>" + progressUID +
+							"</b> ==&gt; Progress <b>" + progressPct + " %</b> " + getDateString(new Date);
+					}
+
+				}
+
 				str += "<br>";
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				el.innerHTML = str;
@@ -912,7 +927,12 @@
 					var outputArgNames = feExecs[f].getElementsByTagName("outputArgs_name");
 					var outputArgValues = feExecs[f].getElementsByTagName("outputArgs_value");
 
-					if (f == 0) {
+					if (f == 0)
+					{
+						let oldStr = el.innerHTML;
+						let oldStrPos = oldStr.indexOf("waiting for response...");
+						if(oldStrPos > 0)
+							str += oldStr.substring(0, oldStrPos - 3) + "<br>";
 						str += "Last ran... " + getDateString(new Date) + "<br>";
 						str += "FEMacro: &quot;" + feMacroName + "&quot;<br>";
 						str += "On " + feExecs.length + " front-end target(s).<br>";
@@ -939,6 +959,10 @@
 					var outputArgNames = req.responseXML.getElementsByTagName("outputArgs_name");
 					var outputArgValues = req.responseXML.getElementsByTagName("outputArgs_value");
 
+					let oldStr = el.innerHTML;
+					let oldStrPos = oldStr.indexOf("waiting for response...");
+					if(oldStrPos > 0)
+						str += oldStr.substring(0, oldStrPos - 3) + "<br>";
 					str += "Last ran... " + getDateString(new Date) + "<br>";
 				}
 
@@ -1710,12 +1734,25 @@ Here is the json string received:
 			{
 				document.getElementById("feUIDSelect-row-" +
 					r + "-col-" + c).style.display = "none";
-				document.getElementById("feUIDMultiSelect-row-" +
-					r + "-col-" + c).style.display = "block";
+				var sel = document.getElementById("feUIDMultiSelect-row-" +
+					r + "-col-" + c);
+				sel.style.display = "block";
 
+				//if all selected are false, then select same FE's that were selected in dropdown
+				Debug.log("Dropdown selection was",macroModules_[r][c].feUIDSelected);
+				if(MultiSelectBox.getSelectedCount(sel) == 0)
+				{
+					var selectionAray = MultiSelectBox.getSelectionArray(sel);
+					for(var i = 0; i < selectionAray.length; ++i)
+					{
+						if(macroModules_[r][c].feUIDSelected == "*" ||
+								macroModules_[r][c].feUIDSelected ==
+									MultiSelectBox.getSelectionElementByIndex(sel, i).innerText)
+							MultiSelectBox.setSelectionElementByIndex(sel, i, true);
+					}
+				}
 				MultiSelectBox.initMySelectBoxes();
-				multiFESelectionHandler(document.getElementById("feUIDMultiSelect-row-" +
-					r + "-col-" + c));
+				multiFESelectionHandler(sel);
 			}
 			else //show single select
 			{
@@ -1732,10 +1769,28 @@ Here is the json string received:
 		//handleSelectedFEUID ~~
 		function handleSelectedFEUID(r, c, multiSelectCSV) {
 			Debug.log("handleSelectedFEUID(" + r + "," + c +
-				")multi", multiSelectCSV);
+				") multi", multiSelectCSV);
 
 			Debug.log("feUID target", macroModules_[r][c].feUIDSelected);
 
+			//before changing UID selection, save input values if anything is not default
+			var macroName = macroModules_[r][c].feMacroNameSelected;
+			if(macroName)
+			{
+				var inEls = document.getElementsByClassName(
+								"macroInput-row-" + r + "-col-" + c
+							);
+				var macroObj = macroModules_[r][c].feMacroNameObject[macroName];
+				var inputsArr = macroObj.inputs;
+				//save input args to history, and last macroName map to input args for r,c FE macro cell
+				inputValueHistory_[r + "," + c] = [macroName, {}];
+				for (var i = 0; i < inputsArr.length; ++i) {
+					Debug.log("inputArgs " + inputsArr[i]);
+					Debug.log("inputArgs.value " + inEls[i].value);
+					inputValueHistory_[inputsArr[i]] = inEls[i].value;
+					inputValueHistory_[r + "," + c][1][inputsArr[i]] = inEls[i].value;
+				}
+			} //end save input values
 
 			var feUIDSelected;
 
@@ -2336,6 +2391,7 @@ Here is the json string received:
 				str += "Launched '" + recordObj["macroName"] +
 					"'... " + getDateString(new Date) +
 					".. waiting for response...";
+				str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
 				el.innerHTML = str;
 			}
 
@@ -2343,6 +2399,7 @@ Here is the json string received:
 			str += "Launched '" + recordObj["macroName"] +
 				"'... " + getDateString(new Date) +
 				".. waiting for response...";
+			str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
 			el = document.getElementById("history-status");
 			el.innerHTML = str;
 
