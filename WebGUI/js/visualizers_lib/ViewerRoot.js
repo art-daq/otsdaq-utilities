@@ -115,24 +115,24 @@ ViewerRoot.SUPERIMPOSE_MODE = 2;
 ViewerRoot.ADMIN_PERMISSIONS_THRESHOLD = 1;
 ViewerRoot.userPermissions = 0; //0 is no access, 1 is access
 
-ViewerRoot.omni;
-ViewerRoot.rootContainer;
+ViewerRoot.omni = null;
+ViewerRoot.rootContainer = null;
 
-ViewerRoot.objIndex;
+ViewerRoot.objIndex = null;
 
-ViewerRoot.rootObjTitleArr;
-ViewerRoot.rootPosArr;
-ViewerRoot.rootObjArr;
-ViewerRoot.rootObjIndexArr;
-ViewerRoot.rootHeaderElArr;
-ViewerRoot.rootObjNameArr;
-ViewerRoot.rootIsTransparentArr;
-ViewerRoot.rootIsAutoRefreshArr;
+ViewerRoot.rootObjTitleArr = null;
+ViewerRoot.rootPosArr = null;
+ViewerRoot.rootObjArr = null;
+ViewerRoot.rootObjIndexArr = null;
+ViewerRoot.rootHeaderElArr = null;
+ViewerRoot.rootObjNameArr = null;
+ViewerRoot.rootIsTransparentArr = null;
+ViewerRoot.rootIsAutoRefreshArr = null;
 
-ViewerRoot.numPositionsTiled;
-ViewerRoot.rootTargetIndex; //targeted object for replace or superimpose
-ViewerRoot.w;
-ViewerRoot.h;
+ViewerRoot.numPositionsTiled = null;
+ViewerRoot.rootTargetIndex = null; //targeted object for replace or superimpose
+ViewerRoot.w = null;
+ViewerRoot.h = null;
 ViewerRoot.sFile;
 
 ViewerRoot.hudAutoHide = false;
