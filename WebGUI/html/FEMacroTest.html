@@ -261,7 +261,18 @@
 		//setCaretPosition(el, caretPos, endPos)
 
 		//handleKeyInput(e)
+
+		//normalizeHistoryRecord(record)
+		//getHistoryRecordSignature(recordObj)
+		//getHistoryRecordDescription(recordObj, useHtmlBreaks)
+		//escapeHistoryHtml(text)
+		//historySlicesMatch(records, startIndex, blockLength, repeatIndex)
+		//historySlicesMatchFromEnd(records, endIndex, blockLength, repeatIndex)
+		//buildCompressedHistoryNodes(records)
+		//getHistoryGroupTitle(records, repeatCount) 
+		//renderHistoryNode(node, renderState)
 		//loadHistory()
+
 		//appendHistoryRecord(record)
 		//onClickHistoryRecord(recordObj)
 		//showPopupClearHistoryConfirm()
@@ -2281,22 +2292,22 @@ Here is the json string received:
 			}
 		} //end handleKeyInput()
 
-		//=====================================================================================
-		//loadHistory ~~
 		var historyRecords_ = []; // chronological order: oldest -> newest
 		var historyRenderRecordMap_ = {};
 		var historyRenderGroupMap_ = {};
 		var historyRenderRecordId_ = 0;
 		var historyRenderGroupId_ = 0;
-
+		//=====================================================================================
 		function normalizeHistoryRecord(record) {
 			return (typeof record === "string") ? JSON.parse(record) : record;
 		}
 
+		//=====================================================================================
 		function getHistoryRecordSignature(recordObj) {
 			return JSON.stringify(recordObj);
 		}
 
+		//=====================================================================================
 		function getHistoryRecordDescription(recordObj, useHtmlBreaks) {
 			var lineBreak = useHtmlBreaks ? "<br>&nbsp;&nbsp;&nbsp;&nbsp;" : "\n    ";
 			var recordName = "";
@@ -2319,6 +2330,7 @@ Here is the json string received:
 			return recordText + (recordName === "" ? "No arguments" : recordName);
 		}
 
+		//=====================================================================================
 		function escapeHistoryHtml(text) {
 			return text
 				.replace(/&/g, "&amp;")
@@ -2328,6 +2340,7 @@ Here is the json string received:
 				.replace(/'/g, "&#39;");
 		}
 
+		//=====================================================================================
 		function historySlicesMatch(records, startIndex, blockLength, repeatIndex) {
 			var baseIndex = startIndex;
 			var compareIndex = startIndex + repeatIndex * blockLength;
@@ -2338,6 +2351,7 @@ Here is the json string received:
 			return true;
 		}
 
+		//=====================================================================================
 		function historySlicesMatchFromEnd(records, endIndex, blockLength, repeatIndex) {
 			var newestBlockStart = endIndex - blockLength;
 			var compareStart = newestBlockStart - repeatIndex * blockLength;
@@ -2348,6 +2362,7 @@ Here is the json string received:
 			return true;
 		}
 
+		//=====================================================================================
 		function buildCompressedHistoryNodes(records) {
 			var nodes = [];
 			for (var endIndex = records.length; endIndex > 0;) {
@@ -2385,25 +2400,31 @@ Here is the json string received:
 					nodes.unshift({ type: "record", record: records[--endIndex] });
 			}
 			return nodes;
-		}
+		} //end buildCompressedHistoryNodes()
 
-		function getHistoryGroupTitle(records, repeatCount) {
-			var title = "Run this repeated command group once (currently " + repeatCount + "x):";
+		//=====================================================================================
+		function getHistoryGroupTitle(records, repeatCount) 
+		{
+			// Debug.log("Repeated " + repeatCount + "x");
+			var title = "Rerun this repeated " + records.length + "-command group:";
 			for (var i = 0; i < records.length; ++i)
 				title += "\n" + (i + 1) + ". " + getHistoryRecordDescription(records[i], false);
 			return title;
-		}
+		} //end getHistoryGroupTitle()
 
+		//=====================================================================================
 		function renderHistoryNode(node, renderState) {
 			if (node.type === "record") {
 				var recordId = historyRenderRecordId_++;
 				historyRenderRecordMap_[recordId] = node.record;
 				var className = "record " + ((renderState.rowIndex++ % 2 === 0) ? "light" : "dark");
+				var recordTitle = escapeHistoryHtml("Run this command:\n" + getHistoryRecordDescription(node.record, false));
 				return DesktopContent.htmlOpen(
 					"div",
 					{
 						"id": "historyRecord" + recordId,
 						"class": className,
+						"title": recordTitle,
 						"onClick": "onClickHistoryRecordByIndex(" + recordId + ")"
 					},
 					"<span class='history-record-label'>" + getHistoryRecordDescription(node.record, true) + "</span>",
@@ -2419,8 +2440,9 @@ Here is the json string received:
 				"<span>" + node.repeatCount + "x</span></div>" +
 				"<div class='history-group-content'>" + childHtml + "</div>" +
 				"</div>";
-		}
+		} //end renderHistoryNode()
 
+		//=====================================================================================
 		function renderHistoryNodes(nodes, renderState) {
 			var html = "";
 			for (var i = nodes.length - 1; i >= 0; --i)
@@ -2428,6 +2450,7 @@ Here is the json string received:
 			return html;
 		}
 
+		//=====================================================================================
 		function renderHistoryDisplay() {
 			var historyContent = document.getElementById("historyContent");
 			if (!historyContent)
@@ -2442,6 +2465,8 @@ Here is the json string received:
 			historyContent.innerHTML = renderHistoryNodes(nodes, { rowIndex: 0 });
 		}
 
+		//=====================================================================================
+		//loadHistory ~~
 		function loadHistory() {
 			Debug.log("loadHistory()");
 			historyRecords_ = [];
