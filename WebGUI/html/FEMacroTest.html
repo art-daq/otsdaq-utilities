@@ -2314,14 +2314,34 @@ Here is the json string received:
 		var historyRenderGroupMap_ = {};
 		var historyRenderRecordId_ = 0;
 		var historyRenderGroupId_ = 0;
+		var HISTORY_GROUP_BOUNDARY_PAUSE_THRESHOLD_SEC = 8; //if there is a pause of at least this many seconds between macros, consider it a strong candidate for a group boundary
+		//=====================================================================================
+		function parseHistoryTimestamp(timestamp) {
+			var parsed = parseInt(timestamp, 10);
+			return isNaN(parsed) ? 0 : parsed;
+		}
+
 		//=====================================================================================
 		function normalizeHistoryRecord(record) {
-			return (typeof record === "string") ? JSON.parse(record) : record;
+			var normalized = (typeof record === "string") ? JSON.parse(record) : record;
+			normalized["launchTime"] = parseHistoryTimestamp(normalized["launchTime"]);
+			normalized["completeTime"] = parseHistoryTimestamp(normalized["completeTime"]);
+			if (!normalized["completeTime"] && normalized["launchTime"])
+				normalized["completeTime"] = normalized["launchTime"];
+			return normalized;
 		}
 
 		//=====================================================================================
 		function getHistoryRecordSignature(recordObj) {
-			return JSON.stringify(recordObj);
+			return JSON.stringify({
+				feClass: recordObj["feClass"],
+				feUID: recordObj["feUID"],
+				macroType: recordObj["macroType"],
+				macroName: recordObj["macroName"],
+				inputArgs: recordObj["inputArgs"],
+				outputArgs: recordObj["outputArgs"],
+				saveOutputs: recordObj["saveOutputs"]
+			});
 		}
 
 		//=====================================================================================
@@ -2380,6 +2400,52 @@ Here is the json string received:
 		}
 
 		//=====================================================================================
+		function getHistoryPauseBetweenRecords(previousRecord, nextRecord) {
+			if (!previousRecord || !nextRecord)
+				return null;
+
+			var previousCompleteTime = parseHistoryTimestamp(previousRecord["completeTime"]);
+			var nextLaunchTime = parseHistoryTimestamp(nextRecord["launchTime"]);
+			if (!previousCompleteTime || !nextLaunchTime || nextLaunchTime < previousCompleteTime)
+				return null;
+
+			return nextLaunchTime - previousCompleteTime;
+		}
+
+		//=====================================================================================
+		function getHistoryGroupBoundaryGap(records, blockStart) {
+			if (blockStart <= 0 || blockStart >= records.length)
+				return null;
+
+			return getHistoryPauseBetweenRecords(records[blockStart - 1], records[blockStart]);
+		}
+
+		//=====================================================================================
+		function isStrongHistoryBoundaryGap(gapSeconds) {
+			return gapSeconds !== null && gapSeconds >= HISTORY_GROUP_BOUNDARY_PAUSE_THRESHOLD_SEC;
+		}
+
+		//=====================================================================================
+		function isBetterHistoryGroupCandidate(candidate, currentBest) {
+			if (!currentBest)
+				return true;
+
+			var candidateHasStrongGap = isStrongHistoryBoundaryGap(candidate.boundaryGap);
+			var currentBestHasStrongGap = isStrongHistoryBoundaryGap(currentBest.boundaryGap);
+
+			if (candidateHasStrongGap != currentBestHasStrongGap)
+				return candidateHasStrongGap;
+
+			if (candidateHasStrongGap && candidate.boundaryGap != currentBest.boundaryGap)
+				return candidate.boundaryGap > currentBest.boundaryGap;
+
+			if (candidate.span != currentBest.span)
+				return candidate.span > currentBest.span;
+
+			return candidate.blockLength < currentBest.blockLength;
+		}
+
+		//=====================================================================================
 		function buildCompressedHistoryNodes(records) {
 			var nodes = [];
 			for (var endIndex = records.length; endIndex > 0;) {
@@ -2392,13 +2458,14 @@ Here is the json string received:
 
 					if (repeatCount > 1) {
 						var span = blockLength * repeatCount;
-						if (!bestMatch || span > bestMatch.span ||
-							(span === bestMatch.span && blockLength < bestMatch.blockLength))
-							bestMatch = {
-								blockLength: blockLength,
-								repeatCount: repeatCount,
-								span: span
-							};
+						var candidate = {
+							blockLength: blockLength,
+							repeatCount: repeatCount,
+							span: span,
+							boundaryGap: getHistoryGroupBoundaryGap(records, endIndex - blockLength)
+						};
+						if (isBetterHistoryGroupCandidate(candidate, bestMatch))
+							bestMatch = candidate;
 					}
 				}
 

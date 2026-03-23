@@ -99,6 +99,16 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	{
 		uint64_t                                       groupID_   = 0;
 		time_t                                         startTime_ = time(0);
+		time_t                                         completeTime_ = 0;
+		std::string                                    historyFeClassSelected_;
+		std::string                                    historyFeUIDSelected_;
+		std::string                                    historyMacroType_;
+		std::string                                    historyMacroName_;
+		std::string                                    historyInputArgs_;
+		std::string                                    historyOutputArgs_;
+		bool                                           historySaveOutputs_ = false;
+		std::string                                    historyUsername_;
+		bool                                           historySaved_ = false;
 		std::vector<std::shared_ptr<runFEMacroStruct>> tasks_;
 
 		bool allDone() const
@@ -174,7 +184,9 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                                   std::string        inputArgs,
 	                                   std::string        outputArgs,
 	                                   bool               saveOutputs,
-	                                   const std::string& username);
+	                                   const std::string& username,
+	                                   time_t             launchTime   = 0,
+	                                   time_t             completeTime = 0);
 	void        loadFEMacroSequences(HttpXmlDocument& xmldoc, const std::string& username);
 	void        saveFEMacroSequence(cgicc::Cgicc& cgi, const std::string& username);
 	void        getFEMacroSequence(HttpXmlDocument&   xmldoc,
