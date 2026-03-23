@@ -1791,9 +1791,9 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
                                                   std::string        inputArgs,
                                                   std::string        outputArgs,
                                                   bool               saveOutputs,
-	                                              const std::string& username,
-	                                              time_t             launchTime,
-	                                              time_t             completeTime)
+                                                  const std::string& username,
+                                                  time_t             launchTime,
+                                                  time_t             completeTime)
 {
 	if(launchTime == 0)
 		launchTime = time(0);
@@ -3281,7 +3281,7 @@ try
 	__SUP_COUTV__(StringMacros::setToString(feUIDs));
 
 	// Create one runFEMacroStruct per UID, grouped under a single runFEMacroGroupStruct
-	auto group = std::make_shared<runFEMacroGroupStruct>();
+	auto group                     = std::make_shared<runFEMacroGroupStruct>();
 	group->historyFeClassSelected_ = feClassSelected.empty() ? "*" : feClassSelected;
 	group->historyFeUIDSelected_   = feUIDSelected.empty() ? "*" : feUIDSelected;
 	group->historyMacroType_       = macroType;
@@ -3331,9 +3331,9 @@ try
 		if(group->allDone())
 		{
 			__SUP_COUTT__ << "All FE macro tasks marked done" << __E__;
-				for(const auto& task : group->tasks_)
-					if(task->parameters_.doneTime_ > group->completeTime_)
-						group->completeTime_ = task->parameters_.doneTime_;
+			for(const auto& task : group->tasks_)
+				if(task->parameters_.doneTime_ > group->completeTime_)
+					group->completeTime_ = task->parameters_.doneTime_;
 			break;
 		}
 		else
@@ -3510,15 +3510,15 @@ try
 	if(!group->historySaved_)
 	{
 		mmSupervisor->appendCommandToHistory(group->historyFeClassSelected_,
-		                                    group->historyFeUIDSelected_,
-		                                    group->historyMacroType_,
-		                                    group->historyMacroName_,
-		                                    group->historyInputArgs_,
-		                                    group->historyOutputArgs_,
-		                                    group->historySaveOutputs_,
-		                                    group->historyUsername_,
-		                                    group->startTime_,
-		                                    group->completeTime_);
+		                                     group->historyFeUIDSelected_,
+		                                     group->historyMacroType_,
+		                                     group->historyMacroName_,
+		                                     group->historyInputArgs_,
+		                                     group->historyOutputArgs_,
+		                                     group->historySaveOutputs_,
+		                                     group->historyUsername_,
+		                                     group->startTime_,
+		                                     group->completeTime_);
 		group->historySaved_ = true;
 	}
 
@@ -3617,22 +3617,22 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	__SUP_COUTV__(username);
 	__SUP_COUTV__(userGroupPermissions);
 
-	time_t launchTime = time(0);
-	auto saveHistoryIfRequested = [&]() {
-		if(!saveToHistory)
-			return;
+	time_t launchTime             = time(0);
+	auto   saveHistoryIfRequested = [&]() {
+        if(!saveToHistory)
+            return;
 
-		appendCommandToHistory(feClassSelected,
-		                       feUIDSelected,
-		                       macroType,
-		                       macroName,
-		                       inputArgs,
-		                       outputArgs,
-		                       saveOutputs,
-		                       username,
-		                       launchTime,
-		                       time(0));
-		saveToHistory = false;
+        appendCommandToHistory(feClassSelected,
+                               feUIDSelected,
+                               macroType,
+                               macroName,
+                               inputArgs,
+                               outputArgs,
+                               saveOutputs,
+                               username,
+                               launchTime,
+                               time(0));
+        saveToHistory = false;
 	};
 
 	std::set<std::string /*feUID*/> feUIDs;

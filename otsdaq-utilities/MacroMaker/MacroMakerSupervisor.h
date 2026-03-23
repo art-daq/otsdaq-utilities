@@ -97,8 +97,8 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	/// runFEMacroGroupStruct groups per-UID tasks launched in parallel under one NotDoneID
 	struct runFEMacroGroupStruct
 	{
-		uint64_t                                       groupID_   = 0;
-		time_t                                         startTime_ = time(0);
+		uint64_t                                       groupID_      = 0;
+		time_t                                         startTime_    = time(0);
 		time_t                                         completeTime_ = 0;
 		std::string                                    historyFeClassSelected_;
 		std::string                                    historyFeUIDSelected_;
