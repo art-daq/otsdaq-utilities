@@ -374,6 +374,10 @@
 		var flagIfPresent = true;
 		var isFlagActive = false;
 
+		var isRunningCommandBlock = false;
+		var commandBlockQueue = [];
+		var commandBlockIndex = 0;
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1292,8 +1296,21 @@ Here is the json string received:
 				}
 			} //end handle flag/trigger actions
 
+			//prepare for next command in command block
+			if (isRunningCommandBlock) {
+				commandBlockIndex++;
+				if (commandBlockIndex < commandBlockQueue.length) {
+					// Execute next command in the block
+					onClickHistoryRecord(commandBlockQueue[commandBlockIndex]);
+				} else {
+					// All commands in the block have been executed
+					isRunningCommandBlock = false;
+					commandBlockQueue = [];
+					commandBlockIndex = 0;
+				}
+			}
 			//prepare for next live view command
-			if (liveViewActive) {
+			else if (liveViewActive) {
 				if (currentLiveViewTimeout !== null)
 					clearTimeout(currentLiveViewTimeout);
 
@@ -2537,10 +2554,15 @@ Here is the json string received:
 			if (!groupRecords || !groupRecords.length)
 				return false;
 
-			for (var i = 0; i < groupRecords.length; ++i)
-				setTimeout((function (recordObj) {
-					return function () { onClickHistoryRecord(recordObj); };
-				})(groupRecords[i]), i * 100);
+			// Set up command block execution queue
+			isRunningCommandBlock = true;
+			commandBlockQueue = groupRecords;
+			commandBlockIndex = 0;
+
+			// Execute the first command
+			if (commandBlockQueue.length > 0) {
+				onClickHistoryRecord(commandBlockQueue[commandBlockIndex]);
+			}
 			return false;
 		}
 
