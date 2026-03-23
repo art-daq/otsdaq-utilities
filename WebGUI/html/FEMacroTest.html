@@ -846,6 +846,10 @@
 				el.innerHTML = "<br><br><br>" +
 					str + "<br><br>Error while running FE Macro: " + Debug.callOutDebugLocales(errStr);
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
+				// reset command-block state so future runs start clean
+				isRunningCommandBlock = false;
+				commandBlockQueue = [];
+				commandBlockIndex = 0;
 				return;
 			}
 
