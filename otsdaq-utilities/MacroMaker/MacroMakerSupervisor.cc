@@ -1791,8 +1791,15 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
                                                   std::string        inputArgs,
                                                   std::string        outputArgs,
                                                   bool               saveOutputs,
-                                                  const std::string& username)
+                                                  const std::string& username,
+                                                  time_t             launchTime,
+                                                  time_t             completeTime)
 {
+	if(launchTime == 0)
+		launchTime = time(0);
+	if(completeTime == 0)
+		completeTime = launchTime;
+
 	//prevent repeats to FE command history (otherwise live view can overwhelm history)
 	auto feHistoryIt = lastFeCommandToHistory_.find(username);
 	if(feHistoryIt != lastFeCommandToHistory_.end() && feHistoryIt->second.size() == 7 &&
@@ -1819,6 +1826,8 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		histfile << "\"macroName\":\"" << macroName << "\",\n";
 		histfile << "\"inputArgs\":\"" << inputArgs << "\",\n";
 		histfile << "\"outputArgs\":\"" << outputArgs << "\",\n";
+		histfile << "\"launchTime\":\"" << launchTime << "\",\n";
+		histfile << "\"completeTime\":\"" << completeTime << "\",\n";
 		if(saveOutputs)
 			histfile << "\"saveOutputs\":\"" << 1 << "\"\n";
 		else
@@ -3247,16 +3256,6 @@ try
 	__SUP_COUTTV__(userInfo.username_);
 	__SUP_COUTTV__(StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
 
-	// Save one history record per user launch request, preserving aggregate FE selection
-	appendCommandToHistory(feClassSelected.empty() ? "*" : feClassSelected,
-	                       feUIDSelected.empty() ? "*" : feUIDSelected,
-	                       macroType,
-	                       macroName,
-	                       inputArgs,
-	                       outputArgs,
-	                       saveOutputs,
-	                       userInfo.username_);
-
 	// Expand feUIDSelected CSV into individual per-UID tasks
 	std::set<std::string> feUIDs;
 	{
@@ -3282,7 +3281,15 @@ try
 	__SUP_COUTV__(StringMacros::setToString(feUIDs));
 
 	// Create one runFEMacroStruct per UID, grouped under a single runFEMacroGroupStruct
-	auto group = std::make_shared<runFEMacroGroupStruct>();
+	auto group                     = std::make_shared<runFEMacroGroupStruct>();
+	group->historyFeClassSelected_ = feClassSelected.empty() ? "*" : feClassSelected;
+	group->historyFeUIDSelected_   = feUIDSelected.empty() ? "*" : feUIDSelected;
+	group->historyMacroType_       = macroType;
+	group->historyMacroName_       = macroName;
+	group->historyInputArgs_       = inputArgs;
+	group->historyOutputArgs_      = outputArgs;
+	group->historySaveOutputs_     = saveOutputs;
+	group->historyUsername_        = userInfo.username_;
 	for(const std::string& uid : feUIDs)
 	{
 		group->tasks_.push_back(std::make_shared<runFEMacroStruct>(
@@ -3324,6 +3331,9 @@ try
 		if(group->allDone())
 		{
 			__SUP_COUTT__ << "All FE macro tasks marked done" << __E__;
+			for(const auto& task : group->tasks_)
+				if(task->parameters_.doneTime_ > group->completeTime_)
+					group->completeTime_ = task->parameters_.doneTime_;
 			break;
 		}
 		else
@@ -3493,6 +3503,25 @@ try
 			usleep(10 * 1000);  // 10ms poll interval to keep scheduler lightweight
 	}
 
+	for(const auto& task : group->tasks_)
+		if(task->parameters_.doneTime_ > group->completeTime_)
+			group->completeTime_ = task->parameters_.doneTime_;
+
+	if(!group->historySaved_)
+	{
+		mmSupervisor->appendCommandToHistory(group->historyFeClassSelected_,
+		                                     group->historyFeUIDSelected_,
+		                                     group->historyMacroType_,
+		                                     group->historyMacroName_,
+		                                     group->historyInputArgs_,
+		                                     group->historyOutputArgs_,
+		                                     group->historySaveOutputs_,
+		                                     group->historyUsername_,
+		                                     group->startTime_,
+		                                     group->completeTime_);
+		group->historySaved_ = true;
+	}
+
 	__COUT__ << "FE macro group scheduler ended. groupID=" << group->groupID_ << __E__;
 }  //end runFEMacroGroupSchedulerThread()
 catch(const std::exception& e)
@@ -3588,15 +3617,23 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	__SUP_COUTV__(username);
 	__SUP_COUTV__(userGroupPermissions);
 
-	if(saveToHistory)
-		appendCommandToHistory(feClassSelected,
-		                       feUIDSelected,
-		                       macroType,
-		                       macroName,
-		                       inputArgs,
-		                       outputArgs,
-		                       saveOutputs,
-		                       username);
+	time_t launchTime             = time(0);
+	auto   saveHistoryIfRequested = [&]() {
+        if(!saveToHistory)
+            return;
+
+        appendCommandToHistory(feClassSelected,
+                               feUIDSelected,
+                               macroType,
+                               macroName,
+                               inputArgs,
+                               outputArgs,
+                               saveOutputs,
+                               username,
+                               launchTime,
+                               time(0));
+        saveToHistory = false;
+	};
 
 	std::set<std::string /*feUID*/> feUIDs;
 
@@ -3776,6 +3813,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				ss << "\n\n The error was:\n\n" << error << __E__;
 				__SUP_COUT_ERR__ << "\n" << ss.str();
 				xmldoc.addTextElementToData("Error", ss.str());
+				saveHistoryIfRequested();
 				return;
 			}
 
@@ -3830,11 +3868,14 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 	{
 		if(fp)
 			fclose(fp);
+		saveHistoryIfRequested();
 		throw;
 	}
 
 	if(fp)
 		fclose(fp);
+
+	saveHistoryIfRequested();
 
 	__SUP_COUT__ << "runFEMacro() done." << __E__;
 	//to comment after progress bar test
