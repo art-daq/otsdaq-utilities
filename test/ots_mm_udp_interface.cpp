@@ -54,10 +54,27 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 		__SS_THROW__;
 	}
 
+				
 	//copy ai_addr, which is needed for sendto
 	memcpy(&mm_ai_addr, p->ai_addr, sizeof(mm_ai_addr));
 
 	freeaddrinfo(servinfo);
+
+
+	// increase socket buffer size
+	unsigned int socketReceiveBufferSize = 0x1400000;
+	if(setsockopt(sockfd,
+	              SOL_SOCKET,
+	              SO_RCVBUF,
+	              (char*)&socketReceiveBufferSize,
+	              sizeof(socketReceiveBufferSize)) < 0)
+		__COUT_ERR__ << "Failed to set socket receive size to 0x" << std::hex
+		             << socketReceiveBufferSize << std::dec
+		             << ". Attempting to revert to default." << std::endl;
+	else
+		__COUT__ << "set socket receive size to 0x" << std::hex << socketReceiveBufferSize
+		         << std::dec << "." << __E__;
+
 	return sockfd;
 }  //end makeSocket()
 
@@ -171,6 +188,10 @@ ots_mm_udp_interface::ots_mm_udp_interface(const char* mm_ip, int mm_port) : mm_
 	__COUT__ << "Constructor" << __E__;
 
 	mm_sock_ = makeSocket(mm_ip, mm_port, mm_ai_addr);  // mm_p_);
+
+	selfIPandPort_ = mm_ip;
+	selfIPandPort_ += ":";
+	selfIPandPort_ += std::to_string(mm_port);
 }  //end constructor()
 
 //==============================================================================
@@ -491,20 +512,48 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 
 	// read response ///////////////////////////////////////////////////////////
 	fullXML_ = "";  //clear just in case
-	while(receive(mm_sock_,
-	              buffer_,
-	              0 /*timeoutSeconds*/,
-	              200000 /*timeoutUSeconds*/,
-	              true /*verbose*/) == 0)
+	auto startTime = std::chrono::steady_clock::now();
+	auto lastUpdateTime = std::chrono::steady_clock::now();
+	int64_t lastWarnElapsedTime = 0;
+	while(true)
 	{
-		// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
-		fullXML_ += buffer_;
-	}
+		if(receive(mm_sock_,
+				   buffer_,
+				   0 /*timeoutSeconds*/,
+				   200000 /*timeoutUSeconds*/,
+				   true /*verbose*/) == 0)
+		{
+			lastUpdateTime = std::chrono::steady_clock::now();
+			if(buffer_.find("<progress>") == 0)
+			{
+				__COUT_INFO__ << "Progress update: " << buffer_ << __E__;
+				continue;
+			}
+			fullXML_ += buffer_;
+			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
+			if(fullXML_.size() >= 10 &&
+				 fullXML_.substr(fullXML_.size() - 10).find("</ROOT>") != std::string::npos)
+				break;
+		}
+		auto currentTime = std::chrono::steady_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+		if(lastWarnElapsedTime != elapsed.count() && 
+			elapsed.count() > 2 && elapsed.count() % 3 == 0)
+		{
+			__COUT_WARN__ << "Still waiting for FE Macro Info response after " << elapsed.count() << " seconds... " <<
+				fullXML_.size() << " bytes received so far. " << fullXML_.substr(fullXML_.size() - 10) <<__E__;
+			lastWarnElapsedTime = elapsed.count();
+		}
 
+		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastUpdateTime);
+		if(elapsed.count() > 5)
+			break;
+	}
+	
 	if(fullXML_.size() == 0)
 	{
 		__SS__ << "FE Macro Info receive failed! Check that a MacroMaker Supervisor is "
-		          "running with UDP Remote Control enabled."
+		          "configured with UDP Remote Control enabled and accessible at " << selfIPandPort_ << "."
 		       << __E__;
 		__SS_THROW__;
 	}
@@ -1126,28 +1175,68 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 
 	// read response ///////////////////////////////////////////////////////////
 	std::string runXML = "";  //clear just in case
-	//give first response a long time for execution propagation to/from device, but following receives should be short because just from UDP packet splitting
-	if(receive(mm_sock_,
-	           buffer_,
-	           10 /*timeoutSeconds*/,
-	           0 /*timeoutUSeconds*/,
-	           true /*verbose*/) == 0)
+	auto startTime = std::chrono::steady_clock::now();
+	auto lastUpdateTime = std::chrono::steady_clock::now();
+	int64_t lastWarnElapsedTime = 0;
+	while(true)
 	{
-		// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
-		runXML += buffer_;
-		while(receive(mm_sock_,
-		              buffer_,
-		              0 /*timeoutSeconds*/,
-		              200000 /*timeoutUSeconds*/,
-		              true /*verbose*/) == 0)
+		if(receive(mm_sock_,
+				   buffer_,
+				   0 /*timeoutSeconds*/,
+				   200000 /*timeoutUSeconds*/,
+				   true /*verbose*/) == 0)
+		{
+			lastUpdateTime = std::chrono::steady_clock::now();
+			if(buffer_.find("<progress>") == 0)
+			{
+				__COUT_INFO__ << "Progress update: " << buffer_ << __E__;
+				continue;
+			}
 			runXML += buffer_;
+			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
+			if(runXML.size() >= 10 &&
+				 runXML.substr(runXML.size() - 10).find("</ROOT>") != std::string::npos)
+				break;
+		}
+		auto currentTime = std::chrono::steady_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+		if(lastWarnElapsedTime != elapsed.count() && 
+			elapsed.count() > 2 && elapsed.count() % 3 == 0)
+		{
+			__COUT_WARN__ << "Still waiting for FE Macro Info response after " << elapsed.count() << " seconds... " <<
+				runXML.size() << " bytes received so far." << __E__;
+			lastWarnElapsedTime = elapsed.count();
+		}
+
+		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastUpdateTime);
+		if(elapsed.count() > 10)
+			break;
 	}
 
-	__COUTV__(runXML);
+	// //give first response a long time for execution propagation to/from device, but following receives should be short because just from UDP packet splitting
+	// if(receive(mm_sock_,
+	//            buffer_,
+	//            10 /*timeoutSeconds*/,
+	//            0 /*timeoutUSeconds*/,
+	//            true /*verbose*/) == 0)
+	// {
+	// 	// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
+	// 	runXML += buffer_;
+	// 	while(receive(mm_sock_,
+	// 	              buffer_,
+	// 	              0 /*timeoutSeconds*/,
+	// 	              200000 /*timeoutUSeconds*/,
+	// 	              true /*verbose*/) == 0)
+	// 		runXML += buffer_;
+	// }
 
-	if(runXML.size() == 0 || runXML.find("Error") == 0)
+	// __COUTV__(runXML);
+
+	if(runXML.size() == 0 || runXML.find("Error") == 0 || 
+		(runXML.size() >= 10 &&
+				 runXML.substr(runXML.size() - 10).find("</ROOT>") == std::string::npos))
 	{
-		__SS__ << "Error running the command. Received buffer: "
+		__SS__ << "Error running the command. Received error or incomplete buffer: "
 		       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
 		__SS_THROW__;
 	}

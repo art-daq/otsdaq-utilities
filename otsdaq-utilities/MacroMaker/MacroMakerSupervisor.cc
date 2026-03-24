@@ -133,9 +133,9 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 			__ENV__("OTS_MACROMAKER_UDP_IP");
 			enableRemoteControl = true;
 		}
-		catch(...)
+		catch(const std::runtime_error& e)
 		{
-			;
+			__SUP_COUT__ << "Ignoring MacroMaker server env var error: " << e.what() << __E__;
 		}  // ignore errors
 
 		if(enableRemoteControl)
@@ -531,7 +531,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					                         false /*dispStdOut*/,
 					                         false /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
-					sock.acknowledge(out.str(), true /* verbose */);
+					sock.acknowledge(out.str(), true /* verbose */, 1500 /* max chunk size*/, 1000 /* inter-chunk delay us */);
 				}
 				else if(buffer.find("RunFrontendMacro") == 0)
 				{
@@ -560,23 +560,146 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					std::string username            = "NO-USER";
 					std::string userGroupPermission = "allUsers: 255";
 
-					theSupervisor->runFEMacro(xmldoc,
-					                          feClassSelected,
-					                          feUIDSelected,
-					                          macroType,
-					                          macroName,
-					                          inputArgs,
-					                          outputArgs,
-					                          saveOutputs,
-					                          username,
-					                          userGroupPermission);
+					// Build the same per-UID group execution model used by CGI runFEMacro
+					std::set<std::string> feUIDs;
+					{
+						std::string expandUID = feUIDSelected.empty() ? "*" : feUIDSelected;
+						if(expandUID != "*")
+							StringMacros::getSetFromString(expandUID, feUIDs);
+						else
+						{
+							for(auto& feTypePair : theSupervisor->FEPluginTypetoFEsMap_)
+							{
+								if(feClassSelected.empty() || feClassSelected == "*" ||
+								   feClassSelected == feTypePair.first)
+									for(auto& uid : feTypePair.second)
+										feUIDs.emplace(uid);
+							}
+						}
+						if(feUIDs.empty())
+							feUIDs.emplace(feUIDSelected);  // fallback to existing error behavior
+					}
+
+					auto group                     = std::make_shared<runFEMacroGroupStruct>();
+					group->historyFeClassSelected_ =
+					    feClassSelected.empty() ? "*" : feClassSelected;
+					group->historyFeUIDSelected_ =
+					    feUIDSelected.empty() ? "*" : feUIDSelected;
+					group->historyMacroType_   = macroType;
+					group->historyMacroName_   = macroName;
+					group->historyInputArgs_   = inputArgs;
+					group->historyOutputArgs_  = outputArgs;
+					group->historySaveOutputs_ = saveOutputs;
+					group->historyUsername_    = username;
+
+					for(const std::string& uid : feUIDs)
+						group->tasks_.push_back(std::make_shared<runFEMacroStruct>(
+						    xmldoc,
+						    feClassSelected,
+						    uid,
+						    macroType,
+						    macroName,
+						    inputArgs,
+						    outputArgs,
+						    saveOutputs,
+						    username,
+						    userGroupPermission));
+
+					{
+						std::lock_guard<std::mutex> lock(
+						    theSupervisor->feMacroRunThreadStructMutex_);
+						group->groupID_ = ++theSupervisor->feMacroRunGroupIDCounter_;
+						if(theSupervisor->feMacroRunGroupIDCounter_ == 0)
+							group->groupID_ = ++theSupervisor->feMacroRunGroupIDCounter_;
+
+						for(auto& task : group->tasks_)
+						{
+							task->bar_ = std::make_unique<ProgressBar>();
+							task->bar_->reset(macroName, task->parameters_.feUIDSelected_);
+						}
+						theSupervisor->feMacroRunThreadStruct_.emplace_back(group);
+					}
+
+					std::thread([group, theSupervisor]() {
+						MacroMakerSupervisor::runFEMacroGroupSchedulerThread(
+						    group, theSupervisor);
+					}).detach();
+
+					auto lastProgressSend = std::chrono::steady_clock::now();
+					while(!group->allDone())
+					{
+						usleep(100 * 1000);  // poll at 100 ms
+
+						auto now = std::chrono::steady_clock::now();
+						if(std::chrono::duration_cast<std::chrono::seconds>(now - lastProgressSend)
+						       .count() >= 2)
+						{
+							lastProgressSend = now;
+
+							int totalProgress = 0;
+							int taskCount      = 0;
+							{
+								std::lock_guard<std::mutex> lock(
+								    theSupervisor->feMacroRunThreadStructMutex_);
+								for(auto& task : group->tasks_)
+								{
+									++taskCount;
+									if(task->feMacroRunDone_)
+										totalProgress += 100;
+									else if(task->bar_)
+										totalProgress += task->bar_->read();
+								}
+							}
+
+							int percent = (taskCount > 0) ? (totalProgress / taskCount) : 0;
+							if(percent >= 100)
+								percent = 99;
+
+							__COUTV__(percent);
+							sock.acknowledge(
+							    std::string("<progress>") + std::to_string(percent) +
+							        "</progress>",
+							    true /* verbose */);
+						}
+					}
+
+					for(auto& task : group->tasks_)
+					{
+						if(task->parameters_.feMacroRunError_ != "")
+						{
+							__SS__ << task->parameters_.feMacroRunError_;
+							{
+								xmldoc.addTextElementToData("Error", ss.str());
+								std::stringstream out;
+								xmldoc.outputXmlDocument((std::ostringstream*)&out,
+														false /*dispStdOut*/,
+														true /*allowWhiteSpace*/);
+								__COUT__ << "out: " << out.str();
+								sock.acknowledge(out.str(), true /* verbose */);
+							}
+							__SS_THROW__;
+						}
+						xmldoc.copyDataChildren(task->parameters_.xmldoc_);
+					}
+
+					{
+						std::lock_guard<std::mutex> lock(
+						    theSupervisor->feMacroRunThreadStructMutex_);
+						for(size_t i = 0; i < theSupervisor->feMacroRunThreadStruct_.size(); ++i)
+							if(theSupervisor->feMacroRunThreadStruct_[i].get() == group.get())
+							{
+								theSupervisor->feMacroRunThreadStruct_.erase(
+								    theSupervisor->feMacroRunThreadStruct_.begin() + i);
+								break;
+							}
+					}
 
 					std::stringstream out;
 					xmldoc.outputXmlDocument((std::ostringstream*)&out,
 					                         false /*dispStdOut*/,
 					                         true /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
-					sock.acknowledge(out.str(), true /* verbose */);
+					sock.acknowledge(out.str(), true /* verbose */, 1500 /* max chunk size*/, 1000 /* inter-chunk delay us */);
 				}
 				else
 				{
