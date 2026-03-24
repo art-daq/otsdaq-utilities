@@ -676,15 +676,6 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						if(task->parameters_.feMacroRunError_ != "")
 						{
 							__SS__ << task->parameters_.feMacroRunError_;
-							{
-								xmldoc.addTextElementToData("Error", ss.str());
-								std::stringstream out;
-								xmldoc.outputXmlDocument((std::ostringstream*)&out,
-								                         false /*dispStdOut*/,
-								                         true /*allowWhiteSpace*/);
-								__COUT__ << "out: " << out.str();
-								sock.acknowledge(out.str(), true /* verbose */);
-							}
 							__SS_THROW__;
 						}
 						xmldoc.copyDataChildren(task->parameters_.xmldoc_);
