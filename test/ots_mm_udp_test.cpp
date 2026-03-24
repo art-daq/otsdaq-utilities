@@ -41,10 +41,10 @@ try
 	std::vector<std::string> fes = getVectorFromString(feStr, {';'});
 	if(fes.size() == 0 || (fes.size() == 1 && fes[0] == ""))
 	{
-		__COUT_ERR__ << "No Front-ends found in FE list! Check that a MacroMaker Supervisor is "
-		             << "configured with UDP Remote Control enabled and accessible at " << 
-					 target_mm_ip << ":" << target_mm_port << "."
-		             << __E__;
+		__COUT_ERR__
+		    << "No Front-ends found in FE list! Check that a MacroMaker Supervisor is "
+		    << "configured with UDP Remote Control enabled and accessible at "
+		    << target_mm_ip << ":" << target_mm_port << "." << __E__;
 		return 0;
 	}
 
@@ -61,7 +61,7 @@ try
 		if(fe >= fes.size())
 		{
 			__COUT_ERR__ << "Illegal front-end UID " << target_fe
-			             << " not found in FE list: " << vectorToString(fes, {';'}) << "."			
+			             << " not found in FE list: " << vectorToString(fes, {';'}) << "."
 			             << __E__;
 			return 0;
 		}
@@ -109,8 +109,8 @@ try
 	else
 	{
 		__COUT_INFO__ << "No FE Macro Name specified, here is the list of existing FE "
-		                "Macro Names corresponding to the specified Front-end UID '"
-		             << argv[3] << "':" << __E__;
+		                 "Macro Names corresponding to the specified Front-end UID '"
+		              << argv[3] << "':" << __E__;
 		for(cmd = 0; cmd < commands.size(); ++cmd)
 			__COUT_INFO__ << "\t\t" << commands[cmd] << __E__;
 

@@ -135,7 +135,8 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 		}
 		catch(const std::runtime_error& e)
 		{
-			__SUP_COUT__ << "Ignoring MacroMaker server env var error: " << e.what() << __E__;
+			__SUP_COUT__ << "Ignoring MacroMaker server env var error: " << e.what()
+			             << __E__;
 		}  // ignore errors
 
 		if(enableRemoteControl)
@@ -531,7 +532,10 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					                         false /*dispStdOut*/,
 					                         false /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
-					sock.acknowledge(out.str(), true /* verbose */, 1500 /* max chunk size*/, 1000 /* inter-chunk delay us */);
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
 				}
 				else if(buffer.find("RunFrontendMacro") == 0)
 				{
@@ -563,7 +567,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					// Build the same per-UID group execution model used by CGI runFEMacro
 					std::set<std::string> feUIDs;
 					{
-						std::string expandUID = feUIDSelected.empty() ? "*" : feUIDSelected;
+						std::string expandUID =
+						    feUIDSelected.empty() ? "*" : feUIDSelected;
 						if(expandUID != "*")
 							StringMacros::getSetFromString(expandUID, feUIDs);
 						else
@@ -577,10 +582,11 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 							}
 						}
 						if(feUIDs.empty())
-							feUIDs.emplace(feUIDSelected);  // fallback to existing error behavior
+							feUIDs.emplace(
+							    feUIDSelected);  // fallback to existing error behavior
 					}
 
-					auto group                     = std::make_shared<runFEMacroGroupStruct>();
+					auto group = std::make_shared<runFEMacroGroupStruct>();
 					group->historyFeClassSelected_ =
 					    feClassSelected.empty() ? "*" : feClassSelected;
 					group->historyFeUIDSelected_ =
@@ -593,17 +599,17 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					group->historyUsername_    = username;
 
 					for(const std::string& uid : feUIDs)
-						group->tasks_.push_back(std::make_shared<runFEMacroStruct>(
-						    xmldoc,
-						    feClassSelected,
-						    uid,
-						    macroType,
-						    macroName,
-						    inputArgs,
-						    outputArgs,
-						    saveOutputs,
-						    username,
-						    userGroupPermission));
+						group->tasks_.push_back(
+						    std::make_shared<runFEMacroStruct>(xmldoc,
+						                                       feClassSelected,
+						                                       uid,
+						                                       macroType,
+						                                       macroName,
+						                                       inputArgs,
+						                                       outputArgs,
+						                                       saveOutputs,
+						                                       username,
+						                                       userGroupPermission));
 
 					{
 						std::lock_guard<std::mutex> lock(
@@ -615,7 +621,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						for(auto& task : group->tasks_)
 						{
 							task->bar_ = std::make_unique<ProgressBar>();
-							task->bar_->reset(macroName, task->parameters_.feUIDSelected_);
+							task->bar_->reset(macroName,
+							                  task->parameters_.feUIDSelected_);
 						}
 						theSupervisor->feMacroRunThreadStruct_.emplace_back(group);
 					}
@@ -631,13 +638,14 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						usleep(100 * 1000);  // poll at 100 ms
 
 						auto now = std::chrono::steady_clock::now();
-						if(std::chrono::duration_cast<std::chrono::seconds>(now - lastProgressSend)
+						if(std::chrono::duration_cast<std::chrono::seconds>(
+						       now - lastProgressSend)
 						       .count() >= 2)
 						{
 							lastProgressSend = now;
 
 							int totalProgress = 0;
-							int taskCount      = 0;
+							int taskCount     = 0;
 							{
 								std::lock_guard<std::mutex> lock(
 								    theSupervisor->feMacroRunThreadStructMutex_);
@@ -651,15 +659,15 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 								}
 							}
 
-							int percent = (taskCount > 0) ? (totalProgress / taskCount) : 0;
+							int percent =
+							    (taskCount > 0) ? (totalProgress / taskCount) : 0;
 							if(percent >= 100)
 								percent = 99;
 
 							__COUTV__(percent);
-							sock.acknowledge(
-							    std::string("<progress>") + std::to_string(percent) +
-							        "</progress>",
-							    true /* verbose */);
+							sock.acknowledge(std::string("<progress>") +
+							                     std::to_string(percent) + "</progress>",
+							                 true /* verbose */);
 						}
 					}
 
@@ -672,8 +680,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 								xmldoc.addTextElementToData("Error", ss.str());
 								std::stringstream out;
 								xmldoc.outputXmlDocument((std::ostringstream*)&out,
-														false /*dispStdOut*/,
-														true /*allowWhiteSpace*/);
+								                         false /*dispStdOut*/,
+								                         true /*allowWhiteSpace*/);
 								__COUT__ << "out: " << out.str();
 								sock.acknowledge(out.str(), true /* verbose */);
 							}
@@ -685,8 +693,11 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					{
 						std::lock_guard<std::mutex> lock(
 						    theSupervisor->feMacroRunThreadStructMutex_);
-						for(size_t i = 0; i < theSupervisor->feMacroRunThreadStruct_.size(); ++i)
-							if(theSupervisor->feMacroRunThreadStruct_[i].get() == group.get())
+						for(size_t i = 0;
+						    i < theSupervisor->feMacroRunThreadStruct_.size();
+						    ++i)
+							if(theSupervisor->feMacroRunThreadStruct_[i].get() ==
+							   group.get())
 							{
 								theSupervisor->feMacroRunThreadStruct_.erase(
 								    theSupervisor->feMacroRunThreadStruct_.begin() + i);
@@ -699,7 +710,10 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					                         false /*dispStdOut*/,
 					                         true /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
-					sock.acknowledge(out.str(), true /* verbose */, 1500 /* max chunk size*/, 1000 /* inter-chunk delay us */);
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
 				}
 				else
 				{

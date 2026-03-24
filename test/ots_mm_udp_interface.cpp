@@ -54,12 +54,10 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 		__SS_THROW__;
 	}
 
-				
 	//copy ai_addr, which is needed for sendto
 	memcpy(&mm_ai_addr, p->ai_addr, sizeof(mm_ai_addr));
 
 	freeaddrinfo(servinfo);
-
 
 	// increase socket buffer size
 	unsigned int socketReceiveBufferSize = 0x1400000;
@@ -511,17 +509,17 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 	// __COUTV__(numbytes);
 
 	// read response ///////////////////////////////////////////////////////////
-	fullXML_ = "";  //clear just in case
-	auto startTime = std::chrono::steady_clock::now();
-	auto lastUpdateTime = std::chrono::steady_clock::now();
+	fullXML_                    = "";  //clear just in case
+	auto    startTime           = std::chrono::steady_clock::now();
+	auto    lastUpdateTime      = std::chrono::steady_clock::now();
 	int64_t lastWarnElapsedTime = 0;
 	while(true)
 	{
 		if(receive(mm_sock_,
-				   buffer_,
-				   0 /*timeoutSeconds*/,
-				   200000 /*timeoutUSeconds*/,
-				   true /*verbose*/) == 0)
+		           buffer_,
+		           0 /*timeoutSeconds*/,
+		           200000 /*timeoutUSeconds*/,
+		           true /*verbose*/) == 0)
 		{
 			lastUpdateTime = std::chrono::steady_clock::now();
 			if(buffer_.find("<progress>") == 0)
@@ -532,29 +530,33 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 			fullXML_ += buffer_;
 			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
 			if(fullXML_.size() >= 10 &&
-				 fullXML_.substr(fullXML_.size() - 10).find("</ROOT>") != std::string::npos)
+			   fullXML_.substr(fullXML_.size() - 10).find("</ROOT>") != std::string::npos)
 				break;
 		}
 		auto currentTime = std::chrono::steady_clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
-		if(lastWarnElapsedTime != elapsed.count() && 
-			elapsed.count() > 2 && elapsed.count() % 3 == 0)
+		auto elapsed =
+		    std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+		if(lastWarnElapsedTime != elapsed.count() && elapsed.count() > 2 &&
+		   elapsed.count() % 3 == 0)
 		{
-			__COUT_WARN__ << "Still waiting for FE Macro Info response after " << elapsed.count() << " seconds... " <<
-				fullXML_.size() << " bytes received so far. " << fullXML_.substr(fullXML_.size() - 10) <<__E__;
+			__COUT_WARN__ << "Still waiting for FE Macro Info response after "
+			              << elapsed.count() << " seconds... " << fullXML_.size()
+			              << " bytes received so far. "
+			              << fullXML_.substr(fullXML_.size() - 10) << __E__;
 			lastWarnElapsedTime = elapsed.count();
 		}
 
-		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastUpdateTime);
+		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime -
+		                                                           lastUpdateTime);
 		if(elapsed.count() > 5)
 			break;
 	}
-	
+
 	if(fullXML_.size() == 0)
 	{
 		__SS__ << "FE Macro Info receive failed! Check that a MacroMaker Supervisor is "
-		          "configured with UDP Remote Control enabled and accessible at " << selfIPandPort_ << "."
-		       << __E__;
+		          "configured with UDP Remote Control enabled and accessible at "
+		       << selfIPandPort_ << "." << __E__;
 		__SS_THROW__;
 	}
 
@@ -1174,17 +1176,17 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 	}
 
 	// read response ///////////////////////////////////////////////////////////
-	std::string runXML = "";  //clear just in case
-	auto startTime = std::chrono::steady_clock::now();
-	auto lastUpdateTime = std::chrono::steady_clock::now();
-	int64_t lastWarnElapsedTime = 0;
+	std::string runXML              = "";  //clear just in case
+	auto        startTime           = std::chrono::steady_clock::now();
+	auto        lastUpdateTime      = std::chrono::steady_clock::now();
+	int64_t     lastWarnElapsedTime = 0;
 	while(true)
 	{
 		if(receive(mm_sock_,
-				   buffer_,
-				   0 /*timeoutSeconds*/,
-				   200000 /*timeoutUSeconds*/,
-				   true /*verbose*/) == 0)
+		           buffer_,
+		           0 /*timeoutSeconds*/,
+		           200000 /*timeoutUSeconds*/,
+		           true /*verbose*/) == 0)
 		{
 			lastUpdateTime = std::chrono::steady_clock::now();
 			if(buffer_.find("<progress>") == 0)
@@ -1195,20 +1197,23 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 			runXML += buffer_;
 			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
 			if(runXML.size() >= 10 &&
-				 runXML.substr(runXML.size() - 10).find("</ROOT>") != std::string::npos)
+			   runXML.substr(runXML.size() - 10).find("</ROOT>") != std::string::npos)
 				break;
 		}
 		auto currentTime = std::chrono::steady_clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
-		if(lastWarnElapsedTime != elapsed.count() && 
-			elapsed.count() > 2 && elapsed.count() % 3 == 0)
+		auto elapsed =
+		    std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+		if(lastWarnElapsedTime != elapsed.count() && elapsed.count() > 2 &&
+		   elapsed.count() % 3 == 0)
 		{
-			__COUT_WARN__ << "Still waiting for FE Macro Info response after " << elapsed.count() << " seconds... " <<
-				runXML.size() << " bytes received so far." << __E__;
+			__COUT_WARN__ << "Still waiting for FE Macro Info response after "
+			              << elapsed.count() << " seconds... " << runXML.size()
+			              << " bytes received so far." << __E__;
 			lastWarnElapsedTime = elapsed.count();
 		}
 
-		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastUpdateTime);
+		elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime -
+		                                                           lastUpdateTime);
 		if(elapsed.count() > 10)
 			break;
 	}
@@ -1232,9 +1237,9 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 
 	// __COUTV__(runXML);
 
-	if(runXML.size() == 0 || runXML.find("Error") == 0 || 
-		(runXML.size() >= 10 &&
-				 runXML.substr(runXML.size() - 10).find("</ROOT>") == std::string::npos))
+	if(runXML.size() == 0 || runXML.find("Error") == 0 ||
+	   (runXML.size() >= 10 &&
+	    runXML.substr(runXML.size() - 10).find("</ROOT>") == std::string::npos))
 	{
 		__SS__ << "Error running the command. Received error or incomplete buffer: "
 		       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
