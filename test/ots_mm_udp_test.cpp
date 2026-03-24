@@ -154,9 +154,8 @@ try
 	{
 		inputs.push_back(ots_mm_udp_interface::encodeURIComponent(argv[5 + i]));
 		std::string inputName = mm.getCommandInputName(fes[fe], commands[cmd], i);
-		__COUT_INFO__ << "\tInput #" << i << ": " << inputName << " = " << 
-					ots_mm_udp_interface::decodeURIComponent(inputs.back())
-		              << __E__;
+		__COUT_INFO__ << "\tInput #" << i << ": " << inputName << " = "
+		              << ots_mm_udp_interface::decodeURIComponent(inputs.back()) << __E__;
 	}
 
 	__COUT_INFO__ << "Running command with these expected outputs..." << __E__;
