@@ -1216,25 +1216,7 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 			break;
 	}
 
-	// //give first response a long time for execution propagation to/from device, but following receives should be short because just from UDP packet splitting
-	// if(receive(mm_sock_,
-	//            buffer_,
-	//            10 /*timeoutSeconds*/,
-	//            0 /*timeoutUSeconds*/,
-	//            true /*verbose*/) == 0)
-	// {
-	// 	// __COUT__ << "Appending " << buffer_.size() << " received bytes" << __E__;
-	// 	runXML += buffer_;
-	// 	while(receive(mm_sock_,
-	// 	              buffer_,
-	// 	              0 /*timeoutSeconds*/,
-	// 	              200000 /*timeoutUSeconds*/,
-	// 	              true /*verbose*/) == 0)
-	// 		runXML += buffer_;
-	// }
-
-	// __COUTV__(runXML);
-
+	// At this point, runXML should contain the complete response assembled by the current receive logic.
 	if(runXML.size() == 0 || runXML.find("Error") == 0 ||
 	   (runXML.size() >= 10 &&
 	    runXML.substr(runXML.size() - 10).find("</ROOT>") == std::string::npos))
