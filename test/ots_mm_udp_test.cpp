@@ -39,6 +39,14 @@ try
 	std::string feStr = mm.getFrontendList();
 	__COUTV__(feStr);
 	std::vector<std::string> fes = getVectorFromString(feStr, {';'});
+	if(fes.size() == 0 || (fes.size() == 1 && fes[0] == ""))
+	{
+		__COUT_ERR__
+		    << "No Front-ends found in FE list! Check that a MacroMaker Supervisor is "
+		    << "configured with UDP Remote Control enabled and accessible at "
+		    << target_mm_ip << ":" << target_mm_port << "." << __E__;
+		return 1;
+	}
 
 	uint32_t fe  = -1;
 	uint32_t cmd = -1;
@@ -55,16 +63,16 @@ try
 			__COUT_ERR__ << "Illegal front-end UID " << target_fe
 			             << " not found in FE list: " << vectorToString(fes, {';'}) << "."
 			             << __E__;
-			return 0;
+			return 1;
 		}
 	}
 	else
 	{
-		__COUT_ERR__
+		__COUT_INFO__
 		    << "No front-end UID specified, here is the list of existing Front-end UIDs:"
 		    << __E__;
 		for(fe = 0; fe < fes.size(); ++fe)
-			__COUT_ERR__ << "\t\t" << fes[fe] << __E__;
+			__COUT_INFO__ << "\t\t" << fes[fe] << __E__;
 
 		return 0;
 	}
@@ -73,7 +81,7 @@ try
 	{
 		__COUT_ERR__ << "Illegal front-end index " << fe << " vs " << fes.size()
 		             << " count." << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(fes[fe]);
@@ -95,16 +103,16 @@ try
 			             << "' not found in '" << fes[fe]
 			             << "' Command list: " << vectorToString(commands, {';'}) << "."
 			             << __E__;
-			return 0;
+			return 1;
 		}
 	}
 	else
 	{
-		__COUT_ERR__ << "No FE Macro Name specified, here is the list of existing FE "
-		                "Macro Names corresponding to the specified Front-end UID '"
-		             << argv[3] << "':" << __E__;
+		__COUT_INFO__ << "No FE Macro Name specified, here is the list of existing FE "
+		                 "Macro Names corresponding to the specified Front-end UID '"
+		              << argv[3] << "':" << __E__;
 		for(cmd = 0; cmd < commands.size(); ++cmd)
-			__COUT_ERR__ << "\t\t" << commands[cmd] << __E__;
+			__COUT_INFO__ << "\t\t" << commands[cmd] << __E__;
 
 		return 0;
 	}
@@ -113,7 +121,7 @@ try
 	{
 		__COUT_ERR__ << "Illegal command index " << cmd << " vs " << commands.size()
 		             << " count." << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(commands[cmd]);
@@ -146,8 +154,8 @@ try
 	{
 		inputs.push_back(ots_mm_udp_interface::encodeURIComponent(argv[5 + i]));
 		std::string inputName = mm.getCommandInputName(fes[fe], commands[cmd], i);
-		__COUT_INFO__ << "\tInput #" << i << ": " << inputName << " = " << inputs.back()
-		              << __E__;
+		__COUT_INFO__ << "\tInput #" << i << ": " << inputName << " = "
+		              << ots_mm_udp_interface::decodeURIComponent(inputs.back()) << __E__;
 	}
 
 	__COUT_INFO__ << "Running command with these expected outputs..." << __E__;
@@ -168,7 +176,7 @@ try
 		__COUT_ERR__ << "Illegal response, mismatch in output arguments returned: "
 		             << outputs.size() << " vs " << numberOfOutputs << " expected."
 		             << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(vectorToString(outputs, {';'}));
