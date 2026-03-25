@@ -518,7 +518,7 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 		           buffer_,
 		           0 /*timeoutSeconds*/,
 		           200000 /*timeoutUSeconds*/,
-		           true /*verbose*/) == 0)
+		           false /*verbose*/) == 0)
 		{
 			lastUpdateTime = std::chrono::steady_clock::now();
 			if(buffer_.find("<progress>") == 0)
