@@ -67,8 +67,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 	              (char*)&socketReceiveBufferSize,
 	              sizeof(socketReceiveBufferSize)) < 0)
 		__COUT_ERR__ << "Failed to set socket receive size to 0x" << std::hex
-		             << socketReceiveBufferSize << std::dec
-		             << ". Attempting to revert to default." << std::endl;
+		             << socketReceiveBufferSize << std::dec << "." << std::endl;
 	else
 		__COUT__ << "set socket receive size to 0x" << std::hex << socketReceiveBufferSize
 		         << std::dec << "." << __E__;
