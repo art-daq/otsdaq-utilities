@@ -528,7 +528,8 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 			}
 			fullXML_ += buffer_;
 			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
-			if(fullXML_.find("</ROOT>") != std::string::npos)
+			if(fullXML_.size() >= 10 &&
+			   fullXML_.substr(fullXML_.size() - 10).find("</ROOT>") != std::string::npos)
 				break;
 		}
 		auto currentTime = std::chrono::steady_clock::now();
@@ -1193,7 +1194,8 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 			}
 			runXML += buffer_;
 			// __COUT_INFO__ << "Received: " << buffer_ << __E__;
-			if(runXML.find("</ROOT>") != std::string::npos)
+			if(runXML.size() >= 10 &&
+			   runXML.substr(runXML.size() - 10).find("</ROOT>") != std::string::npos)
 				break;
 		}
 		auto currentTime = std::chrono::steady_clock::now();

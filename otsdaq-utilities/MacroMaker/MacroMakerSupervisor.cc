@@ -141,7 +141,8 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 		catch(...)
 		{
 			__SUP_COUT__ << "Ignoring unknown error reading OTS_MACROMAKER_UDP_PORT/"
-			                "OTS_MACROMAKER_UDP_IP env vars." << __E__;
+			                "OTS_MACROMAKER_UDP_IP env vars."
+			             << __E__;
 		}  // ignore errors
 
 		if(enableRemoteControl)
