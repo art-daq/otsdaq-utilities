@@ -113,7 +113,7 @@ class ots_mm_udp_interface
 	std::string        buffer_;
 	std::string        fullXML_;
 	std::string        selfIPandPort_;  //cache of this info for error messages, etc.
-	                                    ///Note: if std::map does not complicate interface too much for ROOT/pyton, could make member functions return const std::string& and leverage cache solution
+	                                    ///Note: if std::map does not complicate interface too much for ROOT/python, could make member functions return const std::string& and leverage cache solution
 	                                    /// std::map<std::string /*fe+cmd*/,std::map<std::string /*field*/, std::string /*value*/>> feCache_;
 	                                    ///
 };                                      //end ots_mm_udp_interface class declaration
