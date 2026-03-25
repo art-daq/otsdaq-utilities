@@ -677,12 +677,14 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						}
 					}
 
+					// Collect any task error before cleanup so group is always removed
+					std::string taskError;
 					for(auto& task : group->tasks_)
 					{
 						if(task->parameters_.feMacroRunError_ != "")
 						{
-							__SS__ << task->parameters_.feMacroRunError_;
-							__SS_THROW__;
+							taskError = task->parameters_.feMacroRunError_;
+							break;
 						}
 						xmldoc.copyDataChildren(task->parameters_.xmldoc_);
 					}
@@ -700,6 +702,12 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 								    theSupervisor->feMacroRunThreadStruct_.begin() + i);
 								break;
 							}
+					}
+
+					if(!taskError.empty())
+					{
+						__SS__ << taskError;
+						__SS_THROW__;
 					}
 
 					std::stringstream out;
