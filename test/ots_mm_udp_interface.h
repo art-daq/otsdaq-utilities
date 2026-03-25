@@ -108,8 +108,8 @@ class ots_mm_udp_interface
 
   private:
 	void               receiveXmlResponse(std::string&       response,
-	                                    const std::string& waitDescription,
-	                                    int                inactivityTimeoutSeconds);
+	                                      const std::string& waitDescription,
+	                                      int                inactivityTimeoutSeconds);
 	int                mm_sock_;
 	struct sockaddr_in mm_ai_addr;
 	std::string        buffer_;

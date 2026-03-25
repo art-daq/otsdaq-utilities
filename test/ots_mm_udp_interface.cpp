@@ -10,7 +10,7 @@ bool hasCompleteXmlRoot(const std::string& xml)
 {
 	return xml.size() >= 10 &&
 	       xml.substr(xml.size() - 10).find("</ROOT>") != std::string::npos;
-} //end hasCompleteXmlRoot()
+}  //end hasCompleteXmlRoot()
 
 //==============================================================================
 /// get sockaddr, IPv4 or IPv6:
@@ -214,8 +214,8 @@ ots_mm_udp_interface::~ots_mm_udp_interface()
 
 //==============================================================================
 void ots_mm_udp_interface::receiveXmlResponse(std::string&       response,
-	                                          const std::string& waitDescription,
-	                                          int                inactivityTimeoutSeconds)
+                                              const std::string& waitDescription,
+                                              int                inactivityTimeoutSeconds)
 {
 	response.clear();
 	auto    startTime           = std::chrono::steady_clock::now();
@@ -260,7 +260,7 @@ void ots_mm_udp_interface::receiveXmlResponse(std::string&       response,
 		if(elapsed.count() > inactivityTimeoutSeconds)
 			break;
 	}
-} //end receiveXmlResponse()
+}  //end receiveXmlResponse()
 
 //=========================================================================
 ///extract value for field from xml looking forwards from after
@@ -1197,8 +1197,7 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 	receiveXmlResponse(runXML, "command run response", 10);
 
 	// At this point, runXML should contain the complete response assembled by the current receive logic.
-	if(runXML.size() == 0 || runXML.find("Error") == 0 ||
-	   !hasCompleteXmlRoot(runXML))
+	if(runXML.size() == 0 || runXML.find("Error") == 0 || !hasCompleteXmlRoot(runXML))
 	{
 		__SS__ << "Error running the command. Received error or incomplete buffer: "
 		       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
