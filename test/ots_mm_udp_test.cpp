@@ -45,7 +45,7 @@ try
 		    << "No Front-ends found in FE list! Check that a MacroMaker Supervisor is "
 		    << "configured with UDP Remote Control enabled and accessible at "
 		    << target_mm_ip << ":" << target_mm_port << "." << __E__;
-		return 0;
+		return 1;
 	}
 
 	uint32_t fe  = -1;
@@ -63,7 +63,7 @@ try
 			__COUT_ERR__ << "Illegal front-end UID " << target_fe
 			             << " not found in FE list: " << vectorToString(fes, {';'}) << "."
 			             << __E__;
-			return 0;
+			return 1;
 		}
 	}
 	else
@@ -81,7 +81,7 @@ try
 	{
 		__COUT_ERR__ << "Illegal front-end index " << fe << " vs " << fes.size()
 		             << " count." << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(fes[fe]);
@@ -103,7 +103,7 @@ try
 			             << "' not found in '" << fes[fe]
 			             << "' Command list: " << vectorToString(commands, {';'}) << "."
 			             << __E__;
-			return 0;
+			return 1;
 		}
 	}
 	else
@@ -121,7 +121,7 @@ try
 	{
 		__COUT_ERR__ << "Illegal command index " << cmd << " vs " << commands.size()
 		             << " count." << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(commands[cmd]);
@@ -176,7 +176,7 @@ try
 		__COUT_ERR__ << "Illegal response, mismatch in output arguments returned: "
 		             << outputs.size() << " vs " << numberOfOutputs << " expected."
 		             << __E__;
-		return 0;
+		return 1;
 	}
 
 	__COUTV__(vectorToString(outputs, {';'}));
