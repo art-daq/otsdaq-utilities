@@ -107,6 +107,9 @@ class ots_mm_udp_interface
 	static std::string decodeHTMLEntities(const std::string& data);
 
   private:
+	void               receiveXmlResponse(std::string&       response,
+	                                    const std::string& waitDescription,
+	                                    int                inactivityTimeoutSeconds);
 	int                mm_sock_;
 	struct sockaddr_in mm_ai_addr;
 	std::string        buffer_;
