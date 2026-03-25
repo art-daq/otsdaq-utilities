@@ -1236,7 +1236,8 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 	// __COUTV__(runXML);
 
 	if(runXML.size() == 0 || runXML.find("Error") == 0 ||
-	   runXML.find("</ROOT>") == std::string::npos)
+	   (runXML.size() >= 10 &&
+	    runXML.substr(runXML.size() - 10).find("</ROOT>") == std::string::npos))
 	{
 		__SS__ << "Error running the command. Received error or incomplete buffer: "
 		       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
