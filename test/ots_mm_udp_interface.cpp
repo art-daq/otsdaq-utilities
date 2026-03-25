@@ -541,8 +541,7 @@ const std::string& ots_mm_udp_interface::getFrontendMacroInfo()
 		{
 			__COUT_WARN__ << "Still waiting for FE Macro Info response after "
 			              << elapsed.count() << " seconds... " << fullXML_.size()
-			              << " bytes received so far. "
-			              << fullXML_.substr(fullXML_.size() - 10) << __E__;
+			              << " bytes received so far." << __E__;
 			lastWarnElapsedTime = elapsed.count();
 		}
 
