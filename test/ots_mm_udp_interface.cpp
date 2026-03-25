@@ -1205,7 +1205,7 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 		if(lastWarnElapsedTime != elapsed.count() && elapsed.count() > 2 &&
 		   elapsed.count() % 3 == 0)
 		{
-			__COUT_WARN__ << "Still waiting for FE Macro Info response after "
+			__COUT_WARN__ << "Still waiting for command run response after "
 			              << elapsed.count() << " seconds... " << runXML.size()
 			              << " bytes received so far." << __E__;
 			lastWarnElapsedTime = elapsed.count();
