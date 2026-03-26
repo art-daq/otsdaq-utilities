@@ -76,20 +76,7 @@ endif()
 #cet_report_compiler_flags()
 
 find_package(otsdaq 2.06.06 REQUIRED EXPORT)
-
- # XDAQ Extra setup
- include_directories($ENV{XDAQ_ROOT}/include/linux $ENV{XDAQ_ROOT}/include)
-link_directories($ENV{XDAQ_ROOT}/lib)
- set(XDAQ_BASIC_LIB_LIST
-   xcept
-   xoap
-   xdaq
-   toolbox
-   xerces-c
-   cgicc
- )
- set(XDAQ_XERCES-C xerces-c)
-
+find_package(XercesC 3.2 REQUIRED)
 
 #string(REGEX MATCHALL "[0-9][0-9]?[0-9]?" MESSAGEFACILITY_VERSION_LIST "$ENV{MESSAGEFACILITY_VERSION}")
 #list(GET MESSAGEFACILITY_VERSION_LIST 0 MESSAGEFACILITY_MAJOR_VERSION)
