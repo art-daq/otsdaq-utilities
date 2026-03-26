@@ -248,6 +248,12 @@ Desktop.createDesktop = function (security) {
 				+ "," + (_windows[i].isMinimized() ? "0" : (_windows[i].isMaximized() ? "2" : "1"));
 			//+ ", "; //last comma (with space for settings display)
 		}
+
+		//append page scroll position as trailing fields after all window fields
+		if (layout.length > 0)
+			layout += ",";
+		layout += (window.scrollX | 0) + "," + (window.scrollY | 0);
+
 		//layout += "]";
 		return layout;
 	} //end _getWindowLayoutStr()
@@ -1109,7 +1115,7 @@ Desktop.createDesktop = function (security) {
 		//	Note: represent position in terms of 0-10000 for the entire Desktop Content area
 		//		- this should allow for translation to any size Desktop Content area when loaded
 		//
-		//	layout window fields:
+		//	layout window fields (per window):
 		//		0: _windows[i].getWindowName()
 		//		1: _windows[i].getWindowSubName()
 		//		2: _windows[i].getWindowUrl().replace(/&/g,'%38').replace(/=/g,'%61')  //global replace & and =
@@ -1118,6 +1124,10 @@ Desktop.createDesktop = function (security) {
 		//		5: ((_windows[i].getWindowWidth()/dw)|0)
 		//		6: ((_windows[i].getWindowHeight()/dh)|0)
 		//		7: (_windows[i].isMinimized()?"0":(_windows[i].isMinimized()?"2":"1"))
+		//
+		//	trailing page scroll fields (after all window fields):
+		//		+0: (window.scrollX|0)  //page scroll left position in pixels
+		//		+1: (window.scrollY|0)  //page scroll top position in pixels
 		var dw = Desktop.desktop.getDesktopContentWidth() / 10000.0; //to calc int % 0-10000
 		var dh = Desktop.desktop.getDesktopContentHeight() / 10000.0;//to calc int % 0-10000
 		var dx = Desktop.desktop.getDesktopContentX();
@@ -1139,6 +1149,12 @@ Desktop.createDesktop = function (security) {
 				_windows[_windows.length - 1].minimize();
 			else if ((layoutArr[i * numOfFields + 7] | 0) == 2) //convert to integer, if 0 then maximize
 				_windows[_windows.length - 1].maximize();
+		}
+
+		//restore page scroll position from trailing fields (if present)
+		var scrollIdx = numOfWins * numOfFields;
+		if (layoutArr.length > scrollIdx + 1) {
+			window.scrollTo(layoutArr[scrollIdx] | 0, layoutArr[scrollIdx + 1] | 0);
 		}
 	} //end defaultLayoutSelect()
 

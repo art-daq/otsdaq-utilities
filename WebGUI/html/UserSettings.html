@@ -388,7 +388,8 @@
                 Debug.log("layoutEntry", layoutEntry);
 
                 if (_layoutArray[i] != "0" &&
-                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0) {
+                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 2) { //2 extra trailing fields for scroll position
                     Debug.log("Error invalid user layout found. Clearing invalid layout: " +
                         _layoutArray[i], Debug.HIGH_PRIORITY);
                     _layoutArray[i] = "0";
@@ -417,7 +418,8 @@
                     Debug.log("layoutEntry", layoutEntry);
 
                     if (_sysLayoutArray[i] != "0" &&
-                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0) {
+                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 2) { //2 extra trailing fields for scroll position
                         Debug.log("Error invalid system layout found. Clearing invalid layout: " +
                             _sysLayoutArray[i], Debug.HIGH_PRIORITY);
                         _sysLayoutArray[i] = "0";
@@ -1019,6 +1021,14 @@
                         else if (winLayArr[i * numOfFields + j] == "2") //then maximized
                             str += ", Maximized";
                     str += "<br>";
+                }
+
+                //display page scroll position from trailing fields (if present)
+                var scrollIdx = num * numOfFields;
+                if (winLayArr.length > scrollIdx + 1) {
+                    str += "&nbsp;&nbsp;&nbsp;&nbsp;Page Scroll - Left:" +
+                        (winLayArr[scrollIdx] | 0) + "px, Top:" +
+                        (winLayArr[scrollIdx + 1] | 0) + "px<br>";
                 }
             }
             else

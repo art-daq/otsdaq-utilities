@@ -1030,6 +1030,14 @@ else {
                         str += ", Maximized";
             }
 
+            //display page scroll position from trailing fields (if present)
+            var scrollIdx = num * numOfFields;
+            if (winLayArr.length > scrollIdx + 1) {
+                str += "\nPage Scroll - Left:" +
+                    (winLayArr[scrollIdx] | 0) + "px, Top:" +
+                    (winLayArr[scrollIdx + 1] | 0) + "px";
+            }
+
             el.title = str;
         }
 
