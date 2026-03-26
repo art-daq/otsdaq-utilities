@@ -1,5 +1,5 @@
 # Look for the header file.
-find_path(XSD_INCLUDE_DIR NAMES xsd/cxx/config.hxx HINTS $ENV{XDAQ_ROOT}) # Spack environment view?
+find_path(XSD_INCLUDE_DIR NAMES xsd/cxx/config.hxx)
 mark_as_advanced(XSD_INCLUDE_DIR)
 
 message("otsdaq_utilities considering ECLWriter...")
@@ -36,7 +36,7 @@ if(XSD_FOUND)
 		cet_make_library( LIBRARY_NAME ECLWriterCore
 		SOURCE ECLConnection.cpp  ECL.cxx
 			LIBRARIES PUBLIC
-			${XDAQ_XERCES-C}
+			XercesC::XercesC
 			PRIVATE
 			${CURL_LIBRARIES}
 			Boost::regex

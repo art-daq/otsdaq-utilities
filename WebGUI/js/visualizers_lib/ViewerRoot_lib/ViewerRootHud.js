@@ -32,7 +32,6 @@ ViewerRoot.createHud = function() {
     var animationTargetTop, isDropDownAnimating, isDropDownDown;
 
     var hudDirBrowserDiv;
-    var hudAdminSettingsDiv;
     var hudPopUpDiv = 0;
     var _fsmName;
 
