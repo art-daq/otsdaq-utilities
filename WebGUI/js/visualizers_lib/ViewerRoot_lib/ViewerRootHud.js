@@ -27,7 +27,6 @@ ViewerRoot.createHud = function() {
     //	this.popUpVerification()
     //	this.clearPopUpVerification()
 
-    var self = this; // preserve HUD instance inside nested callbacks where 'this' may change
     var hudMouseOverDiv;
     var animationTargetTop, isDropDownAnimating, isDropDownDown;
 
@@ -104,7 +103,7 @@ ViewerRoot.createHud = function() {
 	    else if(i==1)
 	    {
 		ViewerRoot.hudAutoHide = chk.checked; 				//auto hide
-		self.handleWindowResize();  //use the HUD instance directly inside this callback
+		ViewerRoot.hud.handleWindowResize();
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=setUserPreferences&autoHide="+
 					      (chk.checked?1:0),
@@ -224,7 +223,7 @@ ViewerRoot.createHud = function() {
 	    chk.checked = (autoHide|0)?true:false;
 	    Debug.log("setting autoHide=" + chk.checked);
 	    ViewerRoot.hudAutoHide = chk.checked; 	//auto hide
-	    self.handleWindowResize();
+	    ViewerRoot.hud.handleWindowResize();
 	}
 	var hardRefresh = DesktopContent.getXMLValue(req,'hardRefresh');
 	if(hardRefresh !== undefined && hardRefresh !== "")
@@ -500,7 +499,7 @@ ViewerRoot.createHud = function() {
 	    }
 	}
 
-        if(!ViewerRoot.hudAutoHide) return self.handleWindowResize(); //if not autohide lock size
+        if(!ViewerRoot.hudAutoHide) return ViewerRoot.hud.handleWindowResize(); //if not autohide lock size
 
 	if(isDropDownDown) //start animation
 	{
