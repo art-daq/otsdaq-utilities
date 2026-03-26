@@ -39,9 +39,6 @@ var ViewerRoot = ViewerRoot || {}; //define namespace
 
 ////////////////////////////////////////////////////////////
 //public function definitions
-
-//ViewerRoot ~~
-//called to start Root viewer
 ViewerRoot.launch = function() {
 
 	Debug.log("ViewerRoot.launch");
@@ -49,51 +46,44 @@ ViewerRoot.launch = function() {
 	document.getElementById("omni").innerHTML = "<div id='omniHistogramViewer'></div>";
 	ViewerRoot.omni = document.getElementById("omniHistogramViewer");
 
-	//initialize with loading message in center
 	var w = ViewerRoot.w = window.innerWidth;
 	var h = ViewerRoot.h = window.innerHeight;
 
 	ViewerRoot.omni.style.position = "absolute";
-	ViewerRoot.omni.style.left = 0  + "px";
-	ViewerRoot.omni.style.top = 0  + "px";
+	ViewerRoot.omni.style.left = "0px";
+	ViewerRoot.omni.style.top = "0px";
 	ViewerRoot.omni.style.width = w + "px";
 	ViewerRoot.omni.style.height = h + "px";
 	ViewerRoot.omni.style.backgroundColor = "rgb(30,30,30)";
+	ViewerRoot.omni.innerHTML =
+		"<center><div id='loaderStatus' style='margin-top:" + (h/2-8) + "px'>Loading Root Viewer...</div></center>";
 
-	ViewerRoot.omni.innerHTML = "<center><div id='loaderStatus' style='margin-top:" + (h/2-8) + "px'>Loading Root Viewer...</div></center>";
+	var startInit = function() {
+		ViewerRoot.init();
+	};
 
-	//load directories of histograms
-	//and display selected histogram
-	//allow window splitting and comparing and contrasting with transparent histos
-	////////uncomment for initial ROOT example end//////////////////////
+	var loadJsroot = function() {
+		if (typeof JSROOT !== "undefined") {
+			startInit();
+			return;
+		}
+		loadScript(source_dir + 'jsroot-7.9.0/scripts/JSRoot.core.js', startInit);
+	};
 
-	loadScript(source_dir+'ViewerRootHud.js',function(){
-		loadScript(source_dir+'jsroot-7.9.0/scripts/JSRoot.core.js',function(){
-				// JSROOT.AssertPrerequisites('2d;io;3d;',ViewerRoot.init);
-				ViewerRoot.init();
-		});
-	});
+	if (typeof ViewerRoot.createHud === "function") {
+		loadJsroot();
+		return;
+	}
 
+	loadScript(source_dir + 'ViewerRootHud.js', loadJsroot);
+};
+//ViewerRoot ~~
+//called to start Root viewer
 	///	Drawing Strategy
-	//		- if rootCanvas not created, clear omni and create, full window
-	//		- since root js library knows to draw in div with id='report'
-	//			each root object goes in its own div, which at time of creation is given
-	//			id='report'. Maintain array of references to divs holding root object
-	//			that does not depend on id. And use for removal and movement and sizing?
-	//		- first histo always goes full screen within rootCanvas
-	//		- next histo based on RADIO: Tile, Replace, Superimpose
-	//			- if TILE, tile it within rootCanvas
-	//			- if REPLACE, replace previous object
-	//			- if SUPERIMPOSE, place over previous object with alpha 0
-	//
-	//		- implementation
-	//			- keep array of all root elements drawn
-	//			- keep array of their corresponding locations
-	//			- keep number of locations used in tile
-
-
-}
-
+//   - one tile corresponds to one target div
+//   - first object draws the base pad
+//   - additional objects in the same tile are overlaid with SAME when supported
+//   - Tile creates a new position, Replace reuses a position, Superimpose appends to it
 //end public function definitions
 ////////////////////////////////////////////////////////////
 
@@ -125,24 +115,24 @@ ViewerRoot.SUPERIMPOSE_MODE = 2;
 ViewerRoot.ADMIN_PERMISSIONS_THRESHOLD = 1;
 ViewerRoot.userPermissions = 0; //0 is no access, 1 is access
 
-ViewerRoot.omni;
-ViewerRoot.rootContainer;
+ViewerRoot.omni = null;
+ViewerRoot.rootContainer = null;
 
-ViewerRoot.objIndex;
+ViewerRoot.objIndex = null;
 
-ViewerRoot.rootElArr;
-ViewerRoot.rootPosArr;
-ViewerRoot.rootObjArr;
-ViewerRoot.rootObjIndexArr;
-ViewerRoot.rootHeaderElArr;
-ViewerRoot.rootObjNameArr;
-ViewerRoot.rootIsTransparentArr;
-ViewerRoot.rootIsAutoRefreshArr;
+ViewerRoot.rootObjTitleArr = null;
+ViewerRoot.rootPosArr = null;
+ViewerRoot.rootObjArr = null;
+ViewerRoot.rootObjIndexArr = null;
+ViewerRoot.rootHeaderElArr = null;
+ViewerRoot.rootObjNameArr = null;
+ViewerRoot.rootIsTransparentArr = null;
+ViewerRoot.rootIsAutoRefreshArr = null;
 
-ViewerRoot.numPositionsTiled;
-ViewerRoot.rootTargetIndex; //targeted object for replace or superimpose
-ViewerRoot.w;
-ViewerRoot.h;
+ViewerRoot.numPositionsTiled = null;
+ViewerRoot.rootTargetIndex = null; //targeted object for replace or superimpose
+ViewerRoot.w = null;
+ViewerRoot.h = null;
 ViewerRoot.sFile;
 
 ViewerRoot.hudAutoHide = false;
@@ -196,10 +186,11 @@ ViewerRoot.iterSaveAutoRefreshDefault;
 //=====================================================================================
 ViewerRoot.init = function () {
 	Debug.log("ViewerRoot.init");
-	//JSROOT.redraw('object_draw', histo, "colz");
 
+	ViewerRoot.posElArr = [];
+	ViewerRoot.posTargetElArr = [];
+	ViewerRoot.posTargetSerial = 0;
 
-	ViewerRoot.rootElArr = [];
 	ViewerRoot.rootPosArr = [];
 	ViewerRoot.rootObjArr = [];
 	ViewerRoot.rootObjIndexArr = [];
@@ -220,13 +211,12 @@ ViewerRoot.init = function () {
 	frame_id = 0;
 	random_id = 0;
 
-	//create and add report container
 	ViewerRoot.rootContainer = document.createElement('div');
 	ViewerRoot.rootContainer.setAttribute("id","reportContainer");
 	ViewerRoot.rootContainer.onmouseup = function(){
-		Debug.log("Deselect all root containers");
-		ViewerRoot.rootTargetIndex = -1;
-		ViewerRoot.resizeRootObjects();
+	Debug.log("Deselect all root containers");
+	ViewerRoot.rootTargetIndex = -1;
+	ViewerRoot.resizeRootObjects(false);
 	};
 	ViewerRoot.omni.appendChild(ViewerRoot.rootContainer);
 
@@ -236,12 +226,14 @@ ViewerRoot.init = function () {
 
 	window.clearInterval(ViewerRoot.autoRefreshTimer);
 	ViewerRoot.autoRefreshTimer = window.setInterval(
-			ViewerRoot.autoRefreshTick,
-			ViewerRoot.autoRefreshPeriod);
+	ViewerRoot.autoRefreshTick,
+	ViewerRoot.autoRefreshPeriod
+	);
 
-	document.getElementById("loaderStatus").innerHTML = "Root Viewer Loaded.<br>Use drop-down to make selections.";
+	document.getElementById("loaderStatus").innerHTML =
+	"Root Viewer Loaded.<br>Use drop-down to make selections.";
 	ViewerRoot.getDirectoryContents("/");
-} //end init()
+}; //end init()
 
 ViewerRoot.autoRefreshMatchArr = []; //use array to match request returns to index
 
@@ -280,10 +272,135 @@ ViewerRoot.autoRefreshTick = function () {
 	//reset interval if here
 	window.clearInterval(ViewerRoot.autoRefreshTimer);
 	ViewerRoot.autoRefreshTimer = window.setInterval(
-			ViewerRoot.autoRefreshTick,
-			ViewerRoot.autoRefreshPeriod);
-
+		ViewerRoot.autoRefreshTick,
+		ViewerRoot.autoRefreshPeriod);
 } //end autoRefreshTick
+
+ViewerRoot.getPositionObjectIndices = function(posi) {
+	let out = [];
+	for (let i = 0; i < ViewerRoot.rootPosArr.length; ++i)
+	if (ViewerRoot.rootPosArr[i] === posi)
+		out.push(i);
+	return out;
+};
+
+ViewerRoot.makePositionContainer = function(posi) {
+	let el = document.createElement('div');
+	el.setAttribute("class", "rootObjectContainer");
+
+	let target = document.createElement('div');
+	target.setAttribute("class", "rootObjectContainerTarget");
+	target.id = "positionTarget" + (ViewerRoot.posTargetSerial++);
+	target._vrPos = posi;
+	target._vrChain = Promise.resolve();
+
+	el.appendChild(target);
+	ViewerRoot.rootContainer.appendChild(el);
+
+	ViewerRoot.posElArr[posi] = el;
+	ViewerRoot.posTargetElArr[posi] = target;
+};
+
+ViewerRoot.removeObjectsAtPosition = function(posi) {
+	for (let i = 0; i < ViewerRoot.rootPosArr.length; ++i) {
+	if (ViewerRoot.rootPosArr[i] !== posi) continue;
+
+	ViewerRoot.rootPosArr.splice(i, 1);
+	ViewerRoot.rootObjArr.splice(i, 1);
+	ViewerRoot.rootObjIndexArr.splice(i, 1);
+	ViewerRoot.rootObjNameArr.splice(i, 1);
+	ViewerRoot.rootObjTitleArr.splice(i, 1);
+	ViewerRoot.rootIsTransparentArr.splice(i, 1);
+	ViewerRoot.rootIsAutoRefreshArr.splice(i, 1);
+	--i;
+	}
+};
+
+ViewerRoot.isOverlay1DLike = function(obj) {
+	let t = (obj && obj._typename) || "";
+	return (
+	t.indexOf("TH1") === 0 ||
+		t.indexOf("TProfile") === 0 ||
+		t.indexOf("TGraph") === 0
+	);
+};
+
+ViewerRoot.getBaseDrawOpt = function(obj) {
+	let t = (obj && obj._typename) || "";
+
+	if (t === "TNtuple")
+	return "px:py::pz>5";
+
+	if (t === "THMu2eCaloDisk" || t.indexOf("TH2") === 0)
+	return "colz";
+
+	return "";
+};
+
+ViewerRoot.getOverlayDrawOpt = function(baseObj, obj) {
+	if (ViewerRoot.isOverlay1DLike(baseObj) && ViewerRoot.isOverlay1DLike(obj))
+	return "same";
+
+	return null;
+};
+
+ViewerRoot.renderPosition = async function(target) {
+	if (!target || !target.isConnected) return;
+
+	let posi = target._vrPos;
+	let indices = ViewerRoot.getPositionObjectIndices(posi);
+
+	if (JSROOT.cleanup)
+	JSROOT.cleanup(target.id);
+
+	target.innerHTML = "";
+
+	if (!indices.length) return;
+
+	let firstIdx = indices[0];
+	let firstObj = ViewerRoot.rootObjArr[firstIdx];
+	if (!firstObj) return;
+
+	try {
+	await JSROOT.draw(target.id, firstObj, ViewerRoot.getBaseDrawOpt(firstObj));
+
+	for (let k = 1; k < indices.length; ++k) {
+		let idx = indices[k];
+		let obj = ViewerRoot.rootObjArr[idx];
+		if (!obj) continue;
+
+		let opt = ViewerRoot.getOverlayDrawOpt(firstObj, obj);
+		if (opt === null) {
+		Debug.log(
+			"Overlay skipped for unsupported SAME combination: " +
+			(firstObj._typename || "unknown") + " + " +
+			(obj._typename || "unknown"),
+			Debug.WARN_PRIORITY
+		);
+		continue;
+		}
+
+		await JSROOT.draw(target.id, obj, opt);
+	}
+	}
+	catch (err) {
+	Debug.log("ViewerRoot.renderPosition failed: " + err, Debug.HIGH_PRIORITY);
+	target.textContent =
+		firstObj.JSON ? firstObj.JSON : String(err);
+	}
+};
+
+// Queue redraws per position to keep sequential overlay rendering stable
+ViewerRoot.queueRenderPosition = function(posi) {
+	let target = ViewerRoot.posTargetElArr[posi];
+	if (!target) return;
+
+	target._vrChain = (target._vrChain || Promise.resolve())
+	.then(() => ViewerRoot.renderPosition(target))
+	.catch(err =>
+		Debug.log("queueRenderPosition error: " + err, Debug.HIGH_PRIORITY)
+	);
+};
 
 //=====================================================================================
 // ViewerRoot.prepareNextLocation ~~
@@ -292,68 +409,53 @@ ViewerRoot.autoRefreshTick = function () {
 //		will be "histogram"+ViewerRoot.objIndex.. this is the div
 //		the root js library will draw to.
 ViewerRoot.prepareNextLocation = function (objName, objTitle) {
-	Debug.log("ViewerRoot prepareNextLocation for ViewerRoot.objIndex " + "mode " + ViewerRoot.nextObjectMode +
-			": " + ViewerRoot.objIndex + ": " + objName);
+	Debug.log("ViewerRoot prepareNextLocation mode=" + ViewerRoot.nextObjectMode +
+		  " obj=" + objName);
 
-	//fix target just in case foul play occured
-	if(ViewerRoot.rootTargetIndex > ViewerRoot.numPositionsTiled) ViewerRoot.rootTargetIndex = -1;
+	if (ViewerRoot.rootTargetIndex >= ViewerRoot.numPositionsTiled)
+	ViewerRoot.rootTargetIndex = -1;
 
-	//create and add new div
-	var ri = ViewerRoot.rootElArr.length;
-	ViewerRoot.rootElArr.push(document.createElement('div')); //make container
-	ViewerRoot.rootElArr[ri].setAttribute("class","rootObjectContainer"); //set new report target
+	let posi = -1;
+	let drawAsOverlay = false;
 
-	var tmpdiv = document.createElement('div'); //make target div
-	tmpdiv.setAttribute("id","histogram"+ViewerRoot.objIndex); //set new target for root object
-	tmpdiv.setAttribute("class","rootObjectContainerTarget");
-	ViewerRoot.rootElArr[ri].appendChild(tmpdiv);
-
-	//add report to report container
-	ViewerRoot.rootContainer.appendChild(ViewerRoot.rootElArr[ri]);
-
-	var drawTransparently = false;
 	if (!ViewerRoot.numPositionsTiled || ViewerRoot.nextObjectMode == ViewerRoot.TILE_MODE) {
-		//next tile position (or first tile)
-		ViewerRoot.rootPosArr.push(ViewerRoot.numPositionsTiled++);
+	posi = ViewerRoot.numPositionsTiled;
+	ViewerRoot.makePositionContainer(posi);
+	ViewerRoot.numPositionsTiled++;
 	}
 	else if (ViewerRoot.nextObjectMode == ViewerRoot.REPLACE_MODE) {
-		//replace tile(s) at position ViewerRoot.rootTargetIndex, if -1 then replace last tile(s)
-		var repi = ViewerRoot.rootTargetIndex == -1? ViewerRoot.numPositionsTiled-1:ViewerRoot.rootTargetIndex;
-		ViewerRoot.removeAllAtPosition(repi);	//remove all tiles that match repi
+	posi = (ViewerRoot.rootTargetIndex == -1) ?
+		(ViewerRoot.numPositionsTiled - 1) : ViewerRoot.rootTargetIndex;
 
-		ViewerRoot.rootPosArr.push(repi); //assign new report to position
+	ViewerRoot.removeObjectsAtPosition(posi);
 	}
 	else if (ViewerRoot.nextObjectMode == ViewerRoot.SUPERIMPOSE_MODE) {
-		//add tile at position ViewerRoot.rootTargetIndex, if -1 then at last tile(s)
-		var supi = ViewerRoot.rootTargetIndex == -1? ViewerRoot.numPositionsTiled-1:ViewerRoot.rootTargetIndex;
-
-		ViewerRoot.rootPosArr.push(supi);	//assign new report to position
-		drawTransparently = true;
+	posi = (ViewerRoot.rootTargetIndex == -1) ?
+		(ViewerRoot.numPositionsTiled - 1) : ViewerRoot.rootTargetIndex;
+	drawAsOverlay = true;
 	}
 
-	ViewerRoot.rootIsTransparentArr.push(drawTransparently); //keep for transparent drawing
+	ViewerRoot.rootPosArr.push(posi);
+	ViewerRoot.rootIsTransparentArr.push(drawAsOverlay);
 	ViewerRoot.rootIsAutoRefreshArr.push(ViewerRoot.autoRefreshDefault);
-	ViewerRoot.rootObjNameArr.push(objName);	//assign new report to position
+	ViewerRoot.rootObjNameArr.push(objName);
 
-	//look for .root name other blank
 	let prependName = "";
 	{
-		let splitPath = objName.split('/');
-		for (let i = 0; i < splitPath.length; ++i) {
-			let ii = splitPath[i].indexOf(".root");
-			if (ii > 0) {
-				prependName = splitPath[i].substr(0,ii) + ": ";
-				break;
-			}
+	let splitPath = objName.split('/');
+	for (let i = 0; i < splitPath.length; ++i) {
+		let ii = splitPath[i].indexOf(".root");
+		if (ii > 0) {
+		prependName = splitPath[i].substr(0, ii) + ": ";
+		break;
 		}
-		Debug.logv({prependName});
+	}
 	}
 	ViewerRoot.rootObjTitleArr.push(prependName + objTitle);
 
-	ViewerRoot.manageRootHeaders(); 	//manage headers for all positions
-	ViewerRoot.resizeRootObjects(true); 	//resize all root objects as a result of new element
-}
-
+	ViewerRoot.manageRootHeaders();
+	ViewerRoot.resizeRootObjects(false);
+};
 //=====================================================================================
 // ViewerRoot.removeAllAtPosition ~~
 //		Remove all histogram div elements and associated root object data structures
@@ -363,33 +465,34 @@ ViewerRoot.prepareNextLocation = function (objName, objTitle) {
 ViewerRoot.removeAllAtPosition = function(posi, isClosingPosition) {
 	Debug.log("ViewerRoot removeAllAtPosition " + posi);
 
-	for(var i=0;i<ViewerRoot.rootPosArr.length;++i)
-		if(ViewerRoot.rootPosArr[i] == posi) //remove element
-		{
-			ViewerRoot.rootElArr[i].parentNode.removeChild(ViewerRoot.rootElArr[i]);
-			ViewerRoot.rootElArr.splice(i,1);
-			ViewerRoot.rootPosArr.splice(i,1);
-			delete ViewerRoot.rootObjArr[i]; ViewerRoot.rootObjArr[i] = null;
-			ViewerRoot.rootObjArr.splice(i,1);
-			ViewerRoot.rootObjIndexArr.splice(i,1);
-			ViewerRoot.rootObjNameArr.splice(i,1);
-			ViewerRoot.rootObjTitleArr.splice(i,1);
-			ViewerRoot.rootIsTransparentArr.splice(i,1);
-			ViewerRoot.rootIsAutoRefreshArr.splice(i,1);
+	ViewerRoot.removeObjectsAtPosition(posi);
 
-			--i; //rewind
-		}
-		else if(isClosingPosition && ViewerRoot.rootPosArr[i] > posi) //renumber position
-			--ViewerRoot.rootPosArr[i];
+	let el = ViewerRoot.posElArr[posi];
+	if (el && el.parentNode)
+	el.parentNode.removeChild(el);
 
+	ViewerRoot.posElArr.splice(posi, 1);
+	ViewerRoot.posTargetElArr.splice(posi, 1);
 	if (isClosingPosition) {
-		--ViewerRoot.numPositionsTiled;
-		ViewerRoot.manageRootHeaders();
-		if(ViewerRoot.rootTargetIndex > posi) --ViewerRoot.rootTargetIndex;
-		else if(ViewerRoot.rootTargetIndex >= ViewerRoot.numPositionsTiled) ViewerRoot.rootTargetIndex = -1;
-		ViewerRoot.resizeRootObjects(true); 	//resize all root objects as a result of new element
+	--ViewerRoot.numPositionsTiled;
+
+	for (let i = 0; i < ViewerRoot.rootPosArr.length; ++i)
+		if (ViewerRoot.rootPosArr[i] > posi)
+		--ViewerRoot.rootPosArr[i];
+
+	for (let i = posi; i < ViewerRoot.posTargetElArr.length; ++i)
+		if (ViewerRoot.posTargetElArr[i])
+		ViewerRoot.posTargetElArr[i]._vrPos = i;
+
+	ViewerRoot.manageRootHeaders();
+
+	if (ViewerRoot.rootTargetIndex > posi) --ViewerRoot.rootTargetIndex;
+	else if (ViewerRoot.rootTargetIndex >= ViewerRoot.numPositionsTiled)
+		ViewerRoot.rootTargetIndex = -1;
+
+	ViewerRoot.resizeRootObjects(true);
 	}
-}
+};
 
 //=====================================================================================
 // ViewerRoot.manageRootHeaders ~~
@@ -400,19 +503,19 @@ ViewerRoot.manageRootHeaders = function () {
 	var tmpdiv;
 	while(ViewerRoot.numPositionsTiled > ViewerRoot.rootHeaderElArr.length) //add header elements
 	{
-		tmpdiv = document.createElement('div'); //make target div
-		tmpdiv.setAttribute("id","rootContainerHeader-"+ViewerRoot.rootHeaderElArr.length);
-		tmpdiv.setAttribute("class","rootContainerHeader");
-		tmpdiv.onmouseup = ViewerRoot.handleRootPositionSelect;
-		ViewerRoot.rootContainer.appendChild(tmpdiv);
-		ViewerRoot.rootHeaderElArr.push(tmpdiv);
+	tmpdiv = document.createElement('div'); //make target div
+	tmpdiv.setAttribute("id","rootContainerHeader-"+ViewerRoot.rootHeaderElArr.length);
+	tmpdiv.setAttribute("class","rootContainerHeader");
+	tmpdiv.onmouseup = ViewerRoot.handleRootPositionSelect;
+	ViewerRoot.rootContainer.appendChild(tmpdiv);
+	ViewerRoot.rootHeaderElArr.push(tmpdiv);
 	}
 
 	while(ViewerRoot.numPositionsTiled < ViewerRoot.rootHeaderElArr.length) //remove header elements
 	{
-		tmpdiv = ViewerRoot.rootHeaderElArr[ViewerRoot.rootHeaderElArr.length-1];
-		tmpdiv.parentNode.removeChild(tmpdiv);
-		ViewerRoot.rootHeaderElArr.splice(ViewerRoot.rootHeaderElArr.length-1,1);
+	tmpdiv = ViewerRoot.rootHeaderElArr[ViewerRoot.rootHeaderElArr.length-1];
+	tmpdiv.parentNode.removeChild(tmpdiv);
+	ViewerRoot.rootHeaderElArr.splice(ViewerRoot.rootHeaderElArr.length-1,1);
 	}
 
 	//give name to headers by position
@@ -431,32 +534,32 @@ ViewerRoot.manageRootHeaders = function () {
 				if(ViewerRoot.rootIsAutoRefreshArr[j]) isAtLeastOneRefreshing = true; //this root object is set to autorefresh
 			}
 
-		str = "";
+	str = "";
 
-		//add title
-		str += "<div title='" + fullPath + "' class='rootContainerHeader-name'>" + (found == 1?name:"Multiple Files...") + "</div>";
+	//add title
+	str += "<div title='" + fullPath + "' class='rootContainerHeader-name'>" + (found == 1?name:"Multiple Files...") + "</div>";
 
-		//add close button
-		str += "<a title='Close' href='Javascript:ViewerRoot.removeAllAtPosition("+i+",true);' onmouseup='event.cancelBubble=true;' " +
-			"class='rootContainerHeader-closeBtn'>X</a>";
+	//add close button
+	str += "<a title='Close' href='Javascript:ViewerRoot.removeAllAtPosition("+i+",true);' onmouseup='event.cancelBubble=true;' " +
+		"class='rootContainerHeader-closeBtn'>X</a>";
 
-		//add auto refresh icon
-		//if at least one root object is refreshing show icon as on
+	//add auto refresh icon
+	//if at least one root object is refreshing show icon as on
 
-		//Below is original
-		str += "<a title='Close' href='Javascript:ViewerRoot.toggleAllAtPositionAutoRefresh(" + i +
-			");' onmouseup='event.cancelBubble=true;' " +
-			"class='rootContainerHeader-refreshBtn'><img id='rootContainerHeaderRefreshImg" + i +
-			"'src='/WebPath/images/iconImages/icon-rootAutoRefresh" + (isAtLeastOneRefreshing?"On":"Off") + ".png'></a>";
+	//Below is original
+	str += "<a title='Close' href='Javascript:ViewerRoot.toggleAllAtPositionAutoRefresh(" + i +
+		");' onmouseup='event.cancelBubble=true;' " +
+		"class='rootContainerHeader-refreshBtn'><img id='rootContainerHeaderRefreshImg" + i +
+		"'src='/WebPath/images/iconImages/icon-rootAutoRefresh" + (isAtLeastOneRefreshing?"On":"Off") + ".png'></a>";
 
 
-		//Making the refresh button do the same thing as respective histograph name
-//		str += "<a title='Refresh' href='Javascript:ViewerRoot.rootReq(\"" + fullPath +
-//			"\");' onmouseup='event.cancelBubble=true;' " +
-//			"class='rootContainerHeader-refreshBtn'><img id='rootContainerHeaderRefreshImg" + i +
-//			"'src='/WebPath/images/iconImages/icon-rootAutoRefresh" + (isAtLeastOneRefreshing?"On":"Off") + ".png'></a>";
-//
-		ViewerRoot.rootHeaderElArr[i].innerHTML = str;
+	//Making the refresh button do the same thing as respective histograph name
+		//		str += "<a title='Refresh' href='Javascript:ViewerRoot.rootReq(\"" + fullPath +
+		//			"\");' onmouseup='event.cancelBubble=true;' " +
+		//			"class='rootContainerHeader-refreshBtn'><img id='rootContainerHeaderRefreshImg" + i +
+		//			"'src='/WebPath/images/iconImages/icon-rootAutoRefresh" + (isAtLeastOneRefreshing?"On":"Off") + ".png'></a>";
+		//
+	ViewerRoot.rootHeaderElArr[i].innerHTML = str;
 	}
 } //end manageRootHeaders()
 
@@ -477,14 +580,14 @@ ViewerRoot.toggleAllAtPositionAutoRefresh = function (i) {
 				if(!doover && ViewerRoot.rootIsAutoRefreshArr[j]) v = false;
 				ViewerRoot.rootIsAutoRefreshArr[j] = v;                       //---------------------------------------->This is all this function does!
 
-				Debug.log("ViewerRoot toggleAllAtPositionAutoRefresh rootObj " + j + " to " + v);
+		Debug.log("ViewerRoot toggleAllAtPositionAutoRefresh rootObj " + j + " to " + v);
 
-				var tmp = document.getElementById("rootContainerHeaderRefreshImg" + i );
-				tmp.src = "/WebPath/images/iconImages/icon-rootAutoRefresh" + (v?"On":"Off") + ".png";
-				if(lastv != v ){++found; lastv = v;}
-			}
-		if(!doover && found>1) doover = true;
-		else doover = false;
+		var tmp = document.getElementById("rootContainerHeaderRefreshImg" + i );
+		tmp.src = "/WebPath/images/iconImages/icon-rootAutoRefresh" + (v?"On":"Off") + ".png";
+		if(lastv != v ){++found; lastv = v;}
+		}
+	if(!doover && found>1) doover = true;
+	else doover = false;
 	} while(doover); //may need to do it over again, because values of superimposed root objects could be wrong
 
 } //end toggleAllAtPositionAutoRefresh()
@@ -506,12 +609,13 @@ ViewerRoot.clearAll = function () {
 	Debug.log("ViewerRoot clearAll");
 
 	ViewerRoot.rootTargetIndex = -1;
-	//ViewerRoot.numPositionsTiled will be 0 at end
-	for(; ViewerRoot.numPositionsTiled>0; --ViewerRoot.numPositionsTiled)
-		ViewerRoot.removeAllAtPosition(ViewerRoot.numPositionsTiled-1);
+
+	while (ViewerRoot.numPositionsTiled > 0)
+	ViewerRoot.removeAllAtPosition(ViewerRoot.numPositionsTiled - 1, true);
+
 	ViewerRoot.manageRootHeaders();
-	ViewerRoot.resizeRootObjects();
-}
+	ViewerRoot.resizeRootObjects(false);
+};
 
 //=====================================================================================
 // ViewerRoot.handleWindowResize ~~
@@ -521,14 +625,15 @@ ViewerRoot.handleWindowResize = function() {
 	var h = ViewerRoot.h = window.innerHeight < ViewerRoot.DISPLAY_MIN_HEIGHT? ViewerRoot.DISPLAY_MIN_HEIGHT:window.innerHeight;
 
 	if(!ViewerRoot.hudAutoHide) //force w smaller
-		ViewerRoot.w = w -= ViewerRoot.HUD_WIDTH + ViewerRoot.HUD_MARGIN_RIGHT + (5*2); //5 is padding of mouseover region in css
+	ViewerRoot.w = w -= ViewerRoot.HUD_WIDTH + ViewerRoot.HUD_MARGIN_RIGHT + (5*2); //5 is padding of mouseover region in css
 
 	Debug.log("ViewerRoot handleWindowResize " + w + "-" + h);
 
 	ViewerRoot.omni.style.width = w + "px";
 	ViewerRoot.omni.style.height = h + "px";
 
-	ViewerRoot.hud.handleWindowResize();
+	if (ViewerRoot.hud && ViewerRoot.hud.handleWindowResize)
+		ViewerRoot.hud.handleWindowResize();
 	ViewerRoot.resizeRootObjects(true);
 }
 
@@ -550,138 +655,58 @@ ViewerRoot.resizeRootObjects = function(needToRedraw) {
 	}
 	ViewerRoot.rootContainer.style.backgroundColor = "white";
 
+	let w = ViewerRoot.w;
+	let h = ViewerRoot.h - ViewerRoot.ROOT_CONTAINER_OFFY;
 
-	var w = ViewerRoot.w;
-	var h = ViewerRoot.h - ViewerRoot.ROOT_CONTAINER_OFFY;
+	let aspect = 3/4;
+	let r = Math.round(Math.sqrt(h * ViewerRoot.numPositionsTiled / aspect / w));
+	if (r < 1) r = 1;
+	let c = Math.ceil(ViewerRoot.numPositionsTiled / r);
 
-	var aspect = 3/4; //3/4, 9/16 , 1
-	var r = Math.round(Math.sqrt(h*ViewerRoot.numPositionsTiled/aspect/w)); //Math.ceil(Math.sqrt(ViewerRoot.numPositionsTiled));
-	if(r<1) r = 1;
-	var c = Math.ceil(ViewerRoot.numPositionsTiled/r);
+	w = Math.floor(w / c);
+	h = Math.floor(h / r);
 
-	Debug.log("ViewerRoot resizeRootObjects " + r  + "-" + c + " for " + ViewerRoot.numPositionsTiled);
+	let rootAspect = 3/4;
+	let rootw = (h / w < rootAspect) ? (h / rootAspect) : w;
 
-	//calc individual position size
-	w = Math.floor(w/c);
-	h = Math.floor(h/r);
+	for (let i = 0; i < ViewerRoot.numPositionsTiled; ++i) {
+	let el = ViewerRoot.posElArr[i];
+	let target = ViewerRoot.posTargetElArr[i];
+	if (!el || !target) continue;
 
-	Debug.log("ViewerRoot resizeRootObjects size " + w  + "-" + h );
+	target._vrPos = i;
 
-	//re-calc root object width based on aspect
-	var rootAspect = 3/4;
-	var rootw = h/w < rootAspect?h/rootAspect:w;
+	el.style.width = rootw + "px";
+	el.style.height = (h - ViewerRoot.ROOT_HEADER_HEIGHT) + "px";
+	el.style.left = w * (i % c) + (w - rootw) / 2 + "px";
+	el.style.top = ViewerRoot.ROOT_CONTAINER_OFFY + ViewerRoot.ROOT_HEADER_HEIGHT +
+		h * Math.floor(i / c) + "px";
+	el.style.zIndex = i;
 
-	//position all reports properly
-	for(let i=0;i<ViewerRoot.rootElArr.length;++i) //use let instead of var, so that Promise captures correct i (i.e. scope does not exist outside of loop scope)
-	{
-		ViewerRoot.rootElArr[i].style.width = rootw + "px";
-		ViewerRoot.rootElArr[i].style.height = (h - ViewerRoot.ROOT_HEADER_HEIGHT) + "px";
-		ViewerRoot.rootElArr[i].style.left = w*(ViewerRoot.rootPosArr[i]%c) + (w-rootw)/2 + "px";
-		ViewerRoot.rootElArr[i].style.top = ViewerRoot.ROOT_CONTAINER_OFFY + ViewerRoot.ROOT_HEADER_HEIGHT +
-			h*Math.floor(ViewerRoot.rootPosArr[i]/c) + "px";
-			ViewerRoot.rootElArr[i].style.zIndex = ViewerRoot.rootIsTransparentArr[i] ? (50 + i) : i;
-
-		//		Debug.log("ViewerRoot resizeRootObjects x y " + i + " at pos " + ViewerRoot.rootPosArr[i] +
-		//				":" + ViewerRoot.rootElArr[i].style.left  + "-" + ViewerRoot.rootElArr[i].style.top );
-
-		if(needToRedraw && ViewerRoot.rootObjArr[i]) //redraw for new size, when new added rootobj not defined at this point
-		{
-			//Debug.log("ViewerRoot resizeRootObjects redraw " + i  + "-" + ViewerRoot.rootObjIndexArr[i] );
-			//JSROOTPainter.drawObject(ViewerRoot.rootObjArr[i], ViewerRoot.rootObjIndexArr[i]);
-
-			try {
-				// TTree NTuples should be handled special
-				// _typename
-				// fBranches
-				// : arr: Array(5)0: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'px', fTitle: 'px', …}
-				// 1: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'py', fTitle: 'py', …}
-				// 2: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'pz', fTitle: 'pz', …}
-				// 3: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'random', fTitle: 'random', …}
-				// 4: {_typename: 'TBranch', fUniqueID: 0, fBits: 4194304, fName: 'i', fTitle: 'i', …}
-
-				Debug.log("ROOT type",ViewerRoot.rootObjArr[i]._typename);
-				if (ViewerRoot.rootObjArr[i]._typename == "TNtuple") {
-					var ret = JSROOT.redraw('histogram'+
-							ViewerRoot.rootObjIndexArr[i],
-							ViewerRoot.rootObjArr[i], "px:py::pz>5"); //last arg, root draw option
-					Debug.logv({ret});
-					ret.catch(err => {
-							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
-								"' failed to draw: " + err);
-							document.getElementById("histogram" +
-								ViewerRoot.rootObjIndexArr[i]).textContent =
-										ViewerRoot.rootObjArr[i].JSON;
-										//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
-						});
-				}
-				else {
-					var ret = JSROOT.redraw('histogram'+
-							ViewerRoot.rootObjIndexArr[i],
-							ViewerRoot.rootObjArr[i], "colz"); //last arg, root draw option
-					Debug.logv({ret});
-					ret.catch(err => {
-							Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
-								"' failed to draw: " + err);
-							document.getElementById("histogram" +
-								ViewerRoot.rootObjIndexArr[i]).textContent =
-										ViewerRoot.rootObjArr[i].JSON;
-										//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
-						});
-				}
-			}
-			catch (e) {
-				Debug.log("ROOT Object type '" + ViewerRoot.rootObjArr[i]._typename +
-						"' failed to draw: " + e);//, Debug.HIGH_PRIORITY);
-				document.getElementById("histogram" +
-						ViewerRoot.rootObjIndexArr[i]).textContent =
-								ViewerRoot.rootObjArr[i].JSON;
-								//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
-			}
-			ViewerRoot.refreshTransparency(i);
-		}
+	if (needToRedraw)
+		ViewerRoot.queueRenderPosition(i);
 	}
 
-	//position headers
-	for (var i = 0; i < ViewerRoot.rootHeaderElArr.length; ++i) {
-		ViewerRoot.rootHeaderElArr[i].style.width = w-2 + "px";
-		ViewerRoot.rootHeaderElArr[i].style.height = ViewerRoot.ROOT_HEADER_HEIGHT  + "px";
-		ViewerRoot.rootHeaderElArr[i].style.left = w*(i%c)  + "px";
-		ViewerRoot.rootHeaderElArr[i].style.top = ViewerRoot.ROOT_CONTAINER_OFFY + h*Math.floor(i/c) + "px";
+	for (let i = 0; i < ViewerRoot.rootHeaderElArr.length; ++i) {
+	ViewerRoot.rootHeaderElArr[i].style.width = w - 2 + "px";
+	ViewerRoot.rootHeaderElArr[i].style.height = ViewerRoot.ROOT_HEADER_HEIGHT + "px";
+	ViewerRoot.rootHeaderElArr[i].style.left = w * (i % c) + "px";
+	ViewerRoot.rootHeaderElArr[i].style.top =
+		ViewerRoot.ROOT_CONTAINER_OFFY + h * Math.floor(i / c) + "px";
 
-		ViewerRoot.rootHeaderElArr[i].style.borderColor =
-			ViewerRoot.rootTargetIndex==i?'rgb(68,156,44)':'black';
-		ViewerRoot.rootHeaderElArr[i].style.backgroundColor =
-			ViewerRoot.rootTargetIndex==i?'rgb(178,222,166)':'rgba(0,0,0,0)';
+	ViewerRoot.rootHeaderElArr[i].style.borderColor =
+		ViewerRoot.rootTargetIndex == i ? 'rgb(68,156,44)' : 'black';
+	ViewerRoot.rootHeaderElArr[i].style.backgroundColor =
+		ViewerRoot.rootTargetIndex == i ? 'rgb(178,222,166)' : 'rgba(0,0,0,0)';
 	}
-} //end resizeRootObjects()
+}; //end resizeRootObjects()
 
 //=====================================================================================
 // ViewerRoot.refreshTransparency ~~
 //		refresh the transparency state of histogram i and svg components
 ViewerRoot.refreshTransparency = function(i) {
-	if (!ViewerRoot.rootIsTransparentArr[i]) return;
-	//if need be, make transparent
-	var target = ViewerRoot.rootElArr[i] && ViewerRoot.rootElArr[i].children[0];
-	if (!target) return;
-		//Debug.log("superimpose draw " + i);
-		//histogram div bgColor
-		target.style.backgroundColor = "rgba(0,0,0,0)";
-		//svg bgColor
-		var svgs = target.getElementsByTagName('svg');
-	for (var s = 0; s < svgs.length; ++s)
-		svgs[s].style.backgroundColor = "rgba(0,0,0,0)";
-	//rect fill
-	var rects = target.getElementsByTagName("rect");
-		if(rects.length > 0)
-			rects[0].style.fill = "rgba(0,0,0,0)";
-
-		//structure:
-			//<div id='histogram#'><svg><g>
-			//<rect x="0" y="0" width="461.48" height="281.70663849600004" fill="rgba(0,0,0,0)" style="stroke: #000000; stroke-width: 1px;"></rect>
-			//<svg>..root drawing..</svg>
-			//</g>
-			//</svg>
-	} //end refreshTransparency()
+	// no-op: real overlay is done with SAME in one pad
+};
 
 //=====================================================================================
 // ViewerRoot.checkStreamerInfoLoaded ~~
@@ -689,15 +714,15 @@ ViewerRoot.refreshTransparency = function(i) {
 //	this is a critical step before attempting to draw any root objects
 ViewerRoot.checkStreamerInfoLoaded = function() {
 	if(ViewerRoot.sFile &&
-			ViewerRoot.sFile.fStreamerInfo &&
-			gFile.fStreamerInfo.fClassMap &&
-			gFile.fStreamerInfo.fClassMap.length > 0) //done
+	   ViewerRoot.sFile.fStreamerInfo &&
+	   gFile.fStreamerInfo.fClassMap &&
+	   gFile.fStreamerInfo.fClassMap.length > 0) //done
 	{
-		document.getElementById("loaderStatus").innerHTML = "Root Viewer Loaded.<br>Use drop-down to make selections.";
-		ViewerRoot.getDirectoryContents("/");
+	document.getElementById("loaderStatus").innerHTML = "Root Viewer Loaded.<br>Use drop-down to make selections.";
+	ViewerRoot.getDirectoryContents("/");
 	}
 	else //not done, wait longer
-		window.setTimeout(ViewerRoot.checkStreamerInfoLoaded,ViewerRoot.LOAD_STREAMER_INFO_CHECK_PERIOD);
+	window.setTimeout(ViewerRoot.checkStreamerInfoLoaded,ViewerRoot.LOAD_STREAMER_INFO_CHECK_PERIOD);
 }
 
 //=====================================================================================
@@ -708,17 +733,17 @@ ViewerRoot.getDirectoryContents = function(path) {
 	Debug.log("ViewerRoot getDirectoryContents " + path);
 
 	if(path.indexOf(".root/") >=0)
-		DesktopContent.XMLHttpRequest("Request?RequestType=getRoot", "RootPath="+path, ViewerRoot.getDirContentsHandler,
-										 0 /*reqParam*/,
-										 0 /*progressHandler*/,
-										 0 /*callHandlerOnErr*/,
-										 false /*doNoShowLoadingOverlay*/);
+	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot", "RootPath="+path, ViewerRoot.getDirContentsHandler,
+					  0 /*reqParam*/,
+					  0 /*progressHandler*/,
+					  0 /*callHandlerOnErr*/,
+					  false /*doNoShowLoadingOverlay*/);
 	else
-		DesktopContent.XMLHttpRequest("Request?RequestType=getDirectoryContents", "Path="+path, ViewerRoot.getDirContentsHandler,
-										 0 /*reqParam*/,
-										 0 /*progressHandler*/,
-										 0 /*callHandlerOnErr*/,
-										 true /*doNoShowLoadingOverlay*/);
+	DesktopContent.XMLHttpRequest("Request?RequestType=getDirectoryContents", "Path="+path, ViewerRoot.getDirContentsHandler,
+					  0 /*reqParam*/,
+					  0 /*progressHandler*/,
+					  0 /*callHandlerOnErr*/,
+					  true /*doNoShowLoadingOverlay*/);
 }
 
 //=====================================================================================
@@ -728,13 +753,12 @@ ViewerRoot.getDirContentsHandler = function(req) {
 
 	var permissions = DesktopContent.getXMLValue(req,'permissions');
 	if(!permissions)
-		Debug.log("ViewerRoot getDirContentsHandler permissions missing");
+	Debug.log("ViewerRoot getDirContentsHandler permissions missing");
 	else if (ViewerRoot.userPermissions != permissions) {
-		Debug.log("ViewerRoot getDirContentsHandler user permissions = " + permissions);
-		ViewerRoot.userPermissions = permissions;
-		ViewerRoot.hud.handleWindowResize();
+	Debug.log("ViewerRoot getDirContentsHandler user permissions = " + permissions);
+	ViewerRoot.userPermissions = permissions;
+	ViewerRoot.hud.handleWindowResize();
 	}
-
 	ViewerRoot.hud.handleDirContents(req);
 }
 
@@ -749,12 +773,12 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 
 	Debug.log("ViewerRoot.rootReq " + rootPath );
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot",
-			"RootPath="+rootPath,
-			ViewerRoot.getRootDataHandler,
-			objHandler /*reqParam*/,
-			 0 /*progressHandler*/,
-			 0 /*callHandlerOnErr*/,
-			 refreshIndex<0?false:true /*doNoShowLoadingOverlay*/);
+					  "RootPath="+rootPath,
+					  ViewerRoot.getRootDataHandler,
+					  objHandler /*reqParam*/,
+					  0 /*progressHandler*/,
+					  0 /*callHandlerOnErr*/,
+					  refreshIndex<0?false:true /*doNoShowLoadingOverlay*/);
 } //end rootReq()
 
 //=====================================================================================
@@ -762,12 +786,12 @@ ViewerRoot.rootReq = function(rootPath,refreshIndex) {
 ViewerRoot.rootConfigReq = function (rootConfigPath) {
 	//Debug.log("ViewerRoot.rootReq");
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRootConfig",
-			"RootConfigPath="+rootConfigPath,
-			ViewerRoot.getRootConfigHandler,
-			 0 /*reqParam*/,
-			 0 /*progressHandler*/,
-			 0 /*callHandlerOnErr*/,
-			 true /*doNoShowLoadingOverlay*/);
+					  "RootConfigPath="+rootConfigPath,
+					  ViewerRoot.getRootConfigHandler,
+					  0 /*reqParam*/,
+					  0 /*progressHandler*/,
+					  0 /*callHandlerOnErr*/,
+					  true /*doNoShowLoadingOverlay*/);
 } //end rootConfigReq()
 
 //=====================================================================================
@@ -820,10 +844,10 @@ ViewerRoot.iterativeConfigLoader = function() {
 	//Debug.log("ViewerRoot iterativeConfigLoader " + ViewerRoot.iterNumberRemaining);
 	if(!ViewerRoot.iterNumberRemaining)  //done
 	{
-		ViewerRoot.autoRefreshDefault = ViewerRoot.iterSaveAutoRefreshDefault;
-		ViewerRoot.nextObjectMode = ViewerRoot.iterSaveNextObjectMode;
-		ViewerRoot.iterLoading = false;
-		return;
+	ViewerRoot.autoRefreshDefault = ViewerRoot.iterSaveAutoRefreshDefault;
+	ViewerRoot.nextObjectMode = ViewerRoot.iterSaveNextObjectMode;
+	ViewerRoot.iterLoading = false;
+	return;
 	}
 
 	--ViewerRoot.iterNumberRemaining;
@@ -831,7 +855,7 @@ ViewerRoot.iterativeConfigLoader = function() {
 	//next is always the lowest position left
 	var min = -1;
 	for(var i=0;i<ViewerRoot.iterRootPosArr.length;++i)
-		if(min == -1 || ViewerRoot.iterRootPosArr[i] < ViewerRoot.iterRootPosArr[min]) min = i;
+	if(min == -1 || ViewerRoot.iterRootPosArr[i] < ViewerRoot.iterRootPosArr[min]) min = i;
 
 	ViewerRoot.nextObjectMode = ViewerRoot.iterRootIsTransparentArr[min]?ViewerRoot.SUPERIMPOSE_MODE:ViewerRoot.TILE_MODE;
 	ViewerRoot.autoRefreshDefault = ViewerRoot.iterRootIsAutoRefreshArr[min];
@@ -854,18 +878,18 @@ ViewerRoot.currStateRequestHandler = function(req, rootName)
 
 	if(!req) //error! stop handler
 	{
-		window.clearTimeout(_verifyStateTimeout);
-		window.clearInterval(_timeUpdateTimeout);
-		Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
-		return;
+	window.clearTimeout(_verifyStateTimeout);
+	window.clearInterval(_timeUpdateTimeout);
+	Debug.log("Error: " + err, Debug.HIGH_PRIORITY);
+	return;
 	}
 
 	var cs = DesktopContent.getXMLValue(req,"current_state");
 	var in_transition = DesktopContent.getXMLValue(req,"in_transition");
 
 	if(cs != "Running" || in_transition == "1") {
-		Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
-		ViewerRoot.haltRefresh(rootName, Debug.WARN_PRIORITY);
+	Debug.log("State needs to be Running to use Live DQM.", Debug.WARN_PRIORITY);
+	ViewerRoot.haltRefresh(rootName, Debug.WARN_PRIORITY);
 	}
 }//end currStateRequestHandler()
 
@@ -905,25 +929,25 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 
 	if(!object || !rootType || !rootName)
 	{
-		if(rootPath.includes("LIVE_DQM.root"))
-		{
-			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=getState",
-				"",
-				ViewerRoot.currStateRequestHandler,
-				rootName /*reqParam*/,
-				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
-				true /*doNotShowLoadingOverlay*/,
-				0 /*targetGatewaySupervisor*/,
-				true /*ignoreSystemBlock*/
-			);
-		}
-		else
-		{
-			ViewerRoot.haltRefresh(rootName, Debug.HIGH_PRIORITY);
-		}
-		return;
+	if(rootPath.includes("LIVE_DQM.root"))
+	{
+		DesktopContent.XMLHttpRequest(
+		"Request?RequestType=getState",
+		"",
+		ViewerRoot.currStateRequestHandler,
+		rootName /*reqParam*/,
+		0 /*progressHandler*/,
+		0 /*callHandlerOnErr*/,
+		true /*doNotShowLoadingOverlay*/,
+		0 /*targetGatewaySupervisor*/,
+		true /*ignoreSystemBlock*/
+		);
+	}
+	else
+	{
+		ViewerRoot.haltRefresh(rootName, Debug.HIGH_PRIORITY);
+	}
+	return;
 	}
 
 	var rootTitle = object.fTitle;
@@ -932,17 +956,16 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 	if(refreshIndex === undefined) refreshIndex = -1;
 
 	if(ViewerRoot.autoRefreshMatchArr.length &&
-			refreshIndex >= 0) //check if request matches auto refresh entry
+	   refreshIndex >= 0) //check if request matches auto refresh entry
 	{
 		for (var i = 0; i < ViewerRoot.autoRefreshMatchArr.length; ++i) {
 			if (refreshIndex == ViewerRoot.autoRefreshMatchArr[i][0]) {
-				Debug.log("ViewerRoot handling refresh " +
-						refreshIndex + " " + rootName);
+		Debug.log("ViewerRoot handling refresh " +
+			  refreshIndex + " " + rootName);
 
-				//since handled, remove from auto refresh array
-				ViewerRoot.autoRefreshMatchArr[i] = 0;
-				ViewerRoot.autoRefreshMatchArr.splice(i,1);
-
+		//since handled, remove from auto refresh array
+		ViewerRoot.autoRefreshMatchArr[i] = 0;
+		ViewerRoot.autoRefreshMatchArr.splice(i,1);
 				//if name in js structures has changed,
 				//	assume it is users fault and throw out this refreshed object
 				if(refreshIndex >= ViewerRoot.rootObjNameArr.length ||
@@ -962,11 +985,11 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 				break;
 			}
 		}
-		//if not found, assume it is a new object
+	//if not found, assume it is a new object
 	}
 
 	console.log("refreshIndex=" + refreshIndex +
-			" ViewerRoot.rootTargetIndex=" + ViewerRoot.rootTargetIndex);
+		" ViewerRoot.rootTargetIndex=" + ViewerRoot.rootTargetIndex);
 
 	if(refreshIndex < 0) ViewerRoot.prepareNextLocation(rootName, rootTitle);
 	else {
@@ -977,34 +1000,33 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 		//	 globalset = replace/on
 		//	ViewerRoot.prepareNextLocation(rootName);
 		//   globalset = gui settings
-
-		// tmpHLI = HIGHLIGHT_INDEX;
-		// HIGHLIGHT_INDEX = refreshIndex
-		//refreshIndex = -1;
-		//	do it
-		//	HIGHLIGHT_INDEX = tmpHLI;
-
+	// tmpHLI = HIGHLIGHT_INDEX;
+	// HIGHLIGHT_INDEX = refreshIndex
+	//refreshIndex = -1;
+	//	do it
+	//	HIGHLIGHT_INDEX = tmpHLI;
 
 
-//		var tmpRootTargetIndex = ViewerRoot.rootTargetIndex;
-//		ViewerRoot.rootTargetIndex = refreshIndex;
-//
-//		var tmpRefreshIndex = refreshIndex;
-//		refreshIndex = -1;
-//
-//		var tmpNextObjectMode = ViewerRoot.nextObjectMode;
-//		var tmpAutoRefreshDefault = ViewerRoot.autoRefreshDefault;
-//
-//		ViewerRoot.nextObjectMode = ViewerRoot.REPLACE_MODE;
-//		ViewerRoot.autoRefreshDefault = true;
-//
-//
-//		ViewerRoot.prepareNextLocation(rootName);
-//
-//
-//		ViewerRoot.rootTargetIndex = tmpRootTargetIndex;
-//		ViewerRoot.nextObjectMode = tmpNextObjectMode;
-//		ViewerRoot.autoRefreshDefault = tmpAutoRefreshDefault;
+
+		//		var tmpRootTargetIndex = ViewerRoot.rootTargetIndex;
+		//		ViewerRoot.rootTargetIndex = refreshIndex;
+		//
+		//		var tmpRefreshIndex = refreshIndex;
+		//		refreshIndex = -1;
+		//
+		//		var tmpNextObjectMode = ViewerRoot.nextObjectMode;
+		//		var tmpAutoRefreshDefault = ViewerRoot.autoRefreshDefault;
+		//
+		//		ViewerRoot.nextObjectMode = ViewerRoot.REPLACE_MODE;
+		//		ViewerRoot.autoRefreshDefault = true;
+		//
+		//
+		//		ViewerRoot.prepareNextLocation(rootName);
+		//
+		//
+		//		ViewerRoot.rootTargetIndex = tmpRootTargetIndex;
+		//		ViewerRoot.nextObjectMode = tmpNextObjectMode;
+		//		ViewerRoot.autoRefreshDefault = tmpAutoRefreshDefault;
 	}
 
 	ViewerRoot.interpretObjectJSON(object,rootType,rootName,refreshIndex);
@@ -1017,174 +1039,46 @@ ViewerRoot.getRootDataHandler = function(req, objHandler)
 //	interpret and draw
 ViewerRoot.interpretObjectJSON = function (object, rootType, objName, refreshIndex) {
 
-	if(refreshIndex == undefined) refreshIndex = -1;
+	if (refreshIndex === undefined) refreshIndex = -1;
 
+	let objIndex;
 
-	if(ViewerRoot.hardRefresh) //"Hard" refresh, reloads axes for example
-	{
-		if (refreshIndex < 0) {
-			ViewerRoot.rootObjArr.push(object);
-			ViewerRoot.rootObjIndexArr.push(ViewerRoot.objIndex);
-		}
-		else //use refresh index
-		{
-			delete ViewerRoot.rootObjArr[refreshIndex]; ViewerRoot.rootObjArr[refreshIndex] = null;
-			ViewerRoot.rootObjArr[refreshIndex] = object;
-			ViewerRoot.rootObjTitleArr[refreshIndex] = object.fTitle;
-			ViewerRoot.rootObjIndexArr[refreshIndex] = ViewerRoot.objIndex;
-
-
-			ViewerRoot.rootElArr[refreshIndex].innerHTML = ""; //cleare rootObjectContainer
-			var tmpdiv = document.createElement('div'); //make target div
-			tmpdiv.setAttribute("id","histogram"+ViewerRoot.objIndex); //set new target for root object
-			tmpdiv.setAttribute("class","rootObjectContainerTarget");
-			ViewerRoot.rootElArr[refreshIndex].appendChild(tmpdiv);
-		}
-
-		//draw based on refresh index
-		var targetEl = document.getElementById("histogram" + ViewerRoot.objIndex);
-		try {
-
-			if(rootType == "JSON")
-				throw "Doing JSON only";
-
-			var isFirstTime = targetEl.innerHTML == ""; //if empty, assume it is first time
-			JSROOT.redraw('histogram'+
-					(ViewerRoot.objIndex),
-					object, "colz"); //last arg, root draw option
-
-			if(isFirstTime) //try again, to see if there are errors (because async causes craziness)
-			{
-				if (targetEl.innerHTML == "") {
-					Debug.log("Empty first time handling!");
-
-					//==============
-					function localMakeAsyncCheckerFunction(obji, type, obj) {
-						Debug.log("Async Empty first time handling for histogram" +
-								obji + " type=" + type);
-						//return a function, so that the constants are stable
-						return function () {
-							Debug.log("Async Empty first time handling for histogram" +
-									obji);
-							if (targetEl.innerHTML != "") {
-								Debug.log("histogram" +
-									obji + " is OK, must have just taken a while");
-								return;
-							}
-
-							try {
-								JSROOT.redraw("histogram" +
-										obji,
-										obj, "colz"); //last arg, root draw option
-							}
-							catch (e) {
-								Debug.log("ROOT Object type '" + type +
-										"' failed to draw histogram" +
-										obji + ": " + e);//, Debug.HIGH_PRIORITY);
-								targetEl.textContent = obj.JSON;//JSON.stringify(object); //fill with text
-							}
-								}
-					} //end localMakeAsyncCheckerFunction()
-
-					window.setTimeout(localMakeAsyncCheckerFunction(
-							ViewerRoot.objIndex,
-							object._typename,
-							object),
-						500/*ms*/); //end asynch 2nd try
-
-				} //end empty first time handling
-			} //end special first time handling
-		}
-		catch (e) {
-			Debug.log("ROOT Object type '" + object._typename +
-					"' failed to draw: " + e);//, Debug.HIGH_PRIORITY);
-			targetEl.textContent = object.JSON;// JSON.stringify(object); //fill with text
-		}
-
-		ViewerRoot.objIndex++;
+	if (refreshIndex < 0) {
+	ViewerRoot.rootObjArr.push(object);
+	ViewerRoot.rootObjIndexArr.push(ViewerRoot.objIndex++);
+	objIndex = ViewerRoot.rootObjArr.length - 1;
 	}
-	else		//"Soft" refresh, doesn't reload axes for example
-	{
-		//draw based on refresh index
-		try {
-			Debug.log("ROOT type",object._typename,
-				"refreshIndex", refreshIndex,
-				"ViewerRoot.objIndex", ViewerRoot.objIndex
-				);
-			var objectIndex = refreshIndex < 0 ? ViewerRoot.objIndex:
-				ViewerRoot.rootObjIndexArr[refreshIndex];
-			if (object._typename == "TNtuple") {
-				var ret = JSROOT.redraw('histogram' + objectIndex,
-					object, "px:py::pz>5"); //last arg, root draw option
-				Debug.logv({ret});
-				ret.catch(err => {
-						Debug.log("ROOT Object type '" + object._typename +
-							"' failed to draw: " + err, "objectIndex",objectIndex);
-						document.getElementById("histogram" + objectIndex).textContent =
-								object.JSON;
-									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
-					});
-			}
-			else {
-				var ret = JSROOT.redraw('histogram'+
-						(refreshIndex<0?ViewerRoot.objIndex:
-						ViewerRoot.rootObjIndexArr[refreshIndex]),
-						object, "colz"); //last arg, root draw option
-				Debug.logv({ret});
-				ret.catch(err => {
-						Debug.log("ROOT Object type '" + object._typename +
-							"' failed to draw: " + err, "objectIndex",objectIndex);
-						document.getElementById("histogram" + objectIndex).textContent =
-								object.JSON;
-									//JSON.stringify(ViewerRoot.rootObjArr[i]); //fill with text
-					});
-			}
-		}
-		catch (e) {
-			Debug.err("ROOT Object type '" + object._typename +
-					"' failed to draw: " + e, "objectIndex",objectIndex);
-					document.getElementById("histogram" + objectIndex).textContent =
-							object.JSON;
-		}
-
-		if (refreshIndex < 0) {
-			ViewerRoot.rootObjArr.push(object);
-			ViewerRoot.rootObjIndexArr.push(ViewerRoot.objIndex);
-			ViewerRoot.objIndex++;
-		}
-		else //use refresh index
-		{
-			delete ViewerRoot.rootObjArr[refreshIndex]; ViewerRoot.rootObjArr[refreshIndex] = null;
-			ViewerRoot.rootObjArr[refreshIndex] = object;
-			ViewerRoot.rootObjTitleArr[refreshIndex] = object.fTitle;
-		}
+	else {
+	ViewerRoot.rootObjArr[refreshIndex] = object;
+	ViewerRoot.rootObjTitleArr[refreshIndex] = object.fTitle;
+	objIndex = refreshIndex;
 	}
 
-	ViewerRoot.refreshTransparency(refreshIndex<0?(ViewerRoot.rootObjArr.length-1):refreshIndex);
-	ViewerRoot.manageRootHeaders(); 	//manage headers for all positions
-
-} //end interpretObjectJSON()
+	let posi = ViewerRoot.rootPosArr[objIndex];
+	ViewerRoot.queueRenderPosition(posi);
+	ViewerRoot.manageRootHeaders();
+}; //end interpretObjectJSON()
 
 //=====================================================================================
 function loadScript(url, callback) {
-   // dynamic script loader using callback
-   // (as loading scripts may be asynchronous)
-   var script = document.createElement("script")
-   script.type = "text/javascript";
-   if (script.readyState) { // Internet Explorer specific
-	  script.onreadystatechange = function() {
-		 if (script.readyState == "loaded" ||
-			 script.readyState == "complete") {
-			script.onreadystatechange = null;
-			callback();
-		 }
-	  };
-   } else { // Other browsers
-	  script.onload = function(){
-		 callback();
-	  };
-   }
-   //var rnd = Math.floor(Math.random()*80000); //keeping in case we need to bring back cache breaking behavior in the future
-   script.src = url;//+ "?r=" + rnd;
-   document.getElementsByTagName("head")[0].appendChild(script);
+	// dynamic script loader using callback
+	// (as loading scripts may be asynchronous)
+	var script = document.createElement("script")
+	script.type = "text/javascript";
+	if (script.readyState) { // Internet Explorer specific
+	script.onreadystatechange = function() {
+		if (script.readyState == "loaded" ||
+		script.readyState == "complete") {
+		script.onreadystatechange = null;
+		callback();
+		}
+	};
+	} else { // Other browsers
+	script.onload = function(){
+		callback();
+	};
+	}
+	//var rnd = Math.floor(Math.random()*80000); //keeping in case we need to bring back cache breaking behavior in the future
+	script.src = url;//+ "?r=" + rnd;
+	document.getElementsByTagName("head")[0].appendChild(script);
 } //end loadScript()
