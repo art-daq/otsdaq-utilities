@@ -103,7 +103,7 @@ ViewerRoot.createHud = function() {
 	    else if(i==1)
 	    {
 		ViewerRoot.hudAutoHide = chk.checked; 				//auto hide
-		ViewerRoot.hud.handleWindowResize();
+		ViewerRoot.handleWindowResize();
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=setUserPreferences&autoHide="+
 					      (chk.checked?1:0),
@@ -223,7 +223,7 @@ ViewerRoot.createHud = function() {
 	    chk.checked = (autoHide|0)?true:false;
 	    Debug.log("setting autoHide=" + chk.checked);
 	    ViewerRoot.hudAutoHide = chk.checked; 	//auto hide
-	    ViewerRoot.hud.handleWindowResize();
+	    ViewerRoot.handleWindowResize();
 	}
 	var hardRefresh = DesktopContent.getXMLValue(req,'hardRefresh');
 	if(hardRefresh !== undefined && hardRefresh !== "")
