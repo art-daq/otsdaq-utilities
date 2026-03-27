@@ -2366,7 +2366,8 @@ Here is the json string received:
 				recordText = "(all " + recordObj["feClass"] + ") ";
 			else
 				recordText = "(" + recordObj["feUID"] + ") ";
-			recordText += recordObj["macroName"] + ": ";
+			var macroNameDisplay = useHtmlBreaks ? "<label style='font-weight: 900;'>" + recordObj["macroName"] + "</label>" : recordObj["macroName"];
+			recordText += macroNameDisplay + ": ";
 
 			return recordText + (recordName === "" ? "No arguments" : recordName);
 		}

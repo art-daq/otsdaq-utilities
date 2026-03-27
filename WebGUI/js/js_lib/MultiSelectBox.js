@@ -222,15 +222,16 @@ MultiSelectBox.myOptionSelect = function (option, index, isSingleSelect, event) 
             selectList.push(0);
     }
 
-    //toggle highlighted style and global array
-    MultiSelectBox.toggleClass(option, "optionhighlighted");
-    selectList[index] ^= 1;
-
-    if (isSingleSelect ||   //if true, only allow one select at a time, so deselect others
+    //determine if we're in single-select mode (either isSingleSelect or requireCtrlMultiClick without modifier keys)
+    var isEffectivelySingleSelect = isSingleSelect ||
         (MultiSelectBox.requireCtrlMultiClick_[id] &&
-            !event.ctrlKey && !event.metaKey && !event.shiftKey))
+            !event.ctrlKey && !event.metaKey && !event.shiftKey);
+
+    //in single-select mode, if clicking on an already-selected item, keep it selected (don't toggle off)
+    //this prevents the scenario where clicking on a selected item deselects everything
+    if (isEffectivelySingleSelect && selectList[index] == 1) {
+        //item is already selected, just deselect all others (keep this one selected)
         for (var opt = 0; opt < size; opt++) {
-            //fixed, now works for any order option IDs. Goes by index only.
             var cindex = select.childNodes[opt].id.split("_");
             cindex = cindex[cindex.length - 1];
 
@@ -240,30 +241,49 @@ MultiSelectBox.myOptionSelect = function (option, index, isSingleSelect, event) 
                 selectList[cindex] = 0;
             }
         }
-    else if (event.shiftKey &&
-        MultiSelectBox.lastOptSelect_[id] != -1) {
-        //if shift.. then select or deselect
-        //	(based on value at MultiSelectBox.lastOptSelect_[id]) from
-        //	MultiSelectBox.lastOptSelect_[id]
-        //	to this click
+    }
+    else {
+        //toggle highlighted style and global array
+        MultiSelectBox.toggleClass(option, "optionhighlighted");
+        selectList[index] ^= 1;
 
-        var lo = MultiSelectBox.lastOptSelect_[id] < index ?
-            MultiSelectBox.lastOptSelect_[id] : index;
-        var hi = MultiSelectBox.lastOptSelect_[id] < index ?
-            index : MultiSelectBox.lastOptSelect_[id];
+        if (isEffectivelySingleSelect)
+            for (var opt = 0; opt < size; opt++) {
+                //fixed, now works for any order option IDs. Goes by index only.
+                var cindex = select.childNodes[opt].id.split("_");
+                cindex = cindex[cindex.length - 1];
 
-        //MultiSelectBox.dbg("lo ",lo," hi ",hi);
-        //handle multi shift click
-        for (var opt = lo; opt <= hi; opt++) {
-            //MultiSelectBox.dbg(selectList[opt]," vs ",
-            //		selectList[MultiSelectBox.lastOptSelect_[id]]);
-            if (selectList[opt] !=
-                selectList[MultiSelectBox.lastOptSelect_[id]]) //if not matching selected value
-            {
-                //MultiSelectBox.dbg("flip");
-                //toggle highlighted style and global array
-                MultiSelectBox.toggleClass(select.childNodes[opt], "optionhighlighted");
-                selectList[opt] ^= 1;
+                if (cindex == index) continue;
+                else if (selectList[cindex] == 1) {
+                    MultiSelectBox.toggleClass(select.childNodes[opt], "optionhighlighted");
+                    selectList[cindex] = 0;
+                }
+            }
+        else if (event.shiftKey &&
+            MultiSelectBox.lastOptSelect_[id] != -1) {
+            //if shift.. then select or deselect
+            //	(based on value at MultiSelectBox.lastOptSelect_[id]) from
+            //	MultiSelectBox.lastOptSelect_[id]
+            //	to this click
+
+            var lo = MultiSelectBox.lastOptSelect_[id] < index ?
+                MultiSelectBox.lastOptSelect_[id] : index;
+            var hi = MultiSelectBox.lastOptSelect_[id] < index ?
+                index : MultiSelectBox.lastOptSelect_[id];
+
+            //MultiSelectBox.dbg("lo ",lo," hi ",hi);
+            //handle multi shift click
+            for (var opt = lo; opt <= hi; opt++) {
+                //MultiSelectBox.dbg(selectList[opt]," vs ",
+                //		selectList[MultiSelectBox.lastOptSelect_[id]]);
+                if (selectList[opt] !=
+                    selectList[MultiSelectBox.lastOptSelect_[id]]) //if not matching selected value
+                {
+                    //MultiSelectBox.dbg("flip");
+                    //toggle highlighted style and global array
+                    MultiSelectBox.toggleClass(select.childNodes[opt], "optionhighlighted");
+                    selectList[opt] ^= 1;
+                }
             }
         }
     }
