@@ -307,6 +307,7 @@ MultiSelectBox.createSelectBox = function (el, name, title, vals, keys, types,
     //searchglass=28x28, margin=5, vscroll=16, border=1
     var msW = (!el.offsetWidth ? el.style.width.split('p')[0] : el.offsetWidth) - 28 - 5 - 16 - 2;
     var msH = (!el.offsetHeight ? el.style.height.split('p')[0] : el.offsetHeight) - 40 - 2;
+    if (msH <= 0) msH = 200; //default to 200px if no height specified
 
     el = document.createElement("div"); //create element within element
     MultiSelectBox.omnis_[name].appendChild(el);
