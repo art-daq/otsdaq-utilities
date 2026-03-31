@@ -507,15 +507,18 @@ SubsystemLaunch.create = function() {
 					str += "</td><td  >";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Configure the entire System (all included subsystems)'" +
 						">Configure</button>";
 					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 					// 	">Start</button>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Stop' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Stop the entire System (all included subsystems)'" +
 						">Stop</button>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Halt' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Halt the entire System (all included subsystems)'" +
 						">Halt</button>";
 					str += "</td></tr>";
 				}
@@ -736,14 +739,17 @@ SubsystemLaunch.create = function() {
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Configure subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Configure</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Stop subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Stop</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Halt subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Halt</button>";
 						}
 						else if (fieldIds[i] == "configAlias") {
