@@ -476,6 +476,240 @@
 		} //end setROCStatus()
 
 
+		function toggleDisk (diskNumber, targetStatus){
+			Debug.log("toggleDisk()", diskNumber, targetStatus);
+			
+			var minBoardId = diskNumber * 80;
+			var maxBoardId = minBoardId + 79;
+			var excludeBoards = [31, 111, 160]; //Make sure to exclude TRAD and laser boards
+
+			var allRocNames = [];
+			for(var i = 0; i < FEstructure_.apps.length; ++i)
+				for(var j = 0; j < FEstructure_.apps[i].dtcs.length; ++j)
+					for(var k = 0; k < FEstructure_.apps[i].dtcs[j].rocs.length; ++k)
+						allRocNames.push(FEstructure_.apps[i].dtcs[j].rocs[k].name);
+
+			ConfigurationAPI.getFieldValuesForRecords(
+				"/ROCInterfaceTable",
+				allRocNames,
+				["ROCTypeLinkUID"],
+				function(fieldValues)
+				{
+					if(!fieldValues.length)
+					{
+						Debug.log("No boardID values returned from ROCInterfaceTable.",
+								Debug.HIGH_PRIORITY);
+						return;
+					}
+
+					// Collect ROC names whose ROCTypeLinkUID falls in the disk's board ID range
+					var diskROCs = [];
+					for(var i = 0; i < fieldValues.length; ++i)
+					{
+						var boardId = parseInt(fieldValues[i].fieldValue);
+
+						if(boardId >= minBoardId && boardId <= maxBoardId && excludeBoards.indexOf(boardId) < 0){
+							diskROCs.push(fieldValues[i].fieldUID);
+						}
+					}
+
+					if(!diskROCs.length)
+					{
+						Debug.log("No ROCs found for disk " + diskNumber + ".",
+							Debug.HIGH_PRIORITY);
+						return;
+					}
+					Debug.log("Found " + diskROCs.length + " ROC(s) for disk " + diskNumber);
+
+					var rocButtons = document.querySelectorAll('.rocBox');
+					for(var b = 0; b < rocButtons.length; ++b){
+					    if(diskROCs.indexOf(rocButtons[b].innerText) >= 0)
+					    {
+					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+					        rocButtons[b].style.border = "1px solid black";
+					        rocButtons[b].style.opacity = 0.5;
+					    }
+					}
+					var targetStatusStr = targetStatus == 1 ? "1" : "0";
+					ConfigurationAPI.setFieldValuesForRecords(
+					    "/ROCInterfaceTable",
+					    diskROCs,
+					    ["Status"],
+					    [targetStatusStr],
+					    function(modifiedTables)
+					    {
+					        if(!modifiedTables.length)
+					        {
+					            Debug.log("Error writing status for disk " + diskNumber + " ROCs.",
+					                    Debug.HIGH_PRIORITY);
+					            return;
+					        }
+					        _rocModifiedTables = modifiedTables;
+					        Debug.log("Disk " + diskNumber + " ROCs (" + diskROCs.length +
+					                ") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+					    },
+					    _rocModifiedTables
+					);
+				},
+				_rocModifiedTables
+			);
+
+		} //end toggleDisk()
+
+		function toggleLaser (targetStatus){
+			Debug.log("toggleLaser()", targetStatus);
+			
+			var laserBoard = 160;
+
+			var allRocNames = [];
+			for(var i = 0; i < FEstructure_.apps.length; ++i)
+				for(var j = 0; j < FEstructure_.apps[i].dtcs.length; ++j)
+					for(var k = 0; k < FEstructure_.apps[i].dtcs[j].rocs.length; ++k)
+						allRocNames.push(FEstructure_.apps[i].dtcs[j].rocs[k].name);
+
+			ConfigurationAPI.getFieldValuesForRecords(
+				"/ROCInterfaceTable",
+				allRocNames,
+				["ROCTypeLinkUID"],
+				function(fieldValues)
+				{
+					if(!fieldValues.length)
+					{
+						Debug.log("No boardID values returned from ROCInterfaceTable.",
+								Debug.HIGH_PRIORITY);
+						return;
+					}
+
+					// Collect ROC names whose ROCTypeLinkUID falls in the disk's board ID range
+					var laserROCs = [];
+					for(var i = 0; i < fieldValues.length; ++i)
+					{
+						var boardId = parseInt(fieldValues[i].fieldValue);
+						if(boardId == laserBoard){
+							laserROCs.push(fieldValues[i].fieldUID);
+							break;
+						}
+					}
+
+					if(!laserROCs.length)
+					{
+						Debug.log("No Laser ROCs found!",
+							Debug.HIGH_PRIORITY);
+						return;
+					}
+
+					var rocButtons = document.querySelectorAll('.rocBox');
+					for(var b = 0; b < rocButtons.length; ++b){
+					    if(laserROCs.indexOf(rocButtons[b].innerText) >= 0)
+					    {
+					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+					        rocButtons[b].style.border = "1px solid black";
+					        rocButtons[b].style.opacity = 0.5;
+					    }
+					}
+					var targetStatusStr = targetStatus == 1 ? "1" : "0";
+					ConfigurationAPI.setFieldValuesForRecords(
+					    "/ROCInterfaceTable",
+					    laserROCs,
+					    ["Status"],
+					    [targetStatusStr],
+					    function(modifiedTables)
+					    {
+					        if(!modifiedTables.length)
+					        {
+					            Debug.log("Error writing status for laser ROCs.",
+					                    Debug.HIGH_PRIORITY);
+					            return;
+					        }
+					        _rocModifiedTables = modifiedTables;
+					        Debug.log("Laser ROC set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+					    },
+					    _rocModifiedTables
+					);
+				},
+				_rocModifiedTables
+			);
+
+		} //end toggleTRADs()
+
+		function toggleTRADs (targetStatus){
+			Debug.log("toggleTRADs()", targetStatus);
+			
+			var TRADboards = [31, 111];
+
+			var allRocNames = [];
+			for(var i = 0; i < FEstructure_.apps.length; ++i)
+				for(var j = 0; j < FEstructure_.apps[i].dtcs.length; ++j)
+					for(var k = 0; k < FEstructure_.apps[i].dtcs[j].rocs.length; ++k)
+						allRocNames.push(FEstructure_.apps[i].dtcs[j].rocs[k].name);
+
+			ConfigurationAPI.getFieldValuesForRecords(
+				"/ROCInterfaceTable",
+				allRocNames,
+				["ROCTypeLinkUID"],
+				function(fieldValues)
+				{
+					if(!fieldValues.length)
+					{
+						Debug.log("No boardID values returned from ROCInterfaceTable.",
+								Debug.HIGH_PRIORITY);
+						return;
+					}
+
+					// Collect ROC names whose ROCTypeLinkUID falls in the disk's board ID range
+					var TRADROCs = [];
+					for(var i = 0; i < fieldValues.length; ++i)
+					{
+						var boardId = parseInt(fieldValues[i].fieldValue);
+
+						if(TRADboards.indexOf(boardId) >= 0){
+							TRADROCs.push(fieldValues[i].fieldUID);
+						}
+					}
+
+					if(!TRADROCs.length)
+					{
+						Debug.log("No ROCs found for disk " + diskNumber + ".",
+							Debug.HIGH_PRIORITY);
+						return;
+					}
+					Debug.log("Found " + TRADROCs.length + " ROC(s)");
+
+					var rocButtons = document.querySelectorAll('.rocBox');
+					for(var b = 0; b < rocButtons.length; ++b){
+					    if(TRADROCs.indexOf(rocButtons[b].innerText) >= 0)
+					    {
+					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+					        rocButtons[b].style.border = "1px solid black";
+					        rocButtons[b].style.opacity = 0.5;
+					    }
+					}
+					var targetStatusStr = targetStatus == 1 ? "1" : "0";
+					ConfigurationAPI.setFieldValuesForRecords(
+					    "/ROCInterfaceTable",
+					    TRADROCs,
+					    ["Status"],
+					    [targetStatusStr],
+					    function(modifiedTables)
+					    {
+					        if(!modifiedTables.length)
+					        {
+					            Debug.log("Error writing status for TRAD ROCs.",
+					                    Debug.HIGH_PRIORITY);
+					            return;
+					        }
+					        _rocModifiedTables = modifiedTables;
+					        Debug.log("TRAD ROCs (" + TRADROCs.length +
+					                ") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+					    },
+					    _rocModifiedTables
+					);
+				},
+				_rocModifiedTables
+			);
+
+		} //end toggleTRADs()
+
 		//=====================================================================================
 		//paintApp ~~
 		function paintApp (appLength, appName, appStatus)
@@ -634,6 +868,24 @@
 	</div>
 	<button class='setStatus' onclick="saveAllDtcsStatusChanges()">Write Status For Selected DTCs</button>
 	<button class='setStatus' onclick="saveAllRocsStatusChanges()">Write Status For Selected ROCs</button>
+	<div style="display:flex; justify-content:flex-begin; gap:4px; padding:4px;">
+	    <div style="display:flex; flex-direction:column; gap:4px;">
+	        <button class='toggleOn' onclick="toggleDisk(0,1)">Turn ON Disk 0</button>
+	        <button class='toggleOff' onclick="toggleDisk(0,0)">Turn OFF Disk 0</button>
+	    </div>
+	    <div style="display:flex; flex-direction:column; gap:4px;">
+	        <button class='toggleOn' onclick="toggleDisk(1,1)">Turn ON Disk 1</button>
+	        <button class='toggleOff' onclick="toggleDisk(1,0)">Turn OFF Disk 1</button>
+	    </div>
+	    <div style="display:flex; flex-direction:column; gap:4px;">
+	        <button class='toggleOn' onclick="toggleLaser(1)">Turn ON Laser</button>
+	        <button class='toggleOff' onclick="toggleLaser(0)">Turn OFF Laser</button>
+	    </div>
+	    <div style="display:flex; flex-direction:column; gap:4px;">
+	        <button class='toggleOn' onclick="toggleTRADs(1)">Turn ON TRADs</button>
+	        <button class='toggleOff' onclick="toggleTRADs(0)">Turn OFF TRADs</button>
+	    </div>
+	</div>
 	<div class='mainBlockContainer' id='mainDiv'></div>
 </body>
 
