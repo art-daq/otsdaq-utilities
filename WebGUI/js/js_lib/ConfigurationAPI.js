@@ -3384,32 +3384,37 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
             bitMask |= 1 << i;
         bitMask = bitMask >>> 0; // >>> 0 converts to unsigned 32-bit integer
 
+        if (bitMapParams.length > 16) {
+            allowFloatingPoint = bitMapParams[16] == "Yes" ? 1 : 0;
+        }
+
         minValue = bitMapParams[3] == ConfigurationAPI._DEFAULT || bitMapParams[3] == "" ? 0 : (parseFloat(bitMapParams[3]));
         maxValue = bitMapParams[4] == ConfigurationAPI._DEFAULT || bitMapParams[4] == "" ? bitMask : (parseFloat(bitMapParams[4]));
         if (maxValue < minValue)
             maxValue = bitMask;
         midValue = (maxValue + minValue) / 2; //used for color calcs
-        stepValue = bitMapParams[5] == ConfigurationAPI._DEFAULT || bitMapParams[5] == "" ? 1 : (parseFloat(bitMapParams[5]));
+        var defaultStepValue = allowFloatingPoint ? ((maxValue - minValue) / 256) : 1 ; //8 bit color steps for floats
+        stepValue = bitMapParams[5] == ConfigurationAPI._DEFAULT || bitMapParams[5] == "" ? defaultStepValue : (parseFloat(bitMapParams[5]));
 
         Debug.log("minValue, maxValue, stepValue", minValue, maxValue, stepValue);
 
-        if (minValue < 0 || minValue > bitMask) {
+        if (minValue > bitMask) {
             Debug.err("Illegal input parameters, minValue of " + minValue + " is illegal. " +
-                "(minValue possible values are from 0 to " + bitMask + ".)");
+                "(minValue possible values are up to " + bitMask + ".)");
             return false;
         }
-        if (maxValue < 0 || maxValue > bitMask) {
+        if (maxValue > bitMask) {
             Debug.err("Illegal input parameters, maxValue of " + maxValue + " is illegal. " +
-                "(maxValue possible values are from 0 to " + bitMask + ".)");
+                "(maxValue possible values are up to " + bitMask + ".)");
             return false;
         }
         if (minValue > maxValue) {
             Debug.err("Illegal input parameters, minValue > maxValue is illegal.");
             return false;
         }
-        if (stepValue < 1 || stepValue > maxValue - minValue) {
+        if (stepValue <= 0 || stepValue > maxValue - minValue) {
             Debug.err("Illegal input parameters, stepValue of " + stepValue + " is illegal. " +
-                "(stepValue possible values are from 1 to " + (maxValue - minValue) + ".)");
+                "(stepValue possible values are from 0 to " + (maxValue - minValue) + ".)");
             return false;
         }
         if ((((maxValue - minValue) / stepValue) >>> 0 /* force 32-bit integer */) !=
@@ -3456,7 +3461,6 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
         doSnakeColumns = bitMapParams[14] == "Yes" ? 1 : 0;
         doSnakeRows = bitMapParams[15] == "Yes" ? 1 : 0;
         if (bitMapParams.length > 16) {
-            allowFloatingPoint = bitMapParams[16] == "Yes" ? 1 : 0;
             valueMapToStrings = bitMapParams[17];
             valueMapToStringsArr = valueMapToStrings.split(',');
             //remove all white space
@@ -3663,18 +3667,20 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
                         bmpData[r][c] = srcMatrix[convertedRC[0]][convertedRC[1]];
 
                     if (bmpData[r][c] < minValue) {
+                        let tmpVal = bmpData[r][c];
                         bmpData[r][c] = minValue; //force to legal value
                         throw ("There was an illegal value less than minValue: " +
-                            bmpData[r][c] + " < " + minValue + " @ (row,col) = (" +
-                            convertedRC[0] + "," + convertedRC[0] + ")");
+                            tmpVal + " < " + minValue + " @ (row,col) = (" +
+                            convertedRC[0] + "," + convertedRC[1] + ")");
                     }
                     if (bmpData[r][c] > maxValue) {
+                        let tmpVal = bmpData[r][c];
                         bmpData[r][c] = maxValue; //force to legal value
                         throw ("There was an illegal value greater than maxValue: " +
-                            bmpData[r][c] + " > " + maxValue + " @ (row,col) = (" +
-                            convertedRC[0] + "," + convertedRC[0] + ")");
+                            tmpVal + " > " + maxValue + " @ (row,col) = (" +
+                            convertedRC[0] + "," + convertedRC[1] + ")");
                     }
-                    if ((!allowFloatingPoint || stepValue != 1) &&
+                    if ((!allowFloatingPoint && stepValue != 1) &&
                         (((bmpData[r][c] - minValue) / stepValue) | 0) != (bmpData[r][c] - minValue) / stepValue) {
                         let tmpVal = bmpData[r][c];
                         bmpData[r][c] = (minValue + stepValue * (((bmpData[r][c] - minValue) / stepValue) | 0)); //force to legal value
@@ -3682,7 +3688,7 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
                             tmpVal + " != " +
                             (minValue + stepValue * (((tmpVal - minValue) / stepValue) | 0)) +
                             " @ (row,col) = (" +
-                            convertedRC[0] + "," + convertedRC[0] + ")");
+                            convertedRC[0] + "," + convertedRC[1] + ")");
                     }
                     color =
                         ConfigurationAPI.bitMapDialogConvertValueToRGBA(bmpData[r][c],
@@ -4002,7 +4008,7 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
             if (finalChange) {
                 if (clickValues[i] < minValue) clickValues[i] = minValue;
                 if (clickValues[i] > maxValue) clickValues[i] = maxValue;
-                if (!allowFloatingPoint || stepValue != 1)
+                if (!allowFloatingPoint && stepValue != 1)
                     clickValues[i] = (((clickValues[i] - minValue) / stepValue) | 0) * stepValue + minValue; //lock to step
                 textInputEls[i].value = clickValues[i]; //fix value
             }
@@ -4010,7 +4016,7 @@ ConfigurationAPI.bitMapDialog = function (tableName, UIDName, fieldName, bitMapP
             {
                 if (clickValues[i] < minValue) return;
                 if (clickValues[i] > maxValue) return;
-                if ((!allowFloatingPoint || stepValue != 1) &&
+                if ((!allowFloatingPoint && stepValue != 1) &&
                     (((clickValues[i] - minValue) / stepValue) | 0) != (clickValues[i] - minValue) / stepValue)
                     return; //no locked to step value
                 Debug.log("displaying change");
