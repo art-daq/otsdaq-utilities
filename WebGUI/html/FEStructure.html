@@ -250,7 +250,7 @@
 		function saveAllDtcsStatusChanges()
 		{
 			DesktopContent.popUpVerification(
-	        "Saving  DTCs configuration'. Are you sure?",
+			"Saving  DTCs configuration'. Are you sure?",
 			function () /*yes-to-save rocs tables*/
 			{
 				//proceed to save (quietly) tables, groups, aliases fot dtcs
@@ -286,7 +286,7 @@
 		function saveAllRocsStatusChanges()
 		{
 			DesktopContent.popUpVerification(
-	        "Saving  ROCs configuration'. Are you sure?",
+			"Saving  ROCs configuration'. Are you sure?",
 			function () /*yes-to-save rocs tables*/
 			{
 				//proceed to save (quietly) tables, groups, aliases for rocs
@@ -478,7 +478,7 @@
 
 		function toggleDisk (diskNumber, targetStatus){
 			Debug.log("toggleDisk()", diskNumber, targetStatus);
-			
+
 			var minBoardId = diskNumber * 80;
 			var maxBoardId = minBoardId + 79;
 			var excludeBoards = [31, 111, 160]; //Make sure to exclude TRAD and laser boards
@@ -523,32 +523,32 @@
 
 					var rocButtons = document.querySelectorAll('.rocBox');
 					for(var b = 0; b < rocButtons.length; ++b){
-					    if(diskROCs.indexOf(rocButtons[b].innerText) >= 0)
-					    {
-					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
-					        rocButtons[b].style.border = "1px solid black";
-					        rocButtons[b].style.opacity = 0.5;
-					    }
+						if(diskROCs.indexOf(rocButtons[b].innerText) >= 0)
+						{
+							rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+							rocButtons[b].style.border = "1px solid black";
+							rocButtons[b].style.opacity = 0.5;
+						}
 					}
 					var targetStatusStr = targetStatus == 1 ? "1" : "0";
 					ConfigurationAPI.setFieldValuesForRecords(
-					    "/ROCInterfaceTable",
-					    diskROCs,
-					    ["Status"],
-					    [targetStatusStr],
-					    function(modifiedTables)
-					    {
-					        if(!modifiedTables.length)
-					        {
-					            Debug.log("Error writing status for disk " + diskNumber + " ROCs.",
-					                    Debug.HIGH_PRIORITY);
-					            return;
-					        }
-					        _rocModifiedTables = modifiedTables;
-					        Debug.log("Disk " + diskNumber + " ROCs (" + diskROCs.length +
-					                ") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
-					    },
-					    _rocModifiedTables
+						"/ROCInterfaceTable",
+						diskROCs,
+						["Status"],
+						[targetStatusStr],
+						function(modifiedTables)
+						{
+							if(!modifiedTables.length)
+							{
+								Debug.log("Error writing status for disk " + diskNumber + " ROCs.",
+										Debug.HIGH_PRIORITY);
+								return;
+							}
+							_rocModifiedTables = modifiedTables;
+							Debug.log("Disk " + diskNumber + " ROCs (" + diskROCs.length +
+									") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+						},
+						_rocModifiedTables
 					);
 				},
 				_rocModifiedTables
@@ -558,7 +558,7 @@
 
 		function toggleLaser (targetStatus){
 			Debug.log("toggleLaser()", targetStatus);
-			
+
 			var laserBoard = 160;
 
 			var allRocNames = [];
@@ -600,31 +600,31 @@
 
 					var rocButtons = document.querySelectorAll('.rocBox');
 					for(var b = 0; b < rocButtons.length; ++b){
-					    if(laserROCs.indexOf(rocButtons[b].innerText) >= 0)
-					    {
-					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
-					        rocButtons[b].style.border = "1px solid black";
-					        rocButtons[b].style.opacity = 0.5;
-					    }
+						if(laserROCs.indexOf(rocButtons[b].innerText) >= 0)
+						{
+							rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+							rocButtons[b].style.border = "1px solid black";
+							rocButtons[b].style.opacity = 0.5;
+						}
 					}
 					var targetStatusStr = targetStatus == 1 ? "1" : "0";
 					ConfigurationAPI.setFieldValuesForRecords(
-					    "/ROCInterfaceTable",
-					    laserROCs,
-					    ["Status"],
-					    [targetStatusStr],
-					    function(modifiedTables)
-					    {
-					        if(!modifiedTables.length)
-					        {
-					            Debug.log("Error writing status for laser ROCs.",
-					                    Debug.HIGH_PRIORITY);
-					            return;
-					        }
-					        _rocModifiedTables = modifiedTables;
-					        Debug.log("Laser ROC set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
-					    },
-					    _rocModifiedTables
+						"/ROCInterfaceTable",
+						laserROCs,
+						["Status"],
+						[targetStatusStr],
+						function(modifiedTables)
+						{
+							if(!modifiedTables.length)
+							{
+								Debug.log("Error writing status for laser ROCs.",
+										Debug.HIGH_PRIORITY);
+								return;
+							}
+							_rocModifiedTables = modifiedTables;
+							Debug.log("Laser ROC set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+						},
+						_rocModifiedTables
 					);
 				},
 				_rocModifiedTables
@@ -634,7 +634,7 @@
 
 		function toggleTRADs (targetStatus){
 			Debug.log("toggleTRADs()", targetStatus);
-			
+
 			var TRADboards = [31, 111];
 
 			var allRocNames = [];
@@ -677,32 +677,32 @@
 
 					var rocButtons = document.querySelectorAll('.rocBox');
 					for(var b = 0; b < rocButtons.length; ++b){
-					    if(TRADROCs.indexOf(rocButtons[b].innerText) >= 0)
-					    {
-					        rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
-					        rocButtons[b].style.border = "1px solid black";
-					        rocButtons[b].style.opacity = 0.5;
-					    }
+						if(TRADROCs.indexOf(rocButtons[b].innerText) >= 0)
+						{
+							rocButtons[b].style.backgroundColor = targetStatus == 1 ? 'green' : 'red';
+							rocButtons[b].style.border = "1px solid black";
+							rocButtons[b].style.opacity = 0.5;
+						}
 					}
 					var targetStatusStr = targetStatus == 1 ? "1" : "0";
 					ConfigurationAPI.setFieldValuesForRecords(
-					    "/ROCInterfaceTable",
-					    TRADROCs,
-					    ["Status"],
-					    [targetStatusStr],
-					    function(modifiedTables)
-					    {
-					        if(!modifiedTables.length)
-					        {
-					            Debug.log("Error writing status for TRAD ROCs.",
-					                    Debug.HIGH_PRIORITY);
-					            return;
-					        }
-					        _rocModifiedTables = modifiedTables;
-					        Debug.log("TRAD ROCs (" + TRADROCs.length +
-					                ") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
-					    },
-					    _rocModifiedTables
+						"/ROCInterfaceTable",
+						TRADROCs,
+						["Status"],
+						[targetStatusStr],
+						function(modifiedTables)
+						{
+							if(!modifiedTables.length)
+							{
+								Debug.log("Error writing status for TRAD ROCs.",
+										Debug.HIGH_PRIORITY);
+								return;
+							}
+							_rocModifiedTables = modifiedTables;
+							Debug.log("TRAD ROCs (" + TRADROCs.length +
+									") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+						},
+						_rocModifiedTables
 					);
 				},
 				_rocModifiedTables
@@ -869,22 +869,22 @@
 	<button class='setStatus' onclick="saveAllDtcsStatusChanges()">Write Status For Selected DTCs</button>
 	<button class='setStatus' onclick="saveAllRocsStatusChanges()">Write Status For Selected ROCs</button>
 	<div style="display:flex; justify-content:flex-begin; gap:4px; padding:4px;">
-	    <div style="display:flex; flex-direction:column; gap:4px;">
-	        <button class='toggleOn' onclick="toggleDisk(0,1)">Turn ON Disk 0</button>
-	        <button class='toggleOff' onclick="toggleDisk(0,0)">Turn OFF Disk 0</button>
-	    </div>
-	    <div style="display:flex; flex-direction:column; gap:4px;">
-	        <button class='toggleOn' onclick="toggleDisk(1,1)">Turn ON Disk 1</button>
-	        <button class='toggleOff' onclick="toggleDisk(1,0)">Turn OFF Disk 1</button>
-	    </div>
-	    <div style="display:flex; flex-direction:column; gap:4px;">
-	        <button class='toggleOn' onclick="toggleLaser(1)">Turn ON Laser</button>
-	        <button class='toggleOff' onclick="toggleLaser(0)">Turn OFF Laser</button>
-	    </div>
-	    <div style="display:flex; flex-direction:column; gap:4px;">
-	        <button class='toggleOn' onclick="toggleTRADs(1)">Turn ON TRADs</button>
-	        <button class='toggleOff' onclick="toggleTRADs(0)">Turn OFF TRADs</button>
-	    </div>
+		<div style="display:flex; flex-direction:column; gap:4px;">
+			<button class='toggleOn' onclick="toggleDisk(0,1)">Turn ON Disk 0</button>
+			<button class='toggleOff' onclick="toggleDisk(0,0)">Turn OFF Disk 0</button>
+		</div>
+		<div style="display:flex; flex-direction:column; gap:4px;">
+			<button class='toggleOn' onclick="toggleDisk(1,1)">Turn ON Disk 1</button>
+			<button class='toggleOff' onclick="toggleDisk(1,0)">Turn OFF Disk 1</button>
+		</div>
+		<div style="display:flex; flex-direction:column; gap:4px;">
+			<button class='toggleOn' onclick="toggleLaser(1)">Turn ON Laser</button>
+			<button class='toggleOff' onclick="toggleLaser(0)">Turn OFF Laser</button>
+		</div>
+		<div style="display:flex; flex-direction:column; gap:4px;">
+			<button class='toggleOn' onclick="toggleTRADs(1)">Turn ON TRADs</button>
+			<button class='toggleOff' onclick="toggleTRADs(0)">Turn OFF TRADs</button>
+		</div>
 	</div>
 	<div class='mainBlockContainer' id='mainDiv'></div>
 </body>
