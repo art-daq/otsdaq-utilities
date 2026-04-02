@@ -1881,11 +1881,11 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
 	{
 		//register move cursor and window in question
 		Desktop.foreWinLastMouse = [mouseEvent.clientX, mouseEvent.clientY];
-		
+
 		//IMPORTANT: Capture the target window at mousedown time to prevent race conditions
 		//where the foreground window changes between mousedown and manipulation
 		Desktop.manipTargetWindow = win;
-		
+
 		if (!isDashboard) {
 
 			for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); ++i)
