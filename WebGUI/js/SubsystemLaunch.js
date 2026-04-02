@@ -108,6 +108,7 @@ SubsystemLaunch.create = function() {
 	var _fsmName, _fsmWindowName;
 	var _fsmNameArr;
 	var _getStatusTimer = 0;
+	var _statusRequestNonce = 0; //increments to invalidate stale async status callbacks
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
@@ -881,9 +882,13 @@ SubsystemLaunch.create = function() {
 	//getCurrentStatus ~~
 	var _getStatusCounter = 0;
 	var _updatesubsystemNamesCounter = 0;
+	function invalidatePendingStatusResponses() {
+		++_statusRequestNonce;
+	}
 	function getCurrentStatus() {
 		// Debug.log("getCurrentStatus()");
 		window.clearTimeout(_getStatusTimer);
+		const currentStatusNonce = ++_statusRequestNonce;
 
 		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
 		//	.. so only get run number 1:10
@@ -892,7 +897,9 @@ SubsystemLaunch.create = function() {
 				"&fsmName=" + _fsmName +
 				"&getRunNumber=" + (((_getStatusCounter++)%10)==0?"1":"0"),
 				"",
-				localGetStatusHandler,/*returnHandler*/
+				function(req) {
+					localGetStatusHandler(req, currentStatusNonce);
+				},/*returnHandler*/
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
@@ -904,7 +911,11 @@ SubsystemLaunch.create = function() {
 		return;
 
 		//===========
-		function localGetStatusHandler(req) {
+		function localGetStatusHandler(req, responseNonce) {
+			if(responseNonce != _statusRequestNonce) {
+				Debug.log("Ignoring stale status response",responseNonce,_statusRequestNonce);
+				return;
+			}
 
 			//subsystems --------------------
 			{
@@ -1598,6 +1609,7 @@ SubsystemLaunch.create = function() {
 							return;
 						}
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
@@ -1688,6 +1700,7 @@ SubsystemLaunch.create = function() {
 				Debug.log("Do haltIterator");
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1734,6 +1747,7 @@ SubsystemLaunch.create = function() {
 				Debug.log("Do stop launcher");
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1782,6 +1796,7 @@ SubsystemLaunch.create = function() {
 
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1817,6 +1832,7 @@ SubsystemLaunch.create = function() {
 						Debug.log("Trying to move top-level to Halted",_fsmName,
 								"moveTopLevelAttempts",moveTopLevelAttempts);
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
@@ -1829,6 +1845,7 @@ SubsystemLaunch.create = function() {
 								getCurrentStatus();
 
 								window.clearTimeout(_getStatusTimer);
+								invalidatePendingStatusResponses();
 								//force state display for user feedback
 								SubsystemLaunch.system.inTransition = true;
 								SubsystemLaunch.system.transition = "Launching " + command;
@@ -1893,6 +1910,7 @@ SubsystemLaunch.create = function() {
 
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1947,11 +1965,14 @@ SubsystemLaunch.create = function() {
 		//at this point, ready to send command!
 
 		window.clearTimeout(_getStatusTimer);
+		invalidatePendingStatusResponses();
 
 		//force state display for user feedback
 		SubsystemLaunch.subsystems[subsystemIndex].status = "Launching " + command;
 		SubsystemLaunch.subsystems[subsystemIndex].progress = 0;
 		displayStatus();
+
+		event.stopPropagation(); //to prevent hierarchy of click handlers
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=commandRemoteSubsystem" +
 			"&fsmName=" + SubsystemLaunch.launcher.getFsmName() +
@@ -2315,6 +2336,7 @@ SubsystemLaunch.create = function() {
 						Debug.log("User chose to halt!");
 
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 						SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -2366,6 +2388,7 @@ SubsystemLaunch.create = function() {
 					Debug.log("User chose to halt!");
 
 					window.clearTimeout(_getStatusTimer);
+					invalidatePendingStatusResponses();
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 					SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -2491,6 +2514,7 @@ SubsystemLaunch.create = function() {
 			Debug.logv({logEntry});
 
 			window.clearTimeout(_getStatusTimer);
+			invalidatePendingStatusResponses();
 			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 			SubsystemLaunch.system.error = ""; //clear error for next command response
