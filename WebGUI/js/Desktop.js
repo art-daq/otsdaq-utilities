@@ -539,7 +539,9 @@ Desktop.createDesktop = function (security) {
 
 		//disallow repeats by skipping (due to broadcast messages hanging around, user messages are always 2nd)
 		var tmpi;
-		if ((tmpi = tmp.indexOf(_lastSystemMessage)) >= 0) {
+		if (_lastSystemMessage && _lastSystemMessage.length > 5 &&
+				(tmpi = tmp.indexOf(_lastSystemMessage)) >= 0)
+		{
 			// Debug.log("Skipping repeat System Message...");
 			tmp = tmp.substr(tmpi + _lastSystemMessage.length + 1);
 		}
