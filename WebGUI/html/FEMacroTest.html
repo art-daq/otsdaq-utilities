@@ -52,7 +52,7 @@
 
 		.macroModule {
 			border: 2px solid #b0b0b0;
-			padding: 30px;
+			padding: 30px 10px 30px 30px;
 			background: rgb(255, 255, 255);
 			/* background: -webkit-linear-gradient(top, #838AB1, #B2FFFC);
 			background: -moz-linear-gradient(top, #838AB1, #B2FFFC);
@@ -228,7 +228,7 @@
 		.copyOutput-button {
 			cursor: pointer;
 			float: right;
-			margin: -20px -20px -35px 15px;
+			margin: -26px 0px -35px 15px;
 			position: relative;
 			z-index: 10;
 		}
@@ -3881,6 +3881,13 @@ Here is the json string received:
 				.then(() => {
 					const el = document.getElementById("copybtn");
 					const original = el.src;
+
+					DesktopContent.popUpVerification(
+						"Execution text copied!", 0,
+						0, "#efeaea", 0, "black",
+						0, 0, 0, 0, 0, 0, 0, 0,
+						true /* justDisplayAndTimeoutPopup */,
+						2147483646 + 1 /* z-index on top of Debug popup */);
 
 					el.src = "/WebPath/images/windowContentImages/loader-Settings.gif";
 
