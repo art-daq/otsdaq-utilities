@@ -1972,7 +1972,8 @@ SubsystemLaunch.create = function() {
 		SubsystemLaunch.subsystems[subsystemIndex].progress = 0;
 		displayStatus();
 
-		event.stopPropagation(); //to prevent hierarchy of click handlers
+		if(event)
+			event.stopPropagation(); //to prevent hierarchy of click handlers
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=commandRemoteSubsystem" +
 			"&fsmName=" + SubsystemLaunch.launcher.getFsmName() +
@@ -2561,7 +2562,8 @@ SubsystemLaunch.create = function() {
 	this.handleCheckbox = function (c, el) {
 		var val = el.checked;
 		Debug.log("handleCheckbox", c, val);
-		event.stopPropagation();
+		if(event)
+			event.stopPropagation();
 
 		var field = "fsmIncluded";
 		var targetSubsystem = "";
