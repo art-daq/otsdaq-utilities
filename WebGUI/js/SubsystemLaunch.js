@@ -1078,7 +1078,7 @@ SubsystemLaunch.create = function() {
 			el.style.display = "none";
 			el = document.getElementById("runDurationDiv");
 			el.style.display = "none";
-			let el2 = document.getElementById("runDurationText");			
+			let el2 = document.getElementById("runDurationText");
 
 			el = document.getElementById("runCountInputUnits");
 			var str = "";
