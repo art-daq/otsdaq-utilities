@@ -400,7 +400,7 @@ SubsystemLaunch.create = function() {
 
 				il = document.createElement("div");
 				il.setAttribute("id","runDurationDiv");
-				il.setAttribute("style","float: left; margin: 7px 10px;");
+				il.setAttribute("style","float: left; margin: 7px 10px 0 10px;");
 				str = "<select id='runDurationSelect' style='padding: 4px; font-size: 14px;' "+
 					"onchange='SubsystemLaunch.launcher.handleDurationSelect(this.value);'>";
 				var tmpOptions = ["Open-ended","Second(s)","Minute(s)","Hour(s)"];
@@ -845,7 +845,6 @@ SubsystemLaunch.create = function() {
 		var tdiv = document.getElementById("systemStatusDiv");
 		var sdiv = document.getElementById("subsystemDiv");
 
-
 		// sdiv.style.left = (sdivX-20) + "px";
 		// sdiv.style.top = sdivY + "px";
 		// sdiv.style.height = sdivH + "px";
@@ -859,7 +858,6 @@ SubsystemLaunch.create = function() {
 			sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
 
-
 		//check if need extra new line at top to avoid FSM select
 		var dropdownContainer = document.getElementById('fsm-dropdown-div');
 		var runButtonContainer = document.getElementById('runDivContainer');
@@ -867,7 +865,7 @@ SubsystemLaunch.create = function() {
 			if(dropdownContainer.offsetLeft + dropdownContainer.offsetWidth + 20 >
 					runButtonContainer.offsetLeft) {
 				Debug.log("Need extra space");
-				document.getElementById("runDiv").style.paddingTop = "78px";
+				document.getElementById("runDiv").style.paddingTop = "75px";
 			}
 			else
 			{
@@ -1066,7 +1064,7 @@ SubsystemLaunch.create = function() {
 			el = document.getElementById("runDurationDiv");
 			el.style.display = "block";
 			el = document.getElementById("runDurationText");
-			el.style.display = "block";
+			el.innerText = "duration";
 
 		}
 		else //show iterator status
@@ -1080,11 +1078,11 @@ SubsystemLaunch.create = function() {
 			el.style.display = "none";
 			el = document.getElementById("runDurationDiv");
 			el.style.display = "none";
-			el = document.getElementById("runDurationText");
-			el.style.display = "none";
+			let el2 = document.getElementById("runDurationText");			
 
 			el = document.getElementById("runCountInputUnits");
 			var str = "";
+			var str2 = "";
 			var inRun = SubsystemLaunch.system.state == "Running" && !SubsystemLaunch.system.inTransition;
 
 			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") {
@@ -1107,18 +1105,24 @@ SubsystemLaunch.create = function() {
 				}
 
 				if(inRun)
-					str += ", Time-in-Run";
+				{
+					str += ",&nbsp;";
+					str2 += "Time-in-Run";
+				}
 				else
-					str += ", Time-on-command" +
+				{
+					str += ",&nbsp;";
+					str2 += "Time-on-command" +
 						(SubsystemLaunch.system.inTransition && SubsystemLaunch.system.transition == "Stopping"?
 						" Stop":
 						(TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]?
 							(" " + TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]):""));
+				}
 
 				if(SubsystemLaunch.iterator.genRunDuration == -1 || !inRun)
-					str += ": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
+					str2 += ": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
 				else
-					str += ": " + SubsystemLaunch.iterator.currentCommandDuration +
+					str2 += ": " + SubsystemLaunch.iterator.currentCommandDuration +
 							" of " + SubsystemLaunch.iterator.genRunDuration +
 							" seconds";
 
@@ -1126,16 +1130,20 @@ SubsystemLaunch.create = function() {
 			else if(inRun) //likely, Iterator left open-ended run
 				str += "In open-ended Run";
 			else if(SubsystemLaunch.system.activeFsmWindow == "iterator")
+			{
 				str += "Command #" + SubsystemLaunch.iterator.currentCommandIndex +
 					" of " + SubsystemLaunch.iterator.currentNumberOfCommands +
-					", Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
+					",&nbsp;";
+				str2 += "Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
 					", Time-on-command" +
 					(SubsystemLaunch.system.inTransition && SubsystemLaunch.system.transition == "Stopping"?
 					" Stop":
 					(TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]?
 						(" " + TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]):"")) +
 					": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
-			el.innerText = str;
+			}
+			el.innerHTML = str;
+			el2.innerText = str2;
 		} // end show stop button and iterator status
 
 
@@ -1425,7 +1433,7 @@ SubsystemLaunch.create = function() {
 		dropdownContainer.id = 'fsm-dropdown-div';
 		dropdownContainer.style.cssText = `
 			position: absolute;
-			top: 16px;
+			top: 11px;
 			left: 10px;
 			z-index: 1000;
 			display: block;
