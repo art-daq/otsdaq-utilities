@@ -539,7 +539,9 @@ Desktop.createDesktop = function (security) {
 
 		//disallow repeats by skipping (due to broadcast messages hanging around, user messages are always 2nd)
 		var tmpi;
-		if ((tmpi = tmp.indexOf(_lastSystemMessage)) >= 0) {
+		if (_lastSystemMessage && _lastSystemMessage.length > 5 &&
+				(tmpi = tmp.indexOf(_lastSystemMessage)) >= 0)
+		{
 			// Debug.log("Skipping repeat System Message...");
 			tmp = tmp.substr(tmpi + _lastSystemMessage.length + 1);
 		}
@@ -1773,6 +1775,7 @@ Desktop.foreWinLastMouse = [-1, -1];
 Desktop.winManipMode = Desktop.WIN_MANIP_MODE.NONE;
 Desktop.stretchAndMoveInterval = 0; //used to stretch and move even while moving over iFrames
 Desktop.disableMouseDown = 0;
+Desktop.manipTargetWindow = null; //the window being manipulated (captured at mousedown to prevent race conditions)
 
 ////////////// TOUCHES START CODE ////////////////////
 
@@ -1880,6 +1883,11 @@ Desktop.handleWindowMouseDown = function (mouseEvent) {
 	{
 		//register move cursor and window in question
 		Desktop.foreWinLastMouse = [mouseEvent.clientX, mouseEvent.clientY];
+
+		//IMPORTANT: Capture the target window at mousedown time to prevent race conditions
+		//where the foreground window changes between mousedown and manipulation
+		Desktop.manipTargetWindow = win;
+
 		if (!isDashboard) {
 
 			for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); ++i)
@@ -1925,6 +1933,7 @@ Desktop.handleWindowMouseUp = function (mouseEvent) {
 
 		Desktop.foreWinLastMouse = [-1, -1];	//indicate no movements happening
 		Desktop.winManipMode = Desktop.WIN_MANIP_MODE.NONE;
+		Desktop.manipTargetWindow = null;	//clear the captured target window
 		//if(Desktop.desktop.getForeWindow())
 		if (1) {
 			//Desktop.desktop.getForeWindow().showFrame();
@@ -2148,9 +2157,12 @@ Desktop.handleBodyMouseMove = function (mouseEvent) {
 //==============================================================================
 //handle resizing and moving events for desktop
 Desktop.handleWindowManipulation = function (delta) {
-	if (!Desktop.desktop.getForeWindow()) return false;
+	//IMPORTANT: Use the captured target window from mousedown to prevent race conditions
+	//where the foreground window changes between mousedown and manipulation.
+	//Fall back to getForeWindow() only if manipTargetWindow is not set (shouldn't happen in normal flow).
+	var win = Desktop.manipTargetWindow || Desktop.desktop.getForeWindow();
+	if (!win) return false;
 
-	var win = Desktop.desktop.getForeWindow();
 	// Debug.log("handle",win.getWindowId(),win.getWindowName());
 
 	//check if windows are tiled
