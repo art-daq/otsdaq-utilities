@@ -45,6 +45,12 @@
 		var _dtcRecordsAlias = "DTC";
 		var _rocRecordsAlias = "ROC";
 
+		//Board numbers for TRAD and laser
+		var TRADBoards = [31, 71, 111, 151];
+		var LaserBoard = 160;
+		var MinValidBoardId = 0;
+		var MaxValidBoardId = 160;
+
 		///////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////
 
@@ -476,12 +482,10 @@
 		} //end setROCStatus()
 
 
-		function toggleDisk (diskNumber, targetStatus){
-			Debug.log("toggleDisk()", diskNumber, targetStatus);
+		function toggleDiskPhi (disk, phi, targetStatus){
+			Debug.log("toggleDiskPhi()", disk, phi, targetStatus);
 
-			var minBoardId = diskNumber * 80;
-			var maxBoardId = minBoardId + 79;
-			var excludeBoards = [31, 111, 160]; //Make sure to exclude TRAD and laser boards
+			var excludeBoards = TRADBoards.concat(LaserBoard); //Make sure to exclude TRAD and laser boards
 
 			var allRocNames = [];
 			for(var i = 0; i < FEstructure_.apps.length; ++i)
@@ -507,19 +511,25 @@
 					for(var i = 0; i < fieldValues.length; ++i)
 					{
 						var boardId = parseInt(fieldValues[i].fieldValue);
+						if (boardId < MinValidBoardId || boardId > MaxValidBoardId) continue;
 
-						if(boardId >= minBoardId && boardId <= maxBoardId && excludeBoards.indexOf(boardId) < 0){
+						var thisDisk = Math.floor(boardId / 80);
+						var thisPhi = Math.floor((boardId % 80) / 40);
+
+						if (excludeBoards.indexOf(boardId) < 0 &&
+							(disk < 0 || thisDisk == disk) &&
+							(phi < 0 || thisPhi == phi)){
 							diskROCs.push(fieldValues[i].fieldUID);
 						}
 					}
 
 					if(!diskROCs.length)
 					{
-						Debug.log("No ROCs found for disk " + diskNumber + ".",
+						Debug.log("No ROCs found for disk " + disk + ".",
 							Debug.HIGH_PRIORITY);
 						return;
 					}
-					Debug.log("Found " + diskROCs.length + " ROC(s) for disk " + diskNumber);
+					Debug.log("Found " + diskROCs.length + " ROC(s) for disk " + disk);
 
 					var rocButtons = document.querySelectorAll('.rocBox');
 					for(var b = 0; b < rocButtons.length; ++b){
@@ -540,12 +550,12 @@
 						{
 							if(!modifiedTables.length)
 							{
-								Debug.log("Error writing status for disk " + diskNumber + " ROCs.",
+								Debug.log("Error writing status for disk " + disk + " ROCs.",
 										Debug.HIGH_PRIORITY);
 								return;
 							}
 							_rocModifiedTables = modifiedTables;
-							Debug.log("Disk " + diskNumber + " ROCs (" + diskROCs.length +
+							Debug.log("Disk " + disk + " ROCs (" + diskROCs.length +
 									") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
 						},
 						_rocModifiedTables
@@ -554,12 +564,10 @@
 				_rocModifiedTables
 			);
 
-		} //end toggleDisk()
+		} //end toggleDiskPhi()
 
 		function toggleLaser (targetStatus){
 			Debug.log("toggleLaser()", targetStatus);
-
-			var laserBoard = 160;
 
 			var allRocNames = [];
 			for(var i = 0; i < FEstructure_.apps.length; ++i)
@@ -585,7 +593,7 @@
 					for(var i = 0; i < fieldValues.length; ++i)
 					{
 						var boardId = parseInt(fieldValues[i].fieldValue);
-						if(boardId == laserBoard){
+						if(boardId == LaserBoard){
 							laserROCs.push(fieldValues[i].fieldUID);
 							break;
 						}
@@ -635,8 +643,6 @@
 		function toggleTRADs (targetStatus){
 			Debug.log("toggleTRADs()", targetStatus);
 
-			var TRADboards = [31, 111];
-
 			var allRocNames = [];
 			for(var i = 0; i < FEstructure_.apps.length; ++i)
 				for(var j = 0; j < FEstructure_.apps[i].dtcs.length; ++j)
@@ -662,7 +668,7 @@
 					{
 						var boardId = parseInt(fieldValues[i].fieldValue);
 
-						if(TRADboards.indexOf(boardId) >= 0){
+						if(TRADBoards.indexOf(boardId) >= 0){
 							TRADROCs.push(fieldValues[i].fieldUID);
 						}
 					}
@@ -869,21 +875,41 @@
 	<button class='setStatus' onclick="saveAllDtcsStatusChanges()">Write Status For Selected DTCs</button>
 	<button class='setStatus' onclick="saveAllRocsStatusChanges()">Write Status For Selected ROCs</button>
 	<div style="display:flex; justify-content:flex-begin; gap:4px; padding:4px;">
-		<div style="display:flex; flex-direction:column; gap:4px;">
-			<button class='toggleOn' onclick="toggleDisk(0,1)">Turn ON Disk 0</button>
-			<button class='toggleOff' onclick="toggleDisk(0,0)">Turn OFF Disk 0</button>
+		<div class="toggleOn" onclick="toggleDiskPhi(0,-1,1)" style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px; cursor:pointer;">
+    		<span>Enable Disk 0</span>
+    		<div style="display:flex; gap:4px;">
+    		    <button class='toggleOn' onclick="event.stopPropagation(); toggleDiskPhi(0,0,1)">Phi 0</button>
+    		    <button class='toggleOn' onclick="event.stopPropagation(); toggleDiskPhi(0,1,1)">Phi 1</button>
+    		</div>
+		</div>
+		<div class="toggleOn" onclick="toggleDiskPhi(1,-1,1)" style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px; cursor:pointer;">
+    		<span>Enable Disk 1</span>
+    		<div style="display:flex; gap:4px;">
+    		    <button class='toggleOn' onclick="event.stopPropagation(); toggleDiskPhi(1,0,1)">Phi 0</button>
+    		    <button class='toggleOn' onclick="event.stopPropagation(); toggleDiskPhi(1,1,1)">Phi 1</button>
+    		</div>
+		</div>
+		<div class="toggleOff" onclick="toggleDiskPhi(0,-1,0)" style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px; cursor:pointer;">
+    		<span>Disable Disk 0</span>
+    		<div style="display:flex; gap:4px;">
+    		    <button class='toggleOff' onclick="event.stopPropagation(); toggleDiskPhi(0,0,0)">Phi 0</button>
+    		    <button class='toggleOff' onclick="event.stopPropagation(); toggleDiskPhi(0,1,0)">Phi 1</button>
+    		</div>
+		</div>
+		<div class="toggleOff" onclick="toggleDiskPhi(1,-1,0)" style="display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px; cursor:pointer;">
+    		<span>Disable Disk 1</span>
+    		<div style="display:flex; gap:4px;">
+    		    <button class='toggleOff' onclick="event.stopPropagation(); toggleDiskPhi(1,0,0)">Phi 0</button>
+    		    <button class='toggleOff' onclick="event.stopPropagation(); toggleDiskPhi(1,1,0)">Phi 1</button>
+    		</div>
 		</div>
 		<div style="display:flex; flex-direction:column; gap:4px;">
-			<button class='toggleOn' onclick="toggleDisk(1,1)">Turn ON Disk 1</button>
-			<button class='toggleOff' onclick="toggleDisk(1,0)">Turn OFF Disk 1</button>
+			<button class='toggleOn' onclick="toggleLaser(1)">Enable Laser</button>
+			<button class='toggleOff' onclick="toggleLaser(0)">Disable Laser</button>
 		</div>
 		<div style="display:flex; flex-direction:column; gap:4px;">
-			<button class='toggleOn' onclick="toggleLaser(1)">Turn ON Laser</button>
-			<button class='toggleOff' onclick="toggleLaser(0)">Turn OFF Laser</button>
-		</div>
-		<div style="display:flex; flex-direction:column; gap:4px;">
-			<button class='toggleOn' onclick="toggleTRADs(1)">Turn ON TRADs</button>
-			<button class='toggleOff' onclick="toggleTRADs(0)">Turn OFF TRADs</button>
+			<button class='toggleOn' onclick="toggleTRADs(1)">Enable TRADs</button>
+			<button class='toggleOff' onclick="toggleTRADs(0)">Disable TRADs</button>
 		</div>
 	</div>
 	<div class='mainBlockContainer' id='mainDiv'></div>
