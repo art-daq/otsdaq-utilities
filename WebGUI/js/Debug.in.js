@@ -1051,7 +1051,7 @@ Debug.downloadMessages = function () {
 	var dataStr = "data:text/txt;charset=utf-8,";
 
 	var lines = Debug._errBox.innerText.split('\n');
-	for (var i = 6; i < lines.length - 2; ++i) //skip popup header and footer text
+	for (var i = 9; i < lines.length - 2; ++i) //skip popup header and footer text and arrows
 		dataStr += encodeURIComponent(lines[i] + "\n"); //encoded \n
 
 	var link = document.createElement("a");
