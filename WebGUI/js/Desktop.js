@@ -250,9 +250,9 @@ Desktop.createDesktop = function (security) {
 		}
 
 		//append page scroll position as trailing fields after all window fields
+		//	only when there are windows (empty layout means "unset")
 		if (layout.length > 0)
-			layout += ",";
-		layout += (window.scrollX | 0) + "," + (window.scrollY | 0);
+			layout += "," + (window.scrollX | 0) + "," + (window.scrollY | 0);
 
 		//layout += "]";
 		return layout;

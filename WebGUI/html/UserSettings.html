@@ -977,7 +977,7 @@
 
         //=====================================================================================
         //showLayoutText ~~
-        //	layout window fields:
+        //	layout window fields (per window):
         //		0: _windows[i].getWindowName()
         //		1: _windows[i].getWindowSubName()
         //		2: _windows[i].getWindowUrl().replace(/&/g,'%38').replace(/=/g,'%61')  //global replace & and =
@@ -986,6 +986,10 @@
         //		5: ((_windows[i].getWindowWidth()/dw)|0)
         //		6: ((_windows[i].getWindowHeight()/dh)|0)
         //		7: (_windows[i].isMinimized()?"0":"1")
+        //
+        //	trailing page scroll fields (after all window fields):
+        //		+0: (window.scrollX|0)  //page scroll left position in pixels
+        //		+1: (window.scrollY|0)  //page scroll top position in pixels
         function showLayoutText(i, show, mouseEvent, isSystemLayout) {
             if (mouseEvent)
                 mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
