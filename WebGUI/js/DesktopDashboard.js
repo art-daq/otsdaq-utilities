@@ -629,8 +629,13 @@ else {
         //=====================================================================================
         this.redrawRefreshButton = function () {
             _fullScreenRefreshBtn.innerHTML =
-                "<div style='font-size:25px;display:flex;align-items:center;justify-content:center;height:100%;line-height:1;' " +
-                "title='Click to reload the desktop and all windows'>↻</div>";
+                "<div style='display:flex;align-items:center;justify-content:center;height:100%; margin-top: 1px;' " +
+                "title='Click to reload the desktop and all windows'>" +
+                "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' " +
+                "fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'>" +
+                "<path d='M 20.2 15.8 A 9 9 0 1 1 19.8 7.5'/>" +
+                "<polyline points='23.5,3.5 20.5,9 16,8.7'/>" +
+                "</svg></div>";
             _fullScreenRefreshBtn.style.height = "16px";
             _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
         } //end redrawRefreshButton()

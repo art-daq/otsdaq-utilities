@@ -434,8 +434,13 @@ else {
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicRefresh");
         tmpEl.innerHTML =
-            "<div style='font-size:22px;line-height:12px;text-align:center;margin-top:-1px;color:inherit;' " +
-            "title='Click to refresh only this window'>↻</div>";
+            "<div style='display:flex;align-items:center;justify-content:center;height:100%;color:#0f2269;margin-left:1px;' " +
+            "title='Click to refresh only this window'>" +
+            "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' " +
+            "fill='none' stroke='#0f2269' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'>" +
+            "<path d='M 20.2 15.8 A 9 9 0 1 1 19.8 7.5'/>" +
+            "<polyline points='23.5,3.5 20.5,9 16,8.7'/>" +
+            "</svg></div>";
 
         //tmpEl.innerHTML = "↻";
         tmpBtn.appendChild(tmpEl);
@@ -454,7 +459,8 @@ else {
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicHelp");
         tmpEl.innerHTML =
-            "<div style='font-size:18px; color:inherit;' " +
+            "<div style='font-size:18px;display:flex;align-items:center;justify-content:center;height:100%;color:inherit;margin-top:" +
+            (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME? "3px;" : "2px;") + "' " +
             "title='Click to show the help tooltip for this window'>?</div>";   //"?";
         tmpBtn.appendChild(tmpEl);
         tmpContainer.appendChild(tmpBtn); //add button to window
@@ -499,7 +505,9 @@ else {
         tmpBtn.onmousedown = Desktop.handleWindowButtonDown;
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicClose");
-        tmpEl.innerHTML = "x";
+        tmpEl.innerHTML =
+            "<div style='display:flex;align-items:center;justify-content:center;height:100%;color:inherit;margin-top:" +
+            (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME? "3px;" : "2px;") + "'>x</div>";
         tmpBtn.appendChild(tmpEl);
         tmpContainer.appendChild(tmpBtn); //add button to window
 
