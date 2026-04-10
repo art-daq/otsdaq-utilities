@@ -1,1345 +1,1345 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
-    <title>User Settings</title>
-
-    <!--link href="https://fonts.googleapis.com/css?family=Comfortaa" rel="stylesheet"-->
-    <link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
-    <link type='text/css' rel='stylesheet' href='/WebPath/css/UserSettings.css'>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
-    <script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
-    <script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
-
-    <script>
-
-        var _selectedLayout = -2; //hold index of selected , if any
-        var _mailbox, _settingsLayoutMailbox; //pass messages to Desktop
-        var _defaultAliasArray = [-1, -1, -1, -1, -1];
-        var _layoutArray, _sysLayoutArray, _accountsArray;
-        var _layoutAliasArray, _sysLayoutAliasArray;
-        var _NUM_USER_LAYOUTS = 5; //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
-        var _NUM_SYS_LAYOUTS = 5;  //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
-        var _NUM_OF_LAYOUT_FIELDS = 10; //8 original + 2 per-window scroll fields
-        var _accountFieldNames = ["Username", "Email", "Name", "Permissions", "NAC"];
-        var _accountFields = ["username", "useremail", "display_name", "permissions", "nac"];
-        var _theDeleteIndex = -1;
-
-        var userGroups = "";
-        var Groups = "";
-
-
-        //for accounts display
-        var _AccountsPageIndex = 0;
-        var _AccountsPageSize = 10;
-        var _AccountsPageNavWidth = 5;
-        var _AccountsOrderArray;
-        var _AccountsNextSortArray = [0, 0, 0]; //init to default sort type for 3 columns
-        var _AccountsLastSort = -1; //used to re-apply sort when list is updated
-        var _AccountsLastSearch = "";
-        var _AccountsTriedSearch = false;
-        var _AccountSearchTimer = 0;
-
-        //preload loader spinner gif
-        var _loaderImage = new Image();
-        var _loaderImagePath = '/WebPath/images/windowContentImages/loader-Settings.gif';
-        _loaderImage.src = _loaderImagePath;
-
-        //for new account feedback
-        var _triedNewAccount = false;
-        var _oldAccountSize;
-
-        //for lockout
-        var _usernameWithLock = "";
-
-        //functions:
-        //init()
-        //settingsRequest()
-        //extractRGBtoForm(clr,i)
-        //extractLayoutToForm()
-        //settingsRequestHandler(req)
-        //extractUserAccounts(req)
-        //applyAccountsSearch(needle,rerunLast)
-        //handleSearchKeyUp()
-        //handleTimeoutSearchKeyUp()
-        //displayAccounts()
-        //handleBodyMouseUp()
-        //showLayoutText(i,show)
-        //extractFormToRGB(i)
-        //checkSettingsMailbox()
-        //saveGenPreferences(mouseEvent)
-        //setServerSettings()
-        //defaultColors()
-        //colorEditHandler(e)
-        //setLayout(i,mouseEvent)
-        //updateAccount(i)
-        //deleteAccount(i)
-        //createNewAccount(event)
-        //reallyDelete(event)			//really delete the user accout
-        //lockToUsername(i, lock)
-        //showPermissionsTooltip(alwaysShow)
-
-        /////////////////////////////////////////////////////////////////////////////////////////
-        /////////////////////////////////////////////////////////////////////////////////////////
-
-
-        //=====================================================================================
-        //init called once body has loaded
-        function init() {
-            Debug.log("init()");
-
-            //check for wiz mode
-            if (DesktopContent._sequence) {
-                Debug.log("Wiz mode detected!");
-
-                document.body.innerHTML = "";
-                var str = "<div id='accountsDiv'></div><div id='newAccountFeedbackDiv'></div>";
-                document.body.innerHTML = str;
-
-                //get current settings from server
-                DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
-                    "", settingsRequestHandler);
-                return;
-            }
-            //else handle normal mode
-
-            document.getElementById("omni").style.display = "block";
-
-            document.body.onmouseup = handleBodyMouseUp;
-            try {
-                _mailbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-updateSettingsMailbox");
-                _settingsLayoutMailbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-settingsLayoutMailbox");
-            }
-            catch (e) {
-                _mailbox = undefined;
-                _settingsLayoutMailbox = undefined;
-                Debug.log("Ignoring likely cross-origin settings box... here is the error:", e);
-                var els = document.getElementsByClassName("prefBtn");
-                for (var i = 0; i < els.length; ++i)
-                    els[i].style.display = "none"; //hide ability to save gen preferences if cross-origin
-                var el = document.getElementById("genPreferences");
-                if (el) el.style.display = "none";
-            }
-
-            var windowTooltip =
-                "Welcome to the <b>User Settings</b> window. Here you can personalize " +
-                "your user experience.\n\n";
-
-            windowTooltip +=
-                "Here is what you can personalize:" +
-                "<INDENT>";
-            if (_mailbox)
-                windowTooltip +=
-                    "- <b>Color Scheme:</b> " +
-                    "<INDENT>You can change your color scheme by choosing colors for " +
-                    "the desktop dashboard, the desktop background, and desktop windows." +
-                    "</INDENT>" +
-                    "- <b>Window Layouts:</b> " +
-                    "<INDENT>Each user can customize their window layout presets. " +
-                    "A layout preset is a set of windows (including their size and position on your " +
-                    "desktop) that you can recall any time you would like by clicking 'Layouts' " +
-                    "in the top left of the desktop environment and choosing a preset. This is useful" +
-                    "of you find yourself always using the same few windows - you can open them all with one click!" +
-                    "</INDENT>";
-
-            windowTooltip += "- <b>Tooltips:</b> " +
-                "<INDENT>Each user can silence any tooltip as they popup. And in this User Settings window, you can silence all tooltips for yourself (or re-enable all tooltips)." +
-                "</INDENT>";
-
-            if (!_mailbox)
-                windowTooltip += "</INDENT>\nIt looks like this is a Remote Gateway Settings Window. Use the Primary Gateway Setting Window, in the top-right of the desktop, to control <b>Color Scheme</b> and <b>Window Layouts</b>.\n";
-            else
-                windowTooltip += "</INDENT>";
-
-            windowTooltip +=
-                "\nWhen security is enabled, users with admin privileges can create/modify/delete user accounts, " +
-                "and manipulate which user holds the <b>lock</b> (the ots lock mechanism enforces one-user-at-a-time for particular operations).";
-
-
-            DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
-                "", layoutSettingsHandler);
-
-            ////////Tooltips/////////
-            DesktopContent.tooltip("User Settings Introduction", windowTooltip);
-            DesktopContent.setWindowTooltip(windowTooltip);
-        } //end init()
-
-        //==============================================================================
-        function layoutSettingsHandler(req) {
-            _layoutAliasArray = DesktopContent.getXMLValue(req, "pref_aliaslayout")
-            _sysLayoutAliasArray = DesktopContent.getXMLValue(req, "pref_sysalias_layout");
-            _layoutAliasArray = _layoutAliasArray == undefined ? _defaultAliasArray : _layoutAliasArray.split(",");
-            _sysLayoutAliasArray = _sysLayoutAliasArray == undefined ? _defaultAliasArray : _sysLayoutAliasArray.split(",");
-            loadLayoutSettings();
-            settingsRequest();
-        }
-
-        //==============================================================================
-        function loadLayoutSettings() {
-            var str = "";
-            //create windows layout div
-            for (var i = 0; i < _NUM_USER_LAYOUTS; ++i) {
-                if (i) str += "<br>";
-                str += "<a onmouseup='Javascript:setLayout(" + (i + 1) +
-                    ",event)' class='winLayoutLink' id='winLayoutLink" + (i + 1) + "'>" +
-                    "<li>User Preset-" + (i + 1) + " (Click to set)</li></a>";
-
-                Debug.log("_layoutAliasArray[" + i + "] " + _layoutAliasArray[i]);
-
-                str += "Layout Alias: ";
-                if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString())
-                    str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
-                else
-                    str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' value='" + _layoutAliasArray[i] + "'>";
-                str += "<div class='winLayoutText' id='winLayoutText" + (i + 1) + "'></div>";
-            }
-            str += "<div id='windSystemLayoutDiv' style='display:none; white-space:nowrap;'>" +
-                "<hr width='100%'/>";
-            for (var i = 0; i < _NUM_SYS_LAYOUTS; ++i) {
-                if (i) str += "<br>";
-                str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS + i + 1) +
-                    ",event)' class='winLayoutLink' id='winSysLayoutLink" + (i + 1) + "'>" +
-                    "<li>System Preset-" + (i + 1) + " (Click to set)</li></a>";
-
-                str += "Layout Alias: ";
-                if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
-                    str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
-                else
-                    str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
-                str += "<div class='winLayoutText' id='winSysLayoutText" + (i + 1) + "'></div>";
-            }
-            str += "</div>";
-            document.getElementById("windLayoutDiv").innerHTML = str;
-        }
-
-        //=====================================================================================
-        //request current settings immediately once page loads
-        function settingsRequest() {
-            Debug.log("settingsRequest()");
-
-            //setup input fields
-            var colorDiv = document.getElementById("colorInputs");
-            var el;
-            var colorNames = ["Desktop", "Dashboard", "Window"];
-            var colorPrefix = ["r&nbsp;", "g&nbsp;", "b&nbsp;"];
-            for (var i = 0; i < colorNames.length; ++i) {
-
-                el = document.createElement("div");
-                el.setAttribute("id", "Settings-colorText" + i);
-                el.setAttribute("class", "Settings-el Settings-colorName");
-                el.innerHTML = colorNames[i] + " Color: ";
-                colorDiv.appendChild(el); //add input field name
-
-                for (var j = 0; j < colorPrefix.length; ++j) {
-                    el = document.createElement("div");
-                    el.setAttribute("class", "Settings-el");
-                    el.innerHTML = colorPrefix[j];
-                    el.style.marginRight = "0";
-                    colorDiv.appendChild(el); //add r g b
-
-                    el = document.createElement("input");
-                    el.setAttribute("id", "Settings-colorInput" + i + j);
-                    el.setAttribute("class", "Settings-el");
-                    el.setAttribute("spellcheck", "false");
-                    el.setAttribute("type", "number");
-                    el.setAttribute("min", "0");
-                    el.setAttribute("max", "255");
-                    el.setAttribute("step", "5");
-                    el.onkeyup = colorEditHandler;
-                    // el.onchange = colorEditHandler;
-                    el.oninput = colorEditHandler;
-                    colorDiv.appendChild(el); //add inputs
-                }
-
-                el = document.createElement("div");
-                el.setAttribute("id", "Settings-colorBox" + i);
-                el.setAttribute("class", "Settings-el Settings-colorBox");
-                colorDiv.appendChild(el); //add inputs
-
-                el = document.createElement("div");
-                el.setAttribute("id", "clearDiv");
-                colorDiv.appendChild(el); //new line
-            }
-
-            _triedNewAccount = false;
-            //get current settings from server
-            DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
-                "", settingsRequestHandler);
-        } //end settingsRequest()
-
-        //=====================================================================================
-        //called to extract color string into form
-        function extractRGBtoForm(clr, i) {
-            Debug.log("Settings User Preferences: " + i + " - " + clr, Debug.LOW_PRIORITY);
-
-            var el, c;
-            el = document.getElementById("Settings-colorBox" + i);
-            el.style.backgroundColor = clr;
-            clr = clr.substr(clr.indexOf("(") + 1);
-            for (var j = 0; j < 3; ++j) {
-                el = document.getElementById("Settings-colorInput" + i + j);
-                el.value = parseInt(clr);
-                clr = clr.substr(clr.indexOf(",") + 1);
-            }
-        } //end extractRGBtoForm()
-
-        //=====================================================================================
-        //extractLayoutToForm ~~
-        function extractLayoutToForm() {
-            var el;
-            for (var i = 0; i < _layoutArray.length && i < _NUM_USER_LAYOUTS; ++i) //_NUM_USER_LAYOUTS user layouts
-            {
-                el = document.getElementById("winLayoutText" + (i + 1));
-                if (_layoutArray[i] == "0") //then unset
-                    el.innerHTML = "Layout Details: no layout set";
-                else
-                    el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
-                        (i + 1) + ",true,event); return false;'>show</a>";
-
-                //update alias input to match current alias array
-                var aliasEl = document.getElementById("winLayoutAlias" + (i + 1));
-                if (aliasEl) {
-                    if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString() ||
-                        _layoutAliasArray[i] == (i + 1)) {
-                        aliasEl.value = "";
-                        aliasEl.setAttribute("placeholder", "Enter Alias");
-                    }
-                    else
-                        aliasEl.value = _layoutAliasArray[i];
-                }
-            }
-
-            //if user has privileges _sysLayoutArray is populated
-            el = document.getElementById("windSystemLayoutDiv");
-            if (!_sysLayoutArray || !_sysLayoutArray.length) //no priveleges
-            {
-                el.style.display = "none";
-                return;
-            }
-            el.style.display = "block";
-            for (var i = 0; i < _sysLayoutArray.length && i < _NUM_SYS_LAYOUTS; ++i) //_NUM_SYS_LAYOUTS system layouts
-            {
-                el = document.getElementById("winSysLayoutText" + (i + 1));
-                if (_sysLayoutArray[i] == "0") //then unset
-                    el.innerHTML = "Layout Details: no layout set";
-                else
-                    el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
-                        (i + 1) + ",true,event,1); return false;'>show</a>";
-
-                //update system alias input to match current alias array
-                var sysAliasEl = document.getElementById("winSysLayoutAlias" + (i + 1));
-                if (sysAliasEl) {
-                    if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString() ||
-                        _sysLayoutAliasArray[i] == (i + 1)) {
-                        sysAliasEl.value = "";
-                        sysAliasEl.setAttribute("placeholder", "Enter Alias");
-                    }
-                    else
-                        sysAliasEl.value = _sysLayoutAliasArray[i];
-                }
-            }
-
-        } //end extractLayoutToForm()
-
-        //=====================================================================================
-        //handle request for current settings
-        function settingsRequestHandler(req) {
-            Debug.log("settingsRequestHandler " + req.responseText);
-
-            if (DesktopContent._sequence) {
-                showPermissionsTooltip();
-
-                //handle wiz mode specially
-                extractUserAccounts(req);
-                return;
-            }
-
-
-            //extract alert from server
-            var serverAlert = DesktopContent.getXMLValue(req, "server_alert");
-            if (serverAlert) Debug.log("Message from Server: " + serverAlert, Debug.HIGH_PRIORITY);
-
-            //get username with lock, "" means no one has lock
-            _usernameWithLock = DesktopContent.getXMLValue(req, "username_with_lock");
-            var pref_username = DesktopContent.getXMLValue(req, "pref_username");
-            var ots_owner = DesktopContent.getXMLValue(req, "ots_owner");
-            var ots_remote_address = DesktopContent.getXMLValue(req, "ots_remote_address");
-            var desktop_user_permissions = DesktopContent.getXMLValue(req, "desktop_user_permissions");
-
-
-            var el = document.getElementById("header");
-            el.innerHTML = "This page gives access to preferences/account selections for user <i><b>" +
-                pref_username + "</b></i> on " + ots_owner + " ots" +
-                (ots_remote_address ? (" (" + ots_remote_address + ")") : "") +
-                "." + "<br><br>" +
-                "Your ots access permissions are '" + desktop_user_permissions + ".'" +
-                "<br><br>" +
-                ((_usernameWithLock && _usernameWithLock != "") ?
-                    (_usernameWithLock + " currently has the " + ots_owner + " ots lock. " +
-                        (_usernameWithLock == pref_username ? " <a onclick='lockToUsername(-1,false,\"" +
-                            pref_username + "\");'>Click</a> to unlock." : "")) :
-                    (ots_owner + " ots is currently unlocked. <a onclick='lockToUsername(-1,true,\"" +
-                        pref_username + "\");'>Click</a> to lock."));
-
-            //pass preferences to Desktop	but remove user accounts from message to Desktop
-            if (_mailbox) {
-                var uaStart = req.responseText.indexOf("<users_accounts v");
-                var uaEnd = req.responseText.indexOf("</users_accounts>") + String("</users_accounts>").length;
-                _mailbox.innerHTML = req.responseText.substr(0, uaStart) + req.responseText.substr(uaEnd);
-            }
-
-            //handle colors
-            var xmlfields = ["pref_bgcolor", "pref_dbcolor", "pref_wincolor"];
-            for (var i = 0; i < xmlfields.length; ++i)
-                extractRGBtoForm(DesktopContent.getXMLValue(req, xmlfields[i]), i);
-
-            //get layout array
-            _layoutArray = DesktopContent.getXMLValue(req, "pref_layout").split(";");
-            Debug.log("Settings layout array " + _layoutArray);
-
-            while (_layoutArray.length < _NUM_USER_LAYOUTS) {
-                Debug.log("_layoutArray received invalid. Attempting to fix.");
-                _layoutArray.push("0");
-            }
-            //for array to proper size for sever communication (just in case)
-            _layoutArray = _layoutArray.slice(0, _NUM_USER_LAYOUTS);
-
-            //cleanse layoutArray
-            for (var i = 0; i < _layoutArray.length; ++i) {
-                var layoutEntry = _layoutArray[i].split(',');
-                if (_layoutArray[i] == "") _layoutArray[i] = "0";
-                Debug.log("layoutEntry", layoutEntry);
-
-                if (_layoutArray[i] != "0" &&
-                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
-                    layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
-                { 
-                    Debug.log("Error invalid user layout found. Clearing invalid layout: " +
-                        _layoutArray[i], Debug.HIGH_PRIORITY);
-                    _layoutArray[i] = "0";
-                }
-            }
-
-            //get system layout array (only populated if user has sufficient privileges)
-            _sysLayoutArray = [];
-            if (DesktopContent.getXMLValue(req, "desktop_user_permissions").indexOf(
-                "allUsers: 255") >= 0) {
-                //we have a super user then
-                _sysLayoutArray = DesktopContent.getXMLValue(req, "pref_syslayout").split(";");
-
-                Debug.log("Has system preferences permission. _sysLayoutArray length " + _sysLayoutArray.length);
-                while (_sysLayoutArray.length < _NUM_SYS_LAYOUTS) {
-                    Debug.log("_sysLayoutArray received invalid. Attempting to fix.");
-                    _sysLayoutArray.push("0");
-                }
-                //for array to proper size for sever communication (just in case)
-                _sysLayoutArray = _sysLayoutArray.slice(0, _NUM_SYS_LAYOUTS);
-
-                //cleanse _sysLayoutArray
-                for (var i = 0; i < _sysLayoutArray.length; ++i) {
-                    var layoutEntry = _sysLayoutArray[i].split(',');
-                    if (_sysLayoutArray[i] == "") _sysLayoutArray[i] = "0";
-                    Debug.log("layoutEntry", layoutEntry);
-
-                    if (_sysLayoutArray[i] != "0" &&
-                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
-                        layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
-                    { 
-                        Debug.log("Error invalid system layout found. Clearing invalid layout: " +
-                            _sysLayoutArray[i], Debug.HIGH_PRIORITY);
-                        _sysLayoutArray[i] = "0";
-                    }
-                }
-            } //end admin layouts handling
-
-
-            Debug.log("System settings layout array " + _sysLayoutArray);
-            Debug.log("User settings layout array " + _layoutArray);
-
-            setLayout(-1); //reset layout selection
-
-            //get user accounts
-            extractUserAccounts(req);
-        } //end settingsRequestHandler()
-
-        //=====================================================================================
-        //called to extract from form to RGB string
-        function extractUserAccounts(req) {
-
-            el = document.getElementById("accountsTableDiv");
-            if (el)
-                el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
-
-            _accountsArray = new Array();
-            for (i = 0; i < _accountFields.length && req.responseXML.getElementsByTagName("users_accounts")[0]; ++i)
-                _accountsArray.push(req.responseXML.getElementsByTagName("users_accounts")[0].getElementsByTagName(_accountFields[i]));
-
-
-            //feedback on new account
-            if (_triedNewAccount) {
-                Debug.log("Settings _triedNewAccount");
-
-                _triedNewAccount = false;
-                el = document.getElementById("newAccountFeedbackDiv");
-
-                if (_accountsArray[0].length != _oldAccountSize) {
-                    var str = "New account added successfully!";
-                    Debug.log(str, Debug.INFO_PRIORITY);
-                    if (el) el.innerHTML = "<center  style='padding:5px'><font color='green'>" +
-                        str + "</font></center>";
-                }
-                else {
-                    var str = "New account was not created. Did you have at least 4 characters in the username?";
-                    Debug.log(str, Debug.HIGH_PRIORITY);
-                    if (el) el.innerHTML = "<center style='padding:5px'><font color='red'>" +
-                        str + "</font></center>";
-                }
-
-            }
-
-
-            //apply current sort, search and then display
-            sortAccountsBy(_AccountsLastSort, true); //with true, does not display accounts or increment sort type
-            displayAccounts();
-        } // end extractUserAccounts()
-
-        //=====================================================================================
-        //applyAccountsSearch ~~
-        //	search through all 3 columns of _AccountsOrderArray
-        // 	and delete entries that do not have needle
-        function applyAccountsSearch(needle) {
-
-            Debug.log("Settings applyAccountsSearch " + needle);
-
-            _AccountsTriedSearch = true;
-            _AccountsLastSearch = needle;
-
-            //reload all entries as possibilities
-            if (_AccountsOrderArray.length != _accountsArray[0].length)
-                sortAccountsBy(_AccountsLastSort, true); //with true, does not display accounts or increment sort type
-
-            if (needle != "") {
-                //apply current sort but do not display
-                //sortAccountsBy(_AccountsLastSort,true); //with true, does not display accounts or increment sort type
-
-                //init keep Array
-                var keepArray = new Array(_AccountsOrderArray.length);
-                for (i = 0; i < _AccountsOrderArray.length; ++i) keepArray[i] = 0;
-
-                //find entries to keep
-                for (j = 0; j < _accountFields.length; ++j)
-                    for (i = 0; i < _AccountsOrderArray.length; ++i)
-                        if (_accountsArray[j][_AccountsOrderArray[i]].getAttribute('value').indexOf(needle) != -1)
-                            keepArray[i] = 1; //keep entry at i
-
-                //remove unkept
-                for (i = 0; i < _AccountsOrderArray.length; ++i)
-                    if (!keepArray[i]) {
-                        keepArray.splice(i, 1);
-                        _AccountsOrderArray.splice(i--, 1); //remove entry at i, and rewind i to look at new i entry
-                    }
-            }
-        } //end applyAccountsSearch()
-
-        //=====================================================================================
-        function setAccountsPage(pg) {
-            _AccountsPageIndex = pg;
-            displayAccounts();
-        } //end setAccountsPage()
-
-        //=====================================================================================
-        //sortAccountsBy ~~
-        //	col is the column to sort on
-        //	_AccountsNextSortArray holds the next sort to do for each column
-        //		For username and display name... sort=0 := alpha, sort=1 := reverse alpha
-        function sortAccountsBy(col, rerunCurrentSort) {
-            if (col < 0 || col > 2) { //validate col
-
-                //default sort
-                _AccountsOrderArray = new Array(); //reset order to be order from server
-                for (i = 0; _accountsArray[0] && i < _accountsArray[0].length; ++i)
-                    _AccountsOrderArray.push(i);
-                if (!rerunCurrentSort) displayAccounts();
-                return;
-            }
-
-            Debug.log("Settings sortAccountsBy " + col + " - " + _AccountsNextSortArray[col]);
-
-            el = document.getElementById("accountsTableDiv");
-            el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
-
-            _AccountsOrderArray.length = 0; //clear array
-
-
-            if (rerunCurrentSort) _AccountsNextSortArray[col] = !_AccountsNextSortArray[col]; //revert back to previous, in the end will leave state unchanged
-            var hi, lo, p;
-            for (i = 0; i < _accountsArray[0].length; ++i) {
-                if (!_AccountsOrderArray.length) //empty case
-                    _AccountsOrderArray.push(i);
-                else  //place in proper location within [lo, hi) range
-                {
-                    lo = 0; hi = _AccountsOrderArray.length;
-                    while (lo < hi) {
-                        p = lo + Math.floor((hi - lo) / 2);
-
-                        //alpha sort and less OR reverse-alpha and more, then look at half-range below
-                        if ((!_AccountsNextSortArray[col] &&
-                            _accountsArray[col][i].getAttribute('value') < _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value')) ||
-                            (_AccountsNextSortArray[col] &&
-                                _accountsArray[col][i].getAttribute('value') > _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value')))
-                            hi = p;
-                        else if (_accountsArray[col][i].getAttribute('value') == _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value'))
-                            lo = hi = p; //found equal
-                        else		//look at half range above
-                            lo = p + 1;
-                    }
-
-                    //new always splice into lo position
-                    _AccountsOrderArray.splice(lo, 0, i);
-                }
-                Debug.log(_accountsArray[col][i].getAttribute('value') + " added to " + lo);
-            }
-
-            _AccountsNextSortArray[col] = !_AccountsNextSortArray[col]; //get ready for next sort, or leave state unchanged if rerun
-            _AccountsLastSort = col;
-
-            applyAccountsSearch(_AccountsLastSearch); //apply search string to new entry list
-
-            if (!rerunCurrentSort) displayAccounts();
-        } //end sortAccountsBy()
-
-        //=====================================================================================
-        function handleSearchKeyUp() {
-
-            el = document.getElementById("accountsTableDiv");
-            if (el && el.innerHTML.indexOf("loaderGif") == -1)
-                el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
-
-            if (_AccountSearchTimer)
-                clearTimeout(_AccountSearchTimer);
-            _AccountSearchTimer = setTimeout(handleTimeoutSearchKeyUp, 500);
-        } //end handleSearchKeyUp()
-
-        //=====================================================================================
-        function handleTimeoutSearchKeyUp() {
-            var el = document.getElementById("accountsSearchBox");
-            Debug.log("Settings handleTimeoutSearchKeyUp " + el.value);
-            applyAccountsSearch(el.value);
-            displayAccounts();
-        } //end handleTimeoutSearchKeyUp()
-        //=====================================================================================
-        function displayAccounts() {
-
-            Debug.log("Settings displayAccounts");
-
-            var el = document.getElementById("jumpToAccounts");
-            var htmlStr = "";
-
-            if (el) //in wiz mode, there is now jump link
-            {
-                if (_usernameWithLock && _usernameWithLock != "") //insert user with lock if applicable
-                    htmlStr += "<div style='color:yellow; margin-bottom:10px;'>Note: <i>" + _usernameWithLock + "</i> currently has the ots Lock.</div>";
-
-                if (_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
-                {
-                    if (_mailbox) //only add jump link if there is a large Preferences section
-                        htmlStr += "<div id='prefs'><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
-
-                    el.innerHTML = htmlStr;
-                }
-                else { el.innerHTML = htmlStr; return; } //If do not have permissions
-            }
-
-            el = document.getElementById("accountsDiv");
-
-            htmlStr = "";
-            htmlStr += "<br>";
-            if (!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
-                htmlStr += "<hr width='75%'><center><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
-
-            htmlStr += "<div id='accountsSearchDiv'>Search: " +
-                "<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
-
-            //display pages
-            var numOfPages = Math.ceil(_AccountsOrderArray.length / _AccountsPageSize);
-            if (_AccountsPageIndex >= numOfPages) _AccountsPageIndex = numOfPages - 1;
-            if (_AccountsPageIndex < 0) _AccountsPageIndex = 0; //don't allow page to be negative, or bad array access happens
-            Debug.log("Settings showing page " + (_AccountsPageIndex + 1) + " of " + numOfPages);
-
-            if (!_accountsArray || !_accountsArray[0]) {
-                Debug.log("No user accounts found!", Debug.WARN_PRIORITY);
-                return;
-            }
-
-            htmlStr += "<center>" + _AccountsOrderArray.length + " of " +
-                _accountsArray[0].length + " accounts match search.<br>(" + _AccountsPageSize + " per page)</center><br>";
-            htmlStr += "<div id='accountsPageNav'>Navigate: ";
-            htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + ")'; event.stopPropagation(); return false;'>&nbsp;Prev </a>";
-
-            for (i = (_AccountsPageIndex - _AccountsPageNavWidth < 0) ? 0 : (_AccountsPageIndex - _AccountsPageNavWidth);
-                i < _AccountsPageIndex + _AccountsPageNavWidth && i < numOfPages; ++i) {
-                htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + ")';event.stopPropagation(); return false;'> " +
-                    (i == _AccountsPageIndex ? "<b>" : "") + (i + 1) + (i == _AccountsPageIndex ? "</b>" : "") + " </a>";
-            }
-
-            htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;";
-            htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + ")';event.stopPropagation(); return false;'> Next&nbsp;</a>";
-            htmlStr += "</div>";
-
-            htmlStr += "<center><div id='accountsPermNote'>" +
-                "<a onclick='showPermissionsTooltip(true /*alwaysShow*/);'>" +
-                "Click here for help with Resetting Passwords and User Permissions" +
-                "</a>" +
-                "</div></center>";
-
-            //////////////////////////////////////////////////////
-            //accounts table
-            htmlStr += "<div id='accountsTableDiv'>";
-            htmlStr += "<table><tr>";
-            for (j = 0; j < _accountFields.length - 1; ++j) //exclude NAC column, and place at end
-                htmlStr += "<td class='accountsHeaderFld'>" +
-                    "<a onmouseup='sortAccountsBy(" + j + ")';event.stopPropagation(); return false;'" +
-                    " title='Sort by " + _accountFields[j] + "'>" +
-                    _accountFieldNames[j] + "<a/></td>";
-            htmlStr += "<td class='accountsHeaderFld' title='Make Account Changes'>Update</td>" +
-                "<td class='accountsHeaderFld' title='Delete Account'>Remove</td>";
-            htmlStr += "<td class='accountsHeaderFld' title='New Account Code'>NAC</td>" +
-                "<td class='accountsHeaderFld' title='Lock ots to single user'>Lock</td>";
-            htmlStr += "</tr>";
-
-            var lockModeTmp;
-            for (i = _AccountsPageIndex * _AccountsPageSize; i < _AccountsOrderArray.length &&
-                i < _AccountsPageIndex * _AccountsPageSize + _AccountsPageSize; ++i) {
-                htmlStr += "<tr><td class='accountsUsername'>" +
-                    _accountsArray[0][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
-                htmlStr += "<td><input type='text' class='actEmailInput' id='accountsEmail" + _AccountsOrderArray[i] + "' value='" +
-                    _accountsArray[1][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-                    "onkeydown='return handleEmailInputKeyDown(event);'" +
-                    "></td>";
-                htmlStr += "<td><input type='text' class='actDispNameInput' id='accountsDisplayName" + _AccountsOrderArray[i] + "' value='" +
-                    _accountsArray[2][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-                    "onkeydown='return handleAccountsInputKeyDown(event);'" +
-                    "></td>";
-                htmlStr += "<td><input type='text' class='actPermInput' id='accountsPermissions" + _AccountsOrderArray[i] + "' value='" +
-                    _accountsArray[3][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-                    "onkeydown='return handleAccountsInputKeyDown(event)'" +
-                    "></td>";
-                htmlStr += "<td><a onmouseup='updateAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
-                    " title='Make Account Changes'>Update</a></td>";
-                htmlStr += "<td><a onmouseup='deleteAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
-                    " title='Delete Account'>X</a></td>";
-                htmlStr += "<td class='accountsNac' title='New Account Code'>" +
-                    _accountsArray[4][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
-                htmlStr += "<td>";
-
-                //for user lock
-                if (_usernameWithLock == "") //no one has lock
-                    lockModeTmp = 1;
-                else if (_usernameWithLock == _accountsArray[0][_AccountsOrderArray[i]].getAttribute('value')) //user has lock
-                    lockModeTmp = 0;
-                else lockModeTmp = 2;
-
-                if (lockModeTmp != 2) //only output something if mode 0 or 1
-                    htmlStr += "<a onmouseup='lockToUsername(" + _AccountsOrderArray[i] + "," +
-                        lockModeTmp + ")'; event.stopPropagation(); return false;' title='Lock ots to single user'>" +
-                        "<img src='/WebPath/images/dashboardImages/icon-Settings-" +
-                        (lockModeTmp ? "Unl" : "L") + "ock.png'></a>";
-
-                htmlStr += "</td>";
-                htmlStr += "</tr>";
-            }
-            htmlStr += "</table>";
-            htmlStr += "</div>";
-
-            htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none; background-color: #EAABAB' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
-            //////////////////////////////////////////////////////
-            //add new account option
-            htmlStr += "<h3 style='margin-bottom: -30px; margin-top: 10px;'>Create New Account:</h3>";
-            htmlStr += "<table><tr>";
-            for (j = 0; j < _accountFields.length - 1; ++j) //omit nac field
-                htmlStr += "<td class='accountsHeaderFld'>" + _accountFieldNames[j] + "</td>";
-            htmlStr += "</tr><tr>";
-            htmlStr += "<td><input type='text' id='accountsUsernameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-            htmlStr += "<td><input type='text' id='accountsEmailNew' value='' onkeydown='return handleEmailInputKeyDown(event)'></td> ";
-            htmlStr += "<td><input type='text' id='accountsDisplayNameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-            htmlStr += "<td><input type='text' id='accountsPermissionsNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-            htmlStr += "<td></td><br><br>";
-            htmlStr += "</tr></table>";
-            htmlStr += "<center><div style='padding-top: 10px'><input id='newacct' type='submit' onmouseup='createNewAccount(event);' value='Create New Account'></div></center>";
-
-            el.innerHTML = htmlStr;
-
-
-
-            ///////
-
-            if (_AccountsTriedSearch) {
-                el = document.getElementById('accountsSearchBox');
-                el.focus();
-                el.setSelectionRange(el.value.length, el.value.length);
-                _AccountsTriedSearch = false;
-
-            }
-        } //end displayAccounts()
-
-        //=====================================================================================
-        //handleAccountsInputKeyDown ~~
-        //	allow alphanumeric character only
-        function handleAccountsInputKeyDown(e) {
-            //Debug.log("Settings handleAccountsInputKeyDown " + e.keyCode);
-            if (e.keyCode == 9) return true;		//if tab focus on next box
-            else if ((!e.shiftKey && (e.keyCode >= 48 && e.keyCode <= 57)) || //accept numbers but not shifted numbers
-                (e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
-                (e.keyCode >= 65 && e.keyCode <= 90) || //accept letters and shifted letters
-                e.keyCode == 46 || e.keyCode == 8 || //delete, backspace
-                e.keyCode == 35 || e.keyCode == 36 ||  //home and end
-                (e.keyCode >= 37 && e.keyCode <= 40 || //arrows are accepted
-                    e.keyCode == 188 || e.keyCode == 186 || e.keyCode == 32)) // Space, Colon, and Comma
-                return true;
-
-            return false; //to stop tab and enter (and unaccepted chars) from propagating to window
-        }
-
-        //=====================================================================================
-        function handleEmailInputKeyDown(e) {
-            //Debug.log("Settings handleAccountsInputKeyDown " + e.keyCode);
-            if (e.keyCode == 9) return true;		//if tab focus on next box
-            else if ((e.keyCode >= 48 && e.keyCode <= 57) || //accept numbers and shifted numbers
-                (e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
-                (e.keyCode >= 65 && e.keyCode <= 90) || //accept letters and shifted letters
-                e.keyCode == 46 || e.keyCode == 8 || //delete, backspace
-                e.keyCode == 35 || e.keyCode == 36 ||  //home and end
-                (e.keyCode >= 37 && e.keyCode <= 40) ||   //arrows are accepted
-                e.keyCode == 188 || e.keyCode == 190) // Comma and dot
-                return true;
-
-
-            return false; //to stop tab and enter (and unaccepted chars) from propagating to window
-        }
-
-        //=====================================================================================
-        function handleBodyMouseUp() {
-            setLayout(-1); //clear selected layout
-
-            _theDeleteIndex = -1;
-            var delEl = document.getElementById("theRealDelete");
-            if (delEl) delEl.style.display = 'none';
-        }
-
-        //=====================================================================================
-        //called to extract from form to RGB string
-        function extractFormToRGB(i) {
-            var retstr = "rgb" + (i == 2 ? "a" : "") + "(";
-            var el;
-            for (var j = 0; j < 3; ++j) {
-                el = document.getElementById("Settings-colorInput" + i + j);
-                el.value = parseInt(el.value);
-                if (el.value == "NaN") el.value = 0;
-                retstr += el.value + (j == 2 ? (i == 2 ? ",0.9)" : ")") : ",");
-            }
-            return retstr;
-        }
-
-        //=====================================================================================
-        function checkSettingsMailbox() {
-            Debug.log("Settings checkSettingsMailbox");
-            if (_settingsLayoutMailbox.innerHTML == "") { //still dont have layout, try again
-                setTimeout(checkSettingsMailbox, 500);
-                return;
-            }
-            else
-                setServerSettings();
-        } //end checkSettingsMailbox()
-
-        //=====================================================================================
-        //saveGenPreferences ~~
-        function saveGenPreferences(mouseEvent) {
-
-            if (mouseEvent)
-                mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
-
-            Debug.log("Settings Save Preferences. Selected layout=" + _selectedLayout);
-
-            _settingsLayoutMailbox.innerHTML = "";
-
-            if (_selectedLayout > 0) { //if selected, then get current layout from mailbox
-
-                Debug.log("_selectedLayout " + _selectedLayout);
-                _mailbox.innerHTML = "LAYOUT";
-                setTimeout(checkSettingsMailbox, 500);
-                return;
-            }
-            else //else go straight to set settings
-                setServerSettings();
-        } // end saveGenPreferences()
-
-        //=====================================================================================
-        //setServerSettings ~~
-        //	This saves the user pref to server.
-        //
-        //	Note: this is very similar to what happens in DesktopLogin.js/_updateLayoutTimeoutHandler()
-        //		They should be changed together.
-        function setServerSettings() {
-            Debug.log("Settings setServerSettings");
-            var data = "";
-
-            //colors
-            var colorFields = ["bgcolor", "dbcolor", "wincolor"];
-            for (var j = 0; j < 3; ++j)
-                data += colorFields[j] + "=" + extractFormToRGB(j) + "&";
-
-            ////////////////////////
-            //layout
-
-            var tmpAlias, tmpAliasEl;
-            if (_selectedLayout >= 1 && _selectedLayout <= _NUM_USER_LAYOUTS) //set new  default layout from desktop mailbox
-            {
-                _layoutArray[_selectedLayout - 1] = _settingsLayoutMailbox.innerHTML;
-            }
-            //for array to proper size for sever communication (just in case)
-            _layoutArray = _layoutArray.slice(0, _NUM_USER_LAYOUTS);
-
-            //read all user layout alias inputs and sync array
-            for (var j = 0; j < _NUM_USER_LAYOUTS; ++j) {
-                tmpAliasEl = document.getElementById("winLayoutAlias" + (j + 1));
-                if (tmpAliasEl) {
-                    tmpAlias = tmpAliasEl.value.trim();
-                    _layoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
-                    if (tmpAlias.length == 0) {
-                        tmpAliasEl.value = "";
-                        tmpAliasEl.setAttribute("placeholder", "Enter Alias");
-                    }
-                }
-            }
-
-            var layoutStr = "";
-            for (var j = 0; j < _layoutArray.length; ++j)
-                layoutStr += _layoutArray[j] + (j == _layoutArray.length - 1 ? "" : ";");
-            data += "layout=" + layoutStr + "&";
-
-            ////////////////////////
-            //system layout
-            if (_selectedLayout >= _NUM_USER_LAYOUTS + 1 && //set new  default layout from desktop mailbox
-                _selectedLayout <= _NUM_USER_LAYOUTS + _NUM_SYS_LAYOUTS) {
-                _sysLayoutArray[_selectedLayout - 1 - _NUM_USER_LAYOUTS] = _settingsLayoutMailbox.innerHTML;
-            }
-            //for array to proper size for sever communication (just in case)
-            _sysLayoutArray = _sysLayoutArray.slice(0, _NUM_SYS_LAYOUTS);
-
-            //read all system layout alias inputs and sync array
-            for (var j = 0; j < _NUM_SYS_LAYOUTS; ++j) {
-                tmpAliasEl = document.getElementById("winSysLayoutAlias" + (j + 1));
-                if (tmpAliasEl) {
-                    tmpAlias = tmpAliasEl.value.trim();
-                    _sysLayoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
-                    if (tmpAlias.length == 0) {
-                        tmpAliasEl.value = "";
-                        tmpAliasEl.setAttribute("placeholder", "Enter Alias");
-                    }
-                }
-            }
-
-            layoutStr = "";
-            Debug.log("_sysLayoutArray length " + _sysLayoutArray.length);
-            for (var j = 0; j < _sysLayoutArray.length; ++j)
-                layoutStr += _sysLayoutArray[j] + (j == _sysLayoutArray.length - 1 ? "" : ";");
-            data += "syslayout=" + layoutStr + "&";
-
-            ////////////////////////
-            //send save req
-            data += "aliaslayout=" + _layoutAliasArray + "&";
-            data += "sysAliaslayout=" + _sysLayoutAliasArray + "&";
-
-            _triedNewAccount = false;
-            Debug.log("Settings Save Preferences -- " + data);
-            DesktopContent.XMLHttpRequest("Request?RequestType=setSettings",
-                data,
-                settingsRequestHandler);
-        } //end setServerSettings()
-
-        //=====================================================================================
-        function defaultColors() {
-            Debug.log("Settings Default Colors");
-
-            //#define PREF_XML_BGCOLOR_DEFAULT 			"rgb(0,76,151)"     // -background color
-            //#define PREF_XML_DBCOLOR_DEFAULT 			"rgb(0,40,85)"      // -dashboard color
-            //#define PREF_XML_WINCOLOR_DEFAULT 		"rgba(196,229,255,0.9)"  	// -window color
-            extractRGBtoForm("rgb(0,76,151)", 0);
-            extractRGBtoForm("rgb(0,40,85)", 1);
-            extractRGBtoForm("rgba(196,229,255,0.9)", 2);
-        } //end defaultColors()
-
-        //=====================================================================================
-        function colorEditHandler(e) {
-            Debug.log("Settings color input handler");
-            for (var i = 0; i < 3; ++i) //correct field and display result
-                extractRGBtoForm(extractFormToRGB(i), i);
-            return true;
-        } //end colorEditHandler()
-
-        //=====================================================================================
-        //setLayout ~~
-        function setLayout(i, mouseEvent) {
-            if (_selectedLayout == i) return;
-
-            Debug.log("Settings default layout " + i);
-
-            for (var j = 1; j <= _NUM_USER_LAYOUTS; ++j) { //correct field and display result
-                el = document.getElementById("winLayoutLink" + j);
-                el.style.color = 'black';
-            }
-
-            for (var j = 1; j <= _NUM_SYS_LAYOUTS; ++j) { //correct field and display result
-                el = document.getElementById("winSysLayoutLink" + j);
-                el.style.color = 'black';
-            }
-
-            extractLayoutToForm();
-
-            if (i >= 1 && i <= _NUM_USER_LAYOUTS) //user presets
-            {
-                el = document.getElementById("winLayoutLink" + i);
-                el.style.color = 'rgb(0,155,0)';
-                el = document.getElementById("winLayoutText" + i);
-                el.innerHTML = "Click Save Preferences to confirm";
-                _selectedLayout = i;
-            }
-            else if (i >= _NUM_USER_LAYOUTS + 1 &&
-                i <= _NUM_USER_LAYOUTS + _NUM_SYS_LAYOUTS)	//system presets
-            {
-                el = document.getElementById("winSysLayoutLink" + (i - _NUM_USER_LAYOUTS));
-                el.style.color = 'rgb(0,155,0)';
-                el = document.getElementById("winSysLayoutText" + (i - _NUM_USER_LAYOUTS));
-                el.innerHTML = "Click Save Preferences to confirm";
-                _selectedLayout = i;
-            }
-            else
-                _selectedLayout = -1; //no layout selected
-
-            Debug.log("_selectedLayout = " + _selectedLayout);
-
-            if (mouseEvent)
-                mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
-        } // end setLayout()
-
-        //=====================================================================================
-        //showLayoutText ~~
-        //	layout window fields (per window, 10 fields):
-        //		0: _windows[i].getWindowName()
-        //		1: _windows[i].getWindowSubName()
-        //		2: _windows[i].getWindowUrl().replace(/&/g,'%38').replace(/=/g,'%61')  //global replace & and =
-        //		3: (((_windows[i].getWindowX()-dx)/dw)|0)
-        //		4: (((_windows[i].getWindowY()-dy)/dh)|0)
-        //		5: ((_windows[i].getWindowWidth()/dw)|0)
-        //		6: ((_windows[i].getWindowHeight()/dh)|0)
-        //		7: (_windows[i].isMinimized()?"0":"1")
-        //		8: iframeScrollX  //per-window iframe scroll left in pixels
-        //		9: iframeScrollY  //per-window iframe scroll top in pixels
-        //
-        function showLayoutText(i, show, mouseEvent, isSystemLayout) {
-            if (mouseEvent)
-                mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
-
-            var str = "";
-            var sysTxt = isSystemLayout ? "Sys" : "";
-            var el = document.getElementById("win" + sysTxt + "LayoutText" + i);
-            if (show) {
-                str = "Layout Details: <a href='#' onmouseup='showLayoutText(" + i + ",false,event," +
-                    (isSystemLayout ? 1 : 0) + "); return false;'>hide</a><br>";
-                var winLayArr = (isSystemLayout ?
-                    _sysLayoutArray : _layoutArray)[i - 1].split(",");
-
-                //auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
-                var numOfFields;
-                var rem10 = winLayArr.length % 10;
-                var rem8 = winLayArr.length % 8;
-                if (rem10 == 0 || rem10 == 2)
-                    numOfFields = 10;
-                else
-                    numOfFields = 8;
-
-                //destroy 7 field approach (new way adds the 8th field for isMinimized)
-                var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
-                str += "~ Layout of " + num + " Window" + ((num == 1) ? "" : "s") + " ~<br>";
-
-                var fieldArr = ["X", "Y", "W", "H", ""];
-                for (var i = 0; i < num; ++i) {
-                    str += "&nbsp;&nbsp;&nbsp;&nbsp;" +
-                        decodeURIComponent(winLayArr[i * numOfFields]) +
-                        " - " +
-                        decodeURIComponent(winLayArr[i * numOfFields + 1]) +
-                        " - ";
-
-                    for (var j = 3; j < 8; ++j)
-                        if (j < 7)
-                            str += ((j - 3) ? ", " : "") + fieldArr[j - 3] + ":" +
-                                (Math.round(winLayArr[i * numOfFields + j] / 100) | 0) + "%";
-                        else if (winLayArr[i * numOfFields + j] == "0") //then minimized
-                            str += ", Minimized";
-                        else if (winLayArr[i * numOfFields + j] == "2") //then maximized
-                            str += ", Maximized";
-
-                    //display per-window scroll position (if present in 10-field format)
-                    if (numOfFields >= 10) {
-                        var winScrollX = winLayArr[i * numOfFields + 8] | 0;
-                        var winScrollY = winLayArr[i * numOfFields + 9] | 0;
-                        if (winScrollX || winScrollY)
-                            str += ", Scroll - Left:" + winScrollX + "px, Top:" + winScrollY + "px";
-                    }
-                    str += "<br>";
-                }
-            }
-            else
-                str = "Layout Details: <a href='#' onmouseup='showLayoutText(" + i + ",true,event," +
-                    (isSystemLayout ? 1 : 0) + "); return false;'>show</a>";
-
-            el.innerHTML = str;
-        } //end showLayoutText()
-
-        //=====================================================================================
-        function updateAccount(i) {
-            Debug.log("Settings updateAccount-" + i);
-
-            var dnEl = document.getElementById("accountsDisplayName" + i);
-            var pEl = document.getElementById("accountsPermissions" + i);
-            var emEl = document.getElementById("accountsEmail" + i);
-
-            Debug.log("Settings updateAccount-" + _accountsArray[0][i].getAttribute('value') + ":" + emEl.value +
-                ":" + dnEl.value + ":" + pEl.value);
-
-            var data = "";
-            data += "type=updateAccount&";
-            data += "username=" + _accountsArray[0][i].getAttribute('value') + "&";
-            data += "useremail=" + emEl.value + "&";
-            data += "displayname=" + dnEl.value + "&";
-            data += "permissions=" + pEl.value + "&";
-
-            _triedNewAccount = false;
-
-            DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
-                data, settingsRequestHandler);
-
-        } //end updateAccount()
-
-        //=====================================================================================
-        function deleteAccount(i) {
-            Debug.log("Settings deleteAccount-" + i);
-            _theDeleteIndex = i;
-
-            var delEl = document.getElementById("theRealDelete");
-            delEl.style.display = 'block';
-
-        } //end deleteAccount()
-
-        //=====================================================================================
-        function createNewAccount(event) {
-            if (event) event.stopPropagation();
-            Debug.log("Settings createNewAccount");
-
-            var elField = ["username", "useremail", "displayname", "permissions"];
-            var elIds = ["accountsUsernameNew", "accountsEmailNew", "accountsDisplayNameNew", "accountsPermissionsNew"];
-            var el;
-
-            var data = "";
-            data += "type=createAccount&";
-            for (i = 0; i < elIds.length; ++i) {
-                el = document.getElementById(elIds[i]);
-                data += elField[i] + "=" + el.value + "&";
-            }
-
-            _triedNewAccount = true;
-            _oldAccountSize = _accountsArray[0].length; //save to give feedback on success
-
-            DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
-                data, settingsRequestHandler);
-
-        } //end createNewAccount()
-
-        //=====================================================================================
-        function reallyDelete(event) {
-            if (event) event.stopPropagation();
-            Debug.log("Settings Really Deleted! Delete Index: " + _theDeleteIndex);
-
-            var data = "";
-            data += "type=deleteAccount&";
-            data += "username=" + _accountsArray[0][_theDeleteIndex].getAttribute('value') + "&";
-            data += "displayname=" + _accountsArray[2][_theDeleteIndex].getAttribute('value') + "&";
-
-            _triedNewAccount = false;
-
-            DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
-                data, settingsRequestHandler);
-        } //end reallyDelete()
-
-        //=====================================================================================
-        function lockToUsername(i, lock, username) {
-            var data = "";
-            data += "lock=" + (lock ? "1" : "0") + "&";
-
-            if (username) {
-                Debug.log("Settings lockToUsername " + username + " lock " + lock);
-                data += "username=" + username;
-            }
-            else {
-                Debug.log("Settings lockToUsername " + _accountsArray[0][i].getAttribute('value') + " lock " + lock);
-                data += "username=" + _accountsArray[0][i].getAttribute('value');
-            }
-
-            _triedNewAccount = false;
-
-            DesktopContent.XMLHttpRequest("Request?RequestType=setUserWithLock&accounts=1",
-                data, settingsRequestHandler);
-        } //end lockToUsername()
-
-        //=====================================================================================
-        function resetUserTooltips() {
-            DesktopContent.popUpVerification("Are you sure you want to reset all your " +
-                "Tooltips?<br><br>This will reset the 'never show' property of your " +
-                "Tooltips. It is irreversible, and will result in you seeing all " +
-                "Tooltips again.",
-                function () {
-                    Debug.log("accepted");
-                    DesktopContent.XMLHttpRequest("Request?RequestType=resetUserTooltips", "",
-                        function () {
-                            Debug.log("All of your Tooltips have been reset!",
-                                Debug.INFO_PRIORITY);
-                        }, 0, 0, 0, false); //show loading
-                });
-        } //end resetUserTooltips()
-
-        //=====================================================================================
-        function silenceUserTooltips() {
-            DesktopContent.popUpVerification("Are you sure you want to silence all your " +
-                "Tooltips?<br>",
-                function () {
-                    Debug.log("accepted");
-                    DesktopContent.XMLHttpRequest("Request?RequestType=silenceUserTooltips", "",
-                        function () {
-                            Debug.log("All of your Tooltips have been silenced!",
-                                Debug.INFO_PRIORITY);
-                        }, 0, 0, 0, true); //show loading
-                });
-        } //end silenceUserTooltips()
-
-        //=====================================================================================
-        function showPermissionsTooltip(alwaysShow) {
-            DesktopContent.tooltip(alwaysShow ? "ALWAYS" : "Password Reset and User Permissions",
-                (alwaysShow ? "<b>Help with Password Reset and User Permissions:</b>\n\n" : "") +
-                "First off, to do a <b>password reset</b> for a user, a system admin must toggle the user's " +
-                "<b>permissions string</b>. Setting it to 0, and then back to a valid <b>permissions string</b> should force " +
-                "the user to have to create a new password with a <b>New Account Code</b> (NAC)." +
-                "\n\n" +
-                "Now, for more on permissions..." +
-                "\n\n" +
-                "In <i>otsdaq</i>, a user's <b>permissions string</b> consists of pairs " +
-                "of <b>group names</b> and <b>permission indices</b>; each <b>GROUP:INDEX</b> pair is separated by a comma. " +
-                "\n\n" +
-                "The syntax looks like this: <b>GROUP:INDEX, GROUP:INDEX, ...</b>" +
-                "\n\n" +
-                "<b>Group names</b> afford flexibility in organizing your users. " +
-                "There is one required <b>group name</b>, &quot;AllUsers.&quot; " +
-                "All other <b>group names</b> can be made up by <i>otsdaq</i> system administrators." +
-                "\n\n" +
-                "For example, imagine a user that needs access to " +
-                "expert Tracker controls, and standard Shifter controls, but no Calorimeter access; such a user's permission string might be as follows: " +
-                "\n\n" +
-                "<TAB><b> AllUsers: 10, Tracker:100, Calorimeter:0 </b></TAB>" +
-                "\n\n" +
-                "The above user, would be a 10 (i.e. <i>standard user</i>) for default requests, " +
-                "a 100 (i.e. <i>expert</i>) for Tracker requests, " +
-                "and 0 (i.e. <i>inactive</i>) for Calorimeter requests." +
-                "\n\n\n" +
-                "The expected interpretation of <b>permission index</b> values are as follows (any number from 0 to 255 is valid): " +
-                "\n\n<INDENT><b>0 := Inactive (reset account password)\n10 := Standard User\n100 := Expert\n255 := Admin" +
-                "</b></INDENT>" +
-                "\n\n" +
-                "On the server side, system administrators must setup <b>Application Supervisor</b> request handling for custom <b>group names</b> to be effective. " +
-                "<b>Application Supervisor properties</b> can be created in the <b>configuration tree</b> to override default request handling settings. " +
-                "<b>Front-End Macros</b> also have a <b>permissions string</b> which must be setup by the plugin creators in the source code." +
-                "");
-
-        } //end showPermissionsTooltip()
-
-    </script>
+	<title>User Settings</title>
+
+	<!--link href="https://fonts.googleapis.com/css?family=Comfortaa" rel="stylesheet"-->
+	<link href='/WebPath/css/fonts.css?family=Comfortaa:700,400&subset=latin,greek' rel='stylesheet' type='text/css'>
+	<link type='text/css' rel='stylesheet' href='/WebPath/css/UserSettings.css'>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+
+	<script>
+
+		var _selectedLayout = -2; //hold index of selected , if any
+		var _mailbox, _settingsLayoutMailbox; //pass messages to Desktop
+		var _defaultAliasArray = [-1, -1, -1, -1, -1];
+		var _layoutArray, _sysLayoutArray, _accountsArray;
+		var _layoutAliasArray, _sysLayoutAliasArray;
+		var _NUM_USER_LAYOUTS = 5; //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
+		var _NUM_SYS_LAYOUTS = 5;  //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
+		var _NUM_OF_LAYOUT_FIELDS = 10; //8 original + 2 per-window scroll fields
+		var _accountFieldNames = ["Username", "Email", "Name", "Permissions", "NAC"];
+		var _accountFields = ["username", "useremail", "display_name", "permissions", "nac"];
+		var _theDeleteIndex = -1;
+
+		var userGroups = "";
+		var Groups = "";
+
+
+		//for accounts display
+		var _AccountsPageIndex = 0;
+		var _AccountsPageSize = 10;
+		var _AccountsPageNavWidth = 5;
+		var _AccountsOrderArray;
+		var _AccountsNextSortArray = [0, 0, 0]; //init to default sort type for 3 columns
+		var _AccountsLastSort = -1; //used to re-apply sort when list is updated
+		var _AccountsLastSearch = "";
+		var _AccountsTriedSearch = false;
+		var _AccountSearchTimer = 0;
+
+		//preload loader spinner gif
+		var _loaderImage = new Image();
+		var _loaderImagePath = '/WebPath/images/windowContentImages/loader-Settings.gif';
+		_loaderImage.src = _loaderImagePath;
+
+		//for new account feedback
+		var _triedNewAccount = false;
+		var _oldAccountSize;
+
+		//for lockout
+		var _usernameWithLock = "";
+
+		//functions:
+		//init()
+		//settingsRequest()
+		//extractRGBtoForm(clr,i)
+		//extractLayoutToForm()
+		//settingsRequestHandler(req)
+		//extractUserAccounts(req)
+		//applyAccountsSearch(needle,rerunLast)
+		//handleSearchKeyUp()
+		//handleTimeoutSearchKeyUp()
+		//displayAccounts()
+		//handleBodyMouseUp()
+		//showLayoutText(i,show)
+		//extractFormToRGB(i)
+		//checkSettingsMailbox()
+		//saveGenPreferences(mouseEvent)
+		//setServerSettings()
+		//defaultColors()
+		//colorEditHandler(e)
+		//setLayout(i,mouseEvent)
+		//updateAccount(i)
+		//deleteAccount(i)
+		//createNewAccount(event)
+		//reallyDelete(event)			//really delete the user accout
+		//lockToUsername(i, lock)
+		//showPermissionsTooltip(alwaysShow)
+
+		/////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////
+
+
+		//=====================================================================================
+		//init called once body has loaded
+		function init() {
+			Debug.log("init()");
+
+			//check for wiz mode
+			if (DesktopContent._sequence) {
+				Debug.log("Wiz mode detected!");
+
+				document.body.innerHTML = "";
+				var str = "<div id='accountsDiv'></div><div id='newAccountFeedbackDiv'></div>";
+				document.body.innerHTML = str;
+
+				//get current settings from server
+				DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
+					"", settingsRequestHandler);
+				return;
+			}
+			//else handle normal mode
+
+			document.getElementById("omni").style.display = "block";
+
+			document.body.onmouseup = handleBodyMouseUp;
+			try {
+				_mailbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-updateSettingsMailbox");
+				_settingsLayoutMailbox = DesktopContent._theWindow.parent.document.getElementById("DesktopContent-settingsLayoutMailbox");
+			}
+			catch (e) {
+				_mailbox = undefined;
+				_settingsLayoutMailbox = undefined;
+				Debug.log("Ignoring likely cross-origin settings box... here is the error:", e);
+				var els = document.getElementsByClassName("prefBtn");
+				for (var i = 0; i < els.length; ++i)
+					els[i].style.display = "none"; //hide ability to save gen preferences if cross-origin
+				var el = document.getElementById("genPreferences");
+				if (el) el.style.display = "none";
+			}
+
+			var windowTooltip =
+				"Welcome to the <b>User Settings</b> window. Here you can personalize " +
+				"your user experience.\n\n";
+
+			windowTooltip +=
+				"Here is what you can personalize:" +
+				"<INDENT>";
+			if (_mailbox)
+				windowTooltip +=
+					"- <b>Color Scheme:</b> " +
+					"<INDENT>You can change your color scheme by choosing colors for " +
+					"the desktop dashboard, the desktop background, and desktop windows." +
+					"</INDENT>" +
+					"- <b>Window Layouts:</b> " +
+					"<INDENT>Each user can customize their window layout presets. " +
+					"A layout preset is a set of windows (including their size and position on your " +
+					"desktop) that you can recall any time you would like by clicking 'Layouts' " +
+					"in the top left of the desktop environment and choosing a preset. This is useful" +
+					"of you find yourself always using the same few windows - you can open them all with one click!" +
+					"</INDENT>";
+
+			windowTooltip += "- <b>Tooltips:</b> " +
+				"<INDENT>Each user can silence any tooltip as they popup. And in this User Settings window, you can silence all tooltips for yourself (or re-enable all tooltips)." +
+				"</INDENT>";
+
+			if (!_mailbox)
+				windowTooltip += "</INDENT>\nIt looks like this is a Remote Gateway Settings Window. Use the Primary Gateway Setting Window, in the top-right of the desktop, to control <b>Color Scheme</b> and <b>Window Layouts</b>.\n";
+			else
+				windowTooltip += "</INDENT>";
+
+			windowTooltip +=
+				"\nWhen security is enabled, users with admin privileges can create/modify/delete user accounts, " +
+				"and manipulate which user holds the <b>lock</b> (the ots lock mechanism enforces one-user-at-a-time for particular operations).";
+
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
+				"", layoutSettingsHandler);
+
+			////////Tooltips/////////
+			DesktopContent.tooltip("User Settings Introduction", windowTooltip);
+			DesktopContent.setWindowTooltip(windowTooltip);
+		} //end init()
+
+		//==============================================================================
+		function layoutSettingsHandler(req) {
+			_layoutAliasArray = DesktopContent.getXMLValue(req, "pref_aliaslayout")
+			_sysLayoutAliasArray = DesktopContent.getXMLValue(req, "pref_sysalias_layout");
+			_layoutAliasArray = _layoutAliasArray == undefined ? _defaultAliasArray : _layoutAliasArray.split(",");
+			_sysLayoutAliasArray = _sysLayoutAliasArray == undefined ? _defaultAliasArray : _sysLayoutAliasArray.split(",");
+			loadLayoutSettings();
+			settingsRequest();
+		}
+
+		//==============================================================================
+		function loadLayoutSettings() {
+			var str = "";
+			//create windows layout div
+			for (var i = 0; i < _NUM_USER_LAYOUTS; ++i) {
+				if (i) str += "<br>";
+				str += "<a onmouseup='Javascript:setLayout(" + (i + 1) +
+					",event)' class='winLayoutLink' id='winLayoutLink" + (i + 1) + "'>" +
+					"<li>User Preset-" + (i + 1) + " (Click to set)</li></a>";
+
+				Debug.log("_layoutAliasArray[" + i + "] " + _layoutAliasArray[i]);
+
+				str += "Layout Alias: ";
+				if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString())
+					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
+				else
+					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' value='" + _layoutAliasArray[i] + "'>";
+				str += "<div class='winLayoutText' id='winLayoutText" + (i + 1) + "'></div>";
+			}
+			str += "<div id='windSystemLayoutDiv' style='display:none; white-space:nowrap;'>" +
+				"<hr width='100%'/>";
+			for (var i = 0; i < _NUM_SYS_LAYOUTS; ++i) {
+				if (i) str += "<br>";
+				str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS + i + 1) +
+					",event)' class='winLayoutLink' id='winSysLayoutLink" + (i + 1) + "'>" +
+					"<li>System Preset-" + (i + 1) + " (Click to set)</li></a>";
+
+				str += "Layout Alias: ";
+				if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
+					str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
+				else
+					str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
+				str += "<div class='winLayoutText' id='winSysLayoutText" + (i + 1) + "'></div>";
+			}
+			str += "</div>";
+			document.getElementById("windLayoutDiv").innerHTML = str;
+		}
+
+		//=====================================================================================
+		//request current settings immediately once page loads
+		function settingsRequest() {
+			Debug.log("settingsRequest()");
+
+			//setup input fields
+			var colorDiv = document.getElementById("colorInputs");
+			var el;
+			var colorNames = ["Desktop", "Dashboard", "Window"];
+			var colorPrefix = ["r&nbsp;", "g&nbsp;", "b&nbsp;"];
+			for (var i = 0; i < colorNames.length; ++i) {
+
+				el = document.createElement("div");
+				el.setAttribute("id", "Settings-colorText" + i);
+				el.setAttribute("class", "Settings-el Settings-colorName");
+				el.innerHTML = colorNames[i] + " Color: ";
+				colorDiv.appendChild(el); //add input field name
+
+				for (var j = 0; j < colorPrefix.length; ++j) {
+					el = document.createElement("div");
+					el.setAttribute("class", "Settings-el");
+					el.innerHTML = colorPrefix[j];
+					el.style.marginRight = "0";
+					colorDiv.appendChild(el); //add r g b
+
+					el = document.createElement("input");
+					el.setAttribute("id", "Settings-colorInput" + i + j);
+					el.setAttribute("class", "Settings-el");
+					el.setAttribute("spellcheck", "false");
+					el.setAttribute("type", "number");
+					el.setAttribute("min", "0");
+					el.setAttribute("max", "255");
+					el.setAttribute("step", "5");
+					el.onkeyup = colorEditHandler;
+					// el.onchange = colorEditHandler;
+					el.oninput = colorEditHandler;
+					colorDiv.appendChild(el); //add inputs
+				}
+
+				el = document.createElement("div");
+				el.setAttribute("id", "Settings-colorBox" + i);
+				el.setAttribute("class", "Settings-el Settings-colorBox");
+				colorDiv.appendChild(el); //add inputs
+
+				el = document.createElement("div");
+				el.setAttribute("id", "clearDiv");
+				colorDiv.appendChild(el); //new line
+			}
+
+			_triedNewAccount = false;
+			//get current settings from server
+			DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
+				"", settingsRequestHandler);
+		} //end settingsRequest()
+
+		//=====================================================================================
+		//called to extract color string into form
+		function extractRGBtoForm(clr, i) {
+			Debug.log("Settings User Preferences: " + i + " - " + clr, Debug.LOW_PRIORITY);
+
+			var el, c;
+			el = document.getElementById("Settings-colorBox" + i);
+			el.style.backgroundColor = clr;
+			clr = clr.substr(clr.indexOf("(") + 1);
+			for (var j = 0; j < 3; ++j) {
+				el = document.getElementById("Settings-colorInput" + i + j);
+				el.value = parseInt(clr);
+				clr = clr.substr(clr.indexOf(",") + 1);
+			}
+		} //end extractRGBtoForm()
+
+		//=====================================================================================
+		//extractLayoutToForm ~~
+		function extractLayoutToForm() {
+			var el;
+			for (var i = 0; i < _layoutArray.length && i < _NUM_USER_LAYOUTS; ++i) //_NUM_USER_LAYOUTS user layouts
+			{
+				el = document.getElementById("winLayoutText" + (i + 1));
+				if (_layoutArray[i] == "0") //then unset
+					el.innerHTML = "Layout Details: no layout set";
+				else
+					el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
+						(i + 1) + ",true,event); return false;'>show</a>";
+
+				//update alias input to match current alias array
+				var aliasEl = document.getElementById("winLayoutAlias" + (i + 1));
+				if (aliasEl) {
+					if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString() ||
+						_layoutAliasArray[i] == (i + 1)) {
+						aliasEl.value = "";
+						aliasEl.setAttribute("placeholder", "Enter Alias");
+					}
+					else
+						aliasEl.value = _layoutAliasArray[i];
+				}
+			}
+
+			//if user has privileges _sysLayoutArray is populated
+			el = document.getElementById("windSystemLayoutDiv");
+			if (!_sysLayoutArray || !_sysLayoutArray.length) //no priveleges
+			{
+				el.style.display = "none";
+				return;
+			}
+			el.style.display = "block";
+			for (var i = 0; i < _sysLayoutArray.length && i < _NUM_SYS_LAYOUTS; ++i) //_NUM_SYS_LAYOUTS system layouts
+			{
+				el = document.getElementById("winSysLayoutText" + (i + 1));
+				if (_sysLayoutArray[i] == "0") //then unset
+					el.innerHTML = "Layout Details: no layout set";
+				else
+					el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
+						(i + 1) + ",true,event,1); return false;'>show</a>";
+
+				//update system alias input to match current alias array
+				var sysAliasEl = document.getElementById("winSysLayoutAlias" + (i + 1));
+				if (sysAliasEl) {
+					if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString() ||
+						_sysLayoutAliasArray[i] == (i + 1)) {
+						sysAliasEl.value = "";
+						sysAliasEl.setAttribute("placeholder", "Enter Alias");
+					}
+					else
+						sysAliasEl.value = _sysLayoutAliasArray[i];
+				}
+			}
+
+		} //end extractLayoutToForm()
+
+		//=====================================================================================
+		//handle request for current settings
+		function settingsRequestHandler(req) {
+			Debug.log("settingsRequestHandler " + req.responseText);
+
+			if (DesktopContent._sequence) {
+				showPermissionsTooltip();
+
+				//handle wiz mode specially
+				extractUserAccounts(req);
+				return;
+			}
+
+
+			//extract alert from server
+			var serverAlert = DesktopContent.getXMLValue(req, "server_alert");
+			if (serverAlert) Debug.log("Message from Server: " + serverAlert, Debug.HIGH_PRIORITY);
+
+			//get username with lock, "" means no one has lock
+			_usernameWithLock = DesktopContent.getXMLValue(req, "username_with_lock");
+			var pref_username = DesktopContent.getXMLValue(req, "pref_username");
+			var ots_owner = DesktopContent.getXMLValue(req, "ots_owner");
+			var ots_remote_address = DesktopContent.getXMLValue(req, "ots_remote_address");
+			var desktop_user_permissions = DesktopContent.getXMLValue(req, "desktop_user_permissions");
+
+
+			var el = document.getElementById("header");
+			el.innerHTML = "This page gives access to preferences/account selections for user <i><b>" +
+				pref_username + "</b></i> on " + ots_owner + " ots" +
+				(ots_remote_address ? (" (" + ots_remote_address + ")") : "") +
+				"." + "<br><br>" +
+				"Your ots access permissions are '" + desktop_user_permissions + ".'" +
+				"<br><br>" +
+				((_usernameWithLock && _usernameWithLock != "") ?
+					(_usernameWithLock + " currently has the " + ots_owner + " ots lock. " +
+						(_usernameWithLock == pref_username ? " <a onclick='lockToUsername(-1,false,\"" +
+							pref_username + "\");'>Click</a> to unlock." : "")) :
+					(ots_owner + " ots is currently unlocked. <a onclick='lockToUsername(-1,true,\"" +
+						pref_username + "\");'>Click</a> to lock."));
+
+			//pass preferences to Desktop	but remove user accounts from message to Desktop
+			if (_mailbox) {
+				var uaStart = req.responseText.indexOf("<users_accounts v");
+				var uaEnd = req.responseText.indexOf("</users_accounts>") + String("</users_accounts>").length;
+				_mailbox.innerHTML = req.responseText.substr(0, uaStart) + req.responseText.substr(uaEnd);
+			}
+
+			//handle colors
+			var xmlfields = ["pref_bgcolor", "pref_dbcolor", "pref_wincolor"];
+			for (var i = 0; i < xmlfields.length; ++i)
+				extractRGBtoForm(DesktopContent.getXMLValue(req, xmlfields[i]), i);
+
+			//get layout array
+			_layoutArray = DesktopContent.getXMLValue(req, "pref_layout").split(";");
+			Debug.log("Settings layout array " + _layoutArray);
+
+			while (_layoutArray.length < _NUM_USER_LAYOUTS) {
+				Debug.log("_layoutArray received invalid. Attempting to fix.");
+				_layoutArray.push("0");
+			}
+			//for array to proper size for sever communication (just in case)
+			_layoutArray = _layoutArray.slice(0, _NUM_USER_LAYOUTS);
+
+			//cleanse layoutArray
+			for (var i = 0; i < _layoutArray.length; ++i) {
+				var layoutEntry = _layoutArray[i].split(',');
+				if (_layoutArray[i] == "") _layoutArray[i] = "0";
+				Debug.log("layoutEntry", layoutEntry);
+
+				if (_layoutArray[i] != "0" &&
+					layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+					layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+				{
+					Debug.log("Error invalid user layout found. Clearing invalid layout: " +
+						_layoutArray[i], Debug.HIGH_PRIORITY);
+					_layoutArray[i] = "0";
+				}
+			}
+
+			//get system layout array (only populated if user has sufficient privileges)
+			_sysLayoutArray = [];
+			if (DesktopContent.getXMLValue(req, "desktop_user_permissions").indexOf(
+				"allUsers: 255") >= 0) {
+				//we have a super user then
+				_sysLayoutArray = DesktopContent.getXMLValue(req, "pref_syslayout").split(";");
+
+				Debug.log("Has system preferences permission. _sysLayoutArray length " + _sysLayoutArray.length);
+				while (_sysLayoutArray.length < _NUM_SYS_LAYOUTS) {
+					Debug.log("_sysLayoutArray received invalid. Attempting to fix.");
+					_sysLayoutArray.push("0");
+				}
+				//for array to proper size for sever communication (just in case)
+				_sysLayoutArray = _sysLayoutArray.slice(0, _NUM_SYS_LAYOUTS);
+
+				//cleanse _sysLayoutArray
+				for (var i = 0; i < _sysLayoutArray.length; ++i) {
+					var layoutEntry = _sysLayoutArray[i].split(',');
+					if (_sysLayoutArray[i] == "") _sysLayoutArray[i] = "0";
+					Debug.log("layoutEntry", layoutEntry);
+
+					if (_sysLayoutArray[i] != "0" &&
+						layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+						layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+					{
+						Debug.log("Error invalid system layout found. Clearing invalid layout: " +
+							_sysLayoutArray[i], Debug.HIGH_PRIORITY);
+						_sysLayoutArray[i] = "0";
+					}
+				}
+			} //end admin layouts handling
+
+
+			Debug.log("System settings layout array " + _sysLayoutArray);
+			Debug.log("User settings layout array " + _layoutArray);
+
+			setLayout(-1); //reset layout selection
+
+			//get user accounts
+			extractUserAccounts(req);
+		} //end settingsRequestHandler()
+
+		//=====================================================================================
+		//called to extract from form to RGB string
+		function extractUserAccounts(req) {
+
+			el = document.getElementById("accountsTableDiv");
+			if (el)
+				el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
+
+			_accountsArray = new Array();
+			for (i = 0; i < _accountFields.length && req.responseXML.getElementsByTagName("users_accounts")[0]; ++i)
+				_accountsArray.push(req.responseXML.getElementsByTagName("users_accounts")[0].getElementsByTagName(_accountFields[i]));
+
+
+			//feedback on new account
+			if (_triedNewAccount) {
+				Debug.log("Settings _triedNewAccount");
+
+				_triedNewAccount = false;
+				el = document.getElementById("newAccountFeedbackDiv");
+
+				if (_accountsArray[0].length != _oldAccountSize) {
+					var str = "New account added successfully!";
+					Debug.log(str, Debug.INFO_PRIORITY);
+					if (el) el.innerHTML = "<center  style='padding:5px'><font color='green'>" +
+						str + "</font></center>";
+				}
+				else {
+					var str = "New account was not created. Did you have at least 4 characters in the username?";
+					Debug.log(str, Debug.HIGH_PRIORITY);
+					if (el) el.innerHTML = "<center style='padding:5px'><font color='red'>" +
+						str + "</font></center>";
+				}
+
+			}
+
+
+			//apply current sort, search and then display
+			sortAccountsBy(_AccountsLastSort, true); //with true, does not display accounts or increment sort type
+			displayAccounts();
+		} // end extractUserAccounts()
+
+		//=====================================================================================
+		//applyAccountsSearch ~~
+		//	search through all 3 columns of _AccountsOrderArray
+		// 	and delete entries that do not have needle
+		function applyAccountsSearch(needle) {
+
+			Debug.log("Settings applyAccountsSearch " + needle);
+
+			_AccountsTriedSearch = true;
+			_AccountsLastSearch = needle;
+
+			//reload all entries as possibilities
+			if (_AccountsOrderArray.length != _accountsArray[0].length)
+				sortAccountsBy(_AccountsLastSort, true); //with true, does not display accounts or increment sort type
+
+			if (needle != "") {
+				//apply current sort but do not display
+				//sortAccountsBy(_AccountsLastSort,true); //with true, does not display accounts or increment sort type
+
+				//init keep Array
+				var keepArray = new Array(_AccountsOrderArray.length);
+				for (i = 0; i < _AccountsOrderArray.length; ++i) keepArray[i] = 0;
+
+				//find entries to keep
+				for (j = 0; j < _accountFields.length; ++j)
+					for (i = 0; i < _AccountsOrderArray.length; ++i)
+						if (_accountsArray[j][_AccountsOrderArray[i]].getAttribute('value').indexOf(needle) != -1)
+							keepArray[i] = 1; //keep entry at i
+
+				//remove unkept
+				for (i = 0; i < _AccountsOrderArray.length; ++i)
+					if (!keepArray[i]) {
+						keepArray.splice(i, 1);
+						_AccountsOrderArray.splice(i--, 1); //remove entry at i, and rewind i to look at new i entry
+					}
+			}
+		} //end applyAccountsSearch()
+
+		//=====================================================================================
+		function setAccountsPage(pg) {
+			_AccountsPageIndex = pg;
+			displayAccounts();
+		} //end setAccountsPage()
+
+		//=====================================================================================
+		//sortAccountsBy ~~
+		//	col is the column to sort on
+		//	_AccountsNextSortArray holds the next sort to do for each column
+		//		For username and display name... sort=0 := alpha, sort=1 := reverse alpha
+		function sortAccountsBy(col, rerunCurrentSort) {
+			if (col < 0 || col > 2) { //validate col
+
+				//default sort
+				_AccountsOrderArray = new Array(); //reset order to be order from server
+				for (i = 0; _accountsArray[0] && i < _accountsArray[0].length; ++i)
+					_AccountsOrderArray.push(i);
+				if (!rerunCurrentSort) displayAccounts();
+				return;
+			}
+
+			Debug.log("Settings sortAccountsBy " + col + " - " + _AccountsNextSortArray[col]);
+
+			el = document.getElementById("accountsTableDiv");
+			el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
+
+			_AccountsOrderArray.length = 0; //clear array
+
+
+			if (rerunCurrentSort) _AccountsNextSortArray[col] = !_AccountsNextSortArray[col]; //revert back to previous, in the end will leave state unchanged
+			var hi, lo, p;
+			for (i = 0; i < _accountsArray[0].length; ++i) {
+				if (!_AccountsOrderArray.length) //empty case
+					_AccountsOrderArray.push(i);
+				else  //place in proper location within [lo, hi) range
+				{
+					lo = 0; hi = _AccountsOrderArray.length;
+					while (lo < hi) {
+						p = lo + Math.floor((hi - lo) / 2);
+
+						//alpha sort and less OR reverse-alpha and more, then look at half-range below
+						if ((!_AccountsNextSortArray[col] &&
+							_accountsArray[col][i].getAttribute('value') < _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value')) ||
+							(_AccountsNextSortArray[col] &&
+								_accountsArray[col][i].getAttribute('value') > _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value')))
+							hi = p;
+						else if (_accountsArray[col][i].getAttribute('value') == _accountsArray[col][_AccountsOrderArray[p]].getAttribute('value'))
+							lo = hi = p; //found equal
+						else		//look at half range above
+							lo = p + 1;
+					}
+
+					//new always splice into lo position
+					_AccountsOrderArray.splice(lo, 0, i);
+				}
+				Debug.log(_accountsArray[col][i].getAttribute('value') + " added to " + lo);
+			}
+
+			_AccountsNextSortArray[col] = !_AccountsNextSortArray[col]; //get ready for next sort, or leave state unchanged if rerun
+			_AccountsLastSort = col;
+
+			applyAccountsSearch(_AccountsLastSearch); //apply search string to new entry list
+
+			if (!rerunCurrentSort) displayAccounts();
+		} //end sortAccountsBy()
+
+		//=====================================================================================
+		function handleSearchKeyUp() {
+
+			el = document.getElementById("accountsTableDiv");
+			if (el && el.innerHTML.indexOf("loaderGif") == -1)
+				el.innerHTML = "<img id='loaderGif' src='" + _loaderImagePath + "'>";
+
+			if (_AccountSearchTimer)
+				clearTimeout(_AccountSearchTimer);
+			_AccountSearchTimer = setTimeout(handleTimeoutSearchKeyUp, 500);
+		} //end handleSearchKeyUp()
+
+		//=====================================================================================
+		function handleTimeoutSearchKeyUp() {
+			var el = document.getElementById("accountsSearchBox");
+			Debug.log("Settings handleTimeoutSearchKeyUp " + el.value);
+			applyAccountsSearch(el.value);
+			displayAccounts();
+		} //end handleTimeoutSearchKeyUp()
+		//=====================================================================================
+		function displayAccounts() {
+
+			Debug.log("Settings displayAccounts");
+
+			var el = document.getElementById("jumpToAccounts");
+			var htmlStr = "";
+
+			if (el) //in wiz mode, there is now jump link
+			{
+				if (_usernameWithLock && _usernameWithLock != "") //insert user with lock if applicable
+					htmlStr += "<div style='color:yellow; margin-bottom:10px;'>Note: <i>" + _usernameWithLock + "</i> currently has the ots Lock.</div>";
+
+				if (_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
+				{
+					if (_mailbox) //only add jump link if there is a large Preferences section
+						htmlStr += "<div id='prefs'><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
+
+					el.innerHTML = htmlStr;
+				}
+				else { el.innerHTML = htmlStr; return; } //If do not have permissions
+			}
+
+			el = document.getElementById("accountsDiv");
+
+			htmlStr = "";
+			htmlStr += "<br>";
+			if (!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
+				htmlStr += "<hr width='75%'><center><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
+
+			htmlStr += "<div id='accountsSearchDiv'>Search: " +
+				"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
+
+			//display pages
+			var numOfPages = Math.ceil(_AccountsOrderArray.length / _AccountsPageSize);
+			if (_AccountsPageIndex >= numOfPages) _AccountsPageIndex = numOfPages - 1;
+			if (_AccountsPageIndex < 0) _AccountsPageIndex = 0; //don't allow page to be negative, or bad array access happens
+			Debug.log("Settings showing page " + (_AccountsPageIndex + 1) + " of " + numOfPages);
+
+			if (!_accountsArray || !_accountsArray[0]) {
+				Debug.log("No user accounts found!", Debug.WARN_PRIORITY);
+				return;
+			}
+
+			htmlStr += "<center>" + _AccountsOrderArray.length + " of " +
+				_accountsArray[0].length + " accounts match search.<br>(" + _AccountsPageSize + " per page)</center><br>";
+			htmlStr += "<div id='accountsPageNav'>Navigate: ";
+			htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + ")'; event.stopPropagation(); return false;'>&nbsp;Prev </a>";
+
+			for (i = (_AccountsPageIndex - _AccountsPageNavWidth < 0) ? 0 : (_AccountsPageIndex - _AccountsPageNavWidth);
+				i < _AccountsPageIndex + _AccountsPageNavWidth && i < numOfPages; ++i) {
+				htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + ")';event.stopPropagation(); return false;'> " +
+					(i == _AccountsPageIndex ? "<b>" : "") + (i + 1) + (i == _AccountsPageIndex ? "</b>" : "") + " </a>";
+			}
+
+			htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;";
+			htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + ")';event.stopPropagation(); return false;'> Next&nbsp;</a>";
+			htmlStr += "</div>";
+
+			htmlStr += "<center><div id='accountsPermNote'>" +
+				"<a onclick='showPermissionsTooltip(true /*alwaysShow*/);'>" +
+				"Click here for help with Resetting Passwords and User Permissions" +
+				"</a>" +
+				"</div></center>";
+
+			//////////////////////////////////////////////////////
+			//accounts table
+			htmlStr += "<div id='accountsTableDiv'>";
+			htmlStr += "<table><tr>";
+			for (j = 0; j < _accountFields.length - 1; ++j) //exclude NAC column, and place at end
+				htmlStr += "<td class='accountsHeaderFld'>" +
+					"<a onmouseup='sortAccountsBy(" + j + ")';event.stopPropagation(); return false;'" +
+					" title='Sort by " + _accountFields[j] + "'>" +
+					_accountFieldNames[j] + "<a/></td>";
+			htmlStr += "<td class='accountsHeaderFld' title='Make Account Changes'>Update</td>" +
+				"<td class='accountsHeaderFld' title='Delete Account'>Remove</td>";
+			htmlStr += "<td class='accountsHeaderFld' title='New Account Code'>NAC</td>" +
+				"<td class='accountsHeaderFld' title='Lock ots to single user'>Lock</td>";
+			htmlStr += "</tr>";
+
+			var lockModeTmp;
+			for (i = _AccountsPageIndex * _AccountsPageSize; i < _AccountsOrderArray.length &&
+				i < _AccountsPageIndex * _AccountsPageSize + _AccountsPageSize; ++i) {
+				htmlStr += "<tr><td class='accountsUsername'>" +
+					_accountsArray[0][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
+				htmlStr += "<td><input type='text' class='actEmailInput' id='accountsEmail" + _AccountsOrderArray[i] + "' value='" +
+					_accountsArray[1][_AccountsOrderArray[i]].getAttribute('value') + "' " +
+					"onkeydown='return handleEmailInputKeyDown(event);'" +
+					"></td>";
+				htmlStr += "<td><input type='text' class='actDispNameInput' id='accountsDisplayName" + _AccountsOrderArray[i] + "' value='" +
+					_accountsArray[2][_AccountsOrderArray[i]].getAttribute('value') + "' " +
+					"onkeydown='return handleAccountsInputKeyDown(event);'" +
+					"></td>";
+				htmlStr += "<td><input type='text' class='actPermInput' id='accountsPermissions" + _AccountsOrderArray[i] + "' value='" +
+					_accountsArray[3][_AccountsOrderArray[i]].getAttribute('value') + "' " +
+					"onkeydown='return handleAccountsInputKeyDown(event)'" +
+					"></td>";
+				htmlStr += "<td><a onmouseup='updateAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
+					" title='Make Account Changes'>Update</a></td>";
+				htmlStr += "<td><a onmouseup='deleteAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
+					" title='Delete Account'>X</a></td>";
+				htmlStr += "<td class='accountsNac' title='New Account Code'>" +
+					_accountsArray[4][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
+				htmlStr += "<td>";
+
+				//for user lock
+				if (_usernameWithLock == "") //no one has lock
+					lockModeTmp = 1;
+				else if (_usernameWithLock == _accountsArray[0][_AccountsOrderArray[i]].getAttribute('value')) //user has lock
+					lockModeTmp = 0;
+				else lockModeTmp = 2;
+
+				if (lockModeTmp != 2) //only output something if mode 0 or 1
+					htmlStr += "<a onmouseup='lockToUsername(" + _AccountsOrderArray[i] + "," +
+						lockModeTmp + ")'; event.stopPropagation(); return false;' title='Lock ots to single user'>" +
+						"<img src='/WebPath/images/dashboardImages/icon-Settings-" +
+						(lockModeTmp ? "Unl" : "L") + "ock.png'></a>";
+
+				htmlStr += "</td>";
+				htmlStr += "</tr>";
+			}
+			htmlStr += "</table>";
+			htmlStr += "</div>";
+
+			htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none; background-color: #EAABAB' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
+			//////////////////////////////////////////////////////
+			//add new account option
+			htmlStr += "<h3 style='margin-bottom: -30px; margin-top: 10px;'>Create New Account:</h3>";
+			htmlStr += "<table><tr>";
+			for (j = 0; j < _accountFields.length - 1; ++j) //omit nac field
+				htmlStr += "<td class='accountsHeaderFld'>" + _accountFieldNames[j] + "</td>";
+			htmlStr += "</tr><tr>";
+			htmlStr += "<td><input type='text' id='accountsUsernameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+			htmlStr += "<td><input type='text' id='accountsEmailNew' value='' onkeydown='return handleEmailInputKeyDown(event)'></td> ";
+			htmlStr += "<td><input type='text' id='accountsDisplayNameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+			htmlStr += "<td><input type='text' id='accountsPermissionsNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+			htmlStr += "<td></td><br><br>";
+			htmlStr += "</tr></table>";
+			htmlStr += "<center><div style='padding-top: 10px'><input id='newacct' type='submit' onmouseup='createNewAccount(event);' value='Create New Account'></div></center>";
+
+			el.innerHTML = htmlStr;
+
+
+
+			///////
+
+			if (_AccountsTriedSearch) {
+				el = document.getElementById('accountsSearchBox');
+				el.focus();
+				el.setSelectionRange(el.value.length, el.value.length);
+				_AccountsTriedSearch = false;
+
+			}
+		} //end displayAccounts()
+
+		//=====================================================================================
+		//handleAccountsInputKeyDown ~~
+		//	allow alphanumeric character only
+		function handleAccountsInputKeyDown(e) {
+			//Debug.log("Settings handleAccountsInputKeyDown " + e.keyCode);
+			if (e.keyCode == 9) return true;		//if tab focus on next box
+			else if ((!e.shiftKey && (e.keyCode >= 48 && e.keyCode <= 57)) || //accept numbers but not shifted numbers
+				(e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
+				(e.keyCode >= 65 && e.keyCode <= 90) || //accept letters and shifted letters
+				e.keyCode == 46 || e.keyCode == 8 || //delete, backspace
+				e.keyCode == 35 || e.keyCode == 36 ||  //home and end
+				(e.keyCode >= 37 && e.keyCode <= 40 || //arrows are accepted
+					e.keyCode == 188 || e.keyCode == 186 || e.keyCode == 32)) // Space, Colon, and Comma
+				return true;
+
+			return false; //to stop tab and enter (and unaccepted chars) from propagating to window
+		}
+
+		//=====================================================================================
+		function handleEmailInputKeyDown(e) {
+			//Debug.log("Settings handleAccountsInputKeyDown " + e.keyCode);
+			if (e.keyCode == 9) return true;		//if tab focus on next box
+			else if ((e.keyCode >= 48 && e.keyCode <= 57) || //accept numbers and shifted numbers
+				(e.keyCode >= 96 && e.keyCode <= 105) ||	//accept keypad numbers
+				(e.keyCode >= 65 && e.keyCode <= 90) || //accept letters and shifted letters
+				e.keyCode == 46 || e.keyCode == 8 || //delete, backspace
+				e.keyCode == 35 || e.keyCode == 36 ||  //home and end
+				(e.keyCode >= 37 && e.keyCode <= 40) ||   //arrows are accepted
+				e.keyCode == 188 || e.keyCode == 190) // Comma and dot
+				return true;
+
+
+			return false; //to stop tab and enter (and unaccepted chars) from propagating to window
+		}
+
+		//=====================================================================================
+		function handleBodyMouseUp() {
+			setLayout(-1); //clear selected layout
+
+			_theDeleteIndex = -1;
+			var delEl = document.getElementById("theRealDelete");
+			if (delEl) delEl.style.display = 'none';
+		}
+
+		//=====================================================================================
+		//called to extract from form to RGB string
+		function extractFormToRGB(i) {
+			var retstr = "rgb" + (i == 2 ? "a" : "") + "(";
+			var el;
+			for (var j = 0; j < 3; ++j) {
+				el = document.getElementById("Settings-colorInput" + i + j);
+				el.value = parseInt(el.value);
+				if (el.value == "NaN") el.value = 0;
+				retstr += el.value + (j == 2 ? (i == 2 ? ",0.9)" : ")") : ",");
+			}
+			return retstr;
+		}
+
+		//=====================================================================================
+		function checkSettingsMailbox() {
+			Debug.log("Settings checkSettingsMailbox");
+			if (_settingsLayoutMailbox.innerHTML == "") { //still dont have layout, try again
+				setTimeout(checkSettingsMailbox, 500);
+				return;
+			}
+			else
+				setServerSettings();
+		} //end checkSettingsMailbox()
+
+		//=====================================================================================
+		//saveGenPreferences ~~
+		function saveGenPreferences(mouseEvent) {
+
+			if (mouseEvent)
+				mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
+
+			Debug.log("Settings Save Preferences. Selected layout=" + _selectedLayout);
+
+			_settingsLayoutMailbox.innerHTML = "";
+
+			if (_selectedLayout > 0) { //if selected, then get current layout from mailbox
+
+				Debug.log("_selectedLayout " + _selectedLayout);
+				_mailbox.innerHTML = "LAYOUT";
+				setTimeout(checkSettingsMailbox, 500);
+				return;
+			}
+			else //else go straight to set settings
+				setServerSettings();
+		} // end saveGenPreferences()
+
+		//=====================================================================================
+		//setServerSettings ~~
+		//	This saves the user pref to server.
+		//
+		//	Note: this is very similar to what happens in DesktopLogin.js/_updateLayoutTimeoutHandler()
+		//		They should be changed together.
+		function setServerSettings() {
+			Debug.log("Settings setServerSettings");
+			var data = "";
+
+			//colors
+			var colorFields = ["bgcolor", "dbcolor", "wincolor"];
+			for (var j = 0; j < 3; ++j)
+				data += colorFields[j] + "=" + extractFormToRGB(j) + "&";
+
+			////////////////////////
+			//layout
+
+			var tmpAlias, tmpAliasEl;
+			if (_selectedLayout >= 1 && _selectedLayout <= _NUM_USER_LAYOUTS) //set new  default layout from desktop mailbox
+			{
+				_layoutArray[_selectedLayout - 1] = _settingsLayoutMailbox.innerHTML;
+			}
+			//for array to proper size for sever communication (just in case)
+			_layoutArray = _layoutArray.slice(0, _NUM_USER_LAYOUTS);
+
+			//read all user layout alias inputs and sync array
+			for (var j = 0; j < _NUM_USER_LAYOUTS; ++j) {
+				tmpAliasEl = document.getElementById("winLayoutAlias" + (j + 1));
+				if (tmpAliasEl) {
+					tmpAlias = tmpAliasEl.value.trim();
+					_layoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
+					if (tmpAlias.length == 0) {
+						tmpAliasEl.value = "";
+						tmpAliasEl.setAttribute("placeholder", "Enter Alias");
+					}
+				}
+			}
+
+			var layoutStr = "";
+			for (var j = 0; j < _layoutArray.length; ++j)
+				layoutStr += _layoutArray[j] + (j == _layoutArray.length - 1 ? "" : ";");
+			data += "layout=" + layoutStr + "&";
+
+			////////////////////////
+			//system layout
+			if (_selectedLayout >= _NUM_USER_LAYOUTS + 1 && //set new  default layout from desktop mailbox
+				_selectedLayout <= _NUM_USER_LAYOUTS + _NUM_SYS_LAYOUTS) {
+				_sysLayoutArray[_selectedLayout - 1 - _NUM_USER_LAYOUTS] = _settingsLayoutMailbox.innerHTML;
+			}
+			//for array to proper size for sever communication (just in case)
+			_sysLayoutArray = _sysLayoutArray.slice(0, _NUM_SYS_LAYOUTS);
+
+			//read all system layout alias inputs and sync array
+			for (var j = 0; j < _NUM_SYS_LAYOUTS; ++j) {
+				tmpAliasEl = document.getElementById("winSysLayoutAlias" + (j + 1));
+				if (tmpAliasEl) {
+					tmpAlias = tmpAliasEl.value.trim();
+					_sysLayoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
+					if (tmpAlias.length == 0) {
+						tmpAliasEl.value = "";
+						tmpAliasEl.setAttribute("placeholder", "Enter Alias");
+					}
+				}
+			}
+
+			layoutStr = "";
+			Debug.log("_sysLayoutArray length " + _sysLayoutArray.length);
+			for (var j = 0; j < _sysLayoutArray.length; ++j)
+				layoutStr += _sysLayoutArray[j] + (j == _sysLayoutArray.length - 1 ? "" : ";");
+			data += "syslayout=" + layoutStr + "&";
+
+			////////////////////////
+			//send save req
+			data += "aliaslayout=" + _layoutAliasArray + "&";
+			data += "sysAliaslayout=" + _sysLayoutAliasArray + "&";
+
+			_triedNewAccount = false;
+			Debug.log("Settings Save Preferences -- " + data);
+			DesktopContent.XMLHttpRequest("Request?RequestType=setSettings",
+				data,
+				settingsRequestHandler);
+		} //end setServerSettings()
+
+		//=====================================================================================
+		function defaultColors() {
+			Debug.log("Settings Default Colors");
+
+			//#define PREF_XML_BGCOLOR_DEFAULT 			"rgb(0,76,151)"     // -background color
+			//#define PREF_XML_DBCOLOR_DEFAULT 			"rgb(0,40,85)"      // -dashboard color
+			//#define PREF_XML_WINCOLOR_DEFAULT 		"rgba(196,229,255,0.9)"  	// -window color
+			extractRGBtoForm("rgb(0,76,151)", 0);
+			extractRGBtoForm("rgb(0,40,85)", 1);
+			extractRGBtoForm("rgba(196,229,255,0.9)", 2);
+		} //end defaultColors()
+
+		//=====================================================================================
+		function colorEditHandler(e) {
+			Debug.log("Settings color input handler");
+			for (var i = 0; i < 3; ++i) //correct field and display result
+				extractRGBtoForm(extractFormToRGB(i), i);
+			return true;
+		} //end colorEditHandler()
+
+		//=====================================================================================
+		//setLayout ~~
+		function setLayout(i, mouseEvent) {
+			if (_selectedLayout == i) return;
+
+			Debug.log("Settings default layout " + i);
+
+			for (var j = 1; j <= _NUM_USER_LAYOUTS; ++j) { //correct field and display result
+				el = document.getElementById("winLayoutLink" + j);
+				el.style.color = 'black';
+			}
+
+			for (var j = 1; j <= _NUM_SYS_LAYOUTS; ++j) { //correct field and display result
+				el = document.getElementById("winSysLayoutLink" + j);
+				el.style.color = 'black';
+			}
+
+			extractLayoutToForm();
+
+			if (i >= 1 && i <= _NUM_USER_LAYOUTS) //user presets
+			{
+				el = document.getElementById("winLayoutLink" + i);
+				el.style.color = 'rgb(0,155,0)';
+				el = document.getElementById("winLayoutText" + i);
+				el.innerHTML = "Click Save Preferences to confirm";
+				_selectedLayout = i;
+			}
+			else if (i >= _NUM_USER_LAYOUTS + 1 &&
+				i <= _NUM_USER_LAYOUTS + _NUM_SYS_LAYOUTS)	//system presets
+			{
+				el = document.getElementById("winSysLayoutLink" + (i - _NUM_USER_LAYOUTS));
+				el.style.color = 'rgb(0,155,0)';
+				el = document.getElementById("winSysLayoutText" + (i - _NUM_USER_LAYOUTS));
+				el.innerHTML = "Click Save Preferences to confirm";
+				_selectedLayout = i;
+			}
+			else
+				_selectedLayout = -1; //no layout selected
+
+			Debug.log("_selectedLayout = " + _selectedLayout);
+
+			if (mouseEvent)
+				mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
+		} // end setLayout()
+
+		//=====================================================================================
+		//showLayoutText ~~
+		//	layout window fields (per window, 10 fields):
+		//		0: _windows[i].getWindowName()
+		//		1: _windows[i].getWindowSubName()
+		//		2: _windows[i].getWindowUrl().replace(/&/g,'%38').replace(/=/g,'%61')  //global replace & and =
+		//		3: (((_windows[i].getWindowX()-dx)/dw)|0)
+		//		4: (((_windows[i].getWindowY()-dy)/dh)|0)
+		//		5: ((_windows[i].getWindowWidth()/dw)|0)
+		//		6: ((_windows[i].getWindowHeight()/dh)|0)
+		//		7: (_windows[i].isMinimized()?"0":"1")
+		//		8: iframeScrollX  //per-window iframe scroll left in pixels
+		//		9: iframeScrollY  //per-window iframe scroll top in pixels
+		//
+		function showLayoutText(i, show, mouseEvent, isSystemLayout) {
+			if (mouseEvent)
+				mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
+
+			var str = "";
+			var sysTxt = isSystemLayout ? "Sys" : "";
+			var el = document.getElementById("win" + sysTxt + "LayoutText" + i);
+			if (show) {
+				str = "Layout Details: <a href='#' onmouseup='showLayoutText(" + i + ",false,event," +
+					(isSystemLayout ? 1 : 0) + "); return false;'>hide</a><br>";
+				var winLayArr = (isSystemLayout ?
+					_sysLayoutArray : _layoutArray)[i - 1].split(",");
+
+				//auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
+				var numOfFields;
+				var rem10 = winLayArr.length % 10;
+				var rem8 = winLayArr.length % 8;
+				if (rem10 == 0 || rem10 == 2)
+					numOfFields = 10;
+				else
+					numOfFields = 8;
+
+				//destroy 7 field approach (new way adds the 8th field for isMinimized)
+				var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
+				str += "~ Layout of " + num + " Window" + ((num == 1) ? "" : "s") + " ~<br>";
+
+				var fieldArr = ["X", "Y", "W", "H", ""];
+				for (var i = 0; i < num; ++i) {
+					str += "&nbsp;&nbsp;&nbsp;&nbsp;" +
+						decodeURIComponent(winLayArr[i * numOfFields]) +
+						" - " +
+						decodeURIComponent(winLayArr[i * numOfFields + 1]) +
+						" - ";
+
+					for (var j = 3; j < 8; ++j)
+						if (j < 7)
+							str += ((j - 3) ? ", " : "") + fieldArr[j - 3] + ":" +
+								(Math.round(winLayArr[i * numOfFields + j] / 100) | 0) + "%";
+						else if (winLayArr[i * numOfFields + j] == "0") //then minimized
+							str += ", Minimized";
+						else if (winLayArr[i * numOfFields + j] == "2") //then maximized
+							str += ", Maximized";
+
+					//display per-window scroll position (if present in 10-field format)
+					if (numOfFields >= 10) {
+						var winScrollX = winLayArr[i * numOfFields + 8] | 0;
+						var winScrollY = winLayArr[i * numOfFields + 9] | 0;
+						if (winScrollX || winScrollY)
+							str += ", Scroll - Left:" + winScrollX + "px, Top:" + winScrollY + "px";
+					}
+					str += "<br>";
+				}
+			}
+			else
+				str = "Layout Details: <a href='#' onmouseup='showLayoutText(" + i + ",true,event," +
+					(isSystemLayout ? 1 : 0) + "); return false;'>show</a>";
+
+			el.innerHTML = str;
+		} //end showLayoutText()
+
+		//=====================================================================================
+		function updateAccount(i) {
+			Debug.log("Settings updateAccount-" + i);
+
+			var dnEl = document.getElementById("accountsDisplayName" + i);
+			var pEl = document.getElementById("accountsPermissions" + i);
+			var emEl = document.getElementById("accountsEmail" + i);
+
+			Debug.log("Settings updateAccount-" + _accountsArray[0][i].getAttribute('value') + ":" + emEl.value +
+				":" + dnEl.value + ":" + pEl.value);
+
+			var data = "";
+			data += "type=updateAccount&";
+			data += "username=" + _accountsArray[0][i].getAttribute('value') + "&";
+			data += "useremail=" + emEl.value + "&";
+			data += "displayname=" + dnEl.value + "&";
+			data += "permissions=" + pEl.value + "&";
+
+			_triedNewAccount = false;
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
+				data, settingsRequestHandler);
+
+		} //end updateAccount()
+
+		//=====================================================================================
+		function deleteAccount(i) {
+			Debug.log("Settings deleteAccount-" + i);
+			_theDeleteIndex = i;
+
+			var delEl = document.getElementById("theRealDelete");
+			delEl.style.display = 'block';
+
+		} //end deleteAccount()
+
+		//=====================================================================================
+		function createNewAccount(event) {
+			if (event) event.stopPropagation();
+			Debug.log("Settings createNewAccount");
+
+			var elField = ["username", "useremail", "displayname", "permissions"];
+			var elIds = ["accountsUsernameNew", "accountsEmailNew", "accountsDisplayNameNew", "accountsPermissionsNew"];
+			var el;
+
+			var data = "";
+			data += "type=createAccount&";
+			for (i = 0; i < elIds.length; ++i) {
+				el = document.getElementById(elIds[i]);
+				data += elField[i] + "=" + el.value + "&";
+			}
+
+			_triedNewAccount = true;
+			_oldAccountSize = _accountsArray[0].length; //save to give feedback on success
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
+				data, settingsRequestHandler);
+
+		} //end createNewAccount()
+
+		//=====================================================================================
+		function reallyDelete(event) {
+			if (event) event.stopPropagation();
+			Debug.log("Settings Really Deleted! Delete Index: " + _theDeleteIndex);
+
+			var data = "";
+			data += "type=deleteAccount&";
+			data += "username=" + _accountsArray[0][_theDeleteIndex].getAttribute('value') + "&";
+			data += "displayname=" + _accountsArray[2][_theDeleteIndex].getAttribute('value') + "&";
+
+			_triedNewAccount = false;
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
+				data, settingsRequestHandler);
+		} //end reallyDelete()
+
+		//=====================================================================================
+		function lockToUsername(i, lock, username) {
+			var data = "";
+			data += "lock=" + (lock ? "1" : "0") + "&";
+
+			if (username) {
+				Debug.log("Settings lockToUsername " + username + " lock " + lock);
+				data += "username=" + username;
+			}
+			else {
+				Debug.log("Settings lockToUsername " + _accountsArray[0][i].getAttribute('value') + " lock " + lock);
+				data += "username=" + _accountsArray[0][i].getAttribute('value');
+			}
+
+			_triedNewAccount = false;
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=setUserWithLock&accounts=1",
+				data, settingsRequestHandler);
+		} //end lockToUsername()
+
+		//=====================================================================================
+		function resetUserTooltips() {
+			DesktopContent.popUpVerification("Are you sure you want to reset all your " +
+				"Tooltips?<br><br>This will reset the 'never show' property of your " +
+				"Tooltips. It is irreversible, and will result in you seeing all " +
+				"Tooltips again.",
+				function () {
+					Debug.log("accepted");
+					DesktopContent.XMLHttpRequest("Request?RequestType=resetUserTooltips", "",
+						function () {
+							Debug.log("All of your Tooltips have been reset!",
+								Debug.INFO_PRIORITY);
+						}, 0, 0, 0, false); //show loading
+				});
+		} //end resetUserTooltips()
+
+		//=====================================================================================
+		function silenceUserTooltips() {
+			DesktopContent.popUpVerification("Are you sure you want to silence all your " +
+				"Tooltips?<br>",
+				function () {
+					Debug.log("accepted");
+					DesktopContent.XMLHttpRequest("Request?RequestType=silenceUserTooltips", "",
+						function () {
+							Debug.log("All of your Tooltips have been silenced!",
+								Debug.INFO_PRIORITY);
+						}, 0, 0, 0, true); //show loading
+				});
+		} //end silenceUserTooltips()
+
+		//=====================================================================================
+		function showPermissionsTooltip(alwaysShow) {
+			DesktopContent.tooltip(alwaysShow ? "ALWAYS" : "Password Reset and User Permissions",
+				(alwaysShow ? "<b>Help with Password Reset and User Permissions:</b>\n\n" : "") +
+				"First off, to do a <b>password reset</b> for a user, a system admin must toggle the user's " +
+				"<b>permissions string</b>. Setting it to 0, and then back to a valid <b>permissions string</b> should force " +
+				"the user to have to create a new password with a <b>New Account Code</b> (NAC)." +
+				"\n\n" +
+				"Now, for more on permissions..." +
+				"\n\n" +
+				"In <i>otsdaq</i>, a user's <b>permissions string</b> consists of pairs " +
+				"of <b>group names</b> and <b>permission indices</b>; each <b>GROUP:INDEX</b> pair is separated by a comma. " +
+				"\n\n" +
+				"The syntax looks like this: <b>GROUP:INDEX, GROUP:INDEX, ...</b>" +
+				"\n\n" +
+				"<b>Group names</b> afford flexibility in organizing your users. " +
+				"There is one required <b>group name</b>, &quot;AllUsers.&quot; " +
+				"All other <b>group names</b> can be made up by <i>otsdaq</i> system administrators." +
+				"\n\n" +
+				"For example, imagine a user that needs access to " +
+				"expert Tracker controls, and standard Shifter controls, but no Calorimeter access; such a user's permission string might be as follows: " +
+				"\n\n" +
+				"<TAB><b> AllUsers: 10, Tracker:100, Calorimeter:0 </b></TAB>" +
+				"\n\n" +
+				"The above user, would be a 10 (i.e. <i>standard user</i>) for default requests, " +
+				"a 100 (i.e. <i>expert</i>) for Tracker requests, " +
+				"and 0 (i.e. <i>inactive</i>) for Calorimeter requests." +
+				"\n\n\n" +
+				"The expected interpretation of <b>permission index</b> values are as follows (any number from 0 to 255 is valid): " +
+				"\n\n<INDENT><b>0 := Inactive (reset account password)\n10 := Standard User\n100 := Expert\n255 := Admin" +
+				"</b></INDENT>" +
+				"\n\n" +
+				"On the server side, system administrators must setup <b>Application Supervisor</b> request handling for custom <b>group names</b> to be effective. " +
+				"<b>Application Supervisor properties</b> can be created in the <b>configuration tree</b> to override default request handling settings. " +
+				"<b>Front-End Macros</b> also have a <b>permissions string</b> which must be setup by the plugin creators in the source code." +
+				"");
+
+		} //end showPermissionsTooltip()
+
+	</script>
 
 </head>
 
 
 <body onload='//init() called by DesktopContent.js'>
-    <div id='omni' style='display:none;'>
-        <!-- hide by default until normal mode handling -->
+	<div id='omni' style='display:none;'>
+		<!-- hide by default until normal mode handling -->
 
-        <center>
-            <div id='header'>
-                This page gives access to preferences/account selections.
-            </div>
-            <br><br>
+		<center>
+			<div id='header'>
+				This page gives access to preferences/account selections.
+			</div>
+			<br><br>
 
-            <div id='jumpToAccounts'></div>
-        </center>
+			<div id='jumpToAccounts'></div>
+		</center>
 
-        <div id="genPreferences" style="width:100%">
+		<div id="genPreferences" style="width:100%">
 
-            <h1>General Preferences</h1>
+			<h1>General Preferences</h1>
 
-            <center>
-                <input class='prefBtn' type='submit' value='Save Preferences'
-                       onmouseup='saveGenPreferences(); event.stopPropagation(); return false;' />
-                <br>
-                <h3>Color Scheme:</h3>
-                <table>
-                    <td>
-                        <div id='colorInputs'></div>
-                        <div id='clearDiv'></div>
-                        <a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a>
-                        <a onmouseup='defaultColors(); return false;'>Default Colors</a>
-                    </td>
-                </table>
-                <h3>Desktop Window Arrangement Presets:</h3>
-                <div id='windLayoutDiv'>
-                    <!-- <a onmouseup='Javascript:setLayout(1,event)' class='winLayoutLink' id='winLayoutLink1'><li>Set Current Window Layout as User Preset-1</li></a>
-                    <div class='winLayoutText' id='winLayoutText1'></div>
-                    <br>
-                    <a onmouseup='Javascript:setLayout(2,event)' class='winLayoutLink' id='winLayoutLink2'><li>Set Current Window Layout as User Preset-2</li></a>
-                    <div class='winLayoutText' id='winLayoutText2'></div>
-                    <br>
-                    <a onmouseup='Javascript:setLayout(3,event)' class='winLayoutLink' id='winLayoutLink3'><li>Set Current Window Layout as User Preset-3</li></a>
-                    <div class='winLayoutText' id='winLayoutText3'></div>
+			<center>
+				<input class='prefBtn' type='submit' value='Save Preferences'
+					   onmouseup='saveGenPreferences(); event.stopPropagation(); return false;' />
+				<br>
+				<h3>Color Scheme:</h3>
+				<table>
+					<td>
+						<div id='colorInputs'></div>
+						<div id='clearDiv'></div>
+						<a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a>
+						<a onmouseup='defaultColors(); return false;'>Default Colors</a>
+					</td>
+				</table>
+				<h3>Desktop Window Arrangement Presets:</h3>
+				<div id='windLayoutDiv'>
+					<!-- <a onmouseup='Javascript:setLayout(1,event)' class='winLayoutLink' id='winLayoutLink1'><li>Set Current Window Layout as User Preset-1</li></a>
+					<div class='winLayoutText' id='winLayoutText1'></div>
+					<br>
+					<a onmouseup='Javascript:setLayout(2,event)' class='winLayoutLink' id='winLayoutLink2'><li>Set Current Window Layout as User Preset-2</li></a>
+					<div class='winLayoutText' id='winLayoutText2'></div>
+					<br>
+					<a onmouseup='Javascript:setLayout(3,event)' class='winLayoutLink' id='winLayoutLink3'><li>Set Current Window Layout as User Preset-3</li></a>
+					<div class='winLayoutText' id='winLayoutText3'></div>
 
-                    <div id='windSystemLayoutDiv' style='display:none'>
-                            <hr width='50%'/>
-                            <a onmouseup='Javascript:setLayout(4,event)' class='winLayoutLink' id='winSysLayoutLink1'><li>Set Current Window Layout as System Preset-1</li></a>
-                            <div class='winLayoutText' id='winSysLayoutText1'></div>
-                            <br>
-                            <a onmouseup='Javascript:setLayout(5,event)' class='winLayoutLink' id='winSysLayoutLink2'><li>Set Current Window Layout as System Preset-2</li></a>
-                            <div class='winLayoutText' id='winSysLayoutText2'></div>
-                    </div> -->
-                </div>
-            </center>
-
-
-            <div id='clearDiv'></div>
-
-            <br>
-            <center><input class='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center>
-
-        </div> <!-- end genPreferences -->
-
-        <div id='clearDiv'></div>
-        <h3>Misc. Personal Customizations:</h3>
-
-        <center>
-            <button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
-
-            <button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
-        </center>
+					<div id='windSystemLayoutDiv' style='display:none'>
+							<hr width='50%'/>
+							<a onmouseup='Javascript:setLayout(4,event)' class='winLayoutLink' id='winSysLayoutLink1'><li>Set Current Window Layout as System Preset-1</li></a>
+							<div class='winLayoutText' id='winSysLayoutText1'></div>
+							<br>
+							<a onmouseup='Javascript:setLayout(5,event)' class='winLayoutLink' id='winSysLayoutLink2'><li>Set Current Window Layout as System Preset-2</li></a>
+							<div class='winLayoutText' id='winSysLayoutText2'></div>
+					</div> -->
+				</div>
+			</center>
 
 
-        <a name="ACCOUNTS_LABEL"></a>
-        <div id='accountsDiv'></div>
-        <div id='newAccountFeedbackDiv'></div>
-        <br><br><br><br>
+			<div id='clearDiv'></div>
+
+			<br>
+			<center><input class='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center>
+
+		</div> <!-- end genPreferences -->
+
+		<div id='clearDiv'></div>
+		<h3>Misc. Personal Customizations:</h3>
+
+		<center>
+			<button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
+
+			<button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
+		</center>
+
+
+		<a name="ACCOUNTS_LABEL"></a>
+		<div id='accountsDiv'></div>
+		<div id='newAccountFeedbackDiv'></div>
+		<br><br><br><br>
 
 
 </body>
