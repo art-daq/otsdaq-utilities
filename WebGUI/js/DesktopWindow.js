@@ -433,44 +433,9 @@ else {
         tmpBtn.onmousedown = Desktop.handleWindowButtonDown;
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicRefresh");
-        if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX &&
-            Debug.OS_TYPE == Debug.OS_TYPE_LINUX) //Linux firefox
-        {
-            //firefox linux shows circle-arrow character slightly bigger than other firefox
-            tmpEl.innerHTML =
-                "<div style='font-size:21px; margin: -1px 0 0 -3px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME &&
-            Debug.OS_TYPE == Debug.OS_TYPE_MAC) //Mac chrome
-        {
-            //chrome on Mac shows circle-arrow smaller than Windows and Linux
-            tmpEl.innerHTML =
-                "<div style='font-size:22px; margin: -3px 0 0 1px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX)// &&
-        // Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS) //Windows firefox
-        //As of Sept 2021: Mac firefox now shows circle-arrow bigger like windows
-        {
-            //windows shows circle-arrow bigger
-            tmpEl.innerHTML =
-                "<div style='font-size:19px; margin: -3px 0 0 -2px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        // else if(Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //firefox
-        // {
-        // 	//firefox shows circle-arrow character smaller
-        // 	tmpEl.innerHTML =
-        // 			"<div style='font-size:28px; margin: -4px 0 0 -1px; color:inherit;' " +
-        // 			"title='Click to refresh only this window'>↻</div>";
-        // }
-        else //chrome
-        {
-            tmpEl.innerHTML =
-                "<div style='font-size:19px; margin: 0 0 0 0; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
+        tmpEl.innerHTML =
+            "<div style='font-size:22px;line-height:12px;text-align:center;margin-top:-1px;color:inherit;' " +
+            "title='Click to refresh only this window'>↻</div>";
 
         //tmpEl.innerHTML = "↻";
         tmpBtn.appendChild(tmpEl);

@@ -628,49 +628,11 @@ else {
 
         //=====================================================================================
         this.redrawRefreshButton = function () {
-            if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX &&
-                Debug.OS_TYPE == Debug.OS_TYPE_LINUX) //Linux firefox
-            {
-                //firefox on Linux shows circle-arrow character slightly bigger than other firefox
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size:30px;margin-top:-9px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME &&
-                Debug.OS_TYPE == Debug.OS_TYPE_MAC) //Mac chrome
-            {
-                //chrome on Mac shows circle-arrow smaller than Windows and Linux
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size: 23px; margin: -5px 0 0 2px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //&&
-            //Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS) //Windows firefox
-            //As of Sept 2021: Mac firefox now shows circle-arrow bigger like windows
-            {
-                //windows shows circle-arrow bigger
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size:25px;margin-top:-10px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            // else if(Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //firefox
-            // {
-            // 	//firefox shows circle-arrow character smaller
-            // 	_fullScreenRefreshBtn.innerHTML =
-            // 			"<div style='font-size:32px;margin-top:-12px;' title='Click to reload the desktop and all windows'>↻</div>";
-            // 	_fullScreenRefreshBtn.style.height = "16px";
-            // 	_fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            // }
-            else //chrome
-            {
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size: 22px; margin: -2px 0 0 2px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
+            _fullScreenRefreshBtn.innerHTML =
+                "<div style='font-size:25px;display:flex;align-items:center;justify-content:center;height:100%;line-height:1;' " +
+                "title='Click to reload the desktop and all windows'>↻</div>";
+            _fullScreenRefreshBtn.style.height = "16px";
+            _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
         } //end redrawRefreshButton()
 
         //=====================================================================================
