@@ -1111,12 +1111,17 @@ Desktop.createDesktop = function (security) {
 		var layoutArr = layoutStr.split(",");
 
 		//auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
-		var numOfFields;
+		var numOfFields = 8; //default to legacy format
 		var rem10 = layoutArr.length % 10;
-		if (rem10 == 0 || rem10 == 2)
-			numOfFields = 10; //new format with per-window scroll fields
-		else
-			numOfFields = 8;  //legacy format without per-window scroll fields
+		var rem8 = layoutArr.length % 8;
+		if (rem10 == 0) {
+			if (rem8 == 0 && layoutArr.length > 10) {
+				//ambiguous - check if field 8 is numeric (scroll value) to disambiguate
+				if (!isNaN(layoutArr[8]))
+					numOfFields = 10;
+			} else
+				numOfFields = 10; //unambiguously new format
+		}
 		var numOfWins = parseInt(layoutArr.length / numOfFields);
 
 		Debug.log("Desktop defaultLayoutSelect layout numOfFields=" + numOfFields);

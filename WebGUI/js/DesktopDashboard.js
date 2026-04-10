@@ -1011,12 +1011,17 @@ else {
             var winLayArr = winLayArr[layoutID].split(",");
 
             //auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
-            var numOfFields;
+            var numOfFields = 8; //default to legacy format
             var rem10 = winLayArr.length % 10;
-            if (rem10 == 0 || rem10 == 2)
-                numOfFields = 10;
-            else
-                numOfFields = 8;
+            var rem8 = winLayArr.length % 8;
+            if (rem10 == 0) {
+                if (rem8 == 0 && winLayArr.length > 10) {
+                    //ambiguous - check if field 8 is numeric (scroll value) to disambiguate
+                    if (!isNaN(winLayArr[8]))
+                        numOfFields = 10;
+                } else
+                    numOfFields = 10; //unambiguously new format
+            }
 
             //destroy 7 field approach (new way adds the 8th field for isMinimized)
             var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
