@@ -2636,6 +2636,7 @@ Desktop.handleWindowButtonDown = function (mouseEvent) {
 
 //==============================================================================
 Desktop.handleWindowRefresh = function (mouseEvent) {
+	if(Desktop.foreWinLastMouse[0] != -1) return; //block if resize/drag in progress
 	Debug.log("Refresh " + this.id.split('-')[1]);
 	Desktop.desktop.refreshWindowById(this.id.split('-')[1]);
 	return false;
@@ -2643,6 +2644,7 @@ Desktop.handleWindowRefresh = function (mouseEvent) {
 
 //==============================================================================
 Desktop.handleWindowHelp = function (mouseEvent) {
+	if(Desktop.foreWinLastMouse[0] != -1) return; //block if resize/drag in progress
 	Debug.log("Help " + this.id.split('-')[1]);
 	Desktop.desktop.windowHelpById(this.id.split('-')[1]);
 	return false;
@@ -2778,6 +2780,7 @@ Desktop.handleFullScreenWindowRefresh = function (mouseEvent) {
 
 //==============================================================================
 Desktop.handleWindowMinimize = function (mouseEvent) {
+	if(Desktop.foreWinLastMouse[0] != -1) return; //block if resize/drag in progress
 	Debug.log("minimize " + this.id.split('-')[1]);
 	Desktop.desktop.minimizeWindowById(this.id.split('-')[1]);
 	return false;
@@ -2785,6 +2788,7 @@ Desktop.handleWindowMinimize = function (mouseEvent) {
 
 //==============================================================================
 Desktop.handleWindowMaximize = function (mouseEvent) {
+	if(Desktop.foreWinLastMouse[0] != -1) return; //block if resize/drag in progress
 	Debug.log("maximize " + this.id.split('-')[1]);
 	Desktop.desktop.maximizeWindowById(this.id.split('-')[1]);
 	return false;
@@ -2792,6 +2796,7 @@ Desktop.handleWindowMaximize = function (mouseEvent) {
 
 //==============================================================================
 Desktop.handleWindowClose = function (mouseEvent) {
+	if(Desktop.foreWinLastMouse[0] != -1) return; //block if resize/drag in progress
 	//	Debug.log("close Window " + this.id.split('-')[1]);
 	Desktop.desktop.closeWindowById(this.id.split('-')[1]);
 	return false;
