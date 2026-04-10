@@ -413,7 +413,7 @@
 
 				if (_layoutArray[i] != "0" &&
 					layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
-					layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+					layoutEntry.length % 8 != 0) //legacy 8-field format (without per-window scroll fields)
 				{
 					Debug.log("Error invalid user layout found. Clearing invalid layout: " +
 						_layoutArray[i], Debug.HIGH_PRIORITY);
@@ -444,7 +444,7 @@
 
 					if (_sysLayoutArray[i] != "0" &&
 						layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
-						layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+						layoutEntry.length % 8 != 0) //legacy 8-field format (without per-window scroll fields)
 					{
 						Debug.log("Error invalid system layout found. Clearing invalid layout: " +
 							_sysLayoutArray[i], Debug.HIGH_PRIORITY);
