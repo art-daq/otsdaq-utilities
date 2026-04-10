@@ -21,7 +21,7 @@
         var _layoutAliasArray, _sysLayoutAliasArray;
         var _NUM_USER_LAYOUTS = 5; //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
         var _NUM_SYS_LAYOUTS = 5;  //changing this number alone should work... but also have to change Desktop (this.defaultLayoutSelect) and DesktopDashboard (_layoutMenuItems) handling!
-        var _NUM_OF_LAYOUT_FIELDS = 8;
+        var _NUM_OF_LAYOUT_FIELDS = 10; //8 original + 2 per-window scroll fields
         var _accountFieldNames = ["Username", "Email", "Name", "Permissions", "NAC"];
         var _accountFields = ["username", "useremail", "display_name", "permissions", "nac"];
         var _theDeleteIndex = -1;
@@ -296,6 +296,18 @@
                 else
                     el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
                         (i + 1) + ",true,event); return false;'>show</a>";
+
+                //update alias input to match current alias array
+                var aliasEl = document.getElementById("winLayoutAlias" + (i + 1));
+                if (aliasEl) {
+                    if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString() ||
+                        _layoutAliasArray[i] == (i + 1)) {
+                        aliasEl.value = "";
+                        aliasEl.setAttribute("placeholder", "Enter Alias");
+                    }
+                    else
+                        aliasEl.value = _layoutAliasArray[i];
+                }
             }
 
             //if user has privileges _sysLayoutArray is populated
@@ -314,6 +326,18 @@
                 else
                     el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
                         (i + 1) + ",true,event,1); return false;'>show</a>";
+
+                //update system alias input to match current alias array
+                var sysAliasEl = document.getElementById("winSysLayoutAlias" + (i + 1));
+                if (sysAliasEl) {
+                    if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString() ||
+                        _sysLayoutAliasArray[i] == (i + 1)) {
+                        sysAliasEl.value = "";
+                        sysAliasEl.setAttribute("placeholder", "Enter Alias");
+                    }
+                    else
+                        sysAliasEl.value = _sysLayoutAliasArray[i];
+                }
             }
 
         } //end extractLayoutToForm()
@@ -388,7 +412,9 @@
                 Debug.log("layoutEntry", layoutEntry);
 
                 if (_layoutArray[i] != "0" &&
-                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0) {
+                    layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+                    layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+                { 
                     Debug.log("Error invalid user layout found. Clearing invalid layout: " +
                         _layoutArray[i], Debug.HIGH_PRIORITY);
                     _layoutArray[i] = "0";
@@ -417,7 +443,9 @@
                     Debug.log("layoutEntry", layoutEntry);
 
                     if (_sysLayoutArray[i] != "0" &&
-                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0) {
+                        layoutEntry.length % _NUM_OF_LAYOUT_FIELDS != 0 &&
+                        layoutEntry.length % 8 != 0) //legacy 8-field format with page scroll
+                    { 
                         Debug.log("Error invalid system layout found. Clearing invalid layout: " +
                             _sysLayoutArray[i], Debug.HIGH_PRIORITY);
                         _sysLayoutArray[i] = "0";
@@ -864,15 +892,26 @@
             ////////////////////////
             //layout
 
-            var tmpAlias;
+            var tmpAlias, tmpAliasEl;
             if (_selectedLayout >= 1 && _selectedLayout <= _NUM_USER_LAYOUTS) //set new  default layout from desktop mailbox
             {
                 _layoutArray[_selectedLayout - 1] = _settingsLayoutMailbox.innerHTML;
-                tmpAlias = document.getElementById("winLayoutAlias" + _selectedLayout).value.trim();
-                _layoutAliasArray[_selectedLayout - 1] = tmpAlias.length == 0 ? _selectedLayout : tmpAlias;
             }
             //for array to proper size for sever communication (just in case)
             _layoutArray = _layoutArray.slice(0, _NUM_USER_LAYOUTS);
+
+            //read all user layout alias inputs and sync array
+            for (var j = 0; j < _NUM_USER_LAYOUTS; ++j) {
+                tmpAliasEl = document.getElementById("winLayoutAlias" + (j + 1));
+                if (tmpAliasEl) {
+                    tmpAlias = tmpAliasEl.value.trim();
+                    _layoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
+                    if (tmpAlias.length == 0) {
+                        tmpAliasEl.value = "";
+                        tmpAliasEl.setAttribute("placeholder", "Enter Alias");
+                    }
+                }
+            }
 
             var layoutStr = "";
             for (var j = 0; j < _layoutArray.length; ++j)
@@ -884,11 +923,22 @@
             if (_selectedLayout >= _NUM_USER_LAYOUTS + 1 && //set new  default layout from desktop mailbox
                 _selectedLayout <= _NUM_USER_LAYOUTS + _NUM_SYS_LAYOUTS) {
                 _sysLayoutArray[_selectedLayout - 1 - _NUM_USER_LAYOUTS] = _settingsLayoutMailbox.innerHTML;
-                tmpAlias = document.getElementById("winSysLayoutAlias" + (_selectedLayout - _NUM_USER_LAYOUTS)).value.trim();
-                _sysLayoutAliasArray[_selectedLayout - 1 - _NUM_USER_LAYOUTS] = tmpAlias.length == 0 ? _selectedLayout - _NUM_USER_LAYOUTS : tmpAlias;
             }
             //for array to proper size for sever communication (just in case)
             _sysLayoutArray = _sysLayoutArray.slice(0, _NUM_SYS_LAYOUTS);
+
+            //read all system layout alias inputs and sync array
+            for (var j = 0; j < _NUM_SYS_LAYOUTS; ++j) {
+                tmpAliasEl = document.getElementById("winSysLayoutAlias" + (j + 1));
+                if (tmpAliasEl) {
+                    tmpAlias = tmpAliasEl.value.trim();
+                    _sysLayoutAliasArray[j] = tmpAlias.length == 0 ? (j + 1) : tmpAlias;
+                    if (tmpAlias.length == 0) {
+                        tmpAliasEl.value = "";
+                        tmpAliasEl.setAttribute("placeholder", "Enter Alias");
+                    }
+                }
+            }
 
             layoutStr = "";
             Debug.log("_sysLayoutArray length " + _sysLayoutArray.length);
@@ -975,7 +1025,7 @@
 
         //=====================================================================================
         //showLayoutText ~~
-        //	layout window fields:
+        //	layout window fields (per window, 10 fields):
         //		0: _windows[i].getWindowName()
         //		1: _windows[i].getWindowSubName()
         //		2: _windows[i].getWindowUrl().replace(/&/g,'%38').replace(/=/g,'%61')  //global replace & and =
@@ -984,6 +1034,9 @@
         //		5: ((_windows[i].getWindowWidth()/dw)|0)
         //		6: ((_windows[i].getWindowHeight()/dh)|0)
         //		7: (_windows[i].isMinimized()?"0":"1")
+        //		8: iframeScrollX  //per-window iframe scroll left in pixels
+        //		9: iframeScrollY  //per-window iframe scroll top in pixels
+        //
         function showLayoutText(i, show, mouseEvent, isSystemLayout) {
             if (mouseEvent)
                 mouseEvent.stopPropagation(); //do nothing but eat event away from body, so body mouseup doesn't cancel
@@ -996,7 +1049,15 @@
                     (isSystemLayout ? 1 : 0) + "); return false;'>hide</a><br>";
                 var winLayArr = (isSystemLayout ?
                     _sysLayoutArray : _layoutArray)[i - 1].split(",");
-                var numOfFields = 8;
+
+                //auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
+                var numOfFields;
+                var rem10 = winLayArr.length % 10;
+                var rem8 = winLayArr.length % 8;
+                if (rem10 == 0 || rem10 == 2)
+                    numOfFields = 10;
+                else
+                    numOfFields = 8;
 
                 //destroy 7 field approach (new way adds the 8th field for isMinimized)
                 var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
@@ -1010,7 +1071,7 @@
                         decodeURIComponent(winLayArr[i * numOfFields + 1]) +
                         " - ";
 
-                    for (var j = 3; j < numOfFields; ++j)
+                    for (var j = 3; j < 8; ++j)
                         if (j < 7)
                             str += ((j - 3) ? ", " : "") + fieldArr[j - 3] + ":" +
                                 (Math.round(winLayArr[i * numOfFields + j] / 100) | 0) + "%";
@@ -1018,6 +1079,14 @@
                             str += ", Minimized";
                         else if (winLayArr[i * numOfFields + j] == "2") //then maximized
                             str += ", Maximized";
+
+                    //display per-window scroll position (if present in 10-field format)
+                    if (numOfFields >= 10) {
+                        var winScrollX = winLayArr[i * numOfFields + 8] | 0;
+                        var winScrollY = winLayArr[i * numOfFields + 9] | 0;
+                        if (winScrollX || winScrollY)
+                            str += ", Scroll - Left:" + winScrollX + "px, Top:" + winScrollY + "px";
+                    }
                     str += "<br>";
                 }
             }

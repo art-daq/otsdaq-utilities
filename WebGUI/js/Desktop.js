@@ -237,6 +237,17 @@ Desktop.createDesktop = function (security) {
 		for (var i = 0; i < _windows.length; ++i) {
 			if (_windows[i].getWindowName() == "Settings") continue; //skip settings window
 
+			//get per-window iframe scroll position (if accessible)
+			var iframeScrollX = 0;
+			var iframeScrollY = 0;
+			try {
+				var frm = _windows[i].getFrame();
+				if (frm && frm.contentWindow) {
+					iframeScrollX = frm.contentWindow.scrollX | 0;
+					iframeScrollY = frm.contentWindow.scrollY | 0;
+				}
+			} catch (e) {} //cross-origin iframes will throw
+
 			layout += (i ? "," : "") +
 				encodeURIComponent(_windows[i].getWindowName())
 				+ "," + encodeURIComponent(_windows[i].getWindowSubName())
@@ -245,7 +256,9 @@ Desktop.createDesktop = function (security) {
 				+ "," + (((_windows[i].getWindowY() - dy) / dh) | 0)
 				+ "," + ((_windows[i].getWindowWidth() / dw) | 0)
 				+ "," + ((_windows[i].getWindowHeight() / dh) | 0)
-				+ "," + (_windows[i].isMinimized() ? "0" : (_windows[i].isMaximized() ? "2" : "1"));
+				+ "," + (_windows[i].isMinimized() ? "0" : (_windows[i].isMaximized() ? "2" : "1"))
+				+ "," + iframeScrollX
+				+ "," + iframeScrollY;
 			//+ ", "; //last comma (with space for settings display)
 		}
 		//layout += "]";
@@ -1097,7 +1110,14 @@ Desktop.createDesktop = function (security) {
 		}
 		var layoutArr = layoutStr.split(",");
 
-		var numOfFields = 8;
+		//auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
+		var numOfFields;
+		var rem10 = layoutArr.length % 10;
+		var rem8 = layoutArr.length % 8;
+		if (rem10 == 0 || rem10 == 2)
+			numOfFields = 10; //new format with per-window scroll fields
+		else
+			numOfFields = 8;  //legacy format without per-window scroll fields
 		var numOfWins = parseInt(layoutArr.length / numOfFields);
 
 		Debug.log("Desktop defaultLayoutSelect layout numOfFields=" + numOfFields);
@@ -1119,7 +1139,10 @@ Desktop.createDesktop = function (security) {
 		//		4: (((_windows[i].getWindowY()-dy)/dh)|0)
 		//		5: ((_windows[i].getWindowWidth()/dw)|0)
 		//		6: ((_windows[i].getWindowHeight()/dh)|0)
-		//		7: (_windows[i].isMinimized()?"0":(_windows[i].isMinimized()?"2":"1"))
+		//		7: (_windows[i].isMinimized()?"0":(_windows[i].isMaximized()?"2":"1"))
+		//		8: iframeScrollX  (per-window iframe scroll left, pixels)
+		//		9: iframeScrollY  (per-window iframe scroll top, pixels)
+		//
 		var dw = Desktop.desktop.getDesktopContentWidth() / 10000.0; //to calc int % 0-10000
 		var dh = Desktop.desktop.getDesktopContentHeight() / 10000.0;//to calc int % 0-10000
 		var dx = Desktop.desktop.getDesktopContentX();
@@ -1141,6 +1164,32 @@ Desktop.createDesktop = function (security) {
 				_windows[_windows.length - 1].minimize();
 			else if ((layoutArr[i * numOfFields + 7] | 0) == 2) //convert to integer, if 0 then maximize
 				_windows[_windows.length - 1].maximize();
+
+			//restore per-window iframe scroll position (if present in layout)
+			if (numOfFields >= 10) {
+				var iframeScrollX = layoutArr[i * numOfFields + 8] | 0;
+				var iframeScrollY = layoutArr[i * numOfFields + 9] | 0;
+				if (iframeScrollX || iframeScrollY) {
+					//scroll after iframe content fully initializes
+					//	the iframe page init runs ~300-600ms after onload via DesktopContent watchdog,
+					//	so retry scrolling with increasing delays to ensure it sticks
+					(function (win, sx, sy) {
+						var frm = win.getFrame();
+						var origOnload = frm.onload;
+						frm.onload = function () {
+							if (origOnload) origOnload.apply(this, arguments);
+							var delays = [100, 500, 1000, 2000];
+							for (var d = 0; d < delays.length; ++d) {
+								(function(delay) {
+									setTimeout(function () {
+										try { frm.contentWindow.scrollTo(sx, sy); } catch (e) {}
+									}, delay);
+								})(delays[d]);
+							}
+						};
+					})(_windows[_windows.length - 1], iframeScrollX, iframeScrollY);
+				}
+			}
 		}
 	} //end defaultLayoutSelect()
 

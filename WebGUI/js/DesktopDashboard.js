@@ -82,6 +82,7 @@ else {
         var _layoutAliasArray, _sysLayoutAliasArray;
         var _userPref_layout, _sysPref_layout;
         var _layoutDropDownDisplayed = false;
+        var _layoutDropDownTimeout = null;
         var _layoutMenuItems = [];
         var numOfUserLayouts = 5;
         var numOfSystemLayouts = 5;
@@ -518,12 +519,30 @@ else {
 
                 Debug.log("found DesktopDashboard-defaults-dropdown div and deleted", Debug.LOW_PRIORITY);
                 el.parentNode.removeChild(el);
+                clearTimeout(_layoutDropDownTimeout);
+                _layoutDropDownTimeout = null;
             }
             if (!_layoutDropDownDisplayed) return; //do not create if closing
 
             Desktop.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
                 "", Desktop.desktop.dashboard.handleDashboardLayoutWindow);
         } //end _windowDashboardLayoutsDropDown()
+
+        //==============================================================================
+        //_scheduleLayoutDropDownTimeout ~
+        //	schedules dropdown to close after inactivity
+        var _scheduleLayoutDropDownTimeout = function () {
+            clearTimeout(_layoutDropDownTimeout);
+            _layoutDropDownTimeout = setTimeout(function () {
+                _layoutDropDownDisplayed = false;
+                var el = document.getElementById("DesktopDashboard-defaults-dropdown");
+                if (el) {
+                    el.parentNode.removeChild(el);
+                    Debug.log("Auto-closing layouts dropdown due to inactivity", Debug.LOW_PRIORITY);
+                }
+                _layoutDropDownTimeout = null;
+            }, 3000); // 3 seconds
+        } //end _scheduleLayoutDropDownTimeout()
 
         //------------------------------------------------------------------
         //create PUBLIC members functions ----------------------
@@ -991,7 +1010,23 @@ else {
                 }
 
             el.innerHTML = str;
+
+            // Add mouse event listeners for auto-close timeout
+            el.onmousemove = function() {
+                _scheduleLayoutDropDownTimeout();
+            };
+            el.onmouseenter = function() {
+                clearTimeout(_layoutDropDownTimeout);
+                _layoutDropDownTimeout = null;
+            };
+            el.onmouseleave = function() {
+                _scheduleLayoutDropDownTimeout();
+            };
+
             _dashboardElement.appendChild(el);
+
+            // Schedule initial timeout
+            _scheduleLayoutDropDownTimeout();
         } //end handleDashboardLayoutWindow()
 
         //==============================================================================
@@ -1007,7 +1042,14 @@ else {
 
             if (winLayArr[layoutID] == null) return;
             var winLayArr = winLayArr[layoutID].split(",");
-            var numOfFields = 8;
+
+            //auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
+            var numOfFields;
+            var rem10 = winLayArr.length % 10;
+            if (rem10 == 0 || rem10 == 2)
+                numOfFields = 10;
+            else
+                numOfFields = 8;
 
             //destroy 7 field approach (new way adds the 8th field for isMinimized)
             var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
@@ -1020,7 +1062,7 @@ else {
                     decodeURIComponent(winLayArr[i * numOfFields + 1]) +
                     " - ";
 
-                for (var j = 3; j < numOfFields; ++j)
+                for (var j = 3; j < 8; ++j)
                     if (j < 7)
                         str += ((j - 3) ? ", " : "") + fieldArr[j - 3] + ":" +
                             (Math.round(winLayArr[i * numOfFields + j] / 100) | 0) + "%";
@@ -1028,6 +1070,14 @@ else {
                         str += ", Minimized";
                     else if (winLayArr[i * numOfFields + j] == "2") //then maximized
                         str += ", Maximized";
+
+                //display per-window scroll position (if present in 10-field format)
+                if (numOfFields >= 10) {
+                    var winScrollX = winLayArr[i * numOfFields + 8] | 0;
+                    var winScrollY = winLayArr[i * numOfFields + 9] | 0;
+                    if (winScrollX || winScrollY)
+                        str += ", Scroll - Left:" + winScrollX + "px, Top:" + winScrollY + "px";
+                }
             }
 
             el.title = str;
