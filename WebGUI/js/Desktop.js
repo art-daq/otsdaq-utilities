@@ -1113,7 +1113,6 @@ Desktop.createDesktop = function (security) {
 		//auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
 		var numOfFields;
 		var rem10 = layoutArr.length % 10;
-		var rem8 = layoutArr.length % 8;
 		if (rem10 == 0 || rem10 == 2)
 			numOfFields = 10; //new format with per-window scroll fields
 		else
