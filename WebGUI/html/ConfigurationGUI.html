@@ -5454,7 +5454,7 @@
 					var dotSize = nodeStatusValue === "1" ? "10px" : "5px";
 					var dotBorderRadius = nodeStatusValue === "1" ? "7px" : "3px";
 					var dotMargin = nodeStatusValue === "1" ? "2px 4px 0 2px" : "4px 7px 0 4px";
-					treeViewHandlerStr_ += "<div style='width:" + dotSize + ";height:" + dotSize +
+					treeViewHandlerStr_ += "<div class='treeNode-statusDot' style='width:" + dotSize + ";height:" + dotSize +
 						";background-color:" + dotColor +
 						";float:left;border-radius:" + dotBorderRadius +
 						";border:2px solid " + borderColor +
@@ -12881,6 +12881,13 @@
 							"'></div>";
 						_editingCellEl.innerHTML = str;
 						_editingCellEl.style.color = treeDiff_COLOR_;
+
+						//update parent UID status dot if Status or Enabled column
+						if (treeEditingTargetColumn_ == "Status" ||
+							treeEditingTargetColumn_ == "Enabled") {
+							var isEnabled = (newValue == "On" || newValue == "Yes" || newValue == "True");
+							updateParentStatusDot(treeEditingNodeParentIdString_, isEnabled);
+						}
 					}
 					else if (treeEditingNodeType_ == "value-groupid") {
 						//if parent is a link (depth != 2)
@@ -13295,6 +13302,51 @@
 			doRestoreNextTreeViewExpand(); //launch restore expands
 
 		} //end refreshTreeView()
+
+		//==============================================================================
+		//updateParentStatusDot ~~
+		//	updates the status dot on a parent UID record node
+		//	when a Status or Enabled field is modified
+		function updateParentStatusDot(parentIdString, isEnabled) {
+			var parentValEl = document.getElementById("treeNode-Value-" + parentIdString);
+			if (!parentValEl) return;
+			var dots = parentValEl.getElementsByClassName("treeNode-statusDot");
+			if (dots.length) {
+				var dot = dots[0];
+				if (isEnabled) {
+					dot.style.backgroundColor = "rgb(16, 204, 16)";
+					dot.style.borderColor = "white";
+					dot.style.width = "10px";
+					dot.style.height = "10px";
+					dot.style.borderRadius = "7px";
+					dot.style.margin = "2px 4px 0 2px";
+					dot.title = "Status: Enabled";
+				} else {
+					dot.style.backgroundColor = "white";
+					dot.style.borderColor = "rgb(255, 0, 0)";
+					dot.style.width = "5px";
+					dot.style.height = "5px";
+					dot.style.borderRadius = "3px";
+					dot.style.margin = "4px 7px 0 4px";
+					dot.title = "Status: Disabled";
+				}
+			} else {
+				// no dot exists yet, add one
+				var dotColor = isEnabled ? "rgb(16, 204, 16)" : "white";
+				var borderColor = isEnabled ? "white" : "rgb(255, 0, 0)";
+				var dotSize = isEnabled ? "10px" : "5px";
+				var dotBorderRadius = isEnabled ? "7px" : "3px";
+				var dotMargin = isEnabled ? "2px 4px 0 2px" : "4px 7px 0 4px";
+				var dotDiv = document.createElement("div");
+				dotDiv.className = "treeNode-statusDot";
+				dotDiv.style.cssText = "width:" + dotSize + ";height:" + dotSize +
+					";background-color:" + dotColor + ";float:left;border-radius:" +
+					dotBorderRadius + ";border:2px solid " + borderColor +
+					";margin:" + dotMargin + ";";
+				dotDiv.title = "Status: " + (isEnabled ? "Enabled" : "Disabled");
+				parentValEl.appendChild(dotDiv);
+			}
+		} //end updateParentStatusDot()
 
 		//==============================================================================
 		//editTreeNodePropagateChange ~~
@@ -14049,6 +14101,14 @@
 									els[i].title = titleStr; //value node title
 								}
 							}
+
+						//update parent UID status dot if Status or Enabled column
+						if (treeEditingNodeType_ == "value-bool" &&
+							(treeEditingTargetColumn_ == "Status" ||
+							treeEditingTargetColumn_ == "Enabled")) {
+							updateParentStatusDot(parentIdString,
+								(newValue == "On" || newValue == "Yes" || newValue == "True"));
+						}
 
 						} //end propagate changes to value node
 					}
