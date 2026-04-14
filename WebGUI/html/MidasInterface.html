@@ -533,8 +533,18 @@
 
 					var hdr = document.createElement("div");
 					hdr.className = "treeSectionHeader";
-					hdr.innerHTML = '<span class="expander">▶</span>' +
-					                '<span class="treeTableName" title="' + encodeHTML(tableName) + '">' + encodeHTML(niceName(tableName)) + '</span>';
+
+					var expander = document.createElement("span");
+					expander.className = "expander";
+					expander.textContent = "▶";
+
+					var label = document.createElement("span");
+					label.className = "treeTableName";
+					label.title = tableName;
+					label.textContent = niceName(tableName);
+
+					hdr.appendChild(expander);
+					hdr.appendChild(label);
 					hdr.onclick = function() { treeTableClick(tableName, section, hdr); };
 
 					var children = document.createElement("div");
@@ -687,12 +697,31 @@
 			for (var i = 0; i < _rootTables.length; ++i) {
 				(function(tName) {
 					var tr = document.createElement("tr");
-					var countStr = _tableCache[tName] ? _tableCache[tName].length : "—";
-					tr.innerHTML = '<td class="iconCell">📁</td>' +
-						'<td class="keyCell isDir"><a onclick="navigateTo([\'' + encodeHTML(tName.replace(/'/g,"\\\'")) + '\'])">' +
-						encodeHTML(niceName(tName)) + '</a></td>' +
-						'<td class="typeCell">Table</td>' +
-						'<td class="valueCell" id="rootCount_' + encodeHTML(tName) + '">' + countStr + '</td>';
+
+					var iconTd = document.createElement("td");
+					iconTd.className = "iconCell";
+					iconTd.textContent = "📁";
+
+					var keyTd = document.createElement("td");
+					keyTd.className = "keyCell isDir";
+					var link = document.createElement("a");
+					link.textContent = niceName(tName);
+					link.addEventListener("click", function() { navigateTo([tName]); });
+					keyTd.appendChild(link);
+
+					var typeTd = document.createElement("td");
+					typeTd.className = "typeCell";
+					typeTd.textContent = "Table";
+
+					var countTd = document.createElement("td");
+					countTd.className = "valueCell";
+					countTd.id = "rootCount_" + tName;
+					countTd.textContent = _tableCache[tName] ? _tableCache[tName].length : "—";
+
+					tr.appendChild(iconTd);
+					tr.appendChild(keyTd);
+					tr.appendChild(typeTd);
+					tr.appendChild(countTd);
 					tbody.appendChild(tr);
 				})(_rootTables[i]);
 			}
@@ -750,13 +779,29 @@
 				for (var i = 0; i < records.length; ++i) {
 					(function(uid) {
 						var tr = document.createElement("tr");
-						tr.innerHTML = '<td class="iconCell">📄</td>' +
-							'<td class="keyCell isDir"><a onclick="navigateTo([\'' +
-							encodeHTML(tableName.replace(/'/g,"\\\'")) + '\',\'' +
-							encodeHTML(uid.replace(/'/g,"\\\'")) + '\'])">' +
-							encodeHTML(uid) + '</a></td>' +
-							'<td class="typeCell">Record</td>' +
-							'<td class="valueCell"></td>';
+
+						var iconTd = document.createElement("td");
+						iconTd.className = "iconCell";
+						iconTd.textContent = "📄";
+
+						var keyTd = document.createElement("td");
+						keyTd.className = "keyCell isDir";
+						var link = document.createElement("a");
+						link.textContent = uid;
+						link.addEventListener("click", function() { navigateTo([tableName, uid]); });
+						keyTd.appendChild(link);
+
+						var typeTd = document.createElement("td");
+						typeTd.className = "typeCell";
+						typeTd.textContent = "Record";
+
+						var commentTd = document.createElement("td");
+						commentTd.className = "valueCell";
+
+						tr.appendChild(iconTd);
+						tr.appendChild(keyTd);
+						tr.appendChild(typeTd);
+						tr.appendChild(commentTd);
 						tbody.appendChild(tr);
 					})(records[i]);
 				}
@@ -806,7 +851,10 @@
 				// action bar
 				var ab = document.createElement("div");
 				ab.className = "actionBar";
-				ab.innerHTML = '<button onclick="refreshRecord()">↺ Reload Record</button>';
+				var reloadBtn = document.createElement("button");
+				reloadBtn.textContent = "↺ Reload Record";
+				reloadBtn.addEventListener("click", refreshRecord);
+				ab.appendChild(reloadBtn);
 				cp.appendChild(ab);
 
 				if (fields.length === 0) {
@@ -1063,8 +1111,11 @@
 
 		// ---------- helpers ----------------------------------------------
 		function niceName(str) {
-			// Remove trailing "Table" or "Configuration" to shorten
-			return str.replace(/Table$/, "").replace(/Configuration$/, " Config");
+			// Remove trailing Table/Configuration suffixes to shorten display names
+			return str
+				.replace(/ConfigurationTable$/, " Config")
+				.replace(/Configuration$/, " Config")
+				.replace(/Table$/, "");
 		}
 
 		function encodeHTML(s) {
