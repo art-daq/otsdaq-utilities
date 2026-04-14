@@ -1,0 +1,1128 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+	<title>MIDAS-like Configuration Interface</title>
+
+	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="/WebPath/css/ConfigurationAPI.css">
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/SimpleContextMenu.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/js_lib/ConfigurationAPI.js"></script>
+
+	<style type="text/css">
+
+		/* ── Reset / Base ─────────────────────────────────── */
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: 'Inconsolata', monospace;
+			font-size: 14px;
+			background-color: #d0d0d0;
+			color: #111;
+			overflow: hidden;
+		}
+
+		a {
+			color: #003399;
+			text-decoration: none;
+		}
+		a:hover { text-decoration: underline; cursor: pointer; }
+
+		input[type="button"], button {
+			cursor: pointer;
+			font-family: 'Inconsolata', monospace;
+			font-size: 13px;
+		}
+
+		/* ── Top Navigation Bar ────────────────────────────── */
+		#topBar {
+			position: absolute;
+			top: 0; left: 0; right: 0;
+			height: 36px;
+			background: linear-gradient(180deg, #5577bb 0%, #335599 100%);
+			color: white;
+			display: flex;
+			align-items: center;
+			padding: 0 8px;
+			gap: 8px;
+			z-index: 100;
+			border-bottom: 2px solid #2244aa;
+		}
+
+		#topBar .logo {
+			font-weight: bold;
+			font-size: 15px;
+			letter-spacing: 1px;
+			white-space: nowrap;
+			color: #ddeeff;
+			margin-right: 6px;
+		}
+
+		#topBar .separator {
+			width: 1px;
+			height: 20px;
+			background: rgba(255,255,255,0.35);
+			margin: 0 4px;
+		}
+
+		#topBar .groupInfo {
+			font-size: 12px;
+			color: #cce0ff;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		#topBar .spacer { flex: 1; }
+
+		#topBar button {
+			background: rgba(255,255,255,0.15);
+			color: white;
+			border: 1px solid rgba(255,255,255,0.4);
+			border-radius: 3px;
+			padding: 3px 10px;
+			font-size: 12px;
+			white-space: nowrap;
+		}
+		#topBar button:hover {
+			background: rgba(255,255,255,0.28);
+		}
+		#topBar #saveBtn {
+			background: rgba(0,180,80,0.4);
+			border-color: rgba(0,220,100,0.6);
+		}
+		#topBar #saveBtn:hover {
+			background: rgba(0,200,90,0.55);
+		}
+		#topBar #saveBtn.dirty {
+			background: rgba(0,180,80,0.7);
+			border-color: #00ee66;
+			animation: pulse 1.4s ease-in-out infinite;
+		}
+		@keyframes pulse {
+			0%,100% { box-shadow: 0 0 0 rgba(0,255,100,0); }
+			50%      { box-shadow: 0 0 6px rgba(0,255,100,0.6); }
+		}
+
+		/* ── Breadcrumb Bar ────────────────────────────────── */
+		#breadcrumbBar {
+			position: absolute;
+			top: 36px; left: 0; right: 0;
+			height: 28px;
+			background: #e8e4e0;
+			border-bottom: 1px solid #bbb;
+			display: flex;
+			align-items: center;
+			padding: 0 8px;
+			font-size: 13px;
+			overflow: hidden;
+			white-space: nowrap;
+			z-index: 90;
+		}
+
+		#breadcrumbBar span.crumb {
+			color: #003399;
+			cursor: pointer;
+		}
+		#breadcrumbBar span.crumb:hover { text-decoration: underline; }
+		#breadcrumbBar span.sep {
+			margin: 0 3px;
+			color: #888;
+		}
+		#breadcrumbBar span.crumbLast {
+			color: #333;
+			font-weight: bold;
+		}
+
+		/* ── Main Layout ───────────────────────────────────── */
+		#mainLayout {
+			position: absolute;
+			top: 64px; left: 0; right: 0; bottom: 0;
+			display: flex;
+		}
+
+		/* ── Left Tree Pane ────────────────────────────────── */
+		#treePane {
+			width: 220px;
+			min-width: 100px;
+			max-width: 400px;
+			background: #f0ede8;
+			border-right: 1px solid #bbb;
+			overflow-y: auto;
+			overflow-x: hidden;
+			flex-shrink: 0;
+			position: relative;
+		}
+
+		#treePaneToggle {
+			position: absolute;
+			top: 2px;
+			right: 2px;
+			width: 16px;
+			height: 16px;
+			cursor: pointer;
+			font-size: 12px;
+			color: #555;
+			text-align: center;
+			line-height: 16px;
+			border: 1px solid #aaa;
+			border-radius: 2px;
+			background: #e8e4e0;
+			z-index: 10;
+		}
+		#treePaneToggle:hover { background: #ddd; color: #222; }
+
+		#treePane.collapsed { width: 18px; }
+		#treePane.collapsed #treeContent { display: none; }
+
+		#treeContent {
+			padding: 4px 2px;
+		}
+
+		.treeSection {
+			margin-bottom: 2px;
+		}
+
+		.treeSectionHeader {
+			display: flex;
+			align-items: center;
+			padding: 3px 4px;
+			cursor: pointer;
+			border-radius: 2px;
+			user-select: none;
+		}
+		.treeSectionHeader:hover { background: #ddd8d0; }
+		.treeSectionHeader.active { background: #c8d8f0; }
+
+		.treeSectionHeader .expander {
+			width: 12px;
+			font-size: 10px;
+			color: #555;
+			margin-right: 3px;
+			flex-shrink: 0;
+		}
+
+		.treeSectionHeader .treeTableName {
+			font-size: 12px;
+			color: #224;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.treeSectionChildren {
+			display: none;
+			padding-left: 14px;
+		}
+		.treeSectionChildren.expanded { display: block; }
+
+		.treeRecord {
+			padding: 2px 4px;
+			font-size: 11px;
+			color: #333;
+			cursor: pointer;
+			border-radius: 2px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.treeRecord:hover { background: #ddd8d0; }
+		.treeRecord.active { background: #c8d8f0; font-weight: bold; }
+
+		/* ── Right Content Pane ────────────────────────────── */
+		#contentPane {
+			flex: 1;
+			overflow-y: auto;
+			overflow-x: auto;
+			background: #faf9f7;
+			padding: 8px 12px;
+		}
+
+		/* ── ODB-style Content Table ───────────────────────── */
+		.odbTitle {
+			font-size: 16px;
+			font-weight: bold;
+			color: #224;
+			margin-bottom: 6px;
+			border-bottom: 2px solid #aab;
+			padding-bottom: 4px;
+		}
+
+		.odbSubtitle {
+			font-size: 12px;
+			color: #556;
+			margin-bottom: 10px;
+		}
+
+		table.odbTable {
+			border-collapse: collapse;
+			width: 100%;
+			min-width: 400px;
+			font-size: 13px;
+			margin-bottom: 16px;
+		}
+
+		table.odbTable th {
+			background: #3355aa;
+			color: white;
+			text-align: left;
+			padding: 5px 8px;
+			font-size: 12px;
+			white-space: nowrap;
+		}
+
+		table.odbTable tr:nth-child(even) td {
+			background: #f2eff8;
+		}
+		table.odbTable tr:nth-child(odd) td {
+			background: #faf9f7;
+		}
+		table.odbTable tr:hover td {
+			background: #dce8ff !important;
+		}
+
+		table.odbTable td {
+			padding: 4px 8px;
+			vertical-align: middle;
+			border-bottom: 1px solid #e0ddd8;
+		}
+
+		/* icon cell */
+		table.odbTable td.iconCell {
+			width: 20px;
+			padding: 0 4px;
+			text-align: center;
+		}
+
+		/* Key column */
+		td.keyCell {
+			font-weight: bold;
+			color: #224;
+			white-space: nowrap;
+		}
+		td.keyCell.isDir a {
+			color: #003399;
+		}
+		td.keyCell.isDir a:hover { text-decoration: underline; }
+
+		/* Type column */
+		td.typeCell {
+			color: #668;
+			font-size: 11px;
+			white-space: nowrap;
+		}
+
+		/* Value column */
+		td.valueCell {
+			color: #111;
+			word-break: break-word;
+		}
+		td.valueCell.editable:hover {
+			background: #ffe !important;
+			cursor: text;
+		}
+
+		/* inline edit */
+		.inlineEditInput {
+			font-family: 'Inconsolata', monospace;
+			font-size: 13px;
+			padding: 1px 4px;
+			border: 1px solid #5588dd;
+			border-radius: 2px;
+			width: calc(100% - 60px);
+			min-width: 80px;
+		}
+
+		.inlineEditSelect {
+			font-family: 'Inconsolata', monospace;
+			font-size: 13px;
+			padding: 1px 4px;
+			border: 1px solid #5588dd;
+			border-radius: 2px;
+			min-width: 100px;
+		}
+
+		.inlineOk, .inlineCancel {
+			font-size: 11px;
+			padding: 1px 6px;
+			border-radius: 2px;
+			margin-left: 4px;
+		}
+		.inlineOk {
+			background: #e8ffe8;
+			border: 1px solid #4a4;
+			color: #040;
+		}
+		.inlineOk:hover { background: #c0ffc0; }
+		.inlineCancel {
+			background: #ffe8e8;
+			border: 1px solid #a44;
+			color: #400;
+		}
+		.inlineCancel:hover { background: #ffc0c0; }
+
+		/* ── Record-level action bar ───────────────────────── */
+		.actionBar {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 10px;
+		}
+		.actionBar button {
+			background: #eee;
+			border: 1px solid #aaa;
+			border-radius: 3px;
+			padding: 3px 10px;
+			font-size: 12px;
+		}
+		.actionBar button:hover { background: #ddf; border-color: #66a; }
+
+		/* ── Loading / Status messages ─────────────────────── */
+		#statusBar {
+			position: fixed;
+			bottom: 0; left: 0; right: 0;
+			height: 20px;
+			background: #e0ddd8;
+			border-top: 1px solid #bbb;
+			font-size: 11px;
+			color: #334;
+			padding: 2px 8px;
+			z-index: 200;
+		}
+
+		.loadingMsg {
+			color: #335599;
+			font-style: italic;
+		}
+		.errorMsg {
+			color: #cc2200;
+			font-weight: bold;
+		}
+
+		/* ── Directory icon ─────────────────────────────────── */
+		.dirIcon::before {
+			content: "📁";
+			margin-right: 4px;
+		}
+		.leafIcon::before {
+			content: "   ";
+			margin-right: 4px;
+		}
+
+		/* ── Empty state ─────────────────────────────────────── */
+		.emptyState {
+			color: #888;
+			font-style: italic;
+			padding: 20px;
+			text-align: center;
+		}
+
+	</style>
+
+	<script>
+
+		// ============================================================
+		//  MidasInterface.html
+		//  MIDAS ODB-like browser for the otsdaq configuration database
+		// ============================================================
+		//
+		//  Navigation levels:
+		//    Level 0 – root   : lists all table names
+		//    Level 1 – table  : lists all record UIDs in a table
+		//    Level 2 – record : shows all field key-value pairs (editable)
+		//
+		//  API used:
+		//    ConfigurationAPI.getActiveGroups()
+		//    ConfigurationAPI.getTree(path, depth, ...)
+		//    ConfigurationAPI.getSubsetRecords(table, ...)
+		//    ConfigurationAPI.getFieldsOfRecords(table, uid[], ...)
+		//    ConfigurationAPI.getFieldValuesForRecords(table, uid[], fields, ...)
+		//    ConfigurationAPI.setFieldValuesForRecords(table, uid[], fields, values, ...)
+		//    ConfigurationAPI.popUpSaveModifiedTablesForm(modifiedTables, ...)
+		// ============================================================
+
+		// ---------- state ------------------------------------------------
+		var _currentPath = [];          // navigation stack, e.g. [] / ["TableName"] / ["TableName","RecordUID"]
+		var _modifiedTables = [];       // tables that have been modified (used for save)
+		var _tableCache = {};           // tableName → array of UIDs
+		var _fieldCache = {};           // "table/uid" → {fields:[], values:{}}
+		var _rootTables = [];           // ordered list of table names from root tree
+
+		// ---------- init -------------------------------------------------
+		function init() {
+			Debug.log("MidasInterface init()");
+			window.onresize = redrawWindow;
+			redrawWindow();
+
+			ConfigurationAPI.init();
+			ConfigurationAPI.getActiveGroups(function(groups) {
+				var info = "";
+				if (groups && groups.Configuration && groups.Configuration.groupName)
+					info = groups.Configuration.groupName + " [" + groups.Configuration.groupKey + "]";
+				else if (groups && groups.Context && groups.Context.groupName)
+					info = groups.Context.groupName + " [" + groups.Context.groupKey + "]";
+				document.getElementById("groupInfo").textContent = info ? ("Active: " + info) : "";
+				loadRoot();
+			});
+		} // end init()
+
+		// ---------- layout -----------------------------------------------
+		function redrawWindow() {
+			// nothing special needed; layout is CSS-driven
+		}
+
+		// ---------- navigation -------------------------------------------
+		function navigateTo(path) {
+			// path is an array, e.g. [] or ["TableName"] or ["TableName","UID"]
+			_currentPath = path.slice();
+			updateBreadcrumb();
+			if (_currentPath.length === 0) {
+				showRootView();
+			} else if (_currentPath.length === 1) {
+				showTableView(_currentPath[0]);
+			} else {
+				showRecordView(_currentPath[0], _currentPath[1]);
+			}
+			highlightTree();
+		}
+
+		function loadRoot() {
+			setStatus("Loading configuration tables…");
+			ConfigurationAPI.getTree("", 1, null, function(tree) {
+				if (!tree) {
+					setStatus("Error loading root tree.");
+					return;
+				}
+				_rootTables = [];
+				var nodes = tree.children;
+				for (var i = 0; i < nodes.length; ++i) {
+					if (nodes[i].nodeName === "node")
+						_rootTables.push(nodes[i].getAttribute("value"));
+				}
+				buildTreePane();
+				setStatus("Ready. " + _rootTables.length + " table(s) found.");
+				navigateTo([]);
+			});
+		}
+
+		// ---------- tree pane --------------------------------------------
+		function buildTreePane() {
+			var tc = document.getElementById("treeContent");
+			tc.innerHTML = "";
+
+			for (var i = 0; i < _rootTables.length; ++i) {
+				(function(tableName) {
+					var section = document.createElement("div");
+					section.className = "treeSection";
+					section.id = "treeSection_" + tableName;
+
+					var hdr = document.createElement("div");
+					hdr.className = "treeSectionHeader";
+					hdr.innerHTML = '<span class="expander">▶</span>' +
+					                '<span class="treeTableName" title="' + encodeHTML(tableName) + '">' + encodeHTML(niceName(tableName)) + '</span>';
+					hdr.onclick = function() { treeTableClick(tableName, section, hdr); };
+
+					var children = document.createElement("div");
+					children.className = "treeSectionChildren";
+					children.id = "treeChildren_" + tableName;
+
+					section.appendChild(hdr);
+					section.appendChild(children);
+					tc.appendChild(section);
+				})(_rootTables[i]);
+			}
+		}
+
+		function treeTableClick(tableName, section, hdr) {
+			// toggle expand / navigate
+			var childrenEl = section.querySelector(".treeSectionChildren");
+			var expander = hdr.querySelector(".expander");
+			var isExpanded = childrenEl.classList.contains("expanded");
+
+			if (!isExpanded) {
+				expander.textContent = "▼";
+				childrenEl.classList.add("expanded");
+				loadTreeChildren(tableName, childrenEl);
+				navigateTo([tableName]);
+			} else {
+				expander.textContent = "▶";
+				childrenEl.classList.remove("expanded");
+				navigateTo([tableName]);
+			}
+		}
+
+		function loadTreeChildren(tableName, childrenEl) {
+			if (_tableCache[tableName]) {
+				renderTreeChildren(tableName, childrenEl, _tableCache[tableName]);
+				return;
+			}
+			childrenEl.innerHTML = '<div class="treeRecord loadingMsg">loading…</div>';
+			ConfigurationAPI.getSubsetRecords(tableName, "", function(records) {
+				_tableCache[tableName] = records || [];
+				renderTreeChildren(tableName, childrenEl, _tableCache[tableName]);
+			});
+		}
+
+		function renderTreeChildren(tableName, childrenEl, records) {
+			childrenEl.innerHTML = "";
+			if (!records || records.length === 0) {
+				childrenEl.innerHTML = '<div class="treeRecord" style="color:#999;">(empty)</div>';
+				return;
+			}
+			for (var i = 0; i < records.length; ++i) {
+				(function(uid) {
+					var el = document.createElement("div");
+					el.className = "treeRecord";
+					el.id = "treeRecord_" + tableName + "_" + uid;
+					el.title = uid;
+					el.textContent = uid;
+					el.onclick = function(e) {
+						e.stopPropagation();
+						navigateTo([tableName, uid]);
+					};
+					childrenEl.appendChild(el);
+				})(records[i]);
+			}
+		}
+
+		function highlightTree() {
+			// clear all
+			var allHdrs = document.querySelectorAll(".treeSectionHeader");
+			for (var i = 0; i < allHdrs.length; ++i)
+				allHdrs[i].classList.remove("active");
+			var allRecs = document.querySelectorAll(".treeRecord");
+			for (var i = 0; i < allRecs.length; ++i)
+				allRecs[i].classList.remove("active");
+
+			if (_currentPath.length >= 1) {
+				var hdr = document.querySelector("#treeSection_" + _currentPath[0] + " > .treeSectionHeader");
+				if (hdr) hdr.classList.add("active");
+			}
+			if (_currentPath.length >= 2) {
+				var rec = document.getElementById("treeRecord_" + _currentPath[0] + "_" + _currentPath[1]);
+				if (rec) rec.classList.add("active");
+			}
+		}
+
+		// ---------- breadcrumb -------------------------------------------
+		function updateBreadcrumb() {
+			var bar = document.getElementById("breadcrumbBar");
+			bar.innerHTML = "";
+
+			var rootSpan = document.createElement("span");
+			rootSpan.className = "crumb";
+			rootSpan.textContent = "root";
+			rootSpan.onclick = function() { navigateTo([]); };
+			bar.appendChild(rootSpan);
+
+			for (var i = 0; i < _currentPath.length; ++i) {
+				var sep = document.createElement("span");
+				sep.className = "sep";
+				sep.textContent = " / ";
+				bar.appendChild(sep);
+
+				if (i < _currentPath.length - 1) {
+					var crumb = document.createElement("span");
+					crumb.className = "crumb";
+					crumb.textContent = (i === 0) ? niceName(_currentPath[i]) : _currentPath[i];
+					(function(idx) {
+						crumb.onclick = function() { navigateTo(_currentPath.slice(0, idx + 1)); };
+					})(i);
+					bar.appendChild(crumb);
+				} else {
+					var last = document.createElement("span");
+					last.className = "crumbLast";
+					last.textContent = (i === 0) ? niceName(_currentPath[i]) : _currentPath[i];
+					bar.appendChild(last);
+				}
+			}
+		}
+
+		// ---------- root view --------------------------------------------
+		function showRootView() {
+			setStatus("Showing root configuration tables.");
+			var cp = document.getElementById("contentPane");
+			cp.innerHTML = "";
+
+			var title = document.createElement("div");
+			title.className = "odbTitle";
+			title.textContent = "otsdaq Configuration — Root";
+			cp.appendChild(title);
+
+			var sub = document.createElement("div");
+			sub.className = "odbSubtitle";
+			sub.textContent = _rootTables.length + " configuration table(s)";
+			cp.appendChild(sub);
+
+			if (_rootTables.length === 0) {
+				cp.innerHTML += '<div class="emptyState">No tables found. Check active configuration groups.</div>';
+				return;
+			}
+
+			var table = document.createElement("table");
+			table.className = "odbTable";
+			table.innerHTML = '<thead><tr>' +
+				'<th style="width:18px;"></th>' +
+				'<th>Key (Table Name)</th>' +
+				'<th style="width:90px;">Type</th>' +
+				'<th>Records</th>' +
+				'</tr></thead>';
+
+			var tbody = document.createElement("tbody");
+			for (var i = 0; i < _rootTables.length; ++i) {
+				(function(tName) {
+					var tr = document.createElement("tr");
+					var countStr = _tableCache[tName] ? _tableCache[tName].length : "—";
+					tr.innerHTML = '<td class="iconCell">📁</td>' +
+						'<td class="keyCell isDir"><a onclick="navigateTo([\'' + encodeHTML(tName.replace(/'/g,"\\\'")) + '\'])">' +
+						encodeHTML(niceName(tName)) + '</a></td>' +
+						'<td class="typeCell">Table</td>' +
+						'<td class="valueCell" id="rootCount_' + encodeHTML(tName) + '">' + countStr + '</td>';
+					tbody.appendChild(tr);
+				})(_rootTables[i]);
+			}
+			table.appendChild(tbody);
+			cp.appendChild(table);
+
+			// lazily load record counts for tables not yet cached
+			for (var i = 0; i < _rootTables.length; ++i) {
+				if (!_tableCache[_rootTables[i]]) {
+					(function(tName) {
+						ConfigurationAPI.getSubsetRecords(tName, "", function(records) {
+							_tableCache[tName] = records || [];
+							var el = document.getElementById("rootCount_" + tName);
+							if (el) el.textContent = _tableCache[tName].length;
+						});
+					})(_rootTables[i]);
+				}
+			}
+		}
+
+		// ---------- table view -------------------------------------------
+		function showTableView(tableName) {
+			setStatus("Loading records for " + tableName + "…");
+			var cp = document.getElementById("contentPane");
+			cp.innerHTML = '<div class="loadingMsg" style="padding:20px;">Loading records…</div>';
+
+			function render(records) {
+				cp.innerHTML = "";
+				var title = document.createElement("div");
+				title.className = "odbTitle";
+				title.textContent = niceName(tableName);
+				cp.appendChild(title);
+
+				var sub = document.createElement("div");
+				sub.className = "odbSubtitle";
+				sub.textContent = tableName + " — " + records.length + " record(s)";
+				cp.appendChild(sub);
+
+				if (records.length === 0) {
+					cp.innerHTML += '<div class="emptyState">No records in this table.</div>';
+					setStatus("Ready.");
+					return;
+				}
+
+				var table = document.createElement("table");
+				table.className = "odbTable";
+				table.innerHTML = '<thead><tr>' +
+					'<th style="width:18px;"></th>' +
+					'<th>Record UID</th>' +
+					'<th style="width:90px;">Type</th>' +
+					'<th>Comment</th>' +
+					'</tr></thead>';
+
+				var tbody = document.createElement("tbody");
+				for (var i = 0; i < records.length; ++i) {
+					(function(uid) {
+						var tr = document.createElement("tr");
+						tr.innerHTML = '<td class="iconCell">📄</td>' +
+							'<td class="keyCell isDir"><a onclick="navigateTo([\'' +
+							encodeHTML(tableName.replace(/'/g,"\\\'")) + '\',\'' +
+							encodeHTML(uid.replace(/'/g,"\\\'")) + '\'])">' +
+							encodeHTML(uid) + '</a></td>' +
+							'<td class="typeCell">Record</td>' +
+							'<td class="valueCell"></td>';
+						tbody.appendChild(tr);
+					})(records[i]);
+				}
+				table.appendChild(tbody);
+				cp.appendChild(table);
+				setStatus("Ready. " + records.length + " record(s).");
+			}
+
+			if (_tableCache[tableName]) {
+				render(_tableCache[tableName]);
+			} else {
+				ConfigurationAPI.getSubsetRecords(tableName, "", function(records) {
+					_tableCache[tableName] = records || [];
+					render(_tableCache[tableName]);
+					// also update tree pane
+					var childrenEl = document.getElementById("treeChildren_" + tableName);
+					if (childrenEl && !childrenEl.classList.contains("expanded")) {
+						// not yet expanded, do nothing
+					} else if (childrenEl) {
+						renderTreeChildren(tableName, childrenEl, _tableCache[tableName]);
+					}
+				});
+			}
+		}
+
+		// ---------- record view ------------------------------------------
+		function showRecordView(tableName, uid) {
+			setStatus("Loading fields for " + uid + "…");
+			var cp = document.getElementById("contentPane");
+			cp.innerHTML = '<div class="loadingMsg" style="padding:20px;">Loading fields…</div>';
+
+			var cacheKey = tableName + "/" + uid;
+
+			function renderRecord(fields, values) {
+				cp.innerHTML = "";
+
+				var title = document.createElement("div");
+				title.className = "odbTitle";
+				title.textContent = uid;
+				cp.appendChild(title);
+
+				var sub = document.createElement("div");
+				sub.className = "odbSubtitle";
+				sub.textContent = niceName(tableName) + " › " + uid + " — " + fields.length + " field(s)";
+				cp.appendChild(sub);
+
+				// action bar
+				var ab = document.createElement("div");
+				ab.className = "actionBar";
+				ab.innerHTML = '<button onclick="refreshRecord()">↺ Reload Record</button>';
+				cp.appendChild(ab);
+
+				if (fields.length === 0) {
+					cp.innerHTML += '<div class="emptyState">No editable fields found for this record.</div>';
+					setStatus("Ready.");
+					return;
+				}
+
+				// build value map from values array
+				var valueMap = {};
+				for (var v = 0; v < values.length; ++v)
+					valueMap[values[v].fieldPath] = values[v].fieldValue;
+
+				var table = document.createElement("table");
+				table.className = "odbTable";
+				table.innerHTML = '<thead><tr>' +
+					'<th>Key (Field)</th>' +
+					'<th style="width:110px;">Data Type</th>' +
+					'<th>Value</th>' +
+					'</tr></thead>';
+
+				var tbody = document.createElement("tbody");
+
+				for (var i = 0; i < fields.length; ++i) {
+					(function(f, idx) {
+						var tr = document.createElement("tr");
+						tr.id = "fieldRow_" + idx;
+
+						var fieldName = f.fieldColumnName;
+						var relPath = f.fieldRelativePath || "";
+						var fullPath = relPath + fieldName;
+						var dataType = f.fieldColumnDataType || f.fieldColumnType || "";
+						var choices = f.fieldColumnDataChoicesArr || [];
+						var currentVal = valueMap[fullPath] !== undefined ? valueMap[fullPath] : (f.fieldColumnDefaultValue || "");
+
+						var keyTd = document.createElement("td");
+						keyTd.className = "keyCell";
+						keyTd.textContent = fieldName;
+						if (relPath && relPath !== "/") {
+							var pathNote = document.createElement("span");
+							pathNote.style.cssText = "color:#999;font-size:10px;font-weight:normal;margin-left:4px;";
+							pathNote.textContent = "(" + relPath.replace(/^\/|\/$/g,"") + ")";
+							keyTd.appendChild(pathNote);
+						}
+
+						var typeTd = document.createElement("td");
+						typeTd.className = "typeCell";
+						typeTd.textContent = dataType;
+
+						var valueTd = document.createElement("td");
+						valueTd.className = "valueCell editable";
+						valueTd.id = "valueCell_" + idx;
+						valueTd.title = "Click to edit";
+						valueTd.textContent = currentVal;
+						valueTd.setAttribute("data-field-idx", idx);
+						valueTd.setAttribute("data-current-value", currentVal);
+						valueTd.onclick = function() { startInlineEdit(idx, f, currentVal, choices); };
+
+						tr.appendChild(keyTd);
+						tr.appendChild(typeTd);
+						tr.appendChild(valueTd);
+						tbody.appendChild(tr);
+					})(fields[i], i);
+				}
+
+				table.appendChild(tbody);
+				cp.appendChild(table);
+				setStatus("Ready. " + fields.length + " field(s).");
+			}
+
+			function doLoad() {
+				ConfigurationAPI.getFieldsOfRecords(tableName, [uid], "", 3,
+					function(fields) {
+						if (!fields || fields.length === 0) {
+							cp.innerHTML = '<div class="emptyState" style="padding:20px;">No editable fields found for this record.</div>';
+							setStatus("No fields.");
+							return;
+						}
+						ConfigurationAPI.getFieldValuesForRecords(tableName, [uid], fields,
+							function(values) {
+								_fieldCache[cacheKey] = { fields: fields, values: values };
+								renderRecord(fields, values);
+							}, _modifiedTables);
+					}, _modifiedTables);
+			}
+
+			if (_fieldCache[cacheKey]) {
+				renderRecord(_fieldCache[cacheKey].fields, _fieldCache[cacheKey].values);
+			} else {
+				doLoad();
+			}
+		}
+
+		function refreshRecord() {
+			if (_currentPath.length < 2) return;
+			var cacheKey = _currentPath[0] + "/" + _currentPath[1];
+			delete _fieldCache[cacheKey];
+			showRecordView(_currentPath[0], _currentPath[1]);
+		}
+
+		// ---------- inline edit ------------------------------------------
+		var _editingFieldIdx = -1;
+
+		function startInlineEdit(idx, fieldObj, currentVal, choices) {
+			if (_editingFieldIdx === idx) return; // already editing
+			if (_editingFieldIdx !== -1) cancelInlineEdit(); // cancel previous
+
+			_editingFieldIdx = idx;
+			var valueTd = document.getElementById("valueCell_" + idx);
+			if (!valueTd) return;
+
+			valueTd.textContent = "";
+
+			var inputEl;
+			if (choices && choices.length > 0) {
+				// dropdown for fixed-choice fields
+				inputEl = document.createElement("select");
+				inputEl.className = "inlineEditSelect";
+				for (var i = 0; i < choices.length; ++i) {
+					var opt = document.createElement("option");
+					opt.value = choices[i];
+					opt.textContent = choices[i];
+					if (choices[i] === currentVal) opt.selected = true;
+					inputEl.appendChild(opt);
+				}
+			} else {
+				// free-text input
+				inputEl = document.createElement("input");
+				inputEl.type = "text";
+				inputEl.className = "inlineEditInput";
+				inputEl.value = currentVal;
+				inputEl.onkeydown = function(e) {
+					if (e.key === "Enter") commitInlineEdit(idx, fieldObj, inputEl);
+					else if (e.key === "Escape") cancelInlineEdit();
+				};
+			}
+
+			var okBtn = document.createElement("button");
+			okBtn.className = "inlineOk";
+			okBtn.textContent = "✓";
+			okBtn.onclick = function() { commitInlineEdit(idx, fieldObj, inputEl); };
+
+			var cancelBtn = document.createElement("button");
+			cancelBtn.className = "inlineCancel";
+			cancelBtn.textContent = "✕";
+			cancelBtn.onclick = cancelInlineEdit;
+
+			valueTd.appendChild(inputEl);
+			valueTd.appendChild(okBtn);
+			valueTd.appendChild(cancelBtn);
+
+			// focus the input
+			if (inputEl.tagName === "INPUT") {
+				inputEl.focus();
+				inputEl.select();
+			}
+		}
+
+		function cancelInlineEdit() {
+			if (_editingFieldIdx === -1) return;
+			var valueTd = document.getElementById("valueCell_" + _editingFieldIdx);
+			if (valueTd) {
+				var originalVal = valueTd.getAttribute("data-current-value");
+				valueTd.textContent = originalVal;
+			}
+			_editingFieldIdx = -1;
+		}
+
+		function commitInlineEdit(idx, fieldObj, inputEl) {
+			var newValue = inputEl.value !== undefined ? inputEl.value : inputEl.options[inputEl.selectedIndex].value;
+			var valueTd = document.getElementById("valueCell_" + idx);
+			var tableName = _currentPath[0];
+			var uid = _currentPath[1];
+
+			setStatus("Saving field " + fieldObj.fieldColumnName + "…");
+
+			ConfigurationAPI.setFieldValuesForRecords(
+				tableName, [uid], [fieldObj], [newValue],
+				function(modifiedTables, errStr) {
+					if (errStr) {
+						setStatus("Error saving: " + errStr, true);
+						cancelInlineEdit();
+						return;
+					}
+					// merge modified tables
+					for (var i = 0; i < modifiedTables.length; ++i) {
+						var found = false;
+						for (var j = 0; j < _modifiedTables.length; ++j) {
+							if (_modifiedTables[j].tableName === modifiedTables[i].tableName) {
+								_modifiedTables[j] = modifiedTables[i];
+								found = true;
+								break;
+							}
+						}
+						if (!found) _modifiedTables.push(modifiedTables[i]);
+					}
+
+					// update displayed value
+					if (valueTd) {
+						valueTd.textContent = newValue;
+						valueTd.setAttribute("data-current-value", newValue);
+					}
+					_editingFieldIdx = -1;
+
+					// invalidate cache for this record
+					var cacheKey = tableName + "/" + uid;
+					delete _fieldCache[cacheKey];
+
+					// show save button as dirty
+					if (_modifiedTables.length > 0)
+						document.getElementById("saveBtn").classList.add("dirty");
+
+					setStatus("Field saved. " + _modifiedTables.length + " table(s) modified (unsaved).");
+				},
+				_modifiedTables
+			);
+		}
+
+		// ---------- save -------------------------------------------------
+		function saveChanges() {
+			if (_modifiedTables.length === 0) {
+				alert("No unsaved changes.");
+				return;
+			}
+			ConfigurationAPI.popUpSaveModifiedTablesForm(_modifiedTables, function() {
+				_modifiedTables = [];
+				document.getElementById("saveBtn").classList.remove("dirty");
+				// refresh current view
+				if (_currentPath.length >= 2) {
+					delete _fieldCache[_currentPath[0] + "/" + _currentPath[1]];
+					showRecordView(_currentPath[0], _currentPath[1]);
+				}
+				setStatus("Changes saved.");
+			});
+		}
+
+		// ---------- reload -----------------------------------------------
+		function reloadAll() {
+			_tableCache = {};
+			_fieldCache = {};
+			_modifiedTables = [];
+			_rootTables = [];
+			document.getElementById("saveBtn").classList.remove("dirty");
+			document.getElementById("treeContent").innerHTML = '<div class="loadingMsg" style="padding:8px;">Reloading…</div>';
+			document.getElementById("contentPane").innerHTML = '<div class="loadingMsg" style="padding:20px;">Reloading…</div>';
+			loadRoot();
+		}
+
+		// ---------- helpers ----------------------------------------------
+		function niceName(str) {
+			// Remove trailing "Table" or "Configuration" to shorten
+			return str.replace(/Table$/, "").replace(/Configuration$/, " Config");
+		}
+
+		function encodeHTML(s) {
+			if (s === undefined || s === null) return "";
+			return String(s)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+		}
+
+		function setStatus(msg, isError) {
+			var sb = document.getElementById("statusBar");
+			if (!sb) return;
+			sb.innerHTML = isError
+				? '<span class="errorMsg">' + encodeHTML(msg) + '</span>'
+				: encodeHTML(msg);
+		}
+
+		// toggle tree pane
+		function toggleTreePane() {
+			var tp = document.getElementById("treePane");
+			var btn = document.getElementById("treePaneToggle");
+			if (tp.classList.contains("collapsed")) {
+				tp.classList.remove("collapsed");
+				btn.textContent = "◀";
+			} else {
+				tp.classList.add("collapsed");
+				btn.textContent = "▶";
+			}
+		}
+
+	</script>
+</head>
+
+<body onload="init()">
+
+	<!-- Top Navigation Bar -->
+	<div id="topBar">
+		<span class="logo">⚙ otsdaq ODB</span>
+		<div class="separator"></div>
+		<span class="groupInfo" id="groupInfo">Loading…</span>
+		<div class="spacer"></div>
+		<button onclick="reloadAll()" title="Reload all configuration data">↺ Reload</button>
+		<button id="saveBtn" onclick="saveChanges()" title="Save modified tables to database">💾 Save Changes</button>
+	</div>
+
+	<!-- Breadcrumb Bar -->
+	<div id="breadcrumbBar">
+		<span class="crumb" onclick="navigateTo([])">root</span>
+	</div>
+
+	<!-- Main Layout -->
+	<div id="mainLayout">
+
+		<!-- Left Tree Pane -->
+		<div id="treePane">
+			<div id="treePaneToggle" onclick="toggleTreePane()" title="Toggle tree pane">◀</div>
+			<div id="treeContent">
+				<div class="loadingMsg" style="padding:8px;font-size:12px;">Loading…</div>
+			</div>
+		</div>
+
+		<!-- Right Content Pane -->
+		<div id="contentPane">
+			<div class="loadingMsg" style="padding:20px;">Loading configuration…</div>
+		</div>
+
+	</div>
+
+	<!-- Status Bar -->
+	<div id="statusBar">Ready.</div>
+
+</body>
+</html>
