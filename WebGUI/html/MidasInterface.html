@@ -424,6 +424,14 @@
 			text-align: center;
 		}
 
+		/* ── Relative path annotation in key cell ───────────── */
+		.pathNote {
+			color: #999;
+			font-size: 10px;
+			font-weight: normal;
+			margin-left: 4px;
+		}
+
 	</style>
 
 	<script>
@@ -598,8 +606,8 @@
 			for (var i = 0; i < allHdrs.length; ++i)
 				allHdrs[i].classList.remove("active");
 			var allRecs = document.querySelectorAll(".treeRecord");
-			for (var i = 0; i < allRecs.length; ++i)
-				allRecs[i].classList.remove("active");
+			for (var j = 0; j < allRecs.length; ++j)
+				allRecs[j].classList.remove("active");
 
 			if (_currentPath.length >= 1) {
 				var hdr = document.querySelector("#treeSection_" + _currentPath[0] + " > .treeSectionHeader");
@@ -839,7 +847,7 @@
 						keyTd.textContent = fieldName;
 						if (relPath && relPath !== "/") {
 							var pathNote = document.createElement("span");
-							pathNote.style.cssText = "color:#999;font-size:10px;font-weight:normal;margin-left:4px;";
+							pathNote.className = "pathNote";
 							pathNote.textContent = "(" + relPath.replace(/^\/|\/$/g,"") + ")";
 							keyTd.appendChild(pathNote);
 						}
@@ -902,7 +910,7 @@
 		// ---------- inline edit ------------------------------------------
 		var _editingFieldIdx = -1;
 
-		function startInlineEdit(idx, fieldObj, currentVal, choices) {
+		function startInlineEdit(idx, fieldInfo, currentVal, choices) {
 			if (_editingFieldIdx === idx) return; // already editing
 			if (_editingFieldIdx !== -1) cancelInlineEdit(); // cancel previous
 
@@ -931,7 +939,7 @@
 				inputEl.className = "inlineEditInput";
 				inputEl.value = currentVal;
 				inputEl.onkeydown = function(e) {
-					if (e.key === "Enter") commitInlineEdit(idx, fieldObj, inputEl);
+					if (e.key === "Enter") commitInlineEdit(idx, fieldInfo, inputEl);
 					else if (e.key === "Escape") cancelInlineEdit();
 				};
 			}
@@ -939,7 +947,7 @@
 			var okBtn = document.createElement("button");
 			okBtn.className = "inlineOk";
 			okBtn.textContent = "✓";
-			okBtn.onclick = function() { commitInlineEdit(idx, fieldObj, inputEl); };
+			okBtn.onclick = function() { commitInlineEdit(idx, fieldInfo, inputEl); };
 
 			var cancelBtn = document.createElement("button");
 			cancelBtn.className = "inlineCancel";
@@ -967,16 +975,22 @@
 			_editingFieldIdx = -1;
 		}
 
-		function commitInlineEdit(idx, fieldObj, inputEl) {
-			var newValue = inputEl.value !== undefined ? inputEl.value : inputEl.options[inputEl.selectedIndex].value;
+		function getInputValue(inputEl) {
+			if (inputEl.tagName === "SELECT")
+				return inputEl.options[inputEl.selectedIndex].value;
+			return inputEl.value;
+		}
+
+		function commitInlineEdit(idx, fieldInfo, inputEl) {
+			var newValue = getInputValue(inputEl);
 			var valueTd = document.getElementById("valueCell_" + idx);
 			var tableName = _currentPath[0];
 			var uid = _currentPath[1];
 
-			setStatus("Saving field " + fieldObj.fieldColumnName + "…");
+			setStatus("Saving field " + fieldInfo.fieldColumnName + "…");
 
 			ConfigurationAPI.setFieldValuesForRecords(
-				tableName, [uid], [fieldObj], [newValue],
+				tableName, [uid], [fieldInfo], [newValue],
 				function(modifiedTables, errStr) {
 					if (errStr) {
 						setStatus("Error saving: " + errStr, true);
