@@ -349,6 +349,17 @@
 			min-width: 100px;
 		}
 
+		.inlineEditCustomInput {
+			font-family: 'Inconsolata', monospace;
+			font-size: 13px;
+			padding: 1px 4px;
+			border: 1px solid #aa6600;
+			border-radius: 2px;
+			width: 120px;
+			min-width: 60px;
+			margin-left: 4px;
+		}
+
 		.inlineOk, .inlineCancel {
 			font-size: 11px;
 			padding: 1px 6px;
@@ -911,7 +922,7 @@
 						valueTd.textContent = currentVal;
 						valueTd.setAttribute("data-field-idx", idx);
 						valueTd.setAttribute("data-current-value", currentVal);
-						valueTd.onclick = function() { startInlineEdit(idx, f, currentVal, choices); };
+						valueTd.onclick = function() { startInlineEdit(idx, f, currentVal, choices, dataType); };
 
 						tr.appendChild(keyTd);
 						tr.appendChild(typeTd);
@@ -958,7 +969,7 @@
 		// ---------- inline edit ------------------------------------------
 		var _editingFieldIdx = -1;
 
-		function startInlineEdit(idx, fieldInfo, currentVal, choices) {
+		function startInlineEdit(idx, fieldInfo, currentVal, choices, dataType) {
 			if (_editingFieldIdx === idx) return; // already editing
 			if (_editingFieldIdx !== -1) cancelInlineEdit(); // cancel previous
 
@@ -968,48 +979,121 @@
 
 			valueTd.textContent = "";
 
-			var inputEl;
-			if (choices && choices.length > 0) {
-				// dropdown for fixed-choice fields
-				inputEl = document.createElement("select");
-				inputEl.className = "inlineEditSelect";
-				for (var i = 0; i < choices.length; ++i) {
-					var opt = document.createElement("option");
-					opt.value = choices[i];
-					opt.textContent = choices[i];
-					if (choices[i] === currentVal) opt.selected = true;
-					inputEl.appendChild(opt);
-				}
-			} else {
-				// free-text input
-				inputEl = document.createElement("input");
-				inputEl.type = "text";
-				inputEl.className = "inlineEditInput";
-				inputEl.value = currentVal;
-				inputEl.onkeydown = function(e) {
-					if (e.key === "Enter") commitInlineEdit(idx, fieldInfo, inputEl);
+			var dt = dataType || "";
+			var CUSTOM_SENTINEL = "\x00__custom__";
+
+			// activeRef.el always points to the element whose value should be committed
+			var activeRef = { el: null };
+
+			// Helper: create a typed text/number/date input
+			function makeTypedInput(val, inputType) {
+				var inp = document.createElement("input");
+				inp.type = inputType || "text";
+				inp.className = "inlineEditInput";
+				inp.value = val !== undefined ? val : "";
+				inp.onkeydown = function(e) {
+					if (e.key === "Enter")  commitInlineEdit(idx, fieldInfo, activeRef.el);
 					else if (e.key === "Escape") cancelInlineEdit();
 				};
+				return inp;
+			}
+
+			if (dt === "Bool" || dt === "YesNo" || dt === "TrueFalse" || dt === "OnOff") {
+				// Boolean types: fixed two-value dropdown, no custom entry
+				var boolChoices = dt === "YesNo"     ? ["Yes", "No"]
+				                : dt === "TrueFalse" ? ["True", "False"]
+				                : dt === "OnOff"     ? ["On", "Off"]
+				                :                      ["1", "0"];
+				var sel = document.createElement("select");
+				sel.className = "inlineEditSelect";
+				for (var bi = 0; bi < boolChoices.length; ++bi) {
+					var bopt = document.createElement("option");
+					bopt.value = boolChoices[bi];
+					bopt.textContent = boolChoices[bi];
+					if (boolChoices[bi] === currentVal) bopt.selected = true;
+					sel.appendChild(bopt);
+				}
+				activeRef.el = sel;
+				valueTd.appendChild(sel);
+
+			} else if (choices && choices.length > 0) {
+				// Fixed-choice dropdown with "-- custom --" escape hatch
+				var currentIsCustom = currentVal !== "" && choices.indexOf(currentVal) === -1;
+
+				var sel = document.createElement("select");
+				sel.className = "inlineEditSelect";
+				for (var ci = 0; ci < choices.length; ++ci) {
+					var copt = document.createElement("option");
+					copt.value = choices[ci];
+					copt.textContent = choices[ci];
+					if (!currentIsCustom && choices[ci] === currentVal) copt.selected = true;
+					sel.appendChild(copt);
+				}
+				var customOpt = document.createElement("option");
+				customOpt.value = CUSTOM_SENTINEL;
+				customOpt.textContent = "-- custom --";
+				if (currentIsCustom) customOpt.selected = true;
+				sel.appendChild(customOpt);
+
+				var customInp = document.createElement("input");
+				customInp.type = "text";
+				customInp.className = "inlineEditCustomInput";
+				customInp.placeholder = "enter custom value";
+				customInp.value = currentIsCustom ? currentVal : "";
+				customInp.style.display = currentIsCustom ? "inline-block" : "none";
+				customInp.onkeydown = function(e) {
+					if (e.key === "Enter")  commitInlineEdit(idx, fieldInfo, activeRef.el);
+					else if (e.key === "Escape") cancelInlineEdit();
+				};
+
+				activeRef.el = currentIsCustom ? customInp : sel;
+
+				sel.onchange = function() {
+					if (sel.value === CUSTOM_SENTINEL) {
+						customInp.style.display = "inline-block";
+						customInp.focus();
+						customInp.select();
+						activeRef.el = customInp;
+					} else {
+						customInp.style.display = "none";
+						activeRef.el = sel;
+					}
+				};
+
+				valueTd.appendChild(sel);
+				valueTd.appendChild(customInp);
+
+			} else {
+				// Free input — pick type based on column data type
+				var inputType = "text";
+				if (dt === "NUMBER") {
+					inputType = "number";
+				} else if (dt.indexOf("TIMESTAMP") !== -1 || dt.indexOf("DATE") !== -1) {
+					inputType = "datetime-local";
+				}
+				var inp = makeTypedInput(currentVal, inputType);
+				activeRef.el = inp;
+				valueTd.appendChild(inp);
 			}
 
 			var okBtn = document.createElement("button");
 			okBtn.className = "inlineOk";
 			okBtn.textContent = "✓";
-			okBtn.onclick = function() { commitInlineEdit(idx, fieldInfo, inputEl); };
+			okBtn.onclick = function() { commitInlineEdit(idx, fieldInfo, activeRef.el); };
 
 			var cancelBtn = document.createElement("button");
 			cancelBtn.className = "inlineCancel";
 			cancelBtn.textContent = "✕";
 			cancelBtn.onclick = cancelInlineEdit;
 
-			valueTd.appendChild(inputEl);
 			valueTd.appendChild(okBtn);
 			valueTd.appendChild(cancelBtn);
 
-			// focus the input
-			if (inputEl.tagName === "INPUT") {
-				inputEl.focus();
-				inputEl.select();
+			// Focus the active input
+			var focusEl = activeRef.el;
+			if (focusEl && focusEl.tagName === "INPUT") {
+				focusEl.focus();
+				focusEl.select();
 			}
 		}
 
