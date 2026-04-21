@@ -180,6 +180,7 @@ try
 }
 catch(...)
 {
-	std::cout << "-------------> !!!!!!!!! Exception caught while executing " << argv[0] << __E__;
+	std::cout << "-------------> !!!!!!!!! Exception caught while executing " << argv[0]
+	          << __E__;
 	return -1;
 }
