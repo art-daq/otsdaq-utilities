@@ -108,6 +108,7 @@ SubsystemLaunch.create = function() {
 	var _fsmName, _fsmWindowName;
 	var _fsmNameArr;
 	var _getStatusTimer = 0;
+	var _statusRequestNonce = 0; //increments to invalidate stale async status callbacks
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
@@ -399,7 +400,7 @@ SubsystemLaunch.create = function() {
 
 				il = document.createElement("div");
 				il.setAttribute("id","runDurationDiv");
-				il.setAttribute("style","float: left; margin: 7px 10px;");
+				il.setAttribute("style","float: left; margin: 7px 10px 0 10px;");
 				str = "<select id='runDurationSelect' style='padding: 4px; font-size: 14px;' "+
 					"onchange='SubsystemLaunch.launcher.handleDurationSelect(this.value);'>";
 				var tmpOptions = ["Open-ended","Second(s)","Minute(s)","Hour(s)"];
@@ -507,15 +508,18 @@ SubsystemLaunch.create = function() {
 					str += "</td><td  >";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Configure the entire System (all included subsystems)'" +
 						">Configure</button>";
 					// str += "<button class='systemFsmActionButton' id='systemManualFsmAction' " +
 					// 	"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 					// 	">Start</button>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Stop' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Stop the entire System (all included subsystems)'" +
 						">Stop</button>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Halt' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
+						"title='Halt the entire System (all included subsystems)'" +
 						">Halt</button>";
 					str += "</td></tr>";
 				}
@@ -736,14 +740,17 @@ SubsystemLaunch.create = function() {
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Configure subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Configure</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Stop subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Stop</button>";
 							str += "<button id='subsystem_" + fieldIds[i] + "_select_" + s +
 								"' onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, " + s + ");'" +
 								"style='margin-right:10px'" +
+								"title='Halt subsystem &apos;" + SubsystemLaunch.subsystems[s].name + "&apos;'" +
 								">Halt</button>";
 						}
 						else if (fieldIds[i] == "configAlias") {
@@ -838,7 +845,6 @@ SubsystemLaunch.create = function() {
 		var tdiv = document.getElementById("systemStatusDiv");
 		var sdiv = document.getElementById("subsystemDiv");
 
-
 		// sdiv.style.left = (sdivX-20) + "px";
 		// sdiv.style.top = sdivY + "px";
 		// sdiv.style.height = sdivH + "px";
@@ -852,7 +858,6 @@ SubsystemLaunch.create = function() {
 			sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
 
-
 		//check if need extra new line at top to avoid FSM select
 		var dropdownContainer = document.getElementById('fsm-dropdown-div');
 		var runButtonContainer = document.getElementById('runDivContainer');
@@ -860,7 +865,7 @@ SubsystemLaunch.create = function() {
 			if(dropdownContainer.offsetLeft + dropdownContainer.offsetWidth + 20 >
 					runButtonContainer.offsetLeft) {
 				Debug.log("Need extra space");
-				document.getElementById("runDiv").style.paddingTop = "78px";
+				document.getElementById("runDiv").style.paddingTop = "75px";
 			}
 			else
 			{
@@ -875,9 +880,13 @@ SubsystemLaunch.create = function() {
 	//getCurrentStatus ~~
 	var _getStatusCounter = 0;
 	var _updatesubsystemNamesCounter = 0;
+	function invalidatePendingStatusResponses() {
+		++_statusRequestNonce;
+	}
 	function getCurrentStatus() {
 		// Debug.log("getCurrentStatus()");
 		window.clearTimeout(_getStatusTimer);
+		const currentStatusNonce = ++_statusRequestNonce;
 
 		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
 		//	.. so only get run number 1:10
@@ -886,7 +895,9 @@ SubsystemLaunch.create = function() {
 				"&fsmName=" + _fsmName +
 				"&getRunNumber=" + (((_getStatusCounter++)%10)==0?"1":"0"),
 				"",
-				localGetStatusHandler,/*returnHandler*/
+				function(req) {
+					localGetStatusHandler(req, currentStatusNonce);
+				},/*returnHandler*/
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
 				0 /*callHandlerOnErr*/,
@@ -898,7 +909,11 @@ SubsystemLaunch.create = function() {
 		return;
 
 		//===========
-		function localGetStatusHandler(req) {
+		function localGetStatusHandler(req, responseNonce) {
+			if(responseNonce != _statusRequestNonce) {
+				Debug.log("Ignoring stale status response",responseNonce,_statusRequestNonce);
+				return;
+			}
 
 			//subsystems --------------------
 			{
@@ -1049,7 +1064,7 @@ SubsystemLaunch.create = function() {
 			el = document.getElementById("runDurationDiv");
 			el.style.display = "block";
 			el = document.getElementById("runDurationText");
-			el.style.display = "block";
+			el.innerText = "duration";
 
 		}
 		else //show iterator status
@@ -1063,11 +1078,11 @@ SubsystemLaunch.create = function() {
 			el.style.display = "none";
 			el = document.getElementById("runDurationDiv");
 			el.style.display = "none";
-			el = document.getElementById("runDurationText");
-			el.style.display = "none";
+			let el2 = document.getElementById("runDurationText");
 
 			el = document.getElementById("runCountInputUnits");
 			var str = "";
+			var str2 = "";
 			var inRun = SubsystemLaunch.system.state == "Running" && !SubsystemLaunch.system.inTransition;
 
 			if (SubsystemLaunch.iterator.activePlan == "---GENERATED_PLAN---") {
@@ -1090,18 +1105,24 @@ SubsystemLaunch.create = function() {
 				}
 
 				if(inRun)
-					str += ", Time-in-Run";
+				{
+					str += ",&nbsp;";
+					str2 += "Time-in-Run";
+				}
 				else
-					str += ", Time-on-command" +
+				{
+					str += ",&nbsp;";
+					str2 += "Time-on-command" +
 						(SubsystemLaunch.system.inTransition && SubsystemLaunch.system.transition == "Stopping"?
 						" Stop":
 						(TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]?
 							(" " + TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]):""));
+				}
 
 				if(SubsystemLaunch.iterator.genRunDuration == -1 || !inRun)
-					str += ": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
+					str2 += ": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
 				else
-					str += ": " + SubsystemLaunch.iterator.currentCommandDuration +
+					str2 += ": " + SubsystemLaunch.iterator.currentCommandDuration +
 							" of " + SubsystemLaunch.iterator.genRunDuration +
 							" seconds";
 
@@ -1109,16 +1130,20 @@ SubsystemLaunch.create = function() {
 			else if(inRun) //likely, Iterator left open-ended run
 				str += "In open-ended Run";
 			else if(SubsystemLaunch.system.activeFsmWindow == "iterator")
+			{
 				str += "Command #" + SubsystemLaunch.iterator.currentCommandIndex +
 					" of " + SubsystemLaunch.iterator.currentNumberOfCommands +
-					", Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
+					",&nbsp;";
+				str2 += "Iteration #" + SubsystemLaunch.iterator.currentCommandIteration +
 					", Time-on-command" +
 					(SubsystemLaunch.system.inTransition && SubsystemLaunch.system.transition == "Stopping"?
 					" Stop":
 					(TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]?
 						(" " + TRANSLATE_ITERATOR_COMMANDS[SubsystemLaunch.iterator.currentCommandType]):"")) +
 					": " + SubsystemLaunch.iterator.currentCommandDuration + " seconds";
-			el.innerText = str;
+			}
+			el.innerHTML = str;
+			el2.innerText = str2;
 		} // end show stop button and iterator status
 
 
@@ -1408,7 +1433,7 @@ SubsystemLaunch.create = function() {
 		dropdownContainer.id = 'fsm-dropdown-div';
 		dropdownContainer.style.cssText = `
 			position: absolute;
-			top: 16px;
+			top: 11px;
 			left: 10px;
 			z-index: 1000;
 			display: block;
@@ -1592,6 +1617,7 @@ SubsystemLaunch.create = function() {
 							return;
 						}
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
@@ -1682,6 +1708,7 @@ SubsystemLaunch.create = function() {
 				Debug.log("Do haltIterator");
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1728,6 +1755,7 @@ SubsystemLaunch.create = function() {
 				Debug.log("Do stop launcher");
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1776,6 +1804,7 @@ SubsystemLaunch.create = function() {
 
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1811,6 +1840,7 @@ SubsystemLaunch.create = function() {
 						Debug.log("Trying to move top-level to Halted",_fsmName,
 								"moveTopLevelAttempts",moveTopLevelAttempts);
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
@@ -1823,6 +1853,7 @@ SubsystemLaunch.create = function() {
 								getCurrentStatus();
 
 								window.clearTimeout(_getStatusTimer);
+								invalidatePendingStatusResponses();
 								//force state display for user feedback
 								SubsystemLaunch.system.inTransition = true;
 								SubsystemLaunch.system.transition = "Launching " + command;
@@ -1887,6 +1918,7 @@ SubsystemLaunch.create = function() {
 
 
 				window.clearTimeout(_getStatusTimer);
+				invalidatePendingStatusResponses();
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -1941,11 +1973,15 @@ SubsystemLaunch.create = function() {
 		//at this point, ready to send command!
 
 		window.clearTimeout(_getStatusTimer);
+		invalidatePendingStatusResponses();
 
 		//force state display for user feedback
 		SubsystemLaunch.subsystems[subsystemIndex].status = "Launching " + command;
 		SubsystemLaunch.subsystems[subsystemIndex].progress = 0;
 		displayStatus();
+
+		if(event)
+			event.stopPropagation(); //to prevent hierarchy of click handlers
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=commandRemoteSubsystem" +
 			"&fsmName=" + SubsystemLaunch.launcher.getFsmName() +
@@ -2309,6 +2345,7 @@ SubsystemLaunch.create = function() {
 						Debug.log("User chose to halt!");
 
 						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 						SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -2360,6 +2397,7 @@ SubsystemLaunch.create = function() {
 					Debug.log("User chose to halt!");
 
 					window.clearTimeout(_getStatusTimer);
+					invalidatePendingStatusResponses();
 					_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 					SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -2485,6 +2523,7 @@ SubsystemLaunch.create = function() {
 			Debug.logv({logEntry});
 
 			window.clearTimeout(_getStatusTimer);
+			invalidatePendingStatusResponses();
 			_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
 			SubsystemLaunch.system.error = ""; //clear error for next command response
@@ -2531,7 +2570,8 @@ SubsystemLaunch.create = function() {
 	this.handleCheckbox = function (c, el) {
 		var val = el.checked;
 		Debug.log("handleCheckbox", c, val);
-		event.stopPropagation();
+		if(event)
+			event.stopPropagation();
 
 		var field = "fsmIncluded";
 		var targetSubsystem = "";
