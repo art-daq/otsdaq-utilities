@@ -16,7 +16,9 @@ if [[ ! -f ".clang-format" ]]; then
 fi
 
 # Enforce that the current directory is the top level of a git repository
-if [[ "$(git rev-parse --show-toplevel 2>/dev/null)" != "${PWD}" ]]; then
+git_toplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
+current_dir="$(pwd -P)"
+if [[ -z "${git_toplevel}" || "${git_toplevel}" != "${current_dir}" ]]; then
 	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: ${PWD} is not the top level of a git repository. Run ots_git_format_apply.sh from a directory that is the top level of a git repository." >&2
 	exit 1
 fi
