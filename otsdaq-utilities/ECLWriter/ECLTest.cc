@@ -36,7 +36,7 @@ std::string encodeURIComponent(const std::string& sourceStr)
 	return retStr;
 }  // end encodeURIComponent()
 
-/// IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
+/// IMPORTANT NOTE!!! avoid posting passwords to linux history, copied areas, or repositories!
 ///  consider adding this to a setup script and using environment variables for your
 ///  passwords!
 ///		#setup environment for eLOG ECL writing
@@ -52,10 +52,14 @@ std::string encodeURIComponent(const std::string& sourceStr)
 ///				export ECL_PASSWORD=$eclpass
 ///			fi
 ///
+/// Then usage would be like:
+///		ECLTest --host $ECL_URL --user $ECL_USER_NAME --pwd $ECL_PASSWORD --cat "$ECL_CATEGORY" --title "Test Message" --msg "This is a test message from ECLTest.cc"
+///
 /// Note: add quotes for any input parameter with spaces
 ///
 /// use option -h or --help for help
 int main(int argc, char* argv[])
+try
 {
 	std::ostringstream descstr;
 	descstr << argv[0]
@@ -147,6 +151,8 @@ int main(int argc, char* argv[])
 	eclEntry.form(form);
 
 	ECLConnection eclConn(ECLUser, ECLPwd, ECLHost);
+	ECLHost = eclConn.getSafeURL();
+	__COUTV__(ECLHost);
 
 	if(ECLCategory == "GetRecent")
 	{
@@ -171,4 +177,9 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
+}
+catch(...)
+{
+	std::cout << "-------------> !!!!!!!!! Exception caught while executing " << argv[0] << __E__;
+	return -1;
 }
