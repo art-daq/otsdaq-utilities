@@ -11,13 +11,13 @@ fi
 
 # Enforce that a .clang-format file exists in the current directory
 if [[ ! -f ".clang-format" ]]; then
-	echo "Error: no .clang-format file found in ${PWD}. Run this script from a directory containing .clang-format." >&2
+	echo "Error: no .clang-format file found in ${PWD}. Run ots_git_format_apply.sh from a directory containing .clang-format." >&2
 	exit 1
 fi
 
 # Enforce that the current directory is the top level of a git repository
 if [[ "$(git rev-parse --show-toplevel 2>/dev/null)" != "${PWD}" ]]; then
-	echo "Error: ${PWD} is not the top level of a git repository." >&2
+	echo "Error: ${PWD} is not the top level of a git repository. Run ots_git_format_apply.sh from a directory that is the top level of a git repository." >&2
 	exit 1
 fi
 
