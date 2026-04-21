@@ -45,9 +45,11 @@ std::string encodeURIComponent(const std::string& sourceStr)
 ///		 	export ECL_CATEGORY="general"
 ///			export ECL_URL="https://hostname:8443/ECL/project"
 ///			if [ "x$ECL_PASSWORD" == "x" ]; then #when ECL password is not setup, prompt user
-///				stty -echo printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
+///				stty -echo
+///				printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
 ///  			read eclpass
-///				stty echo export ECL_PASSWORD=$eclpass
+///				stty echo
+///				export ECL_PASSWORD=$eclpass
 ///			fi
 ///
 /// Note: add quotes for any input parameter with spaces
