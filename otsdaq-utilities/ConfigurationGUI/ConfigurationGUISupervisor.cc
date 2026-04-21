@@ -3669,9 +3669,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 				{
 					if(view.getDataView()[r][col] == "" ||
 					   view.getDataView()[r][col] ==
-					       TableViewColumnInfo::DATATYPE_STRING_DEFAULT ||
-					   view.getDataView()[r][col] ==
-					       TableViewColumnInfo::DATATYPE_STRING_ALT_DEFAULT)
+					       TableViewColumnInfo::DATATYPE_STRING_DEFAULT)
 						continue;
 
 					if(!addedThisTable)  //add this table to since it seems to have a link!

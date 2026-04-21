@@ -540,8 +540,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					__COUT__ << "out: " << out.str();
 					sock.acknowledge(out.str(),
 					                 true /* verbose */,
-					                 1500 /* max chunk size*/,
-					                 1000 /* inter-chunk delay us */);
+					                 1500 /* max chunk size*/);
 				}
 				else if(buffer.find("RunFrontendMacro") == 0)
 				{
@@ -717,8 +716,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					__COUT__ << "out: " << out.str();
 					sock.acknowledge(out.str(),
 					                 true /* verbose */,
-					                 1500 /* max chunk size*/,
-					                 1000 /* inter-chunk delay us */);
+					                 1500 /* max chunk size*/);
 				}
 				else
 				{
