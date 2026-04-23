@@ -1135,8 +1135,8 @@ Debug.callOutDebugLocales = function (str) {
 			if ((j = str.lastIndexOf(':', k - 2)) <= i || //use k-2 to avoid selecting "err: |" scenarios
 				j < 6) {
 				//not a callout, so skip ahead
-				//previous chunk
-				returnStr += str.substr(i, k - i);
+				//previous chunk (include space before |)
+				returnStr += str.substr(i, k - i + 1);
 				i = k + 1;
 				continue;
 			}
