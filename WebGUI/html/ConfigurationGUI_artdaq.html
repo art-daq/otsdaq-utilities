@@ -1559,7 +1559,7 @@
                 else // non-supervisor node handling
                 {
                     hostname = _nodes[i].hostname;
-                    if (count > 1) {
+                    if (nodeName.indexOf('*') >= 0 && _nodes[i].nodeVectorIndexString) {
                         //special multi-node name handling
 
                         nodeName = nodeName.replace(new RegExp("\\*", 'g'),
