@@ -38,7 +38,7 @@ shift
 
 echo -e "$(date +%d%b%y.%T) ecl_post.sh:${LINENO} |  \t Posting ECL message from ${AUTHOR} --> ${TITLE}: ${MESSAGE}"
 
-ECLTest --host $ECL_URL --user $ECL_USER_NAME --pwd $ECL_PASSWORD --cat "${ECL_CATEGORY}" --title "${TITLE}" --msg "From ${AUTHOR}: ${MESSAGE}"
+ECLTest --host "${ECL_URL}" --user "${ECL_USER_NAME}" --pwd "${ECL_PASSWORD}" --cat "${ECL_CATEGORY}" --title "${TITLE}" --msg "From ${AUTHOR}: ${MESSAGE}"
 
 # Print a summary result
 echo -e "$(date +%d%b%y.%T) ecl_post.sh:${LINENO} |  \t ===> Done with ecl post from ${AUTHOR} on ${HOSTNAME}!"
