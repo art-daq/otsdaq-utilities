@@ -2065,6 +2065,15 @@
                 "Toggle group search controls." +
                 "'>" +
                 "Search in Groups</a>";
+			var search_info = "Search for keywords in table content of specific groups or latest keys. " +
+				"\\nUse the keyword field to search all tables in the group for specific text. " +
+				"\\nUse the group keys field to specify a range of group keys to search, such as \\\"1-5\\\" or \\\"-3\\\" to search the latest 3 keys. " +
+				"\\nUse the minimum occurrence threshold field to specify how many of the keywords must be present in the table.";
+			str += "<div id='config_select_info' " +
+				"class='config_select_info' " +
+				"title='Click for more details on the Search in Groups'" +
+				"onclick='Debug.info(\"" + search_info + "\")' >" +
+				"i</div>";
 			str += "<br>";
 
 
