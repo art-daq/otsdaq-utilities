@@ -160,17 +160,42 @@ ContextToggle.create = function() {
 		var infoEl = document.getElementById("activeGroupInfo");
 		if(!infoEl) return;
 
+		function renderActiveGroupInfo()
+		{
+			var ag = ConfigurationAPI._activeGroups;
+			if(ag && ag.Context && ag.Context.groupName)
+			{
+				infoEl.innerHTML = "Active Context Group: <b>" +
+					ag.Context.groupName + "</b> (Key: <b>" +
+					ag.Context.groupKey + "</b>)";
+			}
+			else
+			{
+				infoEl.innerHTML = "Active Context Group: <b>None</b>";
+			}
+		}
+
 		var ag = ConfigurationAPI._activeGroups;
 		if(ag && ag.Context && ag.Context.groupName)
 		{
-			infoEl.innerHTML = "Active Context Group: <b>" +
-				ag.Context.groupName + "</b> (Key: <b>" +
-				ag.Context.groupKey + "</b>)";
+			renderActiveGroupInfo();
+			return;
 		}
-		else
-		{
-			infoEl.innerHTML = "Active Context Group: <b>None</b>";
-		}
+
+		infoEl.innerHTML = "Active Context Group: <b>Loading...</b>";
+		ConfigurationAPI.getActiveGroups(function(activeGroups, err) {
+			if(err)
+			{
+				Debug.log("Error reading active groups: " + err);
+				infoEl.innerHTML = "Active Context Group: <b>None</b>";
+				return;
+			}
+
+			if(activeGroups)
+				ConfigurationAPI._activeGroups = activeGroups;
+
+			renderActiveGroupInfo();
+		});
 	} //end updateActiveGroupInfo()
 
 
