@@ -10668,6 +10668,25 @@
 			//Debug.log("shift=" + shiftIsDown);
 
 
+			// Hotkey: press 'e' or 'p' to activate pencil (toggle free-form editing)
+			// when a fixed-choice dropdown is active
+			if ((e.key == 'e' || e.key == 'p') && !shiftIsDown)
+			{
+				var _fceIcon = document.getElementById("fixedChoice-editIcon");
+				if(_fceIcon && _fceIcon.style.display == "block")
+				{
+					// Only activate if the select box is currently shown (not already in free-form mode)
+					var _fceSel = document.getElementById("fixedChoice-editSelectBox");
+					if(_fceSel && _fceSel.style.display != "none")
+					{
+						handleFixedChoiceEditToggle();
+						if(e.preventDefault) e.preventDefault();
+						if(e.stopPropagation) e.stopPropagation();
+						return false;
+					}
+				}
+			}
+
 			//handle text area specially
 			if (!shiftIsDown) {
 				var tel;

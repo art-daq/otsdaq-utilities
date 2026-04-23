@@ -9,7 +9,10 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 }
 
 /* make buttons and links have a hand cursor */
-input[type="button"], button, a, select {
+input[type="button"], button, a, select,
+[onclick], label,
+.node-icon, .node-viewFclIcon,
+.node-headerText, .switch {
     cursor: pointer;
 }
 
@@ -238,7 +241,6 @@ input[type="button"], button, a, select {
 
     .node-editIcon:hover {
         background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
-        cursor: pointer;
     }
 
 .node-deleteIcon {
@@ -251,7 +253,6 @@ input[type="button"], button, a, select {
 
     .node-deleteIcon:hover {
         background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-trashCanHover.png);
-        cursor: pointer;
     }
 
 .node-viewFclIcon {
