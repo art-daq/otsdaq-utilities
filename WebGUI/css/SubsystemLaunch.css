@@ -63,6 +63,7 @@
 			color: white; /* rgb(136, 102, 102); */
 			font-size: 20px;
 			font-family: "Comfortaa", arial;
+			padding-bottom: 10px;
 		}
 
 		#runDivContainer {
@@ -195,6 +196,20 @@
 		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-2) td,
 		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-1) td {
 			background-color: 		rgb(227, 215, 209);
+		}
+		#subsystemDiv .tableSingleRowMode tr:nth-child(even) select {
+			background-color: 		rgb(245 231 224);
+		}
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-2) select,
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-1) select {
+			background-color: 		rgb(245 231 224);
+		}
+		#subsystemDiv .tableSingleRowMode tr:nth-child(even) button {
+			background-color: 		rgb(245 231 224);
+		}
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-2) button,
+		#subsystemDiv .tableDoubleRowMode tr:nth-child(4n-1) button {
+			background-color: 		rgb(245 231 224);
 		}
 		.subsystem_fsmIncluded {
 			background-color: white !important;

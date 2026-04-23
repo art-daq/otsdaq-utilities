@@ -36,6 +36,45 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 
 .setStatus { /* write status button */
 	margin: 2px;
+	cursor: pointer;
+}
+
+.toggleOn {
+	margin: 2px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	background-color: #2e7d32;
+	color: white;
+	font-size: 12px;
+	font-weight: bold;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+	transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.toggleOn:hover {
+	background-color: #43a047;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.toggleOff {
+	margin: 2px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	background-color: #c62828;
+	color: white;
+	font-size: 12px;
+	font-weight: bold;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+	transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.toggleOff:hover {
+	background-color: #e53935;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 .appBlockContainer {
@@ -73,6 +112,7 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 	float: left;
 	font-size: 10px;
 	color: white;
+	cursor: pointer;
 }
 
 .rocBox {
@@ -83,6 +123,7 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 	float: right;
 	font-size: 10px;
 	color: white;
+	cursor: pointer;
 }
 
 .fiber {

@@ -642,19 +642,20 @@ try
 		    CgiDataUtilities::getData(cgiIn, "tableName");                     // from GET
 		std::string versionStr = CgiDataUtilities::getData(cgiIn, "version");  // from GET
 		int dataOffset = CgiDataUtilities::getDataAsInt(cgiIn, "dataOffset");  // from GET
-		int chunkSize  = CgiDataUtilities::getDataAsInt(cgiIn, "chunkSize");   // from GET
-		//chunkSize is currently ignored, could use to get a few rows at a time
-
-		std::string allowIllegalColumns =
-		    CgiDataUtilities::getData(cgiIn, "allowIllegalColumns");  // from GET
-		__SUP_COUT__ << "allowIllegalColumns: " << (allowIllegalColumns == "1") << __E__;
-
-		std::string rawData = CgiDataUtilities::getData(cgiIn, "rawData");  // from GET
-		__SUP_COUT__ << "rawData: " << (rawData == "1") << __E__;
+		int chunkSize  = CgiDataUtilities::getDataAsInt(
+            cgiIn,
+            "chunkSize");  // from GET (chunkSize is currently ignored, could use to get a few rows at a time)
+		bool descriptionOnly = CgiDataUtilities::getDataAsInt(
+		    cgiIn, "descriptionOnly");  // from GET (used to get tooltip info)
+		bool allowIllegalColumns =
+		    CgiDataUtilities::getDataAsInt(cgiIn, "allowIllegalColumns");  // from GET
+		bool rawData = CgiDataUtilities::getDataAsInt(cgiIn, "rawData");   // from GET
 
 		__SUP_COUT__ << "getSpecificTable: " << tableName << " versionStr: " << versionStr
 		             << " chunkSize: " << chunkSize << " dataOffset: " << dataOffset
-		             << __E__;
+		             << " descriptionOnly: " << descriptionOnly
+		             << " allowIllegalColumns: " << allowIllegalColumns
+		             << " rawData: " << rawData << __E__;
 
 		TableVersion                            version;
 		const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
@@ -714,8 +715,9 @@ try
 		                  cfgMgr,
 		                  tableName,
 		                  TableVersion(version),
-		                  (allowIllegalColumns == "1"),
-		                  (rawData == "1"));
+		                  allowIllegalColumns,
+		                  rawData,
+		                  descriptionOnly);
 		// append author column default value
 		xmlOut.addTextElementToData("DefaultRowValue", userInfo.username_);
 	}
@@ -3711,7 +3713,9 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 				{
 					if(view.getDataView()[r][col] == "" ||
 					   view.getDataView()[r][col] ==
-					       TableViewColumnInfo::DATATYPE_STRING_DEFAULT)
+					       TableViewColumnInfo::DATATYPE_STRING_DEFAULT ||
+					   view.getDataView()[r][col] ==
+					       TableViewColumnInfo::DATATYPE_STRING_ALT_DEFAULT)
 						continue;
 
 					if(!addedThisTable)  //add this table to since it seems to have a link!
@@ -6037,7 +6041,8 @@ void ConfigurationGUISupervisor::handleGetTableXML(HttpXmlDocument&        xmlOu
                                                    const std::string&      tableName,
                                                    TableVersion            version,
                                                    bool allowIllegalColumns /* = false */,
-                                                   bool getRawData /* = false */)
+                                                   bool getRawData /* = false */,
+                                                   bool descriptionOnly /* = false */)
 try
 {
 	char                 tmpIntStr[100];
@@ -6077,6 +6082,9 @@ try
 	xmlOut.addTextElementToData("TableName", tableName);  // table name
 	xmlOut.addTextElementToData("TableDescription",
 	                            table->getTableDescription());  // table name
+
+	if(descriptionOnly)
+		return;
 
 	// existing table versions
 	if(!getRawData)

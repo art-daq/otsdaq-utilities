@@ -433,44 +433,14 @@ else {
         tmpBtn.onmousedown = Desktop.handleWindowButtonDown;
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicRefresh");
-        if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX &&
-            Debug.OS_TYPE == Debug.OS_TYPE_LINUX) //Linux firefox
-        {
-            //firefox linux shows circle-arrow character slightly bigger than other firefox
-            tmpEl.innerHTML =
-                "<div style='font-size:21px; margin: -1px 0 0 -3px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME &&
-            Debug.OS_TYPE == Debug.OS_TYPE_MAC) //Mac chrome
-        {
-            //chrome on Mac shows circle-arrow smaller than Windows and Linux
-            tmpEl.innerHTML =
-                "<div style='font-size:22px; margin: -3px 0 0 1px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX)// &&
-        // Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS) //Windows firefox
-        //As of Sept 2021: Mac firefox now shows circle-arrow bigger like windows
-        {
-            //windows shows circle-arrow bigger
-            tmpEl.innerHTML =
-                "<div style='font-size:19px; margin: -3px 0 0 -2px; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
-        // else if(Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //firefox
-        // {
-        // 	//firefox shows circle-arrow character smaller
-        // 	tmpEl.innerHTML =
-        // 			"<div style='font-size:28px; margin: -4px 0 0 -1px; color:inherit;' " +
-        // 			"title='Click to refresh only this window'>↻</div>";
-        // }
-        else //chrome
-        {
-            tmpEl.innerHTML =
-                "<div style='font-size:19px; margin: 0 0 0 0; color:inherit;' " +
-                "title='Click to refresh only this window'>↻</div>";
-        }
+        tmpEl.innerHTML =
+            "<div style='display:flex;align-items:center;justify-content:center;height:100%;color:#0f2269;margin-left:1px;' " +
+            "title='Click to refresh only this window'>" +
+            "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' " +
+            "fill='none' stroke='#0f2269' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'>" +
+            "<path d='M 20.2 15.8 A 9 9 0 1 1 19.8 7.5'/>" +
+            "<polyline points='23.5,3.5 20.5,9 16,8.7'/>" +
+            "</svg></div>";
 
         //tmpEl.innerHTML = "↻";
         tmpBtn.appendChild(tmpEl);
@@ -489,7 +459,8 @@ else {
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicHelp");
         tmpEl.innerHTML =
-            "<div style='font-size:18px; color:inherit;' " +
+            "<div style='font-size:18px;display:flex;align-items:center;justify-content:center;height:100%;color:inherit;margin-top:" +
+            (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME? "3px;" : "2px;") + "' " +
             "title='Click to show the help tooltip for this window'>?</div>";   //"?";
         tmpBtn.appendChild(tmpEl);
         tmpContainer.appendChild(tmpBtn); //add button to window
@@ -534,7 +505,9 @@ else {
         tmpBtn.onmousedown = Desktop.handleWindowButtonDown;
         var tmpEl = document.createElement("div");
         tmpEl.setAttribute("class", "DesktopWindowButtonGraphicClose");
-        tmpEl.innerHTML = "x";
+        tmpEl.innerHTML =
+            "<div style='display:flex;align-items:center;justify-content:center;height:100%;color:inherit;margin-top:" +
+            (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME? "3px;" : "2px;") + "'>x</div>";
         tmpBtn.appendChild(tmpEl);
         tmpContainer.appendChild(tmpBtn); //add button to window
 

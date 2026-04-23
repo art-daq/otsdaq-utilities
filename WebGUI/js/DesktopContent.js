@@ -1070,8 +1070,14 @@ DesktopContent.showLoading = function (nextFunction) {
 				//					"text-align: center;" +
 				//					"}\n\n";
 
-				//add style element to HEAD tag
+				//add style element to HEAD tag (replace any previous load-box style)
+				var styleId = DesktopContent._loadBoxId + "-style";
+				var oldStyle;
+				while ((oldStyle = document.getElementById(styleId)) && oldStyle.parentNode)
+					oldStyle.parentNode.removeChild(oldStyle);
+
 				var style = document.createElement('style');
+				style.setAttribute('id', styleId);
 
 				if (style.styleSheet) {
 					style.styleSheet.cssText = css;
@@ -1377,7 +1383,7 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 						requestType = " '" + requestURL.substr(requestType + ("RequestType=").length) + "'";
 					else
 						requestType = "";
-					errStr = "Request " + requestType + " failed due to insufficient account permissions.";
+					errStr = "Request " + requestType + " failed due to <b>insufficient account permissions</b>. Re-login or check your access code.";
 					if (callHandlerOnErr && callHandlerOnErr < 2)
 						Debug.err(errStr);
 
@@ -2114,7 +2120,7 @@ DesktopContent.popUpVerification = function (prompt, continueFunc, replaceVal, b
 	css += "#" + DesktopContent._verifyPopUpId + "-text " +
 		"{" +
 		"color: " + textColor + ";width: " + dialogWidth + "px; " +
-		(!justDisplayAndTimeoutPopup ? "padding-bottom: 10px;" : "") +
+		(!justDisplayAndTimeoutPopup ? "padding-bottom: 10px;" : "padding-bottom: 0px;") +
 		"}\n\n";
 	//..and anything in the text div
 	css += "#" + DesktopContent._verifyPopUpId + " *" +
@@ -2126,8 +2132,14 @@ DesktopContent.popUpVerification = function (prompt, continueFunc, replaceVal, b
 		"cursor: pointer;" +
 		"}\n\n";
 
-	//add style element to HEAD tag
+	//add style element to HEAD tag (replace any previous verify-popup style)
+	var styleId = DesktopContent._verifyPopUpId + "-style";
+	var oldStyle;
+	while ((oldStyle = document.getElementById(styleId)) && oldStyle.parentNode)
+		oldStyle.parentNode.removeChild(oldStyle);
+
 	var style = document.createElement('style');
+	style.setAttribute('id', styleId);
 
 	if (style.styleSheet) {
 		style.styleSheet.cssText = css;

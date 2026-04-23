@@ -82,6 +82,7 @@ else {
         var _layoutAliasArray, _sysLayoutAliasArray;
         var _userPref_layout, _sysPref_layout;
         var _layoutDropDownDisplayed = false;
+        var _layoutDropDownTimeout = null;
         var _layoutMenuItems = [];
         var numOfUserLayouts = 5;
         var numOfSystemLayouts = 5;
@@ -518,12 +519,30 @@ else {
 
                 Debug.log("found DesktopDashboard-defaults-dropdown div and deleted", Debug.LOW_PRIORITY);
                 el.parentNode.removeChild(el);
+                clearTimeout(_layoutDropDownTimeout);
+                _layoutDropDownTimeout = null;
             }
             if (!_layoutDropDownDisplayed) return; //do not create if closing
 
             Desktop.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
                 "", Desktop.desktop.dashboard.handleDashboardLayoutWindow);
         } //end _windowDashboardLayoutsDropDown()
+
+        //==============================================================================
+        //_scheduleLayoutDropDownTimeout ~
+        //	schedules dropdown to close after inactivity
+        var _scheduleLayoutDropDownTimeout = function () {
+            clearTimeout(_layoutDropDownTimeout);
+            _layoutDropDownTimeout = setTimeout(function () {
+                _layoutDropDownDisplayed = false;
+                var el = document.getElementById("DesktopDashboard-defaults-dropdown");
+                if (el) {
+                    el.parentNode.removeChild(el);
+                    Debug.log("Auto-closing layouts dropdown due to inactivity", Debug.LOW_PRIORITY);
+                }
+                _layoutDropDownTimeout = null;
+            }, 3000); // 3 seconds
+        } //end _scheduleLayoutDropDownTimeout()
 
         //------------------------------------------------------------------
         //create PUBLIC members functions ----------------------
@@ -609,49 +628,16 @@ else {
 
         //=====================================================================================
         this.redrawRefreshButton = function () {
-            if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX &&
-                Debug.OS_TYPE == Debug.OS_TYPE_LINUX) //Linux firefox
-            {
-                //firefox on Linux shows circle-arrow character slightly bigger than other firefox
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size:30px;margin-top:-9px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_CHROME &&
-                Debug.OS_TYPE == Debug.OS_TYPE_MAC) //Mac chrome
-            {
-                //chrome on Mac shows circle-arrow smaller than Windows and Linux
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size: 23px; margin: -5px 0 0 2px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            else if (Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //&&
-            //Debug.OS_TYPE == Debug.OS_TYPE_WINDOWS) //Windows firefox
-            //As of Sept 2021: Mac firefox now shows circle-arrow bigger like windows
-            {
-                //windows shows circle-arrow bigger
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size:25px;margin-top:-10px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
-            // else if(Debug.BROWSER_TYPE == Debug.BROWSER_TYPE_FIREFOX) //firefox
-            // {
-            // 	//firefox shows circle-arrow character smaller
-            // 	_fullScreenRefreshBtn.innerHTML =
-            // 			"<div style='font-size:32px;margin-top:-12px;' title='Click to reload the desktop and all windows'>↻</div>";
-            // 	_fullScreenRefreshBtn.style.height = "16px";
-            // 	_fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            // }
-            else //chrome
-            {
-                _fullScreenRefreshBtn.innerHTML =
-                    "<div style='font-size: 22px; margin: -2px 0 0 2px;' title='Click to reload the desktop and all windows'>↻</div>";
-                _fullScreenRefreshBtn.style.height = "16px";
-                _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
-            }
+            _fullScreenRefreshBtn.innerHTML =
+                "<div style='display:flex;align-items:center;justify-content:center;height:100%; margin-top: 1px;' " +
+                "title='Click to reload the desktop and all windows'>" +
+                "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' " +
+                "fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'>" +
+                "<path d='M 20.2 15.8 A 9 9 0 1 1 19.8 7.5'/>" +
+                "<polyline points='23.5,3.5 20.5,9 16,8.7'/>" +
+                "</svg></div>";
+            _fullScreenRefreshBtn.style.height = "16px";
+            _fullScreenRefreshBtn.style.padding = "3px 10px 7px 10px";
         } //end redrawRefreshButton()
 
         //=====================================================================================
@@ -991,7 +977,23 @@ else {
                 }
 
             el.innerHTML = str;
+
+            // Add mouse event listeners for auto-close timeout
+            el.onmousemove = function() {
+                _scheduleLayoutDropDownTimeout();
+            };
+            el.onmouseenter = function() {
+                clearTimeout(_layoutDropDownTimeout);
+                _layoutDropDownTimeout = null;
+            };
+            el.onmouseleave = function() {
+                _scheduleLayoutDropDownTimeout();
+            };
+
             _dashboardElement.appendChild(el);
+
+            // Schedule initial timeout
+            _scheduleLayoutDropDownTimeout();
         } //end handleDashboardLayoutWindow()
 
         //==============================================================================
@@ -1007,7 +1009,19 @@ else {
 
             if (winLayArr[layoutID] == null) return;
             var winLayArr = winLayArr[layoutID].split(",");
-            var numOfFields = 8;
+
+            //auto-detect layout format: 10 fields (with per-window scroll) vs 8 fields (legacy)
+            var numOfFields = 8; //default to legacy format
+            var rem10 = winLayArr.length % 10;
+            var rem8 = winLayArr.length % 8;
+            if (rem10 == 0) {
+                if (rem8 == 0 && winLayArr.length > 10) {
+                    //ambiguous - check if field 8 is numeric (scroll value) to disambiguate
+                    if (!isNaN(winLayArr[8]))
+                        numOfFields = 10;
+                } else
+                    numOfFields = 10; //unambiguously new format
+            }
 
             //destroy 7 field approach (new way adds the 8th field for isMinimized)
             var num = parseInt(winLayArr.length / numOfFields); //numOfFields fields per window
@@ -1020,7 +1034,7 @@ else {
                     decodeURIComponent(winLayArr[i * numOfFields + 1]) +
                     " - ";
 
-                for (var j = 3; j < numOfFields; ++j)
+                for (var j = 3; j < 8; ++j)
                     if (j < 7)
                         str += ((j - 3) ? ", " : "") + fieldArr[j - 3] + ":" +
                             (Math.round(winLayArr[i * numOfFields + j] / 100) | 0) + "%";
@@ -1028,6 +1042,14 @@ else {
                         str += ", Minimized";
                     else if (winLayArr[i * numOfFields + j] == "2") //then maximized
                         str += ", Maximized";
+
+                //display per-window scroll position (if present in 10-field format)
+                if (numOfFields >= 10) {
+                    var winScrollX = winLayArr[i * numOfFields + 8] | 0;
+                    var winScrollY = winLayArr[i * numOfFields + 9] | 0;
+                    if (winScrollX || winScrollY)
+                        str += ", Scroll - Left:" + winScrollX + "px, Top:" + winScrollY + "px";
+                }
             }
 
             el.title = str;

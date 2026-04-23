@@ -526,6 +526,8 @@ SubsystemSquares.create = function() {
 					sdivs[i].style.background = "lightgray";
 				else if(statusString == "Running")
 					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
+				else if(statusString == "Configured")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(147, 213, 195) 10%, rgb(5, 148, 122) 60%, rgb(6, 39, 69) 100%)";
 				else
 					sdivs[i].style.background = "rgb(6 176 6)"; //"green";
 
@@ -540,7 +542,7 @@ SubsystemSquares.create = function() {
 				}
 				else
 				{
-					if(statusString == "Running")
+					if(statusString == "Running" || statusString == "Configured")
 					{
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";
@@ -612,6 +614,8 @@ SubsystemSquares.create = function() {
 					sdivs[i].style.background = "lightgray";
 				else if(statusString == "Running")
 					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
+				else if(statusString == "Configured")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(147, 213, 195) 10%, rgb(5, 148, 122) 60%, rgb(6, 39, 69) 100%)";
 				else
 					sdivs[i].style.background =  "rgb(6 176 6)"; //"green";
 
@@ -627,7 +631,7 @@ SubsystemSquares.create = function() {
 				}
 				else
 				{
-					if(statusString == "Running")
+					if(statusString == "Running" || statusString == "Configured")
 					{
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";

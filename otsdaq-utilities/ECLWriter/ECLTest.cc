@@ -36,26 +36,42 @@ std::string encodeURIComponent(const std::string& sourceStr)
 	return retStr;
 }  // end encodeURIComponent()
 
-/// IMPORTANT NOTE!!! avoid posting passwords to copied areas or repositories!
+/// IMPORTANT NOTE!!! avoid posting passwords to linux history, copied areas, or repositories!
 ///  consider adding this to a setup script and using environment variables for your
-///  passwords! 			#setup environment for eLOG ECL writing 			# NOTE! do not
-///  put username/pw in saved/committed text files 			export ECL_USER_NAME="emdaq"
-///  export ECL_CATEGORY="general" 			export
-///  ECL_URL="https://hostname:8443/ECL/project" 			if [ "x$ECL_PASSWORD"
-///  == "x" ]; then #when ECL password is not setup, prompt user 					stty
-///  -echo printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
-///  read eclpass 					stty echo export ECL_PASSWORD=$eclpass 			fi
+///  passwords!
+///		#setup environment for eLOG ECL writing
+///		# NOTE! do not put username/pw in saved/committed text files
+///			export ECL_USER_NAME="emdaq"
+///		 	export ECL_CATEGORY="general"
+///			export ECL_URL="https://hostname:8443/ECL/project"
+///			if [ "x$ECL_PASSWORD" == "x" ]; then #when ECL password is not setup, prompt user
+///				stty -echo
+///				printf "Please enter the ECL eLOG password for $ECL_USER_NAME: "
+///  			read eclpass
+///				stty echo
+///				export ECL_PASSWORD=$eclpass
+///			fi
+///
+/// Then usage would be like:
+///		ECLTest --host $ECL_URL --user $ECL_USER_NAME --pwd $ECL_PASSWORD --cat "$ECL_CATEGORY" --title "Test Message" --msg "This is a test message from ECLTest.cc"
 ///
 /// Note: add quotes for any input parameter with spaces
 ///
 /// use option -h or --help for help
 int main(int argc, char* argv[])
+try
 {
 	std::ostringstream descstr;
 	descstr << argv[0]
 	        << " --host <ECL host> --user <Username> --pwd <Password> [--cat <Category "
 	           "name>] [--title <Message "
-	           "title>] [--msg message] #add quotes for any entry with spaces";
+	           "title>] [--msg message] #add quotes for any entry with spaces"
+	        << __E__ << __E__
+	        << "Use category 'GetRecent' and title <Category name> to get recent posts "
+	           "in that category."
+	        << __E__ << "Use category 'GetCategories' to get a list of categories."
+	        << __E__;
+
 	bpo::options_description desc(descstr.str());
 	desc.add_options()("host,i", bpo::value<std::string>(), "ECL Instance Address")(
 	    "user,u", bpo::value<std::string>(), "ECL Username")(
@@ -135,6 +151,8 @@ int main(int argc, char* argv[])
 	eclEntry.form(form);
 
 	ECLConnection eclConn(ECLUser, ECLPwd, ECLHost);
+	ECLHost = eclConn.getSafeURL();
+	__COUTV__(ECLHost);
 
 	if(ECLCategory == "GetRecent")
 	{
@@ -159,4 +177,10 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
+}
+catch(...)
+{
+	std::cout << "-------------> !!!!!!!!! Exception caught while executing " << argv[0]
+	          << __E__;
+	return -1;
 }

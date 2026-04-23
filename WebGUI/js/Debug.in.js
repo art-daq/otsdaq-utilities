@@ -391,10 +391,11 @@ Debug._errBoxOffX = 0;
 Debug._errBoxOffY = 0;
 Debug._errBoxOffW = 0;
 Debug._errBoxOffH = 0;
+Debug._errBoxOffPosSv = [0,0,0,0];
 
 
 Debug._AVOID_TITLE_NEW_LINE_LENGTH = ("title='Open file in a new browser tab: \n").length;
-Debug._ERR_TRUNCATION_LENGTH = 10000;
+Debug._ERR_TRUNCATION_LENGTH = 15000;
 
 //=====================================================================================
 //Note: effectively doing this: str.replace(/\n/g , "<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -424,7 +425,20 @@ Debug.errorPopConditionString = function (str, truncLenIn) {
 		else
 			rstr += str[i];
 	if (truncLenIn !== -1 && str.length > truncLen)
+	{
+		//if there is a tag closing, run to the end of it
+		if (str.indexOf("</", truncLen) >= 0) {
+			var endIndexClose = str.indexOf(">", truncLen + 1);
+			if (endIndexClose >= 0)
+				rstr += str.substr(truncLen, endIndexClose - truncLen + 1);
+		} else {
+			var endIndex = str.indexOf(">", truncLen);
+			if (endIndex >= 0)
+				rstr += str.substr(truncLen, endIndex - truncLen + 1);
+		}
+
 		rstr += "<br>...&lt;&lt;&lt; MESSAGE TRUNCATED &gt;&gt;&gt;";
+	}
 
 	return rstr;
 } //end errorPopConditionString()
@@ -557,8 +571,10 @@ Debug.errorPop = function (err, severity) {
 			el.onmousedown = function () { console.log("debug down"); event.stopPropagation(); }
 			el.onmouseup = function () { console.log("debug up"); event.stopPropagation(); }
 
-			document.body.removeEventListener("keydown", Debug.KeyDownListener);
-			document.body.addEventListener("keydown", Debug.KeyDownListener);
+			// Use capture on window so ESC handling runs before body key listeners
+			// that may have been registered earlier.
+			window.removeEventListener("keydown", Debug.KeyDownListener, true);
+			window.addEventListener("keydown", Debug.KeyDownListener, true);
 
 
 			//add style for error to page HEAD tag
@@ -1035,7 +1051,7 @@ Debug.downloadMessages = function () {
 	var dataStr = "data:text/txt;charset=utf-8,";
 
 	var lines = Debug._errBox.innerText.split('\n');
-	for (var i = 6; i < lines.length - 2; ++i) //skip popup header and footer text
+	for (var i = 9; i < lines.length - 2; ++i) //skip popup header and footer text and arrows
 		dataStr += encodeURIComponent(lines[i] + "\n"); //encoded \n
 
 	var link = document.createElement("a");
@@ -1119,8 +1135,8 @@ Debug.callOutDebugLocales = function (str) {
 			if ((j = str.lastIndexOf(':', k - 2)) <= i || //use k-2 to avoid selecting "err: |" scenarios
 				j < 6) {
 				//not a callout, so skip ahead
-				//previous chunk
-				returnStr += str.substr(i, k - i);
+				//previous chunk (include space before |)
+				returnStr += str.substr(i, k - i + 1);
 				i = k + 1;
 				continue;
 			}
@@ -1356,7 +1372,7 @@ Debug.dockPopup = function (dockMode)
 		h = (Desktop.desktop.getDesktopHeight() - 16 - 14);
 	}
 
-	var sv = [Debug._errBoxOffX, Debug._errBoxOffY, Debug._errBoxOffW, Debug._errBoxOffH];
+
 
 	switch(dockMode) {
 		case 0: // lower 25% of parent window
@@ -1394,15 +1410,18 @@ Debug.dockPopup = function (dockMode)
 	}
 
 	//toggle back to normal if already in that position
-	if(Debug._errBoxOffX == sv[0] && Debug._errBoxOffY == sv[1] &&
-		 Debug._errBoxOffW == sv[2] && Debug._errBoxOffH == sv[3])
+	if((Debug._errBoxOffX | 0) == Debug._errBoxOffPosSv[0] && (Debug._errBoxOffY | 0) == Debug._errBoxOffPosSv[1] &&
+		 (Debug._errBoxOffW | 0) == Debug._errBoxOffPosSv[2] && (Debug._errBoxOffH | 0) == Debug._errBoxOffPosSv[3])
 	{
 		Debug._errBoxOffX = 0;
 		Debug._errBoxOffY = 0;
 		Debug._errBoxOffW = 0;
 		Debug._errBoxOffH = 0;
-	}
 
-	Debug.handleErrorResize();
+	}
+	Debug._errBoxOffPosSv = [Debug._errBoxOffX | 0, Debug._errBoxOffY | 0, Debug._errBoxOffW | 0, Debug._errBoxOffH | 0];
+
+	Debug.handleErrorResize(); //can modify Debug._errBoxOffX/Y/W/H, so save last position before updating position
+
 
 } //end Debug.dockPopup()
