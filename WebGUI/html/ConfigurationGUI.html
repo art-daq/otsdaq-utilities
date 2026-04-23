@@ -2066,7 +2066,8 @@
                 "'>" +
                 "Search in Groups</a>";
 			var search_info = "Search for keywords in table content of specific groups or latest keys. " +
-				"\\nUse the keyword field to search all tables in the group for specific text. " +
+				"\\nYou may search keywords in all groups or selected ones from the \\\"Search and Select a Group\\\" view." +
+				"\\n\\nUse the keyword field to search all tables in the group for specific text. " +
 				"\\nUse the group keys field to specify a range of group keys to search, such as \\\"1-5\\\" or \\\"-3\\\" to search the latest 3 keys. " +
 				"\\nUse the minimum occurrence threshold field to specify how many of the keywords must be present in the table.";
 			str += "<div id='config_select_info' " +
@@ -2486,10 +2487,16 @@
                         Debug.log("Match found:", { groupName: groupName, groupVersion: matchGroupVersion, tableName: tableName, tableVersion: matchTableVersion, row: matchRow, column: matchColumn });
                         var mapKey = groupName+"-"+tableName+"-"+matchColumn+"-"+matchTableVersion+"-"+matchGroupVersion;
                         if (!groupTableMap.has(mapKey))
-                            groupTableMap.set(mapKey, 0);
+                            groupTableMap.set(mapKey, 1);
                         else
                             groupTableMap.set(mapKey, groupTableMap.get(mapKey) + 1);
                     } // end groupTableMatches loop
+
+					// loop through and add to new table if threshold met
+					for (let [key, count] of groupTableMap.entries()) {
+						if(count < searchMinThreshold)
+							groupTableMap.delete(key);
+					}
 
                     // Display results
                     var resultStr = "Search Results for: <b>" + searchText + "</b>\n";
@@ -2518,7 +2525,7 @@
 							if(parts[1] == "")
 								Debug.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
                             resultStr += "\t\tColumn: <b>" + parts[2] + "</b>" +
-                                ", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i]) + 1) + "</b>" +
+                                ", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i])) + "</b>" +
                                 "\n";
                         } // end groupTableMap loop
                     }
