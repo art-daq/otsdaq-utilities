@@ -388,7 +388,7 @@
                                             artdaqObj[type][name].hostFixedWidth);
 
                                         //modify original node name to give full multi-node description
-                                        if (_nodes[_nodes.length - 1].nodeCount > 1) {
+                                        if (_nodes[_nodes.length - 1].nodeVectorIndexString !== undefined) {
                                             _nodes[_nodes.length - 1].originalName =
                                                 ":" + (_nodes[_nodes.length - 1].nodeNameFixedWidth ?
                                                     _nodes[_nodes.length - 1].nodeNameFixedWidth : 1) +
@@ -468,7 +468,7 @@
 
 
                                         //modify original node name to give full multi-node description
-                                        if (_nodes[_nodes.length - 1].nodeCount > 1) {
+                                        if (_nodes[_nodes.length - 1].nodeVectorIndexString !== undefined) {
                                             _nodes[_nodes.length - 1].originalName =
                                                 ":" + (_nodes[_nodes.length - 1].nodeNameFixedWidth ?
                                                     _nodes[_nodes.length - 1].nodeNameFixedWidth : 1) +
@@ -774,7 +774,7 @@
                 nodesObj[type][name].status = node.status;
                 nodesObj[type][name].hostname = node.hostname;
                 nodesObj[type][name].subsystemName = _subsystems[node.subsystemId].label;
-                if (node.nodeCount > 1) {
+                if (node.nodeVectorIndexString !== undefined && node.nodeVectorIndexString !== "") {
                     Debug.log("Saving multi-node...");
 
                     nodesObj[type][name].nodeArrString = node.nodeVectorIndexString;
@@ -1623,7 +1623,7 @@
                 str += "<div id='" + nodeid +
                     "-headerText' class='node-headerText' onmousedown='handleNodeHeaderMouseDown' >" +
                     (_nodes[i].status ? "" : "<label style='color:red; font-size:inherit;'>*OFF*</label> ") +
-                    (count > 1 ? (_nodes[i].nodeCount + "x ") : "") +
+                    (_nodes[i].nodeVectorIndexString !== undefined ? (_nodes[i].nodeCount + "x ") : "") +
                     typeName + "::" + nodeName +
                     DesktopContent.htmlClearDiv() +
                     (_subsystems[_nodes[i].subsystemId] ? //e.g. undefined for artdaq supervisor
@@ -2391,7 +2391,7 @@
 
             if (!goBack && !menuDepth) _backMenuStackParams = []; //clear stack at top level
 
-            if (x == undefined && _nodes[i].nodeCount && _nodes[i].nodeCount > 1) {
+            if (x == undefined && _nodes[i].nodeVectorIndexString !== undefined) {
                 Debug.log("Showing multi-node menu");
 
                 //handle node vector level first
@@ -4037,7 +4037,7 @@
             var type = _nodes[i].type;
             var typeName = ARTDAQConfigurationAPI.getShortTypeName(type);
 
-            if (x == undefined && _nodes[i].nodeCount && _nodes[i].nodeCount > 1) {
+            if (x == undefined && _nodes[i].nodeVectorIndexString !== undefined) {
                 Debug.log("Showing multi-node menu");//handle node vector level first
                 var menuItems = [];
                 var menuItemHandlers = [];
