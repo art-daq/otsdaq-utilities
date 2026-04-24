@@ -481,7 +481,6 @@
 
 		} //end setROCStatus()
 
-
 		function toggleDiskPhi (disk, phi, targetStatus){
 			Debug.log("toggleDiskPhi()", disk, phi, targetStatus);
 
@@ -502,7 +501,7 @@
 					if(!fieldValues.length)
 					{
 						Debug.log("No boardID values returned from ROCInterfaceTable.",
-								Debug.HIGH_PRIORITY);
+							Debug.HIGH_PRIORITY);
 						return;
 					}
 
@@ -551,12 +550,12 @@
 							if(!modifiedTables.length)
 							{
 								Debug.log("Error writing status for disk " + disk + " ROCs.",
-										Debug.HIGH_PRIORITY);
+									Debug.HIGH_PRIORITY);
 								return;
 							}
 							_rocModifiedTables = modifiedTables;
 							Debug.log("Disk " + disk + " ROCs (" + diskROCs.length +
-									") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
+								") set to " + (targetStatus == 1 ? "ON" : "OFF") + ".");
 						},
 						_rocModifiedTables
 					);
@@ -584,7 +583,7 @@
 					if(!fieldValues.length)
 					{
 						Debug.log("No boardID values returned from ROCInterfaceTable.",
-								Debug.HIGH_PRIORITY);
+							Debug.HIGH_PRIORITY);
 						return;
 					}
 
@@ -626,7 +625,7 @@
 							if(!modifiedTables.length)
 							{
 								Debug.log("Error writing status for laser ROCs.",
-										Debug.HIGH_PRIORITY);
+									Debug.HIGH_PRIORITY);
 								return;
 							}
 							_rocModifiedTables = modifiedTables;
@@ -658,7 +657,7 @@
 					if(!fieldValues.length)
 					{
 						Debug.log("No boardID values returned from ROCInterfaceTable.",
-								Debug.HIGH_PRIORITY);
+							Debug.HIGH_PRIORITY);
 						return;
 					}
 
@@ -701,7 +700,7 @@
 							if(!modifiedTables.length)
 							{
 								Debug.log("Error writing status for TRAD ROCs.",
-										Debug.HIGH_PRIORITY);
+									Debug.HIGH_PRIORITY);
 								return;
 							}
 							_rocModifiedTables = modifiedTables;
