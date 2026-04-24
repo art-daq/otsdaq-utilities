@@ -9122,7 +9122,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
 
 							if(!version.isTemporaryVersion())
 							{
-								__COUT__ << "Table is temporary, reloading view to "
+								__COUT__ << "Table is not temporary, reloading view to "
 								            "clear raw data"
 								         << __E__;
 								// if version is temporary, view is already ok
