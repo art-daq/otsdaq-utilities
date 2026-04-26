@@ -596,7 +596,7 @@ Desktop.createDesktop = function (security) {
 		str += "<a href='Javascript:Desktop.closeSystemMessage(" + _sysMsgId + ");' " +
 			"title='Click here to dismiss system message'>Dismiss</a>";
 		str += " | <a href='Javascript:Desktop.closeAllSystemMessages();' " +
-			"title='Click here to dismiss all system messages'>Close all</a></div>";
+			"title='Click here to dismiss all system messages'>Dismiss All</a></div>";
 
 		//check if alarm message and play alarm sound
 		if (tmp.toLowerCase().indexOf("alarm") >= 0)
