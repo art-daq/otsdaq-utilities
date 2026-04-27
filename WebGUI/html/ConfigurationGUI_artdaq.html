@@ -889,14 +889,27 @@
                         if (pe.nodeNameFixedWidth)
                             nodesObj[nt][combKey].nodeNameFixedWidth = pe.nodeNameFixedWidth;
 
-                        // Combine hostnameArrString: append each clone's hostname indices
+                        // Combine hostnameArrString: append each clone's hostname contribution
                         var allHostArr = pe.hostnameArrString
                             ? pe.hostnameArrString.split(',').map(function(s) { return s.trim(); })
                             : [];
+                        var hostStarPos = pe.hostname ? pe.hostname.indexOf('*') : -1;
                         for (var ci = 0; ci < cloneKeyArr.length; ++ci) {
-                            var clkHostStr = nodesObj[nt][cloneKeyArr[ci]].hostnameArrString;
-                            if (clkHostStr)
+                            var clkEntry = nodesObj[nt][cloneKeyArr[ci]];
+                            var clkHostStr = clkEntry.hostnameArrString;
+                            if (clkHostStr) {
+                                // multinode clone: has its own hostnameArrString
                                 clkHostStr.split(',').forEach(function(s) { allHostArr.push(s.trim()); });
+                            } else if (hostStarPos >= 0 && clkEntry.hostname) {
+                                // single-node clone: extract the index portion from the resolved hostname
+                                // e.g. primary "mu2edaq*-data.fnal.gov" starPos=8, suffix="-data.fnal.gov"
+                                //      clone "mu2edaq01_clone-data.fnal.gov" -> "01_clone"
+                                var hostSuffix = pe.hostname.slice(hostStarPos + 1);
+                                var hostEnd = hostSuffix.length
+                                    ? clkEntry.hostname.length - hostSuffix.length
+                                    : undefined;
+                                allHostArr.push(clkEntry.hostname.slice(hostStarPos, hostEnd));
+                            }
                         }
                         if (allHostArr.length)
                             nodesObj[nt][combKey].hostnameArrString = allHostArr.join(',');
@@ -4019,11 +4032,25 @@
                     if (src.nodeVectorIndexString !== undefined) {
                         var firstIdx = (src.nodeVectorIndexArr && src.nodeVectorIndexArr.length)
                             ? String(src.nodeVectorIndexArr[0]) : "0";
-                        // replace * in the clone name with the first index
+                        // zero-pad to nodeNameFixedWidth (mirrors getPrinterSyntaxStringWithWidth)
+                        var nw = src.nodeNameFixedWidth;
+                        while (nw && firstIdx.length < nw) firstIdx = "0" + firstIdx;
+                        // replace * in the clone name with the first node index
                         cloneNode.name = cloneNode.name.replace(/\*/g, firstIdx);
+                        // replace * in the clone hostname with the first hostname index (if hostname is a template)
+                        if (cloneNode.hostname && cloneNode.hostname.indexOf('*') >= 0) {
+                            var firstHostIdx = (src.hostnameVectorIndexArr && src.hostnameVectorIndexArr.length)
+                                ? String(src.hostnameVectorIndexArr[0]) : firstIdx;
+                            // zero-pad to hostnameFixedWidth
+                            var hw = src.hostnameFixedWidth;
+                            while (hw && firstHostIdx.length < hw) firstHostIdx = "0" + firstHostIdx;
+                            cloneNode.hostname = cloneNode.hostname.replace(/\*/g, firstHostIdx + "_clone");
+                            // register the resolved hostname so the dropdown can select it
+                            _hostnames[cloneNode.hostname] = 1;
+                        }
                         // multinode fields intentionally NOT copied — clone starts as single node
                     }
-                    // hostname fields not copied either; clone starts with bare hostname only
+                    // hostname vector fields not copied either; clone starts with bare hostname only
 
                     // originalName stays the same as the cloned node (tells server which record to copy)
                     cloneNode.originalName = src.originalName;
