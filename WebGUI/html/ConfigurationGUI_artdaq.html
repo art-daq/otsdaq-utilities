@@ -3988,6 +3988,13 @@
                 function localCloneButtonHandler() {
                     Debug.log("localCloneButtonHandler() - cloning node " + i);
 
+                    DesktopContent.popUpVerification(
+                        "Are you sure you want to <b>clone</b> this node? " +
+                        "This process will save an intermediate configuration with a branched off " +
+                        "node with name appended with '_clone' that you can proceed to modify " +
+                        "independently from this node.",
+                        function() { //confirmed — proceed with clone
+
                     document.body.removeEventListener("keydown", localInputKeyHandler);
 
                     //remove all existing dialogs
@@ -4063,6 +4070,9 @@
                     paint();
 
                     launchEditNodeDialog(newIndex);  // handles removeAllPopUps() + _mouseMoveMode internally
+
+                        } /*end confirmed continueFunc*/
+                    ); //end popUpVerification
 
                 } //end localCloneButtonHandler()
 
