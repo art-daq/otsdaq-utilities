@@ -593,7 +593,9 @@ Desktop.createDesktop = function (security) {
 
 		//dismiss link
 		str += "<div style='float:right; margin-left:30px'>";
-		str += "<a href='Javascript:Desktop.closeSystemMessage(" + _sysMsgId + ");' " +
+		str += "<a href='Javascript:Desktop.closeAllSystemMessages();' " +
+			"title='Click here to dismiss all system messages'>Dismiss All</a>";
+		str += " | <a href='Javascript:Desktop.closeSystemMessage(" + _sysMsgId + ");' " +
 			"title='Click here to dismiss system message'>Dismiss</a></div>";
 
 		//check if alarm message and play alarm sound
@@ -3024,6 +3026,14 @@ Desktop.closeSystemMessage = function (id) {
 	var el = document.getElementById("Desktop-systemMessageBox-" + id);
 	el.parentNode.removeChild(el); //remove from page!
 } //end closeSystemMessage()
+
+//==============================================================================
+//closeAllSystemMessages ~~
+Desktop.closeAllSystemMessages = function () {
+	var els = document.getElementsByClassName("Desktop-systemMessageBox");
+	while (els.length > 0)
+		els[0].parentNode.removeChild(els[0]);
+} //end closeAllSystemMessages()
 
 //==============================================================================
 //isWizardMode ~~
