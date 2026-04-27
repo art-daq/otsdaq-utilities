@@ -3877,9 +3877,17 @@
                     //since multiple, use id to identify
                     Debug.log("Saving multi-node settings for node " + i);
 
-                    document.body.removeEventListener("keydown", localInputKeyHandler);
-
                     var nodeNameTemplate = document.getElementById("ediNode-" + "nodeName").value;
+
+                    if (nodeNameTemplate.indexOf("_clone") >= 0) {
+                        Debug.log("Node name '" + nodeNameTemplate + "' still contains '_clone' — " +
+                            "please rename the node before saving. The '_clone' suffix is a temporary " +
+                            "placeholder added during cloning and must be replaced with a meaningful name.",
+                            Debug.HIGH_PRIORITY);
+                        return;
+                    }
+
+                    document.body.removeEventListener("keydown", localInputKeyHandler);
                     var nodeNameFixedWidth = document.getElementById("ediNode-" + "nodeNameFixedWidth").value | 0;
                     var nodeIndices = document.getElementById("ediNode-" + "nodeIndices").value;
                     var status = document.getElementById("ediNode-" + "status").innerText == "Enabled";
@@ -3892,6 +3900,14 @@
                         "hostname").style.display == "none" ?
                         document.getElementById("ediNode-" + "hostnameText").value :
                         document.getElementById("ediNode-" + "hostname").value;
+
+                    if (hostname.indexOf("_clone") >= 0) {
+                        Debug.log("Hostname '" + hostname + "' still contains '_clone' — " +
+                            "please update the hostname before saving. The '_clone' suffix is a temporary " +
+                            "placeholder added during cloning and must be replaced with a real hostname.",
+                            Debug.HIGH_PRIORITY);
+                        return;
+                    }
 
                     var hostnameIndices = document.getElementById("ediNode-" + "hostnameIndices").value;
                     var hostnameFixedWidth = document.getElementById("ediNode-" + "hostnameFixedWidth").value | 0;
@@ -4069,7 +4085,7 @@
                     nodesHaveChanged();
                     paint();
 
-                    launchEditNodeDialog(newIndex);  // handles removeAllPopUps() + _mouseMoveMode internally
+                    save();
 
                         } /*end confirmed continueFunc*/
                     ); //end popUpVerification
