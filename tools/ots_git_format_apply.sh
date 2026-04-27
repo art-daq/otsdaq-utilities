@@ -52,12 +52,12 @@ echo
 if [[ "${1:-}" != "noclang" ]]; then
 	if command -v clang-format >/dev/null 2>&1; then
 		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
-		if ! clang-format -i `find . -type f ! -wholename "*/Data_*" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \)`; then
+		if ! find . -type f ! -wholename "*/Data_*" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \) -print0 | xargs -0 clang-format -i; then
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
 			exit 1
 		fi
 
-		if ! clang-format -i -style=file:.clang-format-hpp `find . -type f ! -wholename "*/Data_*" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \)`; then
+		if ! find . -type f ! -wholename "*/Data_*" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \) -print0 | xargs -0 clang-format -i -style=file:.clang-format-hpp; then
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
 			exit 1
 		fi
