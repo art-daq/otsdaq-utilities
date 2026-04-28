@@ -1,6 +1,6 @@
 body {
 	background-color: 		white;
-	overflow: 				hidden;
+	overflow: 				auto;
 }
 
 b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
@@ -9,7 +9,14 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 
 .mainBlockContainer {
 	display: flex;
-	flex-direction: column;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.mainBlockContainer > .appBlockContainer {
+	flex: 1 1 45%;
+	max-height: 300px;
+	overflow-y: auto;
 }
 
 /* Containers content */
@@ -51,6 +58,11 @@ b, h3, h1 { /* overwrite ConfigurationGUI.css:41 */
 	cursor: pointer;
 	box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 	transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.toggleOn button.toggleOn,
+.toggleOff button.toggleOff {
+	border: 1px solid rgba(255,255,255,0.6);
 }
 
 .toggleOn:hover {
