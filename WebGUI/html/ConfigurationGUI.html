@@ -8057,7 +8057,7 @@
 
 			str += "<br>Keyword to search for... ";
 			str += "<br><input type='text' id='searchTextInAllTableVersions' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(\"" + _currentTableName + "\"); }' " +
+				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(_currentTableName); }' " +
 				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
 			str += "<br>Version to search for... ";
@@ -16239,9 +16239,10 @@
                     }
 
                     var results = req.responseXML.getElementsByTagName("Match");
+					var escapedSearchText = encodeHTML(searchText);
 					if(results.length == 0)
 					{
-						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + searchText + "</b><br><br>No matches found."));
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + escapedSearchText + "</b><br><br>No matches found."));
 						return;
 					}
 
@@ -16296,7 +16297,7 @@
                         }
                     }
 
-					const resultStr = "Search Results For: <b>" + searchText + "</b><br>" + matchStr;
+					const resultStr = "Search Results For: <b>" + escapedSearchText + "</b><br>" + matchStr;
                     Debug.log("resultStr " + resultStr);
 
 					Debug._errTruncLen = -1;

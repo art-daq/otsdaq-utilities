@@ -258,8 +258,8 @@ void MacroMakerSupervisor::verification(xgi::Input* in, xgi::Output* out)
 	else
 	{
 		// defaultSequence_ = false;
-		__COUT__ << "*** Successfully authenticated security sequence "
-		         << "@ " << time(0) << __E__;
+		__COUT__ << "*** Successfully authenticated security sequence " << "@ " << time(0)
+		         << __E__;
 
 		if(defaultSequence_)
 		{
@@ -824,8 +824,8 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 		catch(...)
 		{
 			__SUP_SS__ << "An unknown error was encountered handling requestType '"
-			           << requestType << ".' "
-			           << "Please check the printouts to debug." << __E__;
+			           << requestType << ".' " << "Please check the printouts to debug."
+			           << __E__;
 			try
 			{
 				throw;
@@ -859,8 +859,8 @@ void MacroMakerSupervisor::requestWrapper(xgi::Input* in, xgi::Output* out)
 	catch(...)
 	{
 		__SUP_SS__ << "An unknown error was encountered handling requestType '"
-		           << requestType << ".' "
-		           << "Please check the printouts to debug." << __E__;
+		           << requestType << ".' " << "Please check the printouts to debug."
+		           << __E__;
 		try
 		{
 			throw;
@@ -1123,7 +1123,7 @@ try
 					__COUTV__(StringMacros::mapToString(overrideTables));
 				}
 			}  //end handle common override list
-		}      // end Assemble Subsystem Common Table List ----------------
+		}  // end Assemble Subsystem Common Table List ----------------
 
 		ConfigurationManager cfgMgr;
 		cfgMgr.loadTableGroup(groupName,
@@ -1723,7 +1723,7 @@ void MacroMakerSupervisor::loadMacro(const std::string& macroName,
 
 		if(macroString != "")
 			break;  // macro has been found!
-	}               // end load from path loop
+	}  // end load from path loop
 
 	if(macroString == "")
 	{
@@ -3023,11 +3023,10 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 		else if(oneCommand[1][0] == 'd')
 		{
 			out << "delay(" << oneCommand[2] << ");\n";
-			out << tabOffset << "\t"
-			    << "__CFG_COUT__ << \"Sleeping for... \" << " << oneCommand[2]
-			    << " << \" milliseconds \" << __E__;\n";
-			out << tabOffset << "\t"
-			    << "usleep(" << oneCommand[2] << "*1000 /* microseconds */);\n";
+			out << tabOffset << "\t" << "__CFG_COUT__ << \"Sleeping for... \" << "
+			    << oneCommand[2] << " << \" milliseconds \" << __E__;\n";
+			out << tabOffset << "\t" << "usleep(" << oneCommand[2]
+			    << "*1000 /* microseconds */);\n";
 			continue;
 		}
 		else
@@ -3049,8 +3048,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 				if(!forFeMacro)
 				{
 					// get address from configuration Tree
-					out << tabOffset << "\t"
-					    << "macroArgs[\"" << oneCommand[2]
+					out << tabOffset << "\t" << "macroArgs[\"" << oneCommand[2]
 					    << "\"] = "
 					       "theXDAQContextConfigTree_.getNode(theConfigurationPath_)."
 					       "getNode("
@@ -3064,9 +3062,8 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 						inArgNames->emplace(oneCommand[2]);
 
 					// get address from arguments
-					out << tabOffset << "\t"
-					    << "macroArgs[\"" << oneCommand[2] << "\"] = __GET_ARG_IN__(\""
-					    << oneCommand[2] << "\", uint64_t);";
+					out << tabOffset << "\t" << "macroArgs[\"" << oneCommand[2]
+					    << "\"] = __GET_ARG_IN__(\"" << oneCommand[2] << "\", uint64_t);";
 				}
 			}
 			out << "\t//get macro address argument";
@@ -3076,8 +3073,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 		}
 		else  // handle address as literal
 		{
-			out << tabOffset << "\t"
-			    << "macroAddress = 0x" << oneCommand[2]
+			out << tabOffset << "\t" << "macroAddress = 0x" << oneCommand[2]
 			    << "; memcpy(address,&macroAddress,8);"
 			    << "\t//copy macro address to buffer";
 		}
@@ -3101,8 +3097,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 
 						// get data from arguments
 						out << "\n"
-						    << tabOffset << "\t"
-						    << "macroArgs[\"" << oneCommand[3]
+						    << tabOffset << "\t" << "macroArgs[\"" << oneCommand[3]
 						    << "\"] = __GET_ARG_IN__(\"" << oneCommand[3]
 						    << "\", uint64_t); //initialize from input arguments";
 					}
@@ -3110,8 +3105,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 					{
 						// get data from configuration Tree
 						out << "\n"
-						    << tabOffset << "\t"
-						    << "macroArgs[\"" << oneCommand[3]
+						    << tabOffset << "\t" << "macroArgs[\"" << oneCommand[3]
 						    << "\"] = "
 						       "theXDAQContextConfigTree_.getNode(theConfigurationPath_)."
 						       "getNode("
@@ -3129,19 +3123,14 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 			else  // handle data as literal
 			{
 				out << "\n"
-				    << tabOffset << "\t"
-				    << "macroData = 0x" << oneCommand[3] << "; memcpy(data,&macroData,8);"
-				    << "\t//copy macro data to buffer";
+				    << tabOffset << "\t" << "macroData = 0x" << oneCommand[3]
+				    << "; memcpy(data,&macroData,8);" << "\t//copy macro data to buffer";
 			}
-			out << "\n"
-			    << tabOffset << "\t"
-			    << "universalWrite(address,data);";
+			out << "\n" << tabOffset << "\t" << "universalWrite(address,data);";
 		}
 		else
 		{
-			out << "\n"
-			    << tabOffset << "\t"
-			    << "universalRead(address,data);";
+			out << "\n" << tabOffset << "\t" << "universalRead(address,data);";
 
 			std::string outputArgName;
 
@@ -3155,16 +3144,15 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 			}
 			__SUP_COUTV__(outputArgName);
 
-			out << tabOffset << "\t"
-			    << "memcpy(&macroArgs[\"" << outputArgName
+			out << tabOffset << "\t" << "memcpy(&macroArgs[\"" << outputArgName
 			    << "\"],data,8); //copy buffer to argument map";
 
 			// copy read data to output args
 			if(forFeMacro)
 				out << "\n"
-				    << tabOffset << "\t"
-				    << "__SET_ARG_OUT__(\"" << outputArgName << "\",macroArgs[\""
-				    << outputArgName << "\"]); //update output argument result";
+				    << tabOffset << "\t" << "__SET_ARG_OUT__(\"" << outputArgName
+				    << "\",macroArgs[\"" << outputArgName
+				    << "\"]); //update output argument result";
 
 			if(outArgNames)
 				outArgNames->emplace(outputArgName);
@@ -4093,8 +4081,7 @@ void MacroMakerSupervisor::getFEMacroList(HttpXmlDocument&   xmldoc,
 
 			std::stringstream xmlMacroStream;
 			xmlMacroStream << macro.macroName_;
-			xmlMacroStream << ":"
-			               << "1";  // permissions string
+			xmlMacroStream << ":" << "1";  // permissions string
 			xmlMacroStream << ":" << macro.namesOfInputArguments_.size();
 			for(auto& inputArg : macro.namesOfInputArguments_)
 				xmlMacroStream << ":" << inputArg;
