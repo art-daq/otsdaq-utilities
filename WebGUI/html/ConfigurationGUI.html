@@ -2454,11 +2454,11 @@
 			Debug.log("optionGroups: " + optionGroups);
 
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
-                "&searchText=" + searchText +
-                "&filterValue=" + isActiveOnlyChecked +
-                "&groupType=" + groupType +
-				"&optionGroups=" + optionGroups +
-				"&versionsToCheck=" + searchVersionToCheck,
+                "&searchText=" + encodeURIComponent(searchText) +
+                "&filterValue=" + encodeURIComponent(isActiveOnlyChecked) +
+                "&groupType=" + encodeURIComponent(groupType) +
+				"&optionGroups=" + encodeURIComponent(optionGroups) +
+				"&versionsToCheck=" + encodeURIComponent(searchVersionToCheck),
 				"",
                 function(req){
                     var req = arguments[0];
