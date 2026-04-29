@@ -255,7 +255,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	const bool				activeGroupsOnly,
 																	const std::string&    	groupType,
 																	const std::string&      optionGroups,
-																	std::string&      versionsToCheck);
+																	const std::string&      versionsToCheck);
 	void 					handleSearchFieldInTableXML(			HttpXmlDocument& xmlOut,
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string& searchText,
