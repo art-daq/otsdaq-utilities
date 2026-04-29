@@ -16225,10 +16225,10 @@
             Debug.log("Search field value: " + searchVersionToCheck);
 
             DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
-                "&searchText=" + searchText +
-                "&tableName=" + tableName +
-				"&searchVersionToCheck=" + searchVersionToCheck +
-				"&activeOnly=" + activeOnlyFilter,
+                "&searchText=" + encodeURIComponent(searchText) +
+                "&tableName=" + encodeURIComponent(tableName) +
+				"&searchVersionToCheck=" + encodeURIComponent(searchVersionToCheck) +
+				"&activeOnly=" + encodeURIComponent(activeOnlyFilter),
                 "",
                 function(req){
                     var req = arguments[0];
