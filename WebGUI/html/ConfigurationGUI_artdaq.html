@@ -4319,6 +4319,9 @@
             if (subi !== undefined) //dealing with a particular multi-node node
                 nodeName = getMultiNodeName(i, subi);
 
+            if (!_nodes[i].status)
+                Debug.warn("Note that FHiCL is not generated for disabled artdaq nodes; to check file generation time, inspect the timestamp of the FHiCL file you are viewing.");
+
             var menuItems = [
                 "Open FHiCL for " + typeName +
                 "::" + nodeName,
