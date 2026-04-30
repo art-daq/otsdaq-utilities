@@ -1130,6 +1130,15 @@
 				if (beforePermissions == requestedPermissions)
 					return;
 
+				var assignedPermissionsNote = "";
+				var trimmedRequestedPermissions = requestedPermissions ? requestedPermissions.trim() : "";
+				if (beforePermissions && beforePermissions.indexOf(",") >= 0 &&
+					trimmedRequestedPermissions && trimmedRequestedPermissions.indexOf(",") < 0 &&
+					trimmedRequestedPermissions.indexOf(":") < 0)
+					assignedPermissionsNote =
+						"The assigned permissions value was <b>" + trimmedRequestedPermissions +
+						"</b>, which will be assigned to the allUsers permissions group.<br>";
+
 				var afterPermissions = requestedPermissions;
 				for (var accountIndex = 0; _accountsArray && _accountsArray[0] &&
 					accountIndex < _accountsArray[0].length; ++accountIndex)
@@ -1138,7 +1147,8 @@
 						break;
 					}
 
-				Debug.info("Updated permissions for user '<b>" + username + "</b>'.<br>" +
+				Debug.info(assignedPermissionsNote +
+					"Updated permissions for user '<b>" + username + "</b>'.<br>" +
 					"Before: <b>" + beforePermissions + "</b><br>" +
 					"After: <b>" + afterPermissions + "</b>");
 			}; //end updateAccountHandler()
