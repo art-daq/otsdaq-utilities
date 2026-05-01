@@ -2519,7 +2519,7 @@
                             }
                             if(parts[1] != previousTableName)
                             {
-								resultStr += "\t<a href='#' onclick='setupSpecificTable(\"" + parts[1] + "\",\"" + parts[3] + "\", \"setupTableViewMode(\\\"anchorTag-" + parts[1] + "\\\"); return false;\");'>" +
+								resultStr += "\t<a href='#' onclick='setupSpecificTable(\"" + parts[1] + "\",\"" + parts[3] + "\", \"setupTableViewMode(\\\"anchorTag-" + parts[1] + "\\\");\"); return false;'>" +
                                             "Table " + parts[1] + "-v" + parts[3] + "</a><br>";
                                 previousTableName = parts[1];
                             }
