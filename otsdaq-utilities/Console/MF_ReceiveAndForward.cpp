@@ -502,7 +502,7 @@ int main(int argc, char** argv)
 					buffi      = 0;
 					packCount  = 1;
 				}
-			}  // end handle full packet
+			}     // end handle full packet
 			else  // we do not have a full packet, so setup buff for next packet
 			{
 				buffi += recvBytes + 1;  // go past null character
@@ -572,7 +572,7 @@ int main(int argc, char** argv)
 				packCount  = 1;
 			}
 		}  // end no packet case
-	}  // end main loop
+	}      // end main loop
 
 	close(sockfd);
 	close(sendSockfd);

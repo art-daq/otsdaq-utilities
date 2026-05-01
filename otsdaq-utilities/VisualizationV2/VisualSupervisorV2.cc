@@ -741,7 +741,7 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 					}
 					return;
 				}  // done handling TTree branches
-			}  // end TTree and branch handling
+			}      // end TTree and branch handling
 			else if(spliti < splitTTreePath.size())
 			{
 				__COUTV__(rootDirectoryName);

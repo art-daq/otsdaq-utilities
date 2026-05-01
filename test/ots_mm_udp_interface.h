@@ -118,6 +118,6 @@ class ots_mm_udp_interface
 	                                    ///Note: if std::map does not complicate interface too much for ROOT/python, could make member functions return const std::string& and leverage cache solution
 	                                    /// std::map<std::string /*fe+cmd*/,std::map<std::string /*field*/, std::string /*value*/>> feCache_;
 	                                    ///
-};  //end ots_mm_udp_interface class declaration
+};                                      //end ots_mm_udp_interface class declaration
 
 #endif

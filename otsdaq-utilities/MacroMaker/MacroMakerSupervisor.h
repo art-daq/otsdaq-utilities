@@ -42,7 +42,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 			time_t      doneTime_        = -1;
 			std::string feMacroRunError_ = "";
 			uint64_t    threadID_        = 0;  //Note: std::thread::id() is invalid thread id;
-		};  // end runFEMacroParameterStruct struct
+		};                                     // end runFEMacroParameterStruct struct
 
 		runFEMacroStruct(
 		    const HttpXmlDocument& xmldoc,
