@@ -8900,14 +8900,13 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
 					__COUT__ << "\t\tTable: " << tablePair.first << " v"
 					         << tablePair.second << __E__;
 
-					// Load the table for this specific version
-					TableBase* memberTable = cfgMgr->getTableByName(tablePair.first);
+					// Load the table for this specific version and search that exact view
 					try
 					{
-						cfgMgr->getVersionedTableByName(tablePair.first,
-						                                tablePair.second);
+						TableBase* memberTable = cfgMgr->getVersionedTableByName(
+						    tablePair.first, tablePair.second);
 
-						// Get the table view
+						// Get the table view for the requested version
 						const TableView& tableView = memberTable->getView();
 
 						// Loop through all rows and columns to search for searchText
