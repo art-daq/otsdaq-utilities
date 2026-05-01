@@ -8749,7 +8749,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
     const std::string&      versionsToCheck)
 {
 	// Validate searchText: empty string matches every cell and would be extremely expensive
-	if(searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	if(searchText.empty() || searchText.find_first_not_of(" \t\r\n") == std::string::npos)
 	{
 		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
 		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
@@ -8985,7 +8985,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
     bool                    activeTablesOnly)
 {
 	// Validate searchText: empty string matches every cell and would be extremely expensive
-	if(searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	if(searchText.empty() || searchText.find_first_not_of(" \t\r\n") == std::string::npos)
 	{
 		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
 		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
