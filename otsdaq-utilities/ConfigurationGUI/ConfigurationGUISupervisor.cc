@@ -234,7 +234,7 @@ try
 	//	diffTableVersions
 	//	findGroupsWithTable
 	//  SearchFieldInGroup
-	//	SearchFieldInAllTableVersions
+	//	SearchFieldInTableVersions
 	//	mergeGroups
 	//
 	//		---- associated with JavaScript Iterate App
