@@ -9,11 +9,24 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 	exit 1
 fi
 
-# Enforce that a .clang-format file exists in the current directory
-if [[ ! -f ".clang-format" ]]; then
-	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: no .clang-format file found in ${PWD}. Run ots_git_format_apply.sh from a directory containing .clang-format." >&2
+# Enforce that a .clang-format file exists in the current directory, unless noclang is specified
+if [[ "${1:-}" != "noclang" && ! -f ".clang-format" ]]; then
+	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: no .clang-format file found in ${PWD}. Run ots_git_format_apply.sh from a directory containing .clang-format or use option 'noclang'." >&2
 	exit 1
 fi
+
+# Optional mode: skip clang-format and do whitespace checks/cleanup only
+case "${1:-}" in
+	"" )
+		;;
+	noclang )
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t 'noclang' option detected: skipping clang-format step."
+		;;
+	* )
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: unknown option '$1'. Supported option: noclang" >&2
+		exit 1
+		;;
+esac
 
 # Enforce that the current directory is the top level of a git repository
 git_toplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
@@ -36,20 +49,22 @@ fi
 echo
 
 
-if command -v clang-format >/dev/null 2>&1; then
-	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
-	if ! clang-format -i `find . -type f ! -wholename "*/Data_*" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \)`; then
-		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
-		exit 1
-	fi
+if [[ "${1:-}" != "noclang" ]]; then
+	if command -v clang-format >/dev/null 2>&1; then
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
+		if ! find . -type f ! -wholename "*/Data_*" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \) -print0 | xargs -0 clang-format -i; then
+			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
+			exit 1
+		fi
 
-	if ! clang-format -i -style=file:.clang-format-hpp `find . -type f ! -wholename "*/Data_*" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \)`; then
-		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
-		exit 1
+		if ! find . -type f ! -wholename "*/Data_*" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \) -print0 | xargs -0 clang-format -i -style=file:.clang-format-hpp; then
+			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
+			exit 1
+		fi
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Clang format rules applied."
+	else
+		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t clang-format not found; skipping Clang formatting."
 	fi
-	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Clang format rules applied."
-else
-	echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t clang-format not found; skipping Clang formatting."
 fi
 
 GIT_TEST_MSG="WIP test white-space snapshot commit for white-space check $(date +%d%b%y.%T)"

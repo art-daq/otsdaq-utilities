@@ -388,7 +388,8 @@
                                             artdaqObj[type][name].hostFixedWidth);
 
                                         //modify original node name to give full multi-node description
-                                        if (_nodes[_nodes.length - 1].nodeCount > 1) {
+                                        if (_nodes[_nodes.length - 1].nodeVectorIndexString !== undefined &&
+                                            _nodes[_nodes.length - 1].nodeVectorIndexString !== "") {
                                             _nodes[_nodes.length - 1].originalName =
                                                 ":" + (_nodes[_nodes.length - 1].nodeNameFixedWidth ?
                                                     _nodes[_nodes.length - 1].nodeNameFixedWidth : 1) +
@@ -468,7 +469,8 @@
 
 
                                         //modify original node name to give full multi-node description
-                                        if (_nodes[_nodes.length - 1].nodeCount > 1) {
+                                        if (_nodes[_nodes.length - 1].nodeVectorIndexString !== undefined &&
+                                            _nodes[_nodes.length - 1].nodeVectorIndexString !== "") {
                                             _nodes[_nodes.length - 1].originalName =
                                                 ":" + (_nodes[_nodes.length - 1].nodeNameFixedWidth ?
                                                     _nodes[_nodes.length - 1].nodeNameFixedWidth : 1) +
@@ -557,7 +559,7 @@
             hostname,
             hostnameVectorIndexString, hostnameFixedWidth) {
             var nodeCount = 0;
-            if (nodeVectorIndexString !== undefined) {
+            if (nodeVectorIndexString !== undefined && nodeVectorIndexString !== "") {
                 var nodeVectorIndexArr = []; //reset
                 var nodeVectorIndexReverseMap = {}; //reset
 
@@ -774,7 +776,7 @@
                 nodesObj[type][name].status = node.status;
                 nodesObj[type][name].hostname = node.hostname;
                 nodesObj[type][name].subsystemName = _subsystems[node.subsystemId].label;
-                if (node.nodeCount > 1) {
+                if (node.nodeVectorIndexString !== undefined && node.nodeVectorIndexString !== "") {
                     Debug.log("Saving multi-node...");
 
                     nodesObj[type][name].nodeArrString = node.nodeVectorIndexString;
@@ -800,6 +802,130 @@
                 subsystemsObj[_subsystems[node.subsystemId].label].destinationName =
                     _subsystems[_subsystems[node.subsystemId].destinationId | 0].label;
             } //end node loop
+
+            ////////// combine nodes that share the same originalName into a single multinode entry
+            // (happens when clones exist — clones carry the same originalName as their source)
+            {
+                var cloneGroups = {};
+                for (var ti = 0; ti < types.length; ++ti) {
+                    if (ti == ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR) continue;
+                    var nt = types[ti];
+                    cloneGroups[nt] = {};
+                    for (var nk in nodesObj[nt]) {
+                        var ogn = nodesObj[nt][nk].originalName || nk;
+                        if (!cloneGroups[nt][ogn]) cloneGroups[nt][ogn] = [];
+                        cloneGroups[nt][ogn].push(nk);
+                    }
+                }
+                for (var ti = 0; ti < types.length; ++ti) {
+                    if (ti == ARTDAQConfigurationAPI.NODE_TYPE_SUPERVISOR) continue;
+                    var nt = types[ti];
+                    for (var ogn in cloneGroups[nt]) {
+                        var grp = cloneGroups[nt][ogn];
+                        if (grp.length <= 1) continue;
+
+                        // Determine the base name of the original from ogn
+                        var oBase;
+                        if (ogn.charAt(0) === ':') {
+                            // Multinode format: ":width:indices:templateName"
+                            oBase = ogn.split(':').slice(3).join(':').split(';status=')[0];
+                        } else {
+                            oBase = ogn.split(';status=')[0];
+                        }
+
+                        // Find the primary key: entry whose name base matches oBase
+                        var pk = grp[0];
+                        for (var g = 0; g < grp.length; ++g) {
+                            if (grp[g].split(';status=')[0] === oBase) { pk = grp[g]; break; }
+                        }
+                        var pe = nodesObj[nt][pk];          // primary entry
+                        var pb = pk.split(';status=')[0];   // primary base (no status suffix)
+                        var ss = pk.slice(pb.length);       // status suffix e.g. ";status=1"
+                        var isMP = pb.indexOf('*') >= 0;    // primary already a multinode template?
+                        var cloneKeyArr = grp.filter(function(k) { return k !== pk; });
+
+                        var combKey, combArr, allIdxArr;
+
+                        if (isMP) {
+                            // Primary is already a multinode template e.g. "reader*;status=1"
+                            // Append each clone's indices with the clone's after-* suffix
+                            var starPos = pb.indexOf('*');
+                            allIdxArr = (pe.nodeArrString || '').split(',').map(function(s) { return s.trim(); });
+                            for (var ci = 0; ci < cloneKeyArr.length; ++ci) {
+                                var clk = cloneKeyArr[ci];
+                                var clkBase = clk.split(';status=')[0];
+                                if (clkBase.indexOf('*') >= 0) {
+                                    // Clone is itself a multinode — expand its indices with after-* suffix
+                                    var clkAfterStar = clkBase.slice(starPos + 1);
+                                    var clkIdxArr = (nodesObj[nt][clk].nodeArrString || '').split(',').map(function(s) { return s.trim(); });
+                                    for (var cii = 0; cii < clkIdxArr.length; ++cii)
+                                        allIdxArr.push(clkIdxArr[cii] + clkAfterStar);
+                                } else {
+                                    // Clone is a single node — its name suffix from star position IS the index
+                                    // e.g. primary "reader*" starPos=6, clone "reader0_clone" -> "0_clone"
+                                    allIdxArr.push(clkBase.slice(starPos));
+                                }
+                            }
+                            combArr = allIdxArr.join(',');
+                            combKey = pk; // key unchanged for multinode primary
+                        } else {
+                            // Primary is a single node e.g. "reader0;status=1"
+                            // Build template: primaryBase + "*" + statusSuffix
+                            combKey = pb + '*' + ss;
+                            allIdxArr = [''];  // empty string -> primary node (reader0 + "" = reader0)
+                            for (var ci = 0; ci < cloneKeyArr.length; ++ci) {
+                                var clkBase = cloneKeyArr[ci].split(';status=')[0];
+                                allIdxArr.push(clkBase.slice(pb.length)); // e.g. "_clone"
+                            }
+                            combArr = allIdxArr.join(',');
+                        }
+
+                        // Build combined entry from primary's fields
+                        nodesObj[nt][combKey] = {
+                            originalName:  pe.originalName,
+                            status:        pe.status,
+                            hostname:      pe.hostname,
+                            subsystemName: pe.subsystemName,
+                            nodeArrString: combArr
+                        };
+                        if (pe.nodeNameFixedWidth)
+                            nodesObj[nt][combKey].nodeNameFixedWidth = pe.nodeNameFixedWidth;
+
+                        // Combine hostnameArrString: append each clone's hostname contribution
+                        var allHostArr = pe.hostnameArrString
+                            ? pe.hostnameArrString.split(',').map(function(s) { return s.trim(); })
+                            : [];
+                        var hostStarPos = pe.hostname ? pe.hostname.indexOf('*') : -1;
+                        for (var ci = 0; ci < cloneKeyArr.length; ++ci) {
+                            var clkEntry = nodesObj[nt][cloneKeyArr[ci]];
+                            var clkHostStr = clkEntry.hostnameArrString;
+                            if (clkHostStr) {
+                                // multinode clone: has its own hostnameArrString
+                                clkHostStr.split(',').forEach(function(s) { allHostArr.push(s.trim()); });
+                            } else if (hostStarPos >= 0 && clkEntry.hostname) {
+                                // single-node clone: extract the index portion from the resolved hostname
+                                // e.g. primary "mu2edaq*-data.fnal.gov" starPos=8, suffix="-data.fnal.gov"
+                                //      clone "mu2edaq01_clone-data.fnal.gov" -> "01_clone"
+                                var hostSuffix = pe.hostname.slice(hostStarPos + 1);
+                                var hostEnd = hostSuffix.length
+                                    ? clkEntry.hostname.length - hostSuffix.length
+                                    : undefined;
+                                allHostArr.push(clkEntry.hostname.slice(hostStarPos, hostEnd));
+                            }
+                        }
+                        if (allHostArr.length)
+                            nodesObj[nt][combKey].hostnameArrString = allHostArr.join(',');
+
+                        if (pe.hostnameFixedWidth)
+                            nodesObj[nt][combKey].hostnameFixedWidth = pe.hostnameFixedWidth;
+
+                        // Remove individual entries (combined entry already in place)
+                        for (var g = 0; g < grp.length; ++g)
+                            if (grp[g] !== combKey)
+                                delete nodesObj[nt][grp[g]];
+                    }
+                }
+            } //end clone combining
 
             ////////// now save nodes and subsystems objects
             ARTDAQConfigurationAPI.saveArtdaqNodes(nodesObj, subsystemsObj,
@@ -1559,7 +1685,7 @@
                 else // non-supervisor node handling
                 {
                     hostname = _nodes[i].hostname;
-                    if (count > 1) {
+                    if (nodeName.indexOf('*') >= 0 && _nodes[i].nodeVectorIndexString) {
                         //special multi-node name handling
 
                         nodeName = nodeName.replace(new RegExp("\\*", 'g'),
@@ -1623,7 +1749,7 @@
                 str += "<div id='" + nodeid +
                     "-headerText' class='node-headerText' onmousedown='handleNodeHeaderMouseDown' >" +
                     (_nodes[i].status ? "" : "<label style='color:red; font-size:inherit;'>*OFF*</label> ") +
-                    (count > 1 ? (_nodes[i].nodeCount + "x ") : "") +
+                    (_nodes[i].nodeVectorIndexString !== undefined && _nodes[i].nodeVectorIndexString !== "" ? (_nodes[i].nodeCount + "x ") : "") +
                     typeName + "::" + nodeName +
                     DesktopContent.htmlClearDiv() +
                     (_subsystems[_nodes[i].subsystemId] ? //e.g. undefined for artdaq supervisor
@@ -2391,10 +2517,9 @@
 
             if (!goBack && !menuDepth) _backMenuStackParams = []; //clear stack at top level
 
-            if (x == undefined && _nodes[i].nodeCount && _nodes[i].nodeCount > 1) {
+            if (x == undefined && _nodes[i].nodeVectorIndexString !== undefined &&
+                _nodes[i].nodeVectorIndexString !== "") {
                 Debug.log("Showing multi-node menu");
-
-                //handle node vector level first
                 var menuItems = [];
                 var menuItemHandlers = [];
 
@@ -3277,8 +3402,8 @@
 
             var str = "";
 
-            str += "You are editing the node originally named <b>" +
-                typeName + "::" + nodeName + "</b>...";
+            str += "You are editing the node named <b>" +
+                typeName + "::" + nodeName + "</b>";
 
             var isMultiNode = nodeName.indexOf('*') >= 0;
             var isNodeNameFixedWidth = _nodes[i].nodeNameFixedWidth && _nodes[i].nodeNameFixedWidth > 1;
@@ -3306,7 +3431,11 @@
                 str += "<div id='ediNode-status' style='float:left;margin: 8px 0 0 15px;' class='" +
                     (_nodes[i].status ? "ediNode-statusEnabled" : "ediNode-statusDisabled") +
                     "'>" + (_nodes[i].status ? "Enabled" : "Disabled") +
-                    "</div></div>";
+                    "</div>";
+                str += "<input id='ediNode-cloneNode' type='button' value='Clone Node' " +
+                    "title='Clone this node, appending _clone to the name as an intermediate configuration for independent future editing.' " +
+                    "style='float:left; margin: 6px 0 0 20px;'>";
+                str += "</div>";
 
             } //end status/enabled
 
@@ -3700,6 +3829,9 @@
                 document.getElementById("ediNode-" + "saveNode").onclick =
                     localOKButtonHandler;
 
+                document.getElementById("ediNode-" + "cloneNode").onclick =
+                    localCloneButtonHandler;
+
                 var inputEls = el.getElementsByTagName("input");
                 for (var b = 0; b < inputEls.length; ++b)
                     inputEls[b].onkeydown =
@@ -3746,9 +3878,17 @@
                     //since multiple, use id to identify
                     Debug.log("Saving multi-node settings for node " + i);
 
-                    document.body.removeEventListener("keydown", localInputKeyHandler);
-
                     var nodeNameTemplate = document.getElementById("ediNode-" + "nodeName").value;
+
+                    if (nodeNameTemplate.indexOf("_clone") >= 0) {
+                        Debug.log("Node name '" + nodeNameTemplate + "' still contains '_clone' — " +
+                            "please rename the node before saving. The '_clone' suffix is a temporary " +
+                            "placeholder added during cloning and must be replaced with a meaningful name.",
+                            Debug.HIGH_PRIORITY);
+                        return;
+                    }
+
+                    document.body.removeEventListener("keydown", localInputKeyHandler);
                     var nodeNameFixedWidth = document.getElementById("ediNode-" + "nodeNameFixedWidth").value | 0;
                     var nodeIndices = document.getElementById("ediNode-" + "nodeIndices").value;
                     var status = document.getElementById("ediNode-" + "status").innerText == "Enabled";
@@ -3761,6 +3901,14 @@
                         "hostname").style.display == "none" ?
                         document.getElementById("ediNode-" + "hostnameText").value :
                         document.getElementById("ediNode-" + "hostname").value;
+
+                    if (hostname.indexOf("_clone") >= 0) {
+                        Debug.log("Hostname '" + hostname + "' still contains '_clone' — " +
+                            "please update the hostname before saving. The '_clone' suffix is a temporary " +
+                            "placeholder added during cloning and must be replaced with a real hostname.",
+                            Debug.HIGH_PRIORITY);
+                        return;
+                    }
 
                     var hostnameIndices = document.getElementById("ediNode-" + "hostnameIndices").value;
                     var hostnameFixedWidth = document.getElementById("ediNode-" + "hostnameFixedWidth").value | 0;
@@ -3852,6 +4000,97 @@
                     _mouseMoveMode = _MMM_NONE;
 
                 } //end localOKButtonHandler()
+
+                /////////////////////////////////
+                function localCloneButtonHandler() {
+                    Debug.log("localCloneButtonHandler() - cloning node " + i);
+
+                    DesktopContent.popUpVerification(
+                        "Are you sure you want to <b>clone</b> this node? " +
+                        "This process will save an intermediate configuration with a branched off " +
+                        "node with name appended with '_clone' that you can proceed to modify " +
+                        "independently from this node.",
+                        function() { //confirmed — proceed with clone
+
+                    document.body.removeEventListener("keydown", localInputKeyHandler);
+
+                    //remove all existing dialogs
+                    ConfigurationAPI.removeAllPopUps();
+
+                    _mouseMoveMode = _MMM_NONE;
+
+                    var src = _nodes[i];
+
+                    // insert _clone before any ;status= suffix
+                    var sIdx = src.name.indexOf(";status=");
+                    var baseName = sIdx >= 0
+                        ? src.name.slice(0, sIdx) + "_clone" + src.name.slice(sIdx)
+                        : src.name + "_clone";
+                    var newName = baseName;
+                    var existingNames = {};
+                    for (var k = 0; k < _nodes.length; ++k)
+                        existingNames[_nodes[k].name] = true;
+                    var suffix = 0;
+                    while (existingNames[newName]) {
+                        ++suffix;
+                        var sIdx2 = baseName.indexOf(";status=");
+                        newName = sIdx2 >= 0
+                            ? baseName.slice(0, sIdx2) + suffix + baseName.slice(sIdx2)
+                            : baseName + suffix;
+                    }
+
+                    var xy = getEmptyGridSpot(src.type);
+
+                    var cloneNode = {
+                        "type":        src.type,
+                        "name":        newName,
+                        "status":      src.status,
+                        "hostname":    src.hostname,
+                        "subsystemId": src.subsystemId,
+                        "x": xy[0],
+                        "y": xy[1]
+                    };
+
+                    // Force clone to be a single node — strip multinode fields
+                    // (if src was a multinode template like "reader*", resolve * to first index)
+                    if (src.nodeVectorIndexString !== undefined && src.nodeVectorIndexString !== "") {
+                        var firstIdx = (src.nodeVectorIndexArr && src.nodeVectorIndexArr.length)
+                            ? String(src.nodeVectorIndexArr[0]) : "0";
+                        // zero-pad to nodeNameFixedWidth (mirrors getPrinterSyntaxStringWithWidth)
+                        var nw = src.nodeNameFixedWidth;
+                        while (nw && firstIdx.length < nw) firstIdx = "0" + firstIdx;
+                        // replace * in the clone name with the first node index
+                        cloneNode.name = cloneNode.name.replace(/\*/g, firstIdx);
+                        // replace * in the clone hostname with the first hostname index (if hostname is a template)
+                        if (cloneNode.hostname && cloneNode.hostname.indexOf('*') >= 0) {
+                            var firstHostIdx = (src.hostnameVectorIndexArr && src.hostnameVectorIndexArr.length)
+                                ? String(src.hostnameVectorIndexArr[0]) : firstIdx;
+                            // zero-pad to hostnameFixedWidth
+                            var hw = src.hostnameFixedWidth;
+                            while (hw && firstHostIdx.length < hw) firstHostIdx = "0" + firstHostIdx;
+                            cloneNode.hostname = cloneNode.hostname.replace(/\*/g, firstHostIdx + "_clone");
+                            // register the resolved hostname so the dropdown can select it
+                            _hostnames[cloneNode.hostname] = 1;
+                        }
+                        // multinode fields intentionally NOT copied — clone starts as single node
+                    }
+                    // hostname vector fields not copied either; clone starts with bare hostname only
+
+                    // originalName stays the same as the cloned node (tells server which record to copy)
+                    cloneNode.originalName = src.originalName;
+
+                    _nodes.push(cloneNode);
+
+                    initArrows();
+                    nodesHaveChanged();
+                    paint();
+
+                    save();
+
+                        } /*end confirmed continueFunc*/
+                    ); //end popUpVerification
+
+                } //end localCloneButtonHandler()
 
             } //end localAddHandlers()
 
@@ -4037,7 +4276,8 @@
             var type = _nodes[i].type;
             var typeName = ARTDAQConfigurationAPI.getShortTypeName(type);
 
-            if (x == undefined && _nodes[i].nodeCount && _nodes[i].nodeCount > 1) {
+            if (x == undefined && _nodes[i].nodeVectorIndexString !== undefined &&
+                _nodes[i].nodeVectorIndexString !== "") {
                 Debug.log("Showing multi-node menu");//handle node vector level first
                 var menuItems = [];
                 var menuItemHandlers = [];
@@ -4078,6 +4318,9 @@
             var nodeName = getNodeNameWithoutStatus(i);
             if (subi !== undefined) //dealing with a particular multi-node node
                 nodeName = getMultiNodeName(i, subi);
+
+            if (!_nodes[i].status)
+                Debug.warn("Note that FHiCL is not generated for disabled artdaq nodes; to check file generation time, inspect the timestamp of the FHiCL file you are viewing.");
 
             var menuItems = [
                 "Open FHiCL for " + typeName +
