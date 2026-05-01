@@ -1176,6 +1176,12 @@ try
 		std::string optionGroups    = CgiDataUtilities::getData(cgiIn, "optionGroups");
 		std::string versionsToCheck = CgiDataUtilities::getData(cgiIn, "versionsToCheck");
 
+		searchText = StringMacros::decodeURIComponent(searchText);
+		filterValue = StringMacros::decodeURIComponent(filterValue);
+		groupType = StringMacros::decodeURIComponent(groupType);
+		optionGroups = StringMacros::decodeURIComponent(optionGroups);
+		versionsToCheck = StringMacros::decodeURIComponent(versionsToCheck);
+
 		__SUP_COUT__ << "searchText: " << searchText << __E__;
 		__SUP_COUT__ << "filterValue: " << filterValue << __E__;
 		__SUP_COUT__ << "groupType: " << groupType << __E__;
@@ -1197,6 +1203,11 @@ try
 		std::string searchVersionToCheck =
 		    CgiDataUtilities::getData(cgiIn, "searchVersionToCheck");
 		std::string activeTablesOnly = CgiDataUtilities::getData(cgiIn, "activeOnly");
+
+		searchText = StringMacros::decodeURIComponent(searchText);
+		tableName = StringMacros::decodeURIComponent(tableName);
+		searchVersionToCheck = StringMacros::decodeURIComponent(searchVersionToCheck);
+		activeTablesOnly = StringMacros::decodeURIComponent(activeTablesOnly);
 
 		__SUP_COUT__ << "searchText: " << searchText << __E__;
 		__SUP_COUT__ << "tableName: " << tableName << __E__;
@@ -8735,7 +8746,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
     const bool              activeGroupsOnly,
     const std::string&      groupType,
     const std::string&      optionGroups,
-    std::string&            versionsToCheck)
+    const std::string&            versionsToCheck)
 {
 	bool searchAllGroups = false;
 	if(optionGroups.size() == 0)
