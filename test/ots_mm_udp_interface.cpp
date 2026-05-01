@@ -628,7 +628,7 @@ std::string ots_mm_udp_interface::getFrontendList()
 			retStr += ';';
 		retStr += fields[3];  //append FE UID
 		                      // __COUTV__(retStr);
-	}  //end primary loop
+	}                         //end primary loop
 
 	return retStr;
 }  //end getFrontendList()

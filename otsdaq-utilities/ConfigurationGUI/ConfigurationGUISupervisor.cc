@@ -4697,9 +4697,9 @@ try
 						memberMapAref[bkey.first] = newVersion;
 					}
 				}  // end member version conflict handling
-			}  // end B member map loop
-		}  // end context and table loop
-	}  // end top level conversion map or not loop
+			}      // end B member map loop
+		}          // end context and table loop
+	}              // end top level conversion map or not loop
 
 	// Now save groups
 
@@ -6181,7 +6181,7 @@ try
 				for(const auto& alias : aliases)
 					xmlOut.addTextElementToParent("VersionAlias", alias, subparentEl);
 				hi = lo = TableVersion::INVALID;  //invalidate for fresh start
-			}  //end version alias handling
+			}                                     //end version alias handling
 
 		}  //end version loop
 
@@ -7979,10 +7979,15 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 				               << groupInfo.second.getLatestKeyGroupTypeString() << "'/>"
 				               << __E__;
 				//leave place holder comment,author,time for javascript parsing
-				xmlOut.dataSs_ << "<TableGroupComment value='" << "" << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupAuthor value='" << "" << "'/>" << __E__;
-				xmlOut.dataSs_ << "<TableGroupCreationTime value='" << "" << "'/>"
-				               << __E__;
+				xmlOut.dataSs_ << "<TableGroupComment value='"
+				               << ""
+				               << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupAuthor value='"
+				               << ""
+				               << "'/>" << __E__;
+				xmlOut.dataSs_ << "<TableGroupCreationTime value='"
+				               << ""
+				               << "'/>" << __E__;
 			}
 
 			if(returnMembers)
@@ -8162,8 +8167,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 		return;
 	}
 
-	__SUP_COUT__ << "========== " << "Found " << info.subsystems.size() << " subsystems."
-	             << __E__;
+	__SUP_COUT__ << "========== "
+	             << "Found " << info.subsystems.size() << " subsystems." << __E__;
 
 	unsigned int paramIndex = 0;  // start at first artdaq Supervisor parameter
 
@@ -8183,8 +8188,9 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	{
 		typeString = "subsystem";
 
-		__SUP_COUT__ << "\t\t" << "Found " << typeString << " " << subsystem.first
-		             << " \t := '" << subsystem.second.label << "'" << __E__;
+		__SUP_COUT__ << "\t\t"
+		             << "Found " << typeString << " " << subsystem.first << " \t := '"
+		             << subsystem.second.label << "'" << __E__;
 
 		xmlOut.addTextElementToParent(typeString, subsystem.second.label, parentEl);
 		xmlOut.addTextElementToParent(
@@ -8201,20 +8207,21 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 
 	}  // end subsystem handling
 
-	__SUP_COUT__ << "========== " << "Found " << nodeTypeToObjectMap.size()
-	             << " process types." << __E__;
+	__SUP_COUT__ << "========== "
+	             << "Found " << nodeTypeToObjectMap.size() << " process types." << __E__;
 
 	for(auto& nameTypePair : nodeTypeToObjectMap)
 	{
 		typeString = nameTypePair.first;
 
-		__SUP_COUT__ << "\t" << "Found " << nameTypePair.second.size() << " "
-		             << typeString << "(s)" << __E__;
+		__SUP_COUT__ << "\t"
+		             << "Found " << nameTypePair.second.size() << " " << typeString
+		             << "(s)" << __E__;
 
 		for(auto& artdaqNode : nameTypePair.second)
 		{
-			__SUP_COUT__ << "\t\t" << "Found '" << artdaqNode.first << "' " << typeString
-			             << __E__;
+			__SUP_COUT__ << "\t\t"
+			             << "Found '" << artdaqNode.first << "' " << typeString << __E__;
 			__SUP_COUTV__(StringMacros::vectorToString(artdaqNode.second));
 
 			if(artdaqNode.second.size() < 2)
@@ -8262,16 +8269,16 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 			}
 
 			paramIndex = 0;  // return to starting parameter
-			__SUP_COUTT__ << "\t\t\t" << "-status: " << artdaqNode.second[paramIndex]
-			              << __E__;
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-status: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-status", artdaqNode.second[paramIndex++], parentEl);
-			__SUP_COUTT__ << "\t\t\t" << "-hostname: " << artdaqNode.second[paramIndex]
-			              << __E__;
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-hostname: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-hostname", artdaqNode.second[paramIndex++], parentEl);
-			__SUP_COUTT__ << "\t\t\t" << "-subsystem: " << artdaqNode.second[paramIndex]
-			              << __E__;
+			__SUP_COUTT__ << "\t\t\t"
+			              << "-subsystem: " << artdaqNode.second[paramIndex] << __E__;
 			xmlOut.addTextElementToParent(
 			    typeString + "-subsystem", artdaqNode.second[paramIndex], parentEl);
 		}
@@ -8955,8 +8962,8 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
 									    groupTableEl);
 								}
 							}  // end columns
-						}  // end rows
-					}  // end try load versioned table
+						}      // end rows
+					}          // end try load versioned table
 					catch(const std::runtime_error& e)
 					{
 						__COUT_WARN__ << "Failed to search table " << tablePair.first
@@ -9310,16 +9317,17 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 
 			diffReport << "\n\n"
 			           << "'" << groupName << "(" << groupKey << ")' has <b>"
-			           << memberMap.size() << " member tables</b>, and " << "'"
-			           << activeGroups.at(groupType).first << "("
+			           << memberMap.size() << " member tables</b>, and "
+			           << "'" << activeGroups.at(groupType).first << "("
 			           << activeGroups.at(groupType).second << ")' has <b>"
 			           << diffMemberMap.size() << " member tables</b>." << __E__;
 		}
 		else  //specified diff group (not active), so do not need groupType
 		{
 			diffReport << "This difference report is between group <b>'" << groupName
-			           << "(" << groupKey << ")'</b>" << " and group <b>'"
-			           << diffGroupName << "(" << diffKey << ")'</b>." << __E__;
+			           << "(" << groupKey << ")'</b>"
+			           << " and group <b>'" << diffGroupName << "(" << diffKey
+			           << ")'</b>." << __E__;
 
 			cfgMgr->loadTableGroup(diffGroupName,
 			                       diffKey,
@@ -9334,8 +9342,8 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 
 			diffReport << "\n\n"
 			           << "'" << groupName << "(" << groupKey << ")' has <b>"
-			           << memberMap.size() << " member tables</b>, and " << "'"
-			           << diffGroupName << "(" << diffKey << ")' has <b>"
+			           << memberMap.size() << " member tables</b>, and "
+			           << "'" << diffGroupName << "(" << diffKey << ")' has <b>"
 			           << diffMemberMap.size() << " member tables</b>." << __E__;
 		}
 
@@ -9349,8 +9357,9 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 		{
 			if(diffMemberMap.find(member.first) == diffMemberMap.end())
 			{
-				diffReport << "\n\n<li>" << "Table <b>" << member.first << "-v"
-				           << member.second << "</b> not found in active group."
+				diffReport << "\n\n<li>"
+				           << "Table <b>" << member.first << "-v" << member.second
+				           << "</b> not found in active group."
 				           << "</li>" << __E__;
 				noDifference = false;
 				++tableDifferences;
@@ -9364,10 +9373,11 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 			if(member.second == diffMemberMap.at(member.first))
 				continue;
 
-			diffReport << "\n\n<li>" << "Table <b>" << member.first << " v"
-			           << member.second << "</b> in " << groupName << "(" << groupKey
-			           << ")' ...vs... " << " <b>v" << diffMemberMap.at(member.first)
-			           << "</b> in " << diffGroupName << "(" << diffKey << ")':" << __E__;
+			diffReport << "\n\n<li>"
+			           << "Table <b>" << member.first << " v" << member.second
+			           << "</b> in " << groupName << "(" << groupKey << ")' ...vs... "
+			           << " <b>v" << diffMemberMap.at(member.first) << "</b> in "
+			           << diffGroupName << "(" << diffKey << ")':" << __E__;
 
 			TableBase* table = cfgMgr->getTableByName(member.first);
 
@@ -9402,15 +9412,17 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 			if(memberMap.find(diffMember.first) == memberMap.end())
 			{
 				if(diffKey.isInvalid())
-					diffReport << "\n\n<li>" << "Active Group Table <b>"
-					           << diffMember.first << "-v" << diffMember.second
-					           << "</b> not found in '" << groupName << "(" << groupKey
-					           << ")'." << "</li>" << __E__;
+					diffReport << "\n\n<li>"
+					           << "Active Group Table <b>" << diffMember.first << "-v"
+					           << diffMember.second << "</b> not found in '" << groupName
+					           << "(" << groupKey << ")'."
+					           << "</li>" << __E__;
 				else
 					diffReport << "\n\n<li>" << diffGroupName << "(" << diffKey
 					           << ") Table <b>" << diffMember.first << "-v"
 					           << diffMember.second << "</b> not found in '" << groupName
-					           << "(" << groupKey << ")'." << "</li>" << __E__;
+					           << "(" << groupKey << ")'."
+					           << "</li>" << __E__;
 
 				noDifference = false;
 				++tableDifferences;
@@ -9422,30 +9434,34 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 		if(diffKey.isInvalid())
 		{
 			if(noDifference)
-				diffReport << "\n\nNo difference found between " << "<b>'" << groupName
-				           << "(" << groupKey << ")'</b> and active group " << "<b>'"
-				           << activeGroups.at(groupType).first << "("
+				diffReport << "\n\nNo difference found between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and active group "
+				           << "<b>'" << activeGroups.at(groupType).first << "("
 				           << activeGroups.at(groupType).second << ")'</b>." << __E__;
 			else
 				diffReport << "\n\n<b>" << tableDifferences
 				           << "</b> member table differences identified between "
 				           << "<b>'" << groupName << "(" << groupKey
-				           << ")'</b> and active group " << "<b>'"
-				           << activeGroups.at(groupType).first << "("
+				           << ")'</b> and active group "
+				           << "<b>'" << activeGroups.at(groupType).first << "("
 				           << activeGroups.at(groupType).second << ")'</b>." << __E__;
 		}
 		else
 		{
 			if(noDifference)
-				diffReport << "\n\nNo difference found between " << "<b>'" << groupName
-				           << "(" << groupKey << ")'</b> and group " << "<b>'"
-				           << diffGroupName << "(" << diffKey << ")'</b>." << __E__;
+				diffReport << "\n\nNo difference found between "
+				           << "<b>'" << groupName << "(" << groupKey
+				           << ")'</b> and group "
+				           << "<b>'" << diffGroupName << "(" << diffKey << ")'</b>."
+				           << __E__;
 			else
 				diffReport << "\n\n<b>" << tableDifferences
 				           << "</b> member table differences identified between "
 				           << "<b>'" << groupName << "(" << groupKey
-				           << ")'</b> and group " << "<b>'" << diffGroupName << "("
-				           << diffKey << ")'</b>." << __E__;
+				           << ")'</b> and group "
+				           << "<b>'" << diffGroupName << "(" << diffKey << ")'</b>."
+				           << __E__;
 		}
 
 		xmlOut.addTextElementToData("NoDifference", noDifference ? "1" : "0");
