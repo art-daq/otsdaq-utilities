@@ -8748,6 +8748,14 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
     const std::string&      optionGroups,
     const std::string&      versionsToCheck)
 {
+	// Validate searchText: empty string matches every cell and would be extremely expensive
+	if(searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	{
+		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
+		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
+		return;
+	}
+
 	bool searchAllGroups = false;
 	if(optionGroups.size() == 0)
 	{
@@ -8976,6 +8984,14 @@ void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
     const std::string&      searchVersionToCheck,
     bool                    activeTablesOnly)
 {
+	// Validate searchText: empty string matches every cell and would be extremely expensive
+	if(searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	{
+		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
+		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
+		return;
+	}
+
 	const std::map<std::string, TableInfo>& allTableInfo   = cfgMgr->getAllTableInfo();
 	std::map<std::string, TableVersion>     allActivePairs = cfgMgr->getActiveVersions();
 
