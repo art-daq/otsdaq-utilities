@@ -667,6 +667,7 @@
 		var _msChosenGroupName;
 		var _msChosenGroupKey;
 		var _groupViewFilterIndex = 2; //-1=all, 0=context, 1=backbone, 2=configuration
+		var showGroupSearch = false;
 
 		var _mouseIsSelecting = false;	//to block switching cells when selecting text
 
@@ -2028,9 +2029,7 @@
 			var str = "";
 			str += "<div style='display:none'>Group View</div>"; //Note: this is children[0] tag is used in some place to determine mode after a series of events
 
-			var tableNames, tableVersions;
 			var backLinkStr;
-			var tableName, tableVersion;
 
 			backLinkStr = "setupGroupViewMode();";
 
@@ -2058,9 +2057,24 @@
 			str += "<a href='#' onclick='" +
 				"setupGroupCreator(\"&backLinkStr=" + backLinkStr +
 				"\");' title='" +
-				"Goto the group creator interface." +
+				"Go to the group creator interface." +
 				"'>" +
-				"Create a new Group</a>";
+				"Create a new Group</a> ";
+			str += "<a href='#' onclick='" +
+                "showGroupSearch = !showGroupSearch; setupGroupViewMode(); return false;' title='" +
+                "Toggle group search controls." +
+                "'>" +
+                "Search in Groups</a>";
+			var search_info = "Search for keywords in table content of specific groups or latest keys. " +
+				"\\nYou may search keywords in all groups or selected ones from the \\\"Search and Select a Group\\\" view." +
+				"\\n\\nUse the keyword field to search all tables in the group for specific text. " +
+				"\\nUse the group keys field to specify a range of group keys to search, such as \\\"1-5\\\" or \\\"-3\\\" to search the latest 3 keys. " +
+				"\\nUse the minimum occurrence threshold field to specify how many of the keywords must be present in the table.";
+			str += "<div id='config_select_info' " +
+				"class='config_select_info' " +
+				"title='Click for more details on the Search in Groups' " +
+				"onclick='Debug.info(\"" + search_info + "\")' >" +
+				"i</div>";
 			str += "<br>";
 
 
@@ -2090,6 +2104,30 @@
 					"'>" +
 					"View Latest Key for Selected Group</button>";
 
+				str += "<div id='groupSearchControls' style='display:" + (showGroupSearch ? "block" : "none") + ";'>";
+				str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Latest Keys Only</label>";
+
+				str += "<br>Keyword to search for... ";
+				str += "<br><input type='text' id='searchTextInGroups' " +
+					"placeholder='Search text' " +
+					"style='width:399px;' " +
+					"autocomplete='off' " +
+					"autocorrect='off' " +
+					"autocapitalize='off' " +
+					"spellcheck='false' " +
+					"onkeyup='if(event.key==\"Enter\") { searchTextInGroup(); }' />";
+
+				str += "<br>Range of group keys... ";
+				str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+                    "style='margin:0;width:399px; height:" + (17) + "px'" +
+					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys' />";
+
+				str += "<br>Minimum occurrence threshold... ";
+				str += "<br><input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+					"style='margin:0;width:399px; height:" + (17) + "px'/>";
+
+				str += "</div>";
+
 				str += "<div style='margin-top:10px' id='msSelectedGroupDiv'></div>";
 
 				str += "<div style='margin-top:0px'>";
@@ -2107,7 +2145,7 @@
 
 			//////////// make search box
 			{
-				var noMultiSelect = true; // true or false (false for multiselect functionality)
+				var noMultiSelect = false; // true or false (false for multiselect functionality)
 
 				var msValues = []; 	//group names for multi-select
 				var msKeys = []; 	//group keys for multi-select
@@ -2229,36 +2267,41 @@
 		function groupSearchSelectionHandler(el) {
 			var i = MultiSelectBox.getSelectedIndex(el);
 			var selArr = MultiSelectBox.getSelectionArray(el);
-			if (selArr[i]) {
-				Debug.log("Chosen element index:" + i +
-					" value:" + el.innerHTML +
-					" key:" + el.getAttribute("key-value") +
-					" type:" + el.getAttribute("type-value"));
-				var keyArr = el.getAttribute("key-value").split('-');
 
-				_msChosenGroupName = keyArr[keyArr.length - 1];
-				_msChosenGroupKey = keyArr[keyArr.length - 2];
+			var str = "";
+			for(var j=0; j<selArr.length; ++j){
+				if(selArr[j]==1){
+					var selEl = MultiSelectBox.getSelectionElementByIndex(el, j);
+					console.log("Chosen element index:" + j +
+						" value:" + selEl.innerHTML +
+						" key:" + selEl.getAttribute("key-value") +
+						" type:" + selEl.getAttribute("type-value"));
 
-				//copy selected div and show as selected
-				var srcEl = document.getElementById("groupViewGroupDiv-" +
-					_msChosenGroupName + "-" + _msChosenGroupKey);
-				var str = "";
+					var keyArr = selEl.getAttribute("key-value").split('-');
+					_msChosenGroupName = keyArr[keyArr.length - 1];
+					_msChosenGroupKey = keyArr[keyArr.length - 2];
 
-				str += "<b class='bold-header'>";
-				str += "Selected Group: " + _msChosenGroupName;
-				str += "</b><br>";
-				str += srcEl.innerHTML;
-				str += "<br>";
+					Debug.log("keyArr.length:" + keyArr.length +
+						" _msChosenGroupName:" + _msChosenGroupName +
+						" _msChosenGroupKey:" + _msChosenGroupKey);
 
-				el = document.getElementById('msSelectedGroupDiv');
-				el.innerHTML = str;
+					//copy selected div and show as selected
+					var srcEl = document.getElementById("groupViewGroupDiv-" +
+						_msChosenGroupName + "-" + _msChosenGroupKey);
+
+					str += "<b class='bold-header'>";
+					str += "Selected Group: " + _msChosenGroupName;
+					str += "</b><br>";
+					str += srcEl.innerHTML;
+					str += "<br>";
+				}
+				else {
+					_msChosenGroupName = "";
+					_msChosenGroupKey = "";
+				}
 			}
-			else {
-				_msChosenGroupName = "";
-				_msChosenGroupKey = "";
-				el = document.getElementById('msSelectedGroupDiv');
-				el.innerHTML = "";
-			}
+			el = document.getElementById('msSelectedGroupDiv');
+			el.innerHTML = str;
 		} //end groupSearchSelectionHandler()
 
 		//==============================================================================
@@ -2380,6 +2423,120 @@
 
 			return str;
 		} //end makeGroupInfoDisplayString()
+
+        //==============================================================================
+        //searchTextInGroup
+        function searchTextInGroup() {
+            Debug.log("CfgGUI searchTextInGroup");
+
+            var el = document.getElementById("searchTextInGroups");
+            var searchText = el ? el.value : "";
+            Debug.log("searchTextInGroups: " + searchText);
+
+			var el = document.getElementById("searchMinThreshold");
+            var searchMinThreshold = el ? el.value : 1;
+            Debug.log("searchMinThreshold: " + searchMinThreshold);
+
+			var el = document.getElementById("searchVersionToCheck");
+            var searchVersionToCheck = el ? el.value : "";
+            Debug.log("searchVersionToCheck: " + searchVersionToCheck);
+
+			var activeOnlyEl = document.getElementById("activeOnlyFilter");
+			var isActiveOnlyChecked = activeOnlyEl ? activeOnlyEl.checked : false;
+			Debug.log("activeGroupFilter checked: " + isActiveOnlyChecked);
+
+            var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
+            var groupType = typeName[_groupViewFilterIndex + 1];
+            Debug.log("groupType: " + groupType);
+
+			var optionElements = document.querySelectorAll('.myOption.optionhighlighted');
+			var optionGroups = Array.from(optionElements).map(el => el.textContent).join(',');
+			Debug.log("optionGroups: " + optionGroups);
+
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
+                "&searchText=" + encodeURIComponent(searchText) +
+                "&filterValue=" + encodeURIComponent(isActiveOnlyChecked) +
+                "&groupType=" + encodeURIComponent(groupType) +
+				"&optionGroups=" + encodeURIComponent(optionGroups) +
+				"&versionsToCheck=" + encodeURIComponent(searchVersionToCheck),
+				"",
+                function(req){
+                    var req = arguments[0];
+                    var errStr = arguments[2];
+                    if (errStr) {
+                        console.error(errStr);
+                        return;
+                    }
+
+                    const groupTableMap = new Map();
+                    var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
+
+					Debug.log("GroupTableMatch elements found:", groupTableMatches.length);
+
+                    for (var i = 0; i < groupTableMatches.length; i++) {
+                        var groupTable = groupTableMatches[i];
+                        var groupTableInfo = groupTable.getAttribute("value").split("/");
+                        var groupName = groupTableInfo[0];
+                        var tableName = groupTableInfo[1];
+                        var matchRow = DesktopContent.getXMLValue(groupTable, "MatchRow");
+                        var matchColumn = DesktopContent.getXMLValue(groupTable, "MatchColumn");
+                        var matchTableVersion = DesktopContent.getXMLValue(groupTable, "MatchTableVersion");
+                        var matchGroupVersion = DesktopContent.getXMLValue(groupTable, "MatchGroupVersion");
+                        // Process each match...
+
+                        Debug.log("Match found:", { groupName: groupName, groupVersion: matchGroupVersion, tableName: tableName, tableVersion: matchTableVersion, row: matchRow, column: matchColumn });
+                        var mapKey = groupName+"-"+tableName+"-"+matchColumn+"-"+matchTableVersion+"-"+matchGroupVersion;
+                        if (!groupTableMap.has(mapKey))
+                            groupTableMap.set(mapKey, 1);
+                        else
+                            groupTableMap.set(mapKey, groupTableMap.get(mapKey) + 1);
+                    } // end groupTableMatches loop
+
+					// loop through and add to new table if threshold met
+					for (let [key, count] of groupTableMap.entries()) {
+						if(count < searchMinThreshold)
+							groupTableMap.delete(key);
+					}
+
+                    // Display results
+                    var escapedSearchText = encodeHTML(searchText);
+                    var resultStr = "Search Results For: <b>" + escapedSearchText + "</b>\n";
+                    if (groupTableMap.size === 0) {
+                        resultStr += "<br>No matches found.";
+                    } else {
+                        var previousGroupName = "";
+						var previousGroupKey = "";
+                        var previousTableName = "";
+                        for(var i=0; i<groupTableMap.size; i++)
+                        {
+                            var parts = Array.from(groupTableMap.keys())[i].split("-");
+                            if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
+                            {
+                                resultStr += "\nGroup: <b>" + parts[0] + "</b> v" + parts[4] + "\n";
+                                previousGroupName = parts[0];
+                                previousGroupKey = parts[4];
+                                previousTableName = "";
+                            }
+                            if(parts[1] != previousTableName)
+                            {
+								resultStr += "\t<a href='#' onclick='setupSpecificTable(\"" + parts[1] + "\",\"" + parts[3] + "\", \"setupTableViewMode(\\\"anchorTag-" + parts[1] + "\\\");\"); return false;'>" +
+                                            "Table " + parts[1] + "-v" + parts[3] + "</a><br>";
+                                previousTableName = parts[1];
+                            }
+							if(parts[1] == "")
+								Debug.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
+                            resultStr += "\t\tColumn: <b>" + parts[2] + "</b>" +
+                                ", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i])) + "</b>" +
+                                "\n";
+                        } // end groupTableMap loop
+                    }
+					Debug._errTruncLen = -1;
+                    Debug.info(DesktopContent.tooltipConditionString(resultStr));
+					Debug._errTruncLen = undefined;
+                },
+                "searchTextInGroup"
+            );
+        } //end searchTextInGroup()
 
 		//==============================================================================
 		//gotoSelectedMSGroup ~~
@@ -3786,6 +3943,16 @@
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered_) {
 				window.addEventListener('mouseup', () => {
+					// do not interrupt highlighting and text input
+					const activeEl = document.activeElement;
+					const hasTextSelection = window.getSelection && !window.getSelection().isCollapsed;
+					if (_mouseIsSelecting || hasTextSelection ||
+						(activeEl && (activeEl.tagName === "INPUT" ||
+							activeEl.tagName === "TEXTAREA" ||
+							activeEl.isContentEditable))) {
+						return;
+					}
+					isDragging = false;
 					Debug.log("Window mouse up");
 					isDragging_ = false;
 					dragStartIndex_ = -1;
@@ -7876,6 +8043,37 @@
 		} //end groupsWithTable()
 
 		//==============================================================================
+        function setupSearchAllTableVersions() {
+            Debug.log("setupSearchAllTableVersions()");
+
+            var el = document.getElementById('findAndReplace');
+            el.innerHTML = ""; //clear the other type of controls
+            var el = document.getElementById('aboveTableDialog'); //share with copyAndMove and tableVersionDiff
+            var i = el.innerText.indexOf("Active ");
+            if (i >= 0 && i < 5) { el.innerHTML = ""; return; } //hide if already shown
+
+            var str = "";
+			str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
+
+			str += "<br>Keyword to search for... ";
+			str += "<br><input type='text' id='searchTextInAllTableVersions' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+				"onkeydown='if(event.key==\"Enter\") { popUpSearchFieldPrompt(_currentTableName); }' " +
+				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
+
+			str += "<br>Version to search for... ";
+            str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'" +
+					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys'/>";
+
+			str += "<br>Minimum occurrence threshold... ";
+            str += "<br>";
+            str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
+            str += "<br>";
+            el.innerHTML = str;
+        } //end setupSearchAllTableVersions()
+
+		//==============================================================================
 		//setupCopyAndMoveRows
 		function setupCopyAndMoveRows() {
 			Debug.log("setupCopyAndMoveRows()");
@@ -8745,7 +8943,7 @@
 
 						str += "<div onkeydown='keyHandler(event)' " +
 							"onmouseup='event.stopPropagation();' " +
-							"onclick='event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 							"style='" +
 							"white-space:nowrap;" +
 							"margin:-3px -2px -2px -1px;" +
@@ -8754,7 +8952,7 @@
 						str += "<select  onkeydown='keyHandler(event)' " +
 							"id='fixedChoice-editSelectBox' " +
 							"onmouseup='event.stopPropagation();' " +
-							"onclick='event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 							"style='" +
 							"float:left;" +
 							"margin: -2px 1px 0px 0px; " +
@@ -8813,7 +9011,7 @@
 								"id='fixedChoice-editTextBox' " +
 								"onkeydown='keyHandler(event)' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"style='display:none;" +
 								"float:left;" +
 								"margin:-2px 0 -" + (el.offsetHeight + 6) + "px 0;" +
@@ -9068,7 +9266,7 @@
 
 							str += "<table cellpadding='0' cellspacing='0' border='0' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"><tr>";
 							str += "<td style='text-align:right'>Table:</td><td>";
 							str += "<select  onkeydown='keyHandler(event,this)' " +
@@ -9814,7 +10012,7 @@
 								"id='fixedChoice-editTextBox' " +
 								"onkeydown='keyHandler(event)' " +
 								"onmouseup='event.stopPropagation();' " +
-								"onclick='event.stopPropagation();' " +
+							"onclick='event.stopPropagation();' " +
 								"style='display:none;" +
 								"float:left;" +
 								"margin:-2px 0 -" + (el.offsetHeight - 10) + "px 0;" +
@@ -9984,7 +10182,7 @@
 									"id='fixedChoice-editTextBox' " +
 									"onkeydown='keyHandler(event)' " +
 									"onmouseup='event.stopPropagation();' " +
-									"onclick='event.stopPropagation();' " +
+								"onclick='event.stopPropagation();' " +
 									"style='display:none;" +
 									"float:left;" +
 									"margin:-2px 0 -" + (el.offsetHeight - 10) + "px 0;" +
@@ -10323,7 +10521,8 @@
 					((el.offsetWidth > 150 ? el.offsetWidth : 150) - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='";
 				str += encodeHTML(_editingCellElOldValue); //replace single quotes since within html
 				str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
-					"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting);' " +
+					"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting); event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 					">";
 
 			}
@@ -10338,7 +10537,8 @@
 						((el.offsetWidth > 150 ? el.offsetWidth : 150) - 6) + "px; height:" + (el.offsetHeight - 8) + "px' value='";
 					str += encodeHTML(_editingCellElOldValue); //replace single quotes since within html
 					str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
-						"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting);' " +
+						"onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting); event.stopPropagation();' " +
+						"onclick='event.stopPropagation();' " +
 						">";
 				}
 
@@ -10620,6 +10820,7 @@
 			{
 				let rowIndex = Number(selectedRows[i].cells[0].textContent.trim().match(/\d+/)[0]);
 				tableCopyOrMoveRow(0, rowIndex, true);
+				registerOnClickActions(); //re-register onclick actions after copy since table is redrawn
 			}
 		} //end copyAndPasteBlockRows()
 
@@ -10636,6 +10837,7 @@
 					if (!deleteBtn) return null;
 					deleteBtn.onclick();
 					Debug.log("Successfully deleted row" + rowIndex);
+					registerOnClickActions(); //re-register onclick actions after deletion since table is redrawn
 				}
 				catch
 				{
@@ -16001,6 +16203,110 @@
 		} //end popUpClearVersionsPrompt()
 
 		//==============================================================================
+        //popUpSearchFieldPrompt
+        function popUpSearchFieldPrompt(tableName) {
+            console.log("CfgGUI popUpSearchFieldPrompt");
+            console.log("TableName " + tableName);
+
+            var el = document.getElementById("searchTextInAllTableVersions");
+            var searchText = el ? el.value : "";
+            Debug.log("Search field value: " + searchText);
+
+			var el = document.getElementById("activeOnlyFilter");
+			var activeOnlyFilter = el.checked;
+			console.log("activeOnlyFilter " + activeOnlyFilter);
+
+            var el = document.getElementById("searchMinThreshold");
+            var searchMinThreshold = el ? el.value : 1;
+            Debug.log("Search field value: " + searchMinThreshold);
+
+			var el = document.getElementById("searchVersionToCheck");
+            var searchVersionToCheck = el ? el.value : "";
+            Debug.log("Search field value: " + searchVersionToCheck);
+
+            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
+                "&searchText=" + encodeURIComponent(searchText) +
+                "&tableName=" + encodeURIComponent(tableName) +
+				"&searchVersionToCheck=" + encodeURIComponent(searchVersionToCheck) +
+				"&activeOnly=" + encodeURIComponent(activeOnlyFilter),
+                "",
+                function(req){
+                    var req = arguments[0];
+                    var errStr = arguments[2];
+                    if (errStr) {
+                        Debug.err(errStr);
+                        return;
+                    }
+
+                    var results = req.responseXML.getElementsByTagName("Match");
+					var escapedSearchText = encodeHTML(searchText);
+					if(results.length == 0)
+					{
+						Debug.info(DesktopContent.tooltipConditionString("Search Results For: <b>" + escapedSearchText + "</b><br><br>No matches found."));
+						return;
+					}
+
+                    var matchStr = "";
+                    var columnStr = "";
+                    var matchColumnMap = new Map();
+                    var prevVersion = -1;
+                    for (var i = 0; i < results.length; ++i) {
+                        var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
+                        if(matchVersion != prevVersion)
+                        {
+                            if(matchColumnMap.size > 0)
+                            {
+                                columnStr = "";
+                                for (let [column, count] of matchColumnMap) {
+                                    if(count >= searchMinThreshold)
+                                        columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                                }
+                                if(columnStr != "")
+                                {
+                                    matchStr += "<br>";
+                                    matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
+                                            "Table " + tableName + "-v" + prevVersion + "</a><br>";
+                                    matchStr += columnStr;
+                                }
+                            }
+                            prevVersion = matchVersion;
+                            matchColumnMap = new Map();
+                        }
+
+                        var matchColumn = DesktopContent.getXMLValue(results[i], "MatchColumn");
+                        if(matchColumnMap.has(matchColumn))
+                            matchColumnMap.set(matchColumn, matchColumnMap.get(matchColumn)+1);
+                        else
+                            matchColumnMap.set(matchColumn, 1);
+                    }
+
+                    // for last version looped through
+                    if(matchColumnMap.size > 0)
+                    {
+                        columnStr = "";
+                        for (let [column, count] of matchColumnMap) {
+                            if(count >= searchMinThreshold)
+                                columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+                        }
+                        if(columnStr != "")
+                        {
+                            matchStr += "<br>";
+                            matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
+                                    "Table " + tableName + "-v" + prevVersion + "</a><br>";
+                            matchStr += columnStr;
+                        }
+                    }
+
+					const resultStr = "Search Results For: <b>" + escapedSearchText + "</b><br>" + matchStr;
+                    Debug.log("resultStr " + resultStr);
+
+					Debug._errTruncLen = -1;
+					Debug.info(DesktopContent.tooltipConditionString(resultStr));
+					Debug._errTruncLen = undefined;
+                }, 0);
+        } //end popUpSearchFieldPrompt()
+
+		//==============================================================================
 		//popUpSaveNewTableForm
 		function popUpSaveNewTableForm() {
 			editCellOK(); //editCellCancel();
@@ -18252,6 +18558,7 @@
 				"Copy and Move",
 				"Diff Table Versions",
 				"Groups with this Table",
+				"Search All Table Versions",
 				_showTableDetails ?
 					"Hide Table Details" :
 					"Show Table Details",
@@ -18281,6 +18588,7 @@
 				"setupCopyAndMoveRows()",
 				"setupTableVersionDiff()",
 				"groupsWithTable()",
+				"setupSearchAllTableVersions()",
 				"toggleTableDetails()",
 				"transposeTableView()",
 				"DesktopContent.openNewBrowserTab(" +

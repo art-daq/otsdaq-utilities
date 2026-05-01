@@ -151,3 +151,15 @@ th {
 .currentMemberVersionLink, .currentMemberVersionLink label {
     cursor: pointer;
 }
+
+#config_select_info {
+    display: inline-block;
+    background-color: darkblue;
+    border-radius: 9px;
+    color: white;
+    padding: 0px 5px 1px 5px;
+    font-family: 'Inconsolata';
+    cursor: pointer;
+    margin-left: 5px;
+    margin-top: 3px;
+}

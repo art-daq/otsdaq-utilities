@@ -233,6 +233,8 @@ try
 	//	diffWithGroupKey
 	//	diffTableVersions
 	//	findGroupsWithTable
+	//  SearchFieldInGroup
+	//	SearchFieldInTableVersions
 	//	mergeGroups
 	//
 	//		---- associated with JavaScript Iterate App
@@ -1165,6 +1167,59 @@ try
 
 		handleGetAffectedGroupsXML(
 		    xmlOut, cfgMgr, groupName, TableGroupKey(groupKey), modifiedTables);
+	}
+	else if(requestType == "SearchFieldInGroup")
+	{
+		std::string searchText      = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string filterValue     = CgiDataUtilities::getData(cgiIn, "filterValue");
+		std::string groupType       = CgiDataUtilities::getData(cgiIn, "groupType");
+		std::string optionGroups    = CgiDataUtilities::getData(cgiIn, "optionGroups");
+		std::string versionsToCheck = CgiDataUtilities::getData(cgiIn, "versionsToCheck");
+
+		searchText      = StringMacros::decodeURIComponent(searchText);
+		filterValue     = StringMacros::decodeURIComponent(filterValue);
+		groupType       = StringMacros::decodeURIComponent(groupType);
+		optionGroups    = StringMacros::decodeURIComponent(optionGroups);
+		versionsToCheck = StringMacros::decodeURIComponent(versionsToCheck);
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "filterValue: " << filterValue << __E__;
+		__SUP_COUT__ << "groupType: " << groupType << __E__;
+		__SUP_COUT__ << "optionGroups: " << optionGroups << __E__;
+		__SUP_COUT__ << "versionsToCheck: " << versionsToCheck << __E__;
+
+		handleSearchFieldInGroupXML(xmlOut,
+		                            cfgMgr,
+		                            searchText,
+		                            (filterValue == "true"),
+		                            groupType,
+		                            optionGroups,
+		                            versionsToCheck);
+	}
+	else if(requestType == "SearchFieldInTableVersions")
+	{
+		std::string searchText = CgiDataUtilities::getData(cgiIn, "searchText");
+		std::string tableName  = CgiDataUtilities::getData(cgiIn, "tableName");
+		std::string searchVersionToCheck =
+		    CgiDataUtilities::getData(cgiIn, "searchVersionToCheck");
+		std::string activeTablesOnly = CgiDataUtilities::getData(cgiIn, "activeOnly");
+
+		searchText           = StringMacros::decodeURIComponent(searchText);
+		tableName            = StringMacros::decodeURIComponent(tableName);
+		searchVersionToCheck = StringMacros::decodeURIComponent(searchVersionToCheck);
+		activeTablesOnly     = StringMacros::decodeURIComponent(activeTablesOnly);
+
+		__SUP_COUT__ << "searchText: " << searchText << __E__;
+		__SUP_COUT__ << "tableName: " << tableName << __E__;
+		__SUP_COUT__ << "searchVersionToCheck: " << searchVersionToCheck << __E__;
+		__SUP_COUT__ << "activeTablesOnly: " << activeTablesOnly << __E__;
+
+		handleSearchFieldInTableXML(xmlOut,
+		                            cfgMgr,
+		                            searchText,
+		                            tableName,
+		                            searchVersionToCheck,
+		                            (activeTablesOnly == "true"));
 	}
 	else if(requestType == "saveTreeNodeEdit")
 	{
@@ -8688,6 +8743,481 @@ catch(const std::runtime_error& e)
 	    << e.what() << __E__;
 	__SUP_SS_THROW__;
 }  // end getSubsytemTableGroups() catch
+
+//==============================================================================
+/// handleSearchFieldInGroupXML
+void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
+    HttpXmlDocument&        xmlOut,
+    ConfigurationManagerRW* cfgMgr,
+    const std::string&      searchText,
+    const bool              activeGroupsOnly,
+    const std::string&      groupType,
+    const std::string&      optionGroups,
+    const std::string&      versionsToCheck)
+{
+	// Validate searchText: empty string matches every cell and would be extremely expensive
+	if(searchText.empty() || searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	{
+		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
+		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
+		return;
+	}
+
+	bool searchAllGroups = false;
+	if(optionGroups.size() == 0)
+	{
+		__COUT__ << "No optionGroups specified, searching all groups of type "
+		         << groupType << __E__;
+		searchAllGroups = true;
+	}
+	std::vector<std::string> optionGroupsList =
+	    StringMacros::getVectorFromString(optionGroups, {','});
+
+	const std::map<std::string, GroupInfo>& allGroupInfo = cfgMgr->getAllGroupInfo();
+
+	int    searchMinThreshold = 0;
+	int    searchMaxThreshold = 0;
+	size_t dashPos            = -1;
+
+	// Parse versionsToCheck for version range
+	if(versionsToCheck.empty())
+	{
+		searchMaxThreshold = INT_MAX;
+	}
+	else if(versionsToCheck.find('-') != std::string::npos)
+	{
+		__COUT__ << "Parsing versionsToCheck for range: " << versionsToCheck << __E__;
+		dashPos = versionsToCheck.find('-');
+
+		if(dashPos != 0)
+		{
+			// Format: "N-M" means version N to version M
+			std::string minStr = versionsToCheck.substr(0, dashPos);
+			std::string maxStr = versionsToCheck.substr(dashPos + 1);
+
+			searchMinThreshold = atoi(minStr.c_str());
+			searchMaxThreshold = atoi(maxStr.c_str());
+		}
+	}
+	else if(versionsToCheck != "")
+	{
+		// Single version specified
+		searchMinThreshold = atoi(versionsToCheck.c_str());
+		searchMaxThreshold = INT_MAX;  // effectively no upper limit
+	}
+	else
+	{
+		__COUT__ << "Unable to set min and max thresholds for versionsToCheck: "
+		         << versionsToCheck << __E__;
+		xmlOut.addTextElementToData(
+		    "Error",
+		    "Unable to set min and max thresholds for versionsToCheck: " +
+		        versionsToCheck);
+	}
+	__SUP_COUT__ << "versionsToCheck range: " << searchMinThreshold << " to "
+	             << searchMaxThreshold << __E__;
+
+	auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
+
+	for(auto& groupInfo : allGroupInfo)
+	{
+		__COUT__ << "Checking group: " << groupInfo.first
+		         << " group type : " << groupInfo.second.getLatestKeyGroupTypeString()
+		         << __E__;
+
+		if(groupInfo.second.getLatestKeyGroupTypeString() != groupType)
+			continue;
+
+		// Check if groupInfo.first is in optionGroups
+		if(!searchAllGroups &&
+		   std::find(optionGroupsList.begin(), optionGroupsList.end(), groupInfo.first) ==
+		       optionGroupsList.end())
+		{
+			__COUT__ << "\tSkipping group not in optionGroups list." << __E__;
+			continue;  // skip this group
+		}
+
+		std::set<TableGroupKey /*key*/> allGroupKeys = groupInfo.second.getKeys();
+		// convert set to vector for easier string handling
+		std::vector<TableGroupKey> groupKeysVec(allGroupKeys.begin(), allGroupKeys.end());
+		// convert vector to string for output
+		std::string groupKeysStr = StringMacros::vectorToString(groupKeysVec, {','});
+		__COUT__ << "Group keys:" << groupKeysStr << __E__;
+
+		// Dash is first position: "-N" means (maxVersion - N) to maxVersion
+		if(dashPos == 0)
+		{
+			std::string offsetStr = versionsToCheck.substr(1);
+			int         offset =
+			    atoi(offsetStr.c_str()) - 1;  // -1 to include the max version itself
+
+			__SUP_COUT__ << "versionsToCheck offset from end: " << offset << __E__;
+
+			// Find the max version from this group
+			if(groupKeysVec.size() > 0)
+			{
+				TableGroupKey maxVersion = groupKeysVec.at(
+				    groupKeysVec.size() - 1);  // get the last (max) version
+				int maxVersionNum = std::stoi(maxVersion.toString());
+				int minVersionNum = std::max(0, maxVersionNum - offset);
+
+				searchMinThreshold = minVersionNum;
+				searchMaxThreshold = maxVersionNum;
+
+				__SUP_COUT__ << "Version range: " << searchMinThreshold << " to "
+				             << searchMaxThreshold << __E__;
+			}
+		}
+
+		std::set<TableGroupKey /*key*/> groupKeys;
+		// make set of single active key for easier handling below
+		if(activeGroupsOnly)
+		{
+			std::set<TableGroupKey> singleKeySet;
+			singleKeySet.insert(groupInfo.second.getLatestKey());
+			groupKeys = std::move(singleKeySet);
+		}
+		else
+			groupKeys = std::move(allGroupKeys);
+
+		for(const auto& groupKey : groupKeys)
+		{
+			__COUT__ << "\tProcessing group: " << groupInfo.first << " v" << groupKey
+			         << __E__;
+
+			if(!activeGroupsOnly &&
+			   (std::stoi(groupKey.toString()) < searchMinThreshold ||
+			    std::stoi(groupKey.toString()) > searchMaxThreshold))
+			{
+				__COUT__ << "\tSkipping group version outside of versionsToCheck range."
+				         << __E__;
+				continue;  // skip this group version
+			}
+
+			// Get the member map for this group
+			std::map<std::string /*name*/, TableVersion /*version*/> memberMap;
+			try
+			{
+				cfgMgr->loadTableGroup(groupInfo.first,
+				                       groupKey,
+				                       false /*doActivate*/,
+				                       &memberMap,
+				                       0 /*progressBar*/,
+				                       0 /*accumulateErrors*/,
+				                       0 /*groupComment*/,
+				                       0 /*groupAuthor*/,
+				                       0 /*groupCreationTime*/,
+				                       true /*doNotLoadMembers*/);
+
+				// Process each table in the group
+				for(auto& tablePair : memberMap)
+				{
+					__COUT__ << "\t\tTable: " << tablePair.first << " v"
+					         << tablePair.second << __E__;
+
+					// Load the table for this specific version and search that exact view
+					try
+					{
+						TableBase* memberTable = cfgMgr->getVersionedTableByName(
+						    tablePair.first, tablePair.second);
+
+						// Get the table view for the requested version
+						const TableView& tableView = memberTable->getView();
+
+						// Loop through all rows and columns to search for searchText
+						for(unsigned int row = 0; row < tableView.getNumberOfRows();
+						    ++row)
+						{
+							for(unsigned int col = 0;
+							    col < tableView.getNumberOfColumns();
+							    ++col)
+							{
+								const std::string& cellValue =
+								    tableView.getDataView()[row][col];
+
+								// Check if searchText is found in cell value
+								if(cellValue.find(searchText) != std::string::npos)
+								{
+									__COUT__ << "\t\t\tMatch found in " << tablePair.first
+									         << " v" << tablePair.second << " row " << row
+									         << " column " << col
+									         << " value: " << cellValue << __E__;
+									// Separate match element by group/table for better organization
+									auto groupTableEl = xmlOut.addTextElementToParent(
+									    "GroupTableMatch",
+									    groupInfo.first + "/" + tablePair.first,
+									    parentEl);
+									xmlOut.addTextElementToParent(
+									    "MatchRow", std::to_string(row), groupTableEl);
+									xmlOut.addTextElementToParent(
+									    "MatchColumn",
+									    tableView.getColumnInfo(col).getName(),
+									    groupTableEl);
+									xmlOut.addTextElementToParent("MatchGroupVersion",
+									                              groupKey.toString(),
+									                              groupTableEl);
+									xmlOut.addTextElementToParent(
+									    "MatchTableVersion",
+									    tablePair.second.toString(),
+									    groupTableEl);
+								}
+							}  // end columns
+						}      // end rows
+					}          // end try load versioned table
+					catch(const std::runtime_error& e)
+					{
+						__COUT_WARN__ << "Failed to search table " << tablePair.first
+						              << " v" << tablePair.second << ": " << e.what()
+						              << __E__;
+					}
+				}  // end try load table group members
+			}
+			catch(const std::runtime_error& e)
+			{
+				__COUT_WARN__ << "Failed to load group members for " << groupInfo.first
+				              << ": " << e.what() << __E__;
+			}
+		}
+	}  // end groupInfo loop
+}  // end handleSearchFieldInGroupXML()
+
+//==============================================================================
+/// handleSearchFieldInTableXML
+void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
+    HttpXmlDocument&        xmlOut,
+    ConfigurationManagerRW* cfgMgr,
+    const std::string&      searchText,
+    const std::string&      tableName,
+    const std::string&      searchVersionToCheck,
+    bool                    activeTablesOnly)
+{
+	// Validate searchText: empty string matches every cell and would be extremely expensive
+	if(searchText.empty() || searchText.find_first_not_of(" \t\r\n") == std::string::npos)
+	{
+		__COUT_WARN__ << "searchText is empty or whitespace; aborting search." << __E__;
+		xmlOut.addTextElementToData("Error", "Search text must not be empty.");
+		return;
+	}
+
+	const std::map<std::string, TableInfo>& allTableInfo   = cfgMgr->getAllTableInfo();
+	std::map<std::string, TableVersion>     allActivePairs = cfgMgr->getActiveVersions();
+
+	int searchMinThreshold = 0;
+	int searchMaxThreshold = 0;
+
+	// Parse searchVersionToCheck for version range
+	if(searchVersionToCheck.empty())
+	{
+		searchMaxThreshold = INT_MAX;
+	}
+	else if(searchVersionToCheck.find('-') != std::string::npos)
+	{
+		size_t dashPos = searchVersionToCheck.find('-');
+
+		if(dashPos == 0)
+		{
+			// Dash is first position: "-N" means (maxVersion - N) to maxVersion
+			std::string offsetStr = searchVersionToCheck.substr(1);
+			int         offset =
+			    atoi(offsetStr.c_str()) - 1;  // -1 to include the max version itself
+
+			__SUP_COUT__ << "searchVersionToCheck offset from end: " << offset << __E__;
+
+			// Find the max version from allTableInfo
+			if(allTableInfo.find(tableName) != allTableInfo.end())
+			{
+				const TableInfo& tableInfo = allTableInfo.at(tableName);
+				if(tableInfo.versions_.size() > 0)
+				{
+					auto maxVersionIter = tableInfo.versions_.rbegin();
+					int  maxVersionNum  = maxVersionIter->version();
+					int  minVersionNum  = std::max(0, maxVersionNum - offset);
+
+					searchMinThreshold = minVersionNum;
+					searchMaxThreshold = maxVersionNum;
+
+					__SUP_COUT__ << "Version range: " << searchMinThreshold << " to "
+					             << searchMaxThreshold << __E__;
+				}
+			}
+		}
+		else
+		{
+			// Format: "N-M" means version N to version M
+			std::string minStr = searchVersionToCheck.substr(0, dashPos);
+			std::string maxStr = searchVersionToCheck.substr(dashPos + 1);
+
+			searchMinThreshold = atoi(minStr.c_str());
+			searchMaxThreshold = atoi(maxStr.c_str());
+		}
+	}
+	else if(searchVersionToCheck != "")
+	{
+		// Single version specified
+		searchMinThreshold = atoi(searchVersionToCheck.c_str());
+		searchMaxThreshold = INT_MAX;  // effectively no upper limit
+	}
+	else
+	{
+		__COUT__ << "Unable to set min and max thresholds for searchVersionToCheck: "
+		         << searchVersionToCheck << __E__;
+		xmlOut.addTextElementToData(
+		    "Error",
+		    "Unable to set min and max thresholds for searchVersionToCheck: " +
+		        searchVersionToCheck);
+	}
+	__SUP_COUT__ << "searchVersionToCheck range: " << searchMinThreshold << " to "
+	             << searchMaxThreshold << __E__;
+
+	try
+	{
+		if(allTableInfo.find(tableName) == allTableInfo.end())
+		{
+			__SUP_SS__ << "Table '" << tableName << "' not found." << __E__;
+			xmlOut.addTextElementToData("Error", ss.str());
+			return;
+		}
+
+		const TableInfo& tableInfo = allTableInfo.at(tableName);
+		__COUT__ << "tableInfo versions length " << tableInfo.versions_.size() << __E__;
+
+		unsigned int matchCount          = 0;
+		bool         allowIllegalColumns = true;
+		// Create a parent element for search results
+		auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
+
+		// Loop through all versions of the table
+		for(const auto& version : tableInfo.versions_)
+		{
+			try
+			{
+				auto activeIt = allActivePairs.find(tableName);
+				bool isActiveVersion =
+				    (activeIt != allActivePairs.end() && activeIt->second == version);
+				__COUT__ << "Active check for " << tableName << " v" << version << " => "
+				         << (isActiveVersion ? "active" : "inactive") << __E__;
+				if(!isActiveVersion && activeTablesOnly)
+					continue;  // Skip versions that are not active
+
+				if((std::stoi(version.toString()) < searchMinThreshold ||
+				    std::stoi(version.toString()) > searchMaxThreshold) &&
+				   activeTablesOnly == false /*ignore version threshold if active only*/)
+				{
+					__COUT__ << "Skipping version " << version << " out of range "
+					         << searchMinThreshold << " to " << searchMaxThreshold
+					         << __E__;
+					continue;
+				}
+				TableBase* table = cfgMgr->getTableByName(tableName);
+
+				// get view pointer
+				TableView* tableViewPtr;
+				if(version.isInvalid())  // use mock-up
+				{
+					__COUT__ << "Using mock-up for table " << tableName << " version "
+					         << version << __E__;
+					tableViewPtr = table->getMockupViewP();
+				}
+				else  // use view version
+				{
+					try
+					{
+						// locally accumulate 'manageable' errors getting the version to avoid
+						// reverting to mockup
+						std::string localAccumulatedErrors = "";
+						tableViewPtr =
+						    cfgMgr
+						        ->getVersionedTableByName(
+						            tableName,
+						            version,
+						            allowIllegalColumns /*looseColumnMatching*/,
+						            &localAccumulatedErrors,
+						            false /*getRawData*/)
+						        ->getViewP();
+
+						if(localAccumulatedErrors != "")
+							xmlOut.addTextElementToData("Error", localAccumulatedErrors);
+					}
+					catch(const std::runtime_error& e)
+					{
+						__COUT__ << "Error loading version " << version << " for table "
+						         << tableName << ": " << e.what() << __E__;
+						__SUP_COUT_WARN__ << "Could not load version " << version
+						                  << " for table " << tableName << ": "
+						                  << e.what() << __E__;
+						// fallback to mockup
+						tableViewPtr = table->getMockupViewP();
+					}
+				}
+
+				__COUT__ << "Getting table " << tableName << " version " << version
+				         << __E__;
+
+				// Search through all rows and columns
+				for(unsigned int row = 0; row < tableViewPtr->getNumberOfRows(); ++row)
+				{
+					for(unsigned int col = 0; col < tableViewPtr->getNumberOfColumns();
+					    ++col)
+					{
+						const std::string& cellValue =
+						    tableViewPtr->getDataView()[row][col];
+						// Check if searchText is found in cell value
+						if(cellValue.find(searchText) != std::string::npos)
+						{
+							__COUT__ << "Match found in row " << row << " column " << col
+							         << " value: " << cellValue << __E__;
+							auto matchEl = xmlOut.addTextElementToParent(
+							    "Match", cellValue, parentEl);
+							xmlOut.addTextElementToParent(
+							    "MatchVersion", version.toString(), matchEl);
+							xmlOut.addTextElementToParent(
+							    "MatchRow", std::to_string(row), matchEl);
+							xmlOut.addTextElementToParent(
+							    "MatchColumn",
+							    tableViewPtr->getColumnInfo(col).getName(),
+							    matchEl);
+
+							++matchCount;
+						}
+					}
+				}  // end for rows and columns
+			}
+			catch(const std::runtime_error& e)
+			{
+				__COUT__ << "Error searching in version " << version << " for table "
+				         << tableName << ": " << e.what() << __E__;
+				__SUP_COUT_WARN__ << "Could not load version " << version << " for table "
+				                  << tableName << ": " << e.what() << __E__;
+			}
+		}  //emd for version loop
+
+		xmlOut.addTextElementToData("MatchCount", std::to_string(matchCount));
+	}
+	catch(std::runtime_error& e)
+	{
+		__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " << e.what()
+		           << __E__;
+		__SUP_COUT_ERR__ << ss.str();
+		xmlOut.addTextElementToData("Error", ss.str());
+	}
+	catch(...)
+	{
+		__SUP_SS__ << "Error searching in table '" << tableName << "'!\n\n " << __E__;
+		try
+		{
+			throw;
+		}
+		catch(const std::exception& e)
+		{
+			ss << "Exception message: " << e.what();
+		}
+		catch(...)
+		{
+		}
+		__SUP_COUT_ERR__ << ss.str();
+		xmlOut.addTextElementToData("Error", ss.str());
+	}
+}  // end handleSearchFieldInTableXML()
 
 //==============================================================================
 /// handleGroupDiff
