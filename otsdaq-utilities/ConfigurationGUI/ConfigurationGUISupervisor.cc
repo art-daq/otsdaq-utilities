@@ -9061,7 +9061,6 @@ void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
 
 		unsigned int matchCount          = 0;
 		bool         allowIllegalColumns = true;
-		bool         getRawData          = true;
 		// Create a parent element for search results
 		auto parentEl = xmlOut.addTextElementToData("SearchResults", "");
 
@@ -9111,39 +9110,8 @@ void ConfigurationGUISupervisor::handleSearchFieldInTableXML(
 						            version,
 						            allowIllegalColumns /*looseColumnMatching*/,
 						            &localAccumulatedErrors,
-						            getRawData)
+						            false /*getRawData*/)
 						        ->getViewP();
-
-						if(getRawData)
-						{
-							__COUT__ << "Adding raw data for table " << tableName
-							         << " version " << version << __E__;
-
-							const std::set<std::string>& srcColNames =
-							    tableViewPtr->getSourceColumnNames();
-							for(auto& srcColName : srcColNames)
-								xmlOut.addTextElementToData("ColumnHeader", srcColName);
-
-							if(!version.isTemporaryVersion())
-							{
-								__COUT__ << "Table is not temporary, reloading view to "
-								            "clear raw data"
-								         << __E__;
-								// if version is temporary, view is already ok
-								table->eraseView(
-								    version);  // clear so that the next get will fill the table
-								tableViewPtr =
-								    cfgMgr
-								        ->getVersionedTableByName(
-								            tableName,
-								            version,
-								            allowIllegalColumns /*looseColumnMatching*/
-								            ,
-								            &localAccumulatedErrors,
-								            false /* getRawData */)
-								        ->getViewP();
-							}
-						}  // end rawData handling
 
 						if(localAccumulatedErrors != "")
 							xmlOut.addTextElementToData("Error", localAccumulatedErrors);
