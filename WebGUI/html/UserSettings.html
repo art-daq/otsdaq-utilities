@@ -1108,21 +1108,53 @@
 			var dnEl = document.getElementById("accountsDisplayName" + i);
 			var pEl = document.getElementById("accountsPermissions" + i);
 			var emEl = document.getElementById("accountsEmail" + i);
+			var username = _accountsArray[0][i].getAttribute('value');
+			var beforePermissions = _accountsArray[3][i].getAttribute('value');
+			var requestedPermissions = pEl.value;
 
-			Debug.log("Settings updateAccount-" + _accountsArray[0][i].getAttribute('value') + ":" + emEl.value +
+			Debug.log("Settings updateAccount-" + username + ":" + emEl.value +
 				":" + dnEl.value + ":" + pEl.value);
 
 			var data = "";
 			data += "type=updateAccount&";
-			data += "username=" + _accountsArray[0][i].getAttribute('value') + "&";
+			data += "username=" + username + "&";
 			data += "useremail=" + emEl.value + "&";
 			data += "displayname=" + dnEl.value + "&";
 			data += "permissions=" + pEl.value + "&";
 
 			_triedNewAccount = false;
 
+			var updateAccountHandler = function(req) {
+				settingsRequestHandler(req);
+
+				if (beforePermissions == requestedPermissions)
+					return;
+
+				var assignedPermissionsNote = "";
+				var trimmedRequestedPermissions = requestedPermissions ? requestedPermissions.trim() : "";
+				if (beforePermissions && beforePermissions.indexOf(",") >= 0 &&
+					trimmedRequestedPermissions && trimmedRequestedPermissions.indexOf(",") < 0 &&
+					trimmedRequestedPermissions.indexOf(":") < 0)
+					assignedPermissionsNote =
+						"The assigned permissions value was <b>" + trimmedRequestedPermissions +
+						"</b>, which will be assigned to the allUsers permissions group.<br>";
+
+				var afterPermissions = requestedPermissions;
+				for (var accountIndex = 0; _accountsArray && _accountsArray[0] &&
+					accountIndex < _accountsArray[0].length; ++accountIndex)
+					if (_accountsArray[0][accountIndex].getAttribute('value') == username) {
+						afterPermissions = _accountsArray[3][accountIndex].getAttribute('value');
+						break;
+					}
+
+				Debug.info(assignedPermissionsNote +
+					"Updated permissions for user '<b>" + username + "</b>'.<br>" +
+					"Before: <b>" + beforePermissions + "</b><br>" +
+					"After: <b>" + afterPermissions + "</b>");
+			}; //end updateAccountHandler()
+
 			DesktopContent.XMLHttpRequest("Request?RequestType=accountSettings&accounts=1",
-				data, settingsRequestHandler);
+				data, updateAccountHandler);
 
 		} //end updateAccount()
 
