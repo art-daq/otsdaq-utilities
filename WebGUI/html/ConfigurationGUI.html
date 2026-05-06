@@ -5970,7 +5970,10 @@
 					//	folderPath, unique, permissionString,
 					//	imageURL, windowContentURL, linkedApp, parameters)
 
-					newTabJS = "DesktopContent.addDesktopIcon(" +
+					newTabJS = "DesktopContent.popUpVerification(" +
+						"\"Are you sure you want to create a Subset Editor icon on your desktop?\"," +
+						"function(){" +
+						"DesktopContent.addDesktopIcon(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"CfgSub\",\"Config Subsets\"" +
 						", false /*unique*/" +
@@ -5984,7 +5987,8 @@
 						"&recordAlias=" + encodeURIComponent(recordAlias) +
 						"&editableFieldList=" + encodeURIComponent("!*CommentDescription") +
 						"\"" +
-						");";
+						");" +
+						"});";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
 					treeNavContextMenuItemHandlers.push(newTabJS);
