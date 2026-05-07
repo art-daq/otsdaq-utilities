@@ -6286,6 +6286,10 @@
 						treeEditingTargetColumn_);
 					selectThisTreeNode(idString, type);
 				}
+				else if (type.indexOf("link") == 0) {
+					//clicked link text but not edit icon, so toggle children
+					toggleTreeChildren(depth, uid);
+				}
 				else {
 					Debug.err("This should be impossible - tell a developer how you got here! " +
 						"Node clicked type '" + type + ".'");
@@ -6298,7 +6302,7 @@
 					toggleTreeChildren(depth, uid);
 
 				}
-				else if (type == "value") {
+				else if (type == "value" || type.indexOf("link") == 0) {
 					//N/A
 				}
 				else {
