@@ -71,6 +71,8 @@ else {
         var _openFolderPath = "";
         var _openFolderElement;
 
+        var _clickedFolderName = ""; //records the folder name that triggered the icon reload (for error demotion in iconRequestHandler)
+
         var _iconNameToPathMap = undefined; // {/* "name": [path,unique] */} ...used to open icons programatically
 
         var _folderFocusPath = ""; //if set, only show icons in this folder path on desktop (and subfolders)
@@ -106,7 +108,7 @@ else {
 
         //=====================================================================================
         // this.resetWithPermissions ~~
-        this.resetWithPermissions = function (permissions, keepSamePermissions, showRemoteGatewayErrors) {
+        this.resetWithPermissions = function (permissions, keepSamePermissions, showRemoteGatewayErrors, clickedFolderName) {
             Debug.log("Desktop resetWithPermissions " + permissions +
                 ", " + keepSamePermissions + ", se" + showRemoteGatewayErrors);
 
@@ -117,6 +119,10 @@ else {
             ////////////
 
             Desktop.desktop.icons.iconNameToPathMap = undefined; //undefined as indication that icons are not setup yet
+
+            if (clickedFolderName !== undefined)
+                _clickedFolderName = clickedFolderName;
+            else _clickedFolderName = ""; 
 
             if (!Desktop.isWizardMode()) { //This is satisfied for Digest Access Authorization and No Security on OTS
                 Debug.log("Requesting desktop icons from...", window.parent.window.location.origin);
@@ -151,21 +157,12 @@ else {
             _numOfIcons = 0;
 
             var iconArray;
+            var errs = []; //collect errors to evaluate after icon parsing
 
             if (!Desktop.isWizardMode()) { //This is satisfied for  Digest Access Authorization and No Security on OTS
 
-                var errs = DesktopContent.getXMLRequestErrors(req);
-                if (errs.length) {
-                    for (var i = 0; i < errs.length; ++i) {
-                        if (!showRemoteGatewayErrors &&
-                            (errs[i].indexOf("Remote Gateway") > 0 || //demote to log
-                                errs[i].indexOf("Remote Subsystem") > 0))
-                            Debug.log("Warning: " + errs[i]);
-                        else
-                            Debug.err(errs[i]);
-                    }
-                    //try to power through error //return;
-                }
+                errs = DesktopContent.getXMLRequestErrors(req);
+                //error display deferred to after icon parsing - demoted if icon data is present
 
                 iconArray = Desktop.getXMLValue(req, "iconList");
                 //Debug.log("icon Array unsplit: " + iconArray);
@@ -252,6 +249,36 @@ else {
                 Debug.err("No icons matched Folder path parameter provided: " + _folderFocusPath +
                     ". Check that the Folder path is correct and that you have permission to access it." +
                     "\n\nIf you are targeting a Folder path associated with a Remote Subsystem, perhaps it has not loaded yet or is disconnected. Contact admins if the problem persists.");
+
+            //check if the clicked folder has any icon data in the raw response
+            //  (independent of _folderFocusPath filtering)
+            var clickedFolderHasIcons = false;
+            var cfn = _clickedFolderName; //save before clearing
+            if (cfn != "") {
+                for (var j = 6; j < iconArray.length; j += numberOfIconFields)
+                    if (iconArray[j] && iconArray[j].split('/')[0] == cfn) {
+                        clickedFolderHasIcons = true;
+                        break;
+                    }
+            }
+            _clickedFolderName = ""; //clear after use
+
+            //show errors after icon parsing: if the clicked folder's icon data was present, demote all errors to warnings
+            //  (e.g. a disconnected remote subsystem folder icon click that still has cached icon data for that folder)
+            if (errs.length) {
+                for (var i = 0; i < errs.length; ++i) {
+                    if (clickedFolderHasIcons ||  //demote if the clicked folder's icon data was found in the response
+                        (!showRemoteGatewayErrors &&
+                            (errs[i].indexOf("Remote Gateway") > 0 || //demote to log
+                                errs[i].indexOf("Remote Subsystem") > 0)))
+                        Debug.log("Warning: " + errs[i]);
+                    else {
+                        var msg = cfn ? errs[i].split(cfn).join("<b>" + cfn + "</b>") : errs[i];
+                        Debug.err(msg);
+                    }
+                }
+                //try to power through error //return;
+            }
 
         } //end iconRequestHandler()
 

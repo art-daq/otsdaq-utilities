@@ -672,7 +672,8 @@ Desktop.createDesktop = function (security) {
 			//reset icons, if permissions undefined, keep permissions from before
 			Desktop.desktop.icons.resetWithPermissions(
 				undefined /*undefined permissions*/, true /*keepSamePermissions*/,
-				true /*showRemoteGatewayErrors*/);
+				true /*showRemoteGatewayErrors*/,
+				name.substr(0, name.indexOf(" loading...")) /*clickedFolderName*/);
 
 			return;
 		}
