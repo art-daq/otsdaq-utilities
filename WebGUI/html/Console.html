@@ -1676,7 +1676,7 @@
                 default:
                 case 0: //black and green
                     if (lvl == "Error")
-                        return "rgb(255,51,51)";
+                        return "rgb(247 125 125)";
                     if (lvl == "Warning")
                         return "rgb(255,150,50)";
                     if (lvl == "Info")
@@ -1989,7 +1989,11 @@
 
             // Scroll to the element
             if (els.length)
-                els[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                els[0].scrollIntoView({ //behavior: 'smooth', block: 'start' }); //change to nearest fixes top page/desktop jumping off screen
+                    behavior: 'smooth',
+                    block: "nearest",
+		            inline: "nearest",
+                });
 
         } //end scrollMessageAnchorIntoView()
 
