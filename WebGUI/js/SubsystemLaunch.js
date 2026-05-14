@@ -969,13 +969,13 @@ SubsystemLaunch.create = function() {
 							}
 							else if((status.indexOf("Fail") == 0 || status.indexOf("Error") == 0 || status.indexOf("Soft") == 0))
 							{
-								//show error to user only if it is a new error 
+								//show error to user only if it is a new error
 								//	(not a repeat of a growing error message from the server)
-								//	Check: if old status did not start with an error prefix, 
+								//	Check: if old status did not start with an error prefix,
 								//	then this is a genuinely new error to display.
 								var oldStatus = SubsystemLaunch.subsystems[j][fields[i]];
-								if(oldStatus.indexOf("Fail") != 0 && 
-									oldStatus.indexOf("Error") != 0 && 
+								if(oldStatus.indexOf("Fail") != 0 &&
+									oldStatus.indexOf("Error") != 0 &&
 									oldStatus.indexOf("Soft") != 0)
 									Debug.err("From Subsystem '" +
 										SubsystemLaunch.subsystems[j].name + "'... " +
