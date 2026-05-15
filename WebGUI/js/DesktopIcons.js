@@ -854,7 +854,6 @@ else {
 		//	deepClickHandler() in addIcon()
 		this.mouseDownFolderContents = function (el, event) {
 			var i = MultiSelectBox.getSelectedIndex(el);
-			var selArr = MultiSelectBox.getSelectionArray(el);
 			var val = el.textContent;
 			var type = el.getAttribute("type-value");
 			var key = el.getAttribute("key-value") | 0;
