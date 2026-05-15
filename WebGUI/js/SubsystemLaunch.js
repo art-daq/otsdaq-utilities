@@ -974,9 +974,9 @@ SubsystemLaunch.create = function() {
 								//	Check: if old status did not start with an error prefix,
 								//	then this is a genuinely new error to display.
 								var oldStatus = SubsystemLaunch.subsystems[j][fields[i]];
-								if(oldStatus.indexOf("Fail") != 0 &&
-									oldStatus.indexOf("Error") != 0 &&
-									oldStatus.indexOf("Soft") != 0)
+								if(!oldStatus || (oldStatus.indexOf("Fail") != 0 &&
+										oldStatus.indexOf("Error") != 0 &&
+										oldStatus.indexOf("Soft") != 0))
 									Debug.err("From Subsystem '" +
 										SubsystemLaunch.subsystems[j].name + "'... " +
 										status);
