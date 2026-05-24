@@ -649,6 +649,7 @@
 
         var _advancedFilterDelaySetTimer = 0;
         var _advancedFilterINIT_VAL = "Wildcard(*) filter here.";
+        var _advancedFilterStr = _advancedFilterINIT_VAL; //persists across server roundtrips that recreate ac_searchBox
 
         var _advancedRefreshSetTimer = 0;
 
@@ -2716,11 +2717,15 @@
             //	table draw to select multiples or click
             //		shift to add or single subtract
 
+            //Prefer live DOM value (user may be mid-edit), else fall back to cached
+            //  _advancedFilterStr — the ac_searchBox element is destroyed whenever
+            //  drawAdvancedControls() rebuilds the advanced area (e.g. after a Set
+            //  round-trip), so the DOM cannot be relied on as the source of truth.
             var filterStr = document.getElementById("ac_searchBox");
             if (filterStr)
                 filterStr = filterStr.value;
             else
-                filterStr = _advancedFilterINIT_VAL;
+                filterStr = _advancedFilterStr;
 
             str = "";
 
@@ -2759,8 +2764,9 @@
                     //allow right-click in text
                     "oncontextmenu": "_advancedContextMenuBlock=false; event.stopPropagation();",
                     "onfocus": 'Debug.log("focus",this.value); ' +
-                        'if(this.value == _advancedFilterINIT_VAL) {this.value = ""; this.style.color = "black";} ',
-                    "oninput": "window.clearTimeout(_advancedFilterDelaySetTimer); " +
+                        'if(this.value == _advancedFilterINIT_VAL) {this.value = ""; this.style.color = "black"; _advancedFilterStr = "";} ',
+                    "oninput": "_advancedFilterStr = this.value; " +
+                        "window.clearTimeout(_advancedFilterDelaySetTimer); " +
                         "_advancedFilterDelaySetTimer = window.setTimeout(applyAdvancedControlsFilter,500);",
                     "style":
                         "width:126px; " +
