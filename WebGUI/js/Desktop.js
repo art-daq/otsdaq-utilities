@@ -111,6 +111,7 @@ Desktop.createDesktop = function (security) {
 	//	Desktop.logout()
 	//	Desktop.formatTime(t)
 	//	Desktop.closeSystemMessage(id)
+	//	Desktop.copySystemMessage(id)
 	//	Desktop.isWizardMode()
 	//	Desktop.openNewBrowserTab(name,subname,windowPath,unique)
 	//	Desktop.desktopTooltip
@@ -578,16 +579,32 @@ Desktop.createDesktop = function (security) {
 
 		var str = "";
 
+		//copy-to-clipboard icon in top-right corner
+		str += "<a href='#' onclick='Desktop.copySystemMessage(" + _sysMsgId + ", event); return false;' " +
+			"title='Copy message text to clipboard' " +
+			"style='position:absolute; top:4px; right:6px; cursor:pointer; line-height:0;'>" +
+			"<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' " +
+			"fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>" +
+			"<rect x='9' y='9' width='13' height='13' rx='2' ry='2'></rect>" +
+			"<path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path>" +
+			"</svg></a>";
+
+		var plainTextLines = [];
 		for (var i = 0; i + 1 < msgArr.length; i += 2) {
 			str += "<div style='font-size:12px'>System Message Received at " + Desktop.formatTime(msgArr[i]) + "</div>";
+			var decoded = decodeURIComponent(msgArr[i + 1]);
 			str += "<div>" +
 				//first decode URI, then convert html entities
-				decodeURIComponent(msgArr[i + 1]).replace(/[\u00A0-\u9999<>\&]/gim,
+				decoded.replace(/[\u00A0-\u9999<>\&]/gim,
 					function (i) {
 						return '&#' + i.charCodeAt(0) + ';';
 					}) + "</div><br>";
+			plainTextLines.push("System Message Received at " + Desktop.formatTime(msgArr[i]));
+			plainTextLines.push(decoded);
+			plainTextLines.push("");
 			_lastSystemMessage = msgArr[i] + "|" + msgArr[i + 1];
 		}
+		sysMsgEl.setAttribute("data-msg-text", plainTextLines.join("\n"));
 
 		str += "<div style='float:left; font-size:12px; margin-top:6px;'>Repeats are suppressed for 30 seconds.</div>";
 
@@ -3027,6 +3044,72 @@ Desktop.closeSystemMessage = function (id) {
 	var el = document.getElementById("Desktop-systemMessageBox-" + id);
 	el.parentNode.removeChild(el); //remove from page!
 } //end closeSystemMessage()
+
+//==============================================================================
+//copySystemMessage ~~
+//	copy plain-text contents of a system message popup to the clipboard
+Desktop.copySystemMessage = function (id, ev) {
+	var el = document.getElementById("Desktop-systemMessageBox-" + id);
+	if (!el) return;
+	var text = el.getAttribute("data-msg-text") || el.innerText || "";
+
+	//capture click position now (event object may not be valid by the time clipboard promise resolves)
+	var clickX = ev && (ev.clientX || (ev.touches && ev.touches[0] && ev.touches[0].clientX));
+	var clickY = ev && (ev.clientY || (ev.touches && ev.touches[0] && ev.touches[0].clientY));
+
+	var done = function (ok) {
+		Debug.log("copySystemMessage " + id + (ok ? " copied" : " failed"));
+		if (typeof DesktopContent === "undefined" || !DesktopContent.popUpVerification) return;
+
+		DesktopContent.popUpVerification(
+			ok ? "System message text copied!" : "Failed to copy system message text!",
+			0,
+			0, "#efeaea", 0, "black",
+			0, 0, 0, 0, 0, 0, 0, 0,
+			true /* justDisplayAndTimeoutPopup */,
+			2147483646 + 1 /* z-index on top of system message box */);
+
+		//popUpVerification on Desktop page forces center-of-screen; override to bottom-right of click
+		if (clickX != null && clickY != null && DesktopContent._verifyPopUp) {
+			var p = DesktopContent._verifyPopUp;
+			var offset = 8; //px below & right of cursor
+			var px = clickX + offset;
+			var py = clickY + offset;
+
+			//keep within viewport
+			var maxX = DesktopContent.getWindowWidth() - p.offsetWidth - 4;
+			var maxY = DesktopContent.getWindowHeight() - p.offsetHeight - 4;
+			if (px > maxX) px = maxX;
+			if (py > maxY) py = maxY;
+			if (px < 4) px = 4;
+			if (py < 4) py = 4;
+
+			p.style.left = (DesktopContent.getWindowScrollLeft() + px) + "px";
+			p.style.top = (DesktopContent.getWindowScrollTop() + py) + "px";
+		}
+	};
+
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		navigator.clipboard.writeText(text).then(
+			function () { done(true); },
+			function () { done(false); }
+		);
+	}
+	else //fallback for older browsers / non-secure contexts
+	{
+		var ta = document.createElement("textarea");
+		ta.value = text;
+		ta.style.position = "fixed";
+		ta.style.opacity = "0";
+		document.body.appendChild(ta);
+		ta.select();
+		var ok = false;
+		try { ok = document.execCommand("copy"); }
+		catch (e) { ok = false; }
+		document.body.removeChild(ta);
+		done(ok);
+	}
+} //end copySystemMessage()
 
 //==============================================================================
 //closeAllSystemMessages ~~

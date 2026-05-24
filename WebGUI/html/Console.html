@@ -1362,7 +1362,7 @@
                 if (!selects[i]) {
                     Debug.log("Hiding class", tmpKeys[i]);
 
-                    tmpKeys[i] = tmpKeys[i].replace(".", "\\.");
+                    tmpKeys[i] = tmpKeys[i].replaceAll(".", "\\.");
                     css += "." + tmpKeys[i] + "_" +
                         field + "Entry " +
                         "{" +
@@ -1456,9 +1456,10 @@
                     tmp.Count + "' onmouseup='toggleMessageAnchor(this);' " + //" style='color:" +
                     //getColorForLevel(tmp.Level) +  //CHANGED to css based
                     "'>" +
+                    "<span class='" + tmp.Hostname + "_HostnameEntry'>" +
                     "<span class='" + tmp.Label + "_LabelEntry'>" +
                     "<span class='" + tmp.Level + "_LevelEntry'>" +
-                    "<span class='" + tmp.Custom + "_CustomEntry'>" + //open label level custom span (for filtering)
+                    "<span class='" + tmp.Custom + "_CustomEntry'>" + //open hostname label level custom span (for filtering)
                     "<span class='elaboratedEntry'><b>" +
                     tmp.Level + " " +
                     "(" + formatTime(_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_TIME]]) + ") ";
@@ -1478,7 +1479,7 @@
                         true /*doCloseTag*/) + "\t" +
                     // firstMsg +
                     "</span>" + secondMsg +
-                    "</span></span></span>" + //close label level span (for filtering)
+                    "</span></span></span></span>" + //close custom level label hostname span (for filtering)
                     "</div>"; //important to only have one /div> per entry for truncate
 
                 //aggragate stats for each observed field
@@ -1678,14 +1679,14 @@
                     if (lvl == "Error")
                         return "rgb(247,125,125)";
                     if (lvl == "Warning")
-                        return "rgb(255,150,50)";
+                        return "rgb(255,188,123)"; //"rgb(255,150,50)";
                     if (lvl == "Info")
                         return "rgb(50, 186, 255)";
 
                     return "auto";
                 case 1: //white and black
                     if (lvl == "Error")
-                        return "rgb(255,51,51)";
+                        return "rgb(206,5,5)"; //rgb(255,51,51)";
                     if (lvl == "Warning")
                         return "rgb(214, 128, 46)";
                     if (lvl == "Info")

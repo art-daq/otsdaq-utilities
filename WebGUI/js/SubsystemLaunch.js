@@ -680,6 +680,12 @@ SubsystemLaunch.create = function() {
 								// " style='overflow:auto; width: 200px;' " +
 								">";
 						}
+						else if(i == DETAIL_I) //single-row mode: scrollable detail wrapper to keep table width matched to status box
+						{
+							str += "<td id='subsystem_" + s + "_" + fieldIds[i] +
+								"' class='subsystem_" + fieldIds[i] + "'>" +
+								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
+						}
 						else //other field <td>s
 							str += "<td id='subsystem_" + s + "_" + fieldIds[i] +
 								"' class='subsystem_" + fieldIds[i] + "'>";
@@ -854,9 +860,13 @@ SubsystemLaunch.create = function() {
 		tdiv.style.width = (w-(2*_MARGIN)) + "px";
 		tdiv.style.display = "block";
 
-		if(redrawMode == 1)
-			sdiv.style.width = (w-(2*_MARGIN)) + "px";
+		//match subsystemDiv width to the systemStatusDiv (top primary status box) in both modes
+		sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
+
+		//single-row mode: size the Detail column's scroll wrap so the table width matches the status box width
+		if(redrawMode != 1)
+			_recomputeDetailScrollWidths();
 
 		//check if need extra new line at top to avoid FSM select
 		var dropdownContainer = document.getElementById('fsm-dropdown-div');
@@ -875,6 +885,40 @@ SubsystemLaunch.create = function() {
 		} //end check if need extra new line at top to avoid FSM select
 
 	} //end redrawWindow()
+
+	//=====================================================================================
+	//_recomputeDetailScrollWidths ~~
+	//	in single-row mode, give the Detail column's scroll wrappers an explicit width so the
+	//	subsystem table matches the systemStatusDiv width (preventing whole-page horizontal scroll
+	//	when Detail content is long, and keeping the table balanced when Detail is short).
+	function _recomputeDetailScrollWidths() {
+		const sdiv = document.getElementById("subsystemDiv");
+		if (!sdiv) return;
+		const tbl = sdiv.querySelector("table.tableSingleRowMode");
+		if (!tbl) return;
+		const wraps = tbl.querySelectorAll(".detail_scroll");
+		if (!wraps.length) return;
+
+		//target table width = subsystemDiv inner (content) width = same as systemStatusDiv table
+		const cs = getComputedStyle(sdiv);
+		const targetW = sdiv.clientWidth -
+				(parseFloat(cs.paddingLeft) || 0) -
+				(parseFloat(cs.paddingRight) || 0);
+
+		//collapse the detail wraps to measure what the rest of the table needs naturally
+		const origTblWidth = tbl.style.width;
+		tbl.style.width = "auto";
+		for (let i = 0; i < wraps.length; ++i) wraps[i].style.width = "0px";
+		//read forces layout
+		const otherW = tbl.offsetWidth;
+		//restore table to 100% (CSS default) so it stays anchored to the container width
+		tbl.style.width = origTblWidth || "";
+
+		const MIN_DETAIL_W = 120; //ensure user can still see/scroll something even on narrow windows
+		let leftover = targetW - otherW;
+		if (leftover < MIN_DETAIL_W) leftover = MIN_DETAIL_W;
+		for (let i = 0; i < wraps.length; ++i) wraps[i].style.width = leftover + "px";
+	} //end _recomputeDetailScrollWidths()
 
 	//=====================================================================================
 	//getCurrentStatus ~~
@@ -1280,8 +1324,13 @@ SubsystemLaunch.create = function() {
 						const tel = document.createElement("textarea");
 						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
 
-						el.innerText = tel.value + " ( " +
+						const detailText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
+
+						//single-row mode wraps detail text in a horizontal-scroll div; target it if present
+						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
+						if (scrollEl) scrollEl.innerText = detailText;
+						else el.innerText = detailText;
 					}
 					else if(fieldIds[i] == "status")
 						localDisplayState(el,
@@ -1295,6 +1344,9 @@ SubsystemLaunch.create = function() {
 
 			} //end field update loop
 		} //end subsystem update loop
+
+		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
+		_recomputeDetailScrollWidths();
 
 		return true;
 

@@ -232,6 +232,18 @@
 			cursor: pointer;
 		}
 
+		/* applied to <body> during click-drag interactions
+		   (e.g. status-LED drag, table-row drag-select)
+		   to suppress text selection and native drag */
+		body.no-select,
+		body.no-select * {
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+			-webkit-user-drag: none;
+		}
+
 		.treeNode {
 			margin-left: 30px;
 			float: left;
@@ -5620,13 +5632,23 @@
 					var borderColor = nodeStatusValue === "1" ? "white" : "rgb(255, 0, 0)";
 					var dotSize = nodeStatusValue === "1" ? "10px" : "5px";
 					var dotBorderRadius = nodeStatusValue === "1" ? "7px" : "3px";
-					var dotMargin = nodeStatusValue === "1" ? "2px 4px 0 2px" : "4px 7px 0 4px";
-					treeViewHandlerStr_ += "<div class='treeNode-statusDot' style='width:" + dotSize + ";height:" + dotSize +
+					//Wrap the visible dot in a larger transparent hitbox so the click
+					// target isn't restricted to the small colored circle.
+					treeViewHandlerStr_ +=
+						"<div class='treeNode-statusDotWrap' " +
+						"style='float:left;cursor:pointer;width:20px;height:18px;" +
+						"display:flex;align-items:center;justify-content:center;' " +
+						"title='Status: " + (nodeStatusValue === "1" ? "Enabled" : "Disabled") +
+						" (click to enable, shift+click to disable; hold and drag over LEDs to change many at once)' " +
+						"onmousedown='handleStatusDotMouseDown(event," + depth + "," + uid + ")' " +
+						"onmouseover='handleStatusDotMouseOver(event," + depth + "," + uid + ")' " +
+						"onclick='event.stopPropagation();'" +
+						">" +
+						"<div class='treeNode-statusDot' style='width:" + dotSize + ";height:" + dotSize +
 						";background-color:" + dotColor +
-						";float:left;border-radius:" + dotBorderRadius +
-						";border:2px solid " + borderColor +
-						";margin:" + dotMargin + ";' title='Status: " +
-						(nodeStatusValue === "1" ? "Enabled" : "Disabled") + "'></div>";
+						";border-radius:" + dotBorderRadius +
+						";border:2px solid " + borderColor + ";pointer-events:none;'></div>" +
+						"</div>";
 				}
 				treeViewHandlerStr_ += "</div>"; //end treeNode Value
 
@@ -13540,6 +13562,7 @@
 			var parentValEl = document.getElementById("treeNode-Value-" + parentIdString);
 			if (!parentValEl) return;
 			var dots = parentValEl.getElementsByClassName("treeNode-statusDot");
+			var tipHint = " (click to enable, shift+click to disable; hold and drag over LEDs to change many at once)";
 			if (dots.length) {
 				var dot = dots[0];
 				if (isEnabled) {
@@ -13548,34 +13571,309 @@
 					dot.style.width = "10px";
 					dot.style.height = "10px";
 					dot.style.borderRadius = "7px";
-					dot.style.margin = "2px 4px 0 2px";
-					dot.title = "Status: Enabled";
 				} else {
 					dot.style.backgroundColor = "white";
 					dot.style.borderColor = "rgb(255, 0, 0)";
 					dot.style.width = "5px";
 					dot.style.height = "5px";
 					dot.style.borderRadius = "3px";
-					dot.style.margin = "4px 7px 0 4px";
-					dot.title = "Status: Disabled";
 				}
+				var titleStr = "Status: " + (isEnabled ? "Enabled" : "Disabled");
+				//update tooltip on the wrapper if present (else on the dot itself)
+				var wrap = dot.parentElement;
+				if (wrap && wrap.classList && wrap.classList.contains("treeNode-statusDotWrap"))
+					wrap.title = titleStr + tipHint;
+				else
+					dot.title = titleStr;
 			} else {
-				// no dot exists yet, add one
+				// no dot exists yet, add wrapper+dot
 				var dotColor = isEnabled ? "rgb(16, 204, 16)" : "white";
 				var borderColor = isEnabled ? "white" : "rgb(255, 0, 0)";
 				var dotSize = isEnabled ? "10px" : "5px";
 				var dotBorderRadius = isEnabled ? "7px" : "3px";
-				var dotMargin = isEnabled ? "2px 4px 0 2px" : "4px 7px 0 4px";
+				var wrapDiv = document.createElement("div");
+				wrapDiv.className = "treeNode-statusDotWrap";
+				wrapDiv.style.cssText = "float:left;cursor:pointer;width:20px;height:18px;" +
+					"display:flex;align-items:center;justify-content:center;";
+				wrapDiv.title = "Status: " + (isEnabled ? "Enabled" : "Disabled") + tipHint;
 				var dotDiv = document.createElement("div");
 				dotDiv.className = "treeNode-statusDot";
 				dotDiv.style.cssText = "width:" + dotSize + ";height:" + dotSize +
-					";background-color:" + dotColor + ";float:left;border-radius:" +
-					dotBorderRadius + ";border:2px solid " + borderColor +
-					";margin:" + dotMargin + ";";
-				dotDiv.title = "Status: " + (isEnabled ? "Enabled" : "Disabled");
-				parentValEl.appendChild(dotDiv);
+					";background-color:" + dotColor + ";border-radius:" + dotBorderRadius +
+					";border:2px solid " + borderColor + ";pointer-events:none;";
+				wrapDiv.appendChild(dotDiv);
+				//note: the handlers are not attached here because we don't know depth/uid;
+				// this fallback path is rare (UID record that gains a status column on the fly)
+				parentValEl.appendChild(wrapDiv);
 			}
 		} //end updateParentStatusDot()
+
+		//==============================================================================
+		// Status-LED click/drag interactions: clicking the small status circle on a
+		// UID tree node turns Status ON; shift+click turns it OFF; holding the mouse
+		// down and dragging across other LEDs applies the same action to each one.
+		var _statusDotDragMode = null;        // null = inactive; true = enable; false = disable
+		var _statusDotSaveQueue_ = [];
+		var _statusDotSaving_ = false;
+		var _statusDotMouseupRegistered_ = false;
+
+		//handleStatusDotMouseDown ~~
+		function handleStatusDotMouseDown(event, depth, uid) {
+			event.stopPropagation();
+			event.preventDefault(); //prevent text selection at the dot itself
+			_statusDotDragMode = !event.shiftKey; //shift => disable; otherwise enable
+			//suppress text selection and native drag for the duration of the drag
+			document.body.classList.add('no-select');
+			if (window.getSelection) {
+				try { window.getSelection().removeAllRanges(); } catch (e) {}
+			}
+			registerStatusDotDragListeners();
+			applyStatusDot(depth, uid, _statusDotDragMode);
+		} //end handleStatusDotMouseDown()
+
+		//handleStatusDotMouseOver ~~
+		function handleStatusDotMouseOver(event, depth, uid) {
+			if (_statusDotDragMode === null) return;
+			event.stopPropagation();
+			applyStatusDot(depth, uid, _statusDotDragMode);
+		} //end handleStatusDotMouseOver()
+
+		function _statusDotEndDrag() {
+			if (_statusDotDragMode === null) return;
+			_statusDotDragMode = null;
+			document.body.classList.remove('no-select');
+		}
+
+		function registerStatusDotDragListeners() {
+			if (_statusDotMouseupRegistered_) return;
+			_statusDotMouseupRegistered_ = true;
+			//end drag on mouseup anywhere
+			window.addEventListener('mouseup', _statusDotEndDrag);
+			//also end drag if window loses focus
+			window.addEventListener('blur', _statusDotEndDrag);
+			//block any text selection or native drag while LED drag is active
+			document.addEventListener('selectstart', function (e) {
+				if (_statusDotDragMode !== null) e.preventDefault();
+			});
+			document.addEventListener('dragstart', function (e) {
+				if (_statusDotDragMode !== null) e.preventDefault();
+			});
+		}
+
+		//applyStatusDot ~~ optimistically flips LED, then queues a save
+		function applyStatusDot(depth, uid, enable) {
+			var idString = depth + "-" + uid;
+			var el = document.getElementById("treeNode-Value-" + idString);
+			if (!el) return;
+			var dots = el.getElementsByClassName("treeNode-statusDot");
+			if (!dots.length) return;
+			var dot = dots[0];
+
+			//skip if already in target state (LED bg green means enabled)
+			var currentlyEnabled = dot.style.backgroundColor.indexOf("rgb(16") === 0;
+			if (currentlyEnabled === enable) return;
+
+			//figure out the UID (text content of the value node, ignoring child element text)
+			var uidText = "";
+			for (var i = 0; i < el.childNodes.length; ++i)
+				if (el.childNodes[i].nodeType === 3) uidText += el.childNodes[i].nodeValue;
+			uidText = uidText.trim();
+			if (!uidText) {
+				Debug.err("Could not determine UID for status toggle.");
+				return;
+			}
+
+			//figure out the table name (same approach as handleTreeNodeClick for type=='uid')
+			var tableName;
+			var path = document.getElementById("treeNode-path-" + idString).textContent;
+			var splitArr = path.split('/');
+			var parentIdString = document.getElementById("treeNode-ParentId-" + idString).textContent;
+			if (depth == 1) {
+				tableName = splitArr[splitArr.length - 2];
+			} else {
+				var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+				if (!pel) {
+					var grandparentEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (grandparentEl)
+						pel = document.getElementById("treeNode-linkTableName-" + grandparentEl.textContent);
+				}
+				if (!pel) {
+					Debug.err("Could not locate target table for status toggle.");
+					return;
+				}
+				tableName = pel.textContent;
+			}
+
+			//optimistically update LED
+			updateParentStatusDot(idString, enable);
+
+			_statusDotSaveQueue_.push({
+				tableName: tableName,
+				uid: uidText,
+				enable: enable,
+				idString: idString,
+				triedEnabledFallback: false
+			});
+			processStatusDotSaveQueue();
+		} //end applyStatusDot()
+
+		//processStatusDotSaveQueue ~~ serializes saves so concurrent edits to the same
+		// table do not race on its temporary version
+		function processStatusDotSaveQueue() {
+			if (_statusDotSaving_) return;
+			if (!_statusDotSaveQueue_.length) return;
+			var item = _statusDotSaveQueue_[0];
+
+			var tableVersion = -1;
+			var tableIndex = -1;
+			for (var j = 0; j < treeMemberNames_.length; ++j)
+				if (item.tableName == treeMemberNames_[j] &&
+					(treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					tableIndex = j;
+					break;
+				}
+			if (tableIndex == -1) {
+				Debug.err("Could not find tree member table '" + item.tableName +
+					"' for status toggle.");
+				updateParentStatusDot(item.idString, !item.enable); //revert
+				_statusDotSaveQueue_.shift();
+				processStatusDotSaveQueue();
+				return;
+			}
+
+			var targetColumn = item.triedEnabledFallback ? "Enabled" : "Status";
+			var newValue = item.enable ? "1" : "0"; // server normalizes for OnOff/YesNo/TrueFalse
+
+			_statusDotSaving_ = true;
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=value-bool" +
+				"&targetTable=" + item.tableName +
+				"&targetTableVersion=" + tableVersion +
+				"&targetUID=" + encodeURIComponent(item.uid) +
+				"&targetColumn=" + targetColumn,
+				"newValue=" + newValue,
+				function (req, reqParam, errStr) {
+					_statusDotSaving_ = false;
+					var failed = false;
+					if (errStr) {
+						Debug.err(errStr);
+						failed = true;
+					}
+					else {
+						var err = DesktopContent.getXMLValue(req, "Error");
+						if (err) {
+							//if the column does not exist as 'Status', retry with 'Enabled'
+							if (!item.triedEnabledFallback &&
+								(err.indexOf("Status") >= 0 || err.indexOf("Enabled") >= 0) &&
+								err.toLowerCase().indexOf("column") >= 0) {
+								item.triedEnabledFallback = true;
+								processStatusDotSaveQueue();
+								return;
+							}
+							if (err.indexOf("is the same as the current value") > 0) {
+								Debug.log(err);
+							} else {
+								Debug.err(err);
+								failed = true;
+							}
+						}
+					}
+
+					if (failed) {
+						updateParentStatusDot(item.idString, !item.enable); //revert LED
+					} else {
+						//maintain tree member versions (possibly more than one table changed)
+						if (req && req.responseXML) {
+							var names = req.responseXML.getElementsByTagName("savedName");
+							var versions = req.responseXML.getElementsByTagName("savedVersion");
+							for (var i = 0; i < names.length; ++i) {
+								var rn = DesktopContent.getXMLValue(names[i]);
+								for (var j = 0; j < treeMemberNames_.length; ++j)
+									if (rn == treeMemberNames_[j]) {
+										treeMemberVersions_[j] = DesktopContent.getXMLValue(versions[i]);
+										break;
+									}
+							}
+						}
+						treeHasChanged();
+						refreshTreeTableVersions();
+						updateStatusFieldDisplayForRecord(item.tableName, item.uid,
+							targetColumn, item.enable);
+					}
+
+					_statusDotSaveQueue_.shift();
+					processStatusDotSaveQueue();
+				}, 0, 0, true
+			);
+		} //end processStatusDotSaveQueue()
+
+		//updateStatusFieldDisplayForRecord ~~ if the Status/Enabled child value node
+		// is currently rendered (record expanded), refresh its text + inline dot so
+		// the user sees the change consistently
+		function updateStatusFieldDisplayForRecord(tableName, uid, columnName, enable) {
+			var els = document.getElementsByClassName(
+				"treeNode-Value-leafNode-ColumnName-" + columnName);
+			for (var i = 0; i < els.length; ++i) {
+				var idString = els[i].id.substr(("treeNode-Value-leafNode-").length);
+				var depth = idString.split('-')[0] | 0;
+				var parentIdEl = document.getElementById("treeNode-ParentId-" + idString);
+				if (!parentIdEl) continue;
+				var parentIdString = parentIdEl.textContent;
+				var thisTable, thisUid;
+				if (depth == 2) {
+					var grandparentIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (!grandparentIdEl) continue;
+					var tableEl = document.getElementById("treeNode-Value-" + grandparentIdEl.textContent);
+					if (!tableEl) continue;
+					thisTable = tableEl.textContent;
+					var uidEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidEl) continue;
+					//strip the LED's empty text content
+					thisUid = "";
+					for (var k = 0; k < uidEl.childNodes.length; ++k)
+						if (uidEl.childNodes[k].nodeType === 3) thisUid += uidEl.childNodes[k].nodeValue;
+					thisUid = thisUid.trim();
+				} else {
+					var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+					if (!pel) {
+						var gpIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+						if (gpIdEl)
+							pel = document.getElementById("treeNode-linkTableName-" + gpIdEl.textContent);
+					}
+					if (!pel) continue;
+					thisTable = pel.textContent;
+					var uidNodeEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidNodeEl) continue;
+					var uidNodeText = "";
+					for (var k = 0; k < uidNodeEl.childNodes.length; ++k)
+						if (uidNodeEl.childNodes[k].nodeType === 3) uidNodeText += uidNodeEl.childNodes[k].nodeValue;
+					uidNodeText = uidNodeText.trim();
+					var uidSplit = uidNodeText.split('=');
+					thisUid = uidSplit.length > 1 ? uidSplit[1].split(')')[0].trim() : uidSplit[0];
+				}
+				if (thisTable !== tableName || thisUid !== uid) continue;
+
+				//derive displayed value text from the column type baked into the className
+				var clsMatch = els[i].className.match(/treeNode-ValueType-(OnOff|YesNo|TrueFalse)/);
+				var displayText;
+				if (clsMatch) {
+					if (clsMatch[1] === "OnOff") displayText = enable ? "On" : "Off";
+					else if (clsMatch[1] === "YesNo") displayText = enable ? "Yes" : "No";
+					else displayText = enable ? "True" : "False";
+				} else {
+					displayText = enable ? "On" : "Off"; //best-effort
+				}
+
+				var color = enable ? "rgb(16, 204, 16)" : "rgb(255, 0, 0);";
+				els[i].innerHTML =
+					"<div style='float:left'>" + displayText + "</div>" +
+					"<div style='width:10px;height:10px;background-color:" + color +
+					";float:left;border-radius:7px;border:2px solid white;margin:2px 0 0 6px;'></div>";
+				if (typeof treeDiff_COLOR_ !== "undefined")
+					els[i].style.color = treeDiff_COLOR_;
+			}
+		} //end updateStatusFieldDisplayForRecord()
 
 		//==============================================================================
 		//editTreeNodePropagateChange ~~
