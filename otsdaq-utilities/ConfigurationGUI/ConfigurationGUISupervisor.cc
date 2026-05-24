@@ -5523,10 +5523,13 @@ try
 			    StringMacros::getVectorFromString(newValue);
 			__COUTV__(StringMacros::vectorToString(paramArray));
 
-			if(paramArray.size() != 2)
+			// accept either 2 params (count, depth) or 3 params (count, depth, customUID).
+			// A non-empty customUID is honored only when copying a single instance.
+			if(paramArray.size() < 2 || paramArray.size() > 3)
 			{
 				__SS__ << "Illegal parameters for tree copy request: must be number of "
-				          "copy instances & depth of copy."
+				          "copy instances & depth of copy (optionally followed by a "
+				          "custom UID for the new record)."
 				       << __E__;
 				__SS_THROW__;
 			}
@@ -5536,8 +5539,13 @@ try
 			__COUTV__(row);
 			unsigned int numberOfInstances = atoi(paramArray[0].c_str());
 			unsigned int depth             = atoi(paramArray[1].c_str());
+			std::string  customUID =
+			    paramArray.size() == 3
+			        ? StringMacros::decodeURIComponent(paramArray[2])
+			        : std::string("");
 			__COUTV__(depth);
 			__COUTV__(numberOfInstances);
+			__COUTV__(customUID);
 			if(numberOfInstances > 1000)
 			{
 				__SS__ << "Illegal parameters - the maximum number of copy instances is "
@@ -5545,10 +5553,19 @@ try
 				       << numberOfInstances << __E__;
 				__SS_THROW__;
 			}
+			if(!customUID.empty() && numberOfInstances != 1)
+			{
+				__SS__ << "A custom UID can only be supplied when copying a single "
+				          "instance. Requested instances: "
+				       << numberOfInstances << __E__;
+				__SS_THROW__;
+			}
 
 			std::map<std::string /*modified table*/, TableVersion /* modified version */>
 			    modifiedTablesMap = cfgMgr->getActiveVersions();  // handling copied from
 			// ConfigurationGUISupervisor::handleFillModifiedTablesXML()
+
+			unsigned int rowsBeforeCopy = cfgView->getNumberOfRows();
 			ConfigurationSupervisorBase::recursiveCopyTreeUIDNode(xmlOut,
 			                                                      cfgMgr,
 			                                                      modifiedTablesMap,
@@ -5557,6 +5574,16 @@ try
 			                                                      numberOfInstances,
 			                                                      cfgView,
 			                                                      uid);
+
+			// if a custom UID was provided, rename the newly-copied row
+			if(!customUID.empty() &&
+			   cfgView->getNumberOfRows() > rowsBeforeCopy)
+			{
+				unsigned int uidCol = cfgView->getColUID();
+				unsigned int newRow = cfgView->getNumberOfRows() - 1;
+				cfgView->setValueAsString(customUID, newRow, uidCol);
+				xmlOut.addTextElementToData("CopiedRecordUID", customUID);
+			}
 		}
 		else if(type == "uid" || type == "value" || type == "value-groupid" ||
 		        type == "value-bool" || type == "value-bitmap" || type == "node-comment")

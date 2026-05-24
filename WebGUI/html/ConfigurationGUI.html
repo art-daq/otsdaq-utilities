@@ -341,8 +341,10 @@
 			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png);
 			width: 20px;
 			height: 20px;
+			float: left;
 			border: 0;
-			margin: -9px 0 -10px 10px;
+			margin: -2px 0 -7px 6px;
+			display: none;
 		}
 
 			.treeNode-copyIcon:hover {
@@ -5669,6 +5671,15 @@
 						"\"); event.stopPropagation();' " +
 						"title='Edit the UID for this record (with the option to delete this record entirely).' " +
 						"></div>" +
+						//copy-record icon, sits to the right of the pencil; only present for UID records
+						(nodeEditType == "uid" ?
+							"<div class='treeNode-copyIcon' id='treeNode-Value-copyIcon-" +
+							(depth + "-" + uid) + "' " +
+							"onclick='handleCopyRecord(" + depth + "," + uid +
+							"); event.stopPropagation();' " +
+							"title='Copy this record (you will be prompted for a new UID).' " +
+							"></div>"
+							: "") +
 						"</div>";
 				treeViewHandlerStr_ += "</td><td style='width:100px'>";
 
@@ -6336,6 +6347,284 @@
 			Debug.logv({ treeEditingNodeType_ });
 
 		} //end handleTreeNodeClick()
+
+		//==============================================================================
+		//handleCopyRecord ~~ copy a UID record (with all of its column values) to a
+		// new record whose UID is supplied by the user. The change is saved as a
+		// temporary table version, like other tree-view edits, so the user can
+		// review the diff and explicitly save the new permanent version.
+		function handleCopyRecord(depth, uid) {
+			if (DesktopContent.isLoading()) {
+				Debug.log("Please wait for Loading... to complete before copying.");
+				return;
+			}
+
+			var idString = depth + "-" + uid;
+			var el = document.getElementById("treeNode-Value-" + idString);
+			if (!el) return;
+
+			//get the UID text (text node only - skip nested icon/dot divs)
+			var sourceUID = "";
+			for (var i = 0; i < el.childNodes.length; ++i)
+				if (el.childNodes[i].nodeType === 3) sourceUID += el.childNodes[i].nodeValue;
+			sourceUID = sourceUID.trim();
+			if (!sourceUID) {
+				Debug.err("Could not determine source UID for record copy.");
+				return;
+			}
+
+			//determine table name and immediate parent id (same approach as
+			// handleTreeNodeClick's "uid" branch)
+			var path = document.getElementById("treeNode-path-" + idString).textContent;
+			var splitArr = path.split('/');
+			var parentIdString = document.getElementById("treeNode-ParentId-" + idString).textContent;
+			var tableName;
+			if (depth == 1) {
+				tableName = splitArr[splitArr.length - 2];
+			} else {
+				var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+				if (!pel) {
+					var gp = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (gp) pel = document.getElementById("treeNode-linkTableName-" + gp.textContent);
+				}
+				if (!pel) {
+					Debug.err("Could not locate target table for record copy.");
+					return;
+				}
+				tableName = pel.textContent;
+			}
+
+			DesktopContent.popUpVerification(
+				"Enter a UID for the new copy of record &apos;<b>" + sourceUID +
+				"</b>&apos; in table &apos;<b>" + tableName + "</b>&apos;.<br><br>" +
+				"All column values from the source record will be copied. " +
+				"The change is saved to a temporary table version - use " +
+				"<b>Save All Tree Changes</b> to commit it permanently.",
+				function (chosenUID) {
+					chosenUID = (chosenUID || "").trim();
+					if (!chosenUID) {
+						Debug.log("Copy cancelled - no UID provided.");
+						return;
+					}
+					if (chosenUID === sourceUID) {
+						Debug.warn("The new UID must differ from the source UID '" +
+							sourceUID + "'.");
+						return;
+					}
+					doCopyRecord(tableName, sourceUID, chosenUID, parentIdString);
+				},
+				0 /*replaceVal (unused)*/,
+				"#efeaea" /*bgColor*/, 0 /*textColor*/, "#770000" /*borderColor*/,
+				true /*getUserInput*/,
+				420 /*dialogWidth*/, 0 /*cancelFunc*/,
+				"Copy" /*yesButtonText*/,
+				true /*noAutoComplete*/,
+				sourceUID + "_copy" /*defaultUserInputValue*/
+			);
+		} //end handleCopyRecord()
+
+		//doCopyRecord ~~ issues the saveTreeNodeEdit request for tree-copy with a
+		// custom UID and refreshes the affected portion of the tree on success.
+		// If parentIdString is falsy, the tree DOM is not refreshed (used by the
+		// link-edit copy flow which is currently inside an in-place editor that
+		// would be destroyed by a refresh). onSuccess (optional) fires after the
+		// save completes successfully.
+		function doCopyRecord(tableName, sourceUID, newUID, parentIdString, onSuccess) {
+			var tableVersion = -1, tableIndex = -1;
+			for (var j = 0; j < treeMemberNames_.length; ++j)
+				if (tableName == treeMemberNames_[j] &&
+					(treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					tableIndex = j;
+					break;
+				}
+			if (tableIndex == -1) {
+				Debug.err("Could not find tree member table '" + tableName +
+					"' for record copy.");
+				return;
+			}
+
+			//tree-copy newValue := numberOfCopies , depth , customUID(encoded)
+			// Commas are the server-side delimiters and must NOT be URL-encoded here
+			// (CgiDataUtilities::postData hands the raw substring to getVectorFromString);
+			// only the user-supplied UID is encoded for delimiter/&/% safety.
+			var newValue = "1,0," + encodeURIComponent(newUID);
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=tree-copy" +
+				"&targetTable=" + tableName +
+				"&targetTableVersion=" + tableVersion +
+				"&targetUID=" + encodeURIComponent(sourceUID) +
+				"&targetColumn=UID",
+				"newValue=" + newValue,
+				function (req, reqParam, errStr) {
+					if (errStr) { Debug.err(errStr); return; }
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if (err) { Debug.err(err); return; }
+
+					//maintain tree member versions for all affected tables
+					var names = req.responseXML.getElementsByTagName("savedName");
+					var versions = req.responseXML.getElementsByTagName("savedVersion");
+					for (var i = 0; i < names.length; ++i) {
+						var rn = DesktopContent.getXMLValue(names[i]);
+						for (var j = 0; j < treeMemberNames_.length; ++j)
+							if (rn == treeMemberNames_[j]) {
+								treeMemberVersions_[j] = DesktopContent.getXMLValue(versions[i]);
+								break;
+							}
+					}
+
+					treeHasChanged();
+					refreshTreeTableVersions();
+
+					//refresh every other place the copied record could appear:
+					// table nodes whose name matches and GroupID-link nodes pointing
+					// at the same table. The in-place link editor (when invoked from
+					// the link-edit copy flow) is a UID-link cell whose ancestry is a
+					// different table, so refreshNodesShowingTable leaves it intact;
+					// we deliberately exclude its DOM subtree as a safety net.
+					refreshNodesShowingTable(tableName, _editingCellEl /*excludeEl*/);
+
+					Debug.log("Copied record '" + sourceUID + "' to '" + newUID +
+						"' in table '" + tableName + "' (temporary version saved).",
+						Debug.INFO_PRIORITY);
+
+					if (typeof onSuccess === "function") {
+						try { onSuccess(newUID); } catch (e) { Debug.err(e); }
+					}
+				}, 0, 0, true /*reqParam, progressHandler, callHandlerOnErr*/
+			);
+		} //end doCopyRecord()
+
+		//handleLinkRecordCopy ~~ invoked from the copy icon shown beside the pencil
+		// in the UID-link edit dialog. Copies the record currently selected as the
+		// link target and then retargets the link at the new copy (by switching the
+		// link editor into freeform mode and pre-filling the new UID).
+		function handleLinkRecordCopy() {
+			if (DesktopContent.isLoading()) {
+				Debug.log("Please wait for Loading... to complete before copying.");
+				return;
+			}
+
+			var sel = document.getElementById("editTree-groupIdFreeform-select");
+			var tel = document.getElementById("editTree-groupIdFreeform-input");
+			if (!sel || !tel) return;
+
+			//read whichever input is active to get the current link target UID
+			var sourceUID = (sel.style.display !== "none")
+				? (sel.value || "")
+				: (tel.value || "");
+			sourceUID = sourceUID.trim();
+			if (!sourceUID) {
+				Debug.warn("No record is currently selected as the link target; nothing to copy.");
+				return;
+			}
+
+			//the link's target table is the FIRST select inside the editing cell
+			//(see editTreeNodeOK link-UID handling and the render at editTree-...)
+			if (!_editingCellEl) {
+				Debug.err("Link editor is not active; cannot determine target table.");
+				return;
+			}
+			var tableSel = _editingCellEl.getElementsByTagName("select")[0];
+			if (!tableSel) {
+				Debug.err("Could not determine the link's target table.");
+				return;
+			}
+			var tableName = tableSel.value;
+
+			DesktopContent.popUpVerification(
+				"Enter a UID for the new copy of linked record &apos;<b>" + sourceUID +
+				"</b>&apos; in table &apos;<b>" + tableName + "</b>&apos;.<br><br>" +
+				"All column values from the source record will be copied, and this " +
+				"link will be retargeted at the new record. " +
+				"The change is saved to a temporary table version - use " +
+				"<b>Save All Tree Changes</b> to commit it permanently.",
+				function (chosenUID) {
+					chosenUID = (chosenUID || "").trim();
+					if (!chosenUID) {
+						Debug.log("Link-record copy cancelled - no UID provided.");
+						return;
+					}
+					if (chosenUID === sourceUID) {
+						Debug.warn("The new UID must differ from the source UID '" +
+							sourceUID + "'.");
+						return;
+					}
+					doCopyRecord(tableName, sourceUID, chosenUID,
+						null /*parentIdString - skip tree refresh while in-place editor is open*/,
+						function (newUID) {
+							//switch link editor to freeform mode so the new UID can be
+							// any string (incl. one not yet in the dropdown's options)
+							// and pre-fill the input with the new UID.
+							var freshSel = document.getElementById("editTree-groupIdFreeform-select");
+							var freshTel = document.getElementById("editTree-groupIdFreeform-input");
+							if (freshSel && freshTel && freshSel.style.display !== "none")
+								handleEditTreeGroupIDEditFreeformToggle();
+							freshTel = document.getElementById("editTree-groupIdFreeform-input");
+							if (freshTel) {
+								freshTel.value = newUID;
+								ConfigurationAPI.setCaretPosition(freshTel, 0, freshTel.value.length);
+								freshTel.focus();
+							}
+						});
+				},
+				0 /*replaceVal*/,
+				"#efeaea" /*bgColor*/, 0 /*textColor*/, "#770000" /*borderColor*/,
+				true /*getUserInput*/,
+				420 /*dialogWidth*/, 0 /*cancelFunc*/,
+				"Copy" /*yesButtonText*/,
+				true /*noAutoComplete*/,
+				sourceUID + "_copy" /*defaultUserInputValue*/
+			);
+		} //end handleLinkRecordCopy()
+
+		//refreshNodesShowingTable ~~ reset and re-expand any tree containers whose
+		// children would include records of the given table (table nodes and
+		// GroupID-link nodes pointing to it). If excludeEl is provided, any
+		// container whose subtree contains excludeEl is left alone (used by the
+		// link-edit copy flow to protect the still-open in-place editor).
+		function refreshNodesShowingTable(tableName, excludeEl) {
+			function safeToReset(idString) {
+				if (!excludeEl) return true;
+				var subtreeRoot = document.getElementById("treeNode-" + idString);
+				return !(subtreeRoot && subtreeRoot.contains(excludeEl));
+			}
+			function resetAndRetoggle(idString) {
+				var elChildrenNode = document.getElementById("treeNode-ChildrenOf-" + idString);
+				if (!elChildrenNode) return;
+				var wasDisplayed = elChildrenNode.style.display != "none" &&
+					elChildrenNode.innerHTML != "";
+				var parts = idString.split('-');
+				toggleTreeChildren(parts[0], parts[1], false);
+				elChildrenNode.innerHTML = "";
+				if (wasDisplayed)
+					toggleTreeChildren(parts[0], parts[1], true);
+			}
+
+			//table nodes whose text is this table name
+			var tableEls = document.getElementsByClassName("treeNode-Value-nodeEditType-table");
+			for (var i = 0; i < tableEls.length; ++i) {
+				if (tableEls[i].textContent !== tableName) continue;
+				var idString = tableEls[i].id.substr(("treeNode-Value-").length);
+				if (!safeToReset(idString)) continue;
+				resetAndRetoggle(idString);
+			}
+
+			//link nodes pointing to this table (only GroupID links show record lists)
+			var linkEls = document.getElementsByClassName("treeNode-Value-nodeEditType-link");
+			for (var i = 0; i < linkEls.length; ++i) {
+				var idString = linkEls[i].id.substr(("treeNode-Value-").length);
+				var linkTableEl = document.getElementById("treeNode-linkTableName-" + idString);
+				if (!linkTableEl || linkTableEl.textContent !== tableName) continue;
+				var elValSplit = linkEls[i].textContent.split('(');
+				if (elValSplit.length == 1) continue; //being edited
+				var linkIdType = elValSplit[1].split(' ')[0];
+				if (linkIdType !== "GroupID") continue;
+				if (!safeToReset(idString)) continue;
+				resetAndRetoggle(idString);
+			}
+		} //end refreshNodesShowingTable()
 
 		//==============================================================================
 		//applySearchNode ~
@@ -9388,7 +9677,21 @@
 								"onmouseup='event.stopPropagation();'" +
 								"onclick='handleEditTreeGroupIDEditFreeformToggle();event.stopPropagation();' " +
 								"title='Toggle free-form " + linkIdType + " editing' " +
-								"></div></div>";
+								"></div>" +
+								//copy-record icon: only meaningful for unique (UID) links;
+								// copies the currently-selected target record and retargets
+								// the link at the new copy
+								(linkIdType == "UID" ?
+									"<div style='display:block' " +
+									"class='treeNode-copyIcon' " +
+									"id='editTree-groupIdFreeform-copyIcon' " +
+									"onmouseup='event.stopPropagation();' " +
+									"onclick='handleLinkRecordCopy();event.stopPropagation();' " +
+									"title='Copy the currently-selected linked record (you will " +
+									"be prompted for a new UID; the link is then retargeted at the copy).' " +
+									"></div>"
+									: "") +
+								"</div>";
 							str += "</td></tr></table>"; //end select and editIcon table
 
 							str += "</td></tr></table>";
@@ -10717,6 +11020,11 @@
 				Debug.log("Ignoring key press and giving searchbar priority...");
 				return;
 			}
+			//ignore typing inside the verification popup's input field
+			// (otherwise tree-view hotkeys hijack characters as the user types
+			//  the new UID / value in the popup prompt)
+			if (document.activeElement.id == "DesktopContent_popUpUserInput")
+				return;
 
 			Debug.log("key " + e.keyCode);
 
@@ -20408,6 +20716,13 @@
 				}
 				catch (e) { }
 
+				//try bringing along the copy-record icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-copyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel) {
 					if (vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
@@ -20443,6 +20758,13 @@
 			//try bringing along the comment edit icon, and ignore fails
 			try {
 				document.getElementById("treeNode-Value-editCommentIcon-" +
+					treeEditingEditIconShownIdString_).style.display = "block";
+			}
+			catch (e) { }
+
+			//try bringing along the copy-record icon, and ignore fails
+			try {
+				document.getElementById("treeNode-Value-copyIcon-" +
 					treeEditingEditIconShownIdString_).style.display = "block";
 			}
 			catch (e) { }
