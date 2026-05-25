@@ -5539,10 +5539,9 @@ try
 			__COUTV__(row);
 			unsigned int numberOfInstances = atoi(paramArray[0].c_str());
 			unsigned int depth             = atoi(paramArray[1].c_str());
-			std::string  customUID =
-			    paramArray.size() == 3
-			        ? StringMacros::decodeURIComponent(paramArray[2])
-			        : std::string("");
+			std::string  customUID         = paramArray.size() == 3
+			                                     ? StringMacros::decodeURIComponent(paramArray[2])
+			                                     : std::string("");
 			__COUTV__(depth);
 			__COUTV__(numberOfInstances);
 			__COUTV__(customUID);
@@ -5576,8 +5575,7 @@ try
 			                                                      uid);
 
 			// if a custom UID was provided, rename the newly-copied row
-			if(!customUID.empty() &&
-			   cfgView->getNumberOfRows() > rowsBeforeCopy)
+			if(!customUID.empty() && cfgView->getNumberOfRows() > rowsBeforeCopy)
 			{
 				unsigned int uidCol = cfgView->getColUID();
 				unsigned int newRow = cfgView->getNumberOfRows() - 1;
