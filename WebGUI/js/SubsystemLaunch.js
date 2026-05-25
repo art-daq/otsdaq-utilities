@@ -673,12 +673,11 @@ SubsystemLaunch.create = function() {
 								SubsystemLaunch.subsystems[s].name +
 								"&apos; Console counts and relatch first messages'" +
 								"'>";
-						else if(i == DETAIL_I && redrawMode == 1) //keep detail field small in compressed mode
+						else if(i == DETAIL_I && redrawMode == 1) //compressed mode: scrollable detail wrapper (spans 3 cols)
 						{
 							str += "<td colspan=3 id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + " compressed_detail'" +
-								// " style='overflow:auto; width: 200px;' " +
-								">";
+								"' class='subsystem_" + fieldIds[i] + " compressed_detail'>" +
+								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
 						}
 						else if(i == DETAIL_I) //single-row mode: scrollable detail wrapper to keep table width matched to status box
 						{
@@ -864,9 +863,8 @@ SubsystemLaunch.create = function() {
 		sdiv.style.width = (w-(2*_MARGIN)) + "px";
 		sdiv.style.display = "block";
 
-		//single-row mode: size the Detail column's scroll wrap so the table width matches the status box width
-		if(redrawMode != 1)
-			_recomputeDetailScrollWidths();
+		//size the Detail column's scroll wrap so the table width matches the status box width (both modes)
+		_recomputeDetailScrollWidths();
 
 		//check if need extra new line at top to avoid FSM select
 		var dropdownContainer = document.getElementById('fsm-dropdown-div');
@@ -888,16 +886,19 @@ SubsystemLaunch.create = function() {
 
 	//=====================================================================================
 	//_recomputeDetailScrollWidths ~~
-	//	in single-row mode, give the Detail column's scroll wrappers an explicit width so the
-	//	subsystem table matches the systemStatusDiv width (preventing whole-page horizontal scroll
-	//	when Detail content is long, and keeping the table balanced when Detail is short).
+	//	give each Detail column's scroll wrapper an explicit pixel width so the subsystem table
+	//	matches the systemStatusDiv width (preventing whole-page horizontal scroll when Detail
+	//	content is long, while keeping the wrap wide enough to show useful content).
+	//	Works for both wide single-row mode and compressed double-row mode.
 	function _recomputeDetailScrollWidths() {
 		const sdiv = document.getElementById("subsystemDiv");
 		if (!sdiv) return;
-		const tbl = sdiv.querySelector("table.tableSingleRowMode");
+		const tbl = sdiv.querySelector("table.tableSingleRowMode, table.tableDoubleRowMode");
 		if (!tbl) return;
 		const wraps = tbl.querySelectorAll(".detail_scroll");
 		if (!wraps.length) return;
+
+		const isCompressed = tbl.classList.contains("tableDoubleRowMode");
 
 		//target table width = subsystemDiv inner (content) width = same as systemStatusDiv table
 		const cs = getComputedStyle(sdiv);
@@ -911,13 +912,34 @@ SubsystemLaunch.create = function() {
 		for (let i = 0; i < wraps.length; ++i) wraps[i].style.width = "0px";
 		//read forces layout
 		const otherW = tbl.offsetWidth;
-		//restore table to 100% (CSS default) so it stays anchored to the container width
+		//in compressed mode the detail td spans 3 columns, so the spanned columns
+		//	contribute extra to the natural table width once the wrap is set;
+		//	measure the collapsed detail td and add it back to the leftover budget.
+		let spanW = 0;
+		if (isCompressed && wraps[0] && wraps[0].parentElement)
+			spanW = wraps[0].parentElement.clientWidth;
+		//restore table to default (auto) so it stays anchored to the container width
 		tbl.style.width = origTblWidth || "";
 
 		const MIN_DETAIL_W = 120; //ensure user can still see/scroll something even on narrow windows
-		let leftover = targetW - otherW;
+		let leftover = targetW - otherW + spanW;
 		if (leftover < MIN_DETAIL_W) leftover = MIN_DETAIL_W;
 		for (let i = 0; i < wraps.length; ++i) wraps[i].style.width = leftover + "px";
+
+		//final pass: in compressed mode the detail td spans 3 columns, and the upper subsystem
+		//	row's content (e.g., long subsystem name) can stretch those columns wider than the
+		//	leftover value we set, leaving empty space to the right of the wrap. After the
+		//	initial sizing forces the table layout to settle, grow each wrap to fill its td.
+		for (let i = 0; i < wraps.length; ++i) {
+			const td = wraps[i].parentElement;
+			if (!td) continue;
+			const tdcs = getComputedStyle(td);
+			const tdInnerW = td.clientWidth -
+					(parseFloat(tdcs.paddingLeft) || 0) -
+					(parseFloat(tdcs.paddingRight) || 0);
+			if (tdInnerW > wraps[i].offsetWidth)
+				wraps[i].style.width = tdInnerW + "px";
+		}
 	} //end _recomputeDetailScrollWidths()
 
 	//=====================================================================================
@@ -1855,9 +1877,10 @@ SubsystemLaunch.create = function() {
 					},
 					0,"#efeaea",0,"#770000"); //end popUpVerification
 			}
-			else if (command == "Halt" && //likely this means state machines were moved independently, and user wants to do a batch 'Halt'
+			else if (command == "Halt" && //batch 'Halt' so each subsystem is haltable from its own state (avoids Halt->Initialize conversion at top-level skipping Configured subsystems in broadcastMessageToRemoteGateways)
 				(SubsystemLaunch.system.state == "Halted" ||
-					SubsystemLaunch.system.state == "Failed"))
+					SubsystemLaunch.system.state == "Failed" ||
+					SubsystemLaunch.system.state == "Initial"))
 			{
 				Debug.log("Do batch Halt fsmName",_fsmName);
 
@@ -1889,7 +1912,8 @@ SubsystemLaunch.create = function() {
 				}
 
 				//every 2 seconds, check if subsystems are halted
-				if(SubsystemLaunch.system.state == "Failed")
+				if(SubsystemLaunch.system.state == "Failed" ||
+				   SubsystemLaunch.system.state == "Initial")
 				{
 					var moveTopLevelAttempts = 0;
 					localMoveTopLevelToHalted();
@@ -1901,7 +1925,13 @@ SubsystemLaunch.create = function() {
 						Debug.log("Trying to move top-level to Halted",_fsmName,
 								"moveTopLevelAttempts",moveTopLevelAttempts);
 						window.clearTimeout(_getStatusTimer);
-						invalidatePendingStatusResponses();
+						//note: do NOT invalidatePendingStatusResponses() here — recursive
+						//entries would stale-out the previous attempt's in-flight
+						//getCurrentStatus() before its response can be processed, leaving
+						//SubsystemLaunch.subsystems[].status frozen at whatever it was when
+						//the loop started (e.g. "Launching Halt"). The outer invalidate at
+						//the batch-Halt entry (around line 1890) already cleared any
+						//pre-existing in-flight requests before the loop begins.
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
@@ -1913,8 +1943,10 @@ SubsystemLaunch.create = function() {
 							function () {
 								getCurrentStatus();
 
-								window.clearTimeout(_getStatusTimer);
-								invalidatePendingStatusResponses();
+								//note: do NOT invalidatePendingStatusResponses() here —
+								//getCurrentStatus() above already bumped the nonce; calling
+								//invalidate would bump it again and guarantee its own
+								//response is dropped as stale (see localGetStatusHandler).
 								//force state display for user feedback
 								SubsystemLaunch.system.inTransition = true;
 								SubsystemLaunch.system.transition = "Launching " + command;
@@ -1962,7 +1994,7 @@ SubsystemLaunch.create = function() {
 											0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 											true /*targetGatewaySupervisor*/);
 								}
-								else if(moveTopLevelAttempts > 10)
+								else if(moveTopLevelAttempts > 30) //~60s; tolerates several down/unreachable subsystems whose 10s icon/status timeouts can serialize the AppStatusWorkLoop
 								{
 									Debug.err("Could not move top-level to Halted! Timeout waiting for selected subsystems to halt...");
 									getCurrentStatus();

@@ -227,15 +227,11 @@
 			font-family: 'Inconsolata', monospace;
 		}
 
-		.compressed_detail {
-			overflow-x: clip;
-			max-width: 1100px;
-		}
-
-		/* single-row mode: detail column's flexible-width scroll container.
+		/* Detail column's flexible-width scroll container (both modes).
 		   Width is set in JS (_recomputeDetailScrollWidths) so the table matches the status box.
 		   Scrollbar is hidden but mouse wheel / trackpad horizontal scrolling still works. */
-		#subsystemDiv .tableSingleRowMode {
+		#subsystemDiv .tableSingleRowMode,
+		#subsystemDiv .tableDoubleRowMode {
 			max-width: 100%;
 			table-layout: auto;
 		}

@@ -2744,10 +2744,14 @@
             str += "</div>"
             // ------------------
 
+            //inline-flex wrapper aligns the magnifier icon and clear-X vertically
+            //  with the center of the input, regardless of the input's rendered height.
+            str += "<span id='ac_searchBoxWrap' style='display:inline-flex; align-items:center; vertical-align:middle;'>";
+
             str += DesktopContent.htmlOpen("img",
                 {
                     "src": "/WebPath/images/windowContentImages/magnifying-glass.png",
-                    "style": "height: 100%; width: 30px;",
+                    "style": "height: 22px; width: 30px;",
                 });
 
             str += DesktopContent.htmlOpen("input",
@@ -2774,6 +2778,23 @@
                     "value": filterStr,
                 }, "", true);
 
+            str += DesktopContent.htmlOpen("span",
+                {
+                    "id": "ac_searchBoxClear",
+                    "title": "Clear the wildcard filter.",
+                    "style": "display:inline-flex; align-items:center; justify-content:center; " +
+                        "width:18px; height:18px; margin-left:4px; " +
+                        "cursor:pointer; user-select:none; " +
+                        "color:#555; font-weight:bold; font-size:14px; line-height:1; " +
+                        "border:1px solid #aaa; border-radius:3px; background:#eee;",
+                    "onclick":
+                        'var i=document.getElementById("ac_searchBox"); if(!i)return; ' +
+                        'i.value=""; i.style.color="black"; _advancedFilterStr=""; ' +
+                        'window.clearTimeout(_advancedFilterDelaySetTimer); ' +
+                        'applyAdvancedControlsFilter(); i.focus();',
+                }, "&times;", true);
+
+            str += "</span>"; //end ac_searchBoxWrap
 
             str += "</div>"; //end search box
             // ------------------
