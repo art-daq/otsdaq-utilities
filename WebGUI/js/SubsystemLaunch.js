@@ -1450,7 +1450,7 @@ SubsystemLaunch.create = function() {
 		if (isFormControl) {
 			label.setAttribute('for', 'fsm-dropdown');
 		}
-		label.textContent = 'FSM:';
+		label.textContent = 'Run Type:';
 		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
 		dropdownContainer.appendChild(label);
 
