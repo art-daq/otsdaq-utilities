@@ -1900,12 +1900,30 @@ SubsystemLaunch.create = function() {
 				//make temporary command element
 				const el = document.createElement("textarea");
 				el.value = command;
+				//and a Stop variant for DoNotHalt subsystems that are Running/Paused
+				const stopEl = document.createElement("textarea");
+				stopEl.value = "Stop";
 
 				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
 					if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 						!SubsystemLaunch.subsystems[s].inTransition)
 					{
+						//mirror DoNotHalt broadcast logic from GatewaySupervisor.cc:9165-9194:
+						//Halt is never sent to a DoNotHalt subsystem; if it is Running/Paused,
+						//send Stop instead, otherwise leave it alone.
+						if(SubsystemLaunch.subsystems[s].fsmMode == "DoNotHalt")
+						{
+							if(SubsystemLaunch.subsystems[s].status == "Running" ||
+							   SubsystemLaunch.subsystems[s].status == "Paused")
+							{
+								Debug.log("Sending Stop (DoNotHalt mode) to subsystem",s,SubsystemLaunch.subsystems[s]);
+								SubsystemLaunch.launcher.handleSubsystemActionSelect(stopEl,s);
+							}
+							else
+								Debug.log("Skipping DoNotHalt subsystem for batch Halt",s,SubsystemLaunch.subsystems[s]);
+							continue;
+						}
 						Debug.log("Sending halt to subsystem",s,SubsystemLaunch.subsystems[s]);
 						SubsystemLaunch.launcher.handleSubsystemActionSelect(el,s);
 					}
@@ -1960,6 +1978,15 @@ SubsystemLaunch.create = function() {
 										(SubsystemLaunch.subsystems[s].inTransition ||
 											SubsystemLaunch.subsystems[s].status != "Halted"))
 									{
+										//DoNotHalt subsystems never reach "Halted" — treat them as done
+										//once they are no longer in transition and not actively
+										//Running/Paused (i.e. any Stop we issued has settled).
+										if(SubsystemLaunch.subsystems[s].fsmMode == "DoNotHalt" &&
+											!SubsystemLaunch.subsystems[s].inTransition &&
+											SubsystemLaunch.subsystems[s].status != "Running" &&
+											SubsystemLaunch.subsystems[s].status != "Paused")
+											continue;
+
 										Debug.log("Not yet halted at subsystem",s,SubsystemLaunch.subsystems[s]);
 										allSubsystemsHalted = false;
 										break;
