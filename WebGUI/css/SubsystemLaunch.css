@@ -227,9 +227,26 @@
 			font-family: 'Inconsolata', monospace;
 		}
 
-		.compressed_detail {
-			overflow-x: clip;
-			max-width: 1100px;
+		/* Detail column's flexible-width scroll container (both modes).
+		   Width is set in JS (_recomputeDetailScrollWidths) so the table matches the status box.
+		   Scrollbar is hidden but mouse wheel / trackpad horizontal scrolling still works. */
+		#subsystemDiv .tableSingleRowMode,
+		#subsystemDiv .tableDoubleRowMode {
+			max-width: 100%;
+			table-layout: auto;
+		}
+		.detail_scroll {
+			overflow-x: auto;
+			overflow-y: hidden;
+			white-space: nowrap;
+			scrollbar-width: none;       /* Firefox */
+			-ms-overflow-style: none;    /* IE/legacy Edge */
+			/* explicit pixel width is assigned at runtime */
+		}
+		.detail_scroll::-webkit-scrollbar { /* WebKit/Chromium/Safari */
+			display: none;
+			width: 0;
+			height: 0;
 		}
 
 		.subsystem_console {
