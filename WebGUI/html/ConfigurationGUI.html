@@ -232,6 +232,18 @@
 			cursor: pointer;
 		}
 
+		/* applied to <body> during click-drag interactions
+		   (e.g. status-LED drag, table-row drag-select)
+		   to suppress text selection and native drag */
+		body.no-select,
+		body.no-select * {
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+			-webkit-user-drag: none;
+		}
+
 		.treeNode {
 			margin-left: 30px;
 			float: left;
@@ -329,8 +341,10 @@
 			background-image: url(/WebPath/images/windowContentImages/ConfigurationGUI-copyTree.png);
 			width: 20px;
 			height: 20px;
+			float: left;
 			border: 0;
-			margin: -9px 0 -10px 10px;
+			margin: -2px 0 -7px 6px;
+			display: none;
 		}
 
 			.treeNode-copyIcon:hover {
@@ -2818,7 +2832,7 @@
 
 			var DEFAULT_groupNavContextMenuItems = [
 				"Go-to Table View",
-				"Open in new Desktop Window",
+				"Open in this Tab",
 				"Open in new Browser Tab"];
 
 			if (param) {
@@ -5620,13 +5634,23 @@
 					var borderColor = nodeStatusValue === "1" ? "white" : "rgb(255, 0, 0)";
 					var dotSize = nodeStatusValue === "1" ? "10px" : "5px";
 					var dotBorderRadius = nodeStatusValue === "1" ? "7px" : "3px";
-					var dotMargin = nodeStatusValue === "1" ? "2px 4px 0 2px" : "4px 7px 0 4px";
-					treeViewHandlerStr_ += "<div class='treeNode-statusDot' style='width:" + dotSize + ";height:" + dotSize +
+					//Wrap the visible dot in a larger transparent hitbox so the click
+					// target isn't restricted to the small colored circle.
+					treeViewHandlerStr_ +=
+						"<div class='treeNode-statusDotWrap' " +
+						"style='float:left;cursor:pointer;width:20px;height:18px;" +
+						"display:flex;align-items:center;justify-content:center;' " +
+						"title='Status: " + (nodeStatusValue === "1" ? "Enabled" : "Disabled") +
+						" (click to enable, shift+click to disable; hold and drag over LEDs to change many at once)' " +
+						"onmousedown='handleStatusDotMouseDown(event," + depth + "," + uid + ")' " +
+						"onmouseover='handleStatusDotMouseOver(event," + depth + "," + uid + ")' " +
+						"onclick='event.stopPropagation();'" +
+						">" +
+						"<div class='treeNode-statusDot' style='width:" + dotSize + ";height:" + dotSize +
 						";background-color:" + dotColor +
-						";float:left;border-radius:" + dotBorderRadius +
-						";border:2px solid " + borderColor +
-						";margin:" + dotMargin + ";' title='Status: " +
-						(nodeStatusValue === "1" ? "Enabled" : "Disabled") + "'></div>";
+						";border-radius:" + dotBorderRadius +
+						";border:2px solid " + borderColor + ";pointer-events:none;'></div>" +
+						"</div>";
 				}
 				treeViewHandlerStr_ += "</div>"; //end treeNode Value
 
@@ -5647,6 +5671,15 @@
 						"\"); event.stopPropagation();' " +
 						"title='Edit the UID for this record (with the option to delete this record entirely).' " +
 						"></div>" +
+						//copy-record icon, sits to the right of the pencil; only present for UID records
+						(nodeEditType == "uid" ?
+							"<div class='treeNode-copyIcon' id='treeNode-Value-copyIcon-" +
+							(depth + "-" + uid) + "' " +
+							"onclick='handleCopyRecord(" + depth + "," + uid +
+							"); event.stopPropagation();' " +
+							"title='Copy this record (you will be prompted for a new UID).' " +
+							"></div>"
+							: "") +
 						"</div>";
 				treeViewHandlerStr_ += "</td><td style='width:100px'>";
 
@@ -5828,9 +5861,9 @@
 			var DEFAULT_treeNavContextMenuItems = [
 				"Go-to Table View",
 				"See Table Tooltip",
-				"Open Table View in new Desktop Window",
+				"Open Table View in this Tab",
 				"Open Table View in new Browser Tab",
-				"Open Subset Editor in new Desktop Window",
+				"Open Subset Editor in this Tab",
 				"Open Subset Editor in new Browser Tab",
 				"Create Subset Editor desktop icon",
 				"Add new Record to Table"];
@@ -5970,7 +6003,10 @@
 					//	folderPath, unique, permissionString,
 					//	imageURL, windowContentURL, linkedApp, parameters)
 
-					newTabJS = "DesktopContent.addDesktopIcon(" +
+					newTabJS = "DesktopContent.popUpVerification(" +
+						"\"Are you sure you want to create a Subset Editor icon on your desktop?\"," +
+						"function(){" +
+						"DesktopContent.addDesktopIcon(" +
 						"\"" + treeMemberNames_[j] +
 						" Subset\",\"CfgSub\",\"Config Subsets\"" +
 						", false /*unique*/" +
@@ -5984,7 +6020,8 @@
 						"&recordAlias=" + encodeURIComponent(recordAlias) +
 						"&editableFieldList=" + encodeURIComponent("!*CommentDescription") +
 						"\"" +
-						");";
+						");" +
+						"});";
 
 					treeNavContextMenuItems.push(DEFAULT_treeNavContextMenuItems[menuIndex++]);
 					treeNavContextMenuItemHandlers.push(newTabJS);
@@ -6282,6 +6319,10 @@
 						treeEditingTargetColumn_);
 					selectThisTreeNode(idString, type);
 				}
+				else if (type.indexOf("link") == 0) {
+					//clicked link text but not edit icon, so toggle children
+					toggleTreeChildren(depth, uid);
+				}
 				else {
 					Debug.err("This should be impossible - tell a developer how you got here! " +
 						"Node clicked type '" + type + ".'");
@@ -6294,7 +6335,7 @@
 					toggleTreeChildren(depth, uid);
 
 				}
-				else if (type == "value") {
+				else if (type == "value" || type.indexOf("link") == 0) {
 					//N/A
 				}
 				else {
@@ -6306,6 +6347,284 @@
 			Debug.logv({ treeEditingNodeType_ });
 
 		} //end handleTreeNodeClick()
+
+		//==============================================================================
+		//handleCopyRecord ~~ copy a UID record (with all of its column values) to a
+		// new record whose UID is supplied by the user. The change is saved as a
+		// temporary table version, like other tree-view edits, so the user can
+		// review the diff and explicitly save the new permanent version.
+		function handleCopyRecord(depth, uid) {
+			if (DesktopContent.isLoading()) {
+				Debug.log("Please wait for Loading... to complete before copying.");
+				return;
+			}
+
+			var idString = depth + "-" + uid;
+			var el = document.getElementById("treeNode-Value-" + idString);
+			if (!el) return;
+
+			//get the UID text (text node only - skip nested icon/dot divs)
+			var sourceUID = "";
+			for (var i = 0; i < el.childNodes.length; ++i)
+				if (el.childNodes[i].nodeType === 3) sourceUID += el.childNodes[i].nodeValue;
+			sourceUID = sourceUID.trim();
+			if (!sourceUID) {
+				Debug.err("Could not determine source UID for record copy.");
+				return;
+			}
+
+			//determine table name and immediate parent id (same approach as
+			// handleTreeNodeClick's "uid" branch)
+			var path = document.getElementById("treeNode-path-" + idString).textContent;
+			var splitArr = path.split('/');
+			var parentIdString = document.getElementById("treeNode-ParentId-" + idString).textContent;
+			var tableName;
+			if (depth == 1) {
+				tableName = splitArr[splitArr.length - 2];
+			} else {
+				var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+				if (!pel) {
+					var gp = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (gp) pel = document.getElementById("treeNode-linkTableName-" + gp.textContent);
+				}
+				if (!pel) {
+					Debug.err("Could not locate target table for record copy.");
+					return;
+				}
+				tableName = pel.textContent;
+			}
+
+			DesktopContent.popUpVerification(
+				"Enter a UID for the new copy of record &apos;<b>" + sourceUID +
+				"</b>&apos; in table &apos;<b>" + tableName + "</b>&apos;.<br><br>" +
+				"All column values from the source record will be copied. " +
+				"The change is saved to a temporary table version - use " +
+				"<b>Save All Tree Changes</b> to commit it permanently.",
+				function (chosenUID) {
+					chosenUID = (chosenUID || "").trim();
+					if (!chosenUID) {
+						Debug.log("Copy cancelled - no UID provided.");
+						return;
+					}
+					if (chosenUID === sourceUID) {
+						Debug.warn("The new UID must differ from the source UID '" +
+							sourceUID + "'.");
+						return;
+					}
+					doCopyRecord(tableName, sourceUID, chosenUID, parentIdString);
+				},
+				0 /*replaceVal (unused)*/,
+				"#efeaea" /*bgColor*/, 0 /*textColor*/, "#770000" /*borderColor*/,
+				true /*getUserInput*/,
+				420 /*dialogWidth*/, 0 /*cancelFunc*/,
+				"Copy" /*yesButtonText*/,
+				true /*noAutoComplete*/,
+				sourceUID + "_copy" /*defaultUserInputValue*/
+			);
+		} //end handleCopyRecord()
+
+		//doCopyRecord ~~ issues the saveTreeNodeEdit request for tree-copy with a
+		// custom UID and refreshes the affected portion of the tree on success.
+		// If parentIdString is falsy, the tree DOM is not refreshed (used by the
+		// link-edit copy flow which is currently inside an in-place editor that
+		// would be destroyed by a refresh). onSuccess (optional) fires after the
+		// save completes successfully.
+		function doCopyRecord(tableName, sourceUID, newUID, parentIdString, onSuccess) {
+			var tableVersion = -1, tableIndex = -1;
+			for (var j = 0; j < treeMemberNames_.length; ++j)
+				if (tableName == treeMemberNames_[j] &&
+					(treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					tableIndex = j;
+					break;
+				}
+			if (tableIndex == -1) {
+				Debug.err("Could not find tree member table '" + tableName +
+					"' for record copy.");
+				return;
+			}
+
+			//tree-copy newValue := numberOfCopies , depth , customUID(encoded)
+			// Commas are the server-side delimiters and must NOT be URL-encoded here
+			// (CgiDataUtilities::postData hands the raw substring to getVectorFromString);
+			// only the user-supplied UID is encoded for delimiter/&/% safety.
+			var newValue = "1,0," + encodeURIComponent(newUID);
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=tree-copy" +
+				"&targetTable=" + tableName +
+				"&targetTableVersion=" + tableVersion +
+				"&targetUID=" + encodeURIComponent(sourceUID) +
+				"&targetColumn=UID",
+				"newValue=" + newValue,
+				function (req, reqParam, errStr) {
+					if (errStr) { Debug.err(errStr); return; }
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if (err) { Debug.err(err); return; }
+
+					//maintain tree member versions for all affected tables
+					var names = req.responseXML.getElementsByTagName("savedName");
+					var versions = req.responseXML.getElementsByTagName("savedVersion");
+					for (var i = 0; i < names.length; ++i) {
+						var rn = DesktopContent.getXMLValue(names[i]);
+						for (var j = 0; j < treeMemberNames_.length; ++j)
+							if (rn == treeMemberNames_[j]) {
+								treeMemberVersions_[j] = DesktopContent.getXMLValue(versions[i]);
+								break;
+							}
+					}
+
+					treeHasChanged();
+					refreshTreeTableVersions();
+
+					//refresh every other place the copied record could appear:
+					// table nodes whose name matches and GroupID-link nodes pointing
+					// at the same table. The in-place link editor (when invoked from
+					// the link-edit copy flow) is a UID-link cell whose ancestry is a
+					// different table, so refreshNodesShowingTable leaves it intact;
+					// we deliberately exclude its DOM subtree as a safety net.
+					refreshNodesShowingTable(tableName, _editingCellEl /*excludeEl*/);
+
+					Debug.log("Copied record '" + sourceUID + "' to '" + newUID +
+						"' in table '" + tableName + "' (temporary version saved).",
+						Debug.INFO_PRIORITY);
+
+					if (typeof onSuccess === "function") {
+						try { onSuccess(newUID); } catch (e) { Debug.err(e); }
+					}
+				}, 0, 0, true /*reqParam, progressHandler, callHandlerOnErr*/
+			);
+		} //end doCopyRecord()
+
+		//handleLinkRecordCopy ~~ invoked from the copy icon shown beside the pencil
+		// in the UID-link edit dialog. Copies the record currently selected as the
+		// link target and then retargets the link at the new copy (by switching the
+		// link editor into freeform mode and pre-filling the new UID).
+		function handleLinkRecordCopy() {
+			if (DesktopContent.isLoading()) {
+				Debug.log("Please wait for Loading... to complete before copying.");
+				return;
+			}
+
+			var sel = document.getElementById("editTree-groupIdFreeform-select");
+			var tel = document.getElementById("editTree-groupIdFreeform-input");
+			if (!sel || !tel) return;
+
+			//read whichever input is active to get the current link target UID
+			var sourceUID = (sel.style.display !== "none")
+				? (sel.value || "")
+				: (tel.value || "");
+			sourceUID = sourceUID.trim();
+			if (!sourceUID) {
+				Debug.warn("No record is currently selected as the link target; nothing to copy.");
+				return;
+			}
+
+			//the link's target table is the FIRST select inside the editing cell
+			//(see editTreeNodeOK link-UID handling and the render at editTree-...)
+			if (!_editingCellEl) {
+				Debug.err("Link editor is not active; cannot determine target table.");
+				return;
+			}
+			var tableSel = _editingCellEl.getElementsByTagName("select")[0];
+			if (!tableSel) {
+				Debug.err("Could not determine the link's target table.");
+				return;
+			}
+			var tableName = tableSel.value;
+
+			DesktopContent.popUpVerification(
+				"Enter a UID for the new copy of linked record &apos;<b>" + sourceUID +
+				"</b>&apos; in table &apos;<b>" + tableName + "</b>&apos;.<br><br>" +
+				"All column values from the source record will be copied, and this " +
+				"link will be retargeted at the new record. " +
+				"The change is saved to a temporary table version - use " +
+				"<b>Save All Tree Changes</b> to commit it permanently.",
+				function (chosenUID) {
+					chosenUID = (chosenUID || "").trim();
+					if (!chosenUID) {
+						Debug.log("Link-record copy cancelled - no UID provided.");
+						return;
+					}
+					if (chosenUID === sourceUID) {
+						Debug.warn("The new UID must differ from the source UID '" +
+							sourceUID + "'.");
+						return;
+					}
+					doCopyRecord(tableName, sourceUID, chosenUID,
+						null /*parentIdString - skip tree refresh while in-place editor is open*/,
+						function (newUID) {
+							//switch link editor to freeform mode so the new UID can be
+							// any string (incl. one not yet in the dropdown's options)
+							// and pre-fill the input with the new UID.
+							var freshSel = document.getElementById("editTree-groupIdFreeform-select");
+							var freshTel = document.getElementById("editTree-groupIdFreeform-input");
+							if (freshSel && freshTel && freshSel.style.display !== "none")
+								handleEditTreeGroupIDEditFreeformToggle();
+							freshTel = document.getElementById("editTree-groupIdFreeform-input");
+							if (freshTel) {
+								freshTel.value = newUID;
+								ConfigurationAPI.setCaretPosition(freshTel, 0, freshTel.value.length);
+								freshTel.focus();
+							}
+						});
+				},
+				0 /*replaceVal*/,
+				"#efeaea" /*bgColor*/, 0 /*textColor*/, "#770000" /*borderColor*/,
+				true /*getUserInput*/,
+				420 /*dialogWidth*/, 0 /*cancelFunc*/,
+				"Copy" /*yesButtonText*/,
+				true /*noAutoComplete*/,
+				sourceUID + "_copy" /*defaultUserInputValue*/
+			);
+		} //end handleLinkRecordCopy()
+
+		//refreshNodesShowingTable ~~ reset and re-expand any tree containers whose
+		// children would include records of the given table (table nodes and
+		// GroupID-link nodes pointing to it). If excludeEl is provided, any
+		// container whose subtree contains excludeEl is left alone (used by the
+		// link-edit copy flow to protect the still-open in-place editor).
+		function refreshNodesShowingTable(tableName, excludeEl) {
+			function safeToReset(idString) {
+				if (!excludeEl) return true;
+				var subtreeRoot = document.getElementById("treeNode-" + idString);
+				return !(subtreeRoot && subtreeRoot.contains(excludeEl));
+			}
+			function resetAndRetoggle(idString) {
+				var elChildrenNode = document.getElementById("treeNode-ChildrenOf-" + idString);
+				if (!elChildrenNode) return;
+				var wasDisplayed = elChildrenNode.style.display != "none" &&
+					elChildrenNode.innerHTML != "";
+				var parts = idString.split('-');
+				toggleTreeChildren(parts[0], parts[1], false);
+				elChildrenNode.innerHTML = "";
+				if (wasDisplayed)
+					toggleTreeChildren(parts[0], parts[1], true);
+			}
+
+			//table nodes whose text is this table name
+			var tableEls = document.getElementsByClassName("treeNode-Value-nodeEditType-table");
+			for (var i = 0; i < tableEls.length; ++i) {
+				if (tableEls[i].textContent !== tableName) continue;
+				var idString = tableEls[i].id.substr(("treeNode-Value-").length);
+				if (!safeToReset(idString)) continue;
+				resetAndRetoggle(idString);
+			}
+
+			//link nodes pointing to this table (only GroupID links show record lists)
+			var linkEls = document.getElementsByClassName("treeNode-Value-nodeEditType-link");
+			for (var i = 0; i < linkEls.length; ++i) {
+				var idString = linkEls[i].id.substr(("treeNode-Value-").length);
+				var linkTableEl = document.getElementById("treeNode-linkTableName-" + idString);
+				if (!linkTableEl || linkTableEl.textContent !== tableName) continue;
+				var elValSplit = linkEls[i].textContent.split('(');
+				if (elValSplit.length == 1) continue; //being edited
+				var linkIdType = elValSplit[1].split(' ')[0];
+				if (linkIdType !== "GroupID") continue;
+				if (!safeToReset(idString)) continue;
+				resetAndRetoggle(idString);
+			}
+		} //end refreshNodesShowingTable()
 
 		//==============================================================================
 		//applySearchNode ~
@@ -9358,7 +9677,21 @@
 								"onmouseup='event.stopPropagation();'" +
 								"onclick='handleEditTreeGroupIDEditFreeformToggle();event.stopPropagation();' " +
 								"title='Toggle free-form " + linkIdType + " editing' " +
-								"></div></div>";
+								"></div>" +
+								//copy-record icon: only meaningful for unique (UID) links;
+								// copies the currently-selected target record and retargets
+								// the link at the new copy
+								(linkIdType == "UID" ?
+									"<div style='display:block' " +
+									"class='treeNode-copyIcon' " +
+									"id='editTree-groupIdFreeform-copyIcon' " +
+									"onmouseup='event.stopPropagation();' " +
+									"onclick='handleLinkRecordCopy();event.stopPropagation();' " +
+									"title='Copy the currently-selected linked record (you will " +
+									"be prompted for a new UID; the link is then retargeted at the copy).' " +
+									"></div>"
+									: "") +
+								"</div>";
 							str += "</td></tr></table>"; //end select and editIcon table
 
 							str += "</td></tr></table>";
@@ -10588,7 +10921,7 @@
 								newWindowJS + " event.stopPropagation();' " +
 								"onmouseup='event.stopPropagation();'" +
 								"style='color:rgb(44, 44, 187);' " +
-								"title='Go-to Link Table in New Window' " +
+								"title='Go-to Link Table in this Tab' " +
 								">" +
 								"<b style='color:rgb(44, 44, 187);font-size: 16px;'>+Window</b></a>";
 						} //end add link to open table in new window
@@ -10687,6 +11020,11 @@
 				Debug.log("Ignoring key press and giving searchbar priority...");
 				return;
 			}
+			//ignore typing inside the verification popup's input field
+			// (otherwise tree-view hotkeys hijack characters as the user types
+			//  the new UID / value in the popup prompt)
+			if (document.activeElement.id == "DesktopContent_popUpUserInput")
+				return;
 
 			Debug.log("key " + e.keyCode);
 
@@ -13532,6 +13870,7 @@
 			var parentValEl = document.getElementById("treeNode-Value-" + parentIdString);
 			if (!parentValEl) return;
 			var dots = parentValEl.getElementsByClassName("treeNode-statusDot");
+			var tipHint = " (click to enable, shift+click to disable; hold and drag over LEDs to change many at once)";
 			if (dots.length) {
 				var dot = dots[0];
 				if (isEnabled) {
@@ -13540,34 +13879,309 @@
 					dot.style.width = "10px";
 					dot.style.height = "10px";
 					dot.style.borderRadius = "7px";
-					dot.style.margin = "2px 4px 0 2px";
-					dot.title = "Status: Enabled";
 				} else {
 					dot.style.backgroundColor = "white";
 					dot.style.borderColor = "rgb(255, 0, 0)";
 					dot.style.width = "5px";
 					dot.style.height = "5px";
 					dot.style.borderRadius = "3px";
-					dot.style.margin = "4px 7px 0 4px";
-					dot.title = "Status: Disabled";
 				}
+				var titleStr = "Status: " + (isEnabled ? "Enabled" : "Disabled");
+				//update tooltip on the wrapper if present (else on the dot itself)
+				var wrap = dot.parentElement;
+				if (wrap && wrap.classList && wrap.classList.contains("treeNode-statusDotWrap"))
+					wrap.title = titleStr + tipHint;
+				else
+					dot.title = titleStr;
 			} else {
-				// no dot exists yet, add one
+				// no dot exists yet, add wrapper+dot
 				var dotColor = isEnabled ? "rgb(16, 204, 16)" : "white";
 				var borderColor = isEnabled ? "white" : "rgb(255, 0, 0)";
 				var dotSize = isEnabled ? "10px" : "5px";
 				var dotBorderRadius = isEnabled ? "7px" : "3px";
-				var dotMargin = isEnabled ? "2px 4px 0 2px" : "4px 7px 0 4px";
+				var wrapDiv = document.createElement("div");
+				wrapDiv.className = "treeNode-statusDotWrap";
+				wrapDiv.style.cssText = "float:left;cursor:pointer;width:20px;height:18px;" +
+					"display:flex;align-items:center;justify-content:center;";
+				wrapDiv.title = "Status: " + (isEnabled ? "Enabled" : "Disabled") + tipHint;
 				var dotDiv = document.createElement("div");
 				dotDiv.className = "treeNode-statusDot";
 				dotDiv.style.cssText = "width:" + dotSize + ";height:" + dotSize +
-					";background-color:" + dotColor + ";float:left;border-radius:" +
-					dotBorderRadius + ";border:2px solid " + borderColor +
-					";margin:" + dotMargin + ";";
-				dotDiv.title = "Status: " + (isEnabled ? "Enabled" : "Disabled");
-				parentValEl.appendChild(dotDiv);
+					";background-color:" + dotColor + ";border-radius:" + dotBorderRadius +
+					";border:2px solid " + borderColor + ";pointer-events:none;";
+				wrapDiv.appendChild(dotDiv);
+				//note: the handlers are not attached here because we don't know depth/uid;
+				// this fallback path is rare (UID record that gains a status column on the fly)
+				parentValEl.appendChild(wrapDiv);
 			}
 		} //end updateParentStatusDot()
+
+		//==============================================================================
+		// Status-LED click/drag interactions: clicking the small status circle on a
+		// UID tree node turns Status ON; shift+click turns it OFF; holding the mouse
+		// down and dragging across other LEDs applies the same action to each one.
+		var _statusDotDragMode = null;        // null = inactive; true = enable; false = disable
+		var _statusDotSaveQueue_ = [];
+		var _statusDotSaving_ = false;
+		var _statusDotMouseupRegistered_ = false;
+
+		//handleStatusDotMouseDown ~~
+		function handleStatusDotMouseDown(event, depth, uid) {
+			event.stopPropagation();
+			event.preventDefault(); //prevent text selection at the dot itself
+			_statusDotDragMode = !event.shiftKey; //shift => disable; otherwise enable
+			//suppress text selection and native drag for the duration of the drag
+			document.body.classList.add('no-select');
+			if (window.getSelection) {
+				try { window.getSelection().removeAllRanges(); } catch (e) {}
+			}
+			registerStatusDotDragListeners();
+			applyStatusDot(depth, uid, _statusDotDragMode);
+		} //end handleStatusDotMouseDown()
+
+		//handleStatusDotMouseOver ~~
+		function handleStatusDotMouseOver(event, depth, uid) {
+			if (_statusDotDragMode === null) return;
+			event.stopPropagation();
+			applyStatusDot(depth, uid, _statusDotDragMode);
+		} //end handleStatusDotMouseOver()
+
+		function _statusDotEndDrag() {
+			if (_statusDotDragMode === null) return;
+			_statusDotDragMode = null;
+			document.body.classList.remove('no-select');
+		}
+
+		function registerStatusDotDragListeners() {
+			if (_statusDotMouseupRegistered_) return;
+			_statusDotMouseupRegistered_ = true;
+			//end drag on mouseup anywhere
+			window.addEventListener('mouseup', _statusDotEndDrag);
+			//also end drag if window loses focus
+			window.addEventListener('blur', _statusDotEndDrag);
+			//block any text selection or native drag while LED drag is active
+			document.addEventListener('selectstart', function (e) {
+				if (_statusDotDragMode !== null) e.preventDefault();
+			});
+			document.addEventListener('dragstart', function (e) {
+				if (_statusDotDragMode !== null) e.preventDefault();
+			});
+		}
+
+		//applyStatusDot ~~ optimistically flips LED, then queues a save
+		function applyStatusDot(depth, uid, enable) {
+			var idString = depth + "-" + uid;
+			var el = document.getElementById("treeNode-Value-" + idString);
+			if (!el) return;
+			var dots = el.getElementsByClassName("treeNode-statusDot");
+			if (!dots.length) return;
+			var dot = dots[0];
+
+			//skip if already in target state (LED bg green means enabled)
+			var currentlyEnabled = dot.style.backgroundColor.indexOf("rgb(16") === 0;
+			if (currentlyEnabled === enable) return;
+
+			//figure out the UID (text content of the value node, ignoring child element text)
+			var uidText = "";
+			for (var i = 0; i < el.childNodes.length; ++i)
+				if (el.childNodes[i].nodeType === 3) uidText += el.childNodes[i].nodeValue;
+			uidText = uidText.trim();
+			if (!uidText) {
+				Debug.err("Could not determine UID for status toggle.");
+				return;
+			}
+
+			//figure out the table name (same approach as handleTreeNodeClick for type=='uid')
+			var tableName;
+			var path = document.getElementById("treeNode-path-" + idString).textContent;
+			var splitArr = path.split('/');
+			var parentIdString = document.getElementById("treeNode-ParentId-" + idString).textContent;
+			if (depth == 1) {
+				tableName = splitArr[splitArr.length - 2];
+			} else {
+				var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+				if (!pel) {
+					var grandparentEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (grandparentEl)
+						pel = document.getElementById("treeNode-linkTableName-" + grandparentEl.textContent);
+				}
+				if (!pel) {
+					Debug.err("Could not locate target table for status toggle.");
+					return;
+				}
+				tableName = pel.textContent;
+			}
+
+			//optimistically update LED
+			updateParentStatusDot(idString, enable);
+
+			_statusDotSaveQueue_.push({
+				tableName: tableName,
+				uid: uidText,
+				enable: enable,
+				idString: idString,
+				triedEnabledFallback: false
+			});
+			processStatusDotSaveQueue();
+		} //end applyStatusDot()
+
+		//processStatusDotSaveQueue ~~ serializes saves so concurrent edits to the same
+		// table do not race on its temporary version
+		function processStatusDotSaveQueue() {
+			if (_statusDotSaving_) return;
+			if (!_statusDotSaveQueue_.length) return;
+			var item = _statusDotSaveQueue_[0];
+
+			var tableVersion = -1;
+			var tableIndex = -1;
+			for (var j = 0; j < treeMemberNames_.length; ++j)
+				if (item.tableName == treeMemberNames_[j] &&
+					(treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					tableIndex = j;
+					break;
+				}
+			if (tableIndex == -1) {
+				Debug.err("Could not find tree member table '" + item.tableName +
+					"' for status toggle.");
+				updateParentStatusDot(item.idString, !item.enable); //revert
+				_statusDotSaveQueue_.shift();
+				processStatusDotSaveQueue();
+				return;
+			}
+
+			var targetColumn = item.triedEnabledFallback ? "Enabled" : "Status";
+			var newValue = item.enable ? "1" : "0"; // server normalizes for OnOff/YesNo/TrueFalse
+
+			_statusDotSaving_ = true;
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=value-bool" +
+				"&targetTable=" + item.tableName +
+				"&targetTableVersion=" + tableVersion +
+				"&targetUID=" + encodeURIComponent(item.uid) +
+				"&targetColumn=" + targetColumn,
+				"newValue=" + newValue,
+				function (req, reqParam, errStr) {
+					_statusDotSaving_ = false;
+					var failed = false;
+					if (errStr) {
+						Debug.err(errStr);
+						failed = true;
+					}
+					else {
+						var err = DesktopContent.getXMLValue(req, "Error");
+						if (err) {
+							//if the column does not exist as 'Status', retry with 'Enabled'
+							if (!item.triedEnabledFallback &&
+								(err.indexOf("Status") >= 0 || err.indexOf("Enabled") >= 0) &&
+								err.toLowerCase().indexOf("column") >= 0) {
+								item.triedEnabledFallback = true;
+								processStatusDotSaveQueue();
+								return;
+							}
+							if (err.indexOf("is the same as the current value") > 0) {
+								Debug.log(err);
+							} else {
+								Debug.err(err);
+								failed = true;
+							}
+						}
+					}
+
+					if (failed) {
+						updateParentStatusDot(item.idString, !item.enable); //revert LED
+					} else {
+						//maintain tree member versions (possibly more than one table changed)
+						if (req && req.responseXML) {
+							var names = req.responseXML.getElementsByTagName("savedName");
+							var versions = req.responseXML.getElementsByTagName("savedVersion");
+							for (var i = 0; i < names.length; ++i) {
+								var rn = DesktopContent.getXMLValue(names[i]);
+								for (var j = 0; j < treeMemberNames_.length; ++j)
+									if (rn == treeMemberNames_[j]) {
+										treeMemberVersions_[j] = DesktopContent.getXMLValue(versions[i]);
+										break;
+									}
+							}
+						}
+						treeHasChanged();
+						refreshTreeTableVersions();
+						updateStatusFieldDisplayForRecord(item.tableName, item.uid,
+							targetColumn, item.enable);
+					}
+
+					_statusDotSaveQueue_.shift();
+					processStatusDotSaveQueue();
+				}, 0, 0, true
+			);
+		} //end processStatusDotSaveQueue()
+
+		//updateStatusFieldDisplayForRecord ~~ if the Status/Enabled child value node
+		// is currently rendered (record expanded), refresh its text + inline dot so
+		// the user sees the change consistently
+		function updateStatusFieldDisplayForRecord(tableName, uid, columnName, enable) {
+			var els = document.getElementsByClassName(
+				"treeNode-Value-leafNode-ColumnName-" + columnName);
+			for (var i = 0; i < els.length; ++i) {
+				var idString = els[i].id.substr(("treeNode-Value-leafNode-").length);
+				var depth = idString.split('-')[0] | 0;
+				var parentIdEl = document.getElementById("treeNode-ParentId-" + idString);
+				if (!parentIdEl) continue;
+				var parentIdString = parentIdEl.textContent;
+				var thisTable, thisUid;
+				if (depth == 2) {
+					var grandparentIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (!grandparentIdEl) continue;
+					var tableEl = document.getElementById("treeNode-Value-" + grandparentIdEl.textContent);
+					if (!tableEl) continue;
+					thisTable = tableEl.textContent;
+					var uidEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidEl) continue;
+					//strip the LED's empty text content
+					thisUid = "";
+					for (var k = 0; k < uidEl.childNodes.length; ++k)
+						if (uidEl.childNodes[k].nodeType === 3) thisUid += uidEl.childNodes[k].nodeValue;
+					thisUid = thisUid.trim();
+				} else {
+					var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+					if (!pel) {
+						var gpIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+						if (gpIdEl)
+							pel = document.getElementById("treeNode-linkTableName-" + gpIdEl.textContent);
+					}
+					if (!pel) continue;
+					thisTable = pel.textContent;
+					var uidNodeEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidNodeEl) continue;
+					var uidNodeText = "";
+					for (var k = 0; k < uidNodeEl.childNodes.length; ++k)
+						if (uidNodeEl.childNodes[k].nodeType === 3) uidNodeText += uidNodeEl.childNodes[k].nodeValue;
+					uidNodeText = uidNodeText.trim();
+					var uidSplit = uidNodeText.split('=');
+					thisUid = uidSplit.length > 1 ? uidSplit[1].split(')')[0].trim() : uidSplit[0];
+				}
+				if (thisTable !== tableName || thisUid !== uid) continue;
+
+				//derive displayed value text from the column type baked into the className
+				var clsMatch = els[i].className.match(/treeNode-ValueType-(OnOff|YesNo|TrueFalse)/);
+				var displayText;
+				if (clsMatch) {
+					if (clsMatch[1] === "OnOff") displayText = enable ? "On" : "Off";
+					else if (clsMatch[1] === "YesNo") displayText = enable ? "Yes" : "No";
+					else displayText = enable ? "True" : "False";
+				} else {
+					displayText = enable ? "On" : "Off"; //best-effort
+				}
+
+				var color = enable ? "rgb(16, 204, 16)" : "rgb(255, 0, 0)";
+				els[i].innerHTML =
+					"<div style='float:left'>" + displayText + "</div>" +
+					"<div style='width:10px;height:10px;background-color:" + color +
+					";float:left;border-radius:7px;border:2px solid white;margin:2px 0 0 6px;'></div>";
+				if (typeof treeDiff_COLOR_ !== "undefined")
+					els[i].style.color = treeDiff_COLOR_;
+			}
+		} //end updateStatusFieldDisplayForRecord()
 
 		//==============================================================================
 		//editTreeNodePropagateChange ~~
@@ -20102,6 +20716,13 @@
 				}
 				catch (e) { }
 
+				//try bringing along the copy-record icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-copyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel) {
 					if (vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
@@ -20137,6 +20758,13 @@
 			//try bringing along the comment edit icon, and ignore fails
 			try {
 				document.getElementById("treeNode-Value-editCommentIcon-" +
+					treeEditingEditIconShownIdString_).style.display = "block";
+			}
+			catch (e) { }
+
+			//try bringing along the copy-record icon, and ignore fails
+			try {
+				document.getElementById("treeNode-Value-copyIcon-" +
 					treeEditingEditIconShownIdString_).style.display = "block";
 			}
 			catch (e) { }
