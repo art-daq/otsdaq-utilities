@@ -1216,6 +1216,14 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		std::string traceList = "";
 		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
+		__SUP_COUT__ << "Querying " << allTraceApps.size()
+		             << " TRACE controller supervisor(s) for TRACE levels. Hosts: ";
+		{
+			std::stringstream appHosts;
+			for(const auto& appInfo : allTraceApps)
+				appHosts << appInfo.first << "(" << appInfo.second.getClass() << ") ";
+			__SUP_COUT__ << appHosts.str() << __E__;
+		}
 		for(const auto& appInfo : allTraceApps)
 		{
 			__SUP_COUT__ << "Supervisor hostname = " << appInfo.first << "/"
