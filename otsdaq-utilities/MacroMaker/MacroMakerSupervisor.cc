@@ -3366,7 +3366,13 @@ try
 				}
 				else
 				{
-					if(task->bar_)
+					int rp = task->realProgress_.load();
+					if(rp >= 0)
+					{
+						xmldoc.addTextElementToParent(
+						    "progress", std::to_string(rp), progParent);
+					}
+					else if(task->bar_)
 					{
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
@@ -3505,7 +3511,13 @@ try
 				}
 				else
 				{
-					if(task->bar_)
+					int rp = task->realProgress_.load();
+					if(rp >= 0)
+					{
+						xmldoc.addTextElementToParent(
+						    "progress", std::to_string(rp), progParent);
+					}
+					else if(task->bar_)
 					{
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
@@ -3700,7 +3712,8 @@ try
 	                         feMacroRunThreadStruct->parameters_.saveOutputs_,
 	                         feMacroRunThreadStruct->parameters_.runningUsername_,
 	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_,
-	                         false /* saveToHistory */);
+	                         false /* saveToHistory */,
+	                         &feMacroRunThreadStruct->realProgress_);
 
 	feMacroRunThreadStruct->parameters_.doneTime_ = time(0);
 	feMacroRunThreadStruct->feMacroRunDone_       = true;
@@ -3747,7 +3760,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
                                       bool               saveOutputs,
                                       const std::string& username,
                                       const std::string& userGroupPermissions,
-                                      bool               saveToHistory)
+                                      bool               saveToHistory,
+                                      std::atomic<int>*  realProgressOut)
 {
 	__SUP_COUTV__(feClassSelected);
 	__SUP_COUTV__(feUIDSelected);
@@ -3906,11 +3920,13 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			txParameters.addParameter("inputArgs", inputArgs);
 			txParameters.addParameter("outputArgs", outputArgs);
 			txParameters.addParameter("userPermissions", userGroupPermissions);
+			txParameters.addParameter("AsyncSupported", "1");
 
 			SOAPParameters rxParameters;  // params for xoap to recv
 			// rxParameters.addParameter("success");
 			rxParameters.addParameter("outputArgs");
 			rxParameters.addParameter("Error");
+			rxParameters.addParameter("NotDoneTaskID");
 
 			if(saveOutputs)
 			{
@@ -3939,6 +3955,46 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			SOAPUtilities::receive(retMsg, rxParameters);
 
 			__SUP_COUT__ << "Received it " << __E__;
+
+			// If FESupervisor returned NotDoneTaskID, poll until macro completes
+			{
+				std::string notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+				while(notDoneTaskID != "")
+				{
+					__SUP_COUT__ << "FE Macro async task " << notDoneTaskID
+					             << " still running for FE '" << feUID
+					             << "'. Polling in 5s..." << __E__;
+					sleep(5);
+
+					SOAPParameters pollTxParams;
+					pollTxParams.addParameter("Request", "CheckMacro");
+					pollTxParams.addParameter("TaskID", notDoneTaskID);
+
+					xoap::MessageReference pollRetMsg =
+					    SOAPMessenger::sendWithSOAPReply(
+					        it->second.getDescriptor(),
+					        "MacroMakerSupervisorRequest",
+					        pollTxParams);
+
+					rxParameters = SOAPParameters();
+					rxParameters.addParameter("outputArgs");
+					rxParameters.addParameter("Error");
+					rxParameters.addParameter("NotDoneTaskID");
+					rxParameters.addParameter("Progress");
+					SOAPUtilities::receive(pollRetMsg, rxParameters);
+
+					// Update real progress if FESupervisor reported it
+					if(realProgressOut)
+					{
+						std::string progressStr =
+						    rxParameters.getValue("Progress");
+						if(!progressStr.empty())
+							realProgressOut->store(std::stoi(progressStr));
+					}
+
+					notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+				}
+			}
 
 			// bool success = rxParameters.getValue("success") == "1";
 			std::string outputResults = rxParameters.getValue("outputArgs");

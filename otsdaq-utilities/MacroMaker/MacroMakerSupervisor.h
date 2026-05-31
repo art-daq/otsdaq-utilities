@@ -76,6 +76,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 		runFEMacroStruct(runFEMacroStruct&& other) noexcept
 		    : parameters_(other.parameters_)
 		    , feMacroRunDone_(other.feMacroRunDone_.load())
+		    , realProgress_(other.realProgress_.load())
 		{
 		}
 		/// Allow move constructor because std::atomic is not copyable, for vector erase
@@ -85,12 +86,14 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 			{
 				parameters_ = other.parameters_;
 				feMacroRunDone_.store(other.feMacroRunDone_.load());
+				realProgress_.store(other.realProgress_.load());
 			}
 			return *this;
 		}
 
 		runFEMacroParameterStruct    parameters_;
 		std::atomic<bool>            feMacroRunDone_ = false;
+		std::atomic<int>             realProgress_   = -1;
 		std::unique_ptr<ProgressBar> bar_;
 	};  //end runFEMacroStruct struct
 
@@ -226,7 +229,8 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                       bool               saveOutputs,
 	                       const std::string& username,
 	                       const std::string& userGroupPermissions,
-	                       bool               saveToHistory = true);
+	                       bool               saveToHistory = true,
+	                       std::atomic<int>*  realProgressOut = nullptr);
 	static void runFEMacroGroupSchedulerThread(std::shared_ptr<runFEMacroGroupStruct> group,
 	                                           MacroMakerSupervisor*                  mmSupervisor);
 	static void runFEMacroThread(std::shared_ptr<runFEMacroStruct> feMacroRunThreadStruct,
