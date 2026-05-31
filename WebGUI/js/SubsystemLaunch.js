@@ -113,6 +113,43 @@ SubsystemLaunch.create = function() {
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
 
+	// Track the iframe document's scrollTop continuously so it can be restored after
+	// the Desktop framework resizes the iframe (which collapses scrollHeight to
+	// clientHeight, forcing scrollTop to 0, potentially multiple times per resize).
+	var _savedDocScrollTop = 0;
+	var _scrollListenerInstalled = false;
+	function _installScrollListener() {
+		if(_scrollListenerInstalled) return;
+		_scrollListenerInstalled = true;
+
+		document.addEventListener("scroll", function() {
+			var st = document.documentElement.scrollTop;
+			Debug.log("SCROLL EVENT scrollTop=" + st + " saved=" + _savedDocScrollTop +
+				" scrollHeight=" + document.documentElement.scrollHeight +
+				" clientHeight=" + document.documentElement.clientHeight);
+			if(st > 0) _savedDocScrollTop = st;
+		}, true);
+
+		// ResizeObserver fires every time the iframe dimensions change (including
+		// when the Desktop framework collapses and restores the iframe during a
+		// window resize).  When the page becomes scrollable again after a collapse,
+		// restore the saved scrollTop.
+		if(typeof ResizeObserver !== 'undefined') {
+			new ResizeObserver(function() {
+				var sh = document.documentElement.scrollHeight;
+				var ch = document.documentElement.clientHeight;
+				var st = document.documentElement.scrollTop;
+				if(_savedDocScrollTop > 0 && st === 0 && sh > ch) {
+					var target = Math.min(_savedDocScrollTop, sh - ch);
+					document.documentElement.scrollTop = target;
+					Debug.log("ResizeObserver RESTORE scrollTop target=" + target +
+						" result=" + document.documentElement.scrollTop +
+						" scrollHeight=" + sh + " clientHeight=" + ch);
+				}
+			}).observe(document.documentElement);
+		}
+	}
+
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
 	// end variable declaration
@@ -121,6 +158,7 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
 	//init ~~
 	  function init() {
+		_installScrollListener();
 		if(_needEventListeners) //only first time landing handling
 		{
 			var windowTooltip = "Welcome to the <b>Subsystem Launch</b> user interface. " +
@@ -308,6 +346,7 @@ SubsystemLaunch.create = function() {
 	//	redrawMode of 1 for compact, 2 for wide
 	function createElements(redrawMode) {
 		Debug.log("createElements()", redrawMode);
+		_saveDetailScrollPositions();
 
 		Debug.log("createElements() system", SubsystemLaunch.system);
 
@@ -816,6 +855,7 @@ SubsystemLaunch.create = function() {
 		if(el) el.innerText = aliasTranslation;
 
 		displayStatus(); //fill elements with data
+		_restoreDetailScrollPositions();
 	} //end createElements()
 
 	//=====================================================================================
@@ -837,7 +877,12 @@ SubsystemLaunch.create = function() {
 		var redrawMode = 1;
 		if(w > 2400)
 			redrawMode = 2;
-		Debug.log("redrawWindow to " + w + " - " + h,redrawMode,_lastRedrawMode);
+
+		Debug.log("redrawWindow ENTER to " + w + " - " + h + " mode=" + redrawMode + "/" + _lastRedrawMode +
+			" _savedDocScrollTop=" + _savedDocScrollTop +
+			" current_scrollTop=" + document.documentElement.scrollTop +
+			" scrollHeight=" + document.documentElement.scrollHeight +
+			" clientHeight=" + document.documentElement.clientHeight);
 
 
 		if (_lastRedrawMode && redrawMode != _lastRedrawMode) {
@@ -882,7 +927,52 @@ SubsystemLaunch.create = function() {
 			}
 		} //end check if need extra new line at top to avoid FSM select
 
+		//restore the document scrollTop that was reset when the Desktop framework resized the iframe
+		var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+		Debug.log("redrawWindow RESTORE _savedDocScrollTop=" + _savedDocScrollTop +
+			" maxScroll=" + maxScroll +
+			" scrollHeight=" + document.documentElement.scrollHeight +
+			" clientHeight=" + document.documentElement.clientHeight +
+			" current_scrollTop_before=" + document.documentElement.scrollTop);
+
+		if(_savedDocScrollTop > 0) {
+			var target = Math.min(_savedDocScrollTop, maxScroll);
+			document.documentElement.scrollTop = target;
+			Debug.log("redrawWindow SET scrollTop=" + target +
+				" result=" + document.documentElement.scrollTop);
+
+			//deferred restore in case layout hasn't settled yet
+			var savedVal = _savedDocScrollTop;
+			requestAnimationFrame(function() {
+				var maxScroll2 = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+				var target2 = Math.min(savedVal, maxScroll2);
+				document.documentElement.scrollTop = target2;
+				Debug.log("redrawWindow RAF RESTORE target=" + target2 +
+					" result=" + document.documentElement.scrollTop +
+					" maxScroll=" + maxScroll2);
+			});
+		}
+
 	} //end redrawWindow()
+
+	//=====================================================================================
+	// _detailScrollPositions ~~
+	//	persistent cache of each detail_scroll element's scrollLeft, keyed by subsystem index.
+	//	Survives DOM rebuilds (createElements) and width recomputation so the user never
+	//	loses their horizontal scroll position on resize or status refresh.
+	var _detailScrollPositions = {};
+
+	function _saveDetailScrollPositions() {
+		const wraps = document.querySelectorAll(".detail_scroll");
+		for (let i = 0; i < wraps.length; ++i)
+			if (wraps[i].scrollLeft) _detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+	}
+	function _restoreDetailScrollPositions() {
+		for (const id in _detailScrollPositions) {
+			const el = document.getElementById(id);
+			if (el) el.scrollLeft = _detailScrollPositions[id];
+		}
+	}
 
 	//=====================================================================================
 	//_recomputeDetailScrollWidths ~~
@@ -897,6 +987,8 @@ SubsystemLaunch.create = function() {
 		if (!tbl) return;
 		const wraps = tbl.querySelectorAll(".detail_scroll");
 		if (!wraps.length) return;
+
+		_saveDetailScrollPositions();
 
 		const isCompressed = tbl.classList.contains("tableDoubleRowMode");
 
@@ -940,6 +1032,8 @@ SubsystemLaunch.create = function() {
 			if (tdInnerW > wraps[i].offsetWidth)
 				wraps[i].style.width = tdInnerW + "px";
 		}
+
+		_restoreDetailScrollPositions();
 	} //end _recomputeDetailScrollWidths()
 
 	//=====================================================================================
@@ -1349,9 +1443,12 @@ SubsystemLaunch.create = function() {
 						const detailText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
 
-						//single-row mode wraps detail text in a horizontal-scroll div; target it if present
 						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
-						if (scrollEl) scrollEl.innerText = detailText;
+						if (scrollEl) {
+							const savedScroll = scrollEl.scrollLeft;
+							scrollEl.innerText = detailText;
+							scrollEl.scrollLeft = savedScroll;
+						}
 						else el.innerText = detailText;
 					}
 					else if(fieldIds[i] == "status")
