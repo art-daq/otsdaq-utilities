@@ -920,7 +920,8 @@ SubsystemLaunch.create = function() {
 		//restore the document scrollTop that was reset when the Desktop framework resized the iframe
 		if(_savedDocScrollTop > 0) {
 			var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-			document.documentElement.scrollTop = Math.min(_savedDocScrollTop, maxScroll);
+			if(maxScroll > 0)
+				document.documentElement.scrollTop = Math.min(_savedDocScrollTop, maxScroll);
 		}
 
 	} //end redrawWindow()
