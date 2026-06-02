@@ -229,7 +229,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	                       bool               saveOutputs,
 	                       const std::string& username,
 	                       const std::string& userGroupPermissions,
-	                       bool               saveToHistory = true,
+	                       bool               saveToHistory   = true,
 	                       std::atomic<int>*  realProgressOut = nullptr);
 	static void runFEMacroGroupSchedulerThread(std::shared_ptr<runFEMacroGroupStruct> group,
 	                                           MacroMakerSupervisor*                  mmSupervisor);

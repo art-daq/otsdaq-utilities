@@ -3971,10 +3971,9 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					pollTxParams.addParameter("TaskID", notDoneTaskID);
 
 					xoap::MessageReference pollRetMsg =
-					    SOAPMessenger::sendWithSOAPReply(
-					        it->second.getDescriptor(),
-					        "MacroMakerSupervisorRequest",
-					        pollTxParams);
+					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
+					                                     "MacroMakerSupervisorRequest",
+					                                     pollTxParams);
 
 					rxParameters = SOAPParameters();
 					rxParameters.addParameter("outputArgs");
@@ -3986,8 +3985,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					// Update real progress if FESupervisor reported it
 					if(realProgressOut)
 					{
-						std::string progressStr =
-						    rxParameters.getValue("Progress");
+						std::string progressStr = rxParameters.getValue("Progress");
 						if(!progressStr.empty())
 							realProgressOut->store(std::stoi(progressStr));
 					}
