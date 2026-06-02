@@ -221,6 +221,11 @@
 			cursor: pointer;
 		}
 
+		#subsystemDiv .tableDoubleRowMode .subsystem_name {
+			font-size: 13px;
+			font-weight: bold;
+		}
+
 		.subsystem_detail {
 			font-size: 14px;
 			text-align: left;
