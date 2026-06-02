@@ -1110,6 +1110,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		int noWrap         = CgiDataUtilities::postDataAsInt(cgiIn, "noWrap");
 		int messageOnly    = CgiDataUtilities::postDataAsInt(cgiIn, "messageOnly");
 		int hideLineNumers = CgiDataUtilities::postDataAsInt(cgiIn, "hideLineNumers");
+		int noHost         = CgiDataUtilities::postDataAsInt(cgiIn, "noHost");
 
 		// __SUP_COUT__ << "requestType " << requestType << __E__;
 		// __SUP_COUT__ << "colorIndex: " << colorIndex << __E__;
@@ -1117,6 +1118,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		// __SUP_COUT__ << "noWrap: " << noWrap << __E__;
 		// __SUP_COUT__ << "messageOnly: " << messageOnly << __E__;
 		// __SUP_COUT__ << "hideLineNumers: " << hideLineNumers << __E__;
+		// __SUP_COUT__ << "noHost: " << noHost << __E__;
 
 		if(userInfo.username_ == "")  // should never happen?
 		{
@@ -1142,13 +1144,14 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		fprintf(fp, "noWrap %d\n", noWrap);
 		fprintf(fp, "messageOnly %d\n", messageOnly);
 		fprintf(fp, "hideLineNumers %d\n", hideLineNumers);
+		fprintf(fp, "noHost %d\n", noHost);
 		fclose(fp);
 	}
 	else if(requestType == "LoadUserPreferences")
 	{
 		// __SUP_COUT__ << "requestType " << requestType << __E__;
 
-		unsigned int colorIndex, showSideBar, noWrap, messageOnly, hideLineNumers;
+		unsigned int colorIndex, showSideBar, noWrap, messageOnly, hideLineNumers, noHost;
 
 		if(userInfo.username_ == "")  // should never happen?
 		{
@@ -1173,6 +1176,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			xmlOut.addTextElementToData("noWrap", "1");
 			xmlOut.addTextElementToData("messageOnly", "0");
 			xmlOut.addTextElementToData("hideLineNumers", "1");
+			xmlOut.addTextElementToData("noHost", "1");
 			return;
 		}
 		fscanf(fp, "%*s %u", &colorIndex);
@@ -1180,6 +1184,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		fscanf(fp, "%*s %u", &noWrap);
 		fscanf(fp, "%*s %u", &messageOnly);
 		fscanf(fp, "%*s %u", &hideLineNumers);
+		if(fscanf(fp, "%*s %u", &noHost) != 1)
+			noHost = 1;  // default: hidden (backward compat with old pref files)
 		fclose(fp);
 		// __SUP_COUT__ << "colorIndex: " << colorIndex << __E__;
 		// __SUP_COUT__ << "showSideBar: " << showSideBar << __E__;
@@ -1198,6 +1204,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		xmlOut.addTextElementToData("messageOnly", tmpStr);
 		sprintf(tmpStr, "%u", hideLineNumers);
 		xmlOut.addTextElementToData("hideLineNumers", tmpStr);
+		sprintf(tmpStr, "%u", noHost);
+		xmlOut.addTextElementToData("noHost", tmpStr);
 	}
 	else if(requestType == "GetTraceLevels")
 	{
@@ -1216,6 +1224,14 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		std::string traceList = "";
 		auto& allTraceApps    = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
+		__SUP_COUT__ << "Querying " << allTraceApps.size()
+		             << " TRACE controller supervisor(s) for TRACE levels. Hosts: ";
+		{
+			std::stringstream appHosts;
+			for(const auto& appInfo : allTraceApps)
+				appHosts << appInfo.first << "(" << appInfo.second.getClass() << ") ";
+			__SUP_COUT__ << appHosts.str() << __E__;
+		}
 		for(const auto& appInfo : allTraceApps)
 		{
 			__SUP_COUT__ << "Supervisor hostname = " << appInfo.first << "/"
@@ -1257,8 +1273,6 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 				           << appInfo.second.getId()
 				           << " name = " << appInfo.second.getName() << ". \n\n"
 				           << e.what() << __E__;
-				//do not throw exception, because unable to set levels when some Supervisors are down
-				//__SUP_SS_THROW__;
 				__SUP_COUT_ERR__ << ss.str();
 				continue;  //skip bad Supervisor
 			}
