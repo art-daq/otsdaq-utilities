@@ -2601,15 +2601,20 @@ SubsystemLaunch.create = function() {
 
 				DesktopContent.popUpVerification(
 					/* prompt */
-					"Please enter a logbook entry summarizing the run:"
+					"Please enter a logbook entry summarizing the run:" +
+					"<br><br><label style='cursor:pointer;'><input type='checkbox' " +
+					"id='SubsystemLaunch-writeToEcl' /> Write end-of-run summary to ECL</label>"
 					,
 					/* continueFunc [optional] */
 					function (entry) {
 						Debug.log("User entered logbook entry " + entry);
 
+						var eclEl = document.getElementById('SubsystemLaunch-writeToEcl');
+						var writeToEcl = eclEl ? eclEl.checked : true;
+
 						//save last entry
 						lastLogEntry = entry;
-						localStop(entry);
+						localStop(entry, writeToEcl);
 					} //end continueFunc handlere
 					,
 					/* val [optional] */ undefined,
@@ -2638,7 +2643,7 @@ SubsystemLaunch.create = function() {
 
 
 		//===========
-		function localStop(logEntry) {
+		function localStop(logEntry, writeToEcl) {
 			Debug.log("localStop()");
 			Debug.logv({logEntry});
 
@@ -2656,7 +2661,8 @@ SubsystemLaunch.create = function() {
 			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
 						"&fsmName=" + _fsmName +
 						"&StateMachine=Stop", //end get data
-						"logEntry=" + encodeURIComponent(logEntry), //end post data
+						"logEntry=" + encodeURIComponent(logEntry) +
+						"&writeToEcl=" + (writeToEcl ? "1" : "0"), //end post data
 					function(req) //start handler
 					{
 				Debug.log("stop() FSM handler");
