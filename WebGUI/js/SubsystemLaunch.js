@@ -935,8 +935,10 @@ SubsystemLaunch.create = function() {
 
 	function _saveDetailScrollPositions() {
 		const wraps = document.querySelectorAll(".detail_scroll");
-		for (let i = 0; i < wraps.length; ++i)
-			if (wraps[i].scrollLeft) _detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+		for (let i = 0; i < wraps.length; ++i) {
+			if (!wraps[i].id) continue;
+			_detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+		}
 	}
 	function _restoreDetailScrollPositions() {
 		for (const id in _detailScrollPositions) {
