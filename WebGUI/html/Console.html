@@ -3360,7 +3360,12 @@
                 }
 
                 var label = rows[r].children[1].innerText;
-                var hosts = rows[r].children[3].innerText.split(';');
+                // Look up raw hosts from _traceLevels by label (display column is cleaned/shortened)
+                var hosts = [];
+                for (var hh in _traceLevels) {
+                    if (_traceLevels[hh][label])
+                        hosts.push(hh);
+                }
                 Debug.log("Row", checked, label, hosts);
 
                 for (var h = 0; h < hosts.length; ++h) {
