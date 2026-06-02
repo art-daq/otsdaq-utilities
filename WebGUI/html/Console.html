@@ -945,15 +945,24 @@
                 return;
             }
 
-            // Split each hostname into tokens and delimiters
-            var tokenized = [];
+            // Strip domain suffix (everything after the first '.') before
+            // shortening — domain segments like "fnal.gov" are always common
+            // and would interfere with the adjacency logic below.
+            var primaryNames = [];
             for (var i = 0; i < hosts.length; i++) {
+                var dotIdx = hosts[i].indexOf(".");
+                primaryNames.push(dotIdx > 0 ? hosts[i].substring(0, dotIdx) : hosts[i]);
+            }
+
+            // Tokenize each primary hostname by '-' and '_'
+            var tokenized = [];
+            for (var i = 0; i < primaryNames.length; i++) {
                 var parts = [];
                 var delims = [];
                 var cur = "";
-                for (var c = 0; c < hosts[i].length; c++) {
-                    var ch = hosts[i][c];
-                    if (ch === '-' || ch === '_' || ch === '.') {
+                for (var c = 0; c < primaryNames[i].length; c++) {
+                    var ch = primaryNames[i][c];
+                    if (ch === '-' || ch === '_') {
                         parts.push(cur);
                         delims.push(ch);
                         cur = "";
@@ -987,8 +996,25 @@
                 isCommon.push(allSame && !isNum);
             }
 
-            // Don't strip segments adjacent to a non-common segment that has numbers
-            // (to keep "calo-01" together when "calo" is unique)
+            // Keep common segments adjacent to a varying numeric segment so they
+            // act as a label (e.g. "mu2e-calo-01"/"mu2e-calo-02" → "calo-01"/
+            // "calo-02" instead of just "01"/"02").
+            for (var pos = 0; pos < isCommon.length; pos++) {
+                if (!isCommon[pos]) continue;
+                for (var side = -1; side <= 1; side += 2) {
+                    var adj = pos + side;
+                    if (adj < 0 || adj >= isCommon.length || isCommon[adj]) continue;
+                    var anyNum = false;
+                    var allSameAdj = true;
+                    var firstVal = (tokenized[0].parts.length > adj) ? tokenized[0].parts[adj] : null;
+                    for (var h = 0; h < tokenized.length; h++) {
+                        var v = (tokenized[h].parts.length > adj) ? tokenized[h].parts[adj] : null;
+                        if (/^\d+$/.test(v)) anyNum = true;
+                        if (v !== firstVal) allSameAdj = false;
+                    }
+                    if (anyNum && !allSameAdj) { isCommon[pos] = false; break; }
+                }
+            }
 
             // Build short names from non-common segments
             for (var i = 0; i < hosts.length; i++) {
@@ -1003,8 +1029,30 @@
                 }
                 var shortName = shortParts.join("");
                 if (shortName.length <= 3)
-                    shortName = hosts[i];
+                    shortName = primaryNames[i];
                 _hostnameShortMap[hosts[i]] = shortName;
+            }
+
+            // If stripping domains created collisions (e.g. same primary name,
+            // different domains), append the domain to disambiguate.
+            var seen = {};
+            var collisions = {};
+            for (var i = 0; i < hosts.length; i++) {
+                var sn = _hostnameShortMap[hosts[i]];
+                if (seen[sn] !== undefined) {
+                    collisions[sn] = true;
+                }
+                seen[sn] = i;
+            }
+            if (Object.keys(collisions).length > 0) {
+                for (var i = 0; i < hosts.length; i++) {
+                    var sn = _hostnameShortMap[hosts[i]];
+                    if (collisions[sn]) {
+                        var dotIdx = hosts[i].indexOf(".");
+                        var domain = (dotIdx > 0) ? hosts[i].substring(dotIdx) : "";
+                        _hostnameShortMap[hosts[i]] = sn + domain;
+                    }
+                }
             }
         } //end _recomputeShortenedHostnames()
 
