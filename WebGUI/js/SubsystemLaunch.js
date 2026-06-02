@@ -124,11 +124,8 @@ SubsystemLaunch.create = function() {
 
 		document.addEventListener("scroll", function() {
 			var st = document.documentElement.scrollTop;
-			Debug.log("SCROLL EVENT scrollTop=" + st + " saved=" + _savedDocScrollTop +
-				" scrollHeight=" + document.documentElement.scrollHeight +
-				" clientHeight=" + document.documentElement.clientHeight);
 			if(st > 0) _savedDocScrollTop = st;
-		}, true);
+		}, { capture: true, passive: true });
 
 		// ResizeObserver fires every time the iframe dimensions change (including
 		// when the Desktop framework collapses and restores the iframe during a
@@ -142,9 +139,6 @@ SubsystemLaunch.create = function() {
 				if(_savedDocScrollTop > 0 && st === 0 && sh > ch) {
 					var target = Math.min(_savedDocScrollTop, sh - ch);
 					document.documentElement.scrollTop = target;
-					Debug.log("ResizeObserver RESTORE scrollTop target=" + target +
-						" result=" + document.documentElement.scrollTop +
-						" scrollHeight=" + sh + " clientHeight=" + ch);
 				}
 			}).observe(document.documentElement);
 		}
@@ -878,11 +872,7 @@ SubsystemLaunch.create = function() {
 		if(w > 2400)
 			redrawMode = 2;
 
-		Debug.log("redrawWindow ENTER to " + w + " - " + h + " mode=" + redrawMode + "/" + _lastRedrawMode +
-			" _savedDocScrollTop=" + _savedDocScrollTop +
-			" current_scrollTop=" + document.documentElement.scrollTop +
-			" scrollHeight=" + document.documentElement.scrollHeight +
-			" clientHeight=" + document.documentElement.clientHeight);
+		Debug.log("redrawWindow to " + w + " - " + h,redrawMode,_lastRedrawMode);
 
 
 		if (_lastRedrawMode && redrawMode != _lastRedrawMode) {
@@ -928,29 +918,9 @@ SubsystemLaunch.create = function() {
 		} //end check if need extra new line at top to avoid FSM select
 
 		//restore the document scrollTop that was reset when the Desktop framework resized the iframe
-		var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-		Debug.log("redrawWindow RESTORE _savedDocScrollTop=" + _savedDocScrollTop +
-			" maxScroll=" + maxScroll +
-			" scrollHeight=" + document.documentElement.scrollHeight +
-			" clientHeight=" + document.documentElement.clientHeight +
-			" current_scrollTop_before=" + document.documentElement.scrollTop);
-
 		if(_savedDocScrollTop > 0) {
-			var target = Math.min(_savedDocScrollTop, maxScroll);
-			document.documentElement.scrollTop = target;
-			Debug.log("redrawWindow SET scrollTop=" + target +
-				" result=" + document.documentElement.scrollTop);
-
-			//deferred restore in case layout hasn't settled yet
-			var savedVal = _savedDocScrollTop;
-			requestAnimationFrame(function() {
-				var maxScroll2 = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-				var target2 = Math.min(savedVal, maxScroll2);
-				document.documentElement.scrollTop = target2;
-				Debug.log("redrawWindow RAF RESTORE target=" + target2 +
-					" result=" + document.documentElement.scrollTop +
-					" maxScroll=" + maxScroll2);
-			});
+			var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+			document.documentElement.scrollTop = Math.min(_savedDocScrollTop, maxScroll);
 		}
 
 	} //end redrawWindow()
