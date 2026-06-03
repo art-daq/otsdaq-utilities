@@ -3998,10 +3998,8 @@
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered_) {
 				window.addEventListener('mouseup', (e) => {
-					console.log("Window mouse up");
 					// --- Finalize row reorder drag ---
 					if (isReorderDragging_) {
-						console.log("Finalizing reorder drag");
 						_reorderDragMouseMove(e, true); //capture final cursor position at mouse release
 						Debug.log("Reorder drag ended, drop index:", reorderDropIndex_);
 						suppressBodyMouseupOnce_ = true;
