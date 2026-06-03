@@ -12878,11 +12878,9 @@
 			if (!selectedRows.length) return;
 			const defaultParent = selectedRows[0].parentNode;
 
-			// Do nothing when all selected rows already occupy the target position
+			// Track selected indices and capture the reference row BEFORE removing anything (it may not be selected)
 			const selectedIndices = new Set(selectedRows.map(r => allRows.indexOf(r)));
-			// Find the reference row BEFORE removing anything (it may not be selected)
 			const refRow = (targetIndex < allRows.length) ? allRows[targetIndex] : null;
-
 			// If the drop target is inside the selection, abort
 			if (refRow && selectedIndices.has(allRows.indexOf(refRow))) {
 				Debug.log("moveSelectedRowsToIndex: drop target is within selection, ignoring");
