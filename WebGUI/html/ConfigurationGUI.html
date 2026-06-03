@@ -12817,14 +12817,14 @@
 		function _reorderDragMouseMove(e, ignoreButtonState) {
 			if (!isReorderDragging_) return;
 			if (!ignoreButtonState && e.buttons !== 1) {
-				// Mouse button was released outside the window – clean up
-				_clearReorderDropIndicators();
 				// Mouse button was released outside the window – cancel drag and clean up
+				_clearReorderDropIndicators();
 				isReorderDragging_ = false;
 				reorderDropIndex_ = -1;
 				document.body.classList.remove('row-reorder-drag');
 				document.body.classList.remove('no-select');
 				document.removeEventListener('mousemove', _reorderDragMouseMove);
+				return;
 			}
 
 			const rows = getRows();
