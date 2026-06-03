@@ -12819,7 +12819,12 @@
 			if (!ignoreButtonState && e.buttons !== 1) {
 				// Mouse button was released outside the window – clean up
 				_clearReorderDropIndicators();
-				return;
+				// Mouse button was released outside the window – cancel drag and clean up
+				isReorderDragging_ = false;
+				reorderDropIndex_ = -1;
+				document.body.classList.remove('row-reorder-drag');
+				document.body.classList.remove('no-select');
+				document.removeEventListener('mousemove', _reorderDragMouseMove);
 			}
 
 			const rows = getRows();
