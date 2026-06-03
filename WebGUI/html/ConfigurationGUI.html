@@ -3914,6 +3914,7 @@
 				tableRow.addEventListener('mouseover', (e) => {
 					if (!isDragging_) return;
 					if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
+					if (e.buttons !== 1) return; // Left click is not being held down
 
 					const tr = e.target.closest('tr');
 					if (!tr) return;
