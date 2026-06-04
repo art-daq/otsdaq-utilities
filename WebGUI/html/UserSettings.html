@@ -296,18 +296,6 @@
 				else
 					el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
 						(i + 1) + ",true,event); return false;'>show</a>";
-
-				//update alias input to match current alias array
-				var aliasEl = document.getElementById("winLayoutAlias" + (i + 1));
-				if (aliasEl) {
-					if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString() ||
-						_layoutAliasArray[i] == (i + 1)) {
-						aliasEl.value = "";
-						aliasEl.setAttribute("placeholder", "Enter Alias");
-					}
-					else
-						aliasEl.value = _layoutAliasArray[i];
-				}
 			}
 
 			//if user has privileges _sysLayoutArray is populated
@@ -326,18 +314,6 @@
 				else
 					el.innerHTML = "Layout Details: <a href='#' onmouseup='showLayoutText(" +
 						(i + 1) + ",true,event,1); return false;'>show</a>";
-
-				//update system alias input to match current alias array
-				var sysAliasEl = document.getElementById("winSysLayoutAlias" + (i + 1));
-				if (sysAliasEl) {
-					if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString() ||
-						_sysLayoutAliasArray[i] == (i + 1)) {
-						sysAliasEl.value = "";
-						sysAliasEl.setAttribute("placeholder", "Enter Alias");
-					}
-					else
-						sysAliasEl.value = _sysLayoutAliasArray[i];
-				}
 			}
 
 		} //end extractLayoutToForm()
