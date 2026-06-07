@@ -709,13 +709,15 @@ SubsystemLaunch.create = function() {
 						else if(i == DETAIL_I && redrawMode == 1) //compressed mode: scrollable detail wrapper (spans 3 cols)
 						{
 							str += "<td colspan=3 id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + " compressed_detail'>" +
+								"' class='subsystem_" + fieldIds[i] + " compressed_detail'" +
+								" title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>" +
 								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
 						}
 						else if(i == DETAIL_I) //single-row mode: scrollable detail wrapper to keep table width matched to status box
 						{
 							str += "<td id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + "'>" +
+								"' class='subsystem_" + fieldIds[i] + "'" +
+								" title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>" +
 								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
 						}
 						else //other field <td>s
@@ -847,6 +849,20 @@ SubsystemLaunch.create = function() {
 		document.body.appendChild(cel);
 		el = document.getElementById('systemConfigAliasTranslationNote');
 		if(el) el.innerText = aliasTranslation;
+
+		var parentTd = document.getElementById('systemConfigAliasTranslation');
+		if(parentTd) {
+			if(SubsystemLaunch.system.subsystemCommonList) {
+				var span = document.createElement('span');
+				span.innerText = "\nSubsystemCommon tables: " + SubsystemLaunch.system.subsystemCommonList;
+				parentTd.appendChild(span);
+			}
+			if(SubsystemLaunch.system.subsystemCommonOverrideList) {
+				var span = document.createElement('span');
+				span.innerText = "\nSubsystemCommonOverride tables: " + SubsystemLaunch.system.subsystemCommonOverrideList;
+				parentTd.appendChild(span);
+			}
+		}
 
 		displayStatus(); //fill elements with data
 		_restoreDetailScrollPositions();
@@ -2915,6 +2931,14 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 				Debug.log("SubsystemLaunch.system.systemAliases",SubsystemLaunch.system.systemAliases);
 
 			} //end system aliases -----
+
+			//subsystem common/override table lists ----------
+			{
+				SubsystemLaunch.system.subsystemCommonList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonList") || "";
+				SubsystemLaunch.system.subsystemCommonOverrideList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonOverrideList") || "";
+			} //end subsystem common/override -----
 
 			//system state ------------------------
 			{
