@@ -1271,10 +1271,10 @@
 				selectedStartTime = Math.floor(dateFrom.getTime() / 1000);
 				selectedEndTime = Math.floor(dateTo.getTime() / 1000);
 				if ( selectedStartTime >= selectedEndTime) {
-					Debug.log("Invalid custom date filter with start time greater than or equal to end time.");
+					var safeDateFromInput = encodeHTML(dateFromInput);
+					var safeDateToInput = encodeHTML(dateToInput);
 					Debug.warn(DesktopContent.tooltip("Invalid Custom Date",
-						"The start date " + dateFromInput + " must be before the end date " + dateToInput + ". Please adjust your custom date filter inputs."));
-					return;
+						"The start date " + safeDateFromInput + " must be before the end date " + safeDateToInput + ". Please adjust your custom date filter inputs."));
 				}
 			}
 			else {
