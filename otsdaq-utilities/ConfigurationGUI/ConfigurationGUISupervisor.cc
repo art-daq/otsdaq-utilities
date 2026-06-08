@@ -8192,6 +8192,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 						         << "' version v" << keyInOrder << ", so skipping." << __E__;
 						continue;
 					}
+				}
 
 				allVersionsFiltered = false;
 
