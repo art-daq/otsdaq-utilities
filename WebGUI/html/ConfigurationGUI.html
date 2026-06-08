@@ -1277,10 +1277,15 @@
 						"The start date " + safeDateFromInput + " must be before the end date " + safeDateToInput + ". Please adjust your custom date filter inputs."));
 				}
 			}
-			else {
+			else if (selectedOption === "") {
 				Debug.log("No date filter applied, loading all tables.");
-				_tableViewSelectedOption = "";
-				return; // no filter, so return without making a request
+				resetTableViewParams();
+				setupTableViewMode(anchorTarget);
+				return;
+			}
+			else {
+				Debug.log("Unknown date filter preset: " + selectedOption);
+				return;
 			}
 
 			_tableViewSelectedStartTime = selectedStartTime;
