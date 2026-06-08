@@ -2692,8 +2692,14 @@
 
 			str += "<h3 style='margin-top:-10px'><u>Table View</u></h3>";
 
-			var dateToday = new Date().toISOString().split('T')[0];
-			var dateYesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+			function toLocalDateInputValue(d) {
+				var y = d.getFullYear();
+				var m = String(d.getMonth() + 1).padStart(2, "0");
+				var day = String(d.getDate()).padStart(2, "0");
+				return y + "-" + m + "-" + day;
+			}
+			var dateToday = toLocalDateInputValue(new Date());
+			var dateYesterday = toLocalDateInputValue(new Date(Date.now() - 86400000));
 			str += "<div id='tableSearchDiv' ";
 			str += "style='margin-top:-20px; height:50px; width:750px;'";
 			str += ">";
