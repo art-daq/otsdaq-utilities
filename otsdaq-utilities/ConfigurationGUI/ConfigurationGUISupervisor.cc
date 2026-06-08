@@ -8054,11 +8054,13 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	time_t filterEndTime   = 0;
 	if(createdStartTime != "")
 	{
-		try filterStartTime = std::stoll(createdStartTime);
+		try
+		{
+			filterStartTime = static_cast<time_t>(std::stoll(createdStartTime));
+		}
 		catch(const std::exception& e)
 		{
-			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what()
-			           << __E__;
+			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what() << __E__;
 			__SUP_COUT_ERR__ << "\n" << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 			return;
