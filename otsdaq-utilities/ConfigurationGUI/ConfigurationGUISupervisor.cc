@@ -8068,7 +8068,10 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	}
 	if(createdEndTime != "")
 	{
-		try filterEndTime = std::stoll(createdEndTime);
+		try
+		{
+			filterEndTime = static_cast<time_t>(std::stoll(createdEndTime));
+		}
 		catch(const std::exception& e)
 		{
 			__SUP_SS__ << "Error parsing createdEndTime parameter: " << e.what() << __E__;
