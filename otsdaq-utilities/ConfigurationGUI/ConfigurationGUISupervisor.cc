@@ -8165,13 +8165,13 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					try
 					{
 						std::string localAccumulatedErrors;
-						time_t      tableCreationTime =
+							time_t      tableCreationTime =
 						    cfgMgr
 						        ->getVersionedTableByName(tableName,
 						                                  keyInOrder,
 						                                  true /* looseColumnMatching */,
 						                                  &localAccumulatedErrors,
-						                                  true /* getRawData */)
+						                                  false /* getRawData */)
 						        ->getView()
 						        .getCreationTime();
 
