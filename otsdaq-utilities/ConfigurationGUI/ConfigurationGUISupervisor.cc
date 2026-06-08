@@ -8186,10 +8186,12 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 							continue;
 						}
 					}
-					catch(const std::runtime_error&) __COUT__
-					    << "Failed to get creation time for table '" << tableName
-					    << "' version v" << keyInOrder << ", so skipping." << __E__;
-				}
+					catch(const std::runtime_error&)
+					{
+						__COUT__ << "Failed to get creation time for table '" << tableName
+						         << "' version v" << keyInOrder << ", so skipping." << __E__;
+						continue;
+					}
 
 				allVersionsFiltered = false;
 
