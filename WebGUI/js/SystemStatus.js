@@ -466,8 +466,7 @@ function _saveDetailScrollPositions() {
 	var wraps = document.querySelectorAll(".detail_scroll");
 	for (var i = 0; i < wraps.length; ++i) {
 		if (!wraps[i].id) continue;
-		if (wraps[i].scrollLeft)
-			_detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+		_detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
 	}
 }
 
