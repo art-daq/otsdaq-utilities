@@ -4735,7 +4735,7 @@
 					treeGroupKey_ + "\\\");";
 
 				//add save-tree button placeholder (visibility toggled by treeHasChanged)
-				treeViewHandlerStr_ += "<div id='treeSaveButton' style='visibility:hidden'>" +
+				treeViewHandlerStr_ += "<div class='treeSaveButton' style='visibility:hidden'>" +
 					"<input type='button' onmouseup='popUpSaveTreeForm()' " +
 					"value='Save All Tree Changes' title='" +
 					"Save new versions of every modified table\n" +
@@ -4794,7 +4794,7 @@
 
 			//add bottom save-tree button placeholder (only for top-level, not sub-tree expansions)
 			if (!parentId)
-				treeViewHandlerStr_ += "<div id='treeSaveButton' style='visibility:hidden'>" +
+				treeViewHandlerStr_ += "<div class='treeSaveButton' style='visibility:hidden'>" +
 					"<br><input type='button' onmouseup='popUpSaveTreeForm()' " +
 					"value='Save All Tree Changes' title='" +
 					"Save new versions of every modified table\n" +
@@ -12765,7 +12765,7 @@
 				treeHasChanged_ = false;
 
 				//hide all buttons
-				var svBtns = document.querySelectorAll("#treeSaveButton");
+				var svBtns = document.querySelectorAll(".treeSaveButton");
 				for (var i = 0; i < svBtns.length; i++)
 					svBtns[i].style.visibility = "hidden";
 				return;
@@ -12775,7 +12775,7 @@
 			treeHasChanged_ = true;
 
 			//show all buttons
-			var svBtns = document.querySelectorAll("#treeSaveButton");
+			var svBtns = document.querySelectorAll(".treeSaveButton");
 			for (var i = 0; i < svBtns.length; i++)
 				svBtns[i].style.visibility = "visible";
 		} //end treeHasChanged()
