@@ -177,6 +177,20 @@ h1, h2, h3 {
 	text-align: 			center;
 }
 
+.detail_scroll {
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	max-width: 500px;
+	scrollbar-width: none;       /* Firefox */
+	-ms-overflow-style: none;    /* IE/legacy Edge */
+}
+.detail_scroll::-webkit-scrollbar { /* WebKit/Chromium/Safari */
+	display: none;
+	width: 0;
+	height: 0;
+}
+
 .statusCell {
 	box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 							inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
