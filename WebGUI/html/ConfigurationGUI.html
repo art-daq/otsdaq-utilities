@@ -4892,6 +4892,14 @@
 					treeGroupName_ + "\\\",\\\"" +
 					treeGroupKey_ + "\\\");";
 
+				//add save-tree button placeholder (visibility toggled by treeHasChanged)
+				treeViewHandlerStr_ += "<div class='treeSaveButton' style='visibility:hidden'>" +
+					"<input type='button' onmouseup='popUpSaveTreeForm()' " +
+					"value='Save All Tree Changes' title='" +
+					"Save new versions of every modified table\n" +
+					"(Optionally, save new active groups and assign system aliases)" +
+					"'/><br><br></div>";
+
 				//add config group header
 				treeViewHandlerStr_ += "<a id='treeView-ConfigGroupLink' " +
 					"href='#' onclick='setupSpecificTableGroup(\"" + tableGroupName +
@@ -4941,6 +4949,15 @@
 					"<div id='clearDiv'></div>";
 				//////////=======================
 			}
+
+			//add bottom save-tree button placeholder (only for top-level, not sub-tree expansions)
+			if (!parentId)
+				treeViewHandlerStr_ += "<div class='treeSaveButton' style='visibility:hidden'>" +
+					"<br><input type='button' onmouseup='popUpSaveTreeForm()' " +
+					"value='Save All Tree Changes' title='" +
+					"Save new versions of every modified table\n" +
+					"(Optionally, save new active groups and assign system aliases)" +
+					"'/><br><br></div>";
 
 			el.innerHTML = treeViewHandlerStr_;
 
@@ -12905,49 +12922,20 @@
 			if (reset) {
 				treeHasChanged_ = false;
 
-				//delete all buttons
-				var svBtn = document.getElementById("treeSaveButton");
-				while (svBtn) {
-					svBtn.parentNode.removeChild(svBtn);
-					svBtn = document.getElementById("treeSaveButton");
-				}
+				//hide all buttons
+				var svBtns = document.querySelectorAll(".treeSaveButton");
+				for (var i = 0; i < svBtns.length; i++)
+					svBtns[i].style.visibility = "hidden";
 				return;
 			}
 
 			if (treeHasChanged_) return;
-
-			//delete all buttons
-			var svBtn = document.getElementById("treeSaveButton");
-			while (svBtn) {
-				svBtn.parentNode.removeChild(svBtn);
-				svBtn = document.getElementById("treeSaveButton");
-			}
-
-
 			treeHasChanged_ = true;
 
-			//add buttons to save tree
-
-
-			var newDiv = document.createElement("div");
-			newDiv.setAttribute("id", "treeSaveButton");
-			str = "";
-			str += "<input type='button' onmouseup='popUpSaveTreeForm()' " +
-				"value='Save All Tree Changes' title='" +
-				"Save new versions of every modified table\n" +
-				"(Optionally, save new active groups and assign system aliases)" +
-				"'/>";
-			str += "<br><br>";
-			newDiv.innerHTML = str;
-
-			//insert a new div before and after table
-			el = document.getElementById("display");
-			var targetEl = document.getElementById("treeView-ConfigGroupLink");
-			el.insertBefore(newDiv, targetEl);
-			newDiv = document.createElement("div");
-			newDiv.setAttribute("id", "treeSaveButton");
-			newDiv.innerHTML = "<br>" + str;
-			el.appendChild(newDiv);
+			//show all buttons
+			var svBtns = document.querySelectorAll(".treeSaveButton");
+			for (var i = 0; i < svBtns.length; i++)
+				svBtns[i].style.visibility = "visible";
 		} //end treeHasChanged()
 
 		//==============================================================================
