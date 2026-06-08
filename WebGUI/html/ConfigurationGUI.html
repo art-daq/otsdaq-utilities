@@ -2709,7 +2709,7 @@
 			str += "style='margin-top:-20px; height:50px; width:750px;'";
 			str += ">";
 			str += "Show versions created: ";
-			str += "<select id='tableViewDateFilterPreset' onchange='toggleTableViewCustomDateInputs()'>";
+			str += "<select id='tableViewDateFilterPreset' onchange='toggleTableViewCustomDateInputs(); if(this.value !== \"custom\") tableViewFilterRequest();'>";
 			str += "<option value=''>All</option>";
 			str += "<option value='last24'>Last 24 Hours</option>";
 			str += "<option value='last7'>Last Week</option>";
@@ -2717,12 +2717,10 @@
 			str += "<option value='custom'>Custom Range</option>";
 			str += "</select> ";
 			str += "<span id='tableViewCustomDateInputs' style='display:none;'>";
-			str += "From: <input id='tableViewDateFrom' type='date' value='" + dateYesterday + "'> ";
-			str += "To: <input id='tableViewDateTo' type='date' value='" + dateToday + "'> ";
+			str += "From: <input id='tableViewDateFrom' type='date' value='" + dateYesterday + "' onchange='if(document.getElementById(\"tableViewDateFilterPreset\").value === \"custom\") tableViewFilterRequest();'> ";
+			str += "To: <input id='tableViewDateTo' type='date' value='" + dateToday + "' onchange='if(document.getElementById(\"tableViewDateFilterPreset\").value === \"custom\") tableViewFilterRequest();'> ";
 			str += "</span> ";
 			str += "<input id='tableViewApplyFilter' type='button' onclick='tableViewFilterRequest()' value='Apply'> ";
-			str += "<br>";
-			str += "<a href='#' onclick='resetTableViewParams(); setupTableViewMode(); return false;' style='cursor:pointer;'>Reset View</a>";
 			str += "</div>";
 
 			//			str += "<div id='tableSearchDiv' ";
