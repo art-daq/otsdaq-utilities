@@ -1226,9 +1226,8 @@
 			_tableViewSelectedOption = selectedOption;
 			_tableViewSelectedStartTime = 0;
 			_tableViewSelectedEndTime = 0;
-			const date = new Date();
 			var selectedStartTime = 0;
-			var selectedEndTime = Math.floor(date.getTime() / 1000); //default
+			var selectedEndTime = 0;
 
 			function unixTimeDaysAgo(days) {
 				return Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
