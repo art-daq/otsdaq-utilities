@@ -460,8 +460,27 @@ function restartApps(contextName, serverName) {
 } // end of restartApps()
 
 //=====================================================================================
+var _detailScrollPositions = {};
+
+function _saveDetailScrollPositions() {
+	var wraps = document.querySelectorAll(".detail_scroll");
+	for (var i = 0; i < wraps.length; ++i) {
+		if (!wraps[i].id) continue;
+		_detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+	}
+}
+
+function _restoreDetailScrollPositions() {
+	for (var id in _detailScrollPositions) {
+		var el = document.getElementById(id);
+		if (el) el.scrollLeft = _detailScrollPositions[id];
+	}
+}
+
 // this function displays a table with the app array passed into it
 function displayTable(appsArray) {
+	_saveDetailScrollPositions();
+
 	// clear the appStatusDiv
 	var statusDivElement = document.getElementById("appStatusDiv");
 	statusDivElement.innerHTML = "";
@@ -643,9 +662,10 @@ function displayTable(appsArray) {
 				}
 				else if (columnKeys[j] == "detail") {
 					var tmpDetail = decodeURIComponent(appsArray[i][columnKeys[j]]);
-					if (tmpDetail.length > 150)
-						tmpDetail = tmpDetail.substr(0, 150) + "...";
-					cell.innerHTML = tmpDetail;
+					cell.innerHTML = "<div class='detail_scroll' id='detail_" +
+						appsArray[i].name + "'>" + tmpDetail + "</div>";
+					cell.title = "Click to copy text";
+					cell.onclick = function() { copyText(this); };
 				}
 				else if (columnKeys[j] == "availableSpace") {
 					var logSpace = parseFloat(appsArray[i]["availableLogSpaceGB"]) || 0;
@@ -788,13 +808,11 @@ function displayTable(appsArray) {
 						cell.innerHTML = statusString;
 					}
 					else if (columnKeys[j] == "detail") {
-						// cell.innerText = //decodeURIComponent(
-						//     subappInfo[columnKeys[j]];
-						//     //);
 						var tmpDetail = decodeURIComponent(subappInfo[columnKeys[j]]);
-						if (tmpDetail.length > 150)
-							tmpDetail = tmpDetail.substr(0, 150) + "...";
-						cell.innerHTML = tmpDetail;
+						cell.innerHTML = "<div class='detail_scroll' id='detail_" +
+							subappInfo.name + "'>" + tmpDetail + "</div>";
+						cell.title = "Click to copy text";
+						cell.onclick = function() { copyText(this); };
 					}
 					else if (columnKeys[j] == "availableSpace") {
 						var logSpace = parseFloat(subappInfo["availableLogSpaceGB"]) || 0;
@@ -859,6 +877,8 @@ function displayTable(appsArray) {
 
 	// keep record of current array on display. This variable is later used to redisplay table after user does filtering
 	_arrayOnDisplayTable = appsArray;
+
+	_restoreDetailScrollPositions();
 
 	return 1;
 
@@ -1137,3 +1157,20 @@ function saveCheckedUserPreferences(className, elementName, checked) {
 	//     "&checked=" + (checked?1:0));
 	Debug.log(className, elementName, checked);
 } // end of saveCheckedUserPreferences()
+
+//=====================================================================================
+function copyText(el) {
+	var text = el.innerText;
+	navigator.clipboard.writeText(text)
+		.then(function() {
+			Debug.log("Text copied to clipboard!", text);
+			DesktopContent.popUpVerification(
+				"Text copied!", 0,
+				0, "#efeaea", 0, "#770000",
+				0, 0, 0, 0, 0, 0, 0, 0,
+				true);
+		})
+		.catch(function(err) {
+			Debug.err("Failed to copy: ", err);
+		});
+} // end of copyText()
