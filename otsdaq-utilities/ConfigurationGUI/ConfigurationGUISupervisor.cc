@@ -570,7 +570,12 @@ try
 	}
 	else if(requestType == "getTables")
 	{
-		handleTablesXML(xmlOut, cfgMgr);
+		std::string createdStartTime = CgiDataUtilities::getData(cgiIn, "startTime");
+		std::string createdEndTime = CgiDataUtilities::getData(cgiIn, "endTime");
+		__COUT__ << "startTime: " << createdStartTime << __E__;
+		__COUT__ << "endTime: " << createdEndTime << __E__;
+
+		handleTablesXML(xmlOut, cfgMgr, createdStartTime, createdEndTime);
 	}
 	else if(requestType == "getContextMemberNames")
 	{
@@ -8041,8 +8046,36 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 ///		...
 ///
 void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
-                                                 ConfigurationManagerRW* cfgMgr)
+                                                 ConfigurationManagerRW* cfgMgr,
+												 const std::string& createdStartTime,
+												 const std::string& createdEndTime)
 {
+	time_t filterStartTime = 0;
+	time_t filterEndTime = 0;
+	if(createdStartTime != "")
+	{
+		try
+			filterStartTime = std::stoll(createdStartTime);
+		catch(const std::exception& e)
+		{
+			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what() << __E__;
+			__SUP_COUT_ERR__ << "\n" << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+			return;
+		}
+	}
+	if(createdEndTime != "")
+	{
+		try
+			filterEndTime = std::stoll(createdEndTime);
+		catch(const std::exception& e)
+		{
+			__SUP_SS__ << "Error parsing createdEndTime parameter: " << e.what() << __E__;
+			__SUP_COUT_ERR__ << "\n" << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+			return;
+		}
+	}
 	if(cfgMgr->getAllGroupInfo().size() == 0 || cfgMgr->getActiveVersions().size() == 0)
 	{
 		__SUP_COUT__ << "Table Info cache appears empty. Attempting to regenerate."
@@ -8107,14 +8140,50 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		// for speed, group versions into spans:
 		//======
 		/// Lambda function to output table version values in spans
-		auto vSpanToXML = [](auto const& sortedKeys, auto& xmlOut, auto& configEl) {
+		auto vSpanToXML = [](auto const&          sortedKeys,
+		                     auto&                xmlOut,
+		                     auto&                configEl,
+		                     const std::string&   tableName,
+		                     ConfigurationManagerRW* cfgMgr,
+		                     const time_t 			filterStartTime,
+		                     const time_t 			filterEndTime) {
 			//add lo and hi spans, instead of each individual value
 			size_t lo = -1, hi = -1;
+			bool allVersionsFiltered = true;
 			for(auto& keyInOrder : sortedKeys)
 			{
 				//skip scratch version
 				if(keyInOrder.isScratchVersion())
 					continue;
+
+				if(filterStartTime != 0 && filterEndTime != 0)
+				{
+					try
+					{
+						std::string localAccumulatedErrors;
+						time_t tableCreationTime =
+							cfgMgr->getVersionedTableByName(
+								tableName,
+								keyInOrder,
+								true /* looseColumnMatching */,
+								&localAccumulatedErrors,
+								true /* getRawData */)
+								->getView()
+								.getCreationTime();
+
+						if(tableCreationTime < filterStartTime || tableCreationTime > filterEndTime)
+						{
+							__COUT__ << "Table '" << tableName << "' version v" << keyInOrder
+									<< " creation time is outside the filter range, so skipping." << __E__;
+							continue;
+						}
+					}
+					catch(const std::runtime_error&)
+						__COUT__ << "Failed to get creation time for table '" << tableName << "' version v" << keyInOrder
+								<< ", so skipping." << __E__;
+				}
+
+				allVersionsFiltered = false;
 
 				if(lo == size_t(-1))  //establish start of potential span
 				{
@@ -8148,9 +8217,20 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					    "_" + std::to_string(lo) + "_" + std::to_string(hi),
 					    configEl);
 			}
+			return allVersionsFiltered;
 		};  //end local lambda vSpanToXML()
 
-		vSpanToXML(it->second.versions_, xmlOut, parentEl);
+		if (vSpanToXML(it->second.versions_, xmlOut, parentEl, it->first, cfgMgr, filterStartTime, filterEndTime))
+		{
+			// Remove the pair we just added: TableVersions then TableName.
+			unsigned int childCount = xmlOut.getChildrenCount();
+			if(childCount >= 2)
+			{
+				xmlOut.removeDataElement(childCount - 1);
+				xmlOut.removeDataElement(childCount - 2);
+			}
+
+		}
 
 	}  // end table loop
 

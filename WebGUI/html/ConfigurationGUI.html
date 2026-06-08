@@ -669,6 +669,9 @@
 		var _tableColumnMaxValues = [];
 		var _tableViewBackLinkStr;
 		var _tableUploadStr = "";
+		var _tableViewSelectedOption = "";
+		var _tableViewSelectedStartTime = 0;
+		var _tableViewSelectedEndTime = 0;
 		var _doCopyAndPaintIncrementally = false;
 		var _copyAndPaintLastCellKey = "";
 		const _CURSOR_PAINTER_SOURCE = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
@@ -1189,9 +1192,107 @@
 
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			DesktopContent.XMLHttpRequest("Request?RequestType=getTables", "",
+			var requestStr = "Request?RequestType=getTables";
+			if (_tableViewSelectedStartTime > 0 || _tableViewSelectedEndTime > 0)
+				requestStr += "&startTime=" + _tableViewSelectedStartTime +
+					"&endTime=" + _tableViewSelectedEndTime;
+			DesktopContent.XMLHttpRequest(requestStr, "",
 				tableViewRequestHandler, anchorTarget);
 		} //end setupTableViewMode()
+
+		//==============================================================================
+		//tableViewFilterRequest ~
+		function toggleTableViewCustomDateInputs() {
+			var presetEl = document.getElementById("tableViewDateFilterPreset");
+			var customEl = document.getElementById("tableViewCustomDateInputs");
+			if (!presetEl || !customEl)
+				return;
+
+			customEl.style.display = presetEl.value === "custom" ? "inline" : "none";
+		} //end toggleTableViewCustomDateInputs()
+
+		function unixTimeToDateInputValue(unixTimeSeconds) {
+			if (!unixTimeSeconds)
+				return "";
+			var date = new Date((unixTimeSeconds | 0) * 1000);
+			return date.toISOString().split("T")[0];
+		} //end unixTimeToDateInputValue()
+
+		//==============================================================================
+		function tableViewFilterRequest(anchorTarget) {
+			editCellCancel();
+
+			var selectedOption = document.getElementById("tableViewDateFilterPreset").value;
+			_tableViewSelectedOption = selectedOption;
+			_tableViewSelectedStartTime = 0;
+			_tableViewSelectedEndTime = 0;
+			const date = new Date();
+			var selectedStartTime = 0;
+			var selectedEndTime = Math.floor(date.getTime() / 1000); //default
+
+			function unixTimeDaysAgo(days) {
+				return Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
+			}
+
+			function localDateFromInput(dateString, endOfDay = false) {
+				const [year, month, day] = dateString.split("-").map(Number);
+
+				if (endOfDay) {
+					return new Date(year, month - 1, day, 23, 59, 59, 999);
+				}
+
+				return new Date(year, month - 1, day, 0, 0, 0, 0);
+			}
+
+			if (selectedOption === "last24") {
+				selectedStartTime = unixTimeDaysAgo(1);
+				selectedEndTime = Math.floor(Date.now() / 1000);
+			}
+			else if (selectedOption === "last7") {
+				selectedStartTime = unixTimeDaysAgo(7);
+				selectedEndTime = Math.floor(Date.now() / 1000);
+			}
+			else if (selectedOption === "last30") {
+				selectedStartTime = unixTimeDaysAgo(30);
+				selectedEndTime = Math.floor(Date.now() / 1000);
+			}
+			else if (selectedOption === "custom") {
+				// get the dates from tableViewDateFrom and tableViewDateTo
+				const dateFromInput = document.getElementById("tableViewDateFrom").value;
+				const dateToInput = document.getElementById("tableViewDateTo").value;
+				if (!dateFromInput || !dateToInput) {
+					Debug.log("Custom date filter selected but missing date inputs.");
+					return; // missing custom date inputs, so return without making a request
+				}
+				const dateFrom = localDateFromInput(dateFromInput);
+				const dateTo = localDateFromInput(dateToInput, true /*endOfDay*/);
+				selectedStartTime = Math.floor(dateFrom.getTime() / 1000);
+				selectedEndTime = Math.floor(dateTo.getTime() / 1000);
+				if ( selectedStartTime >= selectedEndTime) {
+					Debug.log("Invalid custom date filter with start time greater than or equal to end time.");
+					Debug.warn(DesktopContent.tooltip("Invalid Custom Date",
+						"The start date " + dateFromInput + " must be before the end date " + dateToInput + ". Please adjust your custom date filter inputs."));
+					return;
+				}
+			}
+			else {
+				Debug.log("No date filter applied, loading all tables.");
+				_tableViewSelectedOption = "";
+				return; // no filter, so return without making a request
+			}
+
+			_tableViewSelectedStartTime = selectedStartTime;
+			_tableViewSelectedEndTime = selectedEndTime;
+
+			var el = document.getElementById("display");
+			el.innerHTML = "Loading...";
+			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
+								"&startTime=" + selectedStartTime +
+								"&endTime=" + selectedEndTime,
+								"",
+								tableViewRequestHandler, 
+								anchorTarget);
+		} //end tableViewFilterRequest()
 
 		//==============================================================================
 		//handleFlattenSystemAliasesResponse ~
@@ -2565,6 +2666,14 @@
 		} //end gotoSelectedMSGroup()
 
 		//==============================================================================
+		// resetTableViewParams ~~
+		function resetTableViewParams() {
+			_tableViewSelectedOption = "";
+			_tableViewSelectedStartTime = 0;
+			_tableViewSelectedEndTime = 0;
+		} //end resetTableViewParams()
+
+		//==============================================================================
 		//tableViewRequestHandler ~~
 		function tableViewRequestHandler(req, anchorTarget) {
 			var tableNames = req.responseXML.getElementsByTagName("TableName");
@@ -2580,6 +2689,27 @@
 			var backLinkStr;
 
 			str += "<h3 style='margin-top:-10px'><u>Table View</u></h3>";
+
+			var dateToday = new Date().toISOString().split('T')[0];
+			var dateYesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+			str += "<div id='tableSearchDiv' ";
+			str += "style='margin-top:-20px; height:50px; width:750px;'";
+			str += ">";
+			str += "Show versions created: ";
+			str += "<select id='tableViewDateFilterPreset' onchange='toggleTableViewCustomDateInputs()'>";
+			str += "<option value='last24'>Last 24 Hours</option>";
+			str += "<option value='last7'>Last Week</option>";
+			str += "<option value='last30'>Last 30 Days</option>";
+			str += "<option value='custom'>Custom Range</option>";
+			str += "</select> ";
+			str += "<span id='tableViewCustomDateInputs' style='display:none;'>";
+			str += "From: <input id='tableViewDateFrom' type='date' value='" + dateYesterday + "'> ";
+			str += "To: <input id='tableViewDateTo' type='date' value='" + dateToday + "'> ";
+			str += "</span> ";
+			str += "<input id='tableViewApplyFilter' type='button' onclick='tableViewFilterRequest()' value='Apply'> ";
+			str += "<br>"
+			str += "<a href='#' onclick='resetTableViewParams(); setupTableViewMode(); return false;' style='cursor:pointer;'>Reset View</a>";
+			str += "</div>";
 
 			//			str += "<div id='tableSearchDiv' ";
 			//			str += "style='margin-top:-20px; height:200px; width:450px;'";
@@ -2639,6 +2769,22 @@
 			str += "</table>";
 			//Debug.log("CfgGUI requestHandler str " + str);
 			el.innerHTML = str;
+			if (_tableViewSelectedOption)
+			{
+				var presetEl = document.getElementById("tableViewDateFilterPreset");
+				if (presetEl)
+					presetEl.value = _tableViewSelectedOption;
+				if (_tableViewSelectedOption === "custom")
+				{
+					var dateFromEl = document.getElementById("tableViewDateFrom");
+					var dateToEl = document.getElementById("tableViewDateTo");
+					if (dateFromEl)
+						dateFromEl.value = unixTimeToDateInputValue(_tableViewSelectedStartTime);
+					if (dateToEl)
+						dateToEl.value = unixTimeToDateInputValue(_tableViewSelectedEndTime);
+				}
+				toggleTableViewCustomDateInputs();
+			}
 
 			//			//////////// make search box - similar to tableGroupsRequestHandler()
 			//			{
@@ -2676,6 +2822,7 @@
 
 
 			//if there is a target to jump to, do it
+			toggleTableViewCustomDateInputs();
 			if (anchorTarget) {
 				Debug.log("anchorTarget = " + anchorTarget);
 				jump(anchorTarget);
