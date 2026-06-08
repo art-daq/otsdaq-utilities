@@ -571,7 +571,7 @@ try
 	else if(requestType == "getTables")
 	{
 		std::string createdStartTime = CgiDataUtilities::getData(cgiIn, "startTime");
-		std::string createdEndTime = CgiDataUtilities::getData(cgiIn, "endTime");
+		std::string createdEndTime   = CgiDataUtilities::getData(cgiIn, "endTime");
 		__COUT__ << "startTime: " << createdStartTime << __E__;
 		__COUT__ << "endTime: " << createdEndTime << __E__;
 
@@ -8047,18 +8047,18 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 ///
 void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
                                                  ConfigurationManagerRW* cfgMgr,
-												 const std::string& createdStartTime,
-												 const std::string& createdEndTime)
+                                                 const std::string&      createdStartTime,
+                                                 const std::string&      createdEndTime)
 {
 	time_t filterStartTime = 0;
-	time_t filterEndTime = 0;
+	time_t filterEndTime   = 0;
 	if(createdStartTime != "")
 	{
-		try
-			filterStartTime = std::stoll(createdStartTime);
+		try filterStartTime = std::stoll(createdStartTime);
 		catch(const std::exception& e)
 		{
-			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what() << __E__;
+			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what()
+			           << __E__;
 			__SUP_COUT_ERR__ << "\n" << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 			return;
@@ -8066,8 +8066,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	}
 	if(createdEndTime != "")
 	{
-		try
-			filterEndTime = std::stoll(createdEndTime);
+		try filterEndTime = std::stoll(createdEndTime);
 		catch(const std::exception& e)
 		{
 			__SUP_SS__ << "Error parsing createdEndTime parameter: " << e.what() << __E__;
@@ -8140,16 +8139,16 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		// for speed, group versions into spans:
 		//======
 		/// Lambda function to output table version values in spans
-		auto vSpanToXML = [](auto const&          sortedKeys,
-		                     auto&                xmlOut,
-		                     auto&                configEl,
-		                     const std::string&   tableName,
+		auto vSpanToXML = [](auto const&             sortedKeys,
+		                     auto&                   xmlOut,
+		                     auto&                   configEl,
+		                     const std::string&      tableName,
 		                     ConfigurationManagerRW* cfgMgr,
-		                     const time_t 			filterStartTime,
-		                     const time_t 			filterEndTime) {
+		                     const time_t            filterStartTime,
+		                     const time_t            filterEndTime) {
 			//add lo and hi spans, instead of each individual value
 			size_t lo = -1, hi = -1;
-			bool allVersionsFiltered = true;
+			bool   allVersionsFiltered = true;
 			for(auto& keyInOrder : sortedKeys)
 			{
 				//skip scratch version
@@ -8161,26 +8160,30 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					try
 					{
 						std::string localAccumulatedErrors;
-						time_t tableCreationTime =
-							cfgMgr->getVersionedTableByName(
-								tableName,
-								keyInOrder,
-								true /* looseColumnMatching */,
-								&localAccumulatedErrors,
-								true /* getRawData */)
-								->getView()
-								.getCreationTime();
+						time_t      tableCreationTime =
+						    cfgMgr
+						        ->getVersionedTableByName(tableName,
+						                                  keyInOrder,
+						                                  true /* looseColumnMatching */,
+						                                  &localAccumulatedErrors,
+						                                  true /* getRawData */)
+						        ->getView()
+						        .getCreationTime();
 
-						if(tableCreationTime < filterStartTime || tableCreationTime > filterEndTime)
+						if(tableCreationTime < filterStartTime ||
+						   tableCreationTime > filterEndTime)
 						{
-							__COUT__ << "Table '" << tableName << "' version v" << keyInOrder
-									<< " creation time is outside the filter range, so skipping." << __E__;
+							__COUT__ << "Table '" << tableName << "' version v"
+							         << keyInOrder
+							         << " creation time is outside the filter range, so "
+							            "skipping."
+							         << __E__;
 							continue;
 						}
 					}
-					catch(const std::runtime_error&)
-						__COUT__ << "Failed to get creation time for table '" << tableName << "' version v" << keyInOrder
-								<< ", so skipping." << __E__;
+					catch(const std::runtime_error&) __COUT__
+					    << "Failed to get creation time for table '" << tableName
+					    << "' version v" << keyInOrder << ", so skipping." << __E__;
 				}
 
 				allVersionsFiltered = false;
@@ -8220,7 +8223,13 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 			return allVersionsFiltered;
 		};  //end local lambda vSpanToXML()
 
-		if (vSpanToXML(it->second.versions_, xmlOut, parentEl, it->first, cfgMgr, filterStartTime, filterEndTime))
+		if(vSpanToXML(it->second.versions_,
+		              xmlOut,
+		              parentEl,
+		              it->first,
+		              cfgMgr,
+		              filterStartTime,
+		              filterEndTime))
 		{
 			// Remove the pair we just added: TableVersions then TableName.
 			unsigned int childCount = xmlOut.getChildrenCount();
@@ -8229,7 +8238,6 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 				xmlOut.removeDataElement(childCount - 1);
 				xmlOut.removeDataElement(childCount - 2);
 			}
-
 		}
 
 	}  // end table loop

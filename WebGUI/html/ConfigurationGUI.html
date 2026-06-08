@@ -1290,7 +1290,7 @@
 								"&startTime=" + selectedStartTime +
 								"&endTime=" + selectedEndTime,
 								"",
-								tableViewRequestHandler, 
+								tableViewRequestHandler,
 								anchorTarget);
 		} //end tableViewFilterRequest()
 
@@ -2176,10 +2176,10 @@
 				"'>" +
 				"Create a new Group</a> ";
 			str += "<a href='#' onclick='" +
-                "showGroupSearch = !showGroupSearch; setupGroupViewMode(); return false;' title='" +
-                "Toggle group search controls." +
-                "'>" +
-                "Search in Groups</a>";
+				"showGroupSearch = !showGroupSearch; setupGroupViewMode(); return false;' title='" +
+				"Toggle group search controls." +
+				"'>" +
+				"Search in Groups</a>";
 			var search_info = "Search for keywords in table content of specific groups or latest keys. " +
 				"\\nYou may search keywords in all groups or selected ones from the \\\"Search and Select a Group\\\" view." +
 				"\\n\\nUse the keyword field to search all tables in the group for specific text. " +
@@ -2234,7 +2234,7 @@
 
 				str += "<br>Range of group keys... ";
 				str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-                    "style='margin:0;width:399px; height:" + (17) + "px'" +
+					"style='margin:0;width:399px; height:" + (17) + "px'" +
 					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys' />";
 
 				str += "<br>Minimum occurrence threshold... ";
@@ -2539,73 +2539,73 @@
 			return str;
 		} //end makeGroupInfoDisplayString()
 
-        //==============================================================================
-        //searchTextInGroup
-        function searchTextInGroup() {
-            Debug.log("CfgGUI searchTextInGroup");
+		//==============================================================================
+		//searchTextInGroup
+		function searchTextInGroup() {
+			Debug.log("CfgGUI searchTextInGroup");
 
-            var el = document.getElementById("searchTextInGroups");
-            var searchText = el ? el.value : "";
-            Debug.log("searchTextInGroups: " + searchText);
+			var el = document.getElementById("searchTextInGroups");
+			var searchText = el ? el.value : "";
+			Debug.log("searchTextInGroups: " + searchText);
 
 			var el = document.getElementById("searchMinThreshold");
-            var searchMinThreshold = el ? el.value : 1;
-            Debug.log("searchMinThreshold: " + searchMinThreshold);
+			var searchMinThreshold = el ? el.value : 1;
+			Debug.log("searchMinThreshold: " + searchMinThreshold);
 
 			var el = document.getElementById("searchVersionToCheck");
-            var searchVersionToCheck = el ? el.value : "";
-            Debug.log("searchVersionToCheck: " + searchVersionToCheck);
+			var searchVersionToCheck = el ? el.value : "";
+			Debug.log("searchVersionToCheck: " + searchVersionToCheck);
 
 			var activeOnlyEl = document.getElementById("activeOnlyFilter");
 			var isActiveOnlyChecked = activeOnlyEl ? activeOnlyEl.checked : false;
 			Debug.log("activeGroupFilter checked: " + isActiveOnlyChecked);
 
-            var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
-            var groupType = typeName[_groupViewFilterIndex + 1];
-            Debug.log("groupType: " + groupType);
+			var typeName = ["All", "Context", "Backbone", "Configuration", "Iterate"];
+			var groupType = typeName[_groupViewFilterIndex + 1];
+			Debug.log("groupType: " + groupType);
 
 			var optionElements = document.querySelectorAll('.myOption.optionhighlighted');
 			var optionGroups = Array.from(optionElements).map(el => el.textContent).join(',');
 			Debug.log("optionGroups: " + optionGroups);
 
-            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
-                "&searchText=" + encodeURIComponent(searchText) +
-                "&filterValue=" + encodeURIComponent(isActiveOnlyChecked) +
-                "&groupType=" + encodeURIComponent(groupType) +
+			DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInGroup" +
+				"&searchText=" + encodeURIComponent(searchText) +
+				"&filterValue=" + encodeURIComponent(isActiveOnlyChecked) +
+				"&groupType=" + encodeURIComponent(groupType) +
 				"&optionGroups=" + encodeURIComponent(optionGroups) +
 				"&versionsToCheck=" + encodeURIComponent(searchVersionToCheck),
 				"",
-                function(req){
-                    var req = arguments[0];
-                    var errStr = arguments[2];
-                    if (errStr) {
-                        console.error(errStr);
-                        return;
-                    }
+				function(req){
+					var req = arguments[0];
+					var errStr = arguments[2];
+					if (errStr) {
+						console.error(errStr);
+						return;
+					}
 
-                    const groupTableMap = new Map();
-                    var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
+					const groupTableMap = new Map();
+					var groupTableMatches = DesktopContent.getXMLChildren(req, "GroupTableMatch");
 
 					Debug.log("GroupTableMatch elements found:", groupTableMatches.length);
 
-                    for (var i = 0; i < groupTableMatches.length; i++) {
-                        var groupTable = groupTableMatches[i];
-                        var groupTableInfo = groupTable.getAttribute("value").split("/");
-                        var groupName = groupTableInfo[0];
-                        var tableName = groupTableInfo[1];
-                        var matchRow = DesktopContent.getXMLValue(groupTable, "MatchRow");
-                        var matchColumn = DesktopContent.getXMLValue(groupTable, "MatchColumn");
-                        var matchTableVersion = DesktopContent.getXMLValue(groupTable, "MatchTableVersion");
-                        var matchGroupVersion = DesktopContent.getXMLValue(groupTable, "MatchGroupVersion");
-                        // Process each match...
+					for (var i = 0; i < groupTableMatches.length; i++) {
+						var groupTable = groupTableMatches[i];
+						var groupTableInfo = groupTable.getAttribute("value").split("/");
+						var groupName = groupTableInfo[0];
+						var tableName = groupTableInfo[1];
+						var matchRow = DesktopContent.getXMLValue(groupTable, "MatchRow");
+						var matchColumn = DesktopContent.getXMLValue(groupTable, "MatchColumn");
+						var matchTableVersion = DesktopContent.getXMLValue(groupTable, "MatchTableVersion");
+						var matchGroupVersion = DesktopContent.getXMLValue(groupTable, "MatchGroupVersion");
+						// Process each match...
 
-                        Debug.log("Match found:", { groupName: groupName, groupVersion: matchGroupVersion, tableName: tableName, tableVersion: matchTableVersion, row: matchRow, column: matchColumn });
-                        var mapKey = groupName+"-"+tableName+"-"+matchColumn+"-"+matchTableVersion+"-"+matchGroupVersion;
-                        if (!groupTableMap.has(mapKey))
-                            groupTableMap.set(mapKey, 1);
-                        else
-                            groupTableMap.set(mapKey, groupTableMap.get(mapKey) + 1);
-                    } // end groupTableMatches loop
+						Debug.log("Match found:", { groupName: groupName, groupVersion: matchGroupVersion, tableName: tableName, tableVersion: matchTableVersion, row: matchRow, column: matchColumn });
+						var mapKey = groupName+"-"+tableName+"-"+matchColumn+"-"+matchTableVersion+"-"+matchGroupVersion;
+						if (!groupTableMap.has(mapKey))
+							groupTableMap.set(mapKey, 1);
+						else
+							groupTableMap.set(mapKey, groupTableMap.get(mapKey) + 1);
+					} // end groupTableMatches loop
 
 					// loop through and add to new table if threshold met
 					for (let [key, count] of groupTableMap.entries()) {
@@ -2613,45 +2613,45 @@
 							groupTableMap.delete(key);
 					}
 
-                    // Display results
-                    var escapedSearchText = encodeHTML(searchText);
-                    var resultStr = "Search Results For: <b>" + escapedSearchText + "</b>\n";
-                    if (groupTableMap.size === 0) {
-                        resultStr += "<br>No matches found.";
-                    } else {
-                        var previousGroupName = "";
+					// Display results
+					var escapedSearchText = encodeHTML(searchText);
+					var resultStr = "Search Results For: <b>" + escapedSearchText + "</b>\n";
+					if (groupTableMap.size === 0) {
+						resultStr += "<br>No matches found.";
+					} else {
+						var previousGroupName = "";
 						var previousGroupKey = "";
-                        var previousTableName = "";
-                        for(var i=0; i<groupTableMap.size; i++)
-                        {
-                            var parts = Array.from(groupTableMap.keys())[i].split("-");
-                            if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
-                            {
-                                resultStr += "\nGroup: <b>" + parts[0] + "</b> v" + parts[4] + "\n";
-                                previousGroupName = parts[0];
-                                previousGroupKey = parts[4];
-                                previousTableName = "";
-                            }
-                            if(parts[1] != previousTableName)
-                            {
+						var previousTableName = "";
+						for(var i=0; i<groupTableMap.size; i++)
+						{
+							var parts = Array.from(groupTableMap.keys())[i].split("-");
+							if(parts[0] != previousGroupName || parts[4] != previousGroupKey)
+							{
+								resultStr += "\nGroup: <b>" + parts[0] + "</b> v" + parts[4] + "\n";
+								previousGroupName = parts[0];
+								previousGroupKey = parts[4];
+								previousTableName = "";
+							}
+							if(parts[1] != previousTableName)
+							{
 								resultStr += "\t<a href='#' onclick='setupSpecificTable(\"" + parts[1] + "\",\"" + parts[3] + "\", \"setupTableViewMode(\\\"anchorTag-" + parts[1] + "\\\");\"); return false;'>" +
-                                            "Table " + parts[1] + "-v" + parts[3] + "</a><br>";
-                                previousTableName = parts[1];
-                            }
+											"Table " + parts[1] + "-v" + parts[3] + "</a><br>";
+								previousTableName = parts[1];
+							}
 							if(parts[1] == "")
 								Debug.log('Warning: Empty table name for group ' + parts[0] + ' (' + parts[4] + ')');
-                            resultStr += "\t\tColumn: <b>" + parts[2] + "</b>" +
-                                ", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i])) + "</b>" +
-                                "\n";
-                        } // end groupTableMap loop
-                    }
+							resultStr += "\t\tColumn: <b>" + parts[2] + "</b>" +
+								", Count: <b>" + (groupTableMap.get(Array.from(groupTableMap.keys())[i])) + "</b>" +
+								"\n";
+						} // end groupTableMap loop
+					}
 					Debug._errTruncLen = -1;
-                    Debug.info(DesktopContent.tooltipConditionString(resultStr));
+					Debug.info(DesktopContent.tooltipConditionString(resultStr));
 					Debug._errTruncLen = undefined;
-                },
-                "searchTextInGroup"
-            );
-        } //end searchTextInGroup()
+				},
+				"searchTextInGroup"
+			);
+		} //end searchTextInGroup()
 
 		//==============================================================================
 		//gotoSelectedMSGroup ~~
@@ -8509,16 +8509,16 @@
 		} //end groupsWithTable()
 
 		//==============================================================================
-        function setupSearchAllTableVersions() {
-            Debug.log("setupSearchAllTableVersions()");
+		function setupSearchAllTableVersions() {
+			Debug.log("setupSearchAllTableVersions()");
 
-            var el = document.getElementById('findAndReplace');
-            el.innerHTML = ""; //clear the other type of controls
-            var el = document.getElementById('aboveTableDialog'); //share with copyAndMove and tableVersionDiff
-            var i = el.innerText.indexOf("Active ");
-            if (i >= 0 && i < 5) { el.innerHTML = ""; return; } //hide if already shown
+			var el = document.getElementById('findAndReplace');
+			el.innerHTML = ""; //clear the other type of controls
+			var el = document.getElementById('aboveTableDialog'); //share with copyAndMove and tableVersionDiff
+			var i = el.innerText.indexOf("Active ");
+			if (i >= 0 && i < 5) { el.innerHTML = ""; return; } //hide if already shown
 
-            var str = "";
+			var str = "";
 			str += "<br><label style='margin-right:10px;'><input type='checkbox' id='activeOnlyFilter' value='active'> Active Versions Only</label>";
 
 			str += "<br>Keyword to search for... ";
@@ -8527,17 +8527,17 @@
 				"placeholder='Search text' style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
 
 			str += "<br>Version to search for... ";
-            str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'" +
+			str += "<br><input type='text' id='searchVersionToCheck' value='' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+					"style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'" +
 					"placeholder='e.g. 1, 1-5, -4 to check latest 4 keys'/>";
 
 			str += "<br>Minimum occurrence threshold... ";
-            str += "<br>";
-            str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
-                    "style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
-            str += "<br>";
-            el.innerHTML = str;
-        } //end setupSearchAllTableVersions()
+			str += "<br>";
+			str += "<input type='text' id='searchMinThreshold' value='1' autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false'" +
+					"style='margin:0;width:" + (el.offsetWidth / 6) + "px; height:" + (17) + "px'/>";
+			str += "<br>";
+			el.innerHTML = str;
+		} //end setupSearchAllTableVersions()
 
 		//==============================================================================
 		//setupCopyAndMoveRows
@@ -16964,42 +16964,42 @@
 		} //end popUpClearVersionsPrompt()
 
 		//==============================================================================
-        //popUpSearchFieldPrompt
-        function popUpSearchFieldPrompt(tableName) {
-            console.log("CfgGUI popUpSearchFieldPrompt");
-            console.log("TableName " + tableName);
+		//popUpSearchFieldPrompt
+		function popUpSearchFieldPrompt(tableName) {
+			console.log("CfgGUI popUpSearchFieldPrompt");
+			console.log("TableName " + tableName);
 
-            var el = document.getElementById("searchTextInAllTableVersions");
-            var searchText = el ? el.value : "";
-            Debug.log("Search field value: " + searchText);
+			var el = document.getElementById("searchTextInAllTableVersions");
+			var searchText = el ? el.value : "";
+			Debug.log("Search field value: " + searchText);
 
 			var el = document.getElementById("activeOnlyFilter");
 			var activeOnlyFilter = el.checked;
 			console.log("activeOnlyFilter " + activeOnlyFilter);
 
-            var el = document.getElementById("searchMinThreshold");
-            var searchMinThreshold = el ? el.value : 1;
-            Debug.log("Search field value: " + searchMinThreshold);
+			var el = document.getElementById("searchMinThreshold");
+			var searchMinThreshold = el ? el.value : 1;
+			Debug.log("Search field value: " + searchMinThreshold);
 
 			var el = document.getElementById("searchVersionToCheck");
-            var searchVersionToCheck = el ? el.value : "";
-            Debug.log("Search field value: " + searchVersionToCheck);
+			var searchVersionToCheck = el ? el.value : "";
+			Debug.log("Search field value: " + searchVersionToCheck);
 
-            DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
-                "&searchText=" + encodeURIComponent(searchText) +
-                "&tableName=" + encodeURIComponent(tableName) +
+			DesktopContent.XMLHttpRequest("Request?RequestType=SearchFieldInTableVersions" +
+				"&searchText=" + encodeURIComponent(searchText) +
+				"&tableName=" + encodeURIComponent(tableName) +
 				"&searchVersionToCheck=" + encodeURIComponent(searchVersionToCheck) +
 				"&activeOnly=" + encodeURIComponent(activeOnlyFilter),
-                "",
-                function(req){
-                    var req = arguments[0];
-                    var errStr = arguments[2];
-                    if (errStr) {
-                        Debug.err(errStr);
-                        return;
-                    }
+				"",
+				function(req){
+					var req = arguments[0];
+					var errStr = arguments[2];
+					if (errStr) {
+						Debug.err(errStr);
+						return;
+					}
 
-                    var results = req.responseXML.getElementsByTagName("Match");
+					var results = req.responseXML.getElementsByTagName("Match");
 					var escapedSearchText = encodeHTML(searchText);
 					if(results.length == 0)
 					{
@@ -17007,65 +17007,65 @@
 						return;
 					}
 
-                    var matchStr = "";
-                    var columnStr = "";
-                    var matchColumnMap = new Map();
-                    var prevVersion = -1;
-                    for (var i = 0; i < results.length; ++i) {
-                        var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
-                        if(matchVersion != prevVersion)
-                        {
-                            if(matchColumnMap.size > 0)
-                            {
-                                columnStr = "";
-                                for (let [column, count] of matchColumnMap) {
-                                    if(count >= searchMinThreshold)
-                                        columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
-                                }
-                                if(columnStr != "")
-                                {
-                                    matchStr += "<br>";
-                                    matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
-                                            "Table " + tableName + "-v" + prevVersion + "</a><br>";
-                                    matchStr += columnStr;
-                                }
-                            }
-                            prevVersion = matchVersion;
-                            matchColumnMap = new Map();
-                        }
+					var matchStr = "";
+					var columnStr = "";
+					var matchColumnMap = new Map();
+					var prevVersion = -1;
+					for (var i = 0; i < results.length; ++i) {
+						var matchVersion = DesktopContent.getXMLValue(results[i], "MatchVersion");
+						if(matchVersion != prevVersion)
+						{
+							if(matchColumnMap.size > 0)
+							{
+								columnStr = "";
+								for (let [column, count] of matchColumnMap) {
+									if(count >= searchMinThreshold)
+										columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+								}
+								if(columnStr != "")
+								{
+									matchStr += "<br>";
+									matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
+											"Table " + tableName + "-v" + prevVersion + "</a><br>";
+									matchStr += columnStr;
+								}
+							}
+							prevVersion = matchVersion;
+							matchColumnMap = new Map();
+						}
 
-                        var matchColumn = DesktopContent.getXMLValue(results[i], "MatchColumn");
-                        if(matchColumnMap.has(matchColumn))
-                            matchColumnMap.set(matchColumn, matchColumnMap.get(matchColumn)+1);
-                        else
-                            matchColumnMap.set(matchColumn, 1);
-                    }
+						var matchColumn = DesktopContent.getXMLValue(results[i], "MatchColumn");
+						if(matchColumnMap.has(matchColumn))
+							matchColumnMap.set(matchColumn, matchColumnMap.get(matchColumn)+1);
+						else
+							matchColumnMap.set(matchColumn, 1);
+					}
 
-                    // for last version looped through
-                    if(matchColumnMap.size > 0)
-                    {
-                        columnStr = "";
-                        for (let [column, count] of matchColumnMap) {
-                            if(count >= searchMinThreshold)
-                                columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
-                        }
-                        if(columnStr != "")
-                        {
-                            matchStr += "<br>";
-                            matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
-                                    "Table " + tableName + "-v" + prevVersion + "</a><br>";
-                            matchStr += columnStr;
-                        }
-                    }
+					// for last version looped through
+					if(matchColumnMap.size > 0)
+					{
+						columnStr = "";
+						for (let [column, count] of matchColumnMap) {
+							if(count >= searchMinThreshold)
+								columnStr += "\tColumn: <b>" + column + "</b>, Count: <b>" + count + "</b><br>";
+						}
+						if(columnStr != "")
+						{
+							matchStr += "<br>";
+							matchStr += "<a href='#' onclick='setupSpecificTable(\"" + tableName + "\",\"" + prevVersion + "\", \"setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");\"); return false;'>" +
+									"Table " + tableName + "-v" + prevVersion + "</a><br>";
+							matchStr += columnStr;
+						}
+					}
 
 					const resultStr = "Search Results For: <b>" + escapedSearchText + "</b><br>" + matchStr;
-                    Debug.log("resultStr " + resultStr);
+					Debug.log("resultStr " + resultStr);
 
 					Debug._errTruncLen = -1;
 					Debug.info(DesktopContent.tooltipConditionString(resultStr));
 					Debug._errTruncLen = undefined;
-                }, 0);
-        } //end popUpSearchFieldPrompt()
+				}, 0);
+		} //end popUpSearchFieldPrompt()
 
 		//==============================================================================
 		//popUpSaveNewTableForm
