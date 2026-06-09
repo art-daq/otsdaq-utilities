@@ -1817,9 +1817,6 @@ DesktopContent.tooltip = function (id, tip, alwaysShow) {
 	srcFile = srcStackString.substr(srcStackString.lastIndexOf('/') + 1);
 	if (srcFile.indexOf('?') >= 0)
 		srcFile = srcFile.substr(0, srcFile.indexOf('?'));
-	if (srcFile.indexOf(':') >= 0)
-		srcFile.substr(0, srcFile.indexOf(':'));
-
 
 	if (tip === undefined) {
 		Debug.log("Undefined tooltip string at " + srcStackString + "\n" +
@@ -2642,7 +2639,10 @@ DesktopContent.openNewWindow = function (name, subname, windowPath, unique, comp
 DesktopContent.openNewBrowserTab = function (name, subname, windowPath, unique) {
 	if (windowPath !== undefined) {
 		//remove leading ? because Desktop.js handling expects no leading ?
-		if (windowPath[0] == '?')
+		//	(remember it was stripped, so remote gateway params below are
+		//	 joined with & instead of incorrectly adding a second ?)
+		var hadLeadingQuery = (windowPath[0] == '?');
+		if (hadLeadingQuery)
 			windowPath = windowPath.substr(1);
 
 		//for windowPath, need to check lid=## is terminated with /
@@ -2691,6 +2691,10 @@ DesktopContent.openNewBrowserTab = function (name, subname, windowPath, unique) 
 					windowPath += '&';
 				//else ? is last character, so no need for &
 			}
+			else if (hadLeadingQuery && windowPath.length > 0)
+				//leading ? was stripped above, so windowPath is already a
+				//	query string and remote params must be joined with &
+				windowPath += '&';
 			else
 				windowPath += '?';
 
