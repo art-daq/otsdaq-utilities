@@ -244,6 +244,28 @@
 			-webkit-user-drag: none;
 		}
 
+		/* Row reorder drag: show grab cursor on highlighted rows */
+		#SubSystemTable tr.selected {
+			cursor: grab;
+		}
+		body.row-reorder-drag #SubSystemTable tr.selected {
+			cursor: grabbing;
+		}
+		body.row-reorder-drag {
+			cursor: grabbing !important;
+		}
+
+		/* Drop indicator: orange top-border on the row the dragged rows will land before */
+		#SubSystemTable tr.row-drop-above > td,
+		#SubSystemTable tr.row-drop-above > th {
+			border-top: 3px solid #e67e22 !important;
+		}
+		/* Drop indicator for appending after the last row */
+		#SubSystemTable tr.row-drop-below > td,
+		#SubSystemTable tr.row-drop-below > th {
+			border-bottom: 3px solid #e67e22 !important;
+		}
+
 		.treeNode {
 			margin-left: 30px;
 			float: left;
@@ -733,6 +755,9 @@
 		var hasDragMoved_ = false;
 		var windowMouseupRegistered_ = false; // track if window mouseup listener is registered
 		var suppressNextMouseup_ = false;
+		var suppressBodyMouseupOnce_ = false; // one-shot guard to prevent tooltip/edit popup after drag mouseup
+		var isReorderDragging_ = false;  // true while drag-to-reorder of selected rows is active
+		var reorderDropIndex_ = -1;      // row index that will receive the drop (insert before)
 
 		//==============================================================================
 		//init called once body has loaded
@@ -3875,6 +3900,20 @@
 					const idx = indexOfRow(tr);
 					if (idx === -1 || idx == 0) return;
 
+					// REORDER DRAG: mousedown on an already-selected row without modifier keys
+					if (!e.shiftKey && !e.ctrlKey && !e.metaKey && tr.classList.contains('selected')) {
+						Debug.log("Starting row reorder drag from index", idx);
+						isReorderDragging_ = true;
+						reorderDropIndex_ = idx;
+						document.addEventListener('mousemove', _reorderDragMouseMove);
+						_reorderDragMouseMove(e); //initialize indicator immediately
+						document.body.classList.add('no-select');
+						document.body.classList.add('row-reorder-drag');
+						e.stopPropagation();
+						e.preventDefault();
+						return;
+					}
+
 					// SHIFT RANGE (works without Ctrl)
 					if (e.shiftKey && lastSelectedIndex_ !== null) {
 						const currentlySelected = tr.classList.contains('selected');
@@ -3914,6 +3953,7 @@
 				tableRow.addEventListener('mouseover', (e) => {
 					if (!isDragging_) return;
 					if (!(e.ctrlKey || e.metaKey)) return; // drag requires ctrl
+					if (e.buttons !== 1) return; // Left click is not being held down
 
 					const tr = e.target.closest('tr');
 					if (!tr) return;
@@ -3949,6 +3989,7 @@
 						return;
 					}
 
+
 					// Selection state is handled on mousedown to avoid click-phase double toggles.
 					return;
 				});
@@ -3956,7 +3997,28 @@
 
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered_) {
-				window.addEventListener('mouseup', () => {
+				window.addEventListener('mouseup', (e) => {
+					// --- Finalize row reorder drag ---
+					if (isReorderDragging_) {
+						_reorderDragMouseMove(e, true); //capture final cursor position at mouse release
+						Debug.log("Reorder drag ended, drop index:", reorderDropIndex_);
+						suppressBodyMouseupOnce_ = true;
+						isReorderDragging_ = false;
+						document.body.classList.remove('row-reorder-drag');
+						document.body.classList.remove('no-select');
+						document.removeEventListener('mousemove', _reorderDragMouseMove);
+						_clearReorderDropIndicators();
+						if (reorderDropIndex_ >= _CONFIG_DATA_ROW_OFFSET) {
+							moveSelectedRowsToIndex(reorderDropIndex_);
+						}
+						reorderDropIndex_ = -1;
+						return;
+					}
+
+					const endedSelectionDrag = (isDragging_ && hasDragMoved_);
+					if (endedSelectionDrag)
+						suppressBodyMouseupOnce_ = true;
+
 					// do not interrupt highlighting and text input
 					const activeEl = document.activeElement;
 					const hasTextSelection = window.getSelection && !window.getSelection().isCollapsed;
@@ -3966,7 +4028,6 @@
 							activeEl.isContentEditable))) {
 						return;
 					}
-					isDragging = false;
 					Debug.log("Window mouse up");
 					isDragging_ = false;
 					dragStartIndex_ = -1;
@@ -3977,7 +4038,6 @@
 				windowMouseupRegistered_ = true;
 			}
 		} //end registerOnClickActions()
-
 		//==============================================================================
 		//toggleTableDetails ~~
 		function toggleTableDetails(setVal) {
@@ -10025,6 +10085,12 @@
 		//==============================================================================
 		//selectThisCell ~~
 		function selectThisCell(r, c, el, event, paintMode) {
+			// Never enter cell edit flow from mouseup while row drag/reorder is active.
+			if (event && !paintMode && event.type === "mouseup" &&
+				(isReorderDragging_ || isDragging_ || hasDragMoved_)) {
+				return;
+			}
+
 			if (event && (event.ctrlKey || event.metaKey || suppressNextMouseup_)) {
 				if (isDragging_) {
 					// also stop the context menu that would appear afterwards
@@ -11013,6 +11079,12 @@
 		//bodyMouseHandler ~~
 		function bodyMouseHandler(e) {
 			//Debug.log("bodyMouseHandler");
+			if (suppressBodyMouseupOnce_) {
+				suppressBodyMouseupOnce_ = false;
+				_mouseIsSelecting = false;
+				return;
+			}
+
 			if (!_mouseIsSelecting) {
 				//detect proper views
 				var el = document.getElementById("treeView-ConfigGroupLink");
@@ -12746,6 +12818,157 @@
 		}
 		function indexOfRow(row) { return getRows().indexOf(row); }
 		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+
+		// Remove all reorder drop indicator classes
+		function _clearReorderDropIndicators() {
+			getRows().forEach(r => {
+				r.classList.remove('row-drop-above');
+				r.classList.remove('row-drop-below');
+			});
+		}
+
+		// document mousemove handler active only while a reorder drag is in progress.
+		// Continuously scans the data rows to find which row the cursor is over and
+		// places the drop indicator on the closest row boundary.
+		function _reorderDragMouseMove(e, ignoreButtonState) {
+			if (!isReorderDragging_) return;
+			if (!ignoreButtonState && e.buttons !== 1) {
+				// Mouse button was released outside the window – cancel drag and clean up
+				_clearReorderDropIndicators();
+				isReorderDragging_ = false;
+				reorderDropIndex_ = -1;
+				document.body.classList.remove('row-reorder-drag');
+				document.body.classList.remove('no-select');
+				document.removeEventListener('mousemove', _reorderDragMouseMove);
+				return;
+			}
+
+			const rows = getRows();
+			_clearReorderDropIndicators();
+
+			// Walk every data row and find the one the cursor is in (or closest boundary)
+			let bestRow = null;
+			let bestIdx = -1;
+			let insertAfter = false; // true → insert AFTER bestRow, false → insert BEFORE
+
+			for (let i = _CONFIG_DATA_ROW_OFFSET; i < rows.length; i++) {
+				const rect = rows[i].getBoundingClientRect();
+				if (e.clientY < rect.bottom) {
+					bestRow = rows[i];
+					bestIdx = i;
+					// If cursor is in the lower half of this row, drop after it
+					insertAfter = (e.clientY > rect.top + rect.height / 2);
+					break;
+				}
+				// cursor is below this row – keep going; if we exhaust all rows, append
+				bestRow = rows[i];
+				bestIdx = i;
+				insertAfter = true;
+			}
+
+			if (bestRow === null) return; // no data rows at all
+
+			if (insertAfter) {
+				const nextIdx = bestIdx + 1;
+				if (nextIdx < rows.length) {
+					reorderDropIndex_ = nextIdx;
+					rows[nextIdx].classList.add('row-drop-above');
+				} else {
+					reorderDropIndex_ = rows.length; // sentinel: append to end
+					bestRow.classList.add('row-drop-below');
+				}
+			} else {
+				reorderDropIndex_ = bestIdx;
+				bestRow.classList.add('row-drop-above');
+			}
+		} //end _reorderDragMouseMove()
+
+		// Move all currently selected rows to just before allRows[targetIndex].
+		// If targetIndex >= allRows.length the rows are appended to the end.
+		function moveSelectedRowsToIndex(targetIndex) {
+			const tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
+
+			const allRows = Array.from(tbody.querySelectorAll('tr'));
+			const selectedRows = allRows.filter(r => r.classList.contains('selected'));
+			if (!selectedRows.length) return;
+			const defaultParent = selectedRows[0].parentNode;
+
+			// Track selected indices and capture the reference row BEFORE removing anything (it may not be selected)
+			const selectedIndices = new Set(selectedRows.map(r => allRows.indexOf(r)));
+			const refRow = (targetIndex < allRows.length) ? allRows[targetIndex] : null;
+			// If the drop target is inside the selection, abort
+			if (refRow && selectedIndices.has(allRows.indexOf(refRow))) {
+				Debug.log("moveSelectedRowsToIndex: drop target is within selection, ignoring");
+				return;
+			}
+
+			Debug.log("moveSelectedRowsToIndex: moving", selectedRows.length, "rows to index", targetIndex);
+
+			// Detach selected rows from the table
+			selectedRows.forEach(r => {
+				if (r && r.parentNode)
+					r.parentNode.removeChild(r);
+			});
+
+			// Re-find the reference row (its index shifted if rows above it were removed)
+			if (refRow && refRow.parentNode) {
+				selectedRows.forEach(r => refRow.parentNode.insertBefore(r, refRow));
+			} else if (defaultParent) {
+				// append to the original row container
+				selectedRows.forEach(r => defaultParent.appendChild(r));
+			} else {
+				selectedRows.forEach(r => tbody.appendChild(r));
+			}
+
+			// Mark the table as modified
+			versionHasChanged();
+			_renumberVisibleTableRows();
+			// Re-register click/drag listeners for any newly positioned rows
+			registerOnClickActions();
+			Debug.log("moveSelectedRowsToIndex: done");
+		} //end moveSelectedRowsToIndex()
+
+		// Rebuild the first-column row number and +/- controls after manual DOM reordering.
+		function _renumberVisibleTableRows() {
+			const rows = getRows();
+			for (let r = _CONFIG_DATA_ROW_OFFSET; r < rows.length; ++r) {
+				const row = rows[r];
+				if (!row || !row.cells || !row.cells.length) continue;
+
+				const firstCell = row.cells[0];
+				if (!firstCell) continue;
+
+				const ro = r - _CONFIG_DATA_ROW_OFFSET;
+				firstCell.innerHTML = "";
+				const center = document.createElement("center");
+				center.title = "Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.";
+
+				center.appendChild(document.createTextNode((_dataOffset + ro) + ""));
+				center.appendChild(document.createElement("br"));
+
+				const addBtn = document.createElement("a");
+				addBtn.className = "tableAddRowButton";
+				addBtn.title = "Add a row before this row. Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows.";
+				addBtn.href = "#";
+				addBtn.onclick = function () { addRow(ro); return false; };
+				addBtn.textContent = "+";
+				center.appendChild(addBtn);
+
+				center.appendChild(document.createTextNode("/"));
+
+				const delBtn = document.createElement("a");
+				delBtn.className = "tableDeleteRowButton";
+				delBtn.title = "Delete this row. Use Ctrl + click/drag to select a block of rows; then Ctrl + D/delete/backspace to delete rows.";
+				delBtn.href = "#";
+				delBtn.onclick = function () { deleteRow(ro); registerOnClickActions(); return false; };
+				delBtn.textContent = "-";
+				center.appendChild(delBtn);
+
+				firstCell.appendChild(center);
+			}
+		} //end _renumberVisibleTableRows()
+
 		function setSelectedByIndex(i, state) {
 			const rows = getRows();
 			if (i >= 0 && i < rows.length) {
