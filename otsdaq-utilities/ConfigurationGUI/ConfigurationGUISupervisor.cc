@@ -8060,7 +8060,8 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		}
 		catch(const std::exception& e)
 		{
-			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what() << __E__;
+			__SUP_SS__ << "Error parsing createdStartTime parameter: " << e.what()
+			           << __E__;
 			__SUP_COUT_ERR__ << "\n" << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 			return;
@@ -8165,7 +8166,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					try
 					{
 						std::string localAccumulatedErrors;
-							time_t      tableCreationTime =
+						time_t      tableCreationTime =
 						    cfgMgr
 						        ->getVersionedTableByName(tableName,
 						                                  keyInOrder,
@@ -8189,7 +8190,8 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 					catch(const std::runtime_error&)
 					{
 						__COUT__ << "Failed to get creation time for table '" << tableName
-						         << "' version v" << keyInOrder << ", so skipping." << __E__;
+						         << "' version v" << keyInOrder << ", so skipping."
+						         << __E__;
 						continue;
 					}
 				}
