@@ -8059,9 +8059,9 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 ///
 void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
                                                  ConfigurationManagerRW* cfgMgr,
-                                                 const std::string&      filterStartTimeStr,
-                                                 const std::string&      filterEndTimeStr,
-                                                 const std::string&      filterMode)
+                                                 const std::string& filterStartTimeStr,
+                                                 const std::string& filterEndTimeStr,
+                                                 const std::string& filterMode)
 {
 	time_t filterStartTime = 0;
 	time_t filterEndTime   = 0;
@@ -8073,8 +8073,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		}
 		catch(const std::exception& e)
 		{
-			__SUP_SS__ << "Error parsing startTime parameter: " << e.what()
-			           << __E__;
+			__SUP_SS__ << "Error parsing startTime parameter: " << e.what() << __E__;
 			__SUP_COUT_ERR__ << "\n" << ss.str();
 			xmlOut.addTextElementToData("Error", ss.str());
 			return;
@@ -8103,7 +8102,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		return;
 	}
 	// diagnostics: track where the time is going
-	const auto diagStartTime = std::chrono::steady_clock::now();
+	const auto diagStartTime  = std::chrono::steady_clock::now();
 	auto       diagElapsedSec = [](const std::chrono::steady_clock::time_point& start) {
         return std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
             .count();
@@ -8154,14 +8153,14 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	}
 
 	// diagnostics accumulated over the table loop
-	size_t diagNumTablesFound       = 0;  //tables with at least one version listed
-	size_t diagNumVersionsConsidered = 0;
-	size_t diagNumVersionsMatched    = 0;
-	size_t diagNumTimeLookups        = 0;
-	double diagTimeLookupSec         = 0;  //cumulative time in creation/load time lookups
-	double diagSlowestTableSec       = 0;
+	size_t      diagNumTablesFound        = 0;  //tables with at least one version listed
+	size_t      diagNumVersionsConsidered = 0;
+	size_t      diagNumVersionsMatched    = 0;
+	size_t      diagNumTimeLookups        = 0;
+	double      diagTimeLookupSec    = 0;  //cumulative time in creation/load time lookups
+	double      diagSlowestTableSec  = 0;
 	std::string diagSlowestTableName = "";
-	size_t diagTableCount            = 0;
+	size_t      diagTableCount       = 0;
 
 	for(const auto& orderedTableName : orderedTableSet)  // while(it !=
 	                                                     // allTableInfo.end())
@@ -8202,13 +8201,13 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 		                   &diagNumVersionsMatched,
 		                   &diagNumTimeLookups,
 		                   &diagTimeLookupSec](auto const&             sortedKeys,
-		                     auto&                   xmlOut,
-		                     auto&                   configEl,
-		                     const std::string&      tableName,
-		                     ConfigurationManagerRW* cfgMgr,
-		                     const time_t            filterStartTime,
-		                     const time_t            filterEndTime,
-		                     const std::string&      filterMode) {
+		                                       auto&                   xmlOut,
+		                                       auto&                   configEl,
+		                                       const std::string&      tableName,
+		                                       ConfigurationManagerRW* cfgMgr,
+		                                       const time_t            filterStartTime,
+		                                       const time_t            filterEndTime,
+		                                       const std::string&      filterMode) {
 			//add lo and hi spans, instead of each individual value
 			size_t lo = -1, hi = -1;
 			bool   allVersionsFiltered = true;
@@ -8237,9 +8236,10 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 						        : cfgMgr->getVersionCreationTime(tableName, keyInOrder);
 
 						++diagNumTimeLookups;
-						diagTimeLookupSec += std::chrono::duration<double>(
-						    std::chrono::steady_clock::now() - diagLookupStartTime)
-						                         .count();
+						diagTimeLookupSec +=
+						    std::chrono::duration<double>(
+						        std::chrono::steady_clock::now() - diagLookupStartTime)
+						        .count();
 
 						if(tableVersionTime < filterStartTime ||
 						   tableVersionTime > filterEndTime)
@@ -8247,23 +8247,23 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 							//Note: trace-level to avoid log flooding (one line per
 							//	filtered version can be thousands of lines)
 							__COUTT__ << "Table '" << tableName << "' version v"
-							         << keyInOrder << " " << filterMode
-							         << " time is outside the filter range, so "
-							            "skipping."
-							         << __E__;
+							          << keyInOrder << " " << filterMode
+							          << " time is outside the filter range, so "
+							             "skipping."
+							          << __E__;
 							continue;
 						}
 					}
 					catch(const std::runtime_error&)
 					{
 						++diagNumTimeLookups;
-						diagTimeLookupSec += std::chrono::duration<double>(
-						    std::chrono::steady_clock::now() - diagLookupStartTime)
-						                         .count();
-						__COUT__ << "Failed to get " << filterMode
-						         << " time for table '" << tableName
-						         << "' version v" << keyInOrder << ", so skipping."
-						         << __E__;
+						diagTimeLookupSec +=
+						    std::chrono::duration<double>(
+						        std::chrono::steady_clock::now() - diagLookupStartTime)
+						        .count();
+						__COUT__ << "Failed to get " << filterMode << " time for table '"
+						         << tableName << "' version v" << keyInOrder
+						         << ", so skipping." << __E__;
 						continue;
 					}
 				}
@@ -8367,11 +8367,11 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	             << " tables considered=" << allTableInfo.size()
 	             << " found=" << diagNumTablesFound
 	             << "; versions considered=" << diagNumVersionsConsidered
-	             << " matched=" << diagNumVersionsMatched << "; "
-	             << diagNumTimeLookups << " version time lookups took "
-	             << diagTimeLookupSec << " s; slowest table '" << diagSlowestTableName
-	             << "' took " << diagSlowestTableSec << " s; total "
-	             << diagElapsedSec(diagStartTime) << " s" << __E__;
+	             << " matched=" << diagNumVersionsMatched << "; " << diagNumTimeLookups
+	             << " version time lookups took " << diagTimeLookupSec
+	             << " s; slowest table '" << diagSlowestTableName << "' took "
+	             << diagSlowestTableSec << " s; total " << diagElapsedSec(diagStartTime)
+	             << " s" << __E__;
 
 }  // end handleTablesXML()
 
