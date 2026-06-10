@@ -86,20 +86,33 @@
 		}
 
 		.smallPopup {
-			width: 300px;
+			width: 360px;
 			min-height: 120px;
 			background-color: #002540;
 			z-index: 9;
 			position: fixed;
 			top: 30%;
 			left: 50%;
-			margin-left: -110px;
+			margin-left: -195px; /* -(width + 2*padding)/2 to center */
 			opacity: 0.9;
 			border-radius: 5px;
 			padding: 15px;
 			color: #c4e9f5;
 			border: 2px solid #c4e9f5;
 			display: none;
+		}
+
+		.smallPopup button {
+			padding: 4px 12px;
+			line-height: 1.4;
+			margin: 4px 8px;
+		}
+
+		.smallPopup input[type="text"],
+		.smallPopup input[type="number"] {
+			padding: 5px 8px;
+			line-height: 1.4;
+			box-sizing: border-box; /* so width includes padding, to fit in popup */
 		}
 
 		#historyContent {
@@ -373,6 +386,27 @@
 		var flagKeyword = "";
 		var flagIfPresent = true;
 		var isFlagActive = false;
+		var flagLoudAlarm = false;
+		var flagCompareLabel = ""; //label to search for in numeric comparison mode
+		var flagCompareNumber = NaN; //number to compare against in numeric comparison mode
+		var flagCompareNumberString = ""; //user-typed form of flagCompareNumber (e.g. hex), for display
+		var flagStatusString = "[None]"; //feedback of flag match attempt on last macro run
+
+		//=====================================================================================
+		//setFlagStatus ~~
+		//	update flag status feedback global and display
+		function setFlagStatus(str) {
+			flagStatusString = str;
+			var el = document.getElementById('flagStatusValue');
+			if (el) el.innerText = str;
+		} //end setFlagStatus()
+		//same loud alert sound as Desktop system messages (Desktop.js _sysMsgAlarmSound)
+		var _FLAG_ALARM_SOUND_PATH = "/WebPath/sounds/fx-System-Message-Alarm.wav"; //must be .wav for firefox compatibility
+		var _flagAlarmSound = new Audio(_FLAG_ALARM_SOUND_PATH);
+		_flagAlarmSound.volume = 0.75; // Set volume to 75% (range: 0.0 to 1.0), to match Desktop loud alert
+		_flagAlarmSound.onerror = function (e) {
+			Debug.log("Alarm sound file failed to load!", _FLAG_ALARM_SOUND_PATH, e);
+		};
 
 		var isRunningCommandBlock = false;
 		var commandBlockQueue = [];
@@ -1174,12 +1208,31 @@ Here is the json string received:
 				el.scrollTop = verticalOutputScrollPosition_[1];
 			}
 			//======================
-			function localHandleFlagTriggered(message) {
+			function localHandleFlagTriggered(message, excerptHtml) {
 				Debug.log("localHandleFlagTriggered()", flagIfPresent, flagKeyword);
+
+				//play loud alarm sound, if user enabled option (play() is a promise, which can reject, after processing)
+				Debug.log("localHandleFlagTriggered() flagLoudAlarm:", flagLoudAlarm,
+					" sound src:", _flagAlarmSound.src,
+					" readyState:", _flagAlarmSound.readyState,
+					" volume:", _flagAlarmSound.volume);
+				if (flagLoudAlarm) {
+					_flagAlarmSound.currentTime = 0; //rewind, in case of repeat triggers
+					_flagAlarmSound.play().then(() => {
+						Debug.log("Alarm sound is playing.");
+					}).catch(e => {
+						Debug.log("Alarm sound was suppressed: ", e);
+						document.getElementById('matchMessage').innerHTML +=
+							"<br><br>(Could not play alarm sound because the user must interact with the page first)";
+					});
+				}
 
 				//now stop live view or sequence play
 
-				document.getElementById('matchMessage').innerText = message;
+				var matchMessageEl = document.getElementById('matchMessage');
+				matchMessageEl.innerText = message; //innerText escapes any html in message
+				if (excerptHtml) //append excerpt with highlighted match
+					matchMessageEl.innerHTML += "<br><br>Found here:<br>“" + excerptHtml + "”";
 				document.getElementById('popupKeywordMatch').style.display = 'block';
 
 				if (liveViewActive) {
@@ -1207,6 +1260,24 @@ Here is the json string received:
 
 			} //end localHandleFlagTriggered()
 
+			//======================
+			//	returns a compact html excerpt of <text> around the found position, with the
+			//	found range highlighted in yellow, for the alert popup
+			function localGetExcerpt(text, foundIndex, foundLength) {
+				var EXCERPT_PAD = 60; //characters of context on each side
+				var start = Math.max(0, foundIndex - EXCERPT_PAD);
+				var end = Math.min(text.length, foundIndex + foundLength + EXCERPT_PAD);
+				var before = (start > 0 ? "..." : "") +
+					text.substring(start, foundIndex).replace(/\s+/g, ' ').replace(/^\s+/, '');
+				var found = text.substring(foundIndex, foundIndex + foundLength).replace(/\s+/g, ' ');
+				var after = text.substring(foundIndex + foundLength, end).replace(/\s+/g, ' ').replace(/\s+$/, '') +
+					(end < text.length ? "..." : "");
+				return escapeHtml(before) +
+					"<mark style='background-color: yellow; color: black;'>" +
+					escapeHtml(found) + "</mark>" +
+					escapeHtml(after);
+			} //end localGetExcerpt()
+
 			//handle flag/trigger actions
 			if (isFlagActive) {
 				Debug.log("Entering flagging section, isFlagActive:", isFlagActive);  // Log #1
@@ -1216,85 +1287,149 @@ Here is the json string received:
 
 				if (comparisonOperator === 'none') {
 					//skip intro to get RESPONSE, like 'Last ran... Mon Feb 3 14:20:03 2025 CST<br>FEMacro: "DTC Write"<br>\nOn 1 front-end target(s).\n\n\nFEMacro: "DTC Write"\nFE Target #1 UID: DTC7 (mu2edaq14.fnal.gov:ots::FESupervisor/LID-280)\n....RESPONSE'
-					var outputContainsKeyword = el.innerText.substr(el.innerText.indexOf(")\n")).includes(flagKeyword);
+					var searchedOutput = el.innerText.substr(el.innerText.indexOf(")\n"));
+					var keywordIndex = searchedOutput.indexOf(flagKeyword);
+					var outputContainsKeyword = (keywordIndex >= 0);
 					var shouldFlag = (flagIfPresent && outputContainsKeyword) || (!flagIfPresent && !outputContainsKeyword);
+
+					setFlagStatus(outputContainsKeyword ?
+						"Keyword found in output" + (shouldFlag ? " (triggered!)" : "") :
+						"Keyword not found in output" + (shouldFlag ? " (triggered!)" : ""));
 
 					if (shouldFlag) {
 						var message = flagIfPresent ?
 							"ALERT: String '" + flagKeyword + "' found!\n\nThe macro has been halted." :
 							"ALERT: String '" + flagKeyword + "' not found!\n\nThe macro has been halted.";
-						localHandleFlagTriggered(message);
+						localHandleFlagTriggered(message,
+							keywordIndex >= 0 ? //show excerpt of where the keyword was found
+								localGetExcerpt(searchedOutput, keywordIndex, flagKeyword.length) :
+								undefined);
 					}
 				}
 				else {
-					Debug.log("HTML Content:", el.innerHTML);
-					// Extract label and comparison value from flagKeyword
-					var keywordParts = flagKeyword.split('<');
+					// Label and comparison value from the popup's numeric-mode inputs
 					Debug.log("Flag Keyword:", flagKeyword);  // Log #2
-					if (keywordParts.length === 2) {
-						var searchText = keywordParts[0].trim().replace(/\|$/, '');
-						var numberToCompare = parseFloat(keywordParts[1].replace('>', '').trim());
+					if (flagCompareLabel && !isNaN(flagCompareNumber)) {
+						var searchText = flagCompareLabel;
+						var numberToCompare = flagCompareNumber;
+						//normalize non-breaking spaces (from &nbsp; in output html), so label indexOf works
+						var searchedOutput = el.innerText.replace(/\u00A0/g, ' ');
 
-						// Update regex pattern to match full label text
-						var regexPattern = '([^|]+)\\s*\\|\\s*(\\d+(\\.\\d+)?)\\s*[VC]';
-						Debug.log("Running regex, pattern:", regexPattern);  // Log #3
-						var regex = new RegExp(regexPattern, 'g');
 						var conditionMet = false;
+						var extractedValues = []; //for Flag Status feedback
+						var triggeredExcerptHtml; //for alert popup
 
-						var match;
-						while ((match = regex.exec(el.innerHTML)) !== null) {
-							Debug.log("Match found:", match);  // Log #3
-							Debug.log("Matched String:", match[0]);
-							var labelFound = match[1].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim().replace(/\s+/g, ' ');
-							var foundNumber = parseFloat(match[2]); // match[2] is the captured group (numeric value)
-							Debug.log("Label Found:", labelFound, "Search Text:", searchText, "Found Number:", foundNumber, "Number To Compare:", numberToCompare);
+						//find each occurrence of the label in the output text; value(s) follow
+						//	a '|' ':' or '=' separator, and may be a comma-separated list (e.g. one per link);
+						//	also identify '( label ) value' form, e.g. '(0) 0xbd00, (1) 0xbd00';
+						//	values may be decimal or hex (0x...)
+						var labelIndex = -1;
+						while (!conditionMet &&
+							(labelIndex = searchedOutput.indexOf(searchText, labelIndex + 1)) >= 0) {
 
-							if (labelFound === searchText) {
-								switch (comparisonOperator) {
-									case "gt":
-										Debug.log("Checking condition for operator gt");
-										if (foundNumber > numberToCompare) {
-											conditionMet = true;
-											triggeredNumber = foundNumber;
-										}
-										break;
-									case "gte":
-										if (foundNumber >= numberToCompare) {
-											conditionMet = true;
-											triggeredNumber = foundNumber;
-										}
-										break;
-									case "lt":
-										if (foundNumber < numberToCompare) {
-											conditionMet = true;
-											triggeredNumber = foundNumber;
-										}
-										break;
-									case "lte":
-										if (foundNumber <= numberToCompare) {
-											conditionMet = true;
-											triggeredNumber = foundNumber;
-										}
-										break;
+							//require label occurrence to not be inside a larger word/number (e.g. label '4' in '38940')
+							var labelPrevChar = labelIndex ? searchedOutput[labelIndex - 1] : '';
+							if (/[\w.]/.test(labelPrevChar)) continue;
+
+							var segmentStart = labelIndex + searchText.length;
+
+							//check for '( label )' form: '(' before and ')' after label (ignoring spaces)
+							var parenAfterMatch = searchedOutput.substring(segmentStart, segmentStart + 10).match(/^\s*\)/);
+							var isParenthesized = (parenAfterMatch &&
+								/\(\s*$/.test(searchedOutput.substring(Math.max(0, labelIndex - 10), labelIndex))) ? true : false;
+							if (isParenthesized)
+								segmentStart += parenAfterMatch[0].length; //skip past ')'
+
+							var scanStart = segmentStart;
+							var firstLine = true;
+							var valuesBeforeOccurrence = extractedValues.length;
+							while (true) { //scan label's line; and next line, if label's line has no values
+								var lineEnd = searchedOutput.indexOf('\n', scanStart);
+								if (lineEnd < 0) lineEnd = searchedOutput.length;
+								var segment = searchedOutput.substring(scanStart, lineEnd);
+								var numScanStart = 0;
+								if (firstLine) {
+									if (isParenthesized) {
+										//value(s) end at the next parenthesized label, if any
+										var nextParen = segment.indexOf('(');
+										if (nextParen >= 0) segment = segment.substring(0, nextParen);
+									}
+									else {
+										var sepMatch = segment.match(/^\s*[|:=]\s*/); //require separator right after label
+										if (!sepMatch) break; //no separator, not a label match here
+										numScanStart = sepMatch[0].length;
+									}
 								}
-							}
 
-							if (conditionMet) {
+								//extract and test each number in the segment (hex 0x... or decimal)
+								var numberRegex = /0[xX][0-9a-fA-F]+|-?\d+(\.\d+)?/g;
+								numberRegex.lastIndex = numScanStart;
+								var numMatch;
+								while (!conditionMet && (numMatch = numberRegex.exec(segment)) !== null) {
+									//skip partial matches inside words, while allowing attached units (e.g. 25.0V);
+									//	also skip 'N(' notation (e.g. address in '0(0x0)')
+									var prevChar = numMatch.index ? segment[numMatch.index - 1] : '';
+									var nextChar = segment[numMatch.index + numMatch[0].length] || '';
+									if (/[\w.]/.test(prevChar) || /[\d.xX(]/.test(nextChar)) continue;
+									//skip parenthesized numbers like '(0)' since they are labels, not values
+									var prevNonSpace = segment.substring(0, numMatch.index).match(/(\S)\s*$/);
+									var nextNonSpace = segment.substring(numMatch.index + numMatch[0].length).match(/^\s*(\S)/);
+									if (prevNonSpace && prevNonSpace[1] == '(' &&
+										nextNonSpace && nextNonSpace[1] == ')') continue;
+
+									var foundNumber = /^0[xX]/.test(numMatch[0]) ?
+										parseInt(numMatch[0], 16) : parseFloat(numMatch[0]);
+									extractedValues.push(numMatch[0]); //display original token (e.g. hex) in Flag Status
+									Debug.log("Label found, Found Number:", foundNumber, "Number To Compare:", numberToCompare);
+
+									switch (comparisonOperator) {
+										case "eq": conditionMet = (foundNumber == numberToCompare); break;
+										case "gt": conditionMet = (foundNumber > numberToCompare); break;
+										case "gte": conditionMet = (foundNumber >= numberToCompare); break;
+										case "lt": conditionMet = (foundNumber < numberToCompare); break;
+										case "lte": conditionMet = (foundNumber <= numberToCompare); break;
+									}
+									if (conditionMet) {
+										triggeredNumber = numMatch[0]; //original token (e.g. hex) for alert message
+										triggeredExcerptHtml = localGetExcerpt(searchedOutput,
+											scanStart + numMatch.index, numMatch[0].length);
+									}
+								}
+
+								//if label's own line had no values (e.g. 'label = ...text...:'),
+								//	also scan the following line for a value list
+								if (!conditionMet && firstLine &&
+									extractedValues.length == valuesBeforeOccurrence &&
+									lineEnd < searchedOutput.length) {
+									firstLine = false;
+									scanStart = lineEnd + 1;
+									continue;
+								}
 								break;
-								Debug.log("Condition met, triggering flag");
-							}
-						}
+							} //end line scan loop
+						} //end label occurrence loop
 
-						if (conditionMet) {
+						//give user feedback of label match attempt
+						var shouldFlag = (flagIfPresent && conditionMet) || (!flagIfPresent && !conditionMet);
+						setFlagStatus(extractedValues.length == 0 ?
+							"Label '" + searchText + "' not found" + (shouldFlag ? " (triggered!)" : "") :
+							"Extracted label value" + (extractedValues.length > 1 ? "s" : "") + " = " +
+							extractedValues.join(", ") + (shouldFlag ? " (triggered!)" : ""));
+
+						if (shouldFlag) {
 							var message;
 							var operatorSymbol = getOperatorSymbol(comparisonOperator);
 							Debug.log("Operator Symbol for", comparisonOperator, ":", operatorSymbol);  // Log #10
-							if (flagIfPresent)
-								message = "ALERT: Condition met for: " + searchText + " " + operatorSymbol + " " + numberToCompare + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
+							if (conditionMet)
+								message = "ALERT: Condition met for: " + searchText + " " + operatorSymbol + " " + flagCompareNumberString + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
 							else
-								message = "ALERT: Condition not met for: " + searchText + " " + operatorSymbol + " " + numberToCompare + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
+								message = "ALERT: Condition NOT met for: " + searchText + " " + operatorSymbol + " " + flagCompareNumberString +
+									(extractedValues.length == 0 ?
+										".\n\nLabel '" + searchText + "' was not found in the output." :
+										".\n\nExtracted value(s): " + extractedValues.join(", ")) +
+									"\n\nThe macro has been halted.";
 
-							localHandleFlagTriggered(message);
+							localHandleFlagTriggered(message, triggeredExcerptHtml);
 						}
 					}
 				}
@@ -1414,14 +1549,18 @@ Here is the json string received:
 						"<h3>Command history</h3>" +
 						"<div>" +
 						"<button id='liveViewBtn' onClick='toggleLiveView()' style='margin-right: 5px; border-radius: 5px; padding: 3px 15px; border: 1px solid gray;'>Live View</button>" +
-						"<button id='flagTriggerButton' onClick='PopupMacroFlagAlert()' style='background-color: light gray; border: 1px solid gray; cursor: pointer; font-size: 15px; padding: 3px 10px; border-radius: 5px;'>&#9668; Flag Results</button>" +
+						"<button id='flagTriggerButton' onClick='PopupMacroFlagAlert()' style='background-color: light gray; border: " +
+						(isFlagActive ? "3px solid green" : "1px solid gray") + //keep armed-flag border through re-render
+						"; cursor: pointer; font-size: 15px; padding: 3px 10px; border-radius: 5px;'>&#9668; Flag Results</button>" +
 						"</div>" +
 						"</div>" +
 						"<div id='history-status'></div>" +
 						"<div style='display: flex; justify-content: flex-end; align-items: center;'>" +
 						"<div style='display: flex; flex-direction: column; align-items: flex-end;'>" +
-						"<div style='margin-bottom: 5px;'>Delay: <span id='delayValue'>2 seconds</span></div>" +
-						"<div>Alert For: <span id='keywordValue'>[None]</span></div>" +
+						//show current state, since this html is re-rendered on layout changes
+						"<div style='margin-bottom: 5px;'>Delay: <span id='delayValue'>" + getDelayDisplayString() + "</span></div>" +
+						"<div style='margin-bottom: 5px;'>Alert For: <span id='keywordValue'>" + (flagKeyword ? escapeHtml(flagKeyword) : '[None]') + "</span></div>" +
+						"<div>Flag Status: <span id='flagStatusValue'>" + escapeHtml(flagStatusString) + "</span></div>" +
 						"</div>" +
 						"</div>",
 						true
@@ -2746,8 +2885,7 @@ Here is the json string received:
 			var wholeDiv = el.parentNode.parentNode.parentNode;
 			wholeDiv.style.display = "none";
 			liveViewActive = false;
-			document.getElementById('intervalTime').value = '2';
-			document.getElementById('noDelayCheckbox').checked = false;
+			//note: interval value and No Delay checkbox are intentionally kept, to be recalled next popup
 		} //end hideSmallPopupLiveView()
 
 		//=====================================================================================
@@ -2755,8 +2893,7 @@ Here is the json string received:
 		// hide the popup for keyword flag
 		function hideSmallPopupFlag() {
 			Debug.log("hideSmallPopupFlag()");
-			var flagKeywordInput = document.getElementById("flagKeyword");
-			flagKeywordInput.value = "";
+			//note: keyword/label/number input values are intentionally kept, to be recalled next popup
 			var popupFlagAlert = document.getElementById('popupFlagAlert');
 			if (popupFlagAlert) {
 				popupFlagAlert.style.display = 'none';
@@ -2778,7 +2915,6 @@ Here is the json string received:
 		//toggleLiveView ~~
 		// live view
 		function toggleLiveView() {
-			document.getElementById('delayValue').textContent = '2 seconds';
 			liveViewActive = !liveViewActive;
 
 			if (liveViewActive) {
@@ -2796,7 +2932,6 @@ Here is the json string received:
 				}
 
 				liveViewActive = false;
-				document.getElementById('intervalTime').value = '2';
 
 				var liveViewBtn = document.getElementById('liveViewBtn');
 				liveViewBtn.textContent = 'Live View';
@@ -2833,7 +2968,6 @@ Here is the json string received:
 			liveViewBtn.textContent = 'Stop Live View';
 			liveViewBtn.style.backgroundColor = 'red';
 			liveViewBtn.style.color = 'white';
-			document.getElementById('noDelayCheckbox').checked = false;
 
 			// Enable live view only if it's not already active
 			if (!liveViewActive) {
@@ -2863,9 +2997,14 @@ Here is the json string received:
 			if (isFlagActive) {
 				flagKeyword = "";
 				flagIfPresent = true;
+				flagLoudAlarm = false;
+				flagCompareLabel = "";
+				flagCompareNumber = NaN;
+				flagCompareNumberString = "";
 				flagTriggerButton.style.border = "1px solid black";
 				isFlagActive = false;
 				document.getElementById('keywordValue').textContent = '[None]';
+				setFlagStatus('[None]');
 			}
 			else {
 				document.getElementById('popupFlagAlert').style.display = 'block';
@@ -2873,12 +3012,43 @@ Here is the json string received:
 		} //end PopupMacroFlagAlert()
 
 		//=====================================================================================
+		//handleComparisonOperatorChange ~~
+		//	swap between single keyword input (Contains) and Label <operator> Number inputs (numeric comparison)
+		function handleComparisonOperatorChange() {
+			var numericMode = (document.getElementById('comparisonOperator').value !== 'none');
+			document.getElementById('flagCompareLabel').style.display = numericMode ? '' : 'none';
+			document.getElementById('flagCompareNumber').style.display = numericMode ? '' : 'none';
+			document.getElementById('flagKeyword').style.display = numericMode ? 'none' : '';
+			//shrink dropdown in numeric mode (operators are only 2 characters), so inputs fit in popup
+			document.getElementById('comparisonOperator').style.width = numericMode ? '55px' : '';
+			document.getElementById('flagPopupPrompt').textContent = numericMode ?
+				'Please enter a condition to flag:' :
+				'Please enter a keyword to flag:';
+		} //end handleComparisonOperatorChange()
+
+		//=====================================================================================
 		//setFlagKeyword ~~
 		function setFlagKeyword(isPresent) {
-			flagKeyword = document.getElementById('flagKeyword').value;
+			var comparisonOperator = document.getElementById('comparisonOperator').value;
+			if (comparisonOperator === 'none') {
+				flagKeyword = document.getElementById('flagKeyword').value;
+				flagCompareLabel = "";
+				flagCompareNumber = NaN;
+			}
+			else { //numeric comparison mode
+				flagCompareLabel = document.getElementById('flagCompareLabel').value.trim();
+				var numberString = document.getElementById('flagCompareNumber').value.trim();
+				flagCompareNumber = (numberString === "") ? NaN :
+					Number(numberString); //Number() also parses hex '0x...'
+				flagCompareNumberString = numberString;
+				//flagKeyword doubles as the 'is valid/active' state and display string
+				flagKeyword = (flagCompareLabel && !isNaN(flagCompareNumber)) ?
+					(flagCompareLabel + " " + getOperatorSymbol(comparisonOperator) + " " + numberString) : "";
+			}
 			flagIfPresent = isPresent;
+			flagLoudAlarm = document.getElementById('flagLoudAlarmCheckbox').checked;
 
-			Debug.log("setFlagKeyword()", flagKeyword, flagIfPresent);
+			Debug.log("setFlagKeyword()", flagKeyword, flagIfPresent, flagLoudAlarm);
 
 			document.getElementById('keywordValue').textContent = flagKeyword || '[None]';
 
@@ -2886,10 +3056,12 @@ Here is the json string received:
 			if (flagKeyword) {
 				flagTriggerButton.style.border = "3px solid green";
 				isFlagActive = true;
+				setFlagStatus('Awaiting next macro run...');
 			}
 			else {
 				flagTriggerButton.style.border = "1px solid black";
 				isFlagActive = false;
+				setFlagStatus('[None]');
 			}
 
 			document.getElementById('popupFlagAlert').style.display = 'none';
@@ -3859,9 +4031,26 @@ Here is the json string received:
 		} //end handleEnterPressSaveSequence()
 
 		//=====================================================================================
+		//escapeHtml ~~
+		//	escape html special characters, so text can safely go in innerHTML
+		function escapeHtml(str) {
+			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		} //end escapeHtml()
+
+		//=====================================================================================
+		//getDelayDisplayString ~~
+		//	current live view delay as display string
+		function getDelayDisplayString() {
+			if (intervalTime === 0) return 'None';
+			if (intervalTime > 0) return (intervalTime / 1000) + ' seconds';
+			return '2 seconds'; //default, before user has set an interval
+		} //end getDelayDisplayString()
+
+		//=====================================================================================
 		//getOperatorSymbol ~~
 		function getOperatorSymbol(operator) {
 			switch (operator) {
+				case "eq": return "==";
 				case "gt": return ">";
 				case "gte": return ">=";
 				case "lt": return "<";
@@ -3964,8 +4153,8 @@ Here is the json string received:
 			<h4>Please enter the interval time (sec):</h4>
 			<input type="number" id="intervalTime" value="2" onkeypress="return handleEnterPress(event)">
 			<div>
-				<input type="checkbox" id="noDelayCheckbox" style="margin-top: 20px;">
-				<label for="noDelayCheckbox">No Delay</label>
+				<input type="checkbox" id="noDelayCheckbox" style="margin-top: 20px; cursor: pointer;">
+				<label for="noDelayCheckbox" style="cursor: pointer;">No Delay</label>
 			</div>
 			<div class="buttongroup" style="margin-top: 20px;">
 				<button onclick="setIntervalAndStart()">Set Interval</button>
@@ -3976,20 +4165,33 @@ Here is the json string received:
 
 	<div id="popupFlagAlert" class="smallPopup" style="display: none;">
 		<center>
-			<h4>Please enter a keyword to flag:</h4>
+			<h4 id="flagPopupPrompt">Please enter a keyword to flag:</h4>
 			<div style="display: flex; align-items: center; justify-content: center;">
-				<select id="comparisonOperator" style="margin-top: 5px; height: 30px; margin-right: 10px;">
-					<option value="none">None</option>
+				<input type="text" id="flagCompareLabel" placeholder="Label"
+					style="display: none; width: 155px; margin-top: 5px; margin-right: 10px;" />
+				<select id="comparisonOperator" onchange="handleComparisonOperatorChange()"
+					style="margin-top: 5px; height: 30px; margin-right: 10px;"
+					title="'Contains' does a plain text search of the keyword in the macro output. The numeric operators compare against value(s) in the output following the label and a '|' ':' or '=' separator (e.g. 'Label | 25.0' or 'Label: 1, 2, 3'), or in '( label ) value' form (e.g. '(0) 0xbd00'). Values may be decimal or hex (0x...).">
+					<option value="none">Contains</option>
+					<option value="eq">==</option>
 					<option value="gt">&gt;</option>
 					<option value="gte">&gt;=</option>
 					<option value="lt">&lt;</option>
 					<option value="lte">&lt;=</option>
 				</select>
-				<input type="text" id="flagKeyword" value="" style="margin-top: 5px;" />
+				<input type="text" id="flagKeyword" placeholder="Keyword" value="" style="margin-top: 5px;" />
+				<input type="text" id="flagCompareNumber" placeholder="Number"
+					title="Number to compare against; decimal or hex (e.g. 0xbd00)"
+					style="display: none; width: 90px; margin-top: 5px;" />
+			</div>
+			<div style="margin-top: 10px;">
+				<input type="checkbox" id="flagLoudAlarmCheckbox" style="cursor: pointer;"
+					title="When checked, the loud Desktop system message alarm sound will play when the flag is triggered.">
+				<label for="flagLoudAlarmCheckbox" style="cursor: pointer;">Loud alarm sound on trigger</label>
 			</div>
 			<div class="buttongroup" style="margin-top: 20px;">
 				<button onclick="setFlagKeyword(true)">Flag if Present</button>
-				<button onclick="setFlagKeyword(false)" style="margin-left: 10px;">Flag if Absent</button>
+				<button onclick="setFlagKeyword(false)">Flag if Absent</button>
 				<div style="margin-top: 10px;">
 					<button onclick="hideSmallPopupFlag(this)">Cancel</button>
 				</div>
