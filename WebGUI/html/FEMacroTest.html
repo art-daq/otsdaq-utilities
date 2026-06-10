@@ -401,7 +401,7 @@
 			if (el) el.innerText = str;
 		} //end setFlagStatus()
 		//same loud alert sound as Desktop system messages (Desktop.js _sysMsgAlarmSound)
-		var _FLAG_ALARM_SOUND_PATH = "/WebPath/sounds/fx-System-Message-Alarm.wav"; //must be .wav for firefox incompatibility
+		var _FLAG_ALARM_SOUND_PATH = "/WebPath/sounds/fx-System-Message-Alarm.wav"; //must be .wav for firefox compatibility
 		var _flagAlarmSound = new Audio(_FLAG_ALARM_SOUND_PATH);
 		_flagAlarmSound.volume = 0.75; // Set volume to 75% (range: 0.0 to 1.0), to match Desktop loud alert
 		_flagAlarmSound.onerror = function (e) {
