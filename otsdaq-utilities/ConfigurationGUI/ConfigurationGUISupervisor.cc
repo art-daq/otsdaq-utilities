@@ -8093,6 +8093,12 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 			return;
 		}
 	}
+	if(filterStartTime != 0 && filterEndTime != 0 && filterStartTime > filterEndTime)
+	{
+		__SUP_SS__ << "Invalid time range: startTime (" << filterStartTime
+		           << ") must be <= endTime (" << filterEndTime << ")." << __E__;
+		__SUP_SS_THROW__;
+	}
 	if(filterMode != "created" && filterMode != "loaded")
 	{
 		__SUP_SS__ << "Invalid filterMode parameter '" << filterMode

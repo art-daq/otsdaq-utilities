@@ -2830,8 +2830,11 @@
 				var day = String(d.getDate()).padStart(2, "0");
 				return y + "-" + m + "-" + day;
 			}
-			var dateToday = toLocalDateInputValue(new Date());
-			var dateYesterday = toLocalDateInputValue(new Date(Date.now() - 86400000));
+			var today = new Date();
+			var dateToday = toLocalDateInputValue(today);
+			var yesterday = new Date(today);
+			yesterday.setDate(today.getDate() - 1);
+			var dateYesterday = toLocalDateInputValue(yesterday);
 			str += "<div id='tableSearchDiv' ";
 			str += "style='margin-top:-20px; height:50px; white-space:nowrap;'";
 			str += ">";
