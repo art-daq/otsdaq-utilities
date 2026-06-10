@@ -1343,7 +1343,7 @@ Here is the json string received:
 							var scanStart = segmentStart;
 							var firstLine = true;
 							var valuesBeforeOccurrence = extractedValues.length;
-							while (!conditionMet) { //scan label's line; and next line, if label's line has no values
+							while (true) { //scan label's line; and next line, if label's line has no values
 								var lineEnd = searchedOutput.indexOf('\n', scanStart);
 								if (lineEnd < 0) lineEnd = searchedOutput.length;
 								var segment = searchedOutput.substring(scanStart, lineEnd);
