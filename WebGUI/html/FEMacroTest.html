@@ -1410,19 +1410,24 @@ Here is the json string received:
 						} //end label occurrence loop
 
 						//give user feedback of label match attempt
+						var shouldFlag = (flagIfPresent && conditionMet) || (!flagIfPresent && !conditionMet);
 						setFlagStatus(extractedValues.length == 0 ?
-							"Label '" + searchText + "' not found" :
+							"Label '" + searchText + "' not found" + (shouldFlag ? " (triggered!)" : "") :
 							"Extracted label value" + (extractedValues.length > 1 ? "s" : "") + " = " +
-							extractedValues.join(", ") + (conditionMet ? " (triggered!)" : ""));
+							extractedValues.join(", ") + (shouldFlag ? " (triggered!)" : ""));
 
-						if (conditionMet) {
+						if (shouldFlag) {
 							var message;
 							var operatorSymbol = getOperatorSymbol(comparisonOperator);
 							Debug.log("Operator Symbol for", comparisonOperator, ":", operatorSymbol);  // Log #10
-							if (flagIfPresent)
+							if (conditionMet)
 								message = "ALERT: Condition met for: " + searchText + " " + operatorSymbol + " " + flagCompareNumberString + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
 							else
-								message = "ALERT: Condition not met for: " + searchText + " " + operatorSymbol + " " + flagCompareNumberString + ".\n\nTarget was stopped at " + triggeredNumber + "\n\nThe macro has been halted.";
+								message = "ALERT: Condition NOT met for: " + searchText + " " + operatorSymbol + " " + flagCompareNumberString +
+									(extractedValues.length == 0 ?
+										".\n\nLabel '" + searchText + "' was not found in the output." :
+										".\n\nExtracted value(s): " + extractedValues.join(", ")) +
+									"\n\nThe macro has been halted.";
 
 							localHandleFlagTriggered(message, triggeredExcerptHtml);
 						}
