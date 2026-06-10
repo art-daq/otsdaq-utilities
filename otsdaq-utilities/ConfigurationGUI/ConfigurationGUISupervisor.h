@@ -68,8 +68,9 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	void 					handleTablesXML							(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
-																	const std::string&		createdStartTime,
-																	const std::string&		createdEndTime);
+																	const std::string&		filterStartTime,
+																	const std::string&		filterEndTime,
+																	const std::string&		filterMode = "created" /* "created" or "loaded" */);
 	void 					handleGetTableXML						(HttpXmlDocument&       xmldoc,
 																	ConfigurationManagerRW* cfgMgr,
 																	const std::string&      tableName,

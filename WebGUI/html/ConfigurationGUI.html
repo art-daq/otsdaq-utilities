@@ -692,8 +692,35 @@
 		var _tableViewBackLinkStr;
 		var _tableUploadStr = "";
 		var _tableViewSelectedOption = "";
+		var _tableViewSelectedFilterMode = "created"; //"created" or "loaded"
 		var _tableViewSelectedStartTime = 0;
 		var _tableViewSelectedEndTime = 0;
+		//time filter presets per filter mode; seconds = how far back from now
+		//	("All" and "Custom Range" are always added in populateTableViewPresetOptions())
+		var _TABLE_VIEW_FILTER_PRESETS = {
+			"created": [
+				{ value: "last5m",  label: "Last 5 Minutes",  seconds: 5*60 },
+				{ value: "last15m", label: "Last 15 Minutes", seconds: 15*60 },
+				{ value: "last30m", label: "Last 30 Minutes", seconds: 30*60 },
+				{ value: "last1h",  label: "Last Hour",       seconds: 60*60 },
+				{ value: "last4h",  label: "Last 4 Hours",    seconds: 4*60*60 },
+				{ value: "last24",  label: "Last Day",        seconds: 24*60*60 },
+				{ value: "last7",   label: "Last Week",       seconds: 7*24*60*60 },
+				{ value: "last30",  label: "Last Month",      seconds: 30*24*60*60 },
+				{ value: "last365", label: "Last Year",       seconds: 365*24*60*60 }
+			],
+			"loaded": [
+				{ value: "last5m",  label: "Last 5 Minutes",  seconds: 5*60 },
+				{ value: "last15m", label: "Last 15 Minutes", seconds: 15*60 },
+				{ value: "last30m", label: "Last 30 Minutes", seconds: 30*60 },
+				{ value: "last1h",  label: "Last Hour",       seconds: 60*60 },
+				{ value: "last4h",  label: "Last 4 Hours",    seconds: 4*60*60 },
+				{ value: "last24",  label: "Last Day",        seconds: 24*60*60 },
+				{ value: "last7",   label: "Last Week",       seconds: 7*24*60*60 },
+				{ value: "last30",  label: "Last Month",      seconds: 30*24*60*60 },
+				{ value: "last365", label: "Last Year",       seconds: 365*24*60*60 }
+			]
+		};
 		var _doCopyAndPaintIncrementally = false;
 		var _copyAndPaintLastCellKey = "";
 		const _CURSOR_PAINTER_SOURCE = 'url("/WebPath/images/iconImages/cursor-PaintRoller.png"), auto';
@@ -1218,9 +1245,29 @@
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
 			var requestStr = "Request?RequestType=getTables";
-			if (_tableViewSelectedStartTime > 0 || _tableViewSelectedEndTime > 0)
-				requestStr += "&startTime=" + _tableViewSelectedStartTime +
-					"&endTime=" + _tableViewSelectedEndTime;
+
+			// recalculate time window from the stored preset so relative
+			//	presets ("Last 5 Minutes", etc.) are always relative to now
+			var startTime = _tableViewSelectedStartTime;
+			var endTime = _tableViewSelectedEndTime;
+			if (_tableViewSelectedOption && _tableViewSelectedOption !== "custom")
+			{
+				var presets = _TABLE_VIEW_FILTER_PRESETS[_tableViewSelectedFilterMode] ||
+					_TABLE_VIEW_FILTER_PRESETS["created"];
+				for (var p = 0; p < presets.length; ++p)
+					if (presets[p].value === _tableViewSelectedOption) {
+						endTime = Math.floor(Date.now() / 1000);
+						startTime = endTime - presets[p].seconds;
+						_tableViewSelectedStartTime = startTime;
+						_tableViewSelectedEndTime = endTime;
+						break;
+					}
+			}
+
+			if (startTime > 0 || endTime > 0)
+				requestStr += "&startTime=" + startTime +
+					"&endTime=" + endTime +
+					"&filterMode=" + _tableViewSelectedFilterMode;
 			DesktopContent.XMLHttpRequest(requestStr, "",
 				tableViewRequestHandler, anchorTarget);
 		} //end setupTableViewMode()
@@ -1235,6 +1282,46 @@
 
 			customEl.style.display = presetEl.value === "custom" ? "inline" : "none";
 		} //end toggleTableViewCustomDateInputs()
+
+		//==============================================================================
+		//populateTableViewPresetOptions ~
+		//	rebuild the time preset dropdown options based on the selected filter mode
+		//	(Created vs Loaded); keep the current selection if it exists in the new mode,
+		//	otherwise fall back to "All."
+		function populateTableViewPresetOptions() {
+			var presetEl = document.getElementById("tableViewDateFilterPreset");
+			if (!presetEl)
+				return;
+
+			var presets = _TABLE_VIEW_FILTER_PRESETS[_tableViewSelectedFilterMode] ||
+				_TABLE_VIEW_FILTER_PRESETS["created"];
+			var prevValue = presetEl.value;
+
+			var str = "<option value=''>All</option>";
+			var prevValueExists = (prevValue === "" || prevValue === "custom");
+			for (var i = 0; i < presets.length; ++i) {
+				str += "<option value='" + presets[i].value + "'>" +
+					presets[i].label + "</option>";
+				if (presets[i].value === prevValue)
+					prevValueExists = true;
+			}
+			str += "<option value='custom'>Custom Range</option>";
+			presetEl.innerHTML = str;
+			presetEl.value = prevValueExists ? prevValue : "";
+		} //end populateTableViewPresetOptions()
+
+		//==============================================================================
+		//handleTableViewFilterModeChange ~
+		//	on Created/Loaded mode change: swap the preset options for the new mode,
+		//	then re-apply the filter
+		function handleTableViewFilterModeChange() {
+			var modeEl = document.getElementById("tableViewDateFilterMode");
+			if (modeEl)
+				_tableViewSelectedFilterMode = modeEl.value;
+			populateTableViewPresetOptions();
+			toggleTableViewCustomDateInputs();
+			tableViewFilterRequest();
+		} //end handleTableViewFilterModeChange()
 
 		function unixTimeToDateInputValue(unixTimeSeconds) {
 			if (!unixTimeSeconds)
@@ -1252,14 +1339,13 @@
 
 			var selectedOption = document.getElementById("tableViewDateFilterPreset").value;
 			_tableViewSelectedOption = selectedOption;
+			var modeEl = document.getElementById("tableViewDateFilterMode");
+			if (modeEl)
+				_tableViewSelectedFilterMode = modeEl.value;
 			_tableViewSelectedStartTime = 0;
 			_tableViewSelectedEndTime = 0;
 			var selectedStartTime = 0;
 			var selectedEndTime = 0;
-
-			function unixTimeDaysAgo(days) {
-				return Math.floor(Date.now() / 1000) - (days * 24 * 60 * 60);
-			}
 
 			function localDateFromInput(dateString, endOfDay = false) {
 				const [year, month, day] = dateString.split("-").map(Number);
@@ -1271,17 +1357,19 @@
 				return new Date(year, month - 1, day, 0, 0, 0, 0);
 			}
 
-			if (selectedOption === "last24") {
-				selectedStartTime = unixTimeDaysAgo(1);
+			//look up the selected preset in the current mode's preset list
+			var presets = _TABLE_VIEW_FILTER_PRESETS[_tableViewSelectedFilterMode] ||
+				_TABLE_VIEW_FILTER_PRESETS["created"];
+			var selectedPreset = null;
+			for (var p = 0; p < presets.length; ++p)
+				if (presets[p].value === selectedOption) {
+					selectedPreset = presets[p];
+					break;
+				}
+
+			if (selectedPreset) {
 				selectedEndTime = Math.floor(Date.now() / 1000);
-			}
-			else if (selectedOption === "last7") {
-				selectedStartTime = unixTimeDaysAgo(7);
-				selectedEndTime = Math.floor(Date.now() / 1000);
-			}
-			else if (selectedOption === "last30") {
-				selectedStartTime = unixTimeDaysAgo(30);
-				selectedEndTime = Math.floor(Date.now() / 1000);
+				selectedStartTime = selectedEndTime - selectedPreset.seconds;
 			}
 			else if (selectedOption === "custom") {
 				// get the dates from tableViewDateFrom and tableViewDateTo
@@ -1296,15 +1384,17 @@
 				selectedStartTime = Math.floor(dateFrom.getTime() / 1000);
 				selectedEndTime = Math.floor(dateTo.getTime() / 1000);
 				if ( selectedStartTime >= selectedEndTime) {
-					var safeDateFromInput = encodeHTML(dateFromInput);
-					var safeDateToInput = encodeHTML(dateToInput);
-					Debug.warn(DesktopContent.tooltip("Invalid Custom Date",
-						"The start date " + safeDateFromInput + " must be before the end date " + safeDateToInput + ". Please adjust your custom date filter inputs."));
+					Debug.warn("Invalid Custom Date Range: the 'From' date (" +
+						encodeHTML(dateFromInput) + ") must be before the 'To' date (" +
+						encodeHTML(dateToInput) + "). Please adjust your custom date filter inputs.");
+					return;
 				}
 			}
 			else if (selectedOption === "") {
 				Debug.log("No date filter applied, loading all tables.");
+				var keepFilterMode = _tableViewSelectedFilterMode;
 				resetTableViewParams();
+				_tableViewSelectedFilterMode = keepFilterMode; //preserve user's Created/Loaded choice
 				setupTableViewMode(anchorTarget);
 				return;
 			}
@@ -1317,10 +1407,14 @@
 			_tableViewSelectedEndTime = selectedEndTime;
 
 			var el = document.getElementById("display");
-			el.innerHTML = "Loading...";
+			el.innerHTML = "Loading... " +
+				"<label style='font-size:12px; color:gray;'>If this is the first " +
+				"time filtering, it may take a while to populate the time cache " +
+				"(e.g. &gt;1 minute).</label>";
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
 								"&startTime=" + selectedStartTime +
-								"&endTime=" + selectedEndTime,
+								"&endTime=" + selectedEndTime +
+								"&filterMode=" + _tableViewSelectedFilterMode,
 								"",
 								tableViewRequestHandler,
 								anchorTarget);
@@ -2701,6 +2795,7 @@
 		// resetTableViewParams ~~
 		function resetTableViewParams() {
 			_tableViewSelectedOption = "";
+			_tableViewSelectedFilterMode = "created";
 			_tableViewSelectedStartTime = 0;
 			_tableViewSelectedEndTime = 0;
 		} //end resetTableViewParams()
@@ -2720,7 +2815,14 @@
 			var tableName, version;
 			var backLinkStr;
 
-			str += "<h3 style='margin-top:-10px'><u>Table View</u></h3>";
+			str += "<h3 style='margin-top:-10px; margin-bottom: 28px;'><u>Table View</u> " +
+				"<a href='#' style='font-size:14px; font-weight:normal; margin-left: 46px;' " +
+				"onclick='var p=document.getElementById(\"tableViewDateFilterPreset\"); " +
+				"if(p){p.value=\"\";tableViewFilterRequest();} return false;'>Show All</a>" +
+				" | " +
+				"<a href='#' style='font-size:14px; font-weight:normal;' " +
+				"onclick='tableViewFilterRequest(); return false;'>Refresh</a>" +
+				"</h3>";
 
 			function toLocalDateInputValue(d) {
 				var y = d.getFullYear();
@@ -2731,20 +2833,37 @@
 			var dateToday = toLocalDateInputValue(new Date());
 			var dateYesterday = toLocalDateInputValue(new Date(Date.now() - 86400000));
 			str += "<div id='tableSearchDiv' ";
-			str += "style='margin-top:-20px; height:50px; width:750px;'";
+			str += "style='margin-top:-20px; height:50px; white-space:nowrap;'";
 			str += ">";
-			str += "Show versions created: ";
+			str += "Show versions: ";
+			str += "<select id='tableViewDateFilterMode' onchange='handleTableViewFilterModeChange();'>";
+			str += "<option value='created'>Created</option>";
+			str += "<option value='loaded'>Loaded</option>";
+			str += "</select> ";
+			//Note: time preset options are populated by populateTableViewPresetOptions()
+			//	based on the selected filter mode (Created vs Loaded)
 			str += "<select id='tableViewDateFilterPreset' onchange='toggleTableViewCustomDateInputs(); if(this.value !== \"custom\") tableViewFilterRequest();'>";
-			str += "<option value=''>All</option>";
-			str += "<option value='last24'>Last 24 Hours</option>";
-			str += "<option value='last7'>Last Week</option>";
-			str += "<option value='last30'>Last 30 Days</option>";
-			str += "<option value='custom'>Custom Range</option>";
 			str += "</select> ";
 			str += "<span id='tableViewCustomDateInputs' style='display:none;'>";
 			str += "From: <input id='tableViewDateFrom' type='date' value='" + dateYesterday + "' onchange='if(document.getElementById(\"tableViewDateFilterPreset\").value === \"custom\") tableViewFilterRequest();'> ";
 			str += "To: <input id='tableViewDateTo' type='date' value='" + dateToday + "' onchange='if(document.getElementById(\"tableViewDateFilterPreset\").value === \"custom\") tableViewFilterRequest();'> ";
 			str += "</span> ";
+
+			//show "Showing X of Y table names, and N of M table versions" counts
+			//	(always returned by the server)
+			var numTablesConsidered = DesktopContent.getXMLValue(req, "NumberOfTablesConsidered");
+			var numTablesFound = DesktopContent.getXMLValue(req, "NumberOfTablesFound");
+			var numVersionsConsidered = DesktopContent.getXMLValue(req, "NumberOfVersionsConsidered");
+			var numVersionsFound = DesktopContent.getXMLValue(req, "NumberOfVersionsFound");
+			if (numTablesConsidered !== undefined && numTablesFound !== undefined)
+			{
+				str += " <label id='tableViewFilterCount'>Showing " + numTablesFound +
+					" of " + numTablesConsidered + " table names";
+				if (numVersionsConsidered !== undefined && numVersionsFound !== undefined)
+					str += ", and " + numVersionsFound + " of " + numVersionsConsidered +
+						" table versions";
+				str += "</label>";
+			}
 			str += "</div>";
 
 			//			str += "<div id='tableSearchDiv' ";
@@ -2805,6 +2924,10 @@
 			str += "</table>";
 			//Debug.log("CfgGUI requestHandler str " + str);
 			el.innerHTML = str;
+			var modeEl = document.getElementById("tableViewDateFilterMode");
+			if (modeEl)
+				modeEl.value = _tableViewSelectedFilterMode;
+			populateTableViewPresetOptions(); //fill preset options for the selected mode
 			if (_tableViewSelectedOption)
 			{
 				var presetEl = document.getElementById("tableViewDateFilterPreset");
@@ -3777,7 +3900,8 @@
 			if (-1 != version)
 				str += "</a>";
 
-			//display all other version links
+			//display all other version links and build ordered version list for < > nav
+			var _specificTableAllVersions = [-1]; //start with mockup
 			{
 				var tableVersion, tableVersionHi;
 				var aliasString;
@@ -3799,6 +3923,7 @@
 						aliasString += (k == 0 ? "==>" : ",") + versionAliases[k].getAttribute("value");
 
 					for (; tableVersion <= tableVersionHi; ++tableVersion) {
+						_specificTableAllVersions.push(tableVersion | 0);
 						str += " ";
 						if (tableVersion != version)
 							str += "<a href='#' onclick='setupSpecificTable(\"" + tableName +
@@ -3812,6 +3937,41 @@
 					} //end version field/span loop
 				}
 			}
+
+			// < > navigation links to go to previous/next version (on own line)
+			{
+				var curIdx = _specificTableAllVersions.indexOf(version | 0);
+				var prevVersion = (curIdx > 0) ?
+					_specificTableAllVersions[curIdx - 1] : undefined;
+				var nextVersion = (curIdx >= 0 && curIdx < _specificTableAllVersions.length - 1) ?
+					_specificTableAllVersions[curIdx + 1] : undefined;
+
+				str += "<br>";
+				if (prevVersion !== undefined)
+					str += "<a href='#' title='Previous version (Left Arrow key)' " +
+						"onclick='setupSpecificTable(\"" + tableName +
+						"\",\"" + prevVersion +
+						"\", \"" + backLinkStr + "\"); return false;'>&lt;</a>";
+				else
+					str += "<span style='color:gray;' title='No previous version'>&lt;</span>";
+
+				str += " ";
+				if (nextVersion !== undefined)
+					str += "<a href='#' title='Next version (Right Arrow key)' " +
+						"onclick='setupSpecificTable(\"" + tableName +
+						"\",\"" + nextVersion +
+						"\", \"" + backLinkStr + "\"); return false;'>&gt;</a>";
+				else
+					str += "<span style='color:gray;' title='No next version'>&gt;</span>";
+			}
+
+			// store version nav info for arrow key handler
+			window._specificTableVersionNav = {
+				tableName: tableName,
+				backLinkStr: backLinkStr,
+				allVersions: _specificTableAllVersions,
+				currentVersion: version | 0
+			};
 
 			str += "<div id='clearDiv'></div>";
 			str += "<div id='findAndReplace'></div>";
@@ -11337,6 +11497,30 @@
 					event.stopImmediatePropagation(); // Prevents further listeners on the same element
 					if (e.preventDefault)
 						e.preventDefault();
+				}
+			}
+			else if ((e.key == "ArrowLeft" || e.key == "ArrowRight") &&
+				!_editingCellEl &&
+				window._specificTableVersionNav) {
+				// LEFT/RIGHT arrow: navigate to previous/next version in Specific Table View
+				var displayEl = document.getElementById("display");
+				if (displayEl && displayEl.children[0] &&
+					displayEl.children[0].textContent == "Specific Table View") {
+					var nav = window._specificTableVersionNav;
+					var curIdx = nav.allVersions.indexOf(nav.currentVersion);
+					var targetVersion;
+					if (e.key == "ArrowLeft" && curIdx > 0)
+						targetVersion = nav.allVersions[curIdx - 1];
+					else if (e.key == "ArrowRight" && curIdx >= 0 &&
+						curIdx < nav.allVersions.length - 1)
+						targetVersion = nav.allVersions[curIdx + 1];
+					if (targetVersion !== undefined) {
+						e.stopImmediatePropagation();
+						if (e.preventDefault)
+							e.preventDefault();
+						setupSpecificTable(nav.tableName,
+							"" + targetVersion, nav.backLinkStr);
+					}
 				}
 			}
 			else if (e.key == "Escape" && _editingCellEl) {
