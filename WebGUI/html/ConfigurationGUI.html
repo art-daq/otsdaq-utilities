@@ -690,6 +690,8 @@
 		var _tableColumnMinValues = [];
 		var _tableColumnMaxValues = [];
 		var _tableViewBackLinkStr;
+		var _navHistory = [];
+		var _navHistoryPushDisabled = false;
 		var _tableUploadStr = "";
 		var _tableViewSelectedOption = "";
 		var _tableViewSelectedFilterMode = "created"; //"created" or "loaded"
@@ -840,6 +842,12 @@
 			DesktopContent.mouseMoveSubscriber(bodyMouseMoveHandler);
 			//be careful to not override the body.keydown DesktopContent/Debug action
 			document.body.addEventListener("keydown", bodyKeyHandler, true /* flag for capture priority */);
+			window.addEventListener("mousedown", function(e) {
+				if (e.button == 3) {
+					e.preventDefault();
+					navigateBack();
+				}
+			});
 
 
 			//============================
@@ -1008,6 +1016,8 @@
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
 
+			navHistoryPush();
+
 			//get history for this group type
 			DesktopContent.XMLHttpRequest("Request?RequestType=getGroupHistory&groupAction=" +
 				groupAction + "&groupType=" +
@@ -1156,6 +1166,7 @@
 		//==============================================================================
 		//setupSystemViewMode ~
 		function setupSystemViewMode(anchorTarget) {
+			navHistoryPush();
 
 			editCellCancel();
 
@@ -1228,6 +1239,7 @@
 		//==============================================================================
 		//setupGroupViewMode ~
 		function setupGroupViewMode(anchorTarget) {
+			navHistoryPush();
 			editCellCancel();
 
 			var el = document.getElementById("display");
@@ -1240,6 +1252,7 @@
 		//==============================================================================
 		//setupTableViewMode ~
 		function setupTableViewMode(anchorTarget) {
+			navHistoryPush();
 			editCellCancel();
 
 			var el = document.getElementById("display");
@@ -1499,6 +1512,7 @@
 		//setupSpecificTable ~
 		//	undefined version gives latest
 		function setupSpecificTable(tableName, version, backLinkStr, allowIllegalColumns, refreshVersions) {
+			navHistoryPush();
 
 			Debug.logv({refreshVersions});
 
@@ -3027,6 +3041,7 @@
 		//==============================================================================
 		//setupSpecificTableGroup ~
 		function setupSpecificTableGroup(groupName, groupKey, backLinkStr, anchorTarget, modifiedTables) {
+			navHistoryPush();
 			Debug.log("setupSpecificTableGroup", groupName, groupKey, backLinkStr, anchorTarget, modifiedTables);
 
 			//cancel any existing popups
@@ -3195,6 +3210,7 @@
 			var el = document.getElementById("display");
 
 			var str = "";
+			str += "<div style='display:none'>Specific Table Group View</div>";
 
 			var tableExistingVersions;
 
@@ -7536,6 +7552,7 @@
 		//		To prevent insanity, track the loaded tables as also modified tables!
 		//	Also, at this point must not allow random active tables, which could happen during editing (i.e. must reactivate the Configure Group).
 		function setupTableGroupTreeView(tableGroupName, tableGroupKey, backLinkStr) {
+			navHistoryPush();
 			editCellCancel();
 
 			if (backLinkStr && backLinkStr != "")
@@ -8119,6 +8136,7 @@
 		//==============================================================================
 		//setupGroupCreator ~
 		function setupGroupCreator(preSelectStr) {
+			navHistoryPush();
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables",
@@ -11576,6 +11594,16 @@
 					if (e.preventDefault)
 						e.preventDefault();
 					return false;
+				}
+				else if (e.keyCode == 8 && !_editingCellEl)
+				{
+					if (navigateBack())
+					{
+						e.stopImmediatePropagation();
+						if (e.preventDefault)
+							e.preventDefault();
+						return false;
+					}
 				}
 			}
 			//else no handler, so allow infrastructure DesktopContent/Debug action
@@ -19719,6 +19747,79 @@
 			Debug.log("evaluateJS = " + str);
 			eval(str);
 		} //end evaluateJS()
+
+		//==============================================================================
+		//navHistoryPush ~~
+		//	detects the current view from the DOM and pushes its
+		//	reconstruct string onto the history stack
+		function navHistoryPush() {
+			if (_navHistoryPushDisabled) return;
+			var displayEl = document.getElementById("display");
+			if (!displayEl || !displayEl.children[0]) return;
+			var viewTag = displayEl.children[0].textContent;
+			var navStr = "";
+
+			if (viewTag == "System View")
+				navStr = "setupSystemViewMode();";
+			else if (viewTag == "Group View")
+				navStr = "setupGroupViewMode();";
+			else if (viewTag == "Table View")
+				navStr = "setupTableViewMode();";
+			else if (viewTag == "Specific Table View")
+				navStr = "setupSpecificTable(\"" + _currentTableName +
+					"\",\"" + _version + "\",\"" +
+					(_tableViewBackLinkStr ?
+						_tableViewBackLinkStr.replace(/"/g, "\\\"") : "") +
+					"\");";
+			else {
+				var treeViewEl = document.getElementById("treeView-ConfigGroupLink");
+				if (treeViewEl)
+					navStr = "setupTableGroupTreeView(\"" +
+						treeGroupName_ + "\",\"" +
+						treeGroupKey_ + "\",\"" +
+						(treeViewBackLinkStr_ ?
+							treeViewBackLinkStr_.replace(/"/g, "\\\"") : "") +
+						"\");";
+			}
+
+			if (!navStr || navStr == "") {
+				var links = displayEl.getElementsByTagName("a");
+				for (var i = 0; i < links.length; ++i) {
+					if (links[i].textContent == "Refresh") {
+						var onclick = links[i].getAttribute("onclick");
+						if (onclick) {
+							var endIdx = onclick.indexOf("; return false;");
+							if (endIdx < 0) endIdx = onclick.indexOf(";return false;");
+							navStr = endIdx >= 0 ? onclick.substring(0, endIdx + 1) : onclick;
+						}
+						break;
+					}
+				}
+			}
+
+			if (!navStr || navStr == "") return;
+			if (_navHistory.length > 0 &&
+				_navHistory[_navHistory.length - 1] == navStr) return;
+			_navHistory.push(navStr);
+			Debug.log("navHistoryPush depth=" + _navHistory.length +
+				" pushed=" + navStr);
+		} //end navHistoryPush()
+
+		//navigateBack ~~
+		//	pops the navigation history and restores the previous view
+		//	used by mouse back button and Backspace key
+		function navigateBack() {
+			if (_navHistory.length > 0) {
+				var navStr = _navHistory.pop();
+				Debug.log("navigateBack depth=" + _navHistory.length +
+					" restoring=" + navStr);
+				_navHistoryPushDisabled = true;
+				evaluateJS(navStr);
+				_navHistoryPushDisabled = false;
+				return true;
+			}
+			return false;
+		} //end navigateBack()
 
 		//==============================================================================
 		//createEditTableMenu ~~
