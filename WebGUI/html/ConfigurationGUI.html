@@ -11597,6 +11597,9 @@
 				}
 				else if (e.keyCode == 8 && !_editingCellEl)
 				{
+					var t = e.target;
+					if (t && (t.tagName == "INPUT" || t.tagName == "TEXTAREA" || t.isContentEditable))
+						return;
 					if (navigateBack())
 					{
 						e.stopImmediatePropagation();
