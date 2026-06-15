@@ -1014,10 +1014,10 @@
 			}
 
 			var el = document.getElementById("display");
-			el.innerHTML = "Loading...";
 
 			navHistoryPush();
 
+			el.innerHTML = "Loading...";
 			//get history for this group type
 			DesktopContent.XMLHttpRequest("Request?RequestType=getGroupHistory&groupAction=" +
 				groupAction + "&groupType=" +
