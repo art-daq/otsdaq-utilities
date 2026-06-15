@@ -19769,7 +19769,7 @@
 				navStr = "setupSpecificTable(\"" + _currentTableName +
 					"\",\"" + _version + "\",\"" +
 					(_tableViewBackLinkStr ?
-						_tableViewBackLinkStr.replace(/"/g, "\\\"") : "") +
+						_tableViewBackLinkStr.replace(/[\\"]/g, "\\$&") : "") +
 					"\");";
 			else {
 				var treeViewEl = document.getElementById("treeView-ConfigGroupLink");
@@ -19778,7 +19778,7 @@
 						treeGroupName_ + "\",\"" +
 						treeGroupKey_ + "\",\"" +
 						(treeViewBackLinkStr_ ?
-							treeViewBackLinkStr_.replace(/"/g, "\\\"") : "") +
+							treeViewBackLinkStr_.replace(/[\\"]/g, "\\$&") : "") +
 						"\");";
 			}
 
