@@ -1727,7 +1727,7 @@
 						str += "<a href='#' onclick='setupTableGroupTreeView(\"" +
 							_activeTableGroups[i * 2] +
 							"\",\"" +
-							_activeTableGroups[i * 2 + 1] + "\"); return false;' " +
+							_activeTableGroups[i * 2 + 1] + "\",\"" + backLinkStr + "\"); return false;' " +
 							"title='Open the tree-view for " + _activeTableGroups[i * 2] +
 							"(" + _activeTableGroups[i * 2 + 1] + ")'" +
 							">Tree-view</a>";
@@ -1838,7 +1838,7 @@
 							str += "<a href='#' onclick='setupTableGroupTreeView(\"" +
 								_lastTableGroups[i] +
 								"\",\"" +
-								_lastTableGroups[i + 1] + "\"); return false;' " +
+								_lastTableGroups[i + 1] + "\",\"" + backLinkStr + "\"); return false;' " +
 								"title='Open the tree-view for " + _lastTableGroups[i] +
 								"(" + _lastTableGroups[i + 1] + ")'" +
 								">Tree-view</a>";
@@ -2133,7 +2133,7 @@
 							str += "<a href='#' onclick='setupTableGroupTreeView(\"" +
 								subsystemActiveTableGroups[i * 2] +
 								"\",\"" +
-								subsystemActiveTableGroups[i * 2 + 1] + "\"); return false;' " +
+								subsystemActiveTableGroups[i * 2 + 1] + "\",\"" + backLinkStr + "\"); return false;' " +
 								"title='Open the tree-view for " + subsystemActiveTableGroups[i * 2] +
 								"(" + subsystemActiveTableGroups[i * 2 + 1] + ")'" +
 								">Tree-view</a>";
@@ -2229,7 +2229,7 @@
 								str += "<a href='#' onclick='setupTableGroupTreeView(\"" +
 									subsystemLastTableGroups[i] +
 									"\",\"" +
-									subsystemLastTableGroups[i + 1] + "\"); return false;' " +
+									subsystemLastTableGroups[i + 1] + "\",\"" + backLinkStr + "\"); return false;' " +
 									"title='Open the tree-view for " + subsystemLastTableGroups[i] +
 									"(" + subsystemLastTableGroups[i + 1] + ")'" +
 									">Tree-view</a>";
@@ -5020,8 +5020,8 @@
 						treeViewBackLinkStr_ = treeViewBackLinkStr_.replace(/"/g, "\\\"");
 					Debug.log("Back-link = " + treeViewBackLinkStr_);
 
-					treeViewHandlerStr_ += "<a onclick='evaluateJS(\"" + treeViewBackLinkStr_ +
-						"\"); return false;'>Back</a>";
+					treeViewHandlerStr_ += "<a style='cursor:pointer' onclick='evaluateJS(\"" + treeViewBackLinkStr_ +
+						"\")'>Back</a>";
 					treeViewHandlerStr_ += "&nbsp;&nbsp;&nbsp;&nbsp;";
 				}
 
@@ -11518,6 +11518,19 @@
 					event.stopImmediatePropagation(); // Prevents further listeners on the same element
 					if (e.preventDefault)
 						e.preventDefault();
+				}
+				else if (e.keyCode == 8) //BACKSPACE in tree-view: navigate back
+				{
+					var t = e.target;
+					if (t && (t.tagName == "INPUT" || t.tagName == "TEXTAREA" || t.isContentEditable))
+						return;
+					if (navigateBack())
+					{
+						event.stopImmediatePropagation();
+						if (e.preventDefault)
+							e.preventDefault();
+						return false;
+					}
 				}
 			}
 			else if ((e.key == "ArrowLeft" || e.key == "ArrowRight") &&
