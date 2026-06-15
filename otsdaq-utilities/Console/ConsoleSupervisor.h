@@ -211,6 +211,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			for(auto& triggeredAction : priorityCustomTriggerList)
 			{
 				if(getLabel() == "Console") break; ///<Note: to avoid recursive triggers, Label=Console can not trigger
+				if(getMsg().find(__SYSTEM_ALERT_PREAMBLE__) == 0) break; ///<Note: to avoid recursive triggers from addSystemMessage __COUT_INFO__ log
 
 				size_t pos = 0;
 				bool foundAll = false;
