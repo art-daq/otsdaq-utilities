@@ -19817,8 +19817,12 @@
 				Debug.log("navigateBack depth=" + _navHistory.length +
 					" restoring=" + navStr);
 				_navHistoryPushDisabled = true;
-				evaluateJS(navStr);
-				_navHistoryPushDisabled = false;
+				try {
+					evaluateJS(navStr);
+				}
+				finally {
+					_navHistoryPushDisabled = false;
+				}
 				return true;
 			}
 			return false;
