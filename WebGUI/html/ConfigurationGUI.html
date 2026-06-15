@@ -19769,20 +19769,19 @@
 			else if (viewTag == "Table View")
 				navStr = "setupTableViewMode();";
 			else if (viewTag == "Specific Table View")
-				navStr = "setupSpecificTable(\"" + _currentTableName +
-					"\",\"" + _version + "\",\"" +
-					(_tableViewBackLinkStr ?
-						_tableViewBackLinkStr.replace(/[\\"]/g, "\\$&") : "") +
-					"\");";
+				navStr = "setupSpecificTable(" +
+					JSON.stringify(_currentTableName) + "," +
+					JSON.stringify("" + _version) + "," +
+					JSON.stringify(_tableViewBackLinkStr || "") +
+					");";
 			else {
 				var treeViewEl = document.getElementById("treeView-ConfigGroupLink");
 				if (treeViewEl)
-					navStr = "setupTableGroupTreeView(\"" +
-						treeGroupName_ + "\",\"" +
-						treeGroupKey_ + "\",\"" +
-						(treeViewBackLinkStr_ ?
-							treeViewBackLinkStr_.replace(/[\\"]/g, "\\$&") : "") +
-						"\");";
+					navStr = "setupTableGroupTreeView(" +
+						JSON.stringify(treeGroupName_) + "," +
+						JSON.stringify("" + treeGroupKey_) + "," +
+						JSON.stringify(treeViewBackLinkStr_ || "") +
+						");";
 			}
 
 			if (!navStr || navStr == "") {
