@@ -1239,12 +1239,13 @@
 
 		//==============================================================================
 		//setupTableViewMode ~
-		function setupTableViewMode(anchorTarget) {
+		function setupTableViewMode(anchorTarget, refreshVersions) {
 			editCellCancel();
 
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			var requestStr = "Request?RequestType=getTables";
+			var requestStr = "Request?RequestType=getTables" +
+				(refreshVersions ? "&refresh=1" : "");
 
 			// recalculate time window from the stored preset so relative
 			//	presets ("Last 5 Minutes", etc.) are always relative to now
@@ -1334,7 +1335,22 @@
 		} //end unixTimeToDateInputValue()
 
 		//==============================================================================
-		function tableViewFilterRequest(anchorTarget) {
+		function filterTableViewByName() {
+			var input = document.getElementById("tableViewSearchInput");
+			if (!input) return;
+			var filter = input.value.toLowerCase();
+			var table = document.getElementById("tableViewTable");
+			if (!table) return;
+			var tbody = table.tBodies[0] || table;
+			var rows = tbody.children;
+			for (var i = 0; i < rows.length; ++i) {
+				var name = rows[i].getAttribute("data-tablename") || "";
+				rows[i].style.display = name.indexOf(filter) >= 0 ? "" : "none";
+			}
+		} //end filterTableViewByName()
+
+		//==============================================================================
+		function tableViewFilterRequest(anchorTarget, refreshVersions) {
 			editCellCancel();
 
 			var selectedOption = document.getElementById("tableViewDateFilterPreset").value;
@@ -1395,7 +1411,7 @@
 				var keepFilterMode = _tableViewSelectedFilterMode;
 				resetTableViewParams();
 				_tableViewSelectedFilterMode = keepFilterMode; //preserve user's Created/Loaded choice
-				setupTableViewMode(anchorTarget);
+				setupTableViewMode(anchorTarget, refreshVersions);
 				return;
 			}
 			else {
@@ -1412,6 +1428,7 @@
 				"time filtering, it may take a while to populate the time cache " +
 				"(e.g. &gt;1 minute).</label>";
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
+								(refreshVersions ? "&refresh=1" : "") +
 								"&startTime=" + selectedStartTime +
 								"&endTime=" + selectedEndTime +
 								"&filterMode=" + _tableViewSelectedFilterMode,
@@ -2821,7 +2838,7 @@
 				"if(p){p.value=\"\";tableViewFilterRequest();} return false;'>Show All</a>" +
 				" | " +
 				"<a href='#' style='font-size:14px; font-weight:normal;' " +
-				"onclick='tableViewFilterRequest(); return false;'>Refresh</a>" +
+				"onclick='tableViewFilterRequest(undefined, true); return false;'>Refresh</a>" +
 				"</h3>";
 
 			function toLocalDateInputValue(d) {
@@ -2836,7 +2853,7 @@
 			yesterday.setDate(today.getDate() - 1);
 			var dateYesterday = toLocalDateInputValue(yesterday);
 			str += "<div id='tableSearchDiv' ";
-			str += "style='margin-top:-20px; height:50px; white-space:nowrap;'";
+			str += "style='margin-top:-20px; white-space:nowrap;'";
 			str += ">";
 			str += "Show versions: ";
 			str += "<select id='tableViewDateFilterMode' onchange='handleTableViewFilterModeChange();'>";
@@ -2869,10 +2886,13 @@
 			}
 			str += "</div>";
 
-			//			str += "<div id='tableSearchDiv' ";
-			//			str += "style='margin-top:-20px; height:200px; width:450px;'";
-			//			str += ">";
-			//			str += "</div>";
+			str += "<div style='margin-top:5px;'>";
+			str += "Search: <input type='text' id='tableViewSearchInput' " +
+				"placeholder='Filter table names...' " +
+				"style='width:300px;' " +
+				"autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false' " +
+				"oninput='filterTableViewByName();' />";
+			str += "</div>";
 
 			str += "<div id='clearDiv'></div>";
 
@@ -2881,8 +2901,8 @@
 
 			str += "<table id='tableViewTable'>";
 			for (var i = 0; i < tableNames.length; ++i) {
-				str += "<tr><td>";
 				tableName = tableNames[i].getAttribute("value");
+				str += "<tr data-tablename='" + tableName.toLowerCase() + "'><td>";
 
 				backLinkStr = "setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");";
 
@@ -8118,10 +8138,11 @@
 
 		//==============================================================================
 		//setupGroupCreator ~
-		function setupGroupCreator(preSelectStr) {
+		function setupGroupCreator(preSelectStr, refreshVersions) {
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			DesktopContent.XMLHttpRequest("Request?RequestType=getTables",
+			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
+				(refreshVersions ? "&refresh=1" : ""),
 				"", setupGroupCreatorHandler, preSelectStr,
 				0, true  //progressHandler, callHandlerOnErr
 			);
@@ -8167,7 +8188,7 @@
 			}
 
 			var refreshLinkStr = "setupGroupCreator(\"" +
-				preSelectStr + "&backLinkStr=" + backLinkStr + "\");";
+				preSelectStr + "&backLinkStr=" + backLinkStr + "\", true);";
 			str += "<a href='#' onclick='" + refreshLinkStr +
 				"; _cachedGroupComment=\"" + _cachedGroupComment + "\"; return false;'>Refresh</a>";
 			str += "<br>";
