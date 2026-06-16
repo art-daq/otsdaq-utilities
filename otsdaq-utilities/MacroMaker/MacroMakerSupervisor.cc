@@ -3606,6 +3606,8 @@ try
 	         << " tasks=" << group->tasks_.size() << __E__;
 
 	std::size_t maxThreads = StringMacros::getConcurrencyCount();
+	if(maxThreads == 0)
+		maxThreads = 4;
 	if(maxThreads > group->tasks_.size())
 		maxThreads = group->tasks_.size();
 
