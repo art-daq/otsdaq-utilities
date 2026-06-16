@@ -3605,9 +3605,7 @@ try
 	__COUT__ << "FE macro group scheduler started. groupID=" << group->groupID_
 	         << " tasks=" << group->tasks_.size() << __E__;
 
-	std::size_t maxThreads = std::thread::hardware_concurrency();
-	if(maxThreads == 0)
-		maxThreads = 4;
+	std::size_t maxThreads = StringMacros::getConcurrencyCount();
 	if(maxThreads > group->tasks_.size())
 		maxThreads = group->tasks_.size();
 

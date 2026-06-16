@@ -7525,8 +7525,8 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(groupAliasesTableName).getChildren();
 
-	const int numOfThreads = ConfigurationManager::PROCESSOR_COUNT / 2;
-	__SUP_COUT__ << " PROCESSOR_COUNT " << ConfigurationManager::PROCESSOR_COUNT
+	const int numOfThreads = StringMacros::getConcurrencyCount() / 2;
+	__SUP_COUT__ << " getConcurrencyCount " << StringMacros::getConcurrencyCount()
 	             << " ==> " << numOfThreads << " threads for alias group loads." << __E__;
 
 	if(numOfThreads < 2)  // no multi-threading
