@@ -6691,6 +6691,8 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 	std::vector<std::string> columnData =
 	    StringMacros::getVectorFromString(data, {';'} /*delimiter*/);
 
+	std::set<std::string> childLinkIndices, childLinkUIDIndices, childLinkGroupIDIndices;
+
 	for(unsigned int c = 0; c < columnData.size() - 1; ++c)
 	{
 		columnParameters =
@@ -6819,8 +6821,53 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 			__SS_THROW__;
 		}
 
+		if(TableViewColumnInfo::isChildLink(columnType))
+			childLinkIndices.insert(columnType.substr(sizeof("ChildLink-") - 1));
+		else if(columnType.find("ChildLinkUID-") == 0)
+			childLinkUIDIndices.insert(columnType.substr(sizeof("ChildLinkUID-") - 1));
+		else if(columnType.find("ChildLinkGroupID-") == 0)
+			childLinkGroupIDIndices.insert(
+			    columnType.substr(sizeof("ChildLinkGroupID-") - 1));
+
 		outss << "\"/>\n";
 	}
+
+	// Cross-column validation: every ChildLinkUID and ChildLinkGroupID must
+	//	have a matching ChildLink with the same index.
+	for(const auto& idx : childLinkUIDIndices)
+		if(childLinkIndices.find(idx) == childLinkIndices.end())
+		{
+			__SS__ << "Column type 'ChildLinkUID-" << idx
+			       << "' has no matching 'ChildLink-" << idx
+			       << "' column. A ChildLinkUID column must be paired with a "
+			          "ChildLink column using the same link index."
+			       << __E__;
+			__SS_THROW__;
+		}
+	for(const auto& idx : childLinkGroupIDIndices)
+		if(childLinkIndices.find(idx) == childLinkIndices.end())
+		{
+			__SS__ << "Column type 'ChildLinkGroupID-" << idx
+			       << "' has no matching 'ChildLink-" << idx
+			       << "' column. A ChildLinkGroupID column must be paired with a "
+			          "ChildLink column using the same link index. "
+			          "Did you intend to make a target of a Group Link? "
+			          "If so, use the 'GroupID' column type instead."
+			       << __E__;
+			__SS_THROW__;
+		}
+	for(const auto& idx : childLinkIndices)
+		if(childLinkUIDIndices.find(idx) == childLinkUIDIndices.end() &&
+		   childLinkGroupIDIndices.find(idx) == childLinkGroupIDIndices.end())
+		{
+			__SS__ << "Column type 'ChildLink-" << idx
+			       << "' has no matching 'ChildLinkUID-" << idx
+			       << "' or 'ChildLinkGroupID-" << idx
+			       << "' column. A ChildLink column must be paired with either a "
+			          "ChildLinkUID or ChildLinkGroupID column using the same link index."
+			       << __E__;
+			__SS_THROW__;
+		}
 
 	outss << "\t\t\t</VIEW>\n";
 	outss << "\t\t</TABLE>\n";
@@ -7525,8 +7572,8 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(groupAliasesTableName).getChildren();
 
-	const int numOfThreads = ConfigurationManager::PROCESSOR_COUNT / 2;
-	__SUP_COUT__ << " PROCESSOR_COUNT " << ConfigurationManager::PROCESSOR_COUNT
+	const int numOfThreads = StringMacros::getConcurrencyCount() / 2;
+	__SUP_COUT__ << " getConcurrencyCount " << StringMacros::getConcurrencyCount()
 	             << " ==> " << numOfThreads << " threads for alias group loads." << __E__;
 
 	if(numOfThreads < 2)  // no multi-threading
