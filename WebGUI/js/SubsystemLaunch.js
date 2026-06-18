@@ -22,6 +22,7 @@
 
 
 var SubsystemLaunch = SubsystemLaunch || {}; //define SubsystemLaunch namespace
+SubsystemLaunch._pendingWriteToEcl = false;
 
 if (typeof Debug == 'undefined')
 	throw('ERROR: Debug is undefined! Must include Debug.js before SubsystemLaunch.js');
@@ -1628,7 +1629,7 @@ SubsystemLaunch.create = function() {
 		if (isFormControl) {
 			label.setAttribute('for', 'fsm-dropdown');
 		}
-		label.textContent = 'FSM:';
+		label.textContent = 'Run Type:';
 		label.style.cssText = 'float: left; margin: 3px 0 0 0;';
 		dropdownContainer.appendChild(label);
 
@@ -2719,17 +2720,25 @@ SubsystemLaunch.create = function() {
 				if(lastLogEntry && lastLogEntry != "")
 					lastLogEntry = decodeURIComponent(lastLogEntry);
 
+				var writeToEcl = false; // updated by checkbox onchange before popup is cleared
+				SubsystemLaunch._pendingWriteToEcl = false; // reset each time popup opens
+
 				DesktopContent.popUpVerification(
 					/* prompt */
-					"Please enter a logbook entry summarizing the run:"
+					"Please enter a logbook entry summarizing the run:" +
+					"<br><br><label style='cursor:pointer;'><input type='checkbox' " +
+					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>"
 					,
 					/* continueFunc [optional] */
 					function (entry) {
 						Debug.log("User entered logbook entry " + entry);
 
+						var writeToEcl = SubsystemLaunch._pendingWriteToEcl || false;
+						Debug.log("writeToEcl = " + writeToEcl);
+
 						//save last entry
 						lastLogEntry = entry;
-						localStop(entry);
+						localStop(entry, writeToEcl);
 					} //end continueFunc handlere
 					,
 					/* val [optional] */ undefined,
@@ -2758,7 +2767,7 @@ SubsystemLaunch.create = function() {
 
 
 		//===========
-		function localStop(logEntry) {
+		function localStop(logEntry, writeToEcl) {
 			Debug.log("localStop()");
 			Debug.logv({logEntry});
 
@@ -2776,7 +2785,8 @@ SubsystemLaunch.create = function() {
 			DesktopContent.XMLHttpRequest("StateMachineXgiHandler?" +
 						"&fsmName=" + _fsmName +
 						"&StateMachine=Stop", //end get data
-						"logEntry=" + encodeURIComponent(logEntry), //end post data
+						"logEntry=" + encodeURIComponent(logEntry) +
+						"&writeToEcl=" + (writeToEcl ? "1" : "0"), //end post data
 					function(req) //start handler
 					{
 				Debug.log("stop() FSM handler");

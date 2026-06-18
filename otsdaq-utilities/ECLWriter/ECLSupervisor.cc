@@ -1048,11 +1048,13 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 {
 	SOAPParameters parameters("EntryText");
 	parameters.addParameter("SubjectText");
+	parameters.addParameter("SkipFooter");
 	SOAPUtilities::receive(msg, parameters);
 	std::string EntryText =
 	    StringMacros::decodeURIComponent(parameters.getValue("EntryText"));
 	std::string SubjectText =
 	    StringMacros::decodeURIComponent(parameters.getValue("SubjectText"));
+	bool skipFooter = parameters.getValue("SkipFooter") == "1";
 
 	__COUT__ << "Received External Supervisor System Entry " << EntryText << std::endl;
 	__COUTV__(SubjectText);
@@ -1087,15 +1089,22 @@ xoap::MessageReference ECLSupervisor::MakeSystemLogEntry(xoap::MessageReference 
 
 	{
 		std::stringstream ss;
-		ss << "Message: " << __E__ << EntryText << __E__ << __E__;
-		ss << "This was a System Generated Log Entry from '" << CategoryName_
-		   << "' at host '" << __ENV__("THIS_HOST") << "'" << __E__;
-		ss << "Active ots users: " << users << __E__;
-		ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
-		ss << "Uptime: "
-		   << StringMacros::getTimeDurationString(
-		          CorePropertySupervisorBase::getSupervisorUptime())
-		   << __E__;
+		if(skipFooter)
+		{
+			ss << EntryText;
+		}
+		else
+		{
+			ss << "Message: " << __E__ << EntryText << __E__ << __E__;
+			ss << "This was a System Generated Log Entry from '" << CategoryName_
+			   << "' at host '" << __ENV__("THIS_HOST") << "'" << __E__;
+			ss << "Active ots users: " << users << __E__;
+			ss << "USER_DATA: " << __ENV__("USER_DATA") << __E__;
+			ss << "Uptime: "
+			   << StringMacros::getTimeDurationString(
+			          CorePropertySupervisorBase::getSupervisorUptime())
+			   << __E__;
+		}
 		field = Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
 		                "text");
 		fields.push_back(field);
