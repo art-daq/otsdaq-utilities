@@ -663,7 +663,7 @@ function displayTable(appsArray) {
 				else if (columnKeys[j] == "detail") {
 					var tmpDetail = decodeURIComponent(appsArray[i][columnKeys[j]]);
 					cell.innerHTML = "<div class='detail_scroll' id='detail_" +
-						appsArray[i].name + "'>" + tmpDetail + "</div>";
+						appsArray[i].context + "_" + appsArray[i].name + "'>" + tmpDetail + "</div>";
 					cell.title = "Click to copy text";
 					cell.onclick = function() { copyText(this); };
 				}
@@ -810,7 +810,7 @@ function displayTable(appsArray) {
 					else if (columnKeys[j] == "detail") {
 						var tmpDetail = decodeURIComponent(subappInfo[columnKeys[j]]);
 						cell.innerHTML = "<div class='detail_scroll' id='detail_" +
-							subappInfo.name + "'>" + tmpDetail + "</div>";
+							appsArray[i].context + "_" + subappInfo.name + "'>" + tmpDetail + "</div>";
 						cell.title = "Click to copy text";
 						cell.onclick = function() { copyText(this); };
 					}
