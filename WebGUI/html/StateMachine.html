@@ -932,7 +932,7 @@
 		} //end handleTransitionParameterChange()
 
 		function fetchGlobalFieldsForAlias(alias) {
-			if(!alias) { _globalFieldsString = ""; return; }
+			if(!alias) { _globalFieldsString = ""; redrawPhysics(); return; }
 			DesktopContent.XMLHttpRequest("Request?RequestType=getAliasGlobalFields" +
 					"&configAlias=" + encodeURIComponent(alias),
 					"",
