@@ -6827,7 +6827,7 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 			childLinkUIDIndices.insert(columnType.substr(sizeof("ChildLinkUID-") - 1));
 		else if(columnType.find("ChildLinkGroupID-") == 0)
 			childLinkGroupIDIndices.insert(
-			    columnType.substr(strlen("ChildLinkGroupID-")));
+			    columnType.substr(sizeof("ChildLinkGroupID-") - 1));
 
 		outss << "\"/>\n";
 	}
