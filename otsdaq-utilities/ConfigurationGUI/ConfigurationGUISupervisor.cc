@@ -6822,12 +6822,12 @@ void ConfigurationGUISupervisor::handleSaveTableInfoXML(
 		}
 
 		if(TableViewColumnInfo::isChildLink(columnType))
-			childLinkIndices.insert(columnType.substr(strlen("ChildLink-")));
+			childLinkIndices.insert(columnType.substr(sizeof("ChildLink-") - 1));
 		else if(columnType.find("ChildLinkUID-") == 0)
-			childLinkUIDIndices.insert(columnType.substr(strlen("ChildLinkUID-")));
+			childLinkUIDIndices.insert(columnType.substr(sizeof("ChildLinkUID-") - 1));
 		else if(columnType.find("ChildLinkGroupID-") == 0)
 			childLinkGroupIDIndices.insert(
-			    columnType.substr(strlen("ChildLinkGroupID-")));
+			    columnType.substr(sizeof("ChildLinkGroupID-") - 1));
 
 		outss << "\"/>\n";
 	}
