@@ -1758,6 +1758,11 @@ SubsystemLaunch.create = function() {
 	this.handleSystemConfigAliasSelect = function (value) {
 		Debug.log("handleSystemConfigAliasSelect()", value);
 		SubsystemLaunch.system.selectedSystemAlias = value;
+		if(!value) {
+			var el = document.getElementById("systemConfigAliasGlobalFields");
+			if(el) el.innerText = "";
+			return;
+		}
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=getAliasGlobalFields" +
 				"&configAlias=" + encodeURIComponent(value),
