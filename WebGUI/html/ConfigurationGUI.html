@@ -5762,7 +5762,7 @@
 						for (var j = 1; j < choices.length; ++j) //skip the first DEFAULT param
 							bmpParams.push(choices[j].getAttribute("value"));
 
-						treeViewHandlerStr_ += createBmpString(value, bmpParams);
+						treeViewHandlerStr_ += "<div style='margin-top:6px'>" + createBmpString(value, bmpParams) + "</div>";
 					}
 					else
 						treeViewHandlerStr_ += value;
