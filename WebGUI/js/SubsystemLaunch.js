@@ -76,6 +76,7 @@ SubsystemLaunch.create = function() {
 	//
 	//		'public' member functions: -------
 	//	this.handleSubsystemActionSelect(el, subsystemIndex)
+	//	this.handleSystemConfigAliasSelect(value)
 	//	this.handleSubsystemConfigAliasSelect(value, subsystemIndex)
 	//	this.getSubsystemConfigAliasSelectInfo(subsystemIndex)
 	//	this.bootSubsystem(subsystemIndex)
@@ -862,6 +863,14 @@ SubsystemLaunch.create = function() {
 				span.innerText = "\nSubsystemCommonOverride tables: " + SubsystemLaunch.system.subsystemCommonOverrideList;
 				parentTd.appendChild(span);
 			}
+			{
+				var span = document.createElement('span');
+				span.id = 'systemConfigAliasGlobalFields';
+				parentTd.appendChild(span);
+			}
+			if(SubsystemLaunch.system.selectedSystemAlias)
+				SubsystemLaunch.launcher.handleSystemConfigAliasSelect(
+					SubsystemLaunch.system.selectedSystemAlias);
 		}
 
 		displayStatus(); //fill elements with data
@@ -1744,6 +1753,26 @@ SubsystemLaunch.create = function() {
 		); //end setRemoteSubsystemFsmControl request
 
 	}	//end handleSubsystemConfigAliasSelect()
+
+	//=====================================================================================
+	this.handleSystemConfigAliasSelect = function (value) {
+		Debug.log("handleSystemConfigAliasSelect()", value);
+		SubsystemLaunch.system.selectedSystemAlias = value;
+
+		DesktopContent.XMLHttpRequest("Request?RequestType=getAliasGlobalFields" +
+				"&configAlias=" + encodeURIComponent(value),
+				"",
+			function (req) {
+					var globalFieldsStr = DesktopContent.getXMLValue(req, "global_fields_string");
+					var el = document.getElementById('systemConfigAliasGlobalFields');
+					if(el)
+						el.innerText = globalFieldsStr || "";
+				},
+				0, 0, false,
+				true,
+				true
+		);
+	}	//end handleSystemConfigAliasSelect()
 
 	//=====================================================================================
 	this.getSubsystemConfigAliasSelectInfo = function (subsystemIndex) {

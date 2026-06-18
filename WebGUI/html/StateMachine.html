@@ -371,6 +371,7 @@
 
 		var _aliasTranslationMap = []; //e.g. _aliasTranslationMap["Physics"] => config_v2
 		var _aliasTranslationMetaDataMap = []; //e.g. _aliasTranslationMap["Physics"] => [comment,author,createTime]
+		var _globalFieldsString = "";
 
 
 		var _currState, _prevState;
@@ -894,6 +895,8 @@
 				//Debug.log("Physics _transParamsHtmlStr " + _transParamsHtmlStr);
 				_parameterSetup.innerHTML = _transParamsHtmlStr;
 				_parameterSetup.style.display = "block";
+				if(_transitionParameterValues[0])
+					fetchGlobalFieldsForAlias(_transitionParameterValues[0]);
 				return; //done
 			}
 
@@ -920,12 +923,28 @@
 					Debug.log("handleTransitionParameterChange ConfigurationAlias " +
 						el.options[el.selectedIndex].value);
 					_transitionParameterValues[paramIndex] = el.options[el.selectedIndex].value;
+					fetchGlobalFieldsForAlias(_transitionParameterValues[paramIndex]);
 					break;
 				default:
 					Debug.log("handleTransitionParameterChange UNKNOWN?!");
 			}
 
 		} //end handleTransitionParameterChange()
+
+		function fetchGlobalFieldsForAlias(alias) {
+			if(!alias) { _globalFieldsString = ""; return; }
+			DesktopContent.XMLHttpRequest("Request?RequestType=getAliasGlobalFields" +
+					"&configAlias=" + encodeURIComponent(alias),
+					"",
+				function (req) {
+						_globalFieldsString = DesktopContent.getXMLValue(req, "global_fields_string") || "";
+						redrawPhysics();
+					},
+					0, 0, false,
+					true,
+					true
+			);
+		} //end fetchGlobalFieldsForAlias()
 
 		//=====================================================================================
 		//smRequestHandler
@@ -2201,6 +2220,14 @@
 								_context.fillText("   " +
 									"Group Comment: '" + metaValue.substr(0, 30) +
 									(metaValue.length > 30 ? "..." : "") + "'",
+									x, y);
+							}
+
+							if (_globalFieldsString) {
+								_context.font = '10pt Donegal One';
+								y += f - 4;
+								_context.fillText("   " +
+									"Global Fields:" + _globalFieldsString,
 									x, y);
 							}
 
