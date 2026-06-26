@@ -3757,8 +3757,14 @@
 				el.innerHTML = str;
 				return;
 			}
-			var rows = req.responseXML.getElementsByTagName(
-				"CurrentVersionRows")[0].getElementsByTagName("Row");
+			var colCSVEls = req.responseXML.getElementsByTagName(
+				"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+			var colArrays = [];
+			for (var ci = 0; ci < colCSVEls.length; ++ci) {
+				var csvVal = colCSVEls[ci].getAttribute("value");
+				colArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+			}
+			var numDataRows = colArrays.length ? colArrays[0].length : 0;
 
 			var colHdrs = req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnHeader");
 			var colTypeEls = req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnType");
@@ -3806,7 +3812,7 @@
 			_editingCell = false;
 			_editingCellEl = 0;
 			_versionIsChanged = false;
-			_dataOffset = rows.length ? (rows[0].getAttribute("value") | 0) : 0;
+			_dataOffset = 0;
 
 			var str = "";
 			str += "<div style='display:none'>Specific Table View</div>"; //Note: this is children[0] tag is used in some place to determine mode after a series of events
@@ -3991,7 +3997,7 @@
 			// store version nav info for arrow key handler
 			window._specificTableVersionNav = {
 				tableName: tableName,
-				backLinkStr: backLinkStr,
+				backLinkStr: _tableViewBackLinkStr,
 				allVersions: _specificTableAllVersions,
 				currentVersion: version | 0
 			};
@@ -4120,16 +4126,13 @@
 
 				//add data
 				{
-					var rowEntries;
-					for (var r = 0; r < rows.length; ++r) {
-						rowEntries = rows[r].getElementsByTagName("Entry");
-
+					for (var r = 0; r < numDataRows; ++r) {
 						cols.push([]);
 						for (var c = 0; c < _CONFIG_DATA_COL_OFFSET; ++c)
 							cols[cols.length - 1].push("");
 
 						for (var c = 0; c < colHdrs.length; ++c)
-							cols[cols.length - 1].push(rowEntries[c].getAttribute("value"));
+							cols[cols.length - 1].push(colArrays[c][r]);
 					}
 				}
 
@@ -16537,20 +16540,23 @@
 
 										var dataStr = "data:text/csv;charset=utf-8,";
 										try {
-											var rows = req.responseXML.getElementsByTagName(
-												"CurrentVersionRows")[0].getElementsByTagName("Row");
+											var colCSVEls = req.responseXML.getElementsByTagName(
+												"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+											var dlColArrays = [];
+											for (var ci = 0; ci < colCSVEls.length; ++ci) {
+												var csvVal = colCSVEls[ci].getAttribute("value");
+												dlColArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+											}
+											var dlNumRows = dlColArrays.length ? dlColArrays[0].length : 0;
 
-											var rowEntries;
-											for (var r = 0; r < rows.length; ++r) {
+											for (var r = 0; r < dlNumRows; ++r) {
 												if (r)
 													dataStr += encodeURI(rowDel); //encoded \n
 
-												rowEntries = rows[r].getElementsByTagName("Entry");
-
-												for (var c = 0; c < rowEntries.length; ++c) {
+												for (var c = 0; c < dlColArrays.length; ++c) {
 													if (c)
 														dataStr += encodeURI(colDel);
-													dataStr += encodeURIComponent(rowEntries[c].getAttribute("value").
+													dataStr += encodeURIComponent(dlColArrays[c][r].
 														replace(new RegExp(rowDel, 'g'), "${OTS_RECORD_DELIMETER}").
 														replace(new RegExp(colDel, 'g'), "${OTS_FIELD_DELIMETER}"));
 												}
@@ -16782,20 +16788,20 @@
 											tableName + "-v" + _memberMapForGroupSave[tableName] + "'...");
 										return;
 									}
-									var rows = req.responseXML.getElementsByTagName(
-										"CurrentVersionRows")[0].getElementsByTagName("Row");
+									var ucColCSVEls = req.responseXML.getElementsByTagName(
+										"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+									var ucColArrays = [];
+									for (var ci = 0; ci < ucColCSVEls.length; ++ci) {
+										var csvVal = ucColCSVEls[ci].getAttribute("value");
+										ucColArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+									}
+									var ucNumRows = ucColArrays.length ? ucColArrays[0].length : 0;
 
 									var currCols = [];
-									//add data to cols
-									{
-										var rowEntries;
-										for (var r = 0; r < rows.length; ++r) {
-											rowEntries = rows[r].getElementsByTagName("Entry");
-
-											currCols.push([]);
-											for (var c = 0; c < rowEntries.length; ++c)
-												currCols[currCols.length - 1].push(rowEntries[c].getAttribute("value"));
-										}
+									for (var r = 0; r < ucNumRows; ++r) {
+										currCols.push([]);
+										for (var c = 0; c < ucColArrays.length; ++c)
+											currCols[currCols.length - 1].push(ucColArrays[c][r]);
 									}
 									console.log("Existing cols", currCols);
 									console.log("Final src", src);
