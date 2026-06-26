@@ -6398,8 +6398,8 @@ try
 				csvStr += StringMacros::encodeURIComponent(timeAsString);
 			}
 			else
-				csvStr += StringMacros::encodeURIComponent(
-				    tableViewPtr->getDataView()[r][c]);
+				csvStr +=
+				    StringMacros::encodeURIComponent(tableViewPtr->getDataView()[r][c]);
 		}
 		xmlOut.addTextElementToParent("ColCSV", csvStr, parentEl);
 	}
