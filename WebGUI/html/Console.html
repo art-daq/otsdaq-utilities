@@ -566,9 +566,11 @@
             _MESSAGE_FIELD_LINE = _consoleMessageFields.indexOf("Line");
 
         var _consoleMessageArray;
-        var _compactViewCheckbox, _noWrapCheckbox, _hideLineNumbersCheckbox;
+        var _compactViewCheckbox, _noWrapCheckbox, _hideLineNumbersCheckbox, _noHostCheckbox;
         var _compactStyleEl = 0, _noWrapStyleEl = 0, _hideLineStyleEl = 0,
-            _levelStyleEl = 0, _filterStyleEl = {};
+            _noHostStyleEl = 0, _levelStyleEl = 0, _filterStyleEl = {};
+        var _hostnameShortMap = {};
+        var _knownHostnames = [];
 
         var _chosenColorScheme = -1; //(start decremented by 1 from choice)
         var _colorSchemes = [ //background, foreground, highlight
@@ -709,6 +711,8 @@
             _noWrapCheckbox.onmouseup = toggleNoWrap;
             _hideLineNumbersCheckbox = document.getElementById('hideLineNumbersCheckbox');
             _hideLineNumbersCheckbox.onmouseup = toggleHideLineNumber;
+            _noHostCheckbox = document.getElementById('noHostCheckbox');
+            _noHostCheckbox.onmouseup = toggleNoHost;
 
 
             //init console history
@@ -731,10 +735,13 @@
             _noWrapCheckbox.checked = false;		//inverse of default value
             _hideLineNumbersCheckbox.disabled = false; 		//enable checkbox selection
             _hideLineNumbersCheckbox.checked = true;		//inverse of default value
+            _noHostCheckbox.disabled = false; 				//enable checkbox selection
+            _noHostCheckbox.checked = true;				//inverse of default value (hidden by default)
 
             toggleNoWrap(undefined, undefined, true /*doNotSave*/); 			//call to setup no wrap first time
             toggleCompactView(undefined, undefined, true /*doNotSave*/); 		//call to setup compact view first time
             toggleHideLineNumber(undefined, undefined, true /*doNotSave*/); 	//call to setup hide line numbers first time
+            toggleNoHost(undefined, undefined, true /*doNotSave*/); 			//call to setup no host first time
             toggleFilterControls();		//call to initially setup
 
             //call to setup colorScheme first time
@@ -865,6 +872,201 @@
                 document.getElementsByTagName('head')[0].appendChild(_hideLineStyleEl);
             }
         } //end toggleHideLineNumber()
+
+        //=====================================================================================
+        //toggleNoHost ~
+        function toggleNoHost(e, setVal, doNotSave) {
+
+            if (_noHostCheckbox.disabled) return;
+
+            if (!e) _noHostCheckbox.checked = !_noHostCheckbox.checked;
+
+            var chk = e ? !_noHostCheckbox.checked : _noHostCheckbox.checked;
+
+            if (setVal !== undefined) {
+                chk = setVal ? true : false;
+                _noHostCheckbox.checked = chk;
+            }
+            else if (!doNotSave)
+                saveUserPreferences(undefined, undefined, undefined, undefined, undefined, chk);
+
+            Debug.log("Console _noHostCheckbox.checked: " + chk);
+
+            if (_noHostStyleEl && _noHostStyleEl.parentNode) {
+                _noHostStyleEl.parentNode.removeChild(_noHostStyleEl);
+                _noHostStyleEl = 0;
+            }
+
+            if (chk) {
+                var css = ".hostDisplayEntry " +
+                    "{" +
+                    "display: none;" +
+                    "}\n\n";
+                _noHostStyleEl = document.createElement('style');
+
+                if (_noHostStyleEl.styleSheet) {
+                    _noHostStyleEl.styleSheet.cssText = css;
+                } else {
+                    _noHostStyleEl.appendChild(document.createTextNode(css));
+                }
+
+                document.getElementsByTagName('head')[0].appendChild(_noHostStyleEl);
+            }
+        } //end toggleNoHost()
+
+        //=====================================================================================
+        //getShortenedHostname ~
+        //  Returns the shortened display name for a hostname. Caches results.
+        //  On first call for a new hostname, recomputes all short names.
+        function getShortenedHostname(hostname) {
+            if (!hostname) return "";
+            if (_hostnameShortMap.hasOwnProperty(hostname))
+                return _hostnameShortMap[hostname];
+
+            _knownHostnames.push(hostname);
+            _recomputeShortenedHostnames();
+            return _hostnameShortMap[hostname] || hostname;
+        } //end getShortenedHostname()
+
+        //=====================================================================================
+        //_recomputeShortenedHostnames ~
+        //  Splits each hostname into segments (by -, _, .), finds segments common
+        //  to ALL hostnames, and strips them — keeping only the unique parts.
+        //  Segments that are purely numeric or adjacent to a numeric segment are never stripped.
+        //  Single hostname: just strip the domain suffix.
+        function _recomputeShortenedHostnames() {
+            var hosts = _knownHostnames;
+            if (hosts.length === 0) return;
+
+            if (hosts.length === 1) {
+                var h = hosts[0];
+                var dotIdx = h.indexOf(".");
+                _hostnameShortMap[h] = (dotIdx > 0) ? h.substring(0, dotIdx) : h;
+                return;
+            }
+
+            // Strip domain suffix (everything after the first '.') before
+            // shortening — domain segments like "fnal.gov" are always common
+            // and would interfere with the adjacency logic below.
+            var primaryNames = [];
+            for (var i = 0; i < hosts.length; i++) {
+                var dotIdx = hosts[i].indexOf(".");
+                primaryNames.push(dotIdx > 0 ? hosts[i].substring(0, dotIdx) : hosts[i]);
+            }
+
+            // Tokenize each primary hostname by '-' and '_'
+            var tokenized = [];
+            for (var i = 0; i < primaryNames.length; i++) {
+                var parts = [];
+                var delims = [];
+                var cur = "";
+                for (var c = 0; c < primaryNames[i].length; c++) {
+                    var ch = primaryNames[i][c];
+                    if (ch === '-' || ch === '_') {
+                        parts.push(cur);
+                        delims.push(ch);
+                        cur = "";
+                    } else {
+                        cur += ch;
+                    }
+                }
+                parts.push(cur);
+                tokenized.push({parts: parts, delims: delims});
+            }
+
+            // Find common segments: a segment position is common if identical
+            // across ALL hostnames AND not purely numeric
+            var maxLen = 0;
+            for (var i = 0; i < tokenized.length; i++)
+                if (tokenized[i].parts.length > maxLen) maxLen = tokenized[i].parts.length;
+
+            var isCommon = [];
+            for (var pos = 0; pos < maxLen; pos++) {
+                var val = (tokenized[0].parts.length > pos) ? tokenized[0].parts[pos] : null;
+                var allSame = (val !== null);
+                if (allSame) {
+                    for (var h = 1; h < tokenized.length; h++) {
+                        if (tokenized[h].parts.length <= pos || tokenized[h].parts[pos] !== val) {
+                            allSame = false;
+                            break;
+                        }
+                    }
+                }
+                var isNum = (val !== null && /^\d+$/.test(val));
+                isCommon.push(allSame && !isNum);
+            }
+
+            // Keep common segments adjacent to a varying numeric segment so they
+            // act as a label (e.g. "mu2e-calo-01"/"mu2e-calo-02" → "calo-01"/
+            // "calo-02" instead of just "01"/"02").
+            for (var pos = 0; pos < isCommon.length; pos++) {
+                if (!isCommon[pos]) continue;
+                for (var side = -1; side <= 1; side += 2) {
+                    var adj = pos + side;
+                    if (adj < 0 || adj >= isCommon.length || isCommon[adj]) continue;
+                    var anyNum = false;
+                    var allSameAdj = true;
+                    var firstVal = (tokenized[0].parts.length > adj) ? tokenized[0].parts[adj] : null;
+                    for (var h = 0; h < tokenized.length; h++) {
+                        var v = (tokenized[h].parts.length > adj) ? tokenized[h].parts[adj] : null;
+                        if (/^\d+$/.test(v)) anyNum = true;
+                        if (v !== firstVal) allSameAdj = false;
+                    }
+                    if (anyNum && !allSameAdj) { isCommon[pos] = false; break; }
+                }
+            }
+
+            // Build short names from non-common segments
+            for (var i = 0; i < hosts.length; i++) {
+                var t = tokenized[i];
+                var shortParts = [];
+                for (var pos = 0; pos < t.parts.length; pos++) {
+                    if (!isCommon[pos]) {
+                        if (shortParts.length > 0)
+                            shortParts.push(t.delims[pos - 1] || "-");
+                        shortParts.push(t.parts[pos]);
+                    }
+                }
+                var shortName = shortParts.join("");
+                if (shortName.length <= 3)
+                    shortName = primaryNames[i];
+                _hostnameShortMap[hosts[i]] = shortName;
+            }
+
+            // If stripping domains created collisions (e.g. same primary name,
+            // different domains), append the domain to disambiguate.
+            var seen = {};
+            var collisions = {};
+            for (var i = 0; i < hosts.length; i++) {
+                var sn = _hostnameShortMap[hosts[i]];
+                if (seen[sn] !== undefined) {
+                    collisions[sn] = true;
+                }
+                seen[sn] = i;
+            }
+            if (Object.keys(collisions).length > 0) {
+                for (var i = 0; i < hosts.length; i++) {
+                    var sn = _hostnameShortMap[hosts[i]];
+                    if (collisions[sn]) {
+                        var dotIdx = hosts[i].indexOf(".");
+                        var domain = (dotIdx > 0) ? hosts[i].substring(dotIdx) : "";
+                        _hostnameShortMap[hosts[i]] = sn + domain;
+                    }
+                }
+            }
+        } //end _recomputeShortenedHostnames()
+
+        //=====================================================================================
+        //cleanHostForDisplay ~
+        //  Strips 'artdaq..' prefix, '-data'/'-ipmi' suffixes, then shortens via
+        //  getShortenedHostname(). Used for Advanced tab host display.
+        function cleanHostForDisplay(rawHost) {
+            if (!rawHost) return "";
+            var h = rawHost;
+            if (h.indexOf("artdaq..") === 0) h = h.substring(8);
+            h = h.replace(/-data(?=\.|$)/g, "").replace(/-ipmi(?=\.|$)/g, "");
+            return getShortenedHostname(h);
+        } //end cleanHostForDisplay()
 
         //=====================================================================================
         //toggleCompactView ~
@@ -1460,6 +1662,7 @@
                     "<span class='" + tmp.Hostname + "_HostnameEntry'>" +
                     "<span class='" + tmp.Label + "_LabelEntry'>" +
                     "<span class='" + tmp.Level + "_LevelEntry'>" +
+                    "<span class='hostDisplayEntry'>" + getShortenedHostname(tmp.Hostname) + " | </span>" +
                     "<span class='" + tmp.Custom + "_CustomEntry'>" + //open hostname label level custom span (for filtering)
                     "<span class='elaboratedEntry'><b>" +
                     tmp.Level + " " +
@@ -1678,16 +1881,16 @@
                 default:
                 case 0: //black and green
                     if (lvl == "Error")
-                        return "rgb(247,125,125)";
+                        return "rgb(249, 65, 65)";
                     if (lvl == "Warning")
-                        return "rgb(255,188,123)"; //"rgb(255,150,50)";
+                        return "rgb(255, 188, 123)"; //"rgb(255,150,50)";
                     if (lvl == "Info")
                         return "rgb(50, 186, 255)";
 
                     return "auto";
                 case 1: //white and black
                     if (lvl == "Error")
-                        return "rgb(206,5,5)"; //rgb(255,51,51)";
+                        return "rgb(206, 5, 5)"; //rgb(255,51,51)";
                     if (lvl == "Warning")
                         return "rgb(214, 128, 46)";
                     if (lvl == "Info")
@@ -1700,7 +1903,7 @@
                     if (lvl == "Warning")
                         return "rgb(214, 128, 46)";
                     if (lvl == "Info")
-                        return "rgb(29 137 0)";//"rgb(50, 110, 255)";
+                        return "rgb(29, 137, 0)"; //"rgb(50, 110, 255)";
 
                     return "auto";
             }
@@ -1717,7 +1920,7 @@
         //=====================================================================================
         //saveUserPreferences ~
         //	save user preferences to server
-        function saveUserPreferences(colorIndex, showSideBar, noWrap, messageOnly, hideLineNumers) {
+        function saveUserPreferences(colorIndex, showSideBar, noWrap, messageOnly, hideLineNumers, noHost) {
 
             //take new values from inputs if given, otherwise determine current value
             if (colorIndex === undefined)
@@ -1730,6 +1933,8 @@
                 messageOnly = _compactViewCheckbox.checked;
             if (hideLineNumers === undefined)
                 hideLineNumers = _hideLineNumbersCheckbox.checked;
+            if (noHost === undefined)
+                noHost = _noHostCheckbox.checked;
 
             //force only integer values in request
             DesktopContent.XMLHttpRequest("Request?RequestType=SaveUserPreferences",
@@ -1737,7 +1942,8 @@
                 "&showSideBar=" + (showSideBar ? 1 : 0) +
                 "&noWrap=" + (noWrap ? 1 : 0) +
                 "&messageOnly=" + (messageOnly ? 1 : 0) +
-                "&hideLineNumers=" + (hideLineNumers ? 1 : 0));
+                "&hideLineNumers=" + (hideLineNumers ? 1 : 0) +
+                "&noHost=" + (noHost ? 1 : 0));
         } //end saveUserPreferences()
 
         //=====================================================================================
@@ -1756,6 +1962,7 @@
             toggleNoWrap(0, (DesktopContent.getXMLValue(req, "noWrap") | 0) ? true : false);
             toggleCompactView(0, (DesktopContent.getXMLValue(req, "messageOnly") | 0) ? true : false);
             toggleHideLineNumber(0, (DesktopContent.getXMLValue(req, "hideLineNumers") | 0) ? true : false);
+            toggleNoHost(0, (DesktopContent.getXMLValue(req, "noHost") | 0) ? true : false);
         } //end handleLoadUserPreferences()
 
         //=====================================================================================
@@ -2550,7 +2757,7 @@
                         COL_NAMES[i] + "'") : "") + ">";
 
                     if (i == 1)
-                        str += host;
+                        str += cleanHostForDisplay(host);
                     else if (i == 0)
                         str += "<input type='checkbox' class='ac_checkboxSelect' onclick='advancedUpdateSelectedCheckboxesText();' />";
                     else if (i == 2) //label count
@@ -3026,14 +3233,13 @@
 
                             if (hostPresence.length == 1 ||
                                 _traceHostSelect.mode == _traceHostSelect_MODE_LABELBYHOST)
-                                str += hostPresence[ll];
+                                str += cleanHostForDisplay(hostPresence[ll]);
                             else if (hostPresence.length > 1) {
                                 if (hostPresence.length == hosts.length)
                                     str += "All";
-                                else //give a list of hosts
-                                {
+                                else {
                                     for (var j = 0; j < hostPresence.length; ++j)
-                                        str += (j ? ';' : '') + hostPresence[j];
+                                        str += (j ? ', ' : '') + cleanHostForDisplay(hostPresence[j]);
                                 }
                             }
                             else {
@@ -3093,24 +3299,23 @@
             //Debug.log("advancedHelperGetHosts()",labeli);
 
             var rows = document.getElementsByClassName("ac_row");
-            //hosts is column 3
             labeli |= 0;
-            //Debug.log("Rows",rows.length,"labeli",labeli);
             if (labeli < 0 || labeli >= rows.length) {
                 Debug.err("Illegal label index " + labeli + " with " +
                     rows.length + " rows! Notify admins.");
                 return undefined;
             }
 
-            var hostStr = rows[labeli].children[3].innerText;
-            if (hostStr == "All") {
-                var hostArr = [];
-
-                for (var hh in _traceLevels)
-                    hostArr.push(hh)
-                return hostArr;
+            // Get the label from column 1 and look up which raw _traceLevels hosts have it.
+            // (Column 3 shows cleaned/shortened hostnames for display, so we can't use
+            // innerText for _traceLevels key lookup.)
+            var label = rows[labeli].children[1].innerText;
+            var hostArr = [];
+            for (var hh in _traceLevels) {
+                if (_traceLevels[hh][label])
+                    hostArr.push(hh);
             }
-            return hostStr.split(';');
+            return hostArr;
         } //end advancedHelperGetHosts()
 
         //=====================================================================================
@@ -3155,7 +3360,12 @@
                 }
 
                 var label = rows[r].children[1].innerText;
-                var hosts = rows[r].children[3].innerText.split(';');
+                // Look up raw hosts from _traceLevels by label (display column is cleaned/shortened)
+                var hosts = [];
+                for (var hh in _traceLevels) {
+                    if (_traceLevels[hh][label])
+                        hosts.push(hh);
+                }
                 Debug.log("Row", checked, label, hosts);
 
                 for (var h = 0; h < hosts.length; ++h) {
@@ -4112,7 +4322,7 @@
         //=====================================================================================
         function handleBitMouseDown(e, label, b, labeli) {
             if (e) {
-                _advancedButtonDown = e.button;
+                _advancedButtonDown = e.shiftKey ? 2 : e.button;
                 e.stopPropagation();
             }
             //Debug.log("handleBitMouseDown",_advancedButtonDown,label,b);
@@ -4443,7 +4653,15 @@
                 <div id='hideLineNumbersCheckboxText'>
                     <a class="consoleLink"
                        href='Javascript:toggleHideLineNumber();'
-                       title='Toggle Hide Line Numbers'>Hide Line Numbers</a>
+                       title='Toggle Hide Line #'>Hide Line #</a>
+                </div>
+            </div>
+            <div class='controlsCheckbox'>
+                <input type="checkbox" id="noHostCheckbox" />
+                <div id='noHostCheckboxText'>
+                    <a class="consoleLink"
+                       href='Javascript:toggleNoHost();'
+                       title='Toggle Host Display'>No Host</a>
                 </div>
             </div>
         </div>
