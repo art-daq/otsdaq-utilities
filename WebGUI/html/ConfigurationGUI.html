@@ -1239,12 +1239,13 @@
 
 		//==============================================================================
 		//setupTableViewMode ~
-		function setupTableViewMode(anchorTarget) {
+		function setupTableViewMode(anchorTarget, refreshVersions) {
 			editCellCancel();
 
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			var requestStr = "Request?RequestType=getTables";
+			var requestStr = "Request?RequestType=getTables" +
+				(refreshVersions ? "&refresh=1" : "");
 
 			// recalculate time window from the stored preset so relative
 			//	presets ("Last 5 Minutes", etc.) are always relative to now
@@ -1334,7 +1335,22 @@
 		} //end unixTimeToDateInputValue()
 
 		//==============================================================================
-		function tableViewFilterRequest(anchorTarget) {
+		function filterTableViewByName() {
+			var input = document.getElementById("tableViewSearchInput");
+			if (!input) return;
+			var filter = input.value.toLowerCase();
+			var table = document.getElementById("tableViewTable");
+			if (!table) return;
+			var tbody = table.tBodies[0] || table;
+			var rows = tbody.children;
+			for (var i = 0; i < rows.length; ++i) {
+				var name = rows[i].getAttribute("data-tablename") || "";
+				rows[i].style.display = name.indexOf(filter) >= 0 ? "" : "none";
+			}
+		} //end filterTableViewByName()
+
+		//==============================================================================
+		function tableViewFilterRequest(anchorTarget, refreshVersions) {
 			editCellCancel();
 
 			var selectedOption = document.getElementById("tableViewDateFilterPreset").value;
@@ -1395,7 +1411,7 @@
 				var keepFilterMode = _tableViewSelectedFilterMode;
 				resetTableViewParams();
 				_tableViewSelectedFilterMode = keepFilterMode; //preserve user's Created/Loaded choice
-				setupTableViewMode(anchorTarget);
+				setupTableViewMode(anchorTarget, refreshVersions);
 				return;
 			}
 			else {
@@ -1412,6 +1428,7 @@
 				"time filtering, it may take a while to populate the time cache " +
 				"(e.g. &gt;1 minute).</label>";
 			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
+								(refreshVersions ? "&refresh=1" : "") +
 								"&startTime=" + selectedStartTime +
 								"&endTime=" + selectedEndTime +
 								"&filterMode=" + _tableViewSelectedFilterMode,
@@ -2821,7 +2838,7 @@
 				"if(p){p.value=\"\";tableViewFilterRequest();} return false;'>Show All</a>" +
 				" | " +
 				"<a href='#' style='font-size:14px; font-weight:normal;' " +
-				"onclick='tableViewFilterRequest(); return false;'>Refresh</a>" +
+				"onclick='tableViewFilterRequest(undefined, true); return false;'>Refresh</a>" +
 				"</h3>";
 
 			function toLocalDateInputValue(d) {
@@ -2836,7 +2853,7 @@
 			yesterday.setDate(today.getDate() - 1);
 			var dateYesterday = toLocalDateInputValue(yesterday);
 			str += "<div id='tableSearchDiv' ";
-			str += "style='margin-top:-20px; height:50px; white-space:nowrap;'";
+			str += "style='margin-top:-20px; white-space:nowrap;'";
 			str += ">";
 			str += "Show versions: ";
 			str += "<select id='tableViewDateFilterMode' onchange='handleTableViewFilterModeChange();'>";
@@ -2869,10 +2886,13 @@
 			}
 			str += "</div>";
 
-			//			str += "<div id='tableSearchDiv' ";
-			//			str += "style='margin-top:-20px; height:200px; width:450px;'";
-			//			str += ">";
-			//			str += "</div>";
+			str += "<div style='margin-top:5px;'>";
+			str += "Search: <input type='text' id='tableViewSearchInput' " +
+				"placeholder='Filter table names...' " +
+				"style='width:300px;' " +
+				"autocomplete='off' autocorrect='off' autocapitalize='off' spellcheck='false' " +
+				"oninput='filterTableViewByName();' />";
+			str += "</div>";
 
 			str += "<div id='clearDiv'></div>";
 
@@ -2881,8 +2901,8 @@
 
 			str += "<table id='tableViewTable'>";
 			for (var i = 0; i < tableNames.length; ++i) {
-				str += "<tr><td>";
 				tableName = tableNames[i].getAttribute("value");
+				str += "<tr data-tablename='" + tableName.toLowerCase() + "'><td>";
 
 				backLinkStr = "setupTableViewMode(\\\"anchorTag-" + tableName + "\\\");";
 
@@ -3737,8 +3757,14 @@
 				el.innerHTML = str;
 				return;
 			}
-			var rows = req.responseXML.getElementsByTagName(
-				"CurrentVersionRows")[0].getElementsByTagName("Row");
+			var colCSVEls = req.responseXML.getElementsByTagName(
+				"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+			var colArrays = [];
+			for (var ci = 0; ci < colCSVEls.length; ++ci) {
+				var csvVal = colCSVEls[ci].getAttribute("value");
+				colArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+			}
+			var numDataRows = colArrays.length ? colArrays[0].length : 0;
 
 			var colHdrs = req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnHeader");
 			var colTypeEls = req.responseXML.getElementsByTagName("CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnType");
@@ -3786,7 +3812,7 @@
 			_editingCell = false;
 			_editingCellEl = 0;
 			_versionIsChanged = false;
-			_dataOffset = rows.length ? (rows[0].getAttribute("value") | 0) : 0;
+			_dataOffset = 0;
 
 			var str = "";
 			str += "<div style='display:none'>Specific Table View</div>"; //Note: this is children[0] tag is used in some place to determine mode after a series of events
@@ -3971,7 +3997,7 @@
 			// store version nav info for arrow key handler
 			window._specificTableVersionNav = {
 				tableName: tableName,
-				backLinkStr: backLinkStr,
+				backLinkStr: _tableViewBackLinkStr,
 				allVersions: _specificTableAllVersions,
 				currentVersion: version | 0
 			};
@@ -4100,16 +4126,13 @@
 
 				//add data
 				{
-					var rowEntries;
-					for (var r = 0; r < rows.length; ++r) {
-						rowEntries = rows[r].getElementsByTagName("Entry");
-
+					for (var r = 0; r < numDataRows; ++r) {
 						cols.push([]);
 						for (var c = 0; c < _CONFIG_DATA_COL_OFFSET; ++c)
 							cols[cols.length - 1].push("");
 
 						for (var c = 0; c < colHdrs.length; ++c)
-							cols[cols.length - 1].push(rowEntries[c].getAttribute("value"));
+							cols[cols.length - 1].push(colArrays[c][r]);
 					}
 				}
 
@@ -5742,7 +5765,7 @@
 						for (var j = 1; j < choices.length; ++j) //skip the first DEFAULT param
 							bmpParams.push(choices[j].getAttribute("value"));
 
-						treeViewHandlerStr_ += createBmpString(value, bmpParams);
+						treeViewHandlerStr_ += "<div style='margin-top:6px'>" + createBmpString(value, bmpParams) + "</div>";
 					}
 					else
 						treeViewHandlerStr_ += value;
@@ -8118,10 +8141,11 @@
 
 		//==============================================================================
 		//setupGroupCreator ~
-		function setupGroupCreator(preSelectStr) {
+		function setupGroupCreator(preSelectStr, refreshVersions) {
 			var el = document.getElementById("display");
 			el.innerHTML = "Loading...";
-			DesktopContent.XMLHttpRequest("Request?RequestType=getTables",
+			DesktopContent.XMLHttpRequest("Request?RequestType=getTables" +
+				(refreshVersions ? "&refresh=1" : ""),
 				"", setupGroupCreatorHandler, preSelectStr,
 				0, true  //progressHandler, callHandlerOnErr
 			);
@@ -8167,7 +8191,7 @@
 			}
 
 			var refreshLinkStr = "setupGroupCreator(\"" +
-				preSelectStr + "&backLinkStr=" + backLinkStr + "\");";
+				preSelectStr + "&backLinkStr=" + backLinkStr + "\", true);";
 			str += "<a href='#' onclick='" + refreshLinkStr +
 				"; _cachedGroupComment=\"" + _cachedGroupComment + "\"; return false;'>Refresh</a>";
 			str += "<br>";
@@ -16516,20 +16540,23 @@
 
 										var dataStr = "data:text/csv;charset=utf-8,";
 										try {
-											var rows = req.responseXML.getElementsByTagName(
-												"CurrentVersionRows")[0].getElementsByTagName("Row");
+											var colCSVEls = req.responseXML.getElementsByTagName(
+												"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+											var dlColArrays = [];
+											for (var ci = 0; ci < colCSVEls.length; ++ci) {
+												var csvVal = colCSVEls[ci].getAttribute("value");
+												dlColArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+											}
+											var dlNumRows = dlColArrays.length ? dlColArrays[0].length : 0;
 
-											var rowEntries;
-											for (var r = 0; r < rows.length; ++r) {
+											for (var r = 0; r < dlNumRows; ++r) {
 												if (r)
 													dataStr += encodeURI(rowDel); //encoded \n
 
-												rowEntries = rows[r].getElementsByTagName("Entry");
-
-												for (var c = 0; c < rowEntries.length; ++c) {
+												for (var c = 0; c < dlColArrays.length; ++c) {
 													if (c)
 														dataStr += encodeURI(colDel);
-													dataStr += encodeURIComponent(rowEntries[c].getAttribute("value").
+													dataStr += encodeURIComponent(dlColArrays[c][r].
 														replace(new RegExp(rowDel, 'g'), "${OTS_RECORD_DELIMETER}").
 														replace(new RegExp(colDel, 'g'), "${OTS_FIELD_DELIMETER}"));
 												}
@@ -16761,20 +16788,20 @@
 											tableName + "-v" + _memberMapForGroupSave[tableName] + "'...");
 										return;
 									}
-									var rows = req.responseXML.getElementsByTagName(
-										"CurrentVersionRows")[0].getElementsByTagName("Row");
+									var ucColCSVEls = req.responseXML.getElementsByTagName(
+										"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+									var ucColArrays = [];
+									for (var ci = 0; ci < ucColCSVEls.length; ++ci) {
+										var csvVal = ucColCSVEls[ci].getAttribute("value");
+										ucColArrays.push(csvVal.length ? csvVal.split(",").map(decodeURIComponent) : []);
+									}
+									var ucNumRows = ucColArrays.length ? ucColArrays[0].length : 0;
 
 									var currCols = [];
-									//add data to cols
-									{
-										var rowEntries;
-										for (var r = 0; r < rows.length; ++r) {
-											rowEntries = rows[r].getElementsByTagName("Entry");
-
-											currCols.push([]);
-											for (var c = 0; c < rowEntries.length; ++c)
-												currCols[currCols.length - 1].push(rowEntries[c].getAttribute("value"));
-										}
+									for (var r = 0; r < ucNumRows; ++r) {
+										currCols.push([]);
+										for (var c = 0; c < ucColArrays.length; ++c)
+											currCols[currCols.length - 1].push(ucColArrays[c][r]);
 									}
 									console.log("Existing cols", currCols);
 									console.log("Final src", src);

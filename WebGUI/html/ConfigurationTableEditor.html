@@ -710,6 +710,26 @@
                 if (tableName && tableName != "" && !err) {
                     Debug.log("Successful response to save request of Info for '" + tableName + "'", Debug.INFO_PRIORITY);
 
+                    if (_tableName.indexOf(tableName) < 0) {
+                        _tableName.push(tableName);
+                        _tableName.sort();
+                        var sel = document.getElementById("loadFromConfigName");
+                        if (sel) {
+                            var opt = document.createElement("option");
+                            opt.value = tableName;
+                            opt.text = tableName;
+                            var inserted = false;
+                            for (var oi = 0; oi < sel.options.length; ++oi)
+                                if (sel.options[oi].value > tableName) {
+                                    sel.add(opt, sel.options[oi]);
+                                    inserted = true;
+                                    break;
+                                }
+                            if (!inserted) sel.add(opt);
+                            sel.value = tableName;
+                        }
+                    }
+
                     if (isFromSaveReq == 1) //then save was not an overwrite, so this is a new table! Provide a tooltip to remind users how to use their new table.
                     {
                         DesktopContent.tooltip(
@@ -1481,6 +1501,7 @@
                     startingLinkId;
                 str += "' onmousedown='_mouseIsSelecting = true; Debug.log(_mouseIsSelecting);' " +
                     "onmouseup='_mouseIsSelecting = false; Debug.log(_mouseIsSelecting);' " +
+                    "onfocus='this.select();' " +
                     ">";
 
                 str += "<div id='clearDiv'></div>";
