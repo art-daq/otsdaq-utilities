@@ -210,6 +210,10 @@ else {
 			str += "<a href='#' onmouseup='Desktop.desktop.login.promptNewUser(this); return false;' style='margin:0 100px 0 50px'>New User?</a>";
 			str += "<input type='submit' class='DesktopDashboard-button' value='    Login    ' onmouseup='Desktop.desktop.login.attemptLogin();' /><br />"
 
+			str += "<input type='button' class='DesktopDashboard-button' " +
+				"value='  Single Sign-On  ' title='Sign in using Fermilab Single Sign-On' " +
+				"onmouseup='Desktop.desktop.login.attemptOidcLogin(); return false;' /><br />";
+
 			str += "<div id='loginFeedbackDiv'>" + (_keepFeedbackText?_keptFeedbackText:"") + "</div>";
 			_keepFeedbackText = false;
 
@@ -1012,6 +1016,36 @@ else {
 					+"&ju="+_jumble(x[0],_sessionId)+"&jp="+_jumble(x[1],_sessionId),
 					_handleLoginAttempt);
 		} //end attemptLogin()
+
+		//==============================================================================
+		//attemptOidcLogin --
+		//		Open the OIDC / single sign-on (SSO) flow in a separate window.
+		//		The opened page forwards the browser to the identity provider; on success
+		//		the callback page stores the login cookie (shared same-origin localStorage)
+		//		and reloads this window so the normal cookie-check completes the login.
+		this.attemptOidcLogin = function()
+		{
+			Debug.log("Desktop Login Prompt Attempt OIDC Single Sign-On", Debug.LOW_PRIORITY);
+
+			if(Desktop.desktop.login.isBlackout())
+			{
+				Debug.log("stopSystemBlackout - assume user expects system to be back");
+				Desktop.desktop.login.blackout(false);
+			}
+
+			var url = serverOrigin_ + "/urn:xdaq-application:lid=" + urnLid_ + "/OIDCLogin";
+
+			var ssoWindow = window.open(url, "otsOIDCLogin",
+					"width=600,height=750,menubar=no,toolbar=no,location=yes,status=no");
+
+			if(!ssoWindow)
+			{
+				_keptFeedbackText = "Please allow pop-ups to use Single Sign-On.";
+				_keepFeedbackText = true;
+				var fb = document.getElementById('loginFeedbackDiv');
+				if(fb) fb.innerHTML = _keptFeedbackText;
+			}
+		} //end attemptOidcLogin()
 
 		//==============================================================================
 		function getParameterByName(name, url)
