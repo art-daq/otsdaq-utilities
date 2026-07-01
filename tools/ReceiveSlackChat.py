@@ -193,6 +193,7 @@ def poll_once(client, last_ts, user_cache):
             continue
 
         display_name = get_display_name(client, user_id, user_cache)
+        display_name = display_name.replace("\t", " ").replace("\n", " ")
         text = msg.get("text", "")
         text = text.replace("\t", " ").replace("\n", "\\n")
 
