@@ -460,6 +460,77 @@ function restartApps(contextName, serverName) {
 } // end of restartApps()
 
 //=====================================================================================
+function restartGateway() {
+	Debug.log("restartGateway");
+	if (_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+
+	DesktopContent.popUpVerification(
+		"Are you sure you want to relaunch otsdaq in Normal Mode?",
+		function () {
+			DesktopContent.systemBlackout(true);
+			window.setTimeout(function () {
+				DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTS",
+					"",
+					function (req, reqParam, errStr) {
+						if (req) {
+							var err = DesktopContent.getXMLValue(req, "Error");
+							if (err) {
+								Debug.err(err);
+								DesktopContent.systemBlackout(false);
+								if (_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+								_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000);
+								return;
+							}
+						}
+						else if (errStr && errStr.indexOf("Request was interrupted") < 0) {
+							Debug.err("Relaunch failed: " + errStr);
+							DesktopContent.systemBlackout(false);
+							if (_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+							_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000);
+							return;
+						}
+
+						var countDown = 20;
+						Debug.log("Attempting to restart your system in Normal Mode... " +
+							"\n\n Please wait " + countDown +
+							" seconds and then reload to verify changes.",
+							Debug.INFO_PRIORITY);
+
+						localCountDown();
+						function localCountDown() {
+							Debug.log("Waiting " + countDown + " seconds for startup operation...",
+								Debug.INFO_PRIORITY);
+							window.setTimeout(function () {
+								--countDown;
+								if (countDown == 0) {
+									DesktopContent.systemBlackout(false);
+									Debug.log("And we are back!", Debug.INFO_PRIORITY);
+									if (_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+									_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000);
+									return;
+								}
+								localCountDown();
+							}, 1000);
+						}
+					},
+					0 /*handler param*/,
+					0 /*progressHandler*/,
+					true /*callHandlerOnErr*/,
+					false /*doNotShowLoadingOverlay*/,
+					true /*targetGatewaySupervisor*/,
+					true /*ignoreSystemBlock*/);
+			}, 1000);
+		},
+		0, "#efeaea", 0, "#770000",
+		0, 0, 0, 0,
+		function () {
+			if (_updateAppsTimeout) window.clearTimeout(_updateAppsTimeout);
+			_updateAppsTimeout = window.setTimeout(updateAppsArray, 1000);
+		}
+	);
+} // end of restartGateway()
+
+//=====================================================================================
 var _detailScrollPositions = {};
 
 function _saveDetailScrollPositions() {
@@ -550,8 +621,12 @@ function displayTable(appsArray) {
 					if (!appsArray[i].class.includes("Gateway"))
 						cell.innerHTML = "<button onclick = 'restartApps(\"" +
 							contextName + "\", \"" + url + "\")' title = 'Restart " +
-							" no gateway apps on " + url + "' class = 'contextButton'>" +
-							"Restart server</button>";
+							"non-Gateway apps on " + url + "' class = 'contextButton'>" +
+							"Restart Server Apps</button>";
+					else
+						cell.innerHTML = "<button onclick = 'restartGateway()' " +
+							"title = 'Relaunch ots in Normal Mode' class = 'contextButton'>" +
+							"Restart</button>";
 				}
 				else if (columnKeys[j] == "stale") {
 					cell.style.fontSize = "12px";

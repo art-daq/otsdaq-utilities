@@ -555,6 +555,10 @@ SubsystemLaunch.create = function() {
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						"title='Halt the entire System (all included subsystems)'" +
 						">Halt</button>";
+					str += "<div id='systemRelaunchButton' " +
+						"title='Click to relaunch the top-level ots system in Normal Mode' " +
+						"onclick='SubsystemLaunch.launcher.bootTopLevel();' " +
+						"></div>";
 					str += "</td></tr>";
 				}
 
@@ -853,15 +857,17 @@ SubsystemLaunch.create = function() {
 
 		var parentTd = document.getElementById('systemConfigAliasTranslation');
 		if(parentTd) {
-			if(SubsystemLaunch.system.subsystemCommonList) {
-				var span = document.createElement('span');
-				span.innerText = "\nSubsystemCommon tables: " + SubsystemLaunch.system.subsystemCommonList;
-				parentTd.appendChild(span);
-			}
-			if(SubsystemLaunch.system.subsystemCommonOverrideList) {
-				var span = document.createElement('span');
-				span.innerText = "\nSubsystemCommonOverride tables: " + SubsystemLaunch.system.subsystemCommonOverrideList;
-				parentTd.appendChild(span);
+			{
+				var commonTypes = ["SubsystemCommon", "SubsystemCommonOverride", "SubsystemCommonContext", "SubsystemCommonContextOverride"];
+				var commonKeys = ["subsystemCommonList", "subsystemCommonOverrideList", "subsystemCommonContextList", "subsystemCommonContextOverrideList"];
+				for(var ci = 0; ci < commonTypes.length; ++ci) {
+					var span = document.createElement('span');
+					span.id = 'subsystemCommonSpan_' + commonTypes[ci];
+					span.innerText = SubsystemLaunch.system[commonKeys[ci]]
+						? ("\n" + commonTypes[ci] + " tables: " + SubsystemLaunch.system[commonKeys[ci]])
+						: "";
+					parentTd.appendChild(span);
+				}
 			}
 			{
 				var span = document.createElement('span');
@@ -1174,6 +1180,24 @@ SubsystemLaunch.create = function() {
 				// Debug.log("subsystem obj", SubsystemLaunch.subsystems);
 			} //end subsystems ------
 
+
+			//subsystem common table lists (updated each poll) ----------
+			{
+				var commonTypes = ["SubsystemCommon", "SubsystemCommonOverride", "SubsystemCommonContext", "SubsystemCommonContextOverride"];
+				var commonKeys = ["subsystemCommonList", "subsystemCommonOverrideList", "subsystemCommonContextList", "subsystemCommonContextOverrideList"];
+				var commonXmlTags = ["SubsystemCommonList", "SubsystemCommonOverrideList", "SubsystemCommonContextList", "SubsystemCommonContextOverrideList"];
+				for(var ci = 0; ci < commonTypes.length; ++ci) {
+					var val = DesktopContent.getXMLValue(req, commonXmlTags[ci]) || "";
+					if(val != SubsystemLaunch.system[commonKeys[ci]]) {
+						SubsystemLaunch.system[commonKeys[ci]] = val;
+						var span = document.getElementById('subsystemCommonSpan_' + commonTypes[ci]);
+						if(span)
+							span.innerText = val
+								? ("\n" + commonTypes[ci] + " tables: " + val)
+								: "";
+					}
+				}
+			} //end subsystem common table lists ----------
 
 			//system state ------------------------
 			{
@@ -1852,6 +1876,75 @@ SubsystemLaunch.create = function() {
 
 
 	}	//end bootSubsystem()
+
+	//=====================================================================================
+	this.bootTopLevel = function () {
+		Debug.log("bootTopLevel()");
+
+		DesktopContent.popUpVerification(
+			"Are you sure you want to relaunch the <b>top-level ots system</b> in Normal Mode?",
+			function () {
+				DesktopContent.popUpVerification(
+					"Are you REALLY sure you want to relaunch the <b>top-level ots system</b>?",
+					function () {
+						Debug.log("Relaunching top-level ots...");
+
+						DesktopContent.systemBlackout(true);
+						window.setTimeout(function() {
+							DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTS",
+								"",
+								function(req, id, errStr) {
+									if(req) {
+										var err = DesktopContent.getXMLValue(req, "Error");
+										if(err) {
+											Debug.err(err);
+											DesktopContent.systemBlackout(false);
+											return;
+										}
+									}
+									else if(errStr &&
+										errStr.indexOf("Request was interrupted") < 0) {
+										Debug.err("Relaunch failed: " + errStr);
+										DesktopContent.systemBlackout(false);
+										return;
+									}
+
+									var countDown = 20;
+									Debug.log("Attempting to restart the top-level system in Normal Mode... " +
+										"\n\n Please wait " + countDown +
+										" seconds.", Debug.INFO_PRIORITY);
+									localCountDown();
+									function localCountDown() {
+										Debug.log("Waiting " + countDown + " seconds for startup...",
+											Debug.INFO_PRIORITY);
+										window.setTimeout(function() {
+											--countDown;
+											if(countDown == 0) {
+												DesktopContent.systemBlackout(false);
+												Debug.log("And we are back!", Debug.INFO_PRIORITY);
+												window.clearTimeout(_getStatusTimer);
+												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
+												return;
+											}
+											localCountDown();
+										}, 1000);
+									}
+								},
+								0 /*reqParam*/, 0 /*progressHandler*/,
+								true /*callHandlerOnErr*/,
+								false /*doNotShowLoadingOverlay*/,
+								true /*targetGatewaySupervisor*/,
+								true /*ignoreSystemBlock*/);
+						}, 1000); //delay to guarantee blackout starts
+
+					}, //end handler
+					0,"#efeaea",0,"#770000",0 /* getUserInput [optional] */ ,
+					350 /* dialogWidth [optional] */); //end second verify
+			},
+			0,"#efeaea",0,"#770000",0 /* getUserInput [optional] */ ,
+			350 /* dialogWidth [optional] */); //end first verify
+
+	}	//end bootTopLevel()
 
 	//=====================================================================================
 	this.handleSubsystemFsmModeSelect = function (value, subsystemIndex) {
@@ -2972,6 +3065,10 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 					DesktopContent.getXMLValue(req, "SubsystemCommonList") || "";
 				SubsystemLaunch.system.subsystemCommonOverrideList =
 					DesktopContent.getXMLValue(req, "SubsystemCommonOverrideList") || "";
+				SubsystemLaunch.system.subsystemCommonContextList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonContextList") || "";
+				SubsystemLaunch.system.subsystemCommonContextOverrideList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonContextOverrideList") || "";
 			} //end subsystem common/override -----
 
 			//system state ------------------------
