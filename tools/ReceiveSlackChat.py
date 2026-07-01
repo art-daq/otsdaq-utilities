@@ -21,6 +21,7 @@
 
 import fcntl
 import os
+import re
 import sys
 import time
 
@@ -124,6 +125,27 @@ def get_display_name(client, user_id, cache):
     return name
 
 
+_MENTION_RE = re.compile(r"<@([A-Z0-9]+)(?:\|[^>]*)?>")
+_CHANNEL_RE = re.compile(r"<#[A-Z0-9]+\|?([^>]*)>")
+_LINK_RE = re.compile(r"<((?:https?|mailto):[^>|]*)(?:\|([^>]*))?>")
+_SPECIAL_RE = re.compile(r"<!([^>|]+)(?:\|([^>]*))?>")
+
+
+def normalize_slack_text(client, text, user_cache):
+    """Convert Slack message markup to plain text.
+
+    Slack sends mentions/links as e.g. <@U123>, <#C123|general>,
+    <https://x.y|label>, <!here>, and HTML-escapes &, <, >.
+    """
+    text = _MENTION_RE.sub(
+        lambda m: "@" + get_display_name(client, m.group(1), user_cache), text
+    )
+    text = _CHANNEL_RE.sub(lambda m: "#" + (m.group(1) or "channel"), text)
+    text = _LINK_RE.sub(lambda m: m.group(2) or m.group(1), text)
+    text = _SPECIAL_RE.sub(lambda m: "@" + (m.group(2) or m.group(1)), text)
+    return text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+
 def poll_once(client, last_ts, user_cache):
     """Fetch new messages from Slack since last_ts.
 
@@ -195,6 +217,7 @@ def poll_once(client, last_ts, user_cache):
         display_name = get_display_name(client, user_id, user_cache)
         display_name = display_name.replace("\t", " ").replace("\n", " ")
         text = msg.get("text", "")
+        text = normalize_slack_text(client, text, user_cache)
         text = text.replace("\t", " ").replace("\n", "\\n")
 
         print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
