@@ -1,12 +1,21 @@
 #include "otsdaq-utilities/Chat/ChatSupervisor.h"
 #include "otsdaq/CgiDataUtilities/CgiDataUtilities.h"
 #include "otsdaq/Macros/CoutMacros.h"
+#include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
 #include <xdaq/NamespaceURI.h>
 
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <fstream>
 #include <iostream>
+#include <sstream>
 
 using namespace ots;
 
@@ -21,6 +30,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);
 
 	ChatLastUpdateIndex = 1;  // skip 0
+	slackDaemonPid_     = -1;
 
 	// run ots_setup_slack.sh to enable OTS_EN_SLACK environment variable
 	enableSlackChat = (std::getenv("OTS_EN_SLACK") != nullptr &&
@@ -36,9 +46,21 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 			chatSupervisorToolsPath_ += '/';
 		chatSupervisorToolsPath_ += "tools/";
 
+		const char* userData = std::getenv("USER_DATA");
+		slackInboxPath_      = userData ? std::string(userData) + "/ChatSlackInbox.txt"
+		                                : "/tmp/ots_slack_inbox.txt";
+
+		// Require Slack configuration before enabling daemon/send-to-Slack behavior.
+		if(std::getenv("SLACK_BOT_TOKEN") == nullptr ||
+		   std::getenv("SLACK_CHANNEL_ID") == nullptr)
+			enableSlackChat = false;
+
 		__COUT__ << "ChatSupervisor: Slack chat "
 		         << (enableSlackChat ? "enabled" : "disabled") << __E__;
 		__COUT__ << "ChatSupervisor path: " << chatSupervisorToolsPath_ << __E__;
+
+		if(enableSlackChat)
+			startSlackDaemon();
 	}
 }
 
@@ -46,10 +68,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 ChatSupervisor::~ChatSupervisor(void) { destroy(); }
 
 //==============================================================================
-void ChatSupervisor::destroy(void)
-{
-	// called by destructor
-}
+void ChatSupervisor::destroy(void) { stopSlackDaemon(); }
 
 //==============================================================================
 void ChatSupervisor::defaultPage(xgi::Input* /* cgiIn */, xgi::Output* out)
@@ -92,6 +111,8 @@ void ChatSupervisor::request(const std::string& requestType,
 
 	if(requestType == "RefreshChat")
 	{
+		receiveFromSlack();
+
 		std::string lastUpdateIndexString =
 		    CgiDataUtilities::postData(cgiIn, "lastUpdateIndex");
 		std::string user = CgiDataUtilities::postData(cgiIn, "user");
@@ -228,13 +249,15 @@ void ChatSupervisor::newUser(const std::string& user)
 //==============================================================================
 /// ChatSupervisor::newChat()
 ///	create new chat, and increment update
-void ChatSupervisor::newChat(const std::string& chat, const std::string& user)
+void ChatSupervisor::newChat(const std::string& chat,
+                             const std::string& user,
+                             bool               fromSlack)
 {
 	ChatHistoryEntry_.push_back(chat);
 	ChatHistoryAuthor_.push_back(user);
 	ChatHistoryTime_.push_back(time(0));
 	ChatHistoryIndex_.push_back(incrementAndGetLastUpdate());
-	if(enableSlackChat)
+	if(enableSlackChat && !fromSlack)
 		sendToSlack(user, chat);
 }
 
@@ -287,7 +310,7 @@ void ChatSupervisor::cleanupExpiredChats()
 		else
 			break;  // chronological order, so first encountered that is still valid exit
 			        // loop
-}
+}  // end cleanupExpiredChats()
 
 //==============================================================================
 /// ChatSupervisor::removeChatHistoryEntry()
@@ -297,7 +320,7 @@ void ChatSupervisor::removeChatHistoryEntry(uint64_t i)
 	ChatHistoryTime_.erase(ChatHistoryTime_.begin() + i);
 	ChatHistoryAuthor_.erase(ChatHistoryAuthor_.begin() + i);
 	ChatHistoryIndex_.erase(ChatHistoryIndex_.begin() + i);
-}
+}  // end removeChatHistoryEntry()
 
 //==============================================================================
 /// ChatSupervisor::removeChatHistoryEntry()
@@ -307,14 +330,18 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 	        "ots");  // add status message to chat, increment update
 	ChatUsers_.erase(ChatUsers_.begin() + i);
 	ChatUsersTime_.erase(ChatUsersTime_.begin() + i);
-}
+}  // end removeChatUserEntry()
 
 //==============================================================================
 /// ChatSupervisor::sendToSlack()
 void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
 {
+	// URL-encode message and user so that UTF-8 emoji bytes, quotes, and any
+	// other shell-special characters survive the shell command line intact.
+	// SendSlackChat.py calls urllib.parse.unquote() on both args to decode.
 	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " +
-	                      "--message \"" + message + "\" --user " + user;
+	                      "--message " + StringMacros::encodeURIComponent(message) +
+	                      " --user " + StringMacros::encodeURIComponent(user);
 	__COUT__ << "Executing command: " << command << __E__;
 
 	try
@@ -330,4 +357,192 @@ void ChatSupervisor::sendToSlack(const std::string& user, const std::string& mes
 	{
 		__COUT__ << "Exception while executing command: " << e.what() << __E__;
 	}
-}
+}  // end sendToSlack()
+
+//==============================================================================
+/// ChatSupervisor::startSlackDaemon()
+///	Launch the ReceiveSlackChat.py daemon as a background process.
+void ChatSupervisor::startSlackDaemon()
+{
+	if(slackDaemonPid_ > 0)
+		return;
+
+	std::string script = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
+	__COUT__ << "Starting Slack receive daemon: " << script << " -> " << slackInboxPath_
+	         << __E__;
+
+	pid_t pid = fork();
+	if(pid < 0)
+	{
+		__COUT__ << "Failed to fork Slack receive daemon" << __E__;
+		return;
+	}
+	if(pid == 0)
+	{
+		execlp("python3",
+		       "python3",
+		       script.c_str(),
+		       "--output",
+		       slackInboxPath_.c_str(),
+		       "--interval",
+		       "1",
+		       (char*)nullptr);
+		_exit(1);
+	}
+
+	slackDaemonPid_ = pid;
+	__COUT__ << "Slack receive daemon started with PID " << slackDaemonPid_ << __E__;
+}  // end startSlackDaemon()
+
+//==============================================================================
+/// ChatSupervisor::stopSlackDaemon()
+///	Terminate the background ReceiveSlackChat.py daemon.
+void ChatSupervisor::stopSlackDaemon()
+{
+	if(slackDaemonPid_ <= 0)
+		return;
+
+	__COUT__ << "Stopping Slack receive daemon PID " << slackDaemonPid_ << __E__;
+	kill(slackDaemonPid_, SIGTERM);
+
+	int  status = 0;
+	bool exited = false;
+	for(int i = 0; i < 50; ++i)  // ~5s total
+	{
+		pid_t r = waitpid(slackDaemonPid_, &status, WNOHANG);
+		if(r == slackDaemonPid_)
+		{
+			exited = true;
+			break;
+		}
+		if(r < 0)
+		{
+			exited = true;  // already reaped / not our child
+			break;
+		}
+		usleep(100000);
+	}
+	if(!exited)
+	{
+		__COUT__ << "Slack receive daemon did not exit after SIGTERM; sending SIGKILL"
+		         << __E__;
+		kill(slackDaemonPid_, SIGKILL);
+		waitpid(slackDaemonPid_, &status, 0);
+	}
+	else
+	{
+		(void)waitpid(
+		    slackDaemonPid_, &status, WNOHANG);  // ensure reaped if it exited quickly
+	}
+
+	slackDaemonPid_ = -1;
+
+	// Clean up the inbox file
+	std::remove(slackInboxPath_.c_str());
+	std::remove((slackInboxPath_ + ".lock").c_str());
+}  // end stopSlackDaemon()
+
+//==============================================================================
+/// ChatSupervisor::receiveFromSlack()
+///	Read messages written by the ReceiveSlackChat.py daemon and inject them
+///	into the chat history. Uses file locking to coordinate with the daemon.
+void ChatSupervisor::receiveFromSlack()
+{
+	if(!enableSlackChat || slackInboxPath_.empty())
+		return;
+
+	std::string lockPath = slackInboxPath_ + ".lock";
+	int         lockFd   = open(lockPath.c_str(), O_WRONLY | O_CREAT, 0644);
+	if(lockFd < 0)
+	{
+		__COUT__ << "receiveFromSlack: cannot open lock file " << lockPath << __E__;
+		return;
+	}
+
+	if(flock(lockFd, LOCK_EX | LOCK_NB) != 0)
+	{
+		close(lockFd);
+		return;  // daemon is writing, try next cycle
+	}
+
+	std::vector<std::string> lines;
+	{
+		std::ifstream infile(slackInboxPath_);
+		if(infile.is_open())
+		{
+			std::string line;
+			while(std::getline(infile, line))
+				if(!line.empty())
+					lines.push_back(line);
+		}
+	}
+
+	// Truncate the file after reading
+	if(!lines.empty())
+	{
+		__COUT__ << "receiveFromSlack: read " << lines.size() << " line(s) from "
+		         << slackInboxPath_ << __E__;
+		std::ofstream clearFile(slackInboxPath_, std::ios::trunc);
+	}
+
+	flock(lockFd, LOCK_UN);
+	close(lockFd);
+
+	for(const auto& line : lines)
+	{
+		size_t firstTab = line.find('\t');
+		if(firstTab == std::string::npos)
+		{
+			__COUT__ << "receiveFromSlack: skipping malformed line (no tab): " << line
+			         << __E__;
+			continue;
+		}
+
+		std::string tag = line.substr(0, firstTab);
+		if(tag != "MSG")
+		{
+			__COUT__ << "receiveFromSlack: skipping unknown tag '" << tag << "'" << __E__;
+			continue;
+		}
+
+		size_t secondTab = line.find('\t', firstTab + 1);
+		if(secondTab == std::string::npos)
+		{
+			__COUT__ << "receiveFromSlack: skipping malformed MSG line: " << line
+			         << __E__;
+			continue;
+		}
+
+		std::string user    = line.substr(firstTab + 1, secondTab - firstTab - 1);
+		std::string message = line.substr(secondTab + 1);
+
+		auto replaceAll =
+		    [](std::string& s, const std::string& from, const std::string& to) {
+			    size_t pos = 0;
+			    while((pos = s.find(from, pos)) != std::string::npos)
+			    {
+				    s.replace(pos, from.size(), to);
+				    pos += to.size();
+			    }
+		    };
+
+		// Keep OTS chat percent-encoding expected by WebGUI/html/Chat.html convertForClient().
+		replaceAll(user, "&", "%26");
+		replaceAll(user, "<", "%3C");
+		replaceAll(user, ">", "%3E");
+		replaceAll(user, "\"", "%22");
+		replaceAll(user, "'", "%27");
+
+		replaceAll(message, "\\n", "%0A%0D");
+		replaceAll(message, "&", "%26");
+		replaceAll(message, "<", "%3C");
+		replaceAll(message, ">", "%3E");
+		replaceAll(message, "\"", "%22");
+		replaceAll(message, "'", "%27");
+		replaceAll(message, "  ", "%20%20");
+
+		__COUT__ << "receiveFromSlack: injecting message from user '" << user
+		         << "': " << message << __E__;
+		newChat(message, "[slack] " + user, /*fromSlack=*/true);
+	}
+}  // end receiveFromSlack()
