@@ -144,7 +144,7 @@ def poll_once(client, last_ts, user_cache):
                 flush=True,
             )
             time.sleep(retry_after)
-            return [], last_ts, False
+            return [], last_ts, True
         print(
             f"Error polling Slack: {_format_slack_error(e)}",
             file=sys.stderr,
