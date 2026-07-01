@@ -184,11 +184,12 @@ def poll_once(client, last_ts, user_cache):
     messages = response.get("messages", [])
     messages.reverse()
 
-    print(
-        f"[poll] since={last_ts} channel={SLACK_CHANNEL_ID} "
-        f"got {len(messages)} raw message(s)",
-        flush=True,
-    )
+    if len(messages):
+        print(
+            f"[poll] since={last_ts} channel={SLACK_CHANNEL_ID} "
+            f"got {len(messages)} raw message(s)",
+            flush=True,
+        )
 
     lines = []
     newest_ts = last_ts
