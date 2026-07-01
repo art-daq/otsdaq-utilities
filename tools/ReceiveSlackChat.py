@@ -226,6 +226,7 @@ def _load_last_ts(state_path, lookback_seconds):
             print(f"[startup] resuming from persisted last_ts={val}", flush=True)
             return val
     except FileNotFoundError:
+        # Expected on first run (or before state is created); fall back below.
         pass
     except Exception as e:
         print(f"[startup] failed reading {state_path}: {e}", file=sys.stderr, flush=True)
