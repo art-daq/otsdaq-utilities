@@ -69,14 +69,20 @@ def connectToClient() -> WebClient:
 
 
 def cleanMessage(message: str) -> str:
-    """Sanitize the message to prevent issues with Slack formatting."""
-    # Basic sanitization: escape &, <, > characters
-    message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    # replace all %20 with space
-    message = message.replace("%20", " ")
-    # replace all %0A%0D with newlines
-    message = message.replace("%0A%0D", "\n")
-    return message  # Remove leading/trailing whitespace
+    """Sanitize the message for Slack's ``text`` field.
+
+    Per https://api.slack.com/reference/surfaces/formatting#escaping we must
+    escape only ``&``, ``<`` and ``>`` so that plain text doesn't accidentally
+    look like ``<@user>`` / ``<url>`` mentions. Emoji shortcodes (``:smile:``)
+    and Unicode emoji (``\U0001F600``) are left untouched — Slack renders
+    both natively.
+    """
+    message = (
+        message.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return message
 
 
 def sendToSlack(user: str, message: str) -> None:

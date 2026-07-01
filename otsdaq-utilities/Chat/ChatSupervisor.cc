@@ -1,6 +1,7 @@
 #include "otsdaq-utilities/Chat/ChatSupervisor.h"
 #include "otsdaq/CgiDataUtilities/CgiDataUtilities.h"
 #include "otsdaq/Macros/CoutMacros.h"
+#include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
@@ -330,8 +331,12 @@ void ChatSupervisor::removeChatUserEntry(uint64_t i)
 /// ChatSupervisor::sendToSlack()
 void ChatSupervisor::sendToSlack(const std::string& user, const std::string& message)
 {
+	// URL-encode message and user so that UTF-8 emoji bytes, quotes, and any
+	// other shell-special characters survive the shell command line intact.
+	// SendSlackChat.py calls urllib.parse.unquote() on both args to decode.
 	std::string command = "python3 " + chatSupervisorToolsPath_ + "SendSlackChat.py " +
-	                      "--message \"" + message + "\" --user " + user;
+	                      "--message " + StringMacros::encodeURIComponent(message) +
+	                      " --user " + StringMacros::encodeURIComponent(user);
 	__COUT__ << "Executing command: " << command << __E__;
 
 	try
