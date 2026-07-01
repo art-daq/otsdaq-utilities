@@ -510,16 +510,31 @@ void ChatSupervisor::receiveFromSlack()
 		std::string user    = line.substr(firstTab + 1, secondTab - firstTab - 1);
 		std::string message = line.substr(secondTab + 1);
 
-		// Unescape newlines from the Python output
-		size_t pos = 0;
-		while((pos = message.find("\\n", pos)) != std::string::npos)
-		{
-			message.replace(pos, 2, "\n");
-			pos += 1;
-		}
+		auto replaceAll = [](std::string& s, const std::string& from, const std::string& to) {
+			size_t pos = 0;
+			while((pos = s.find(from, pos)) != std::string::npos)
+			{
+				s.replace(pos, from.size(), to);
+				pos += to.size();
+			}
+		};
+
+		// Keep OTS chat percent-encoding expected by WebGUI/html/Chat.html convertForClient().
+		replaceAll(user, "&", "%26");
+		replaceAll(user, "<", "%3C");
+		replaceAll(user, ">", "%3E");
+		replaceAll(user, "\"", "%22");
+		replaceAll(user, "'", "%27");
+
+		replaceAll(message, "\\n", "%0A%0D");
+		replaceAll(message, "&", "%26");
+		replaceAll(message, "<", "%3C");
+		replaceAll(message, ">", "%3E");
+		replaceAll(message, "\"", "%22");
+		replaceAll(message, "'", "%27");
+		replaceAll(message, "  ", "%20%20");
 
 		__COUT__ << "receiveFromSlack: injecting message from user '"
 		         << user << "': " << message << __E__;
 		newChat(message, "[slack] " + user, /*fromSlack=*/true);
-	}
 }
