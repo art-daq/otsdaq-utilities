@@ -623,10 +623,10 @@ function displayTable(appsArray) {
 							contextName + "\", \"" + url + "\")' title = 'Restart " +
 							"non-Gateway apps on " + url + "' class = 'contextButton'>" +
 							"Restart Server Apps</button>";
-					else
+					else if (!appsArray[i].class.includes("Remote"))
 						cell.innerHTML = "<button onclick = 'restartGateway()' " +
 							"title = 'Relaunch ots in Normal Mode' class = 'contextButton'>" +
-							"Restart</button>";
+							"Restart ots</button>";
 				}
 				else if (columnKeys[j] == "stale") {
 					cell.style.fontSize = "12px";
