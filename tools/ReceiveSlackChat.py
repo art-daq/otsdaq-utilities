@@ -47,22 +47,29 @@ def _install_parent_death_signal():
 _install_parent_death_signal()
 
 
-try:
-    from slack_sdk import WebClient
-    from slack_sdk.errors import SlackApiError
-except ImportError:
-    raise ImportError(
-        "Install slack_sdk with 'pip install slack_sdk' to use this script."
-    )
+# Slack SDK/config are only required when actually running the daemon.
+# Allow `--help` to work even if slack_sdk or SLACK_* env vars are not set.
+WebClient = None
+SlackApiError = Exception
 
+if "--help" not in sys.argv and "-h" not in sys.argv:
+    try:
+        from slack_sdk import WebClient
+        from slack_sdk.errors import SlackApiError
+    except ImportError as e:
+        raise ImportError(
+            "Install slack_sdk with 'pip install slack_sdk' to use this script."
+        ) from e
 
-SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
-SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
-if not SLACK_BOT_TOKEN or not SLACK_CHANNEL_ID:
-    raise RuntimeError(
-        "Environment variables SLACK_BOT_TOKEN and SLACK_CHANNEL_ID must be set."
-    )
-
+    SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+    SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
+    if not SLACK_BOT_TOKEN or not SLACK_CHANNEL_ID:
+        raise RuntimeError(
+            "Environment variables SLACK_BOT_TOKEN and SLACK_CHANNEL_ID must be set."
+        )
+else:
+    SLACK_BOT_TOKEN = None
+    SLACK_CHANNEL_ID = None
 
 # Slack errors that will never recover without operator/config action.
 # Keep polling on them is pure noise, so we exit instead.
@@ -144,7 +151,7 @@ def poll_once(client, last_ts, user_cache):
                 flush=True,
             )
             time.sleep(retry_after)
-            return [], last_ts, False
+            return [], last_ts, True
         print(
             f"Error polling Slack: {_format_slack_error(e)}",
             file=sys.stderr,

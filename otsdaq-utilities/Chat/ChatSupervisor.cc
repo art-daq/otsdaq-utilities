@@ -395,7 +395,35 @@ void ChatSupervisor::stopSlackDaemon()
 
 	__COUT__ << "Stopping Slack receive daemon PID " << slackDaemonPid_ << __E__;
 	kill(slackDaemonPid_, SIGTERM);
-	waitpid(slackDaemonPid_, nullptr, 0);
+
+	int  status = 0;
+	bool exited = false;
+	for(int i = 0; i < 50; ++i)  // ~5s total
+	{
+		pid_t r = waitpid(slackDaemonPid_, &status, WNOHANG);
+		if(r == slackDaemonPid_)
+		{
+			exited = true;
+			break;
+		}
+		if(r < 0)
+		{
+			exited = true;  // already reaped / not our child
+			break;
+		}
+		usleep(100000);
+	}
+	if(!exited)
+	{
+		__COUT__ << "Slack receive daemon did not exit after SIGTERM; sending SIGKILL" << __E__;
+		kill(slackDaemonPid_, SIGKILL);
+		waitpid(slackDaemonPid_, &status, 0);
+	}
+	else
+	{
+		(void)waitpid(slackDaemonPid_, &status, WNOHANG);  // ensure reaped if it exited quickly
+	}
+
 	slackDaemonPid_ = -1;
 
 	// Clean up the inbox file
