@@ -2795,6 +2795,17 @@ Desktop.handleFullScreenWindowRefresh = function (mouseEvent) {
 	//    	}
 
 
+	// rebuild tile positions with new window IDs so tile-aware resize still works
+	var newTilePositions = {};
+	for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); i++) {
+		var w = Desktop.desktop.getWindowByIndex(i);
+		newTilePositions[w.getWindowId()] = [
+			w.getWindowX(), w.getWindowY(),
+			w.getWindowWidth(), w.getWindowHeight()
+		];
+	}
+	Desktop.desktop.lastTileWinPositions = newTilePositions;
+
 	//reset icons, if permissions undefined, keep permissions from before
 	Desktop.desktop.icons.resetWithPermissions(
 		undefined /*undefined permissions*/, true /*keepSamePermissions*/);
