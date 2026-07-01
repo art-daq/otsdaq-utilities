@@ -47,7 +47,7 @@ class ChatSupervisor : public CoreSupervisorBase
 	std::string chatSupervisorToolsPath_;
 	bool        enableSlackChat;
 	std::string slackInboxPath_;
-	pid_t       slackDaemonPid_;
+	int         slackDaemonPid_;
 
 	enum
 	{
