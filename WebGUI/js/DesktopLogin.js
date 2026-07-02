@@ -210,9 +210,16 @@ else {
 			str += "<a href='#' onmouseup='Desktop.desktop.login.promptNewUser(this); return false;' style='margin:0 100px 0 50px'>New User?</a>";
 			str += "<input type='submit' class='DesktopDashboard-button' value='    Login    ' onmouseup='Desktop.desktop.login.attemptLogin();' /><br />"
 
-			str += "<input type='button' class='DesktopDashboard-button' " +
-				"value='  Single Sign-On  ' title='Sign in using Fermilab Single Sign-On' " +
-				"onmouseup='Desktop.desktop.login.attemptOidcLogin(); return false;' /><br />";
+			//visual divider between standard login and Single Sign-On
+			str += "<div style='margin:14px 0 10px 0; width:100%; text-align:center; " +
+				"border-top:1px solid #888; line-height:0.1em;'>" +
+				"<span style='padding:0 10px;'>or</span></div>";
+
+			str += "<div style='width:100%; margin-top:14px; text-align:center;'>" +
+				"<input type='submit' class='DesktopDashboard-button' " +
+				"style='height:28px; padding:2px 16px; font-weight:bold; white-space:nowrap;' " +
+				"value='Sign in with SSO' title='Sign in using Single Sign-On' " +
+				"onmouseup='Desktop.desktop.login.attemptOidcLogin(); return false;' /></div><br />";
 
 			str += "<div id='loginFeedbackDiv'>" + (_keepFeedbackText?_keptFeedbackText:"") + "</div>";
 			_keepFeedbackText = false;
