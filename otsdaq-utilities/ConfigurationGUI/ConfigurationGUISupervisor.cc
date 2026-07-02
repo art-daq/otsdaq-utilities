@@ -2,6 +2,7 @@
 
 #include "otsdaq/CgiDataUtilities/CgiDataUtilities.h"
 #include "otsdaq/Macros/CoutMacros.h"
+#include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
 #include "otsdaq/TablePlugins/IterateTable.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
@@ -15,6 +16,7 @@
 #include <xdaq/NamespaceURI.h>
 
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <utility>
@@ -1677,6 +1679,125 @@ try
 		                     TableGroupKey(groupBKeyConfig),
 		                     userInfo.username_,
 		                     mergeApproach);
+	}
+	else if(requestType == "getArtdaqSystemVariables")
+	{
+		std::string filePath =
+		    std::string(__ENV__("USER_DATA")) +
+		    "/ServiceData/ArtdaqSystemVariables.dat";
+		std::ifstream inFile(filePath);
+		if(inFile.is_open())
+		{
+			std::string line;
+			while(std::getline(inFile, line))
+			{
+				size_t eqPos = line.find('=');
+				if(eqPos == std::string::npos)
+					continue;
+				std::string key   = line.substr(0, eqPos);
+				std::string value = line.substr(eqPos + 1);
+				xmlOut.addTextElementToData("artdaq_" + key, value);
+			}
+		}
+	}
+	else if(requestType == "setArtdaqSystemVariable")
+	{
+		std::string key   = CgiDataUtilities::postData(cgiIn, "key");
+		std::string value = CgiDataUtilities::postData(cgiIn, "value");
+
+		if(key.empty())
+		{
+			xmlOut.addTextElementToData(
+			    "Error", "Variable key must not be empty.");
+		}
+		else
+		{
+			bool valid = true;
+			for(char c : key)
+				if(!std::isalnum(c) && c != '_')
+				{
+					valid = false;
+					break;
+				}
+			if(!valid)
+			{
+				xmlOut.addTextElementToData(
+				    "Error",
+				    "Variable key must contain only alphanumeric "
+				    "characters and underscores.");
+			}
+			else
+			{
+				std::string filePath =
+				    std::string(__ENV__("USER_DATA")) +
+				    "/ServiceData/ArtdaqSystemVariables.dat";
+				std::map<std::string, std::string> vars;
+				{
+					std::ifstream inFile(filePath);
+					if(inFile.is_open())
+					{
+						std::string line;
+						while(std::getline(inFile, line))
+						{
+							size_t eqPos = line.find('=');
+							if(eqPos == std::string::npos)
+								continue;
+							vars[line.substr(0, eqPos)] =
+							    line.substr(eqPos + 1);
+						}
+					}
+				}
+
+				vars[key] = value;
+
+				std::ofstream outFile(filePath);
+				if(!outFile.is_open())
+				{
+					xmlOut.addTextElementToData(
+					    "Error",
+					    "Failed to open persistence file for writing.");
+				}
+				else
+				{
+					for(auto& [k, v] : vars)
+						outFile << k << "=" << v << "\n";
+					__SUP_COUT__ << "Set artdaq system variable "
+					             << key << " = " << value << __E__;
+					xmlOut.addTextElementToData(
+					    "Success",
+					    "Variable '" + key + "' set.");
+				}
+			}
+		}
+	}
+	else if(requestType == "getJsonDocuments")
+	{
+		auto* ifc = ConfigurationInterface::getInstance();
+
+		std::set<std::string> allTableNames = ifc->getAllTableNames();
+
+		for(const auto& tableName : allTableNames)
+		{
+			if(tableName.find(TableBase::JSON_DOC_PREPEND) != 0)
+				continue;
+
+			std::string docName =
+			    tableName.substr(TableBase::JSON_DOC_PREPEND.size());
+
+			TableBase   tmpTable(true, tableName);
+			std::set<TableVersion> versions = ifc->getVersions(&tmpTable);
+
+			std::string versionList;
+			for(const auto& v : versions)
+			{
+				if(!versionList.empty())
+					versionList += ",";
+				versionList += v.toString();
+			}
+
+			xmlOut.addTextElementToData("jsonDoc_name", docName);
+			xmlOut.addTextElementToData("jsonDoc_versions", versionList);
+		}
 	}
 	else
 	{
