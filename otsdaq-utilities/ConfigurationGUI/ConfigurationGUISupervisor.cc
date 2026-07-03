@@ -1702,8 +1702,9 @@ try
 	}
 	else if(requestType == "setArtdaqSystemVariable")
 	{
-		std::string key   = CgiDataUtilities::postData(cgiIn, "key");
-		std::string value = CgiDataUtilities::postData(cgiIn, "value");
+		std::string key = CgiDataUtilities::postData(cgiIn, "key");
+		std::string value =
+		    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgiIn, "value"));
 
 		if(key.empty())
 		{
@@ -1797,6 +1798,157 @@ try
 
 			xmlOut.addTextElementToData("jsonDoc_name", docName);
 			xmlOut.addTextElementToData("jsonDoc_versions", versionList);
+		}
+	}
+	else if(requestType == "getJsonDocumentContent")
+	{
+		std::string docName    = CgiDataUtilities::getData(cgiIn, "docName");
+		std::string docVersion = CgiDataUtilities::getData(cgiIn, "docVersion");
+
+		__SUP_COUTV__(docName);
+		__SUP_COUTV__(docVersion);
+
+		bool valid = !docName.empty();
+		for(char c : docName)
+			if(!std::isalnum(c) && c != '_' && c != '-')
+			{
+				valid = false;
+				break;
+			}
+		if(!valid)
+		{
+			xmlOut.addTextElementToData(
+			    "Error",
+			    "Document name must be non-empty and contain only "
+			    "alphanumeric characters, dashes, and underscores.");
+		}
+		else if(docVersion.empty() ||
+		        docVersion.find_first_not_of("0123456789") != std::string::npos)
+		{
+			xmlOut.addTextElementToData(
+			    "Error", "Document version must contain only numeric characters.");
+		}
+		else
+		{
+			try
+			{
+				auto* ifc = ConfigurationInterface::getInstance();
+				std::string json =
+				    ifc->loadCustomJSON(docName, TableVersion(docVersion));
+				xmlOut.addTextElementToData("content", json);
+			}
+			catch(const std::exception& e)
+			{
+				xmlOut.addTextElementToData(
+				    "Error",
+				    "Failed to load document '" + docName + "-v" + docVersion +
+				        "': " + e.what());
+			}
+		}
+	}
+	else if(requestType == "saveJsonDocumentContent")
+	{
+		std::string docName =
+		    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgiIn, "docName"));
+		std::string content =
+		    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgiIn, "content"));
+
+		__SUP_COUTV__(docName);
+		__SUP_COUTVS__(10, content);
+
+		bool valid = !docName.empty();
+		for(char c : docName)
+			if(!std::isalnum(c) && c != '_' && c != '-')
+			{
+				valid = false;
+				break;
+			}
+		if(!valid)
+		{
+			xmlOut.addTextElementToData(
+			    "Error",
+			    "Document name must be non-empty and contain only "
+			    "alphanumeric characters, dashes, and underscores.");
+		}
+		else if(content.empty())
+		{
+			xmlOut.addTextElementToData("Error", "Document content must not be empty.");
+		}
+		else
+		{
+			try
+			{
+				auto* ifc = ConfigurationInterface::getInstance();
+				std::pair<std::string, TableVersion> saved =
+				    ifc->saveCustomJSON(content, docName);
+				__SUP_COUT__ << "Saved JSON document '" << docName << "' as version "
+				             << saved.second.toString() << __E__;
+				xmlOut.addTextElementToData("newVersion", saved.second.toString());
+				xmlOut.addTextElementToData(
+				    "Success", "Saved as version " + saved.second.toString());
+			}
+			catch(const std::exception& e)
+			{
+				xmlOut.addTextElementToData(
+				    "Error", "Failed to save document '" + docName + "': " + e.what());
+			}
+		}
+	}
+	else if(requestType == "getAppUrnByClass")
+	{
+		std::string className = CgiDataUtilities::getData(cgiIn, "className");
+
+		__SUP_COUTV__(className);
+
+		if(className.empty())
+		{
+			xmlOut.addTextElementToData("Error", "className must not be empty.");
+		}
+		else
+		{
+			try
+			{
+				std::vector<std::pair<std::string, ConfigurationTree>> appRecords =
+				    cfgMgr->getNode(ConfigurationManager::XDAQ_APPLICATION_TABLE_NAME)
+				        .getChildren();
+
+				bool found = false;
+				for(const auto& appRecord : appRecords)
+				{
+					std::string appClass =
+					    appRecord.second.getNode("Class").getValueAsString();
+
+					// tolerate either a bare class name or a namespace-qualified
+					// class name (e.g. "CodeEditorSupervisor" or
+					// "ots::CodeEditorSupervisor") on either side of the comparison
+					bool classMatches =
+					    appClass == className ||
+					    (appClass.size() > className.size() &&
+					     appClass.compare(appClass.size() - className.size(),
+					                       className.size(),
+					                       className) == 0 &&
+					     appClass[appClass.size() - className.size() - 1] == ':');
+					if(!classMatches)
+						continue;
+
+					std::string appId = appRecord.second.getNode("Id").getValueAsString();
+					xmlOut.addTextElementToData("urn", appId);
+					found = true;
+					break;
+				}
+
+				if(!found)
+					xmlOut.addTextElementToData(
+					    "Error", "No enabled application found for class '" + className +
+					                 "'.");
+			}
+			catch(const std::exception& e)
+			{
+				xmlOut.addTextElementToData(
+				    "Error",
+				    "Failed to look up application URN for class '" + className +
+				        "': " + e.what());
+			}
 		}
 	}
 	else
