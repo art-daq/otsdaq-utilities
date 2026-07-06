@@ -18191,27 +18191,58 @@
 			el.style.display = "none";
 
 			//set position and size
-			var w = 300;
+			var w = 310;
 			var h = 200;
 			ConfigurationAPI.setPopUpPosition(el, w /*w*/, h /*h*/);
 
 			var defaultAlias = "myAlias";
+			var aliasChoices = [
+				"Default",
+				"SubsystemCommon",
+				"SubsystemCommonOverride",
+				"SubsystemCommonContext",
+				"SubsystemCommonContextOverride",
+			];
 			var str = "<a id='" +
 				"popUpDialog" +
 				"-header' onclick='var el = document.getElementById(" +
 				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); return false;'>Cancel</a><br><br>";
 
 			str += "<div id='popUpDialog-div'>";
-			str += "Please enter the Alias you would like to assign to version &apos;" +
+			str += "Please choose or enter the Alias you would like to assign to version &apos;" +
 				_version + "&apos; of <b>" +
 				_currentTableName + "</b>:<br><br>";
-			str += "<input type='text' id='popUpDialog-alias' value='" +
-				defaultAlias + "'></input>";
+
+			str += "<div style='white-space:nowrap;'>";
+
+			str += "<select id='popUpDialog-aliasSelect' " +
+				"style='float:left;'>";
+			for(var i = 0; i < aliasChoices.length; ++i)
+				str += "<option>" + aliasChoices[i] + "</option>";
+			str += "</select>";
+
+			str += "<input type='text' " +
+				"id='popUpDialog-alias' " +
+				"style='display:none;float:left;width:200px;' " +
+				"value=''></input>";
+
+			str += "<div style='display:block;" +
+				"margin: -2px 0 -7px 14px;' " +
+				"class='treeNode-Value-editIcon' id='popUpDialog-aliasEditIcon' " +
+				"onclick='handlePopUpAliasEditToggle();' " +
+				"title='Toggle free-form editing' " +
+				"></div>";
+
+			str += "</div>";
+
 			str += "</div><br><br>";
 
 			var onmouseupJS = "";
-			onmouseupJS += "ConfigurationAPI.setTableAliasInActiveBackbone(" +
-				"document.getElementById(\"popUpDialog-alias\").value" +
+			onmouseupJS += "var sel = document.getElementById(\"popUpDialog-aliasSelect\");" +
+				"var tel = document.getElementById(\"popUpDialog-alias\");" +
+				"var aliasVal = (tel.style.display != \"none\") ? tel.value : sel.value;" +
+				"ConfigurationAPI.setTableAliasInActiveBackbone(" +
+				"aliasVal" +
 				",\"" +
 				_currentTableName + "\",\"" +
 				_version + "\",0,/*done handler*/ function()" +
@@ -18234,9 +18265,8 @@
 			document.getElementById("display").appendChild(el); //add element to display div
 			el.style.display = "block";
 
-			//select comment text
-			ConfigurationAPI.setCaretPosition(document.getElementById("popUpDialog-alias"),
-				0, defaultAlias.length);
+			//show pencil icon
+			document.getElementById("popUpDialog-aliasEditIcon").style.display = "block";
 		} //end popUpVersionAliasForm()
 
 		//==============================================================================
@@ -21282,6 +21312,27 @@
 			}
 
 		} //end handleEditTreeAliasEditToggle()
+
+		//==============================================================================
+		//handlePopUpAliasEditToggle ~~
+		function handlePopUpAliasEditToggle() {
+			Debug.log("handlePopUpAliasEditToggle");
+
+			var sel = document.getElementById("popUpDialog-aliasSelect");
+			var tel = document.getElementById("popUpDialog-alias");
+			if(sel.style.display == "none") {
+				sel.style.display = "block";
+				tel.style.display = "none";
+			}
+			else {
+				tel.style.width = ((sel.offsetWidth > 150 ? sel.offsetWidth : 150) - 2) + "px";
+				sel.style.display = "none";
+				if(tel.value == "")
+					tel.value = "myAlias";
+				tel.style.display = "block";
+				ConfigurationAPI.setCaretPosition(tel, 0, tel.value.length);
+			}
+		} //end handlePopUpAliasEditToggle()
 
 		//==============================================================================
 		//bodyMouseMoveHandler ~~

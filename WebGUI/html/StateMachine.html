@@ -1211,6 +1211,36 @@
 			var cs = DesktopContent.getXMLValue(req, "current_state");
 			var inTrans = DesktopContent.getXMLValue(req, "in_transition") == "1";
 
+			//check if FSM names changed (e.g. due to Context Common Table override)
+			{
+				var fsmNameArr = req.responseXML.getElementsByTagName("stateMachineName");
+				var newFsmNames = [];
+				for(var fi=0; fi<fsmNameArr.length; ++fi)
+					newFsmNames.push(fsmNameArr[fi].getAttribute('value'));
+				if(_fsmNameArr && newFsmNames.join(",") != _fsmNameArr.join(",")) {
+					Debug.log("FSM names changed, refreshing state machine...");
+					_fsmNameArr = newFsmNames;
+					var selectElement = document.getElementById('fsm-select');
+					if(selectElement) {
+						selectElement.innerHTML = "";
+						for(var fi=0; fi<_fsmNameArr.length; ++fi) {
+							var option = document.createElement('option');
+							option.value = _fsmNameArr[fi];
+							option.text = _fsmNameArr[fi] == "" ? "No FSM Records" : _fsmNameArr[fi];
+							if(_fsmName == _fsmNameArr[fi])
+								option.selected = true;
+							selectElement.appendChild(option);
+						}
+					}
+					validateAndSetFsmName();
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=getStateMachine" +
+						"&fsmName=" + _fsmName, "",
+						smRequestHandler);
+					return;
+				}
+			}
+
 			//Debug.log("Physics currStateRequestHandler: " + cs + " -- " + inTrans);
 
 			//find current state in stateNames array
