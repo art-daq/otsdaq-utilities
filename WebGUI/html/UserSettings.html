@@ -255,6 +255,14 @@
 				el = document.createElement("div");
 				el.setAttribute("id", "Settings-colorBox" + i);
 				el.setAttribute("class", "Settings-el Settings-colorBox");
+				el.style.cursor = "pointer";
+				el.title = "Click to open color picker";
+				(function (colorIndex) {
+					el.onmouseup = function (e) {
+						openColorPicker(colorIndex);
+						if (e) e.stopPropagation(); //eat event away from body
+					};
+				})(i);
 				colorDiv.appendChild(el); //add inputs
 
 				el = document.createElement("div");
@@ -953,6 +961,294 @@
 				extractRGBtoForm(extractFormToRGB(i), i);
 			return true;
 		} //end colorEditHandler()
+
+		//=====================================================================================
+		//openColorPicker ~~
+		//	open a custom color-wheel popup for color box 'i'. As the user drags on the
+		//	wheel (hue/saturation) and the brightness slider, the R/G/B inputs are updated
+		//	live and the form is refreshed.
+		var _colorWheelState = { index: -1, hue: 0, sat: 0, val: 1 };
+		function openColorPicker(i) {
+			_colorWheelState.index = i;
+
+			//seed wheel HSV from the color box's current R/G/B values
+			function clamp255(v) {
+				v = parseInt(v);
+				if (isNaN(v) || v < 0) return 0;
+				return v > 255 ? 255 : v;
+			}
+			var r = clamp255(document.getElementById("Settings-colorInput" + i + "0").value);
+			var g = clamp255(document.getElementById("Settings-colorInput" + i + "1").value);
+			var b = clamp255(document.getElementById("Settings-colorInput" + i + "2").value);
+			var hsv = _rgbToHsv(r, g, b);
+			_colorWheelState.hue = hsv[0];
+			_colorWheelState.sat = hsv[1];
+			_colorWheelState.val = hsv[2];
+
+			_buildColorWheelPopup();
+			_drawColorWheel();
+			_syncColorWheelToInputs(); //ensure inputs reflect seed (in case clamped)
+
+			var popup = document.getElementById("Settings-colorWheelPopup");
+			popup.style.display = "block";
+
+			//position the popup near the clicked color box
+			var box = document.getElementById("Settings-colorBox" + i);
+			if (box && box.getBoundingClientRect) {
+				var rect = box.getBoundingClientRect();
+				var top = rect.bottom + window.pageYOffset + 6;
+				var left = rect.left + window.pageXOffset;
+				//keep it on-screen horizontally
+				var maxLeft = window.pageXOffset + document.documentElement.clientWidth - 230;
+				if (left > maxLeft) left = maxLeft;
+				if (left < 4) left = 4;
+				popup.style.top = top + "px";
+				popup.style.left = left + "px";
+			}
+		} //end openColorPicker()
+
+		//=====================================================================================
+		//_buildColorWheelPopup ~~ lazily create the color-wheel popup DOM (once)
+		function _buildColorWheelPopup() {
+			if (document.getElementById("Settings-colorWheelPopup")) return;
+
+			var popup = document.createElement("div");
+			popup.setAttribute("id", "Settings-colorWheelPopup");
+			popup.style.position = "absolute";
+			popup.style.zIndex = "10000";
+			popup.style.display = "none";
+			popup.style.padding = "10px";
+			popup.style.background = "rgba(40,40,40,0.97)";
+			popup.style.border = "1px solid #888";
+			popup.style.borderRadius = "6px";
+			popup.style.boxShadow = "0 4px 16px rgba(0,0,0,0.5)";
+			popup.style.textAlign = "center";
+			popup.onmouseup = function (e) { if (e) e.stopPropagation(); }; //don't let body cancel
+			popup.onmousedown = function (e) { if (e) e.stopPropagation(); };
+
+			var canvas = document.createElement("canvas");
+			canvas.setAttribute("id", "Settings-colorWheelCanvas");
+			canvas.width = 200;
+			canvas.height = 200;
+			canvas.style.cursor = "crosshair";
+			canvas.style.borderRadius = "50%";
+			canvas.style.display = "block";
+
+			//wrapper adds a margin around the wheel so the mouse can travel past the
+			//edge; edge colors remain selectable because saturation is clamped to 1.
+			var WHEEL_PAD = 24; //px of interactive margin around the wheel
+			var wheelWrap = document.createElement("div");
+			wheelWrap.setAttribute("id", "Settings-colorWheelWrap");
+			wheelWrap.style.display = "inline-block";
+			wheelWrap.style.padding = WHEEL_PAD + "px";
+			wheelWrap.style.cursor = "crosshair";
+			wheelWrap.appendChild(canvas);
+			popup.appendChild(wheelWrap);
+
+			var computeHueSat = function (e) {
+				var rect = canvas.getBoundingClientRect();
+				var cx = canvas.width / 2, cy = canvas.height / 2;
+				var x = (e.clientX - rect.left) - cx;
+				var y = (e.clientY - rect.top) - cy;
+				var dist = Math.sqrt(x * x + y * y);
+				var radius = canvas.width / 2;
+				var sat = dist / radius;
+				if (sat > 1) sat = 1;
+				var hue = Math.atan2(y, x) * 180 / Math.PI;
+				if (hue < 0) hue += 360;
+				return [hue, sat];
+			};
+			//hover/drag: preview the color on the swatch only (do NOT commit to inputs)
+			wheelWrap.onmousemove = function (e) {
+				var hs = computeHueSat(e);
+				var rgb = _hsvToRgb(hs[0], hs[1], _colorWheelState.val);
+				var swatch = document.getElementById("Settings-colorWheelSwatch");
+				if (swatch)
+					swatch.style.backgroundColor = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+				_drawColorWheel(hs[0], hs[1]); //committed marker + hover marker
+			};
+			//leaving the wheel area: restore preview to the committed color
+			wheelWrap.onmouseleave = function () {
+				_drawColorWheel();
+				var rgb = _hsvToRgb(_colorWheelState.hue, _colorWheelState.sat, _colorWheelState.val);
+				var swatch = document.getElementById("Settings-colorWheelSwatch");
+				if (swatch)
+					swatch.style.backgroundColor = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+			};
+			//left click: lock in the selected color and commit to the R/G/B inputs
+			wheelWrap.onmousedown = function (e) {
+				if (e && e.button !== 0) return; //left click only
+				var hs = computeHueSat(e);
+				_colorWheelState.hue = hs[0];
+				_colorWheelState.sat = hs[1];
+				_drawColorWheel();
+				_syncColorWheelToInputs(); //commit
+				if (e) e.preventDefault();
+			};
+
+			//brightness (value) slider
+			var sliderWrap = document.createElement("div");
+			sliderWrap.style.margin = "8px 0 4px 0";
+			var slider = document.createElement("input");
+			slider.setAttribute("id", "Settings-colorWheelValue");
+			slider.setAttribute("type", "range");
+			slider.setAttribute("min", "0");
+			slider.setAttribute("max", "100");
+			slider.setAttribute("value", "100");
+			slider.style.width = "180px";
+			slider.oninput = function () {
+				_colorWheelState.val = parseInt(slider.value) / 100;
+				_drawColorWheel();
+				_syncColorWheelToInputs();
+			};
+			sliderWrap.appendChild(slider);
+			popup.appendChild(sliderWrap);
+
+			//preview swatch + Close button
+			var footer = document.createElement("div");
+			footer.style.marginTop = "6px";
+			footer.style.display = "flex";
+			footer.style.alignItems = "center";
+			footer.style.justifyContent = "space-between";
+
+			var swatch = document.createElement("div");
+			swatch.setAttribute("id", "Settings-colorWheelSwatch");
+			swatch.style.width = "40px";
+			swatch.style.height = "24px";
+			swatch.style.border = "1px solid #fff";
+			swatch.style.borderRadius = "3px";
+			footer.appendChild(swatch);
+
+			var closeBtn = document.createElement("input");
+			closeBtn.setAttribute("type", "submit");
+			closeBtn.setAttribute("class", "DesktopDashboard-button");
+			closeBtn.setAttribute("value", "Close");
+			closeBtn.onmouseup = function (e) {
+				document.getElementById("Settings-colorWheelPopup").style.display = "none";
+				if (e) e.stopPropagation();
+			};
+			footer.appendChild(closeBtn);
+
+			popup.appendChild(footer);
+			document.body.appendChild(popup);
+		} //end _buildColorWheelPopup()
+
+		//=====================================================================================
+		//_drawColorWheel ~~ render the HSV wheel at current brightness with a selection marker.
+		//	If previewHue/previewSat are provided, also draw a lighter hover marker there.
+		function _drawColorWheel(previewHue, previewSat) {
+			var canvas = document.getElementById("Settings-colorWheelCanvas");
+			if (!canvas) return;
+			var ctx = canvas.getContext("2d");
+			var w = canvas.width, h = canvas.height;
+			var cx = w / 2, cy = h / 2, radius = w / 2;
+			var val = _colorWheelState.val;
+
+			var image = ctx.createImageData(w, h);
+			var data = image.data;
+			for (var py = 0; py < h; ++py) {
+				for (var px = 0; px < w; ++px) {
+					var dx = px - cx, dy = py - cy;
+					var dist = Math.sqrt(dx * dx + dy * dy);
+					var idx = (py * w + px) * 4;
+					if (dist > radius) {
+						data[idx + 3] = 0; //transparent outside circle
+						continue;
+					}
+					var hue = Math.atan2(dy, dx) * 180 / Math.PI;
+					if (hue < 0) hue += 360;
+					var sat = dist / radius;
+					var rgb = _hsvToRgb(hue, sat, val);
+					data[idx] = rgb[0];
+					data[idx + 1] = rgb[1];
+					data[idx + 2] = rgb[2];
+					data[idx + 3] = 255;
+				}
+			}
+			ctx.putImageData(image, 0, 0);
+
+			//draw selection marker
+			var ang = _colorWheelState.hue * Math.PI / 180;
+			var mr = _colorWheelState.sat * radius;
+			var mx = cx + mr * Math.cos(ang);
+			var my = cy + mr * Math.sin(ang);
+			ctx.beginPath();
+			ctx.arc(mx, my, 6, 0, 2 * Math.PI);
+			ctx.strokeStyle = "#000";
+			ctx.lineWidth = 2;
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.arc(mx, my, 6, 0, 2 * Math.PI);
+			ctx.strokeStyle = "#fff";
+			ctx.lineWidth = 1;
+			ctx.stroke();
+
+			//draw hover preview marker (if provided and different from committed)
+			if (typeof previewHue === "number" && typeof previewSat === "number") {
+				var pang = previewHue * Math.PI / 180;
+				var pr = previewSat * radius;
+				var pmx = cx + pr * Math.cos(pang);
+				var pmy = cy + pr * Math.sin(pang);
+				ctx.beginPath();
+				ctx.arc(pmx, pmy, 5, 0, 2 * Math.PI);
+				ctx.strokeStyle = "rgba(255,255,255,0.9)";
+				ctx.lineWidth = 2;
+				ctx.stroke();
+			}
+		} //end _drawColorWheel()
+
+		//=====================================================================================
+		//_syncColorWheelToInputs ~~ push current wheel HSV into the R/G/B inputs + refresh form
+		function _syncColorWheelToInputs() {
+			var i = _colorWheelState.index;
+			if (i < 0) return;
+			var rgb = _hsvToRgb(_colorWheelState.hue, _colorWheelState.sat, _colorWheelState.val);
+			for (var j = 0; j < 3; ++j)
+				document.getElementById("Settings-colorInput" + i + j).value = rgb[j];
+			extractRGBtoForm(extractFormToRGB(i), i); //refresh box + inputs (handles alpha)
+			var swatch = document.getElementById("Settings-colorWheelSwatch");
+			if (swatch) swatch.style.backgroundColor = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+			var slider = document.getElementById("Settings-colorWheelValue");
+			if (slider) slider.value = Math.round(_colorWheelState.val * 100);
+		} //end _syncColorWheelToInputs()
+
+		//=====================================================================================
+		//_hsvToRgb ~~ h in [0,360), s,v in [0,1] -> [r,g,b] each in [0,255]
+		function _hsvToRgb(h, s, v) {
+			var c = v * s;
+			var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+			var m = v - c;
+			var r = 0, g = 0, b = 0;
+			if (h < 60) { r = c; g = x; b = 0; }
+			else if (h < 120) { r = x; g = c; b = 0; }
+			else if (h < 180) { r = 0; g = c; b = x; }
+			else if (h < 240) { r = 0; g = x; b = c; }
+			else if (h < 300) { r = x; g = 0; b = c; }
+			else { r = c; g = 0; b = x; }
+			return [
+				Math.round((r + m) * 255),
+				Math.round((g + m) * 255),
+				Math.round((b + m) * 255)
+			];
+		} //end _hsvToRgb()
+
+		//=====================================================================================
+		//_rgbToHsv ~~ r,g,b in [0,255] -> [h(0-360), s(0-1), v(0-1)]
+		function _rgbToHsv(r, g, b) {
+			r /= 255; g /= 255; b /= 255;
+			var max = Math.max(r, g, b), min = Math.min(r, g, b);
+			var d = max - min;
+			var h = 0;
+			if (d != 0) {
+				if (max == r) h = ((g - b) / d) % 6;
+				else if (max == g) h = (b - r) / d + 2;
+				else h = (r - g) / d + 4;
+				h *= 60;
+				if (h < 0) h += 360;
+			}
+			var s = max == 0 ? 0 : d / max;
+			return [h, s, max];
+		} //end _rgbToHsv()
 
 		//=====================================================================================
 		//setLayout ~~
