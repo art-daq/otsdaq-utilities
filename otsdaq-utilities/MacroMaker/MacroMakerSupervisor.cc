@@ -1162,7 +1162,7 @@ try
 		FEtoPluginTypeMap_.clear();     // reset
 		for(auto& feApp : feTypeSupervisors)
 		{
-			__SUP_COUT__ << "FEs for app " << feApp.first << ":" << feApp.second.getName()
+			__SUP_COUTT__ << "FEs for app " << feApp.first << ":" << feApp.second.getName()
 			             << __E__;
 
 			auto feChildren = appsNode.getNode(feApp.second.getName())
@@ -1175,7 +1175,7 @@ try
 				if(!fe.second.status())
 					continue;  // skip disabled FEs
 
-				__SUP_COUTV__(fe.first);
+				__SUP_COUTTV__(fe.first);
 				FEtoSupervisorMap_[fe.first] = feApp.first;
 
 				std::string pluginType =
@@ -3949,19 +3949,19 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			    "MacroMakerSupervisorRequest",
 			    txParameters);
 
-			__SUP_COUT__ << "Received response message: "
+			__SUP_COUTT__ << "Received response message: "
 			             << SOAPUtilities::translate(retMsg) << __E__;
 
 			SOAPUtilities::receive(retMsg, rxParameters);
 
-			__SUP_COUT__ << "Received it " << __E__;
+			__SUP_COUT__ << "Received FE Macro response." << __E__;
 
 			// If FESupervisor returned NotDoneTaskID, poll until macro completes
 			{
 				std::string notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
 				while(notDoneTaskID != "")
 				{
-					__SUP_COUT__ << "FE Macro async task " << notDoneTaskID
+					__SUP_COUTT__ << "FE Macro async task " << notDoneTaskID
 					             << " still running for FE '" << feUID
 					             << "'. Polling in 5s..." << __E__;
 					sleep(5);
@@ -3999,7 +3999,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			std::string error         = rxParameters.getValue("Error");
 
 			//__SUP_COUT__ << "rx success = " << success << __E__;
-			__SUP_COUT__ << "outputArgs = " << outputResults << __E__;
+			__SUP_COUTT__ << "outputArgs = " << outputResults << __E__;
 
 			if(error != "")
 			{
@@ -4053,7 +4053,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 						xmldoc.addTextElementToParent(
 						    "outputArgs_value", argValue, feMacroExecParent);
 					}
-					__SUP_COUT__ << argName << ": " << argValue << __E__;
+					__SUP_COUTT__ << argName << ": " << argValue << __E__;
 				}
 			}
 
