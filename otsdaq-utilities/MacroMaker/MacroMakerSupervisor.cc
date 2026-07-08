@@ -1162,8 +1162,8 @@ try
 		FEtoPluginTypeMap_.clear();     // reset
 		for(auto& feApp : feTypeSupervisors)
 		{
-			__SUP_COUTT__ << "FEs for app " << feApp.first << ":" << feApp.second.getName()
-			             << __E__;
+			__SUP_COUTT__ << "FEs for app " << feApp.first << ":"
+			              << feApp.second.getName() << __E__;
 
 			auto feChildren = appsNode.getNode(feApp.second.getName())
 			                      .getNode("LinkToSupervisorTable")
@@ -3950,7 +3950,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			    txParameters);
 
 			__SUP_COUTT__ << "Received response message: "
-			             << SOAPUtilities::translate(retMsg) << __E__;
+			              << SOAPUtilities::translate(retMsg) << __E__;
 
 			SOAPUtilities::receive(retMsg, rxParameters);
 
@@ -3962,8 +3962,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				while(notDoneTaskID != "")
 				{
 					__SUP_COUTT__ << "FE Macro async task " << notDoneTaskID
-					             << " still running for FE '" << feUID
-					             << "'. Polling in 5s..." << __E__;
+					              << " still running for FE '" << feUID
+					              << "'. Polling in 5s..." << __E__;
 					sleep(5);
 
 					SOAPParameters pollTxParams;
