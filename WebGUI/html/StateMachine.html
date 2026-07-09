@@ -658,8 +658,8 @@
 					if(_fsmName == _fsmNameArr[i])
 					{ found = true; break; }
 
-				if(!found)
-					_fsmName = ""; //clear
+				if(!found && _fsmNameArr.length)
+					_fsmName = ""; //clear only if list is non-empty
 			}
 			if(!_fsmName && _fsmNameArr.length)
 			{
