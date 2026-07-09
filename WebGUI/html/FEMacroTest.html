@@ -2358,9 +2358,14 @@ Here is the json string received:
 							var hiArgs = historyRecords_[hi]["inputArgs"].split(";");
 							for (var hj = 0; hj < hiArgs.length; ++hj) {
 								var hiPair = hiArgs[hj].split(",");
-								if (hiPair.length >= 2 && hiPair[0] !== "")
-									historyInputMap[decodeURIComponent(hiPair[0])] =
-										decodeURIComponent(hiPair[1]);
+								if (hiPair.length >= 2 && hiPair[0] !== "") {
+									try {
+										historyInputMap[decodeURIComponent(hiPair[0])] =
+											decodeURIComponent(hiPair[1]);
+									} catch (e) {
+										// ignore malformed URI components
+									}
+								}
 							}
 							break;
 						}
