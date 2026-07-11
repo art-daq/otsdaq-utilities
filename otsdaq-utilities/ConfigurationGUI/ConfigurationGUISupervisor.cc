@@ -6091,7 +6091,6 @@ void ConfigurationGUISupervisor::handleGetTableXML(HttpXmlDocument&        xmlOu
                                                    bool descriptionOnly /* = false */)
 try
 {
-	char                 tmpIntStr[100];
 	xercesc::DOMElement *parentEl, *subparentEl;
 
 	std::string accumulatedErrors = "";
@@ -6381,24 +6380,28 @@ try
 
 	parentEl = xmlOut.addTextElementToData("CurrentVersionRows", "");
 
-	for(int r = 0; r < (int)tableViewPtr->getNumberOfRows(); ++r)
-	{
-		sprintf(tmpIntStr, "%d", r);
-		xercesc::DOMElement* tmpParentEl =
-		    xmlOut.addTextElementToParent("Row", tmpIntStr, parentEl);
+	int numRows = (int)tableViewPtr->getNumberOfRows();
+	int numCols = (int)tableViewPtr->getNumberOfColumns();
 
-		for(int c = 0; c < (int)tableViewPtr->getNumberOfColumns(); ++c)
+	for(int c = 0; c < numCols; ++c)
+	{
+		std::string csvStr;
+		csvStr.reserve(numRows * 20);
+		for(int r = 0; r < numRows; ++r)
 		{
+			if(r > 0)
+				csvStr += ",";
 			if(colInfo[c].getDataType() == TableViewColumnInfo::DATATYPE_TIME)
 			{
 				std::string timeAsString;
 				tableViewPtr->getValue(timeAsString, r, c);
-				xmlOut.addTextElementToParent("Entry", timeAsString, tmpParentEl);
+				csvStr += StringMacros::encodeURIComponent(timeAsString);
 			}
 			else
-				xmlOut.addTextElementToParent(
-				    "Entry", tableViewPtr->getDataView()[r][c], tmpParentEl);
+				csvStr +=
+				    StringMacros::encodeURIComponent(tableViewPtr->getDataView()[r][c]);
 		}
+		xmlOut.addTextElementToParent("ColCSV", csvStr, parentEl);
 	}
 
 	// add "other" fields associated with configView
