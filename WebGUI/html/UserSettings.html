@@ -1065,7 +1065,16 @@
 				var swatch = document.getElementById("Settings-colorWheelSwatch");
 				if (swatch)
 					swatch.style.backgroundColor = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
-				_drawColorWheel(hs[0], hs[1]); //committed marker + hover marker
+
+				//Throttle expensive wheel redraws
+				_colorWheelState._previewHue = hs[0];
+				_colorWheelState._previewSat = hs[1];
+				if (_colorWheelState._rafPending) return;
+				_colorWheelState._rafPending = true;
+				requestAnimationFrame(function () {
+					_colorWheelState._rafPending = false;
+					_drawColorWheel(_colorWheelState._previewHue, _colorWheelState._previewSat);
+				});
 			};
 			//leaving the wheel area: restore preview to the committed color
 			wheelWrap.onmouseleave = function () {
