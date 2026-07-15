@@ -1131,7 +1131,17 @@
 
 			popup.appendChild(footer);
 			document.body.appendChild(popup);
-		} //end _buildColorWheelPopup()
+
+			//Close popup when clicking outside of it (capture to work even when other handlers stopPropagation)
+			if (!window._settingsColorWheelCloseHooked) {
+				window._settingsColorWheelCloseHooked = true;
+				document.addEventListener("mouseup", function (e) {
+					var p = document.getElementById("Settings-colorWheelPopup");
+					if (!p || p.style.display === "none") return;
+					if (e && e.target && p.contains(e.target)) return;
+					p.style.display = "none";
+				}, true);
+			}
 
 		//=====================================================================================
 		//_drawColorWheel ~~ render the HSV wheel at current brightness with a selection marker.
