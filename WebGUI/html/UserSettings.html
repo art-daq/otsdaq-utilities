@@ -257,10 +257,21 @@
 				el.setAttribute("class", "Settings-el Settings-colorBox");
 				el.style.cursor = "pointer";
 				el.title = "Click to open color picker";
+				el.setAttribute("role", "button");
+				el.setAttribute("tabindex", "0");
+				el.setAttribute("aria-label", "Open color picker");
 				(function (colorIndex) {
 					el.onmouseup = function (e) {
 						openColorPicker(colorIndex);
 						if (e) e.stopPropagation(); //eat event away from body
+					};
+					el.onkeydown = function (e) {
+						var key = e && (e.key || e.keyCode);
+						if (key === "Enter" || key === " " || key === 13 || key === 32) {
+							openColorPicker(colorIndex);
+							if (e.preventDefault) e.preventDefault();
+							if (e.stopPropagation) e.stopPropagation();
+						}
 					};
 				})(i);
 				colorDiv.appendChild(el); //add inputs
