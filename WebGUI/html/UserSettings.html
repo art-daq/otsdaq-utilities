@@ -1026,11 +1026,20 @@
 			popup.onmouseup = function (e) { if (e) e.stopPropagation(); }; //don't let body cancel
 			popup.onmousedown = function (e) { if (e) e.stopPropagation(); };
 
+			//custom cursor ~~ a transparent ring (no crosshair lines) so the wheel color
+			//under the pointer stays visible while picking
+			var _wheelCursorSvg = "<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'>" +
+				"<circle cx='11' cy='11' r='8' fill='none' stroke='white' stroke-width='2'/>" +
+				"<circle cx='11' cy='11' r='8' fill='none' stroke='black' stroke-width='1'/>" +
+				"</svg>";
+			var _wheelCursor = "url('data:image/svg+xml;utf8," +
+				encodeURIComponent(_wheelCursorSvg) + "') 11 11, default";
+
 			var canvas = document.createElement("canvas");
 			canvas.setAttribute("id", "Settings-colorWheelCanvas");
 			canvas.width = 200;
 			canvas.height = 200;
-			canvas.style.cursor = "crosshair";
+			canvas.style.cursor = _wheelCursor;
 			canvas.style.borderRadius = "50%";
 			canvas.style.display = "block";
 
@@ -1041,7 +1050,7 @@
 			wheelWrap.setAttribute("id", "Settings-colorWheelWrap");
 			wheelWrap.style.display = "inline-block";
 			wheelWrap.style.padding = WHEEL_PAD + "px";
-			wheelWrap.style.cursor = "crosshair";
+			wheelWrap.style.cursor = _wheelCursor;
 			wheelWrap.appendChild(canvas);
 			popup.appendChild(wheelWrap);
 
