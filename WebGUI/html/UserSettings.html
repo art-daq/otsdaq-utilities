@@ -320,7 +320,10 @@
 			}
 
 			//if user has privileges _sysLayoutArray is populated
-			el = document.getElementById("windSystemLayoutDiv");
+			//toggle the whole sub-column wrapper (not just the inner div) so that, for
+			//non-admin users, the hidden column doesn't reserve empty flex space and
+			//the remaining title/column stay centered
+			el = document.getElementById("windSystemLayoutCol");
 			if (!_sysLayoutArray || !_sysLayoutArray.length) //no priveleges
 			{
 				el.style.display = "none";
@@ -1693,8 +1696,8 @@
 								<div id='windLayoutDiv'></div>
 							</div>
 
-							<div class='genPrefsSubCol' style='width: 544px'>
-								<div id='windSystemLayoutDiv' style='display:none'></div>
+							<div class='genPrefsSubCol' id='windSystemLayoutCol' style='width: 544px; display:none'>
+								<div id='windSystemLayoutDiv'></div>
 							</div>
 						</div>
 					</div>
