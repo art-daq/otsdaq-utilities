@@ -1107,6 +1107,13 @@
 			//brightness (value) slider
 			var sliderWrap = document.createElement("div");
 			sliderWrap.style.margin = "8px 0 4px 0";
+			var sliderLabel = document.createElement("div");
+			sliderLabel.setAttribute("id", "Settings-colorWheelValueLabel");
+			sliderLabel.innerHTML = "Brightness";
+			sliderLabel.style.color = "#fff";
+			sliderLabel.style.fontSize = "12px";
+			sliderLabel.style.marginBottom = "2px";
+			sliderWrap.appendChild(sliderLabel);
 			var slider = document.createElement("input");
 			slider.setAttribute("id", "Settings-colorWheelValue");
 			slider.setAttribute("type", "range");
