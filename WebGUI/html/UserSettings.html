@@ -183,7 +183,7 @@
 				if (i) str += "<br>";
 				str += "<a onmouseup='Javascript:setLayout(" + (i + 1) +
 					",event)' class='winLayoutLink' id='winLayoutLink" + (i + 1) + "'>" +
-					"<text>User Preset-" + (i + 1) + " (Click to set)</text></a>";
+					"<span>User Preset-" + (i + 1) + " (Click to set)</span></a>";
 
 				Debug.log("_layoutAliasArray[" + i + "] " + _layoutAliasArray[i]);
 
@@ -203,7 +203,7 @@
 				if (i) sysStr += "<br>";
 				sysStr += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS + i + 1) +
 					",event)' class='winLayoutLink' id='winSysLayoutLink" + (i + 1) + "'>" +
-					"<text>System Preset-" + (i + 1) + " (Click to set)</text></a>";
+					"<span>System Preset-" + (i + 1) + " (Click to set)</span></a>";
 
 				sysStr += "Layout Alias: ";
 				if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
