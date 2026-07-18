@@ -757,16 +757,16 @@
 			htmlStr += "</div>";
 
 			htmlStr += "<div id='accountsPageNav'>Navigate: ";
-			htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + ")'; event.stopPropagation(); return false;'>&nbsp;Prev </a>";
+			htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + "); event.stopPropagation(); return false;'>&nbsp;Prev </a>";
 
 			for (i = (_AccountsPageIndex - _AccountsPageNavWidth < 0) ? 0 : (_AccountsPageIndex - _AccountsPageNavWidth);
 				i < _AccountsPageIndex + _AccountsPageNavWidth && i < numOfPages; ++i) {
-				htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + ")';event.stopPropagation(); return false;'> " +
+				htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + "); event.stopPropagation(); return false;'> " +
 					(i == _AccountsPageIndex ? "<b>" : "") + (i + 1) + (i == _AccountsPageIndex ? "</b>" : "") + " </a>";
 			}
 
 			htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;";
-			htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + ")';event.stopPropagation(); return false;'> Next&nbsp;</a>";
+			htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + "); event.stopPropagation(); return false;'> Next&nbsp;</a>";
 			htmlStr += "</div>";
 
 			htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
