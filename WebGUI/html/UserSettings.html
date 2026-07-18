@@ -652,8 +652,10 @@
 			if (el) //in wiz mode, there is now jump link
 			{
 				if (_usernameWithLock && _usernameWithLock != "") //insert user with lock if applicable
+				{
 					htmlStr += "<div class='accountsLockNote'>Note: <b>" + _usernameWithLock + "</b> currently has the ots Lock.</div>";
 					htmlStr += "<br><br>";
+				}
 
 				if (_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 				{
