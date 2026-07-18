@@ -17,6 +17,7 @@
 
 
 import os
+import re
 import sys
 from time import sleep
 from urllib.parse import unquote
@@ -69,24 +70,71 @@ def connectToClient() -> WebClient:
 
 
 def cleanMessage(message: str) -> str:
-    """Sanitize the message to prevent issues with Slack formatting."""
-    # Basic sanitization: escape &, <, > characters
-    message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    # replace all %20 with space
-    message = message.replace("%20", " ")
-    # replace all %0A%0D with newlines
-    message = message.replace("%0A%0D", "\n")
-    return message  # Remove leading/trailing whitespace
+    """Sanitize the message for Slack's ``text`` field.
+
+    Per https://api.slack.com/reference/surfaces/formatting#escaping we must
+    escape only ``&``, ``<`` and ``>`` so that plain text doesn't accidentally
+    look like ``<@user>`` / ``<url>`` mentions. Emoji shortcodes (``:smile:``)
+    and Unicode emoji (``\U0001F600``) are left untouched — Slack renders
+    both natively.
+    """
+    message = (
+        message.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return message
+
+
+def resolveMentions(client: WebClient, message: str) -> str:
+    """Replace ``@Name`` in the message with real Slack mentions ``<@UID>``.
+
+    Matches against workspace users' display name, real name, and username
+    (case-insensitive, longest name first so "@Alec Lynch" wins over "@Alec").
+    Unmatched ``@something`` text is left as-is.
+    """
+    if "@" not in message:
+        return message
+
+    names = {}
+    try:
+        cursor = None
+        while True:
+            resp = client.users_list(cursor=cursor, limit=200)
+            for u in resp.get("members", []):
+                if u.get("deleted") or u.get("is_bot"):
+                    continue
+                profile = u.get("profile", {})
+                for n in (
+                    profile.get("display_name"),
+                    profile.get("real_name"),
+                    u.get("name"),
+                ):
+                    if n:
+                        names[n.lower()] = u["id"]
+            cursor = resp.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+    except SlackApiError as e:
+        print(f"Warning: could not list users to resolve mentions: {e.response['error']}")
+        return message
+
+    for name in sorted(names, key=len, reverse=True):
+        pattern = re.compile(r"@" + re.escape(name) + r"\b", re.IGNORECASE)
+        message = pattern.sub(f"<@{names[name]}>", message)
+    return message
 
 
 def sendToSlack(user: str, message: str) -> None:
     """Send a message to a Slack channel using the Slack API."""
 
-    message = f"*{user}*: {message}"
-    message = cleanMessage(message)
     print(f"Sending message to Slack channel {SLACK_CHANNEL} from user {user}")
 
     client = connectToClient()
+
+    message = cleanMessage(message)
+    message = resolveMentions(client, message)
+    message = f"*{cleanMessage(user)}*: {message}"
 
     if message:
         try:
