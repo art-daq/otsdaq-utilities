@@ -183,7 +183,7 @@
 				if (i) str += "<br>";
 				str += "<a onmouseup='Javascript:setLayout(" + (i + 1) +
 					",event)' class='winLayoutLink' id='winLayoutLink" + (i + 1) + "'>" +
-					"<li>User Preset-" + (i + 1) + " (Click to set)</li></a>";
+					"<span>User Preset-" + (i + 1) + " (Click to set)</span></a>";
 
 				Debug.log("_layoutAliasArray[" + i + "] " + _layoutAliasArray[i]);
 
@@ -194,23 +194,25 @@
 					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' value='" + _layoutAliasArray[i] + "'>";
 				str += "<div class='winLayoutText' id='winLayoutText" + (i + 1) + "'></div>";
 			}
-			str += "<div id='windSystemLayoutDiv' style='display:none; white-space:nowrap;'>" +
-				"<hr width='100%'/>";
-			for (var i = 0; i < _NUM_SYS_LAYOUTS; ++i) {
-				if (i) str += "<br>";
-				str += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS + i + 1) +
-					",event)' class='winLayoutLink' id='winSysLayoutLink" + (i + 1) + "'>" +
-					"<li>System Preset-" + (i + 1) + " (Click to set)</li></a>";
-
-				str += "Layout Alias: ";
-				if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
-					str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
-				else
-					str += "<input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
-				str += "<div class='winLayoutText' id='winSysLayoutText" + (i + 1) + "'></div>";
-			}
-			str += "</div>";
 			document.getElementById("windLayoutDiv").innerHTML = str;
+
+			//system presets get their own column (#windSystemLayoutDiv); visibility for
+			//system admins is toggled in extractLayoutToForm() based on _sysLayoutArray privileges
+			var sysStr = "";
+			for (var i = 0; i < _NUM_SYS_LAYOUTS; ++i) {
+				if (i) sysStr += "<br>";
+				sysStr += "<a onmouseup='Javascript:setLayout(" + (_NUM_USER_LAYOUTS + i + 1) +
+					",event)' class='winLayoutLink' id='winSysLayoutLink" + (i + 1) + "'>" +
+					"<span>System Preset-" + (i + 1) + " (Click to set)</span></a>";
+
+				sysStr += "Layout Alias: ";
+				if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
+					sysStr += " <input type='text' id='winSysLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
+				else
+					sysStr += " <input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
+				sysStr += "<div class='winLayoutText' id='winSysLayoutText" + (i + 1) + "'></div>";
+			}
+			document.getElementById("windSystemLayoutDiv").innerHTML = sysStr;
 		}
 
 		//=====================================================================================
@@ -277,7 +279,7 @@
 				colorDiv.appendChild(el); //add inputs
 
 				el = document.createElement("div");
-				el.setAttribute("id", "clearDiv");
+				el.setAttribute("class", "clearDiv");
 				colorDiv.appendChild(el); //new line
 			}
 
@@ -318,7 +320,10 @@
 			}
 
 			//if user has privileges _sysLayoutArray is populated
-			el = document.getElementById("windSystemLayoutDiv");
+			//toggle the whole sub-column wrapper (not just the inner div) so that, for
+			//non-admin users, the hidden column doesn't reserve empty flex space and
+			//the remaining title/column stay centered
+			el = document.getElementById("windSystemLayoutCol");
 			if (!_sysLayoutArray || !_sysLayoutArray.length) //no priveleges
 			{
 				el.style.display = "none";
@@ -364,18 +369,31 @@
 
 
 			var el = document.getElementById("header");
-			el.innerHTML = "This page gives access to preferences/account selections for user <i><b>" +
-				pref_username + "</b></i> on " + ots_owner + " ots" +
-				(ots_remote_address ? (" (" + ots_remote_address + ")") : "") +
-				"." + "<br><br>" +
-				"Your ots access permissions are '" + desktop_user_permissions + ".'" +
-				"<br><br>" +
-				((_usernameWithLock && _usernameWithLock != "") ?
-					(_usernameWithLock + " currently has the " + ots_owner + " ots lock. " +
-						(_usernameWithLock == pref_username ? " <a onclick='lockToUsername(-1,false,\"" +
-							pref_username + "\");'>Click</a> to unlock." : "")) :
-					(ots_owner + " ots is currently unlocked. <a onclick='lockToUsername(-1,true,\"" +
-						pref_username + "\");'>Click</a> to lock."));
+			var lockedBySelf = _usernameWithLock && _usernameWithLock == pref_username;
+			var lockedByOther = _usernameWithLock && _usernameWithLock != "" && !lockedBySelf;
+			var lockBadgeClass = lockedByOther ? "lockBadge--lockedOther" :
+				(lockedBySelf ? "lockBadge--lockedSelf" : "lockBadge--unlocked");
+			var lockBadgeText = lockedByOther ?
+				("<b>" + _usernameWithLock + "</b> currently has the " + ots_owner + " ots lock") :
+				(lockedBySelf ?
+					("You currently have the " + ots_owner + " ots lock") :
+					(ots_owner + " ots is currently unlocked"));
+			var lockBadgeAction = (_usernameWithLock && _usernameWithLock != "") ?
+				(lockedBySelf ?
+					(" &ndash; <a onclick='lockToUsername(-1,false,\"" + pref_username + "\");'>Click to unlock</a>") :
+					"") :
+				(" &ndash; <a onclick='lockToUsername(-1,true,\"" + pref_username + "\");'>Click to lock</a>");
+			el.innerHTML =
+				"<div class='userHeaderCard'>" +
+					"<div class='userHeaderTitle'>Preferences &amp; Account Settings for <b>" + pref_username + "</b> " +
+						"<span class='userHeaderSub'>on " + ots_owner + " ots" +
+						(ots_remote_address ? (" (" + ots_remote_address + ")") : "") + "</span>" +
+					"</div>" +
+					"<div class='userHeaderMeta'>" +
+						"<span class='permBadge'>Access: " + desktop_user_permissions + "</span> " +
+						"<span class='lockBadge " + lockBadgeClass + "'>" + lockBadgeText + lockBadgeAction + "</span>" +
+					"</div>" +
+				"</div>";
 
 			//pass preferences to Desktop	but remove user accounts from message to Desktop
 			if (_mailbox) {
@@ -634,12 +652,15 @@
 			if (el) //in wiz mode, there is now jump link
 			{
 				if (_usernameWithLock && _usernameWithLock != "") //insert user with lock if applicable
-					htmlStr += "<div style='color:yellow; margin-bottom:10px;'>Note: <i>" + _usernameWithLock + "</i> currently has the ots Lock.</div>";
+				{
+					htmlStr += "<div class='accountsLockNote'>Note: <b>" + _usernameWithLock + "</b> currently has the ots Lock.</div>";
+					htmlStr += "<br><br>";
+				}
 
 				if (_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 				{
 					if (_mailbox) //only add jump link if there is a large Preferences section
-						htmlStr += "<div id='prefs'><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
+						htmlStr += "<div id='prefs'><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
 
 					el.innerHTML = htmlStr;
 				}
@@ -651,7 +672,7 @@
 			htmlStr = "";
 			htmlStr += "<br>";
 			if (!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
-				htmlStr += "<hr width='75%'><center><a style='color:#880000' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
+				htmlStr += "<hr width='75%'><center><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
 
 			htmlStr += "<div id='accountsSearchDiv'>Search: " +
 				"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
@@ -669,18 +690,6 @@
 
 			htmlStr += "<center>" + _AccountsOrderArray.length + " of " +
 				_accountsArray[0].length + " accounts match search.<br>(" + _AccountsPageSize + " per page)</center><br>";
-			htmlStr += "<div id='accountsPageNav'>Navigate: ";
-			htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + ")'; event.stopPropagation(); return false;'>&nbsp;Prev </a>";
-
-			for (i = (_AccountsPageIndex - _AccountsPageNavWidth < 0) ? 0 : (_AccountsPageIndex - _AccountsPageNavWidth);
-				i < _AccountsPageIndex + _AccountsPageNavWidth && i < numOfPages; ++i) {
-				htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + ")';event.stopPropagation(); return false;'> " +
-					(i == _AccountsPageIndex ? "<b>" : "") + (i + 1) + (i == _AccountsPageIndex ? "</b>" : "") + " </a>";
-			}
-
-			htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;";
-			htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + ")';event.stopPropagation(); return false;'> Next&nbsp;</a>";
-			htmlStr += "</div>";
 
 			htmlStr += "<center><div id='accountsPermNote'>" +
 				"<a onclick='showPermissionsTooltip(true /*alwaysShow*/);'>" +
@@ -690,7 +699,7 @@
 
 			//////////////////////////////////////////////////////
 			//accounts table
-			htmlStr += "<div id='accountsTableDiv'>";
+			htmlStr += "<div id='accountsTableDiv' class='accountsWidthMatch'>";
 			htmlStr += "<table><tr>";
 			for (j = 0; j < _accountFields.length - 1; ++j) //exclude NAC column, and place at end
 				htmlStr += "<td class='accountsHeaderFld'>" +
@@ -747,9 +756,23 @@
 			htmlStr += "</table>";
 			htmlStr += "</div>";
 
-			htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none; background-color: #EAABAB' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
+			htmlStr += "<div id='accountsPageNav'>Navigate: ";
+			htmlStr += "<a onmouseup='setAccountsPage(" + (_AccountsPageIndex - 1) + "); event.stopPropagation(); return false;'>&nbsp;Prev </a>";
+
+			for (i = (_AccountsPageIndex - _AccountsPageNavWidth < 0) ? 0 : (_AccountsPageIndex - _AccountsPageNavWidth);
+				i < _AccountsPageIndex + _AccountsPageNavWidth && i < numOfPages; ++i) {
+				htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;<a onmouseup='Javascript:setAccountsPage(" + i + "); event.stopPropagation(); return false;'> " +
+					(i == _AccountsPageIndex ? "<b>" : "") + (i + 1) + (i == _AccountsPageIndex ? "</b>" : "") + " </a>";
+			}
+
+			htmlStr += "&nbsp;&nbsp;&nbsp;&nbsp;";
+			htmlStr += "<a onmouseup='Javascript:setAccountsPage(" + (_AccountsPageIndex + 1) + "); event.stopPropagation(); return false;'> Next&nbsp;</a>";
+			htmlStr += "</div>";
+
+			htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
 			//////////////////////////////////////////////////////
 			//add new account option
+			htmlStr += "<div class='accountsWidthMatch'>";
 			htmlStr += "<h3 style='margin-bottom: -30px; margin-top: 10px;'>Create New Account:</h3>";
 			htmlStr += "<table><tr>";
 			for (j = 0; j < _accountFields.length - 1; ++j) //omit nac field
@@ -762,8 +785,10 @@
 			htmlStr += "<td></td><br><br>";
 			htmlStr += "</tr></table>";
 			htmlStr += "<center><div style='padding-top: 10px'><input id='newacct' type='submit' onmouseup='createNewAccount(event);' value='Create New Account'></div></center>";
+			htmlStr += "</div>";
 
 			el.innerHTML = htmlStr;
+
 
 
 
@@ -1642,54 +1667,52 @@
 				<input class='prefBtn' type='submit' value='Save Preferences'
 					   onmouseup='saveGenPreferences(); event.stopPropagation(); return false;' />
 				<br>
-				<h3>Color Scheme:</h3>
-				<table>
-					<td>
-						<div id='colorInputs'></div>
-						<div id='clearDiv'></div>
-						<a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a>
-						<a onmouseup='defaultColors(); return false;'>Default Colors</a>
-					</td>
-				</table>
-				<h3>Desktop Window Arrangement Presets:</h3>
-				<div id='windLayoutDiv'>
-					<!-- <a onmouseup='Javascript:setLayout(1,event)' class='winLayoutLink' id='winLayoutLink1'><li>Set Current Window Layout as User Preset-1</li></a>
-					<div class='winLayoutText' id='winLayoutText1'></div>
-					<br>
-					<a onmouseup='Javascript:setLayout(2,event)' class='winLayoutLink' id='winLayoutLink2'><li>Set Current Window Layout as User Preset-2</li></a>
-					<div class='winLayoutText' id='winLayoutText2'></div>
-					<br>
-					<a onmouseup='Javascript:setLayout(3,event)' class='winLayoutLink' id='winLayoutLink3'><li>Set Current Window Layout as User Preset-3</li></a>
-					<div class='winLayoutText' id='winLayoutText3'></div>
 
-					<div id='windSystemLayoutDiv' style='display:none'>
-							<hr width='50%'/>
-							<a onmouseup='Javascript:setLayout(4,event)' class='winLayoutLink' id='winSysLayoutLink1'><li>Set Current Window Layout as System Preset-1</li></a>
-							<div class='winLayoutText' id='winSysLayoutText1'></div>
-							<br>
-							<a onmouseup='Javascript:setLayout(5,event)' class='winLayoutLink' id='winSysLayoutLink2'><li>Set Current Window Layout as System Preset-2</li></a>
-							<div class='winLayoutText' id='winSysLayoutText2'></div>
-					</div> -->
+				<div class='genPrefsColumns'>
+					<div class='genPrefsCol' style='width: 544px'>
+						<h3>Color Scheme:</h3>
+						<table>
+							<td>
+								<div id='colorInputs'></div>
+								<div class='clearDiv'></div>
+								<a target='_blank' href='http://www.colorschemer.com/online'>RGB Generator</a>
+								<a onmouseup='defaultColors(); return false;'>Default Colors</a>
+							</td>
+						</table>
+
+						<div class='clearDiv'></div>
+						<h3>Misc. Personal Customizations:</h3>
+						<center>
+							<div id='miscCustomizationsBox'>
+								<button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
+
+								<button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
+							</div>
+						</center>
+					</div>
+
+					<div class='genPrefsCol'>
+						<h3>Desktop Window Arrangement Presets:</h3>
+						<div class='genPrefsSubColumns'>
+							<div class='genPrefsSubCol' style='width: 544px'>
+								<div id='windLayoutDiv'></div>
+							</div>
+
+							<div class='genPrefsSubCol' id='windSystemLayoutCol' style='width: 544px; display:none'>
+								<div id='windSystemLayoutDiv'></div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</center>
 
 
-			<div id='clearDiv'></div>
+			<div class='clearDiv'></div>
 
-			<br>
-			<center><input class='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center>
+			<!-- <br>
+			<center><input class='prefBtn' type='submit' value='Save Preferences' onmouseup='saveGenPreferences(event); return false;' /></center> -->
 
 		</div> <!-- end genPreferences -->
-
-		<div id='clearDiv'></div>
-		<h3>Misc. Personal Customizations:</h3>
-
-		<center>
-			<button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
-
-			<button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
-		</center>
-
 
 		<a name="ACCOUNTS_LABEL"></a>
 		<div id='accountsDiv'></div>
