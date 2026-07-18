@@ -20,7 +20,7 @@
 		float:right;
 	}
 
-	#clearDiv {
+	.clearDiv {
 		clear: both;
 		text-align: center;
 	}
