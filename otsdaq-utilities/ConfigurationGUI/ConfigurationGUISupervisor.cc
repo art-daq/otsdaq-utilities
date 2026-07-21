@@ -1121,10 +1121,24 @@ try
 	else if(requestType == "getArtdaqNodes")
 	{
 		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
+		std::string tableGroup     = CgiDataUtilities::getData(cgiIn, "tableGroup");
+		std::string tableGroupKey  = CgiDataUtilities::getData(cgiIn, "tableGroupKey");
+		std::string contextGroup    = CgiDataUtilities::getData(cgiIn, "contextGroup");
+		std::string contextGroupKey = CgiDataUtilities::getData(cgiIn, "contextGroupKey");
+		bool        suppressMultiNode =
+		    1 == CgiDataUtilities::getDataAsInt(cgiIn, "suppressMultiNode");
 
 		__SUP_COUTV__(modifiedTables);
+		__SUP_COUTT__ << "tableGroup: " << tableGroup << __E__;
+		__SUP_COUTT__ << "tableGroupKey: " << tableGroupKey << __E__;
+		__SUP_COUTT__ << "contextGroup: " << contextGroup << __E__;
+		__SUP_COUTT__ << "contextGroupKey: " << contextGroupKey << __E__;
+		__SUP_COUTT__ << "suppressMultiNode: " << suppressMultiNode << __E__;
 
-		handleGetArtdaqNodeRecordsXML(xmlOut, cfgMgr, modifiedTables);
+		handleGetArtdaqNodeRecordsXML(xmlOut, cfgMgr, modifiedTables,
+		                              tableGroup, TableGroupKey(tableGroupKey),
+		                              contextGroup, TableGroupKey(contextGroupKey),
+		                              suppressMultiNode);
 	}
 	else if(requestType == "saveArtdaqNodes")
 	{
@@ -8433,21 +8447,56 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 
 //==============================================================================
 /// handleGetArtdaqNodeRecordsXML
-///	get artdaq nodes for active groups
+///	get artdaq nodes for specified or active groups
 ///
 /// parameters
 ///	modifiedTables := CSV of table/version pairs
+///	tableGroup     := optional config group name (empty = use active groups)
+///	tableGroupKey  := optional config group key  (invalid = use active groups)
 ///
 void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
     HttpXmlDocument&        xmlOut,
     ConfigurationManagerRW* cfgMgr,
-    const std::string&      modifiedTables)
+    const std::string&      modifiedTables,
+    const std::string&      tableGroup,
+    TableGroupKey           tableGroupKey,
+    const std::string&      contextGroup,
+    TableGroupKey           contextGroupKey,
+    bool                    suppressMultiNode)
 {
 	__COUT__ << "Retrieving artdaq nodes..." << __E__;
 
-	//	setup active tables based on active groups and modified tables
+	//	setup active tables based on specified or active groups and modified tables
 	setupActiveTablesXML(
-	    xmlOut, cfgMgr, "", TableGroupKey(-1), modifiedTables, false /* refreshAll */);
+	    xmlOut, cfgMgr, tableGroup, tableGroupKey, modifiedTables, false /* refreshAll */);
+
+	// if a context group was specified, also load it so that
+	// getARTDAQSystem() can find XDAQContextTable and the ARTDAQSupervisor.
+	// Note: loadTableGroup(doActivate=false) only fills the table's raw row/column
+	//	data -- it deliberately does NOT call TableBase::init(), so derived/extracted
+	//	state (like XDAQContextTable::artdaqSupervisorContext_, computed in
+	//	XDAQContextTable::init()->extractContexts()) is left stale from whatever
+	//	group was last activated/initialized. We only want that one derived field
+	//	recomputed for the group we asked for -- calling full init() is NOT safe here:
+	//	it also runs configManager->isOwnerFirstAppInContext(), which looks up THIS
+	//	process's own (unrelated) ownerContextUID_ within whatever XDAQContextTable
+	//	rows now happen to be loaded, and on a lookup miss defaults to "yes" and
+	//	truncates/rewrites the live XDAQ_RUN_FILE. So call extractContexts() directly
+	//	(the read-only half of init()) instead of init() itself.
+	if(contextGroup != "" && !contextGroupKey.isInvalid())
+	{
+		__SUP_COUT__ << "Also loading context group '" << contextGroup << "("
+		             << contextGroupKey << ")' for ARTDAQ node lookup..." << __E__;
+		cfgMgr->loadTableGroup(contextGroup,
+		                       contextGroupKey,
+		                       false /*doActivate*/);
+
+		TableBase* ctxTableBase =
+		    cfgMgr->getTableByName(ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME);
+		XDAQContextTable* ctxTable = dynamic_cast<XDAQContextTable*>(ctxTableBase);
+		if(ctxTable)
+			ctxTable->extractContexts(cfgMgr);
+	}
 
 	std::map<std::string /*type*/,
 	         std::map<std::string /*record*/, std::vector<std::string /*property*/>>>
@@ -8458,8 +8507,12 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	std::vector<std::string /*property*/> artdaqSupervisorInfo;
 
 	std::string                        artdaqSupervisorName;
-	const ARTDAQTableBase::ARTDAQInfo& info = ARTDAQTableBase::getARTDAQSystem(
-	    cfgMgr, nodeTypeToObjectMap, subsystemObjectMap, artdaqSupervisorInfo);
+	const ARTDAQTableBase::ARTDAQInfo& info =
+	    ARTDAQTableBase::getARTDAQSystem(cfgMgr,
+	                                     nodeTypeToObjectMap,
+	                                     subsystemObjectMap,
+	                                     artdaqSupervisorInfo,
+	                                     suppressMultiNode);
 
 	if(artdaqSupervisorInfo.size() != 4 /*expecting 4 artdaq Supervisor parameters*/)
 	{
