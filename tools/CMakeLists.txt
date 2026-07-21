@@ -3,6 +3,7 @@ cet_enable_asserts()
 
 cet_make_exec(NAME ots_table_download_csv LIBRARIES otsdaq::ConfigurationInterface)
 cet_make_exec(NAME ots_table_upload_csv LIBRARIES otsdaq::ConfigurationInterface)
+cet_make_exec(NAME ots_table_update_cells LIBRARIES otsdaq::ConfigurationInterface)
 
 cet_script(ALWAYS_COPY
 	# ProductsUpdate.py #Deprecated
