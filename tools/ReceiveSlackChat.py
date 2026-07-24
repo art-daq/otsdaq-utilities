@@ -34,6 +34,7 @@ def _install_parent_death_signal():
     """
     try:
         import ctypes
+
         libc = ctypes.CDLL("libc.so.6", use_errno=True)
         PR_SET_PDEATHSIG = 1
         libc.prctl(PR_SET_PDEATHSIG, 15)  # 15 == SIGTERM
@@ -74,17 +75,19 @@ else:
 
 # Slack errors that will never recover without operator/config action.
 # Keep polling on them is pure noise, so we exit instead.
-FATAL_SLACK_ERRORS = frozenset({
-    "missing_scope",
-    "invalid_auth",
-    "not_authed",
-    "token_revoked",
-    "token_expired",
-    "account_inactive",
-    "channel_not_found",
-    "not_in_channel",
-    "is_archived",
-})
+FATAL_SLACK_ERRORS = frozenset(
+    {
+        "missing_scope",
+        "invalid_auth",
+        "not_authed",
+        "token_revoked",
+        "token_expired",
+        "account_inactive",
+        "channel_not_found",
+        "not_in_channel",
+        "is_archived",
+    }
+)
 
 
 class FatalSlackError(RuntimeError):
@@ -117,9 +120,7 @@ def get_display_name(client, user_id, cache):
         )
     except SlackApiError as e:
         if e.response.get("error") in FATAL_SLACK_ERRORS:
-            raise FatalSlackError(
-                f"users_info failed: {_format_slack_error(e)}"
-            ) from e
+            raise FatalSlackError(f"users_info failed: {_format_slack_error(e)}") from e
         name = user_id
     cache[user_id] = name
     return name
@@ -261,7 +262,9 @@ def _load_last_ts(state_path, lookback_seconds):
         # Expected on first run (or before state is created); fall back below.
         pass
     except Exception as e:
-        print(f"[startup] failed reading {state_path}: {e}", file=sys.stderr, flush=True)
+        print(
+            f"[startup] failed reading {state_path}: {e}", file=sys.stderr, flush=True
+        )
     ts = f"{time.time() - lookback_seconds:.6f}"
     print(
         f"[startup] no state file; looking back {lookback_seconds}s (last_ts={ts})",

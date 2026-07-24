@@ -75,14 +75,10 @@ def cleanMessage(message: str) -> str:
     Per https://api.slack.com/reference/surfaces/formatting#escaping we must
     escape only ``&``, ``<`` and ``>`` so that plain text doesn't accidentally
     look like ``<@user>`` / ``<url>`` mentions. Emoji shortcodes (``:smile:``)
-    and Unicode emoji (``\U0001F600``) are left untouched — Slack renders
+    and Unicode emoji (``\U0001f600``) are left untouched — Slack renders
     both natively.
     """
-    message = (
-        message.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     return message
 
 
@@ -116,7 +112,9 @@ def resolveMentions(client: WebClient, message: str) -> str:
             if not cursor:
                 break
     except SlackApiError as e:
-        print(f"Warning: could not list users to resolve mentions: {e.response['error']}")
+        print(
+            f"Warning: could not list users to resolve mentions: {e.response['error']}"
+        )
         return message
 
     for name in sorted(names, key=len, reverse=True):
