@@ -32,13 +32,6 @@ except ImportError:
     )
 
 
-# Environment variables for Slack configuration, defined in ots_setup_slack.sh
-USER_DATA = os.environ.get("USER_DATA")
-if not USER_DATA:
-    raise RuntimeError(
-        "Set USER_DATA environment variable to the current user's data directory."
-    )
-
 SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
@@ -130,6 +123,8 @@ def sendToSlack(user: str, message: str) -> None:
 
     client = connectToClient()
 
+    if message is None:
+        message = ""
     # Decode OTS WebGUI Chat percent-encoding (see WebGUI/html/Chat.html convertForServer()).
     message = (
         message.replace("%0A%0D", "\n")
