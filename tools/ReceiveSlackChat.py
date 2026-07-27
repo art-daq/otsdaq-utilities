@@ -220,7 +220,7 @@ def poll_once(client, last_ts, user_cache):
         display_name = display_name.replace("\t", " ").replace("\n", " ")
         text = msg.get("text", "")
         text = normalize_slack_text(client, text, user_cache)
-        text = text.replace("\t", " ").replace("\n", "\\n")
+        text = text.replace("\\", "\\\\").replace("\t", " ").replace("\n", "\\n")
 
         print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
 
