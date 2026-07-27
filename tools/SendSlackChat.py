@@ -51,7 +51,7 @@ def connectToClient() -> WebClient:
             client.auth_test()
             return client
         except SlackApiError as e:
-            _root_logger.error(
+            print(
                 f"Attempt {attempt} of {number_of_tries} failed: {e.response['error']}"
             )
             sleep(2)  # Wait before retrying
@@ -106,13 +106,26 @@ def resolveMentions(client: WebClient, message: str) -> str:
                 break
     except SlackApiError as e:
         print(
-            f"Warning: could not list users to resolve mentions: {e.response['error']}"
+            f"Warning: could not list users to resolve mentions "
+            f"(check the bot token has the 'users:read' scope): {e.response['error']}"
         )
         return message
+
+    print(f"resolveMentions: loaded {len(names)} candidate name(s) from Slack")
 
     for name in sorted(names, key=len, reverse=True):
         pattern = re.compile(r"(?<!\w)@" + re.escape(name) + r"\b", re.IGNORECASE)
         message = pattern.sub(f"<@{names[name]}>", message)
+
+    # Anything still looking like "@word" here didn't match any known Slack
+    # display_name/real_name/username, so it will just be plain text in Slack
+    # (no ping). Surface it so the mismatch is easy to diagnose.
+    for m in re.finditer(r"(?<!\w)@(\w[\w' -]*)", message):
+        print(
+            f"Warning: '@{m.group(1)}' did not match any Slack user "
+            "(display name/real name/username) -- it will not notify anyone"
+        )
+
     return message
 
 
