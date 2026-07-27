@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # ____________________________________________________________
 #
 # Long-running daemon that continuously polls a Slack channel for new messages
