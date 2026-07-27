@@ -52,6 +52,7 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 
 		// Require Slack configuration before enabling daemon/send-to-Slack behavior.
 		if(std::getenv("SLACK_BOT_TOKEN") == nullptr ||
+		   std::getenv("SLACK_CHANNEL") == nullptr ||
 		   std::getenv("SLACK_CHANNEL_ID") == nullptr)
 			enableSlackChat = false;
 
