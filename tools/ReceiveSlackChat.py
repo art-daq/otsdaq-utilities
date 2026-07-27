@@ -150,9 +150,9 @@ def normalize_slack_text(client, text, user_cache):
 def poll_once(client, last_ts, user_cache):
     """Fetch new messages from Slack since last_ts.
 
-    Returns (lines, new_last_ts, ok). ok is False if the poll failed
-    (transient error or rate-limit); the caller uses this to track
-    consecutive failures.
+    Returns (lines, new_last_ts, ok). ok is False if the poll failed due to a
+    transient error; rate limits are handled internally by sleeping and then
+    returning ok=True so the caller doesn't count it as a failure.
     """
     kwargs = {"channel": SLACK_CHANNEL_ID, "limit": 50}
     if last_ts and last_ts != "0":
