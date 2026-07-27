@@ -545,7 +545,30 @@ void ChatSupervisor::receiveFromSlack()
 		replaceAll(user, "\"", "%22");
 		replaceAll(user, "'", "%27");
 
-		replaceAll(message, "\\n", "%0A%0D");
+		// Reverse ReceiveSlackChat.py escaping: "\\\\" -> "\\" and "\\n" -> newline marker.
+		std::string decoded;
+		decoded.reserve(message.size());
+		for(size_t i = 0; i < message.size(); ++i)
+		{
+			if(message[i] == '\\' && i + 1 < message.size())
+			{
+				if(message[i + 1] == '\\')
+				{
+					decoded.push_back('\\');
+					++i;
+					continue;
+				}
+				if(message[i + 1] == 'n')
+				{
+					decoded += "%0A%0D";
+					++i;
+					continue;
+				}
+			}
+			decoded.push_back(message[i]);
+		}
+		message.swap(decoded);
+
 		replaceAll(message, "&", "%26");
 		replaceAll(message, "<", "%3C");
 		replaceAll(message, ">", "%3E");
