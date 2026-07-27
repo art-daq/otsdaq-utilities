@@ -438,8 +438,8 @@ void ChatSupervisor::stopSlackDaemon()
 	slackDaemonPid_ = -1;
 
 	// Clean up the inbox file
-	std::remove(slackInboxPath_.c_str());
-	std::remove((slackInboxPath_ + ".lock").c_str());
+	unlink(slackInboxPath_.c_str());
+	unlink((slackInboxPath_ + ".lock").c_str());
 }  // end stopSlackDaemon()
 
 //==============================================================================
