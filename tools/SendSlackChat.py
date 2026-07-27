@@ -130,6 +130,16 @@ def sendToSlack(user: str, message: str) -> None:
 
     client = connectToClient()
 
+    # Decode OTS WebGUI Chat percent-encoding (see WebGUI/html/Chat.html convertForServer()).
+    message = (
+        message.replace("%0A%0D", "\n")
+        .replace("%20%20", "  ")
+        .replace("%26", "&")
+        .replace("%3C", "<")
+        .replace("%3E", ">")
+        .replace("%22", '"')
+        .replace("%27", "'")
+    )
     message = cleanMessage(message)
     message = resolveMentions(client, message)
     message = f"*{cleanMessage(user)}*: {message}"
