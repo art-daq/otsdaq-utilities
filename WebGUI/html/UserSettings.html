@@ -52,6 +52,8 @@
 
 		//for lockout
 		var _usernameWithLock = "";
+		var _prefUsername = "";
+		var _desktopUserPermissions = "";
 
 		//functions:
 		//init()
@@ -363,9 +365,11 @@
 			//get username with lock, "" means no one has lock
 			_usernameWithLock = DesktopContent.getXMLValue(req, "username_with_lock");
 			var pref_username = DesktopContent.getXMLValue(req, "pref_username");
+			_prefUsername = pref_username;
 			var ots_owner = DesktopContent.getXMLValue(req, "ots_owner");
 			var ots_remote_address = DesktopContent.getXMLValue(req, "ots_remote_address");
 			var desktop_user_permissions = DesktopContent.getXMLValue(req, "desktop_user_permissions");
+			_desktopUserPermissions = desktop_user_permissions;
 
 
 			var el = document.getElementById("header");
@@ -381,7 +385,9 @@
 			var lockBadgeAction = (_usernameWithLock && _usernameWithLock != "") ?
 				(lockedBySelf ?
 					(" &ndash; <a onclick='lockToUsername(-1,false,\"" + pref_username + "\");'>Click to unlock</a>") :
-					"") :
+					((desktop_user_permissions && desktop_user_permissions.indexOf("allUsers: 255") >= 0) ?
+						(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false,\"" + _usernameWithLock + "\");'>Click to force unlock</a>") :
+						"")) :
 				(" &ndash; <a onclick='lockToUsername(-1,true,\"" + pref_username + "\");'>Click to lock</a>");
 			el.innerHTML =
 				"<div class='userHeaderCard'>" +
@@ -673,6 +679,24 @@
 			htmlStr += "<br>";
 			if (!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
 				htmlStr += "<hr width='75%'><center><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
+
+			//show current lock status just above the search box
+			if (_usernameWithLock && _usernameWithLock != "") {
+				if (_usernameWithLock == _prefUsername)
+					htmlStr += "<center><div class='accountsLockNote accountsLockNote--self'>You currently have the ots lock &ndash; " +
+						"<a onclick='lockToUsername(-1,false,\"" + _prefUsername + "\");'>Click to unlock</a></div></center>";
+				else {
+					var isAdmin = _desktopUserPermissions && _desktopUserPermissions.indexOf("allUsers: 255") >= 0;
+					htmlStr += "<center><div class='accountsLockNote accountsLockNote--other'>Note: <b>" + _usernameWithLock + "</b> currently has the ots lock" +
+						(isAdmin ?
+							(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false,\"" + _usernameWithLock + "\");'>Click to force unlock</a>") :
+							".") +
+						"</div></center>";
+				}
+			}
+			else
+				htmlStr += "<center><div class='accountsLockNote accountsLockNote--unlocked'>ots is currently unlocked &ndash; " +
+					"<a onclick='lockToUsername(-1,true,\"" + _prefUsername + "\");'>Click to lock</a></div></center>";
 
 			htmlStr += "<div id='accountsSearchDiv'>Search: " +
 				"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
