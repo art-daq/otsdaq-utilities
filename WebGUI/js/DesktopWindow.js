@@ -330,7 +330,7 @@ else {
             _isMaximized = true;
 
             this.windiv.style.display = "inline"; //make sure is visible
-            this.setWindowSizeAndPosition(_x + 10, _y, _w, _h);
+            this.setWindowSizeAndPosition(_x, _y, _w, _h);
             window.parent.document.title = (Desktop.desktop.icons.getFolderFocus() ? Desktop.desktop.icons.getFolderFocus().substr(0,4).trim() + "../" : "") + _name;
 
             Debug.log(document.title, _name, "maximize()");

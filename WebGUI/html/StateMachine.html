@@ -343,7 +343,7 @@
 
 
 		var _PARAMETER_SETUP_MIN_HEIGHT = 15;
-		var _PARAMETER_SETUP_MAX_HEIGHT = 100;
+		var _PARAMETER_SETUP_MAX_HEIGHT = 120;
 		var _PARAMETER_SETUP_WIDTH = 150;
 
 		var _EXTRAS_WIDTH = 220;
@@ -391,6 +391,8 @@
 		var _AlarmSound = new Audio(_ALARM_SOUND_PATH);
 
 		var _parameterSetupMinimized = false;	//default to maximized
+		var _appliedContextCommonList = "";
+		var _appliedContextCommonOverrideList = "";
 		var _parameterInitCount;
 		var _lastAliasListUpdateTime = 0;
 
@@ -656,8 +658,8 @@
 					if(_fsmName == _fsmNameArr[i])
 					{ found = true; break; }
 
-				if(!found)
-					_fsmName = ""; //clear
+				if(!found && _fsmNameArr.length)
+					_fsmName = ""; //clear only if list is non-empty
 			}
 			if(!_fsmName && _fsmNameArr.length)
 			{
@@ -879,7 +881,6 @@
 								"No aliases match FSM filter" + "</option>";
 						}
 
-
 						break;
 					default: ;
 				}
@@ -893,6 +894,16 @@
 			if (_parameterInitCount >= _TRANSITION_PARAMETERS.length) {
 				// _transParamsHtmlStr += "</table>";
 				//Debug.log("Physics _transParamsHtmlStr " + _transParamsHtmlStr);
+
+				var hasCommon = _appliedContextCommonList || _appliedContextCommonOverrideList;
+				_transParamsHtmlStr +=
+					"<div id='context-common-link' style='margin-top:8px;font-size:11px;" +
+					(hasCommon ? "" : "display:none;") + "'>" +
+					"<a href='Javascript:showContextCommonInfo();' " +
+					"style='letter-spacing:0.5px;' " +
+					"title='Show SubsystemCommon and ContextCommon table overrides imposed on this subsystem'>" +
+					"ContextCommon tables provided</a></div>";
+
 				_parameterSetup.innerHTML = _transParamsHtmlStr;
 				_parameterSetup.style.display = "block";
 				if(_transitionParameterValues[0])
@@ -1208,8 +1219,60 @@
 			}
 
 			_activeFsmName = DesktopContent.getXMLValue(req, "active_fsmName");
+
+			_appliedContextCommonList = DesktopContent.getXMLValue(req, "AppliedContextCommonList") || "";
+			_appliedContextCommonOverrideList = DesktopContent.getXMLValue(req, "AppliedContextCommonOverrideList") || "";
+
+			var ctxLink = document.getElementById('context-common-link');
+			if(ctxLink)
+				ctxLink.style.display =
+					(_appliedContextCommonList || _appliedContextCommonOverrideList) ? "" : "none";
+
+			// if no FSM name was set (e.g. server returned empty FSM list),
+			// adopt the active FSM name from the server so transitions still work
+			if(!_fsmName && _activeFsmName && !DesktopContent.getParameter(0, "fsm_name"))
+			{
+				Debug.log("No FSM name set, adopting active FSM name from server:", _activeFsmName);
+				_fsmName = _activeFsmName;
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=getStateMachine" +
+					"&fsmName=" + _fsmName, "",
+					smRequestHandler);
+				return;
+			}
+
 			var cs = DesktopContent.getXMLValue(req, "current_state");
 			var inTrans = DesktopContent.getXMLValue(req, "in_transition") == "1";
+
+			//check if FSM names changed (e.g. due to Context Common Table override)
+			{
+				var fsmNameArr = req.responseXML.getElementsByTagName("stateMachineName");
+				var newFsmNames = [];
+				for(var fi=0; fi<fsmNameArr.length; ++fi)
+					newFsmNames.push(fsmNameArr[fi].getAttribute('value'));
+				if(_fsmNameArr && newFsmNames.join(",") != _fsmNameArr.join(",")) {
+					Debug.log("FSM names changed, refreshing state machine...");
+					_fsmNameArr = newFsmNames;
+					var selectElement = document.getElementById('fsm-select');
+					if(selectElement) {
+						selectElement.innerHTML = "";
+						for(var fi=0; fi<_fsmNameArr.length; ++fi) {
+							var option = document.createElement('option');
+							option.value = _fsmNameArr[fi];
+							option.text = _fsmNameArr[fi] == "" ? "No FSM Records" : _fsmNameArr[fi];
+							if(_fsmName == _fsmNameArr[fi])
+								option.selected = true;
+							selectElement.appendChild(option);
+						}
+					}
+					validateAndSetFsmName();
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=getStateMachine" +
+						"&fsmName=" + _fsmName, "",
+						smRequestHandler);
+					return;
+				}
+			}
 
 			//Debug.log("Physics currStateRequestHandler: " + cs + " -- " + inTrans);
 
@@ -2874,6 +2937,17 @@
 
 			redrawPhysics();
 		} //end toggleParameterSetupPane()
+
+		//=====================================================================================
+		//showContextCommonInfo()
+		function showContextCommonInfo() {
+			var msg = "<b>ContextCommon Tables (enforced from top-level)</b><br>";
+			msg += "ContextCommonList: " +
+				(_appliedContextCommonList || "<i>none</i>") + "<br>";
+			msg += "ContextCommonOverrideList: " +
+				(_appliedContextCommonOverrideList || "<i>none</i>");
+			Debug.info(msg);
+		} //end showContextCommonInfo()
 
 		//=====================================================================================
 		//eatParameterMouseEvent(touchEvent)
