@@ -1906,11 +1906,20 @@ Here is the json string received:
 
 			}
 			Debug.logv({ uidSelStr });
-			var splitArr = el.id.split('-');
 
-			handleSelectedFEUID(splitArr[2] | 0 /*r*/,
-				splitArr[3] | 0 /*c*/,
-				uidSelStr);
+			var parsedR, parsedC;
+			var rowMatch = el.id.match(/row-(\d+)/);
+			var colMatch = el.id.match(/col-(\d+)/);
+			if (rowMatch && colMatch) {
+				parsedR = rowMatch[1] | 0;
+				parsedC = colMatch[1] | 0;
+			} else {
+				var splitArr = el.id.split('-');
+				parsedR = splitArr[2] | 0;
+				parsedC = splitArr[3] | 0;
+			}
+
+			handleSelectedFEUID(parsedR, parsedC, uidSelStr);
 
 		} //end multiFESelectionHandler()
 
@@ -2065,7 +2074,6 @@ Here is the json string received:
 		//handleSelectedMacroType ~~
 		function handleSelectedMacroType(r, c) {
 			Debug.log("handleSelectedMacroType(" + r + "," + c + ")");
-
 
 			if (!macroModules_[r]) {
 				Debug.log("Invalid row " + r + " specified for layout module.",
@@ -2340,18 +2348,44 @@ Here is the json string received:
 					inputValueHistory_[r + "," + c][0] == macroName)
 					inputHistoryMap = inputValueHistory_[r + "," + c][1];
 
+				//if no in-memory values found, search Command History for first match by macroName
+				var historyInputMap;
+				if (!inputHistoryMap[inputsArr[0]] && historyRecords_.length) {
+					for (var hi = historyRecords_.length - 1; hi >= 0; --hi) {
+						if (historyRecords_[hi]["macroName"] == macroName &&
+							historyRecords_[hi]["inputArgs"]) {
+							historyInputMap = {};
+							var hiArgs = historyRecords_[hi]["inputArgs"].split(";");
+							for (var hj = 0; hj < hiArgs.length; ++hj) {
+								var hiPair = hiArgs[hj].split(",");
+								if (hiPair.length >= 2 && hiPair[0] !== "") {
+									try {
+										historyInputMap[decodeURIComponent(hiPair[0])] =
+											decodeURIComponent(hiPair[1]);
+									} catch (e) {
+										// ignore malformed URI components
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+
 				str += "<table>";
 				for (var i = 0; i < inputsArr.length; ++i) {
 					str += "<tr><td class='macroInputName'>";
 					str += inputsArr[i] + ":";
 					str += "</td><td>";
+					var inputVal = inputHistoryMap[inputsArr[i]] ||
+						(historyInputMap && historyInputMap[inputsArr[i]]) ||
+						"Default";
 					str += DesktopContent.htmlOpen("input", {
 						"type": "text",
 						"id": "macroInput-row-" + r + "-col-" + c +
 							"-i-" + i,
 						"class": "macroInput " + "macroInput-row-" + r + "-col-" + c,
-						"value": (inputHistoryMap[inputsArr[i]] ?
-							inputHistoryMap[inputsArr[i]] : "Default"),
+						"value": inputVal,
 						"onclick": "setCaretPosition(this,0,this.value.length);",
 						"autocomplete": "off",
 						"autocorrect": "off",
