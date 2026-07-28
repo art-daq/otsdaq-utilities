@@ -2228,6 +2228,124 @@ Desktop.handleBodyMouseMove = function (mouseEvent) {
 } //end Desktop.handleBodyMouseMove()
 
 //==============================================================================
+//Desktop.buildTiledSqueezeCascade ~~
+//	When tiled windows are squeezed by a horizontal resize, the neighboring window can
+//	only give up width until it reaches its minimum width. This builds the chain
+//	("cascade") of windows beyond that neighboring window, so that width can keep being
+//	taken from the next window over, and the next, and so on, until there are no more
+//	windows wider than their minimum width.
+//
+//	seedWindows := the neighboring windows being squeezed (i.e. cascade level 0)
+//	dir := -1 to cascade to the left (windows whose right edge touches the level's left edge)
+//		   +1 to cascade to the right (windows whose left edge touches the level's right edge)
+//	excludeWindows := windows that must never be part of the cascade, i.e. the target
+//		window and the windows moving along with the target window
+//
+//	returns array of levels, each { wins: [...], slack: px of width the level can give up }
+Desktop.buildTiledSqueezeCascade = function (seedWindows, dir, excludeWindows, tolerance) {
+	var levels = [];
+	var used = {}; //by window id, so that a window is only used once in the cascade
+	for (var i = 0; excludeWindows && i < excludeWindows.length; ++i)
+		used[excludeWindows[i].getWindowId()] = true;
+
+	var level = [];
+	for (var i = 0; i < seedWindows.length; ++i) {
+		if (used[seedWindows[i].getWindowId()]) continue;
+		used[seedWindows[i].getWindowId()] = true;
+		level.push(seedWindows[i]);
+	}
+
+	while (level.length) {
+		//the whole level moves together, so the narrowest window of the level
+		//	limits how much width the level can give up
+		var slack = -1;
+		for (var i = 0; i < level.length; ++i) {
+			var s = level[i].getWindowWidth() - level[i].getWindowMinWidth();
+			if (slack < 0 || s < slack) slack = s;
+		}
+		if (slack < 0) slack = 0;
+		levels.push({ wins: level, slack: slack });
+
+		//find the windows of the next level over
+		var next = [];
+		for (var i = 0; i < Desktop.desktop.getNumberOfWindows(); ++i) {
+			var w = Desktop.desktop.getWindowByIndex(i);
+			if (used[w.getWindowId()]) continue;
+
+			for (var j = 0; j < level.length; ++j) {
+				var touching = dir < 0 ?
+					Math.abs((w.getWindowX() + w.getWindowWidth()) - level[j].getWindowX()) <= tolerance :
+					Math.abs(w.getWindowX() - (level[j].getWindowX() + level[j].getWindowWidth())) <= tolerance;
+				if (touching) {
+					used[w.getWindowId()] = true;
+					next.push(w);
+					break;
+				}
+			}
+		}
+		level = next;
+	} //end cascade level loop
+
+	return levels;
+} //end buildTiledSqueezeCascade()
+
+//==============================================================================
+//Desktop.applyTiledSqueezeCascade ~~
+//	Move the near edge of cascade level 0 by amount px in the cascade direction.
+//	A level that runs out of width keeps its minimum width and just translates, and the
+//	px it could not give up are then taken from the next level over (and so on).
+//	Note: amount must have already been limited to the total slack of the cascade.
+Desktop.applyTiledSqueezeCascade = function (levels, dir, amount, lastPositions) {
+	var shift = amount; //px the near edge of this level must move (always positive)
+	for (var i = 0; i < levels.length && shift > 0; ++i) {
+		levels[i].pre = []; //remember geometry, in case the cascade must be reverted
+		for (var j = 0; j < levels[i].wins.length; ++j) {
+			var w = levels[i].wins[j];
+			levels[i].pre.push([w.getWindowX(), w.getWindowY(), w.getWindowWidth(), w.getWindowHeight()]);
+
+			var newW = w.getWindowWidth() - shift;
+			if (newW < w.getWindowMinWidth()) newW = w.getWindowMinWidth();
+
+			//the far edge of the window stays put, the near edge moves by shift
+			var newX = dir < 0 ?
+				(w.getWindowX() + w.getWindowWidth() - shift) - newW :	//right edge moves left
+				w.getWindowX() + shift;									//left edge moves right
+
+			//note: setWindowSizeAndPosition() is used instead of resizeAndPositionWindow(),
+			//	because a window already at its minimum width is only being translated here
+			w.setWindowSizeAndPosition(newX, w.getWindowY(), newW, w.getWindowHeight());
+
+			if (lastPositions && lastPositions[w.getWindowId()]) {
+				lastPositions[w.getWindowId()][0] = w.getWindowX();
+				lastPositions[w.getWindowId()][2] = w.getWindowWidth();
+			}
+		}
+
+		shift -= levels[i].slack; //what this level could not absorb continues down the line
+		if (shift < 0) shift = 0;
+	}
+} //end applyTiledSqueezeCascade()
+
+//==============================================================================
+//Desktop.revertTiledSqueezeCascade ~~
+//	restore the geometry saved by Desktop.applyTiledSqueezeCascade()
+Desktop.revertTiledSqueezeCascade = function (levels, lastPositions) {
+	for (var i = 0; i < levels.length; ++i) {
+		if (!levels[i].pre) continue;
+		for (var j = 0; j < levels[i].wins.length; ++j) {
+			var w = levels[i].wins[j];
+			w.setWindowSizeAndPosition(levels[i].pre[j][0], levels[i].pre[j][1],
+				levels[i].pre[j][2], levels[i].pre[j][3]);
+			if (lastPositions && lastPositions[w.getWindowId()]) {
+				lastPositions[w.getWindowId()][0] = w.getWindowX();
+				lastPositions[w.getWindowId()][2] = w.getWindowWidth();
+			}
+		}
+		levels[i].pre = undefined;
+	}
+} //end revertTiledSqueezeCascade()
+
+//==============================================================================
 //handle resizing and moving events for desktop
 Desktop.handleWindowManipulation = function (delta) {
 	//IMPORTANT: Use the captured target window from mousedown to prevent race conditions
@@ -2368,6 +2486,82 @@ Desktop.handleWindowManipulation = function (delta) {
 	if (!keepTile)
 		Desktop.desktop.lastTileWinPositions = {}; //clear to avoid future checks
 
+	//when tiled, a horizontal resize is really the drag of a vertical divider: the windows
+	//	on one side of the divider grow, and the windows on the other side are squeezed.
+	//	Build the cascade of windows behind the squeezed window(s), so that when a squeezed
+	//	window reaches its minimum width the divider can keep going by taking width from the
+	//	next window over, and so on, until there are no more windows wider than their minimum
+	//	width. Note that the target window itself is squeezed when the divider being dragged
+	//	is moving into the target window.
+	var squeezeDir = 0;		//-1 ==> taking width from the windows to the left, +1 ==> to the right
+	var squeezeCascade = [];
+	var squeezeSeeds = [];		//the window(s) touching the divider on the squeezed side
+	var squeezeGrowers = [];	//the window(s) touching the divider on the growing side
+	var squeezeIncludesTarget = false;
+	if (keepTile && delta[0]) {
+		if (Desktop.winManipMode == Desktop.WIN_MANIP_MODE.W ||
+			Desktop.winManipMode == Desktop.WIN_MANIP_MODE.NW ||
+			Desktop.winManipMode == Desktop.WIN_MANIP_MODE.SW) {
+			//the left edge of the target window is the divider being dragged
+			if (delta[0] < 0 && followTiledLeft.length) {
+				//divider moving left ==> target window grows, windows to the left are squeezed
+				squeezeDir = -1;
+				squeezeSeeds = followTiledLeft;
+				squeezeGrowers = [win].concat(followTiledRight);
+			}
+			else if (delta[0] > 0 && followTiledLeft.length) {
+				//divider moving right ==> target window (and windows sharing its left edge) are squeezed
+				squeezeDir = 1;
+				squeezeIncludesTarget = true;
+				squeezeSeeds = [win].concat(followTiledRight);
+				squeezeGrowers = followTiledLeft;
+			}
+		}
+		else if (Desktop.winManipMode == Desktop.WIN_MANIP_MODE.E ||
+			Desktop.winManipMode == Desktop.WIN_MANIP_MODE.NE ||
+			Desktop.winManipMode == Desktop.WIN_MANIP_MODE.SE) {
+			//the right edge of the target window is the divider being dragged
+			if (delta[0] > 0 && followTiledRight.length) {
+				//divider moving right ==> target window grows, windows to the right are squeezed
+				squeezeDir = 1;
+				squeezeSeeds = followTiledRight;
+				squeezeGrowers = [win].concat(followTiledLeft);
+			}
+			else if (delta[0] < 0 && followTiledRight.length) {
+				//divider moving left ==> target window (and windows sharing its right edge) are squeezed
+				squeezeDir = -1;
+				squeezeIncludesTarget = true;
+				squeezeSeeds = [win].concat(followTiledLeft);
+				squeezeGrowers = followTiledRight;
+			}
+		}
+
+		if (squeezeDir) {
+			squeezeCascade = Desktop.buildTiledSqueezeCascade(
+				squeezeSeeds, squeezeDir, squeezeGrowers /*excludeWindows*/, TOLERANCE);
+
+			//limit the resize to the total width available down the entire cascade
+			var squeezeAvailable = 0;
+			for (var i = 0; i < squeezeCascade.length; ++i)
+				squeezeAvailable += squeezeCascade[i].slack;
+			if (Math.abs(delta[0]) > squeezeAvailable)
+				delta[0] = squeezeDir < 0 ? -squeezeAvailable : squeezeAvailable;
+
+			// Debug.log("squeeze cascade",squeezeDir,squeezeCascade.length,"levels",
+			// 	squeezeAvailable,"px available",delta[0],"target squeezed",squeezeIncludesTarget);
+
+			if (!delta[0]) //no windows left with width to give
+			{
+				squeezeDir = 0;
+				squeezeIncludesTarget = false;
+			}
+		}
+	} //end tiled squeeze cascade setup
+
+	//when the target window itself is being squeezed, its horizontal resize is handled by
+	//	the cascade below, so that it can translate once it reaches its minimum width
+	var deltaWin = [squeezeIncludesTarget ? 0 : delta[0], delta[1]];
+
 	//if(keepTile) return false;
 	var deltaResidual = [0, 0, 0, 0]; //do not move other window if target window reached limits
 	var winOriginal = [win.getWindowX(),
@@ -2381,51 +2575,51 @@ Desktop.handleWindowManipulation = function (delta) {
 				win.moveWindowByOffset(delta[0], delta[1]);
 			break;
 		case Desktop.WIN_MANIP_MODE.NW: //size from top-left
-			if (delta[0] || delta[1])
+			if (deltaWin[0] || deltaWin[1])
 				deltaResidual = win.resizeAndPositionWindow(
-					win.getWindowX() + delta[0],
-					win.getWindowY() + delta[1],
-					win.getWindowWidth() - delta[0],
-					win.getWindowHeight() - delta[1]);
+					win.getWindowX() + deltaWin[0],
+					win.getWindowY() + deltaWin[1],
+					win.getWindowWidth() - deltaWin[0],
+					win.getWindowHeight() - deltaWin[1]);
 			break;
 		case Desktop.WIN_MANIP_MODE.SE: //size from bottom-right
-			if (delta[0] || delta[1])
+			if (deltaWin[0] || deltaWin[1])
 				deltaResidual = win.resizeAndPositionWindow(
 					win.getWindowX(),
 					win.getWindowY(),
-					win.getWindowWidth() + delta[0],
-					win.getWindowHeight() + delta[1]);
+					win.getWindowWidth() + deltaWin[0],
+					win.getWindowHeight() + deltaWin[1]);
 			break;
 		case Desktop.WIN_MANIP_MODE.NE: //size from top-right
-			if (delta[0] || delta[1])
+			if (deltaWin[0] || deltaWin[1])
 				deltaResidual = win.resizeAndPositionWindow(
 					win.getWindowX(),
-					win.getWindowY() + delta[1],
-					win.getWindowWidth() + delta[0],
-					win.getWindowHeight() - delta[1]);
+					win.getWindowY() + deltaWin[1],
+					win.getWindowWidth() + deltaWin[0],
+					win.getWindowHeight() - deltaWin[1]);
 			break;
 		case Desktop.WIN_MANIP_MODE.SW: //size from bottom-left
-			if (delta[0] || delta[1])
+			if (deltaWin[0] || deltaWin[1])
 				deltaResidual = win.resizeAndPositionWindow(
-					win.getWindowX() + delta[0],
+					win.getWindowX() + deltaWin[0],
 					win.getWindowY(),
-					win.getWindowWidth() - delta[0],
-					win.getWindowHeight() + delta[1]);
+					win.getWindowWidth() - deltaWin[0],
+					win.getWindowHeight() + deltaWin[1]);
 			break;
 		case Desktop.WIN_MANIP_MODE.W: //size from left
-			if (delta[0])
+			if (deltaWin[0])
 				deltaResidual = win.resizeAndPositionWindow(
-					win.getWindowX() + delta[0],
+					win.getWindowX() + deltaWin[0],
 					win.getWindowY(),
-					win.getWindowWidth() - delta[0],
+					win.getWindowWidth() - deltaWin[0],
 					win.getWindowHeight());
 			break;
 		case Desktop.WIN_MANIP_MODE.E: //size from right
-			if (delta[0])
+			if (deltaWin[0])
 				deltaResidual = win.resizeAndPositionWindow(
 					win.getWindowX(),
 					win.getWindowY(),
-					win.getWindowWidth() + delta[0],
+					win.getWindowWidth() + deltaWin[0],
 					win.getWindowHeight());
 			break;
 		case Desktop.WIN_MANIP_MODE.N: //size from top
@@ -2486,7 +2680,22 @@ Desktop.handleWindowManipulation = function (delta) {
 			}
 		}
 
-	if (delta[0])
+	//squeeze the cascade of windows by however much the divider actually moved
+	if (squeezeDir) {
+		var squeezeEdgeMove = squeezeIncludesTarget ?
+			Math.abs(delta[0]) :	//divider moving into the target window, so use the (limited) request
+			(squeezeDir < 0 ?
+				winOriginal[0] - win.getWindowX() :												//left edge moved left
+				(win.getWindowX() + win.getWindowWidth()) - (winOriginal[0] + winOriginal[2]));	//right edge moved right
+
+		if (squeezeEdgeMove > 0)
+			Desktop.applyTiledSqueezeCascade(squeezeCascade, squeezeDir,
+				squeezeEdgeMove, lastPositions);
+		else
+			squeezeDir = 0; //target window edge did not move, so nothing to cascade
+	}
+
+	if (delta[0] && squeezeDir >= 0) //if squeezing left, the cascade above handled these windows
 		for (var i = 0; i < followTiledLeft.length; ++i) {
 			winChangeStack.push([followTiledLeft[i], followTiledLeft[i].resizeAndPositionWindow(
 				followTiledLeft[i].getWindowX(),
@@ -2508,6 +2717,8 @@ Desktop.handleWindowManipulation = function (delta) {
 						followTiledLeft[i].getWindowHeight());
 					lastPositions[followTiledLeft[i].getWindowId()][2] = followTiledLeft[i].getWindowWidth();
 				}
+				if (squeezeDir) //undo the squeeze of the cascade windows
+					Desktop.revertTiledSqueezeCascade(squeezeCascade, lastPositions);
 
 				//revert triggering window
 				delta[0] = 0;
@@ -2520,7 +2731,7 @@ Desktop.handleWindowManipulation = function (delta) {
 			}
 		}
 
-	if (delta[0])
+	if (delta[0] && squeezeDir <= 0) //if squeezing right, the cascade above handled these windows
 		for (var i = 0; i < followTiledRight.length; ++i) {
 			winChangeStack.push([followTiledRight[i], followTiledRight[i].resizeAndPositionWindow(
 				followTiledRight[i].getWindowX() + delta[0] - deltaResidual[0] - deltaResidual[2],
@@ -2544,14 +2755,17 @@ Desktop.handleWindowManipulation = function (delta) {
 					lastPositions[followTiledRight[i].getWindowId()][0] = followTiledRight[i].getWindowX();
 					lastPositions[followTiledRight[i].getWindowId()][2] = followTiledRight[i].getWindowWidth();
 				}
-				for (var i = 0; i < followTiledLeft.length; ++i) {
-					followTiledLeft[i], followTiledLeft[i].resizeAndPositionWindow(
-						followTiledLeft[i].getWindowX(),
-						followTiledLeft[i].getWindowY(),
-						followTiledLeft[i].getWindowWidth() - delta[0] + deltaResidual[0] + deltaResidual[2],
-						followTiledLeft[i].getWindowHeight());
-					lastPositions[followTiledLeft[i].getWindowId()][2] = followTiledLeft[i].getWindowWidth();
-				}
+				if (squeezeDir) //the cascade windows were squeezed instead of followTiledLeft
+					Desktop.revertTiledSqueezeCascade(squeezeCascade, lastPositions);
+				else
+					for (var i = 0; i < followTiledLeft.length; ++i) {
+						followTiledLeft[i], followTiledLeft[i].resizeAndPositionWindow(
+							followTiledLeft[i].getWindowX(),
+							followTiledLeft[i].getWindowY(),
+							followTiledLeft[i].getWindowWidth() - delta[0] + deltaResidual[0] + deltaResidual[2],
+							followTiledLeft[i].getWindowHeight());
+						lastPositions[followTiledLeft[i].getWindowId()][2] = followTiledLeft[i].getWindowWidth();
+					}
 
 				//revert triggering window
 				delta[0] = 0;
