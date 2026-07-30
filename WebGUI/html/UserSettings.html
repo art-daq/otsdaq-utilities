@@ -386,10 +386,10 @@
 			var lockBadgeClass = lockedByOther ? "lockBadge--lockedOther" :
 				(lockedBySelf ? "lockBadge--lockedSelf" : "lockBadge--unlocked");
 			var lockBadgeText = lockedByOther ?
-				("<b>" + _usernameWithLock + "</b> currently has the " + ots_owner + " ots lock") :
+				("<b>" + escapeHtml(_usernameWithLock) + "</b> currently has the " + escapeHtml(ots_owner) + " ots lock") :
 				(lockedBySelf ?
-					("You currently have the " + ots_owner + " ots lock") :
-					(ots_owner + " ots is currently unlocked"));
+					("You currently have the " + escapeHtml(ots_owner) + " ots lock") :
+					(escapeHtml(ots_owner) + " ots is currently unlocked"));
 			var lockBadgeAction = (_usernameWithLock && _usernameWithLock != "") ?
 				(lockedBySelf ?
 					(" &ndash; <a onclick='lockToUsername(-1,false," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to unlock</a>") :
