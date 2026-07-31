@@ -136,6 +136,8 @@ def sendToSlack(user: str, message: str) -> None:
 
     client = connectToClient()
 
+    if user is None:
+        raise RuntimeError("No user provided (--user).")
     if message is None:
         message = ""
     # Decode OTS WebGUI Chat percent-encoding (see WebGUI/html/Chat.html convertForServer()).
