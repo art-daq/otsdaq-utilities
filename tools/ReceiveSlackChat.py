@@ -185,7 +185,7 @@ def poll_once(client, last_ts, user_cache):
     messages = response.get("messages", [])
     messages.reverse()
 
-    if len(messages):
+    if messages and os.environ.get("OTS_SLACK_DEBUG") == "1":
         print(
             f"[poll] since={last_ts} channel={SLACK_CHANNEL_ID} "
             f"got {len(messages)} raw message(s)",
@@ -230,7 +230,7 @@ def poll_once(client, last_ts, user_cache):
         if ts > newest_ts:
             newest_ts = ts
 
-    if messages:
+    if messages and os.environ.get("OTS_SLACK_DEBUG") == "1":
         print(
             f"[poll] kept={len(lines)} skipped_bot={skipped_bot} "
             f"skipped_no_user={skipped_no_user} new_last_ts={newest_ts}",
@@ -335,7 +335,8 @@ def run_daemon(output_path, interval):
                 raise SystemExit(1)
         if lines:
             append_to_file(output_path, lines)
-            print(f"Wrote {len(lines)} message(s) to {output_path}", flush=True)
+            if os.environ.get("OTS_SLACK_DEBUG") == "1":
+                print(f"Wrote {len(lines)} message(s) to {output_path}", flush=True)
         time.sleep(interval)
 
 

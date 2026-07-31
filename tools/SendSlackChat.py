@@ -82,7 +82,7 @@ def resolveMentions(client: WebClient, message: str) -> str:
     (case-insensitive, longest name first so "@Alec Lynch" wins over "@Alec").
     Unmatched ``@something`` text is left as-is.
     """
-    if "@" not in message:
+    if not re.search(r"(?<!\\w)@", message):
         return message
 
     names = {}
