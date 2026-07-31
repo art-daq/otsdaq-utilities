@@ -222,7 +222,8 @@ def poll_once(client, last_ts, user_cache):
         text = normalize_slack_text(client, text, user_cache)
         text = text.replace("\\", "\\\\").replace("\t", " ").replace("\n", "\\n")
 
-        print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
+        if os.environ.get("OTS_SLACK_DEBUG") == "1":
+            print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
 
         lines.append(f"MSG\t{display_name}\t{text}")
 
