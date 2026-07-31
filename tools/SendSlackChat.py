@@ -111,8 +111,6 @@ def resolveMentions(client: WebClient, message: str) -> str:
         )
         return message
 
-    print(f"resolveMentions: loaded {len(names)} candidate name(s) from Slack")
-
     for name in sorted(names, key=len, reverse=True):
         pattern = re.compile(r"(?<!\w)@" + re.escape(name) + r"\b", re.IGNORECASE)
         message = pattern.sub(f"<@{names[name]}>", message)
