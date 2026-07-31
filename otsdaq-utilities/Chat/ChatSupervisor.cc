@@ -371,8 +371,10 @@ void ChatSupervisor::startSlackDaemon()
 		return;
 
 	std::string script = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
+	const char* intervalEnv = std::getenv("OTS_SLACK_POLL_INTERVAL");
+	std::string interval    = intervalEnv ? intervalEnv : "30";
 	__COUT__ << "Starting Slack receive daemon: " << script << " -> " << slackInboxPath_
-	         << __E__;
+	         << " (interval=" << interval << "s)" << __E__;
 
 	pid_t pid = fork();
 	if(pid < 0)
@@ -388,7 +390,7 @@ void ChatSupervisor::startSlackDaemon()
 		       "--output",
 		       slackInboxPath_.c_str(),
 		       "--interval",
-		       "1",
+		       interval.c_str(),
 		       (char*)nullptr);
 		_exit(1);
 	}
