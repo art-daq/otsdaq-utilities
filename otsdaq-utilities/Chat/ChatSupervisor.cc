@@ -50,7 +50,8 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 		if(userData)
 			slackInboxPath_ = std::string(userData) + "/ChatSlackInbox.txt";
 		else
-			slackInboxPath_ = "/tmp/ots_slack_inbox_uid" + std::to_string(getuid()) + ".txt";
+			slackInboxPath_ =
+			    "/tmp/ots_slack_inbox_uid" + std::to_string(getuid()) + ".txt";
 
 		// Require Slack configuration before enabling daemon/send-to-Slack behavior.
 		if(std::getenv("SLACK_BOT_TOKEN") == nullptr ||
@@ -370,7 +371,7 @@ void ChatSupervisor::startSlackDaemon()
 	if(slackDaemonPid_ > 0)
 		return;
 
-	std::string script = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
+	std::string script      = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
 	const char* intervalEnv = std::getenv("OTS_SLACK_POLL_INTERVAL");
 	std::string interval    = intervalEnv ? intervalEnv : "30";
 	__COUT__ << "Starting Slack receive daemon: " << script << " -> " << slackInboxPath_
@@ -580,8 +581,8 @@ void ChatSupervisor::receiveFromSlack()
 		replaceAll(message, "'", "%27");
 		replaceAll(message, "  ", "%20%20");
 
-		__COUT__ << "receiveFromSlack: injecting message from user '" << user
-		         << "' (" << message.size() << " bytes)" << __E__;
+		__COUT__ << "receiveFromSlack: injecting message from user '" << user << "' ("
+		         << message.size() << " bytes)" << __E__;
 		newChat(message, "[slack] " + user, /*fromSlack=*/true);
 	}
 }  // end receiveFromSlack()
