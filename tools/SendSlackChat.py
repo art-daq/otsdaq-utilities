@@ -130,12 +130,14 @@ def resolveMentions(client: WebClient, message: str) -> str:
 def sendToSlack(user: str, message: str) -> None:
     """Send a message to a Slack channel using the Slack API."""
 
+    if user is None or not user.strip():
+        raise RuntimeError("No user provided (--user).")
+    user = user.strip()
+
     print(f"Sending message to Slack channel {SLACK_CHANNEL} from user {user}")
 
     client = connectToClient()
 
-    if user is None:
-        raise RuntimeError("No user provided (--user).")
     if message is None:
         message = ""
     # Decode OTS WebGUI Chat percent-encoding (see WebGUI/html/Chat.html convertForServer()).

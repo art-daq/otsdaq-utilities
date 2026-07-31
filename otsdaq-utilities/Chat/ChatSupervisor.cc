@@ -410,19 +410,19 @@ void ChatSupervisor::stopSlackDaemon()
 
 	int   status     = 0;
 	pid_t probe_pid  = waitpid(slackDaemonPid_, &status, WNOHANG);
-	bool  can_manage = !(probe_pid == slackDaemonPid_ || probe_pid < 0);
+	if(probe_pid < 0)
+	{
+		__COUT__ << "Failed to probe Slack receive daemon PID " << slackDaemonPid_
+		         << "; leaving daemon state and inbox files intact" << __E__;
+		return;
+	}
+	bool can_manage = probe_pid != slackDaemonPid_;
 
 	if(can_manage)
 	{
 		__COUT__ << "Stopping Slack receive daemon PID " << slackDaemonPid_ << __E__;
 		kill(slackDaemonPid_, SIGTERM);
 	}
-	else if(probe_pid < 0)
-	{
-		__COUT__ << "Slack receive daemon PID " << slackDaemonPid_
-		         << " is not a child process; skipping termination" << __E__;
-	}
-
 	bool exited = !can_manage;
 	for(int i = 0; i < 50 && !exited; ++i)  // ~5s total
 	{
