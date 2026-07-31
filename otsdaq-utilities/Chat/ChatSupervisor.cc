@@ -408,8 +408,8 @@ void ChatSupervisor::stopSlackDaemon()
 	if(slackDaemonPid_ <= 0)
 		return;
 
-	int   status     = 0;
-	pid_t probe_pid  = waitpid(slackDaemonPid_, &status, WNOHANG);
+	int   status    = 0;
+	pid_t probe_pid = waitpid(slackDaemonPid_, &status, WNOHANG);
 	if(probe_pid < 0)
 	{
 		__COUT__ << "Failed to probe Slack receive daemon PID " << slackDaemonPid_
