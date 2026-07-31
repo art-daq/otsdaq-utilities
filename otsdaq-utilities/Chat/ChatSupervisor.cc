@@ -579,7 +579,7 @@ void ChatSupervisor::receiveFromSlack()
 		replaceAll(message, "  ", "%20%20");
 
 		__COUT__ << "receiveFromSlack: injecting message from user '" << user
-		         << "': " << message << __E__;
+		         << "' (" << message.size() << " bytes)" << __E__;
 		newChat(message, "[slack] " + user, /*fromSlack=*/true);
 	}
 }  // end receiveFromSlack()
