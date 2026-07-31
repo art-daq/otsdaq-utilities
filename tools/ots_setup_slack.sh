@@ -40,6 +40,13 @@ if [ -z "$SLACK_CHANNEL_ID" ]; then
     echo "SLACK_CHANNEL_ID set to default: C0AFQNNNSV7"
 fi
 
+if ! [[ "${OTS_SLACK_POLL_INTERVAL:-}" =~ ^[1-9][0-9]*$ ]]; then
+    export OTS_SLACK_POLL_INTERVAL=5
+    echo "OTS_SLACK_POLL_INTERVAL set to default: 5 seconds"
+else
+    export OTS_SLACK_POLL_INTERVAL
+fi
+
 echo ""
 echo "========================================"
 echo "  Slack Configuration Complete"
@@ -47,10 +54,11 @@ echo "========================================"
 echo ""
 echo "Configuration Summary:"
 echo "----------------------"
-echo "  Bot Token:   ${SLACK_BOT_TOKEN:0:10}...${SLACK_BOT_TOKEN: -5}"
-echo "  Channel:      $SLACK_CHANNEL"
-echo "  Channel ID:   $SLACK_CHANNEL_ID"
-echo "  Slack Enable: $OTS_EN_SLACK"
+echo "  SLACK_BOT_TOKEN:          ${SLACK_BOT_TOKEN:0:10}...${SLACK_BOT_TOKEN: -5}"
+echo "  SLACK_CHANNEL:            $SLACK_CHANNEL"
+echo "  SLACK_CHANNEL_ID:         $SLACK_CHANNEL_ID"
+echo "  OTS_SLACK_POLL_INTERVAL:  ${OTS_SLACK_POLL_INTERVAL}s"
+echo "  OTS_EN_SLACK:             $OTS_EN_SLACK"
 echo ""
 echo "Environment variables have been set successfully!"
 echo "You can now use the OTS chat functionality with Slack integration."
