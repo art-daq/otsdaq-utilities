@@ -47,8 +47,10 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 		chatSupervisorToolsPath_ += "tools/";
 
 		const char* userData = std::getenv("USER_DATA");
-		slackInboxPath_      = userData ? std::string(userData) + "/ChatSlackInbox.txt"
-		                                : "/tmp/ots_slack_inbox.txt";
+		if(userData)
+			slackInboxPath_ = std::string(userData) + "/ChatSlackInbox.txt";
+		else
+			slackInboxPath_ = "/tmp/ots_slack_inbox_uid" + std::to_string(getuid()) + ".txt";
 
 		// Require Slack configuration before enabling daemon/send-to-Slack behavior.
 		if(std::getenv("SLACK_BOT_TOKEN") == nullptr ||
