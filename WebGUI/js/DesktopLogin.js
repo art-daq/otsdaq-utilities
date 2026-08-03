@@ -1028,8 +1028,8 @@ else {
 		//attemptOidcLogin --
 		//		Open the OIDC / single sign-on (SSO) flow in a separate window.
 		//		The opened page forwards the browser to the identity provider; on success
-		//		the callback page stores the login cookie (shared same-origin localStorage)
-		//		and reloads this window so the normal cookie-check completes the login.
+		//		the callback page stores the login code in same-origin localStorage
+		//		and reloads this window so the normal login check completes the login.
 		this.attemptOidcLogin = function()
 		{
 			Debug.log("Desktop Login Prompt Attempt OIDC Single Sign-On", Debug.LOW_PRIORITY);
