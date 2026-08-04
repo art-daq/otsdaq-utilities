@@ -2661,7 +2661,7 @@ Desktop.handleWindowManipulation = function (delta) {
 				//revert all affected windows
 				var j = i;
 				for (var i = 0; i < j; ++i) {
-					followTiledTop[i], followTiledTop[i].resizeAndPositionWindow(
+					followTiledTop[i].resizeAndPositionWindow(
 						followTiledTop[i].getWindowX(),
 						followTiledTop[i].getWindowY(),
 						followTiledTop[i].getWindowWidth(),
@@ -2710,7 +2710,7 @@ Desktop.handleWindowManipulation = function (delta) {
 				//revert all affected windows
 				var j = i;
 				for (var i = 0; i < j; ++i) {
-					followTiledLeft[i], followTiledLeft[i].resizeAndPositionWindow(
+					followTiledLeft[i].resizeAndPositionWindow(
 						followTiledLeft[i].getWindowX(),
 						followTiledLeft[i].getWindowY(),
 						followTiledLeft[i].getWindowWidth() - delta[0] + deltaResidual[0] + deltaResidual[2],
@@ -2759,7 +2759,7 @@ Desktop.handleWindowManipulation = function (delta) {
 					Desktop.revertTiledSqueezeCascade(squeezeCascade, lastPositions);
 				else
 					for (var i = 0; i < followTiledLeft.length; ++i) {
-						followTiledLeft[i], followTiledLeft[i].resizeAndPositionWindow(
+						followTiledLeft[i].resizeAndPositionWindow(
 							followTiledLeft[i].getWindowX(),
 							followTiledLeft[i].getWindowY(),
 							followTiledLeft[i].getWindowWidth() - delta[0] + deltaResidual[0] + deltaResidual[2],
@@ -2803,7 +2803,7 @@ Desktop.handleWindowManipulation = function (delta) {
 					lastPositions[followTiledBottom[i].getWindowId()][3] = followTiledBottom[i].getWindowHeight();
 				}
 				for (var i = 0; i < followTiledTop.length; ++i) {
-					followTiledTop[i], followTiledTop[i].resizeAndPositionWindow(
+					followTiledTop[i].resizeAndPositionWindow(
 						followTiledTop[i].getWindowX(),
 						followTiledTop[i].getWindowY(),
 						followTiledTop[i].getWindowWidth(),

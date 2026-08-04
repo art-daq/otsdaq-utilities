@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # ____________________________________________________________
 #
 # Long-running daemon that continuously polls a Slack channel for new messages
@@ -34,6 +34,7 @@ def _install_parent_death_signal():
     """
     try:
         import ctypes
+
         libc = ctypes.CDLL("libc.so.6", use_errno=True)
         PR_SET_PDEATHSIG = 1
         libc.prctl(PR_SET_PDEATHSIG, 15)  # 15 == SIGTERM
@@ -72,23 +73,21 @@ else:
     SLACK_BOT_TOKEN = None
     SLACK_CHANNEL_ID = None
 
-# Slack errors that will never recover without operator/config action.
-# Keep polling on them is pure noise, so we exit instead.
-FATAL_SLACK_ERRORS = frozenset({
-    "missing_scope",
-    "invalid_auth",
-    "not_authed",
-    "token_revoked",
-    "token_expired",
-    "account_inactive",
-    "channel_not_found",
-    "not_in_channel",
-    "is_archived",
-})
-
-
-class FatalSlackError(RuntimeError):
-    pass
+# Slack errors that require operator/config action. Keep the daemon alive so it
+# can recover if credentials or channel settings are corrected externally.
+CONFIG_SLACK_ERRORS = frozenset(
+    {
+        "missing_scope",
+        "invalid_auth",
+        "not_authed",
+        "token_revoked",
+        "token_expired",
+        "account_inactive",
+        "channel_not_found",
+        "not_in_channel",
+        "is_archived",
+    }
+)
 
 
 def _format_slack_error(e):
@@ -116,10 +115,12 @@ def get_display_name(client, user_id, cache):
             or info["user"].get("name", user_id)
         )
     except SlackApiError as e:
-        if e.response.get("error") in FATAL_SLACK_ERRORS:
-            raise FatalSlackError(
-                f"users_info failed: {_format_slack_error(e)}"
-            ) from e
+        if e.response.get("error") in CONFIG_SLACK_ERRORS:
+            print(
+                f"Warning: users_info failed: {_format_slack_error(e)}",
+                file=sys.stderr,
+                flush=True,
+            )
         name = user_id
     cache[user_id] = name
     return name
@@ -149,9 +150,9 @@ def normalize_slack_text(client, text, user_cache):
 def poll_once(client, last_ts, user_cache):
     """Fetch new messages from Slack since last_ts.
 
-    Returns (lines, new_last_ts, ok). ok is False if the poll failed
-    (transient error or rate-limit); the caller uses this to track
-    consecutive failures.
+    Returns (lines, new_last_ts, ok). ok is False if the poll failed due to a
+    transient error; rate limits are handled internally by sleeping and then
+    returning ok=True so the caller doesn't count it as a failure.
     """
     kwargs = {"channel": SLACK_CHANNEL_ID, "limit": 50}
     if last_ts and last_ts != "0":
@@ -161,10 +162,13 @@ def poll_once(client, last_ts, user_cache):
         response = client.conversations_history(**kwargs)
     except SlackApiError as e:
         err = e.response.get("error", "")
-        if err in FATAL_SLACK_ERRORS:
-            raise FatalSlackError(
-                f"conversations_history failed: {_format_slack_error(e)}"
-            ) from e
+        if err in CONFIG_SLACK_ERRORS:
+            print(
+                f"Warning: conversations_history failed: {_format_slack_error(e)}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return [], last_ts, False
         if err == "ratelimited":
             retry_after = int(e.response.headers.get("Retry-After", "30"))
             print(
@@ -184,7 +188,7 @@ def poll_once(client, last_ts, user_cache):
     messages = response.get("messages", [])
     messages.reverse()
 
-    if len(messages):
+    if messages and os.environ.get("OTS_SLACK_DEBUG") == "1":
         print(
             f"[poll] since={last_ts} channel={SLACK_CHANNEL_ID} "
             f"got {len(messages)} raw message(s)",
@@ -219,16 +223,17 @@ def poll_once(client, last_ts, user_cache):
         display_name = display_name.replace("\t", " ").replace("\n", " ")
         text = msg.get("text", "")
         text = normalize_slack_text(client, text, user_cache)
-        text = text.replace("\t", " ").replace("\n", "\\n")
+        text = text.replace("\\", "\\\\").replace("\t", " ").replace("\n", "\\n")
 
-        print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
+        if os.environ.get("OTS_SLACK_DEBUG") == "1":
+            print(f"[poll] user={display_name} ts={ts} text={text!r}", flush=True)
 
         lines.append(f"MSG\t{display_name}\t{text}")
 
         if ts > newest_ts:
             newest_ts = ts
 
-    if messages:
+    if messages and os.environ.get("OTS_SLACK_DEBUG") == "1":
         print(
             f"[poll] kept={len(lines)} skipped_bot={skipped_bot} "
             f"skipped_no_user={skipped_no_user} new_last_ts={newest_ts}",
@@ -261,7 +266,9 @@ def _load_last_ts(state_path, lookback_seconds):
         # Expected on first run (or before state is created); fall back below.
         pass
     except Exception as e:
-        print(f"[startup] failed reading {state_path}: {e}", file=sys.stderr, flush=True)
+        print(
+            f"[startup] failed reading {state_path}: {e}", file=sys.stderr, flush=True
+        )
     ts = f"{time.time() - lookback_seconds:.6f}"
     print(
         f"[startup] no state file; looking back {lookback_seconds}s (last_ts={ts})",
@@ -288,8 +295,12 @@ def run_daemon(output_path, interval):
     try:
         client.auth_test()
     except SlackApiError as e:
-        print(f"Failed to connect to Slack: {e.response['error']}", file=sys.stderr)
-        raise SystemExit(1)
+        print(
+            f"Warning: Slack authentication test failed: {_format_slack_error(e)}; "
+            "continuing to retry",
+            file=sys.stderr,
+            flush=True,
+        )
 
     print(
         f"ReceiveSlackChat daemon started (interval={interval}s, output={output_path})",
@@ -305,15 +316,7 @@ def run_daemon(output_path, interval):
     MAX_CONSECUTIVE_FAILURES = 10
 
     while True:
-        try:
-            lines, new_last_ts, ok = poll_once(client, last_ts, user_cache)
-        except FatalSlackError as e:
-            print(
-                f"Fatal Slack error, stopping daemon: {e}",
-                file=sys.stderr,
-                flush=True,
-            )
-            raise SystemExit(1)
+        lines, new_last_ts, ok = poll_once(client, last_ts, user_cache)
         if ok:
             consecutive_failures = 0
             if new_last_ts != last_ts:
@@ -324,14 +327,15 @@ def run_daemon(output_path, interval):
             if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                 print(
                     f"Slack polling failed {consecutive_failures} times in a row; "
-                    "stopping daemon.",
+                    "continuing to retry.",
                     file=sys.stderr,
                     flush=True,
                 )
-                raise SystemExit(1)
+                consecutive_failures = 0
         if lines:
             append_to_file(output_path, lines)
-            print(f"Wrote {len(lines)} message(s) to {output_path}", flush=True)
+            if os.environ.get("OTS_SLACK_DEBUG") == "1":
+                print(f"Wrote {len(lines)} message(s) to {output_path}", flush=True)
         time.sleep(interval)
 
 

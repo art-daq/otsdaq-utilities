@@ -47,11 +47,15 @@ ChatSupervisor::ChatSupervisor(xdaq::ApplicationStub* stub) : CoreSupervisorBase
 		chatSupervisorToolsPath_ += "tools/";
 
 		const char* userData = std::getenv("USER_DATA");
-		slackInboxPath_      = userData ? std::string(userData) + "/ChatSlackInbox.txt"
-		                                : "/tmp/ots_slack_inbox.txt";
+		if(userData)
+			slackInboxPath_ = std::string(userData) + "/ChatSlackInbox.txt";
+		else
+			slackInboxPath_ =
+			    "/tmp/ots_slack_inbox_uid" + std::to_string(getuid()) + ".txt";
 
 		// Require Slack configuration before enabling daemon/send-to-Slack behavior.
 		if(std::getenv("SLACK_BOT_TOKEN") == nullptr ||
+		   std::getenv("SLACK_CHANNEL") == nullptr ||
 		   std::getenv("SLACK_CHANNEL_ID") == nullptr)
 			enableSlackChat = false;
 
@@ -367,9 +371,11 @@ void ChatSupervisor::startSlackDaemon()
 	if(slackDaemonPid_ > 0)
 		return;
 
-	std::string script = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
+	std::string script      = chatSupervisorToolsPath_ + "ReceiveSlackChat.py";
+	const char* intervalEnv = std::getenv("OTS_SLACK_POLL_INTERVAL");
+	std::string interval    = intervalEnv ? intervalEnv : "30";
 	__COUT__ << "Starting Slack receive daemon: " << script << " -> " << slackInboxPath_
-	         << __E__;
+	         << " (interval=" << interval << "s)" << __E__;
 
 	pid_t pid = fork();
 	if(pid < 0)
@@ -385,7 +391,7 @@ void ChatSupervisor::startSlackDaemon()
 		       "--output",
 		       slackInboxPath_.c_str(),
 		       "--interval",
-		       "1",
+		       interval.c_str(),
 		       (char*)nullptr);
 		_exit(1);
 	}
@@ -402,12 +408,23 @@ void ChatSupervisor::stopSlackDaemon()
 	if(slackDaemonPid_ <= 0)
 		return;
 
-	__COUT__ << "Stopping Slack receive daemon PID " << slackDaemonPid_ << __E__;
-	kill(slackDaemonPid_, SIGTERM);
+	int   status    = 0;
+	pid_t probe_pid = waitpid(slackDaemonPid_, &status, WNOHANG);
+	if(probe_pid < 0)
+	{
+		__COUT__ << "Failed to probe Slack receive daemon PID " << slackDaemonPid_
+		         << "; leaving daemon state and inbox files intact" << __E__;
+		return;
+	}
+	bool can_manage = probe_pid != slackDaemonPid_;
 
-	int  status = 0;
-	bool exited = false;
-	for(int i = 0; i < 50; ++i)  // ~5s total
+	if(can_manage)
+	{
+		__COUT__ << "Stopping Slack receive daemon PID " << slackDaemonPid_ << __E__;
+		kill(slackDaemonPid_, SIGTERM);
+	}
+	bool exited = !can_manage;
+	for(int i = 0; i < 50 && !exited; ++i)  // ~5s total
 	{
 		pid_t r = waitpid(slackDaemonPid_, &status, WNOHANG);
 		if(r == slackDaemonPid_)
@@ -438,8 +455,8 @@ void ChatSupervisor::stopSlackDaemon()
 	slackDaemonPid_ = -1;
 
 	// Clean up the inbox file
-	std::remove(slackInboxPath_.c_str());
-	std::remove((slackInboxPath_ + ".lock").c_str());
+	unlink(slackInboxPath_.c_str());
+	unlink((slackInboxPath_ + ".lock").c_str());
 }  // end stopSlackDaemon()
 
 //==============================================================================
@@ -533,7 +550,30 @@ void ChatSupervisor::receiveFromSlack()
 		replaceAll(user, "\"", "%22");
 		replaceAll(user, "'", "%27");
 
-		replaceAll(message, "\\n", "%0A%0D");
+		// Reverse ReceiveSlackChat.py escaping: "\\\\" -> "\\" and "\\n" -> newline marker.
+		std::string decoded;
+		decoded.reserve(message.size());
+		for(size_t i = 0; i < message.size(); ++i)
+		{
+			if(message[i] == '\\' && i + 1 < message.size())
+			{
+				if(message[i + 1] == '\\')
+				{
+					decoded.push_back('\\');
+					++i;
+					continue;
+				}
+				if(message[i + 1] == 'n')
+				{
+					decoded += "%0A%0D";
+					++i;
+					continue;
+				}
+			}
+			decoded.push_back(message[i]);
+		}
+		message.swap(decoded);
+
 		replaceAll(message, "&", "%26");
 		replaceAll(message, "<", "%3C");
 		replaceAll(message, ">", "%3E");
@@ -541,8 +581,8 @@ void ChatSupervisor::receiveFromSlack()
 		replaceAll(message, "'", "%27");
 		replaceAll(message, "  ", "%20%20");
 
-		__COUT__ << "receiveFromSlack: injecting message from user '" << user
-		         << "': " << message << __E__;
+		__COUT__ << "receiveFromSlack: injecting message from user '" << user << "' ("
+		         << message.size() << " bytes)" << __E__;
 		newChat(message, "[slack] " + user, /*fromSlack=*/true);
 	}
 }  // end receiveFromSlack()
