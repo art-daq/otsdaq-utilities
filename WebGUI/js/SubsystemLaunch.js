@@ -76,6 +76,7 @@ SubsystemLaunch.create = function() {
 	//
 	//		'public' member functions: -------
 	//	this.handleSubsystemActionSelect(el, subsystemIndex)
+	//	this.handleSystemConfigAliasSelect(value)
 	//	this.handleSubsystemConfigAliasSelect(value, subsystemIndex)
 	//	this.getSubsystemConfigAliasSelectInfo(subsystemIndex)
 	//	this.bootSubsystem(subsystemIndex)
@@ -113,6 +114,37 @@ SubsystemLaunch.create = function() {
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
 
+	// Track the iframe document's scrollTop continuously so it can be restored after
+	// the Desktop framework resizes the iframe (which collapses scrollHeight to
+	// clientHeight, forcing scrollTop to 0, potentially multiple times per resize).
+	var _savedDocScrollTop = 0;
+	var _scrollListenerInstalled = false;
+	function _installScrollListener() {
+		if(_scrollListenerInstalled) return;
+		_scrollListenerInstalled = true;
+
+		document.addEventListener("scroll", function() {
+			var st = document.documentElement.scrollTop;
+			if(st > 0) _savedDocScrollTop = st;
+		}, { capture: true, passive: true });
+
+		// ResizeObserver fires every time the iframe dimensions change (including
+		// when the Desktop framework collapses and restores the iframe during a
+		// window resize).  When the page becomes scrollable again after a collapse,
+		// restore the saved scrollTop.
+		if(typeof ResizeObserver !== 'undefined') {
+			new ResizeObserver(function() {
+				var sh = document.documentElement.scrollHeight;
+				var ch = document.documentElement.clientHeight;
+				var st = document.documentElement.scrollTop;
+				if(_savedDocScrollTop > 0 && st === 0 && sh > ch) {
+					var target = Math.min(_savedDocScrollTop, sh - ch);
+					document.documentElement.scrollTop = target;
+				}
+			}).observe(document.documentElement);
+		}
+	}
+
 	//////////////////////////////////////////////////
 	//////////////////////////////////////////////////
 	// end variable declaration
@@ -121,6 +153,7 @@ SubsystemLaunch.create = function() {
 	//=====================================================================================
 	//init ~~
 	  function init() {
+		_installScrollListener();
 		if(_needEventListeners) //only first time landing handling
 		{
 			var windowTooltip = "Welcome to the <b>Subsystem Launch</b> user interface. " +
@@ -308,6 +341,7 @@ SubsystemLaunch.create = function() {
 	//	redrawMode of 1 for compact, 2 for wide
 	function createElements(redrawMode) {
 		Debug.log("createElements()", redrawMode);
+		_saveDetailScrollPositions();
 
 		Debug.log("createElements() system", SubsystemLaunch.system);
 
@@ -521,6 +555,10 @@ SubsystemLaunch.create = function() {
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						"title='Halt the entire System (all included subsystems)'" +
 						">Halt</button>";
+					str += "<div id='systemRelaunchButton' " +
+						"title='Click to relaunch the top-level ots system in Normal Mode' " +
+						"onclick='SubsystemLaunch.launcher.bootTopLevel();' " +
+						"></div>";
 					str += "</td></tr>";
 				}
 
@@ -676,13 +714,15 @@ SubsystemLaunch.create = function() {
 						else if(i == DETAIL_I && redrawMode == 1) //compressed mode: scrollable detail wrapper (spans 3 cols)
 						{
 							str += "<td colspan=3 id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + " compressed_detail'>" +
+								"' class='subsystem_" + fieldIds[i] + " compressed_detail'" +
+								" title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>" +
 								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
 						}
 						else if(i == DETAIL_I) //single-row mode: scrollable detail wrapper to keep table width matched to status box
 						{
 							str += "<td id='subsystem_" + s + "_" + fieldIds[i] +
-								"' class='subsystem_" + fieldIds[i] + "'>" +
+								"' class='subsystem_" + fieldIds[i] + "'" +
+								" title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>" +
 								"<div class='detail_scroll' id='subsystem_" + s + "_detail_scroll'></div>";
 						}
 						else //other field <td>s
@@ -815,7 +855,32 @@ SubsystemLaunch.create = function() {
 		el = document.getElementById('systemConfigAliasTranslationNote');
 		if(el) el.innerText = aliasTranslation;
 
+		var parentTd = document.getElementById('systemConfigAliasTranslation');
+		if(parentTd) {
+			{
+				var commonTypes = ["SubsystemCommon", "SubsystemCommonOverride", "SubsystemCommonContext", "SubsystemCommonContextOverride"];
+				var commonKeys = ["subsystemCommonList", "subsystemCommonOverrideList", "subsystemCommonContextList", "subsystemCommonContextOverrideList"];
+				for(var ci = 0; ci < commonTypes.length; ++ci) {
+					var span = document.createElement('span');
+					span.id = 'subsystemCommonSpan_' + commonTypes[ci];
+					span.innerText = SubsystemLaunch.system[commonKeys[ci]]
+						? ("\n" + commonTypes[ci] + " tables: " + SubsystemLaunch.system[commonKeys[ci]])
+						: "";
+					parentTd.appendChild(span);
+				}
+			}
+			{
+				var span = document.createElement('span');
+				span.id = 'systemConfigAliasGlobalFields';
+				parentTd.appendChild(span);
+			}
+			if(SubsystemLaunch.system.selectedSystemAlias)
+				SubsystemLaunch.launcher.handleSystemConfigAliasSelect(
+					SubsystemLaunch.system.selectedSystemAlias);
+		}
+
 		displayStatus(); //fill elements with data
+		_restoreDetailScrollPositions();
 	} //end createElements()
 
 	//=====================================================================================
@@ -837,6 +902,7 @@ SubsystemLaunch.create = function() {
 		var redrawMode = 1;
 		if(w > 2400)
 			redrawMode = 2;
+
 		Debug.log("redrawWindow to " + w + " - " + h,redrawMode,_lastRedrawMode);
 
 
@@ -882,7 +948,35 @@ SubsystemLaunch.create = function() {
 			}
 		} //end check if need extra new line at top to avoid FSM select
 
+		//restore the document scrollTop that was reset when the Desktop framework resized the iframe
+		if(_savedDocScrollTop > 0) {
+			var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+			if(maxScroll > 0)
+				document.documentElement.scrollTop = Math.min(_savedDocScrollTop, maxScroll);
+		}
+
 	} //end redrawWindow()
+
+	//=====================================================================================
+	// _detailScrollPositions ~~
+	//	persistent cache of each detail_scroll element's scrollLeft, keyed by subsystem index.
+	//	Survives DOM rebuilds (createElements) and width recomputation so the user never
+	//	loses their horizontal scroll position on resize or status refresh.
+	var _detailScrollPositions = {};
+
+	function _saveDetailScrollPositions() {
+		const wraps = document.querySelectorAll(".detail_scroll");
+		for (let i = 0; i < wraps.length; ++i) {
+			if (!wraps[i].id) continue;
+			_detailScrollPositions[wraps[i].id] = wraps[i].scrollLeft;
+		}
+	}
+	function _restoreDetailScrollPositions() {
+		for (const id in _detailScrollPositions) {
+			const el = document.getElementById(id);
+			if (el) el.scrollLeft = _detailScrollPositions[id];
+		}
+	}
 
 	//=====================================================================================
 	//_recomputeDetailScrollWidths ~~
@@ -897,6 +991,8 @@ SubsystemLaunch.create = function() {
 		if (!tbl) return;
 		const wraps = tbl.querySelectorAll(".detail_scroll");
 		if (!wraps.length) return;
+
+		_saveDetailScrollPositions();
 
 		const isCompressed = tbl.classList.contains("tableDoubleRowMode");
 
@@ -940,6 +1036,8 @@ SubsystemLaunch.create = function() {
 			if (tdInnerW > wraps[i].offsetWidth)
 				wraps[i].style.width = tdInnerW + "px";
 		}
+
+		_restoreDetailScrollPositions();
 	} //end _recomputeDetailScrollWidths()
 
 	//=====================================================================================
@@ -1082,6 +1180,24 @@ SubsystemLaunch.create = function() {
 				// Debug.log("subsystem obj", SubsystemLaunch.subsystems);
 			} //end subsystems ------
 
+
+			//subsystem common table lists (updated each poll) ----------
+			{
+				var commonTypes = ["SubsystemCommon", "SubsystemCommonOverride", "SubsystemCommonContext", "SubsystemCommonContextOverride"];
+				var commonKeys = ["subsystemCommonList", "subsystemCommonOverrideList", "subsystemCommonContextList", "subsystemCommonContextOverrideList"];
+				var commonXmlTags = ["SubsystemCommonList", "SubsystemCommonOverrideList", "SubsystemCommonContextList", "SubsystemCommonContextOverrideList"];
+				for(var ci = 0; ci < commonTypes.length; ++ci) {
+					var val = DesktopContent.getXMLValue(req, commonXmlTags[ci]) || "";
+					if(val != SubsystemLaunch.system[commonKeys[ci]]) {
+						SubsystemLaunch.system[commonKeys[ci]] = val;
+						var span = document.getElementById('subsystemCommonSpan_' + commonTypes[ci]);
+						if(span)
+							span.innerText = val
+								? ("\n" + commonTypes[ci] + " tables: " + val)
+								: "";
+					}
+				}
+			} //end subsystem common table lists ----------
 
 			//system state ------------------------
 			{
@@ -1349,9 +1465,12 @@ SubsystemLaunch.create = function() {
 						const detailText = tel.value + " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
 
-						//single-row mode wraps detail text in a horizontal-scroll div; target it if present
 						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
-						if (scrollEl) scrollEl.innerText = detailText;
+						if (scrollEl) {
+							const savedScroll = scrollEl.scrollLeft;
+							scrollEl.innerText = detailText;
+							scrollEl.scrollLeft = savedScroll;
+						}
 						else el.innerText = detailText;
 					}
 					else if(fieldIds[i] == "status")
@@ -1660,6 +1779,31 @@ SubsystemLaunch.create = function() {
 	}	//end handleSubsystemConfigAliasSelect()
 
 	//=====================================================================================
+	this.handleSystemConfigAliasSelect = function (value) {
+		Debug.log("handleSystemConfigAliasSelect()", value);
+		SubsystemLaunch.system.selectedSystemAlias = value;
+		if(!value) {
+			var el = document.getElementById("systemConfigAliasGlobalFields");
+			if(el) el.innerText = "";
+			return;
+		}
+
+		DesktopContent.XMLHttpRequest("Request?RequestType=getAliasGlobalFields" +
+				"&configAlias=" + encodeURIComponent(value),
+				"",
+			function (req) {
+					var globalFieldsStr = DesktopContent.getXMLValue(req, "global_fields_string");
+					var el = document.getElementById('systemConfigAliasGlobalFields');
+					if(el)
+						el.innerText = globalFieldsStr || "";
+				},
+				0, 0, false,
+				true,
+				true
+		);
+	}	//end handleSystemConfigAliasSelect()
+
+	//=====================================================================================
 	this.getSubsystemConfigAliasSelectInfo = function (subsystemIndex) {
 		Debug.log("getSubsystemConfigAliasSelectInfo()", subsystemIndex);
 
@@ -1732,6 +1876,75 @@ SubsystemLaunch.create = function() {
 
 
 	}	//end bootSubsystem()
+
+	//=====================================================================================
+	this.bootTopLevel = function () {
+		Debug.log("bootTopLevel()");
+
+		DesktopContent.popUpVerification(
+			"Are you sure you want to relaunch the <b>top-level ots system</b> in Normal Mode?",
+			function () {
+				DesktopContent.popUpVerification(
+					"Are you REALLY sure you want to relaunch the <b>top-level ots system</b>?",
+					function () {
+						Debug.log("Relaunching top-level ots...");
+
+						DesktopContent.systemBlackout(true);
+						window.setTimeout(function() {
+							DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTS",
+								"",
+								function(req, id, errStr) {
+									if(req) {
+										var err = DesktopContent.getXMLValue(req, "Error");
+										if(err) {
+											Debug.err(err);
+											DesktopContent.systemBlackout(false);
+											return;
+										}
+									}
+									else if(errStr &&
+										errStr.indexOf("Request was interrupted") < 0) {
+										Debug.err("Relaunch failed: " + errStr);
+										DesktopContent.systemBlackout(false);
+										return;
+									}
+
+									var countDown = 20;
+									Debug.log("Attempting to restart the top-level system in Normal Mode... " +
+										"\n\n Please wait " + countDown +
+										" seconds.", Debug.INFO_PRIORITY);
+									localCountDown();
+									function localCountDown() {
+										Debug.log("Waiting " + countDown + " seconds for startup...",
+											Debug.INFO_PRIORITY);
+										window.setTimeout(function() {
+											--countDown;
+											if(countDown == 0) {
+												DesktopContent.systemBlackout(false);
+												Debug.log("And we are back!", Debug.INFO_PRIORITY);
+												window.clearTimeout(_getStatusTimer);
+												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
+												return;
+											}
+											localCountDown();
+										}, 1000);
+									}
+								},
+								0 /*reqParam*/, 0 /*progressHandler*/,
+								true /*callHandlerOnErr*/,
+								false /*doNotShowLoadingOverlay*/,
+								true /*targetGatewaySupervisor*/,
+								true /*ignoreSystemBlock*/);
+						}, 1000); //delay to guarantee blackout starts
+
+					}, //end handler
+					0,"#efeaea",0,"#770000",0 /* getUserInput [optional] */ ,
+					350 /* dialogWidth [optional] */); //end second verify
+			},
+			0,"#efeaea",0,"#770000",0 /* getUserInput [optional] */ ,
+			350 /* dialogWidth [optional] */); //end first verify
+
+	}	//end bootTopLevel()
 
 	//=====================================================================================
 	this.handleSubsystemFsmModeSelect = function (value, subsystemIndex) {
@@ -2845,6 +3058,18 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 				Debug.log("SubsystemLaunch.system.systemAliases",SubsystemLaunch.system.systemAliases);
 
 			} //end system aliases -----
+
+			//subsystem common/override table lists ----------
+			{
+				SubsystemLaunch.system.subsystemCommonList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonList") || "";
+				SubsystemLaunch.system.subsystemCommonOverrideList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonOverrideList") || "";
+				SubsystemLaunch.system.subsystemCommonContextList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonContextList") || "";
+				SubsystemLaunch.system.subsystemCommonContextOverrideList =
+					DesktopContent.getXMLValue(req, "SubsystemCommonContextOverrideList") || "";
+			} //end subsystem common/override -----
 
 			//system state ------------------------
 			{

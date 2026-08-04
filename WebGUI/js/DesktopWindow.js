@@ -178,6 +178,8 @@ else {
         this.getWindowZ = function () { return parseInt(this.windiv.style.zIndex); } //return integer
         this.getWindowWidth = function () { return _w; }
         this.getWindowHeight = function () { return _h; }
+        this.getWindowMinWidth = function () { return _defaultWindowMinWidth; }
+        this.getWindowMinHeight = function () { return _defaultWindowMinHeight; }
         this.getWindowHeaderHeight = function () { return _defaultHeaderHeight; }
         this.isMaximized = function () { return _isMaximized && !_isMinimized; } //make sure the maximized window is visible
         this.wasMaximized = function () { return _isMaximized && _isMinimized; } //if window should restore maximized
@@ -330,7 +332,7 @@ else {
             _isMaximized = true;
 
             this.windiv.style.display = "inline"; //make sure is visible
-            this.setWindowSizeAndPosition(_x + 10, _y, _w, _h);
+            this.setWindowSizeAndPosition(_x, _y, _w, _h);
             window.parent.document.title = (Desktop.desktop.icons.getFolderFocus() ? Desktop.desktop.icons.getFolderFocus().substr(0,4).trim() + "../" : "") + _name;
 
             Debug.log(document.title, _name, "maximize()");

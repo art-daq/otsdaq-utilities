@@ -46,6 +46,8 @@ class ChatSupervisor : public CoreSupervisorBase
 
 	std::string chatSupervisorToolsPath_;
 	bool        enableSlackChat;
+	std::string slackInboxPath_;
+	int         slackDaemonPid_;
 
 	enum
 	{
@@ -58,8 +60,11 @@ class ChatSupervisor : public CoreSupervisorBase
 	bool     isChatOld(uint64_t chatIndex, uint64_t last);
 
 	void newUser(const std::string& user);
-	void newChat(const std::string& chat, const std::string& user);
+	void newChat(const std::string& chat, const std::string& user, bool fromSlack = false);
 	void sendToSlack(const std::string& user, const std::string& message);
+	void receiveFromSlack();
+	void startSlackDaemon();
+	void stopSlackDaemon();
 	void removeChatHistoryEntry(uint64_t i);
 	void removeChatUserEntry(uint64_t i);
 	void cleanupExpiredChats(void);

@@ -17,6 +17,7 @@
 
 
 import os
+import re
 import sys
 from time import sleep
 from urllib.parse import unquote
@@ -30,13 +31,6 @@ except ImportError:
         "Install slack_sdk with 'pip install slack_sdk' to use this script."
     )
 
-
-# Environment variables for Slack configuration, defined in ots_setup_slack.sh
-USER_DATA = os.environ.get("USER_DATA")
-if not USER_DATA:
-    raise RuntimeError(
-        "Set USER_DATA environment variable to the current user's data directory."
-    )
 
 SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -57,7 +51,7 @@ def connectToClient() -> WebClient:
             client.auth_test()
             return client
         except SlackApiError as e:
-            _root_logger.error(
+            print(
                 f"Attempt {attempt} of {number_of_tries} failed: {e.response['error']}"
             )
             sleep(2)  # Wait before retrying
@@ -69,24 +63,96 @@ def connectToClient() -> WebClient:
 
 
 def cleanMessage(message: str) -> str:
-    """Sanitize the message to prevent issues with Slack formatting."""
-    # Basic sanitization: escape &, <, > characters
+    """Sanitize the message for Slack's ``text`` field.
+
+    Per https://api.slack.com/reference/surfaces/formatting#escaping we must
+    escape only ``&``, ``<`` and ``>`` so that plain text doesn't accidentally
+    look like ``<@user>`` / ``<url>`` mentions. Emoji shortcodes (``:smile:``)
+    and Unicode emoji (``\U0001f600``) are left untouched — Slack renders
+    both natively.
+    """
     message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    # replace all %20 with space
-    message = message.replace("%20", " ")
-    # replace all %0A%0D with newlines
-    message = message.replace("%0A%0D", "\n")
-    return message  # Remove leading/trailing whitespace
+    return message
+
+
+def resolveMentions(client: WebClient, message: str) -> str:
+    """Replace ``@Name`` in the message with real Slack mentions ``<@UID>``.
+
+    Matches against workspace users' display name, real name, and username
+    (case-insensitive, longest name first so "@Alec Lynch" wins over "@Alec").
+    Unmatched ``@something`` text is left as-is.
+    """
+    if not re.search(r"(?<!\w)@", message):
+        return message
+
+    names = {}
+    try:
+        cursor = None
+        while True:
+            resp = client.users_list(cursor=cursor, limit=200)
+            for u in resp.get("members", []):
+                if u.get("deleted") or u.get("is_bot"):
+                    continue
+                profile = u.get("profile", {})
+                for n in (
+                    profile.get("display_name"),
+                    profile.get("real_name"),
+                    u.get("name"),
+                ):
+                    if n:
+                        names[n.lower()] = u["id"]
+            cursor = resp.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+    except SlackApiError as e:
+        print(
+            f"Warning: could not list users to resolve mentions "
+            f"(check the bot token has the 'users:read' scope): {e.response['error']}"
+        )
+        return message
+
+    for name in sorted(names, key=len, reverse=True):
+        pattern = re.compile(r"(?<!\w)@" + re.escape(name) + r"\b", re.IGNORECASE)
+        message = pattern.sub(f"<@{names[name]}>", message)
+
+    # Anything still looking like "@word" here didn't match any known Slack
+    # display_name/real_name/username, so it will just be plain text in Slack
+    # (no ping). Surface it so the mismatch is easy to diagnose.
+    for m in re.finditer(r"(?<!\w)@(\w[\w' -]*)", message):
+        print(
+            f"Warning: '@{m.group(1)}' did not match any Slack user "
+            "(display name/real name/username) -- it will not notify anyone"
+        )
+
+    return message
 
 
 def sendToSlack(user: str, message: str) -> None:
     """Send a message to a Slack channel using the Slack API."""
 
-    message = f"*{user}*: {message}"
-    message = cleanMessage(message)
+    if user is None or not user.strip():
+        raise RuntimeError("No user provided (--user).")
+    user = user.strip()
+
     print(f"Sending message to Slack channel {SLACK_CHANNEL} from user {user}")
 
     client = connectToClient()
+
+    if message is None:
+        message = ""
+    # Decode OTS WebGUI Chat percent-encoding (see WebGUI/html/Chat.html convertForServer()).
+    message = (
+        message.replace("%0A%0D", "\n")
+        .replace("%20%20", "  ")
+        .replace("%26", "&")
+        .replace("%3C", "<")
+        .replace("%3E", ">")
+        .replace("%22", '"')
+        .replace("%27", "'")
+    )
+    message = cleanMessage(message)
+    message = resolveMentions(client, message)
+    message = f"*{cleanMessage(user)}*: {message}"
 
     if message:
         try:

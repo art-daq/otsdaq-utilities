@@ -1162,8 +1162,8 @@ try
 		FEtoPluginTypeMap_.clear();     // reset
 		for(auto& feApp : feTypeSupervisors)
 		{
-			__SUP_COUT__ << "FEs for app " << feApp.first << ":" << feApp.second.getName()
-			             << __E__;
+			__SUP_COUTT__ << "FEs for app " << feApp.first << ":"
+			              << feApp.second.getName() << __E__;
 
 			auto feChildren = appsNode.getNode(feApp.second.getName())
 			                      .getNode("LinkToSupervisorTable")
@@ -1175,7 +1175,7 @@ try
 				if(!fe.second.status())
 					continue;  // skip disabled FEs
 
-				__SUP_COUTV__(fe.first);
+				__SUP_COUTTV__(fe.first);
 				FEtoSupervisorMap_[fe.first] = feApp.first;
 
 				std::string pluginType =
@@ -3366,7 +3366,13 @@ try
 				}
 				else
 				{
-					if(task->bar_)
+					int rp = task->realProgress_.load();
+					if(rp >= 0)
+					{
+						xmldoc.addTextElementToParent(
+						    "progress", std::to_string(rp), progParent);
+					}
+					else if(task->bar_)
 					{
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
@@ -3505,7 +3511,13 @@ try
 				}
 				else
 				{
-					if(task->bar_)
+					int rp = task->realProgress_.load();
+					if(rp >= 0)
+					{
+						xmldoc.addTextElementToParent(
+						    "progress", std::to_string(rp), progParent);
+					}
+					else if(task->bar_)
 					{
 						xmldoc.addTextElementToParent(
 						    "progress", std::to_string(task->bar_->read()), progParent);
@@ -3593,7 +3605,7 @@ try
 	__COUT__ << "FE macro group scheduler started. groupID=" << group->groupID_
 	         << " tasks=" << group->tasks_.size() << __E__;
 
-	std::size_t maxThreads = std::thread::hardware_concurrency();
+	std::size_t maxThreads = StringMacros::getConcurrencyCount();
 	if(maxThreads == 0)
 		maxThreads = 4;
 	if(maxThreads > group->tasks_.size())
@@ -3700,7 +3712,8 @@ try
 	                         feMacroRunThreadStruct->parameters_.saveOutputs_,
 	                         feMacroRunThreadStruct->parameters_.runningUsername_,
 	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_,
-	                         false /* saveToHistory */);
+	                         false /* saveToHistory */,
+	                         &feMacroRunThreadStruct->realProgress_);
 
 	feMacroRunThreadStruct->parameters_.doneTime_ = time(0);
 	feMacroRunThreadStruct->feMacroRunDone_       = true;
@@ -3747,7 +3760,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
                                       bool               saveOutputs,
                                       const std::string& username,
                                       const std::string& userGroupPermissions,
-                                      bool               saveToHistory)
+                                      bool               saveToHistory,
+                                      std::atomic<int>*  realProgressOut)
 {
 	__SUP_COUTV__(feClassSelected);
 	__SUP_COUTV__(feUIDSelected);
@@ -3906,11 +3920,13 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			txParameters.addParameter("inputArgs", inputArgs);
 			txParameters.addParameter("outputArgs", outputArgs);
 			txParameters.addParameter("userPermissions", userGroupPermissions);
+			txParameters.addParameter("AsyncSupported", "1");
 
 			SOAPParameters rxParameters;  // params for xoap to recv
 			// rxParameters.addParameter("success");
 			rxParameters.addParameter("outputArgs");
 			rxParameters.addParameter("Error");
+			rxParameters.addParameter("NotDoneTaskID");
 
 			if(saveOutputs)
 			{
@@ -3933,19 +3949,57 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			    "MacroMakerSupervisorRequest",
 			    txParameters);
 
-			__SUP_COUT__ << "Received response message: "
-			             << SOAPUtilities::translate(retMsg) << __E__;
+			__SUP_COUTT__ << "Received response message: "
+			              << SOAPUtilities::translate(retMsg) << __E__;
 
 			SOAPUtilities::receive(retMsg, rxParameters);
 
-			__SUP_COUT__ << "Received it " << __E__;
+			__SUP_COUT__ << "Received FE Macro response." << __E__;
+
+			// If FESupervisor returned NotDoneTaskID, poll until macro completes
+			{
+				std::string notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+				while(notDoneTaskID != "")
+				{
+					__SUP_COUTT__ << "FE Macro async task " << notDoneTaskID
+					              << " still running for FE '" << feUID
+					              << "'. Polling in 5s..." << __E__;
+					sleep(5);
+
+					SOAPParameters pollTxParams;
+					pollTxParams.addParameter("Request", "CheckMacro");
+					pollTxParams.addParameter("TaskID", notDoneTaskID);
+
+					xoap::MessageReference pollRetMsg =
+					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
+					                                     "MacroMakerSupervisorRequest",
+					                                     pollTxParams);
+
+					rxParameters = SOAPParameters();
+					rxParameters.addParameter("outputArgs");
+					rxParameters.addParameter("Error");
+					rxParameters.addParameter("NotDoneTaskID");
+					rxParameters.addParameter("Progress");
+					SOAPUtilities::receive(pollRetMsg, rxParameters);
+
+					// Update real progress if FESupervisor reported it
+					if(realProgressOut)
+					{
+						std::string progressStr = rxParameters.getValue("Progress");
+						if(!progressStr.empty())
+							realProgressOut->store(std::stoi(progressStr));
+					}
+
+					notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+				}
+			}
 
 			// bool success = rxParameters.getValue("success") == "1";
 			std::string outputResults = rxParameters.getValue("outputArgs");
 			std::string error         = rxParameters.getValue("Error");
 
 			//__SUP_COUT__ << "rx success = " << success << __E__;
-			__SUP_COUT__ << "outputArgs = " << outputResults << __E__;
+			__SUP_COUTT__ << "outputArgs = " << outputResults << __E__;
 
 			if(error != "")
 			{
@@ -3999,7 +4053,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 						xmldoc.addTextElementToParent(
 						    "outputArgs_value", argValue, feMacroExecParent);
 					}
-					__SUP_COUT__ << argName << ": " << argValue << __E__;
+					__SUP_COUTT__ << argName << ": " << argValue << __E__;
 				}
 			}
 
