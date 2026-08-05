@@ -38,6 +38,7 @@
 		#systemStatusState, .subsystem_status {
 			font-family: 'Inconsolata', monospace;
 			padding: 0 30px;
+			box-sizing: border-box;
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
@@ -291,6 +292,13 @@
 		#subsystemDiv .tableDoubleRowMode {
 			max-width: 100%;
 			table-layout: auto;
+		}
+		/* Force Status column to maintain fixed width despite table-layout: auto */
+		#subsystemDiv .tableSingleRowMode td.subsystem_status,
+		#subsystemDiv .tableDoubleRowMode td.subsystem_status {
+			width: 150px !important;
+			max-width: 150px !important;
+			min-width: 150px !important;
 		}
 		.detail_scroll {
 			overflow-x: auto;
