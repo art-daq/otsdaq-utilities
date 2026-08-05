@@ -679,7 +679,7 @@ SubsystemLaunch.create = function() {
 						// 	},"",true);
 					}
 					else if(fields[i] == "State")
-						str += "<th style='width:120px'>" + fields[i] + "</th>";
+						str += "<th style='width:150px'>" + fields[i] + "</th>";
 					else
 						str += "<th>" + fields[i] + "</th>";
 				}
@@ -1562,7 +1562,7 @@ SubsystemLaunch.create = function() {
 				cell.style.background = "rgb(240,240,240)";
 				statusString += " " + progressNum + " %";
 			}
-			cell.innerHTML = "<div style='position:relative; z-index:2; white-space: nowrap;'>" + statusString + "</div>";
+			cell.innerHTML = "<div style='position:relative; z-index:2; white-space: nowrap; width:100%; overflow:hidden;'>" + statusString + "</div>";
 
 			// Debug.log("Status",progressNum, statusString, cell.offsetWidth, cell.offsetHeight);
 
