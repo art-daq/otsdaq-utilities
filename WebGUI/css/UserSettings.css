@@ -321,17 +321,13 @@
 		box-sizing: border-box;
 	}
 
-	/* Desktop Window Arrangement Presets: super title spanning the User Presets
-	   and System Presets sub-columns */
-	.genPrefsSubColumns {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 20px;
-	}
+	/* Desktop Window Arrangement Presets: User Presets and System Presets are
+	   always stacked in the same single column */
 	.genPrefsSubCol {
-		flex: 0 1 auto;
 		box-sizing: border-box;
+	}
+	#windSystemLayoutCol {
+		margin-top: 20px;
 	}
 
 	/* gray card background for Misc. Personal Customizations, matching the Color Scheme table box */
@@ -415,8 +411,8 @@
 		font-weight: 800;
 	}
 
-	/* accountsLockNote ~~ notice shown above the accounts list when another user
-	   holds the ots lock */
+	/* accountsLockNote ~~ notice shown above the accounts search box indicating
+	   who (if anyone) currently holds the ots lock */
 	.accountsLockNote {
 		display: inline-block;
 		background: #fff1d6;
@@ -426,6 +422,29 @@
 		padding: 6px 12px;
 		margin-bottom: 10px;
 		font-size: 13px;
+	}
+	.accountsLockNote--self {
+		background: #fff1d6;
+		color: #8a5a00;
+		border-color: #f0d090;
+	}
+	.accountsLockNote--self a {
+		color: inherit;
+		font-weight: 800;
+	}
+	.accountsLockNote--other {
+		background: #fbdada;
+		color: #a02020;
+		border-color: #f0aaaa;
+	}
+	.accountsLockNote--unlocked {
+		background: #dbf3e0;
+		color: #1f7a3d;
+		border-color: #a8ddb5;
+	}
+	.accountsLockNote--unlocked a {
+		color: inherit;
+		font-weight: 800;
 	}
 
 	/* accounts data table ~~ zebra striping + row hover, scoped to the accounts

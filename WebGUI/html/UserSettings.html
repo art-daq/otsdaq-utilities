@@ -52,6 +52,8 @@
 
 		//for lockout
 		var _usernameWithLock = "";
+		var _prefUsername = "";
+		var _desktopUserPermissions = "";
 
 		//functions:
 		//init()
@@ -83,6 +85,14 @@
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
+		function escapeHtml(str) {
+			return String(str)
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;');
+		}
 
 		//=====================================================================================
 		//init called once body has loaded
@@ -191,7 +201,7 @@
 				if (_layoutAliasArray[i] == "-1" || _layoutAliasArray[i] == (i + 1).toString())
 					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
 				else
-					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' value='" + _layoutAliasArray[i] + "'>";
+					str += " <input type='text' id='winLayoutAlias" + (i + 1) + "' value='" + escapeHtml(_layoutAliasArray[i]) + "'>";
 				str += "<div class='winLayoutText' id='winLayoutText" + (i + 1) + "'></div>";
 			}
 			document.getElementById("windLayoutDiv").innerHTML = str;
@@ -209,7 +219,7 @@
 				if (_sysLayoutAliasArray[i] == "-1" || _sysLayoutAliasArray[i] == (i + 1).toString())
 					sysStr += " <input type='text' id='winSysLayoutAlias" + (i + 1) + "' placeholder='Enter Alias'>";
 				else
-					sysStr += " <input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + _sysLayoutAliasArray[i] + "'>";
+					sysStr += " <input type='text' id='winSysLayoutAlias" + (i + 1) + "' value='" + escapeHtml(_sysLayoutAliasArray[i]) + "'>";
 				sysStr += "<div class='winLayoutText' id='winSysLayoutText" + (i + 1) + "'></div>";
 			}
 			document.getElementById("windSystemLayoutDiv").innerHTML = sysStr;
@@ -363,9 +373,11 @@
 			//get username with lock, "" means no one has lock
 			_usernameWithLock = DesktopContent.getXMLValue(req, "username_with_lock");
 			var pref_username = DesktopContent.getXMLValue(req, "pref_username");
+			_prefUsername = pref_username;
 			var ots_owner = DesktopContent.getXMLValue(req, "ots_owner");
 			var ots_remote_address = DesktopContent.getXMLValue(req, "ots_remote_address");
 			var desktop_user_permissions = DesktopContent.getXMLValue(req, "desktop_user_permissions");
+			_desktopUserPermissions = desktop_user_permissions;
 
 
 			var el = document.getElementById("header");
@@ -374,15 +386,17 @@
 			var lockBadgeClass = lockedByOther ? "lockBadge--lockedOther" :
 				(lockedBySelf ? "lockBadge--lockedSelf" : "lockBadge--unlocked");
 			var lockBadgeText = lockedByOther ?
-				("<b>" + _usernameWithLock + "</b> currently has the " + ots_owner + " ots lock") :
+				("<b>" + escapeHtml(_usernameWithLock) + "</b> currently has the " + escapeHtml(ots_owner) + " ots lock") :
 				(lockedBySelf ?
-					("You currently have the " + ots_owner + " ots lock") :
-					(ots_owner + " ots is currently unlocked"));
+					("You currently have the " + escapeHtml(ots_owner) + " ots lock") :
+					(escapeHtml(ots_owner) + " ots is currently unlocked"));
 			var lockBadgeAction = (_usernameWithLock && _usernameWithLock != "") ?
 				(lockedBySelf ?
-					(" &ndash; <a onclick='lockToUsername(-1,false,\"" + pref_username + "\");'>Click to unlock</a>") :
-					"") :
-				(" &ndash; <a onclick='lockToUsername(-1,true,\"" + pref_username + "\");'>Click to lock</a>");
+					(" &ndash; <a onclick='lockToUsername(-1,false," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to unlock</a>") :
+					((desktop_user_permissions && desktop_user_permissions.indexOf("allUsers: 255") >= 0) ?
+						(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false," + JSON.stringify(_usernameWithLock).replace(/'/g, "&#39;") + ");'>Click to force unlock</a>") :
+						"")) :
+				(" &ndash; <a onclick='lockToUsername(-1,true," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to lock</a>");
 			el.innerHTML =
 				"<div class='userHeaderCard'>" +
 					"<div class='userHeaderTitle'>Preferences &amp; Account Settings for <b>" + pref_username + "</b> " +
@@ -660,7 +674,7 @@
 				if (_accountsArray[0] && _accountsArray[0].length) //If have permissions, add Jump to Link
 				{
 					if (_mailbox) //only add jump link if there is a large Preferences section
-						htmlStr += "<div id='prefs'><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a><div>";
+					htmlStr += "<div id='prefs'><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('accountsDiv', false)\">Jump to Accounts Section</a></div>";
 
 					el.innerHTML = htmlStr;
 				}
@@ -673,6 +687,24 @@
 			htmlStr += "<br>";
 			if (!DesktopContent._sequence && _mailbox) //in normal mode, add jump link
 				htmlStr += "<hr width='75%'><center><a style='color:#3072ed' onClick=\"event.preventDefault(); DesktopContent.scrollIntoViewY('prefs', false)\">Jump to Preferences Section</a></center><h1>Accounts</h1>";
+
+			//show current lock status just above the search box
+			if (_usernameWithLock && _usernameWithLock != "") {
+				if (_usernameWithLock == _prefUsername)
+					htmlStr += "<center><div class='accountsLockNote accountsLockNote--self'>You currently have the ots lock &ndash; " +
+						"<a onclick='lockToUsername(-1,false," + JSON.stringify(_prefUsername).replace(/'/g, "&#39;") + ");'>Click to unlock</a></div></center>";
+				else {
+					var isAdmin = _desktopUserPermissions && _desktopUserPermissions.indexOf("allUsers: 255") >= 0;
+					htmlStr += "<center><div class='accountsLockNote accountsLockNote--other'>Note: <b>" + escapeHtml(_usernameWithLock) + "</b> currently has the ots lock" +
+						(isAdmin ?
+							(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false," + JSON.stringify(_usernameWithLock).replace(/'/g, "&#39;") + ");'>Click to force unlock</a>") :
+							".") +
+						"</div></center>";
+				}
+			}
+			else
+				htmlStr += "<center><div class='accountsLockNote accountsLockNote--unlocked'>ots is currently unlocked &ndash; " +
+					"<a onclick='lockToUsername(-1,true," + JSON.stringify(_prefUsername).replace(/'/g, "&#39;") + ");'>Click to lock</a></div></center>";
 
 			htmlStr += "<div id='accountsSearchDiv'>Search: " +
 				"<input onkeyup='handleSearchKeyUp();' type='text' id='accountsSearchBox' value='" + _AccountsLastSearch + "'></div>";
@@ -1693,12 +1725,10 @@
 
 					<div class='genPrefsCol'>
 						<h3>Desktop Window Arrangement Presets:</h3>
-						<div class='genPrefsSubColumns'>
-							<div class='genPrefsSubCol' style='width: 544px'>
-								<div id='windLayoutDiv'></div>
-							</div>
+						<div class='genPrefsSubCol' style='width: 544px'>
+							<div id='windLayoutDiv'></div>
 
-							<div class='genPrefsSubCol' id='windSystemLayoutCol' style='width: 544px; display:none'>
+							<div id='windSystemLayoutCol' style='display:none'>
 								<div id='windSystemLayoutDiv'></div>
 							</div>
 						</div>
