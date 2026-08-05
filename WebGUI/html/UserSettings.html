@@ -392,11 +392,11 @@
 					(escapeHtml(ots_owner) + " ots is currently unlocked"));
 			var lockBadgeAction = (_usernameWithLock && _usernameWithLock != "") ?
 				(lockedBySelf ?
-					(" &ndash; <a onclick='lockToUsername(-1,false," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to unlock</a>") :
+					(" &ndash; <a onclick='lockToUsername(-1,false," + escapeHtml(JSON.stringify(pref_username)) + ");'>Click to unlock</a>") :
 					((desktop_user_permissions && desktop_user_permissions.indexOf("allUsers: 255") >= 0) ?
-						(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false," + JSON.stringify(_usernameWithLock).replace(/'/g, "&#39;") + ");'>Click to force unlock</a>") :
+						(" &ndash; <a style='color:inherit' onclick='lockToUsername(-1,false," + escapeHtml(JSON.stringify(_usernameWithLock)) + ");'>Click to force unlock</a>") :
 						"")) :
-				(" &ndash; <a onclick='lockToUsername(-1,true," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to lock</a>");
+				(" &ndash; <a onclick='lockToUsername(-1,true," + escapeHtml(JSON.stringify(pref_username)) + ");'>Click to lock</a>");
 			el.innerHTML =
 				"<div class='userHeaderCard'>" +
 					"<div class='userHeaderTitle'>Preferences &amp; Account Settings for <b>" + pref_username + "</b> " +
