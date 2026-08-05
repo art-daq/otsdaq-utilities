@@ -491,7 +491,7 @@ SubsystemLaunch.create = function() {
 				el.setAttribute("id","systemStatusDiv");
 				str = "<table cellspacing='5px'>";
 				str += "<tr><th colspan=" + numOfCols + ">System Status</th></tr>";
-				str += "<tr><td id='systemStatusState'>";
+				str += "<tr style='height: 25px;'><td id='systemStatusState'>";
 				//add state
 				str += SubsystemLaunch.system.state;
 				str += "</td><td id='systemStatusTimeInState'>";
@@ -521,7 +521,8 @@ SubsystemLaunch.create = function() {
 							"</option>";
 					}
 					str += "</select>";
-					str += "</td><td id='systemConfigAliasTranslation' colspan=" + (numOfCols-2) + " title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>";
+					str += "</td><td id='systemConfigAliasTranslation' colspan=" + (numOfCols-2) + " style='vertical-align: top;' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'>";
+					str += "<div class='system_scroll_wrap' style='height: 50px; overflow-y: auto;'>";
 					var aliasTranslation = ""; //set as innerText to handle special HTML chars
 					if (selc >= 0) {
 						str += "Configure Alias '" + SubsystemLaunch.system.systemAliases[selc].name +
@@ -540,7 +541,7 @@ SubsystemLaunch.create = function() {
 					else
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
-					str += "</td><td  >";
+					str += "</div></td><td  >";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						"title='Configure the entire System (all included subsystems)'" +
@@ -563,48 +564,66 @@ SubsystemLaunch.create = function() {
 					str += "</td></tr>";
 				}
 
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Active State Machine: <label id='systemStatus_activeFsm' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left; padding-top: 4px; padding-bottom: 4px;'>Active State Machine: <label id='systemStatus_activeFsm' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 				if(SubsystemLaunch.system.lastRunLogEntry) //if not undefined
 				{
-					str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Run Type: <label id='systemStatus_lastRunLogEntry' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+					str += "<tr><td colspan=" + numOfCols + " style='text-align: left; padding-top: 4px; padding-bottom: 4px;'>Last Run Type: <label id='systemStatus_lastRunLogEntry' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 					str += "</td></tr>";
 				}
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last Logbook Entry: <label id='systemStatus_lastLogbookEntry' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left; padding-top: 4px; padding-bottom: 4px;'>Last Logbook Entry: <label id='systemStatus_lastLogbookEntry' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Last System Message: <label id='systemStatus_lastSystemMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left; padding-top: 4px; padding-bottom: 4px;'>Last System Message: <label id='systemStatus_lastSystemMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
-				str += "<tr><td colspan=" + numOfCols + " style='text-align: left'>Log File Rollover Mode: <label id='systemStatus_logRolloverMode' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<tr><td colspan=" + numOfCols + " style='text-align: left; padding-top: 4px; padding-bottom: 4px;'>Log File Rollover Mode: <label id='systemStatus_logRolloverMode' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</td></tr>";
 
 				//console err/warn count
-				str += "<tr><td rowspan=1 style='text-align: right; padding-right: 5px; padding-left: 5px; white-space: nowrap;'>";
-				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleInfoCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
-				str += SubsystemLaunch.system.consoleInfoCount;
-				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
+					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
+					"title='Click to reset Console counts and relatch first messages'>Console Info #:</a>" +
+					"<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleInfoCount' class='hover_link' " +
+					"style='display:inline-block; width:60px; text-align:left; padding-left:15px;' " +
+					"title='Click to reset Console counts and relatch first messages'>" +
+					(SubsystemLaunch.system.consoleInfoCount||"").replace(/.*: /,"") +
+					"</a>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
+				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Info: <label id='systemStatus_consoleInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
-				str += "</td></tr>";
-				str += "<tr><td rowspan=1 style='text-align: right; padding-right: 5px; padding-left: 5px; white-space: nowrap;'>";
-				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleWarnCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
-				str += SubsystemLaunch.system.consoleWarnCount;
-				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "</div></td></tr>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
+					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
+					"title='Click to reset Console counts and relatch first messages'>Console Warn #:</a>" +
+					"<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleWarnCount' class='hover_link' " +
+					"style='display:inline-block; width:60px; text-align:left; padding-left:15px;' " +
+					"title='Click to reset Console counts and relatch first messages'>" +
+					(SubsystemLaunch.system.consoleWarnCount||"").replace(/.*: /,"") +
+					"</a>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
+				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Warning: <label id='systemStatus_consoleWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
-				str += "</td></tr>";
-				str += "<tr><td rowspan=1 style='text-align: right; padding-right: 5px; white-space: nowrap;'>";
-				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleErrCount' class='hover_link' title='Click to reset Console counts and relatch first messages'>";
-				str += SubsystemLaunch.system.consoleErrCount;
-				str += "</a>";
-				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "</div></td></tr>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
+					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
+					"title='Click to reset Console counts and relatch first messages'>Console Err #:</a>" +
+					"<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' id='systemStatus_consoleErrCount' class='hover_link' " +
+					"style='display:inline-block; width:60px; text-align:left; padding-left:15px;' " +
+					"title='Click to reset Console counts and relatch first messages'>" +
+					(SubsystemLaunch.system.consoleErrCount||"").replace(/.*: /,"") +
+					"</a>";
+				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
+				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Error: <label id='systemStatus_consoleErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
-				str += "</td></tr>";
+				str += "</div></td></tr>";
 
 
 				str += "</table>";
@@ -1051,6 +1070,9 @@ SubsystemLaunch.create = function() {
 	function getCurrentStatus() {
 		// Debug.log("getCurrentStatus()");
 		window.clearTimeout(_getStatusTimer);
+
+		if(DesktopContent._isSystemBlackout) return;
+
 		const currentStatusNonce = ++_statusRequestNonce;
 
 		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
@@ -1139,12 +1161,37 @@ SubsystemLaunch.create = function() {
 								//	Check: if old status did not start with an error prefix,
 								//	then this is a genuinely new error to display.
 								var oldStatus = SubsystemLaunch.subsystems[j][fields[i]];
-								if(!oldStatus || (oldStatus.indexOf("Fail") != 0 &&
+								var isNewError = !oldStatus || (oldStatus.indexOf("Fail") != 0 &&
 										oldStatus.indexOf("Error") != 0 &&
-										oldStatus.indexOf("Soft") != 0))
-									Debug.err("From Subsystem '" +
-										SubsystemLaunch.subsystems[j].name + "'... " +
-										status);
+										oldStatus.indexOf("Soft") != 0);
+
+								if(isNewError)
+								{
+									let lastStatusTime = subsystemArrs["lastStatusTime"][j] ?
+										subsystemArrs["lastStatusTime"][j].getAttribute('value') :
+										SubsystemLaunch.subsystems[j].lastStatusTime;
+									let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(status);
+
+									if(secondsAgo == -1 && lastStatusTime)
+									{
+										let parsed = Date.parse(lastStatusTime);
+										if(!Number.isNaN(parsed) && parsed > 0)
+											secondsAgo = Math.floor((Date.now() - parsed) / 1000);
+									}
+
+									if(SubsystemLaunch.isFirstTime() && secondsAgo > 60)
+									{
+										Debug.warn("Here is the last error from Subsystem '" +
+											SubsystemLaunch.subsystems[j].name + "' [" + secondsAgo + " seconds ago]... " +
+											status);
+									}
+									else if(secondsAgo == -1 || secondsAgo < 60)
+									{
+										Debug.err("From Subsystem '" +
+											SubsystemLaunch.subsystems[j].name + "'... " +
+											status);
+									}
+								}
 							}
 
 							SubsystemLaunch.subsystems[j][fields[i]] = status;
@@ -1388,6 +1435,11 @@ SubsystemLaunch.create = function() {
 						(" (" + SubsystemLaunch.system.activeFsmWindow + ")"):"") +
 					((SubsystemLaunch.system.activeFsmStatus && SubsystemLaunch.system.inTransition)?
 						(" - " + SubsystemLaunch.system.activeFsmStatus):"");
+			else if(fieldIds[i] == "consoleInfoCount" || fieldIds[i] == "consoleWarnCount" || fieldIds[i] == "consoleErrCount") {
+				var countVal = SubsystemLaunch.system[fieldIds[i]];
+				var colonPos = countVal.lastIndexOf(": ");
+				el.innerText = colonPos >= 0 ? countVal.substring(colonPos + 2) : countVal;
+			}
 			else
 				el.innerText = SubsystemLaunch.system[fieldIds[i]];
 		}
@@ -1793,10 +1845,12 @@ SubsystemLaunch.create = function() {
 				"&configAlias=" + encodeURIComponent(value),
 				"",
 			function (req) {
-					var globalFieldsStr = DesktopContent.getXMLValue(req, "global_fields_string");
+					var globalFieldsStr = DesktopContent.getXMLValue(req, "global_fields_string") || "";
+					if(globalFieldsStr.indexOf(" | ") === 0)
+						globalFieldsStr = globalFieldsStr.substring(3);
 					var el = document.getElementById('systemConfigAliasGlobalFields');
 					if(el)
-						el.innerText = globalFieldsStr || "";
+						el.innerText = globalFieldsStr;
 				},
 				0, 0, false,
 				true,
@@ -1889,6 +1943,9 @@ SubsystemLaunch.create = function() {
 					"Are you REALLY sure you want to relaunch the <b>top-level ots system</b>?",
 					function () {
 						Debug.log("Relaunching top-level ots...");
+
+						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
 
 						DesktopContent.systemBlackout(true);
 						window.setTimeout(function() {
