@@ -495,7 +495,7 @@ SubsystemLaunch.create = function() {
 				str += SubsystemLaunch.system.state;
 				str += "</td><td id='systemStatusTimeInState'>";
 				str += "</td><td id='systemStatus_runNumber'>";
-				str += "</td><td style='cursor: pointer; white-space: nowrap;' id='systemStatusActiveUsers' " +
+				str += "</td><td style='cursor: pointer; white-space: nowrap; width: 240px;' id='systemStatusActiveUsers' " +
 					"onclick='SubsystemLaunch.openChatWindow();' title='Click to open Chat window'>";
 				str += "</td></tr>";
 				str += "<tr><td>";
@@ -540,7 +540,7 @@ SubsystemLaunch.create = function() {
 					else
 						str += "&lt;=== Please select a valid System Configure Alias!";
 
-					str += "</div></td><td  >";
+					str += "</div></td><td style='width: 240px;'>";
 					str += "<button class='systemFsmActionButton' id='systemManualFsmAction_Configure' " +
 						"onClick='SubsystemLaunch.launcher.handleSubsystemActionSelect(this, -1);'" +
 						"title='Configure the entire System (all included subsystems)'" +
