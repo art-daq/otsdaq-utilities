@@ -811,6 +811,7 @@
 
 			// if I am building a sequence I do not have to run
 			if (!sequenceBuilding_) {
+				_pollStartTime = Date.now();
 				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 					//"&feSupervisorID=" + feSupervisorID +
 					"&feClassSelected=" + feClassSelected +
@@ -844,6 +845,9 @@
 			if (verticalOrientation_)
 				appendHistoryRecord(JSON.stringify(command));
 		} //end runMacro()
+
+		var _pollStartTime = 0;
+		var _lastNotDoneID = 0;
 
 		//=====================================================================================
 		//handleMacroResponse ~~
@@ -894,6 +898,13 @@
 			{
 				Debug.log("FE Macro run not done", notDoneID);
 
+				//new async run ID means a fresh launch: restart the fast-poll window
+				//	(robust to launch paths that do not set _pollStartTime)
+				if (notDoneID != _lastNotDoneID) {
+					_lastNotDoneID = notDoneID;
+					_pollStartTime = Date.now();
+				}
+
 				//append still running
 				var str = el.innerHTML;
 				str = str.substring(0, str.indexOf("waiting for response...") + 23);
@@ -919,6 +930,7 @@
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				el.innerHTML = str;
 
+				var pollDelay = (Date.now() - _pollStartTime < 10000) ? 1000 : 5000;
 				window.setTimeout(function () {
 					Debug.log("Checking if FE Macro is done", notDoneID);
 					DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
@@ -930,7 +942,7 @@
 						true /*callHandlerOnErr*/,
 						true /*doNotShowLoadingOverlay*/
 					);
-				}, 5000 /* 5 seconds */);
+				}, pollDelay);
 				return;
 			}
 
@@ -2867,6 +2879,7 @@ Here is the json string received:
 			Debug.log("Updated inputValueHistory_ based on history call");
 
 			var postData = "inputArgs=" + recordObj["inputArgs"] + "&outputArgs=" + recordObj["outputArgs"];
+			_pollStartTime = Date.now(); //so NotDoneID polling starts at fast 1s cadence
 			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 				//"&feSupervisorID=" + feSupervisorID +
 				"&feClassSelected=" + recordObj["feClass"] +
@@ -3844,6 +3857,7 @@ Here is the json string received:
 
 				var postData = "inputArgs=" + command["inputArgs"] + "&outputArgs=" + command["outputArgs"];
 
+				_pollStartTime = Date.now();
 				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 					"&feClassSelected=" + command["feClass"] +
 					"&feUIDSelected=" + command["feUID"] +
