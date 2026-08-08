@@ -1449,7 +1449,7 @@ SubsystemLaunch.create = function() {
 			else if(fieldIds[i] == "consoleInfoCount" || fieldIds[i] == "consoleWarnCount" || fieldIds[i] == "consoleErrCount") {
 				var countVal = SubsystemLaunch.system[fieldIds[i]];
 				var colonPos = countVal.lastIndexOf(": ");
-				el.innerText = colonPos >= 0 ? countVal.substring(colonPos + 2) : countVal;		
+				el.innerText = colonPos >= 0 ? countVal.substring(colonPos + 2) : countVal;
 			}
 			else
 				el.innerText = SubsystemLaunch.system[fieldIds[i]];
