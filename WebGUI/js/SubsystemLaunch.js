@@ -487,6 +487,7 @@ SubsystemLaunch.create = function() {
 
 			{ //system status div -------------------------
 				let numOfCols = 4;
+				let consoleRowH = (redrawMode == 2) ? 54 : 90;
 				el = document.createElement("div");
 				el.setAttribute("id","systemStatusDiv");
 				str = "<table cellspacing='5px'>";
@@ -580,7 +581,7 @@ SubsystemLaunch.create = function() {
 				str += "</td></tr>";
 
 				//console err/warn count
-				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: " + consoleRowH + "px;'>";
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
 					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
 					"title='Click to reset Console counts and relatch first messages'>Console Info #:</a>" +
@@ -590,12 +591,12 @@ SubsystemLaunch.create = function() {
 					(SubsystemLaunch.system.consoleInfoCount||"").replace(/.*: /,"") +
 					"</a>";
 				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
-				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<div class='system_scroll_wrap' style='height: " + consoleRowH + "px; overflow-y: auto;'>First Console Info: <label id='systemStatus_consoleFirstInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Info: <label id='systemStatus_consoleInfoMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</div></td></tr>";
-				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: " + consoleRowH + "px;'>";
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
 					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
 					"title='Click to reset Console counts and relatch first messages'>Console Warn #:</a>" +
@@ -605,12 +606,12 @@ SubsystemLaunch.create = function() {
 					(SubsystemLaunch.system.consoleWarnCount||"").replace(/.*: /,"") +
 					"</a>";
 				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
-				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<div class='system_scroll_wrap' style='height: " + consoleRowH + "px; overflow-y: auto;'>First Console Warning: <label id='systemStatus_consoleFirstWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Warning: <label id='systemStatus_consoleWarnMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				str += "</div></td></tr>";
-				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: 90px;'>";
+				str += "<tr><td rowspan=1 style='white-space: nowrap; width: 200px; height: " + consoleRowH + "px;'>";
 				str += "<a onclick='SubsystemLaunch.resetConsoleCounts(-1);' class='hover_link' " +
 					"style='display:inline-block; width:130px; text-align:right; margin-left:20px;' " +
 					"title='Click to reset Console counts and relatch first messages'>Console Err #:</a>" +
@@ -620,7 +621,7 @@ SubsystemLaunch.create = function() {
 					(SubsystemLaunch.system.consoleErrCount||"").replace(/.*: /,"") +
 					"</a>";
 				str += "</td><td colspan=" + (numOfCols-1) + " style='text-align: left; vertical-align: top;'>";
-				str += "<div class='system_scroll_wrap' style='height: 90px; overflow-y: auto;'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
+				str += "<div class='system_scroll_wrap' style='height: " + consoleRowH + "px; overflow-y: auto;'>First Console Error: <label id='systemStatus_consoleFirstErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
 				// str += "</td></tr><tr><td colspan=" + (numOfCols-1) + " style='text-align: left'>";
 				str += "<br>";
 				str += "Last Console Error: <label id='systemStatus_consoleErrMessage' class='subtext' title='Click to copy text' onclick='SubsystemLaunch.copyText(this);'></label>";
@@ -1467,6 +1468,15 @@ SubsystemLaunch.create = function() {
 					fieldIds[i] == "fsmMode") {
 					el = document.getElementById("subsystem_" + fieldIds[i] +
 						"_select_" + s);
+					var pendingKey = (fieldIds[i] == "configAlias") ? "_pendingConfigAlias" : "_pendingFsmMode";
+					var pendingVal = SubsystemLaunch.subsystems[s][pendingKey];
+					if (pendingVal !== undefined) {
+						if (SubsystemLaunch.subsystems[s][fieldIds[i]] == pendingVal) {
+							delete SubsystemLaunch.subsystems[s][pendingKey];
+						} else {
+							continue;
+						}
+					}
 					if (el.value != SubsystemLaunch.subsystems[s][fieldIds[i]]) {
 						if(SubsystemLaunch.subsystems[s].configAliasChoices)
 							Debug.warn("The selected " + fieldIds[i] + " for Subsystem '" +
@@ -1832,6 +1842,8 @@ SubsystemLaunch.create = function() {
 		var targetSubsystem = SubsystemLaunch.subsystems[subsystemIndex].name;
 
 		window.clearTimeout(_getStatusTimer);
+		invalidatePendingStatusResponses();
+		SubsystemLaunch.subsystems[subsystemIndex]._pendingConfigAlias = value;
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=setRemoteSubsystemFsmControl" +
 				"&targetSubsystem=" + targetSubsystem +
@@ -2031,6 +2043,8 @@ SubsystemLaunch.create = function() {
 		var targetSubsystem = SubsystemLaunch.subsystems[subsystemIndex].name;
 
 		window.clearTimeout(_getStatusTimer);
+		invalidatePendingStatusResponses();
+		SubsystemLaunch.subsystems[subsystemIndex]._pendingFsmMode = value;
 
 		DesktopContent.XMLHttpRequest("Request?RequestType=setRemoteSubsystemFsmControl" +
 				"&targetSubsystem=" + targetSubsystem +
@@ -2038,6 +2052,7 @@ SubsystemLaunch.create = function() {
 				"&controlType=mode",
 				"", //end post data,
 			function (req) {
+					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 				},  //end handler
 				0, 0, false,//reqParam, progressHandler, callHandlerOnErr,
