@@ -1850,10 +1850,12 @@ SubsystemLaunch.create = function() {
 				"&controlType=configAlias",
 				"", //end post data,
 			function (req) {
+					if(!req) //error
+						delete SubsystemLaunch.subsystems[subsystemIndex]._pendingConfigAlias;
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 				},  //end handler
-				0, 0, false,//reqParam, progressHandler, callHandlerOnErr,
+				0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 				false,//doNotShowLoadingOverlay,
 				true //targetGatewaySupervisor
 		); //end setRemoteSubsystemFsmControl request
@@ -2051,10 +2053,12 @@ SubsystemLaunch.create = function() {
 				"&controlType=mode",
 				"", //end post data,
 			function (req) {
+					if(!req) //error
+						delete SubsystemLaunch.subsystems[subsystemIndex]._pendingFsmMode;
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 				},  //end handler
-				0, 0, false,//reqParam, progressHandler, callHandlerOnErr,
+				0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 				false,//doNotShowLoadingOverlay,
 				true //targetGatewaySupervisor
 		); //end setRemoteSubsystemFsmControl request
