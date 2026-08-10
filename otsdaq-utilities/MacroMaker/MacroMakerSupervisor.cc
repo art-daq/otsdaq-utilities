@@ -3,6 +3,7 @@
 #include "otsdaq/CodeEditor/CodeEditor.h"
 #include "otsdaq/ConfigurationInterface/ConfigurationManager.h"
 #include "otsdaq/FECore/FEVInterface.h"
+#include "otsdaq/Macros/StringMacros.h"
 
 #include "otsdaq/NetworkUtilities/TransceiverSocket.h"  // for UDP remote control
 
@@ -1065,7 +1066,9 @@ xoap::MessageReference MacroMakerSupervisor::frontEndCommunicationRequest(
 try
 {
 	__COUTT__;  //mark for debugging
-	__SUP_COUT__ << "FE Request received: " << SOAPUtilities::translate(message) << __E__;
+	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs() << " tid=" << gettid()
+	             << " FE Request received: " << SOAPUtilities::translate(message)
+	             << __E__;
 
 	SOAPParameters typeParameter, rxParameters;  // params for xoap to recv
 	typeParameter.addParameter("type");
@@ -1247,16 +1250,107 @@ try
 
 		try
 		{
-			__SUP_COUT__ << "Forwarding request: " << SOAPUtilities::translate(message)
-			             << __E__;
+			__SUP_COUT_INFO__ << "Forwarding (fresh message) to LID="
+			                  << it->second.getId() << " URL=" << it->second.getURL()
+			                  << __E__;
 
-			xoap::MessageReference replyMessage =
-			    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(), message);
+			// Build a fresh SOAP message to avoid stale routing info
+			// from the first hop (CFO -> MacroMaker) contaminating
+			// the second hop (MacroMaker -> target FESupervisor).
+			SOAPCommand            incomingCmd = SOAPUtilities::translate(message);
+			xoap::MessageReference freshMessage =
+			    SOAPUtilities::makeSOAPMessageReference("FECommunication");
+			SOAPParameters fwdParams;
+			fwdParams.addParameter("type", type);
+			fwdParams.addParameter("requester",
+			                       incomingCmd.getParameters().getValue("requester"));
+			fwdParams.addParameter("targetInterfaceID", targetInterfaceID);
+			if(type == "feMacro")
+			{
+				fwdParams.addParameter(
+				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
+				fwdParams.addParameter("inputArgs",
+				                       incomingCmd.getParameters().getValue("inputArgs"));
+			}
+			else if(type == "feSend")
+			{
+				fwdParams.addParameter("value",
+				                       incomingCmd.getParameters().getValue("value"));
+			}
+			else if(type == "feMacroMultiDimensionalStart")
+			{
+				fwdParams.addParameter(
+				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
+				fwdParams.addParameter("inputArgs",
+				                       incomingCmd.getParameters().getValue("inputArgs"));
+				fwdParams.addParameter(
+				    "enableSavingOutput",
+				    incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter(
+				    "outputFilePath",
+				    incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter(
+				    "outputFileRadix",
+				    incomingCmd.getParameters().getValue("outputFileRadix"));
+			}
+			else if(type == "macroMultiDimensionalStart")
+			{
+				fwdParams.addParameter("macroName",
+				                       incomingCmd.getParameters().getValue("macroName"));
+				fwdParams.addParameter(
+				    "macroString", incomingCmd.getParameters().getValue("macroString"));
+				fwdParams.addParameter("inputArgs",
+				                       incomingCmd.getParameters().getValue("inputArgs"));
+				fwdParams.addParameter(
+				    "enableSavingOutput",
+				    incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter(
+				    "outputFilePath",
+				    incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter(
+				    "outputFileRadix",
+				    incomingCmd.getParameters().getValue("outputFileRadix"));
+			}
+			else if(type == "feMacroMultiDimensionalCheck")
+			{
+				fwdParams.addParameter(
+				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
+			}
+			else if(type == "macroMultiDimensionalCheck")
+			{
+				fwdParams.addParameter("macroName",
+				                       incomingCmd.getParameters().getValue("macroName"));
+			}
+			SOAPUtilities::addParameters(freshMessage, fwdParams);
+
+			__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
+			             << " Forwarding request: "
+			             << SOAPUtilities::translate(freshMessage) << __E__;
+
+			xoap::MessageReference replyMessage = SOAPMessenger::sendWithSOAPReply(
+			    it->second.getDescriptor(), freshMessage);
 
 			if(type != "feSend")
 			{
-				__SUP_COUT__ << "Forwarding FE Macro response: "
-				             << SOAPUtilities::translate(replyMessage) << __E__;
+				std::string replyStr =
+				    SOAPUtilities::translate(replyMessage).getCommand();
+				__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
+				             << " Forwarding FE Macro response: " << replyStr << __E__;
+
+				if(replyStr == "Fault")
+				{
+					try
+					{
+						std::string fullReply;
+						replyMessage->writeTo(fullReply);
+						__SUP_COUT_WARN__ << "SOAP Fault detail for target '"
+						                  << targetInterfaceID << "': " << fullReply
+						                  << __E__;
+					}
+					catch(...)
+					{
+					}
+				}
 
 				return replyMessage;
 			}
@@ -3259,8 +3353,10 @@ try
 	{
 		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 
-		__SUP_COUT__ << "Checking if recent FE macro group has completed for NotDoneID = "
-		             << NotDoneID << __E__;
+		__SUP_COUT__
+		    << "DIAG ms=" << StringMacros::nowEpochMs()
+		    << " Checking if recent FE macro group has completed for NotDoneID = "
+		    << NotDoneID << __E__;
 
 		for(const auto& g : feMacroRunThreadStruct_)
 			__SUP_COUTT__ << "[] groupID_ = " << g->groupID_ << __E__;
@@ -3471,10 +3567,19 @@ try
 		MacroMakerSupervisor::runFEMacroGroupSchedulerThread(group, this);
 	}).detach();
 
+	// This synchronous wait must stay SHORT: while this xgi handler runs, the
+	// application does not service other inbound messages, so an FE macro that
+	// calls back through MacroMaker (FECommunication to reach another
+	// supervisor) can not complete until this handler returns -- a circular
+	// wait. Serve only quick macros synchronously; everything else goes async
+	// and the GUI polls with NotDoneID.
+	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
+	             << " runFEMacro xgi entering sync wait loop, groupID=" << group->groupID_
+	             << __E__;
 	size_t sleepTime = 10 * 1000;  //10ms
 	usleep(sleepTime);
 	//if not all done quickly, track in "not-done" queue
-	for(int i = 0; i < 6; ++i)
+	for(int i = 0; i < 2; ++i)
 	{
 		if(group->allDone())
 		{
@@ -3487,12 +3592,13 @@ try
 		else
 		{
 			__SUP_COUTT__ << "FE macros not all done, sleeping..." << __E__;
-			sleepTime *= 5;  //50ms, 250ms, 1s
-			if(sleepTime > 1000 * 1000 /* 1 second */)
-				sleepTime = 1000 * 1000;
+			sleepTime *= 5;  //50ms, 250ms
 			usleep(sleepTime);
 		}
 	}  //end wait loop
+	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
+	             << " runFEMacro xgi exiting sync wait loop, allDone="
+	             << (group->allDone() ? "1" : "0") << __E__;
 
 	if(!group->allDone())  //not all done - go async
 	{
@@ -3944,32 +4050,47 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			}
 
 			// have FE supervisor descriptor, so send
+			__SUP_COUT_INFO__
+			    << "DIAG ms=" << StringMacros::nowEpochMs()
+			    << " Sending MacroMakerSupervisorRequest to FESupervisor LID="
+			    << FESupervisorIndex << __E__;
 			xoap::MessageReference retMsg = SOAPMessenger::sendWithSOAPReply(
 			    it->second.getDescriptor(),  // supervisor descriptor
 			    "MacroMakerSupervisorRequest",
 			    txParameters);
 
-			__SUP_COUTT__ << "Received response message: "
-			              << SOAPUtilities::translate(retMsg) << __E__;
+			__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
+			                  << " Received initial response from FESupervisor." << __E__;
 
 			SOAPUtilities::receive(retMsg, rxParameters);
 
-			__SUP_COUT__ << "Received FE Macro response." << __E__;
-
-			// If FESupervisor returned NotDoneTaskID, poll until macro completes
+			// If FESupervisor returned NotDoneTaskID, poll until macro completes.
+			// Poll with a short adaptive backoff -- CheckMacro is cheap for the
+			// FESupervisor to answer (verified: ~4ms round trip), so fast FE
+			// macros should not pay a multi-second discovery penalty.
 			{
-				std::string notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+				std::string notDoneTaskID  = rxParameters.getValue("NotDoneTaskID");
+				int         asyncPollCount = 0;
+				useconds_t  pollSleepUs    = 100 * 1000;  //100ms, doubling to 2s cap
+				if(!notDoneTaskID.empty())
+				{
+					__SUP_COUT_INFO__
+					    << "DIAG ms=" << StringMacros::nowEpochMs()
+					    << " Async task started, NotDoneTaskID=" << notDoneTaskID
+					    << ". Polling for completion..." << __E__;
+					usleep(pollSleepUs);
+				}
 				while(notDoneTaskID != "")
 				{
-					__SUP_COUTT__ << "FE Macro async task " << notDoneTaskID
-					              << " still running for FE '" << feUID
-					              << "'. Polling in 5s..." << __E__;
-					sleep(5);
+					++asyncPollCount;
 
 					SOAPParameters pollTxParams;
 					pollTxParams.addParameter("Request", "CheckMacro");
 					pollTxParams.addParameter("TaskID", notDoneTaskID);
 
+					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
+					                  << " Poll #" << asyncPollCount
+					                  << " sending CheckMacro..." << __E__;
 					xoap::MessageReference pollRetMsg =
 					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
 					                                     "MacroMakerSupervisorRequest",
@@ -3991,6 +4112,17 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					}
 
 					notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
+					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
+					                  << " Poll #" << asyncPollCount << " notDoneTaskID='"
+					                  << notDoneTaskID << "'" << __E__;
+
+					if(!notDoneTaskID.empty())
+					{
+						usleep(pollSleepUs);
+						pollSleepUs *= 2;
+						if(pollSleepUs > 2000 * 1000 /* 2 seconds */)
+							pollSleepUs = 2000 * 1000;
+					}
 				}
 			}
 
