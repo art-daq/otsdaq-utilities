@@ -399,12 +399,12 @@
 				(" &ndash; <a onclick='lockToUsername(-1,true," + JSON.stringify(pref_username).replace(/'/g, "&#39;") + ");'>Click to lock</a>");
 			el.innerHTML =
 				"<div class='userHeaderCard'>" +
-					"<div class='userHeaderTitle'>Preferences &amp; Account Settings for <b>" + pref_username + "</b> " +
-						"<span class='userHeaderSub'>on " + ots_owner + " ots" +
-						(ots_remote_address ? (" (" + ots_remote_address + ")") : "") + "</span>" +
+					"<div class='userHeaderTitle'>Preferences &amp; Account Settings for <b>" + escapeHtml(pref_username) + "</b> " +
+						"<span class='userHeaderSub'>on " + escapeHtml(ots_owner) + " ots" +
+						(ots_remote_address ? (" (" + escapeHtml(ots_remote_address) + ")") : "") + "</span>" +
 					"</div>" +
 					"<div class='userHeaderMeta'>" +
-						"<span class='permBadge'>Access: " + desktop_user_permissions + "</span> " +
+						"<span class='permBadge'>Access: " + escapeHtml(desktop_user_permissions) + "</span> " +
 						"<span class='lockBadge " + lockBadgeClass + "'>" + lockBadgeText + lockBadgeAction + "</span>" +
 					"</div>" +
 				"</div>";
