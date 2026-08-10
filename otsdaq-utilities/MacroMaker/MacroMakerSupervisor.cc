@@ -1283,27 +1283,33 @@ try
 				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
 				fwdParams.addParameter("inputArgs",
 				                       incomingCmd.getParameters().getValue("inputArgs"));
-				fwdParams.addParameter("enableSavingOutput",
-				                       incomingCmd.getParameters().getValue("enableSavingOutput"));
-				fwdParams.addParameter("outputFilePath",
-				                       incomingCmd.getParameters().getValue("outputFilePath"));
-				fwdParams.addParameter("outputFileRadix",
-				                       incomingCmd.getParameters().getValue("outputFileRadix"));
+				fwdParams.addParameter(
+				    "enableSavingOutput",
+				    incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter(
+				    "outputFilePath",
+				    incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter(
+				    "outputFileRadix",
+				    incomingCmd.getParameters().getValue("outputFileRadix"));
 			}
 			else if(type == "macroMultiDimensionalStart")
 			{
 				fwdParams.addParameter("macroName",
 				                       incomingCmd.getParameters().getValue("macroName"));
-				fwdParams.addParameter("macroString",
-				                       incomingCmd.getParameters().getValue("macroString"));
+				fwdParams.addParameter(
+				    "macroString", incomingCmd.getParameters().getValue("macroString"));
 				fwdParams.addParameter("inputArgs",
 				                       incomingCmd.getParameters().getValue("inputArgs"));
-				fwdParams.addParameter("enableSavingOutput",
-				                       incomingCmd.getParameters().getValue("enableSavingOutput"));
-				fwdParams.addParameter("outputFilePath",
-				                       incomingCmd.getParameters().getValue("outputFilePath"));
-				fwdParams.addParameter("outputFileRadix",
-				                       incomingCmd.getParameters().getValue("outputFileRadix"));
+				fwdParams.addParameter(
+				    "enableSavingOutput",
+				    incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter(
+				    "outputFilePath",
+				    incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter(
+				    "outputFileRadix",
+				    incomingCmd.getParameters().getValue("outputFileRadix"));
 			}
 			else if(type == "feMacroMultiDimensionalCheck")
 			{
