@@ -30,7 +30,6 @@
 
 using namespace ots;
 
-
 #undef __MF_SUBJECT__
 #define __MF_SUBJECT__ "MacroMaker"
 
@@ -1280,7 +1279,8 @@ try
 			}
 			SOAPUtilities::addParameters(freshMessage, fwdParams);
 
-			__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs() << " Forwarding request: "
+			__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
+			             << " Forwarding request: "
 			             << SOAPUtilities::translate(freshMessage) << __E__;
 
 			xoap::MessageReference replyMessage = SOAPMessenger::sendWithSOAPReply(
@@ -4044,9 +4044,9 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					pollTxParams.addParameter("Request", "CheckMacro");
 					pollTxParams.addParameter("TaskID", notDoneTaskID);
 
-					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs() << " Poll #"
-					                  << asyncPollCount << " sending CheckMacro..."
-					                  << __E__;
+					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
+					                  << " Poll #" << asyncPollCount
+					                  << " sending CheckMacro..." << __E__;
 					xoap::MessageReference pollRetMsg =
 					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
 					                                     "MacroMakerSupervisorRequest",
@@ -4068,8 +4068,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					}
 
 					notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
-					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs() << " Poll #"
-					                  << asyncPollCount << " notDoneTaskID='"
+					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
+					                  << " Poll #" << asyncPollCount << " notDoneTaskID='"
 					                  << notDoneTaskID << "'" << __E__;
 
 					if(!notDoneTaskID.empty())
