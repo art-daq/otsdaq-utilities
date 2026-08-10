@@ -1277,6 +1277,44 @@ try
 				fwdParams.addParameter("value",
 				                       incomingCmd.getParameters().getValue("value"));
 			}
+			else if(type == "feMacroMultiDimensionalStart")
+			{
+				fwdParams.addParameter(
+				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
+				fwdParams.addParameter("inputArgs",
+				                       incomingCmd.getParameters().getValue("inputArgs"));
+				fwdParams.addParameter("enableSavingOutput",
+				                       incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter("outputFilePath",
+				                       incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter("outputFileRadix",
+				                       incomingCmd.getParameters().getValue("outputFileRadix"));
+			}
+			else if(type == "macroMultiDimensionalStart")
+			{
+				fwdParams.addParameter("macroName",
+				                       incomingCmd.getParameters().getValue("macroName"));
+				fwdParams.addParameter("macroString",
+				                       incomingCmd.getParameters().getValue("macroString"));
+				fwdParams.addParameter("inputArgs",
+				                       incomingCmd.getParameters().getValue("inputArgs"));
+				fwdParams.addParameter("enableSavingOutput",
+				                       incomingCmd.getParameters().getValue("enableSavingOutput"));
+				fwdParams.addParameter("outputFilePath",
+				                       incomingCmd.getParameters().getValue("outputFilePath"));
+				fwdParams.addParameter("outputFileRadix",
+				                       incomingCmd.getParameters().getValue("outputFileRadix"));
+			}
+			else if(type == "feMacroMultiDimensionalCheck")
+			{
+				fwdParams.addParameter(
+				    "feMacroName", incomingCmd.getParameters().getValue("feMacroName"));
+			}
+			else if(type == "macroMultiDimensionalCheck")
+			{
+				fwdParams.addParameter("macroName",
+				                       incomingCmd.getParameters().getValue("macroName"));
+			}
 			SOAPUtilities::addParameters(freshMessage, fwdParams);
 
 			__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
