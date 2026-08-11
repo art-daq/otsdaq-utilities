@@ -8762,8 +8762,16 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 		TableBase* ctxTableBase =
 		    cfgMgr->getTableByName(ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME);
 		XDAQContextTable* ctxTable = dynamic_cast<XDAQContextTable*>(ctxTableBase);
-		if(ctxTable)
-			ctxTable->extractContexts(cfgMgr);
+		if(!ctxTable)
+		{
+			__SUP_SS__ << "Failed to cast "
+			           << ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME
+			           << " to XDAQContextTable for context group '"
+			           << contextGroup << "(" << contextGroupKey << ")'."
+			           << __E__;
+			__SS_THROW__;
+		}
+		ctxTable->extractContexts(cfgMgr);
 	}
 
 	std::map<std::string /*type*/,
