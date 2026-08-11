@@ -8766,9 +8766,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 		{
 			__SUP_SS__ << "Failed to cast "
 			           << ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME
-			           << " to XDAQContextTable for context group '"
-			           << contextGroup << "(" << contextGroupKey << ")'."
-			           << __E__;
+			           << " to XDAQContextTable for context group '" << contextGroup
+			           << "(" << contextGroupKey << ")'." << __E__;
 			__SS_THROW__;
 		}
 		ctxTable->extractContexts(cfgMgr);
