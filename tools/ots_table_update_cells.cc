@@ -17,14 +17,15 @@
 /// Optionally assigns a version alias to the newly created version.
 ///
 /// usage:
-///     ots_table_update_cells <tableName> <updates> [--version <version>] [--alias <aliasName>]
+///     ots_table_update_cells <tableName> <updates> [--version <version>] [--source-alias <name>] [--alias <aliasName>]
 ///
 /// where <updates> is a semicolon-separated list of row updates:
 ///     UID1:col1=val1,col2=val2;UID2:col1=val3
 ///
 /// options:
-///     --version <version>  : source version to modify (default: active version)
-///     --alias <aliasName>  : assign a version alias to the newly created version
+///     --version <version>      : source version to modify (default: active version)
+///     --source-alias <name>    : load source version from a version alias
+///     --alias <aliasName>      : assign a version alias to the newly created version
 ///
 /// examples:
 ///     ots_table_update_cells TrackerDTC "dtc0:FirmwareVersion=v3.2,Enabled=1;dtc1:Enabled=0"
