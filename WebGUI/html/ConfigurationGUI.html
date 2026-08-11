@@ -916,6 +916,18 @@
 					cmdStr = DesktopContent.getParameter(0, "newWindowOps");
 
 				//DesktopContent.getParameter(1); //from  location.search
+
+				//autoTreeView deep-link: external pages (e.g. Mu2e Run Control) can open
+				//	this ConfigurationGUI (possibly for a REMOTE subsystem) directly in the
+				//	tree view of a given group, activating that group first. On a fresh
+				//	remote window the gateway session isn't verified yet, so the first
+				//	requests fail with status 0 (ERR_EMPTY_RESPONSE) -- even the
+				//	getActiveGroups above runs its callback on error. So retry
+				//	getActiveGroups until it returns valid data (session verified), THEN
+				//	activate the group and open its tree view (at root).
+				var autoTreeGroup = DesktopContent.getParameter(0, "autoTreeGroup");
+				var autoTreeKey   = DesktopContent.getParameter(0, "autoTreeKey");
+
 				if (cmdStr && cmdStr != "") {
 					//do incoming commands!
 					Debug.log("cmdStr=" + cmdStr);
@@ -923,6 +935,45 @@
 					cmdStr = cmdStr.replace(/%22/g, "\"");
 
 					evaluateJS(cmdStr);
+				}
+				else if (autoTreeGroup && autoTreeKey) {
+					Debug.log("autoTreeView deep-link: " + autoTreeGroup +
+						"(" + autoTreeKey + ")");
+
+					var _openTree = function () {
+						//activate the group, then open its tree view at root
+						activateSystemConfig(autoTreeGroup, autoTreeKey,
+							undefined /*ignoreWarnings*/,
+							function (req) {
+								if (DesktopContent.getXMLValue(req, "Error"))
+									return;
+								setupTableGroupTreeView(autoTreeGroup, autoTreeKey);
+							});
+					};
+					var _isReady = function (g) {
+						return g && g.Configuration &&
+							g.Configuration.groupName &&
+							g.Configuration.groupName.length > 0;
+					};
+
+					if (_isReady(activeGroups))
+						_openTree();
+					else {
+						var _autoTreeTries = 0;
+						var _t = setInterval(function () {
+							if (++_autoTreeTries > 40) { //~40s safety cap
+								clearInterval(_t);
+								Debug.log("autoTreeView gave up waiting for session.");
+								return;
+							}
+							ConfigurationAPI.getActiveGroups(function (g) {
+								if (_isReady(g)) {
+									clearInterval(_t);
+									_openTree();
+								}
+							});
+						}, 1000);
+					}
 				}
 				else
 					setupSystemViewMode();
