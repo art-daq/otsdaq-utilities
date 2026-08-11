@@ -412,6 +412,8 @@
 		var commandBlockQueue = [];
 		var commandBlockIndex = 0;
 
+		var _sequenceOnComplete = null;
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -888,6 +890,11 @@
 				isRunningCommandBlock = false;
 				commandBlockQueue = [];
 				commandBlockIndex = 0;
+				if (_sequenceOnComplete) {
+					var cb = _sequenceOnComplete;
+					_sequenceOnComplete = null;
+					cb();
+				}
 				return;
 			}
 
@@ -1474,6 +1481,12 @@ Here is the json string received:
 							runMacro(lastRunMacroDetails.row, lastRunMacroDetails.col);
 						}
 					}, intervalTime);
+			}
+
+			if (_sequenceOnComplete) {
+				var cb = _sequenceOnComplete;
+				_sequenceOnComplete = null;
+				cb();
 			}
 		} //end handleMacroResponse()
 
@@ -3867,19 +3880,20 @@ Here is the json string received:
 					postData,
 					function (req, reqParam, errStr) {
 						Debug.log("Sequence mode handleMacroResponse...", currentIndex + 1, "of", totalMacros);
+
+						_sequenceOnComplete = function () {
+							++currentIndex;
+
+							Debug.logv({ pauseSequenceFlag });
+							if (!pauseSequenceFlag)
+								setTimeout(executeMacro, delayBetweenMacros);
+							else {
+								Debug.log("Flag triggered pause (do not delay)!");
+								executeMacro();
+							}
+						};
+
 						handleMacroResponse(req, reqParam, errStr);
-
-						++currentIndex; //if pause, increment on resume
-
-						//handleMacroResponse might force pause!
-
-						Debug.logv({ pauseSequenceFlag });
-						if (!pauseSequenceFlag)
-							setTimeout(executeMacro, delayBetweenMacros); // Delay before executing next macro
-						else {
-							Debug.log("Flag triggered pause (do not delay)!");
-							executeMacro(); //just to run same code
-						}
 
 					}, //end Sequence Mode exec command handler
 					0 /*reqParam*/, 0 /*progressHandler*/,

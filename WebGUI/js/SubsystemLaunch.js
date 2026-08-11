@@ -32,9 +32,9 @@ else if (typeof Globals == 'undefined')
 SubsystemLaunch.MENU_PRIMARY_COLOR = "rgb(220, 187, 165)";
 SubsystemLaunch.MENU_SECONDARY_COLOR = "rgb(130, 51, 51)";
 
-SubsystemLaunch.SUBSYSTEM_FIELDS = ["name","url","status","progress","detail","lastStatusTime","configAlias","configAliasChoices","fsmMode","fsmIncluded","landingPage"];
+SubsystemLaunch.SUBSYSTEM_FIELDS = ["name","url","status","progress","detail","lastStatusTime","lastStatusChangeTime","configAlias","configAliasChoices","fsmMode","fsmIncluded","landingPage"];
 SubsystemLaunch.SUBSYSTEM_FIELDS_NAME = SubsystemLaunch.SUBSYSTEM_FIELDS.indexOf("name");
-SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS = ["name","url","status","progress","detail","lastStatusTime","configAlias","configAliasChoices","fsmMode","fsmIncluded","consoleErrCount","consoleWarnCount"];
+SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS = ["name","url","status","progress","detail","lastStatusTime","lastStatusChangeTime","configAlias","configAliasChoices","fsmMode","fsmIncluded","consoleErrCount","consoleWarnCount"];
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("status");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_INCLUDED = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("fsmIncluded");
 SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_ALIASES = SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS.indexOf("configAliasChoices");
@@ -1180,14 +1180,14 @@ SubsystemLaunch.create = function() {
 
 								if(isNewError)
 								{
-									let lastStatusTime = subsystemArrs["lastStatusTime"][j] ?
-										subsystemArrs["lastStatusTime"][j].getAttribute('value') :
-										SubsystemLaunch.subsystems[j].lastStatusTime;
+									let lastStatusChangeTime = subsystemArrs["lastStatusChangeTime"][j] ?
+										subsystemArrs["lastStatusChangeTime"][j].getAttribute('value') :
+										SubsystemLaunch.subsystems[j].lastStatusChangeTime;
 									let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(status);
 
-									if(secondsAgo == -1 && lastStatusTime)
+									if(secondsAgo == -1 && lastStatusChangeTime)
 									{
-										let parsed = Date.parse(lastStatusTime);
+										let parsed = Date.parse(lastStatusChangeTime);
 										if(!Number.isNaN(parsed) && parsed > 0)
 											secondsAgo = Math.floor((Date.now() - parsed) / 1000);
 									}
@@ -1530,15 +1530,15 @@ SubsystemLaunch.create = function() {
 				else {
 					el = document.getElementById("subsystem_" + s + "_" + fieldIds[i]);
 
-					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusTime &&
-							SubsystemLaunch.subsystems[s].lastStatusTime != "0")
+					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusChangeTime &&
+							SubsystemLaunch.subsystems[s].lastStatusChangeTime != "0")
 					{
 						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
 						const tel = document.createElement("textarea");
 						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
 
 						const detailText = tel.value + " ( " +
-										SubsystemLaunch.subsystems[s].lastStatusTime + " )";
+										SubsystemLaunch.subsystems[s].lastStatusChangeTime + " )";
 
 						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
 						if (scrollEl) {
@@ -1851,10 +1851,12 @@ SubsystemLaunch.create = function() {
 				"&controlType=configAlias",
 				"", //end post data,
 			function (req) {
+					if(!req) //error
+						delete SubsystemLaunch.subsystems[subsystemIndex]._pendingConfigAlias;
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 				},  //end handler
-				0, 0, false,//reqParam, progressHandler, callHandlerOnErr,
+				0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 				false,//doNotShowLoadingOverlay,
 				true //targetGatewaySupervisor
 		); //end setRemoteSubsystemFsmControl request
@@ -2052,10 +2054,12 @@ SubsystemLaunch.create = function() {
 				"&controlType=mode",
 				"", //end post data,
 			function (req) {
+					if(!req) //error
+						delete SubsystemLaunch.subsystems[subsystemIndex]._pendingFsmMode;
 					window.clearTimeout(_getStatusTimer);
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 				},  //end handler
-				0, 0, false,//reqParam, progressHandler, callHandlerOnErr,
+				0, 0, true,//reqParam, progressHandler, callHandlerOnErr,
 				false,//doNotShowLoadingOverlay,
 				true //targetGatewaySupervisor
 		); //end setRemoteSubsystemFsmControl request
