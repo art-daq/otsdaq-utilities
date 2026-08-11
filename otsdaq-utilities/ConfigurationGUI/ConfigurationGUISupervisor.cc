@@ -1122,9 +1122,9 @@ try
 	}
 	else if(requestType == "getArtdaqNodes")
 	{
-		std::string modifiedTables = CgiDataUtilities::postData(cgiIn, "modifiedTables");
-		std::string tableGroup     = CgiDataUtilities::getData(cgiIn, "tableGroup");
-		std::string tableGroupKey  = CgiDataUtilities::getData(cgiIn, "tableGroupKey");
+		std::string modifiedTables  = CgiDataUtilities::postData(cgiIn, "modifiedTables");
+		std::string tableGroup      = CgiDataUtilities::getData(cgiIn, "tableGroup");
+		std::string tableGroupKey   = CgiDataUtilities::getData(cgiIn, "tableGroupKey");
 		std::string contextGroup    = CgiDataUtilities::getData(cgiIn, "contextGroup");
 		std::string contextGroupKey = CgiDataUtilities::getData(cgiIn, "contextGroupKey");
 		bool        suppressMultiNode =
@@ -1137,9 +1137,13 @@ try
 		__SUP_COUTT__ << "contextGroupKey: " << contextGroupKey << __E__;
 		__SUP_COUTT__ << "suppressMultiNode: " << suppressMultiNode << __E__;
 
-		handleGetArtdaqNodeRecordsXML(xmlOut, cfgMgr, modifiedTables,
-		                              tableGroup, TableGroupKey(tableGroupKey),
-		                              contextGroup, TableGroupKey(contextGroupKey),
+		handleGetArtdaqNodeRecordsXML(xmlOut,
+		                              cfgMgr,
+		                              modifiedTables,
+		                              tableGroup,
+		                              TableGroupKey(tableGroupKey),
+		                              contextGroup,
+		                              TableGroupKey(contextGroupKey),
 		                              suppressMultiNode);
 	}
 	else if(requestType == "saveArtdaqNodes")
@@ -1697,8 +1701,7 @@ try
 	else if(requestType == "getArtdaqSystemVariables")
 	{
 		std::string filePath =
-		    std::string(__ENV__("USER_DATA")) +
-		    "/ServiceData/ArtdaqSystemVariables.dat";
+		    std::string(__ENV__("USER_DATA")) + "/ServiceData/ArtdaqSystemVariables.dat";
 		std::ifstream inFile(filePath);
 		if(inFile.is_open())
 		{
@@ -1722,8 +1725,7 @@ try
 
 		if(key.empty())
 		{
-			xmlOut.addTextElementToData(
-			    "Error", "Variable key must not be empty.");
+			xmlOut.addTextElementToData("Error", "Variable key must not be empty.");
 		}
 		else
 		{
@@ -1736,16 +1738,14 @@ try
 				}
 			if(!valid)
 			{
-				xmlOut.addTextElementToData(
-				    "Error",
-				    "Variable key must contain only alphanumeric "
-				    "characters and underscores.");
+				xmlOut.addTextElementToData("Error",
+				                            "Variable key must contain only alphanumeric "
+				                            "characters and underscores.");
 			}
 			else
 			{
-				std::string filePath =
-				    std::string(__ENV__("USER_DATA")) +
-				    "/ServiceData/ArtdaqSystemVariables.dat";
+				std::string filePath = std::string(__ENV__("USER_DATA")) +
+				                       "/ServiceData/ArtdaqSystemVariables.dat";
 				std::map<std::string, std::string> vars;
 				{
 					std::ifstream inFile(filePath);
@@ -1757,8 +1757,7 @@ try
 							size_t eqPos = line.find('=');
 							if(eqPos == std::string::npos)
 								continue;
-							vars[line.substr(0, eqPos)] =
-							    line.substr(eqPos + 1);
+							vars[line.substr(0, eqPos)] = line.substr(eqPos + 1);
 						}
 					}
 				}
@@ -1769,18 +1768,15 @@ try
 				if(!outFile.is_open())
 				{
 					xmlOut.addTextElementToData(
-					    "Error",
-					    "Failed to open persistence file for writing.");
+					    "Error", "Failed to open persistence file for writing.");
 				}
 				else
 				{
 					for(auto& [k, v] : vars)
 						outFile << k << "=" << v << "\n";
-					__SUP_COUT__ << "Set artdaq system variable "
-					             << key << " = " << value << __E__;
-					xmlOut.addTextElementToData(
-					    "Success",
-					    "Variable '" + key + "' set.");
+					__SUP_COUT__ << "Set artdaq system variable " << key << " = " << value
+					             << __E__;
+					xmlOut.addTextElementToData("Success", "Variable '" + key + "' set.");
 				}
 			}
 		}
@@ -1796,10 +1792,9 @@ try
 			if(tableName.find(TableBase::JSON_DOC_PREPEND) != 0)
 				continue;
 
-			std::string docName =
-			    tableName.substr(TableBase::JSON_DOC_PREPEND.size());
+			std::string docName = tableName.substr(TableBase::JSON_DOC_PREPEND.size());
 
-			TableBase   tmpTable(true, tableName);
+			TableBase              tmpTable(true, tableName);
 			std::set<TableVersion> versions = ifc->getVersions(&tmpTable);
 
 			std::string versionList;
@@ -1846,26 +1841,24 @@ try
 		{
 			try
 			{
-				auto* ifc = ConfigurationInterface::getInstance();
-				std::string json =
-				    ifc->loadCustomJSON(docName, TableVersion(docVersion));
+				auto*       ifc  = ConfigurationInterface::getInstance();
+				std::string json = ifc->loadCustomJSON(docName, TableVersion(docVersion));
 				xmlOut.addTextElementToData("content", json);
 			}
 			catch(const std::exception& e)
 			{
-				xmlOut.addTextElementToData(
-				    "Error",
-				    "Failed to load document '" + docName + "-v" + docVersion +
-				        "': " + e.what());
+				xmlOut.addTextElementToData("Error",
+				                            "Failed to load document '" + docName + "-v" +
+				                                docVersion + "': " + e.what());
 			}
 		}
 	}
 	else if(requestType == "saveJsonDocumentContent")
 	{
-		std::string docName =
-		    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgiIn, "docName"));
-		std::string content =
-		    StringMacros::decodeURIComponent(CgiDataUtilities::postData(cgiIn, "content"));
+		std::string docName = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::postData(cgiIn, "docName"));
+		std::string content = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::postData(cgiIn, "content"));
 
 		__SUP_COUTV__(docName);
 		__SUP_COUTVS__(10, content);
@@ -1939,8 +1932,8 @@ try
 					    appClass == className ||
 					    (appClass.size() > className.size() &&
 					     appClass.compare(appClass.size() - className.size(),
-					                       className.size(),
-					                       className) == 0 &&
+					                      className.size(),
+					                      className) == 0 &&
 					     appClass[appClass.size() - className.size() - 1] == ':');
 					if(!classMatches)
 						continue;
@@ -1953,8 +1946,8 @@ try
 
 				if(!found)
 					xmlOut.addTextElementToData(
-					    "Error", "No enabled application found for class '" + className +
-					                 "'.");
+					    "Error",
+					    "No enabled application found for class '" + className + "'.");
 			}
 			catch(const std::exception& e)
 			{
@@ -8740,8 +8733,12 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	__COUT__ << "Retrieving artdaq nodes..." << __E__;
 
 	//	setup active tables based on specified or active groups and modified tables
-	setupActiveTablesXML(
-	    xmlOut, cfgMgr, tableGroup, tableGroupKey, modifiedTables, false /* refreshAll */);
+	setupActiveTablesXML(xmlOut,
+	                     cfgMgr,
+	                     tableGroup,
+	                     tableGroupKey,
+	                     modifiedTables,
+	                     false /* refreshAll */);
 
 	// if a context group was specified, also load it so that
 	// getARTDAQSystem() can find XDAQContextTable and the ARTDAQSupervisor.
@@ -8760,9 +8757,7 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	{
 		__SUP_COUT__ << "Also loading context group '" << contextGroup << "("
 		             << contextGroupKey << ")' for ARTDAQ node lookup..." << __E__;
-		cfgMgr->loadTableGroup(contextGroup,
-		                       contextGroupKey,
-		                       false /*doActivate*/);
+		cfgMgr->loadTableGroup(contextGroup, contextGroupKey, false /*doActivate*/);
 
 		TableBase* ctxTableBase =
 		    cfgMgr->getTableByName(ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME);
