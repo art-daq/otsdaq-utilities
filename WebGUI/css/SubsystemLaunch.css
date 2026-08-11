@@ -38,6 +38,7 @@
 		#systemStatusState, .subsystem_status {
 			font-family: 'Inconsolata', monospace;
 			padding: 0 30px;
+			box-sizing: border-box;
 			box-shadow: 			inset rgba(255,254,255,0.6) 0 0.3em .3em,
 									inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */
 									rgba(200, 200, 200,0.6) 0 .1em 3px,
@@ -47,6 +48,7 @@
 			/* font-weight:			bold; */
 			text-shadow: 			0px 1px 0px rgba(255,255,255,.3),
 									0px -1px 0px rgba(0,0,0,.7);
+			overflow: hidden;
 		}
 
 		.progressBar {
@@ -291,6 +293,13 @@
 			max-width: 100%;
 			table-layout: auto;
 		}
+		/* Force Status column to maintain fixed width despite table-layout: auto */
+		#subsystemDiv .tableSingleRowMode td.subsystem_status,
+		#subsystemDiv .tableDoubleRowMode td.subsystem_status {
+			width: 150px !important;
+			max-width: 150px !important;
+			min-width: 150px !important;
+		}
 		.detail_scroll {
 			overflow-x: auto;
 			overflow-y: hidden;
@@ -303,6 +312,27 @@
 			display: none;
 			width: 0;
 			height: 0;
+		}
+
+		#systemStatusDiv .system_scroll_wrap {
+			scrollbar-width: none;       /* Firefox: hidden by default */
+			-ms-overflow-style: none;    /* IE/legacy Edge */
+		}
+		#systemStatusDiv .system_scroll_wrap::-webkit-scrollbar {
+			width: 0;                    /* WebKit: hidden by default */
+		}
+		#systemStatusDiv .system_scroll_wrap:hover {
+			scrollbar-width: thin;       /* Firefox: thin overlay on hover */
+		}
+		#systemStatusDiv .system_scroll_wrap:hover::-webkit-scrollbar {
+			width: 6px;
+		}
+		#systemStatusDiv .system_scroll_wrap:hover::-webkit-scrollbar-thumb {
+			background: rgba(0,0,0,0.3);
+			border-radius: 3px;
+		}
+		#systemStatusDiv .system_scroll_wrap:hover::-webkit-scrollbar-track {
+			background: transparent;
 		}
 
 		.subsystem_console {
