@@ -3,7 +3,7 @@ cet_enable_asserts()
 
 cet_make_exec(NAME ots_table_download_csv LIBRARIES otsdaq::ConfigurationInterface)
 cet_make_exec(NAME ots_table_upload_csv LIBRARIES otsdaq::ConfigurationInterface)
-cet_make_exec(NAME ots_table_update_cells LIBRARIES otsdaq::ConfigurationInterface)
+cet_make_exec(NAME ots_table_update_cells_DO_NOT_RUN SOURCE ots_table_update_cells.cc LIBRARIES otsdaq::ConfigurationInterface)
 
 cet_script(ALWAYS_COPY
 	# ProductsUpdate.py #Deprecated
@@ -11,6 +11,7 @@ cet_script(ALWAYS_COPY
 	# AddNewInterface.py #Deprecated
 	ots_check_whitespace.sh
 	ots_git_format_apply.sh
+	ots_table_update_cells.sh
 	ots_whitespace_cleanup.sh
 	# ots_create_repo_from_demo.sh #Deprecated
 	# ots_get_and_fix_repo.sh #Deprecated
