@@ -8356,6 +8356,9 @@
 					} //end version span loop
 				} //end version xml value loop
 				str += "</select>";
+				str += " <a onclick='selectLatestForTable(\"" + name + "\"); return false;'" +
+					" title='Select the latest version for this table.'" +
+					" style='font-size:11px;'>Latest</a>";
 				str += "</td>";
 
 				backLinkStr = "setupGroupCreator(\\\"" + preSelectStr + "\\\");";
@@ -8530,6 +8533,20 @@
 
 			return false;
 		} //end handleGroupMemberChange()
+
+		//==============================================================================
+		//selectLatestForTable ~
+		function selectLatestForTable(tableName) {
+			var sel = document.getElementById("select-" + tableName);
+			if (!sel) return;
+			var options = sel.options;
+			for (var i = options.length - 1; i >= 0; --i)
+				if (options[i].value[0] != '-') {
+					options[i].selected = true;
+					break;
+				}
+			handleGroupMemberChange();
+		} //end selectLatestForTable()
 
 		//==============================================================================
 		//versionsForCreateTableGroup ~

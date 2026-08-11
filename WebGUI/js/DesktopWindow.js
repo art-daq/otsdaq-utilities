@@ -178,6 +178,8 @@ else {
         this.getWindowZ = function () { return parseInt(this.windiv.style.zIndex); } //return integer
         this.getWindowWidth = function () { return _w; }
         this.getWindowHeight = function () { return _h; }
+        this.getWindowMinWidth = function () { return _defaultWindowMinWidth; }
+        this.getWindowMinHeight = function () { return _defaultWindowMinHeight; }
         this.getWindowHeaderHeight = function () { return _defaultHeaderHeight; }
         this.isMaximized = function () { return _isMaximized && !_isMinimized; } //make sure the maximized window is visible
         this.wasMaximized = function () { return _isMaximized && _isMinimized; } //if window should restore maximized
