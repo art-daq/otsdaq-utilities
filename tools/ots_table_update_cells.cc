@@ -108,12 +108,13 @@ void UpdateTableCells(int argc, char* argv[])
 	std::cout
 	    << "\n\nusage:\n"
 	    << "\t ots_table_update_cells <tableName> <updates> [--version <ver>] [--alias "
-	       "<aliasName>]\n\n"
+	       "<aliasName>] [--notes <text>]\n\n"
 	    << "\t <updates> format: UID1:col1=val1,col2=val2;UID2:col1=val3\n"
 	    << "\t --version <ver>       : source version to modify (default: active "
 	       "version)\n"
 	    << "\t --source-alias <name> : load source version from a version alias\n"
-	    << "\t --alias <alias>       : assign version alias to newly created version\n\n"
+	    << "\t --alias <alias>       : assign version alias to newly created version\n"
+	    << "\t --notes <text>        : comment/notes to store with the new version\n\n"
 	    << std::endl;
 
 	std::cout << "argc = " << argc << std::endl;
@@ -143,6 +144,7 @@ void UpdateTableCells(int argc, char* argv[])
 	// parse optional flags
 	std::string  aliasName   = "";
 	std::string  sourceAlias = "";
+	std::string  notes       = "";
 	TableVersion sourceVersion;  // default = invalid, meaning use active version
 	for(int i = 3; i < argc; i++)
 	{
@@ -162,11 +164,16 @@ void UpdateTableCells(int argc, char* argv[])
 			sourceAlias = argv[++i];
 			__COUTV__(sourceAlias);
 		}
+		else if(arg == "--notes" && i + 1 < argc)
+		{
+			notes = argv[++i];
+			__COUTV__(notes);
+		}
 		else
 		{
 			__SS__ << "Unknown option '" << arg
 			       << "'. Expected '--alias <name>', '--version <ver>', "
-			          "or '--source-alias <name>'."
+			          "'--source-alias <name>', or '--notes <text>'."
 			       << __E__;
 			__SS_THROW__;
 		}
@@ -214,7 +221,7 @@ void UpdateTableCells(int argc, char* argv[])
 	// call the reusable updateTableCells workflow
 
 	TableVersion newVersion = cfgMgr->updateTableCells(
-	    tableName, cellUpdates, author, sourceVersion, aliasName, sourceAlias);
+	    tableName, cellUpdates, author, sourceVersion, aliasName, sourceAlias, notes);
 
 	__COUT_INFO__ << "Done. New version: " << tableName << "-v" << newVersion
 	              << std::endl;
