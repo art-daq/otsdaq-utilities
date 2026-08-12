@@ -1555,7 +1555,7 @@ Here is the json string received:
 							"class": "macroModule",
 							"rowspan": maxRow,
 							"width": "400px",
-							"style": "white-space:normal"
+							"style": "white-space:normal; min-width:400px;"
 						},
 						"<h3 style='display: flex; align-items: center;justify-content: center; white-space: nowrap;'>" +
 						"Macro output will be displayed here" +
@@ -1757,7 +1757,23 @@ Here is the json string received:
 
 					{ //Macro Name html
 						str += DesktopContent.htmlOpen("tr"); //start row for Macro Name
-						str += DesktopContent.htmlOpen("td", {}, "<b>Macro Name:</b>" /*innerHTML*/, true /*doCloseTag*/);
+						str += DesktopContent.htmlOpen("td", {},
+							"<b>Macro Name:</b><br>" +
+							DesktopContent.htmlOpen(
+								"input",
+								{
+									"type": "text",
+									"id": "macroNameFilter-row-" + r + "-col-" + c,
+									"class": "macroNameFilter",
+									"placeholder": "Type to filter macros",
+									"oninput": "filterMacroNames(" + r + "," + c + ");",
+									"style": "color:gray; margin-top:4px; margin-right:5px; width:150px; font-size:calc(1em - 2px);",
+								}) +
+							"<div id='macroNameFilterClear-row-" + r + "-col-" + c + "' " +
+								"onclick='clearMacroNameFilter(" + r + "," + c + ");' " +
+								"style='display:none; color:red; cursor:pointer; font-weight:bold; font-size:calc(1em - 2px); margin-top:2px;'>" +
+								"&#10006; Clear Filter</div>"
+							/*innerHTML*/, true /*doCloseTag*/);
 						str += DesktopContent.htmlOpen("td");
 						{
 							str += DesktopContent.htmlOpen(
@@ -2259,17 +2275,85 @@ Here is the json string received:
 			} //end Macro Names loop
 
 			if (feMacroNameSelected != "" && selectedIndex == -1) {
-				Debug.log("Invalid Macro Name '" + feMacroNameSelected + "' specified for layout module.",
-					Debug.WARN_PRIORITY);
+				Debug.log("Macro Name '" + feMacroNameSelected + "' not found in new selection, resetting.");
 				Debug.log("macroNameObject", macroNameObject);
 				selectedIndex = 0;
+
+				var outputEl = document.getElementById("macroModule-output");
+				if (outputEl) {
+					var newFirstMacro = Object.keys(macroNameObject)[0] || "N/A";
+					outputEl.innerHTML = "<b style='color:darkorange;'>Warning:</b> Previously selected Macro Name '<b>" +
+						feMacroNameSelected + "</b>' is not available for FE Type '<b>" +
+						feClassSelected + "</b>'. " +
+						"Macro Name has been reset to '<b>" + newFirstMacro + "</b>'.";
+				}
 			}
 
 			el = document.getElementById("macroNameSelect-row-" +
 				r + "-col-" + c);
 			el.innerHTML = str;
+			el.style.minWidth = "";
+			var normalSize = Math.min(Math.max(i, 2), 10);
+			el.size = normalSize;
+			el._normalSize = normalSize;
+			el._scrollCollapseTimeout = null;
+			var newWidth = el.offsetWidth;
+			if (!el._maxWidth || newWidth > el._maxWidth)
+				el._maxWidth = newWidth;
+			el.style.minWidth = el._maxWidth + "px";
+
+			if (!el._scrollListenerAdded) {
+				el._scrollListenerAdded = true;
+
+				function macroNameExpandSelect(self) {
+					var rect = self.getBoundingClientRect();
+					var rowHeight = rect.height / self.size;
+					var availableHeight = window.innerHeight - rect.top - 20;
+					var expandedSize = Math.min(self.options.length,
+						Math.floor(availableHeight / rowHeight));
+					if (self.size < expandedSize)
+						self.size = expandedSize;
+				}
+				function macroNameStartCollapseTimer(self) {
+					if (self._scrollCollapseTimeout)
+						clearTimeout(self._scrollCollapseTimeout);
+					self._scrollCollapseTimeout = setTimeout(function () {
+						self.size = self._normalSize;
+						self._scrollCollapseTimeout = null;
+						self._expanded = false;
+					}, 1000);
+				}
+				function macroNameCancelCollapseTimer(self) {
+					if (self._scrollCollapseTimeout) {
+						clearTimeout(self._scrollCollapseTimeout);
+						self._scrollCollapseTimeout = null;
+					}
+				}
+
+				el.addEventListener("wheel", function (ev) {
+					if (!this._expanded) {
+						macroNameExpandSelect(this);
+						this._expanded = true;
+					}
+					ev.preventDefault();
+					this.scrollTop += ev.deltaY;
+				}, {passive: false});
+				el.addEventListener("mousemove", function () {
+					if (this._expanded)
+						macroNameCancelCollapseTimer(this);
+				});
+				el.addEventListener("mouseleave", function () {
+					if (this._expanded)
+						macroNameStartCollapseTimer(this);
+				});
+			}
 
 			el.selectedIndex = selectedIndex;
+
+			var filterEl = document.getElementById("macroNameFilter-row-" +
+				r + "-col-" + c);
+			if (filterEl && filterEl.value)
+				filterMacroNames(r, c);
 
 			handleSelectedMacroName(r, c);
 
@@ -2494,6 +2578,57 @@ Here is the json string received:
 				r + "-col-" + c);
 			el.innerHTML = str;
 		} //end handleSelectedMacroName
+
+		//=====================================================================================
+		//filterMacroNames ~~
+		function filterMacroNames(r, c) {
+			var filterEl = document.getElementById("macroNameFilter-row-" +
+				r + "-col-" + c);
+			var selectEl = document.getElementById("macroNameSelect-row-" +
+				r + "-col-" + c);
+			var filterText = filterEl.value.toLowerCase();
+			var macroNameObject = macroModules_[r][c].feMacroNameObject;
+			var currentSelected = macroModules_[r][c].feMacroNameSelected;
+
+			filterEl.style.color = filterText ? "black" : "gray";
+
+			var clearBtn = document.getElementById("macroNameFilterClear-row-" +
+				r + "-col-" + c);
+			if (clearBtn)
+				clearBtn.style.display = filterText ? "block" : "none";
+
+			var str = "";
+			var count = 0;
+			var selectedIndex = -1;
+			for (var macroName in macroNameObject) {
+				if (filterText && macroName.toLowerCase().indexOf(filterText) < 0)
+					continue;
+				str += DesktopContent.htmlOpen(
+					"option",
+					{},
+					macroName /*innerHTML*/, true /*doCloseTag*/);
+				if (macroName == currentSelected)
+					selectedIndex = count;
+				count++;
+			}
+
+			selectEl.innerHTML = str;
+			var normalSize = Math.min(Math.max(count, 2), 10);
+			selectEl.size = normalSize;
+			selectEl._normalSize = normalSize;
+
+			if (selectedIndex >= 0)
+				selectEl.selectedIndex = selectedIndex;
+		} //end filterMacroNames
+
+		//=====================================================================================
+		//clearMacroNameFilter ~~
+		function clearMacroNameFilter(r, c) {
+			var filterEl = document.getElementById("macroNameFilter-row-" +
+				r + "-col-" + c);
+			filterEl.value = "";
+			filterMacroNames(r, c);
+		} //end clearMacroNameFilter
 
 		//=====================================================================================
 		//setCaretPosition ~~
