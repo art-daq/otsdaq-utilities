@@ -944,7 +944,9 @@
 						//activate the group, then open its tree view at root
 						activateSystemConfig(autoTreeGroup, autoTreeKey,
 							undefined /*ignoreWarnings*/,
-							function () {
+							function (req) {
+								if (DesktopContent.getXMLValue(req, "Error"))
+									return;
 								setupTableGroupTreeView(autoTreeGroup, autoTreeKey);
 							});
 					};

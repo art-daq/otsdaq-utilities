@@ -17,14 +17,15 @@
 /// Optionally assigns a version alias to the newly created version.
 ///
 /// usage:
-///     ots_table_update_cells <tableName> <updates> [--version <version>] [--alias <aliasName>]
+///     ots_table_update_cells <tableName> <updates> [--version <version>] [--source-alias <name>] [--alias <aliasName>]
 ///
 /// where <updates> is a semicolon-separated list of row updates:
 ///     UID1:col1=val1,col2=val2;UID2:col1=val3
 ///
 /// options:
-///     --version <version>  : source version to modify (default: active version)
-///     --alias <aliasName>  : assign a version alias to the newly created version
+///     --version <version>      : source version to modify (default: active version)
+///     --source-alias <name>    : load source version from a version alias
+///     --alias <aliasName>      : assign a version alias to the newly created version
 ///
 /// examples:
 ///     ots_table_update_cells TrackerDTC "dtc0:FirmwareVersion=v3.2,Enabled=1;dtc1:Enabled=0"
@@ -104,13 +105,16 @@ void UpdateTableCells(int argc, char* argv[])
 	std::cout << "=================================================\n";
 	__COUT_INFO__ << "Update Table Cells!" << std::endl;
 
-	std::cout << "\n\nusage:\n"
-	          << "\t ots_table_update_cells <tableName> <updates> [--version <ver>] [--alias <aliasName>]\n\n"
-	          << "\t <updates> format: UID1:col1=val1,col2=val2;UID2:col1=val3\n"
-	          << "\t --version <ver>       : source version to modify (default: active version)\n"
-	          << "\t --source-alias <name> : load source version from a version alias\n"
-	          << "\t --alias <alias>       : assign version alias to newly created version\n\n"
-	          << std::endl;
+	std::cout
+	    << "\n\nusage:\n"
+	    << "\t ots_table_update_cells <tableName> <updates> [--version <ver>] [--alias "
+	       "<aliasName>]\n\n"
+	    << "\t <updates> format: UID1:col1=val1,col2=val2;UID2:col1=val3\n"
+	    << "\t --version <ver>       : source version to modify (default: active "
+	       "version)\n"
+	    << "\t --source-alias <name> : load source version from a version alias\n"
+	    << "\t --alias <alias>       : assign version alias to newly created version\n\n"
+	    << std::endl;
 
 	std::cout << "argc = " << argc << std::endl;
 	for(int i = 0; i < argc; i++)
@@ -118,8 +122,9 @@ void UpdateTableCells(int argc, char* argv[])
 
 	if(argc < 3)
 	{
-		std::cout << "Error! Must provide at least 2 parameters: <tableName> <updates>\n\n"
-		          << std::endl;
+		std::cout
+		    << "Error! Must provide at least 2 parameters: <tableName> <updates>\n\n"
+		    << std::endl;
 		return;
 	}
 
@@ -127,8 +132,7 @@ void UpdateTableCells(int argc, char* argv[])
 	std::string tableName = argv[1];
 	__COUTV__(tableName);
 	auto tablePos = tableName.find("Table");
-	if(tablePos == std::string::npos ||
-	   tablePos != tableName.size() - strlen("Table"))
+	if(tablePos == std::string::npos || tablePos != tableName.size() - strlen("Table"))
 		tableName += "Table";
 	__COUTV__(tableName);
 
@@ -137,8 +141,8 @@ void UpdateTableCells(int argc, char* argv[])
 	__COUT_INFO__ << "Parsed " << cellUpdates.size() << " row update(s)." << std::endl;
 
 	// parse optional flags
-	std::string  aliasName     = "";
-	std::string  sourceAlias   = "";
+	std::string  aliasName   = "";
+	std::string  sourceAlias = "";
 	TableVersion sourceVersion;  // default = invalid, meaning use active version
 	for(int i = 3; i < argc; i++)
 	{
@@ -162,7 +166,8 @@ void UpdateTableCells(int argc, char* argv[])
 		{
 			__SS__ << "Unknown option '" << arg
 			       << "'. Expected '--alias <name>', '--version <ver>', "
-			          "or '--source-alias <name>'." << __E__;
+			          "or '--source-alias <name>'."
+			       << __E__;
 			__SS_THROW__;
 		}
 	}
@@ -209,12 +214,7 @@ void UpdateTableCells(int argc, char* argv[])
 	// call the reusable updateTableCells workflow
 
 	TableVersion newVersion = cfgMgr->updateTableCells(
-	    tableName,
-	    cellUpdates,
-	    author,
-	    sourceVersion,
-	    aliasName,
-	    sourceAlias);
+	    tableName, cellUpdates, author, sourceVersion, aliasName, sourceAlias);
 
 	__COUT_INFO__ << "Done. New version: " << tableName << "-v" << newVersion
 	              << std::endl;
