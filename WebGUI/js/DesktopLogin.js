@@ -52,6 +52,7 @@ else {
 		var _cookieUserStr = "otsCookieUser";
 		var _cookieRememberMeStr = "otsRememberMeUser";
 		var _BLACKOUT_COOKIE_STR = "TEMPORARY_SYSTEM_BLACKOUT";
+		var _BLACKOUT_TIME_STR = "otsBlackoutTimestamp";
 		var _system_blackout = undefined;
 		var _user = "";
 		var _displayName = "No-Login";
@@ -714,9 +715,33 @@ else {
 			if(!_attemptedCookieCheck &&
 					_getCookie(_cookieCodeStr) == _BLACKOUT_COOKIE_STR)
 			{
-				_loginPrompt();
-				Debug.log("There is a system wide blackout! (Attempts to login right now may fail - likely someone is rebooting the system)", Debug.WARN_PRIORITY);
-				return;
+				var blackoutTs = localStorage.getItem(_BLACKOUT_TIME_STR);
+				var blackoutAge = blackoutTs
+					? Math.floor((Date.now() - parseInt(blackoutTs)) / 1000)
+					: 999;
+
+				if(blackoutAge >= 60)
+				{
+					Debug.log("System blackout has been active for " + blackoutAge +
+						" seconds. Prompting user to force-clear.", Debug.WARN_PRIORITY);
+					if(confirm("A system blackout has been active for " + blackoutAge +
+						" seconds (started " + new Date(parseInt(blackoutTs)).toLocaleTimeString() +
+						").\n\nWould you like to force-clear the blackout and attempt to log in?"))
+					{
+						Desktop.desktop.login.blackout(false);
+					}
+					else
+					{
+						_loginPrompt();
+						return;
+					}
+				}
+				else
+				{
+					_loginPrompt();
+					Debug.log("There is a system wide blackout! (Attempts to login right now may fail - likely someone is rebooting the system)", Debug.WARN_PRIORITY);
+					return;
+				}
 			}
 
 			if(_attemptedCookieCheck)
@@ -894,13 +919,18 @@ else {
 			if(setVal) //start blackout
 			{
 				_setCookie(_BLACKOUT_COOKIE_STR);
+				localStorage.setItem(_BLACKOUT_TIME_STR, "" + Date.now());
 			}
 			else if(_cookieCode) //remove blackout and replace with cookie code
 			{
 				_setCookie(_cookieCode);
+				localStorage.removeItem(_BLACKOUT_TIME_STR);
 			}
 			else //remove blackout if no cookie code
+			{
 				localStorage.removeItem(_cookieCodeStr);
+				localStorage.removeItem(_BLACKOUT_TIME_STR);
+			}
 
 			_system_blackout = setVal;
 			Debug.log("Login blackout " + _system_blackout);

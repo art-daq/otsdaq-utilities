@@ -222,7 +222,12 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	void  					handleGetArtdaqNodeRecordsXML			(HttpXmlDocument&       xmlOut,
 																	ConfigurationManagerRW* cfgMgr,
-																	const std::string&      modifiedTables);
+																	const std::string&      modifiedTables,
+																	const std::string&      tableGroup      = "",
+																	TableGroupKey           tableGroupKey   = TableGroupKey(),
+																	const std::string&      contextGroup    = "",
+																	TableGroupKey           contextGroupKey = TableGroupKey(),
+																	bool                    suppressMultiNode = false);
 	void  					handleSaveArtdaqNodeRecordsXML			(const std::string&      nodeString,
 																	const std::string&      subsystemString,
 																	HttpXmlDocument&        xmlOut,
