@@ -975,7 +975,7 @@
 
 			var outputFileFound = false;
 			for (var i = 0; i < feMacroRunArgNames.length; ++i) {
-				var name = feMacroRunArgNames[i].getAttribute("value");
+				var name = decodeURIComponent(feMacroRunArgNames[i].getAttribute("value"));
 				//first decode URI, then convert html entities
 				var value = Debug.errorPopConditionString(decodeURIComponent(
 					feMacroRunArgValues[i].getAttribute("value")),
@@ -1071,7 +1071,7 @@
 
 
 				for (var i = 0; i < outputArgNames.length; ++i) {
-					var name = outputArgNames[i].getAttribute("value");
+					var name = decodeURIComponent(outputArgNames[i].getAttribute("value"));
 					//first decode URI, then convert html entities
 					var value = decodeURIComponent(
 						outputArgValues[i].getAttribute("value"));
