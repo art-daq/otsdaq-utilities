@@ -1765,7 +1765,7 @@ Here is the json string received:
 									"type": "text",
 									"id": "macroNameFilter-row-" + r + "-col-" + c,
 									"class": "macroNameFilter",
-									"placeholder": "Type to filter macros",
+									"placeholder": "Type to filter Macros",
 									"oninput": "filterMacroNames(" + r + "," + c + ");",
 									"style": "color:gray; margin-top:4px; margin-right:5px; width:150px; font-size:calc(1em - 2px);",
 								}) +
@@ -2314,14 +2314,27 @@ Here is the json string received:
 					if (self.size < expandedSize)
 						self.size = expandedSize;
 				}
+				function macroNameCollapseSize(self) {
+					return self._hasSelection ? 1 : self._normalSize;
+				}
+				function macroNameShowFilter(self, show) {
+					var id = self.id.replace("macroNameSelect-", "macroNameFilter-");
+					var filterEl = document.getElementById(id);
+					if (filterEl) filterEl.style.display = show ? "" : "none";
+					var clearId = self.id.replace("macroNameSelect-", "macroNameFilterClear-");
+					var clearBtn = document.getElementById(clearId);
+					if (clearBtn && !show) clearBtn.style.display = "none";
+				}
 				function macroNameStartCollapseTimer(self) {
 					if (self._scrollCollapseTimeout)
 						clearTimeout(self._scrollCollapseTimeout);
 					self._scrollCollapseTimeout = setTimeout(function () {
-						self.size = self._normalSize;
+						self.size = macroNameCollapseSize(self);
 						self._scrollCollapseTimeout = null;
 						self._expanded = false;
-					}, 1000);
+						if (self._hasSelection)
+							macroNameShowFilter(self, false);
+					}, 500);
 				}
 				function macroNameCancelCollapseTimer(self) {
 					if (self._scrollCollapseTimeout) {
@@ -2338,14 +2351,39 @@ Here is the json string received:
 					ev.preventDefault();
 					this.scrollTop += ev.deltaY;
 				}, {passive: false});
+				el.addEventListener("mouseenter", function () {
+					macroNameCancelCollapseTimer(this);
+					if (this._hasSelection && this.size < this._normalSize) {
+						this.size = this._normalSize;
+						if (this.selectedIndex >= 0)
+							this.options[this.selectedIndex].scrollIntoView({block: "center"});
+						macroNameShowFilter(this, true);
+					}
+				});
 				el.addEventListener("mousemove", function () {
 					if (this._expanded)
 						macroNameCancelCollapseTimer(this);
 				});
 				el.addEventListener("mouseleave", function () {
-					if (this._expanded)
-						macroNameStartCollapseTimer(this);
+					macroNameStartCollapseTimer(this);
 				});
+
+				var filterInputEl = document.getElementById("macroNameFilter-row-" +
+					r + "-col-" + c);
+				var clearBtnEl = document.getElementById("macroNameFilterClear-row-" +
+					r + "-col-" + c);
+				var siblingEls = [filterInputEl, clearBtnEl];
+				for (var s = 0; s < siblingEls.length; ++s) {
+					if (!siblingEls[s]) continue;
+					(function(selectRef) {
+						siblingEls[s].addEventListener("mouseenter", function () {
+							macroNameCancelCollapseTimer(selectRef);
+						});
+						siblingEls[s].addEventListener("mouseleave", function () {
+							macroNameStartCollapseTimer(selectRef);
+						});
+					})(el);
+				}
 			}
 
 			el.selectedIndex = selectedIndex;
@@ -2389,8 +2427,9 @@ Here is the json string received:
 			var feUIDSelected = macroModules_[r][c].feUIDSelected;
 			var feMacroTypeSelected = macroModules_[r][c].feMacroTypeSelected;
 
-			var feMacroNameSelected = document.getElementById("macroNameSelect-row-" +
-				r + "-col-" + c).value;
+			var selectEl = document.getElementById("macroNameSelect-row-" +
+				r + "-col-" + c);
+			var feMacroNameSelected = selectEl.value;
 			macroModules_[r][c].feMacroNameSelected = feMacroNameSelected;
 			Debug.log("feMacroNameSelected", feMacroNameSelected);
 
@@ -2400,8 +2439,16 @@ Here is the json string received:
 
 			if (!feMacroNameSelected || feMacroNameSelected == "") {
 				Debug.log("No macro name selected.");
+				selectEl._hasSelection = false;
 				return;
 			}
+
+			selectEl._hasSelection = true;
+			selectEl.size = 1;
+			var filterEl = document.getElementById("macroNameFilter-row-" + r + "-col-" + c);
+			if (filterEl) filterEl.style.display = "none";
+			var clearBtn = document.getElementById("macroNameFilterClear-row-" + r + "-col-" + c);
+			if (clearBtn) clearBtn.style.display = "none";
 
 			if (macroNameObject == undefined ||
 				macroNameObject[feMacroNameSelected] === undefined) {
