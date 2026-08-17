@@ -121,6 +121,7 @@
 			max-height: fit-content;
 			overflow-y: auto;
 			resize: horizontal;
+			padding-left: 24px;
 		}
 
 		.history-group {
@@ -128,6 +129,7 @@
 			align-items: stretch;
 			gap: 3px;
 			margin: 2px 0;
+			position: relative;
 		}
 
 		.history-group-bar {
@@ -244,6 +246,42 @@
 			margin: -26px 0px -35px 15px;
 			position: relative;
 			z-index: 10;
+		}
+
+		.history-group-mom-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background-color: #2ecc40;
+			color: white;
+			font-size: 14px;
+			font-weight: bold;
+			line-height: 1;
+			cursor: pointer;
+			border: none;
+			padding: 0;
+			flex-shrink: 0;
+			position: absolute;
+			left: -22px;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+
+		.history-group-mom-btn:hover {
+			background-color: #27ae60;
+		}
+
+		.record.mom-marker {
+			background-color: #2ecc40;
+			color: white;
+			font-weight: bold;
+			cursor: default;
+			padding: 4px 6px;
+			border-radius: 3px;
+			margin: 2px 0;
 		}
 	</style>
 
@@ -414,6 +452,8 @@
 
 		var _sequenceOnComplete = null;
 
+		var pendingMoMGroupId_ = null;
+
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -471,9 +511,9 @@
 				"The panel on the right tracks your history. You can launch previously executed FE Macros, by clicking on them in the history pane. " +
 				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait between repeat executions. " +
 				"\n\n" +
-				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros. " +
-				"<b>Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
-				"Note that sequences in the admin user's folder are considered public and will be accessible by all users." +
+				"Clicking on <b>MoM Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros (a Macro-of-Macros). " +
+				"<b>MoM Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
+				"Note that MoM sequences in the admin user's folder are considered public and will be accessible by all users." +
 				"\n\nAlso, some FE Macros have a tooltip defined for additional information; click on the tooltip icon <span class='macroInfo' style='display:inline-block; width: 50px; height: 50px; margin: -7px 0 0 -10px;'></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next to the FE Macro name to view the tooltip info. ";
 
 			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
@@ -1602,7 +1642,7 @@ Here is the json string received:
 						},
 						"<div style='display: flex; flex-direction: column; align-items: flex-start; width: 100%;'>" +
 						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
-						"<h3>Sequence Mode</h3>" +
+						"<h3>MoM Sequence Mode</h3>" +
 						"<span id='currentMacroDisplay'>No Macro Running</span>" +
 						"</div>" +
 						"<div style='display: flex; justify-content: flex-end; width: 100%;'>" +
@@ -2356,7 +2396,11 @@ Here is the json string received:
 					if (this._hasSelection && this.size < this._normalSize) {
 						this.size = this._normalSize;
 						if (this.selectedIndex >= 0)
-							this.options[this.selectedIndex].scrollIntoView({block: "center"});
+							this.options[this.selectedIndex].scrollIntoView({
+									behavior: 'smooth',
+									block: "nearest",
+									inline: "nearest",
+								});
 						macroNameShowFilter(this, true);
 					}
 				});
@@ -2717,6 +2761,8 @@ Here is the json string received:
 
 		//=====================================================================================
 		function getHistoryRecordSignature(recordObj) {
+			if (recordObj["macroType"] === "__mom_marker__")
+				return "__mom_marker__" + recordObj["launchTime"];
 			return JSON.stringify({
 				feClass: recordObj["feClass"],
 				feUID: recordObj["feUID"],
@@ -2730,6 +2776,8 @@ Here is the json string received:
 
 		//=====================================================================================
 		function getHistoryRecordDescription(recordObj, useHtmlBreaks) {
+			if (recordObj["macroType"] === "__mom_marker__")
+				return "MoM - " + recordObj["macroName"];
 			var lineBreak = useHtmlBreaks ? "<br>&nbsp;&nbsp;&nbsp;&nbsp;" : "\n    ";
 			var recordName = "";
 			var inputArgs = recordObj["inputArgs"].split(";");
@@ -2884,6 +2932,18 @@ Here is the json string received:
 		//=====================================================================================
 		function renderHistoryNode(node, renderState) {
 			if (node.type === "record") {
+				if (node.record["macroType"] === "__mom_marker__") {
+					renderState.rowIndex++;
+					return DesktopContent.htmlOpen(
+						"div",
+						{
+							"class": "record mom-marker",
+							"title": "Macro-of-Macros sequence started"
+						},
+						"<span class='history-record-label'>MoM - " +
+						escapeHistoryHtml(node.record["macroName"]) + "</span>",
+						true);
+				}
 				var recordId = historyRenderRecordId_++;
 				historyRenderRecordMap_[recordId] = node.record;
 				var className = "record " + ((renderState.rowIndex++ % 2 === 0) ? "light" : "dark");
@@ -2904,9 +2964,15 @@ Here is the json string received:
 			historyRenderGroupMap_[groupId] = node.records;
 			var groupTitle = escapeHistoryHtml(getHistoryGroupTitle(node.records, node.repeatCount));
 			var childHtml = renderHistoryNodes(node.children, renderState);
+			var momBtn = "";
+			if (node.records.length > 1)
+				momBtn = "<button class='history-group-mom-btn' title='Create Macro-of-Macros (MoM) Sequence from this group. Toggle MoM Sequence Pane using the link at the top-left of the page.'" +
+					" onClick='event.stopPropagation(); showPopupMoM(" + groupId + ");'>+</button>";
 			return "<div class='history-group'>" +
+				momBtn +
 				"<div class='history-group-bar' title='" + groupTitle + "' onClick='onClickHistoryGroup(" + groupId + ");'>" +
-				"<span>" + node.repeatCount + "x</span></div>" +
+				"<span>" + node.repeatCount + "x</span>" +
+				"</div>" +
 				"<div class='history-group-content'>" + childHtml + "</div>" +
 				"</div>";
 		} //end renderHistoryNode()
@@ -3455,6 +3521,121 @@ Here is the json string received:
 		} //end hidePopupSaveSequence()
 
 		//=====================================================================================
+		//showPopupMoM ~~
+		function showPopupMoM(groupId) {
+			Debug.log("showPopupMoM()", groupId);
+			pendingMoMGroupId_ = groupId;
+			var popup = document.getElementById("popupSaveMoM");
+			var nameInput = document.getElementById("momName");
+			var errorMsg = document.getElementById("momName-error");
+			errorMsg.innerText = "";
+			nameInput.value = "";
+			popup.style.display = "grid";
+			popup.style.gridTemplateColumns = "1fr";
+			nameInput.focus();
+		} //end showPopupMoM()
+
+		//=====================================================================================
+		//hidePopupMoM ~~
+		function hidePopupMoM() {
+			Debug.log("hidePopupMoM()");
+			var popup = document.getElementById("popupSaveMoM");
+			popup.style.display = "none";
+			pendingMoMGroupId_ = null;
+			document.getElementById("momName").value = "";
+			document.getElementById("momName-error").innerText = "";
+		} //end hidePopupMoM()
+
+		//=====================================================================================
+		//handleEnterPressSaveMoM ~~
+		function handleEnterPressSaveMoM(event) {
+			if (event.key === "Enter" || event.keyCode === 13) {
+				event.preventDefault();
+				saveMoM();
+				return false;
+			}
+			return true;
+		} //end handleEnterPressSaveMoM()
+
+		//=====================================================================================
+		//saveMoM ~~
+		function saveMoM() {
+			Debug.log("saveMoM()");
+
+			var nameInput = document.getElementById("momName");
+			var errorMsg = document.getElementById("momName-error");
+			var momName = nameInput.value.trim();
+
+			if (momName === "") {
+				errorMsg.innerText = "Name cannot be empty!";
+				return;
+			}
+
+			var invalidCharacters = /[<>:"/\\|?*]/;
+			if (invalidCharacters.test(momName)) {
+				errorMsg.innerText = "Name contains invalid characters!";
+				return;
+			}
+
+			var groupRecords = historyRenderGroupMap_[pendingMoMGroupId_];
+			if (!groupRecords || !groupRecords.length) {
+				errorMsg.innerText = "Error: history group not found.";
+				return;
+			}
+
+			var sequenceSelector = document.getElementById("select-sequence");
+			if (sequenceSelector) {
+				for (var i = 0; i < sequenceSelector.options.length; i++) {
+					if (sequenceSelector.options[i].value === momName) {
+						errorMsg.innerText = "Name already in use!";
+						return;
+					}
+				}
+			}
+
+			var sequenceObj = {};
+			for (var i = 0; i < groupRecords.length; i++)
+				sequenceObj[String(i)] = JSON.stringify(groupRecords[i]);
+
+			var postData = "FEsequence=" + encodeURIComponent(JSON.stringify(sequenceObj)) +
+				"&sequenceName=" + encodeURIComponent(momName);
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence",
+				postData,
+				function (req, reqParam, errStr) {
+					if (!errStr)
+						errStr = "";
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if (err && err != "")
+						errStr += "\n" + err;
+					if (errStr != "") {
+						Debug.err("Error while saving Macro-of-Macros: " + errStr);
+						return;
+					}
+
+					var sequenceSelector = document.getElementById("select-sequence");
+					if (sequenceSelector) {
+						var option = document.createElement("option");
+						option.text = momName;
+						option.value = momName;
+						sequenceSelector.add(option);
+					}
+
+					Debug.info("Macro-of-Macros '" + momName + "' was successfully saved as a MoM sequence!");
+					hidePopupMoM();
+
+					if (sequenceMode_) {
+						sequenceSelector.value = momName;
+						selectSequence(momName);
+					}
+				},
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				true /*callHandlerOnErr*/
+			);
+		} //end saveMoM()
+
+		//=====================================================================================
 		//popupSetSequenceDelay ~~
 		function popupSetSequenceDelay() {
 			var popup = document.getElementById("popupSetSequenceDelay");
@@ -3507,9 +3688,9 @@ Here is the json string received:
 					"id": "sequnce-selector",
 					"style": "margin:10px; display: inline-flex; gap: 15px;"
 				},
-				"<p><strong>Select sequence: </strong></p>" + select +
+				"<p><strong>Select MoM Sequence: </strong></p>" + select +
 				" <a onclick='makeSequencePublic()' " +
-				"title='Click to make this sequence publicly accessible to all users (must have admin(255) privileges)' " +
+				"title='Click to make this MoM sequence publicly accessible to all users (must have admin(255) privileges)' " +
 				">Make Public</a>",
 				true);
 			// space used to show the steps of each sequence
@@ -3672,7 +3853,7 @@ Here is the json string received:
 					if (err && err != "")
 						errStr += "\n" + err;
 					if (errStr != "") {
-						Debug.err("Error while loading FE Macro Sequences: " + errStr);
+						Debug.err("Error while loading FE Macro MoM Sequences: " + errStr);
 						return;
 					}
 
@@ -3705,7 +3886,7 @@ Here is the json string received:
 			var sequenceName = document.getElementById("select-sequence").value;
 			Debug.logv({ sequenceName });
 			if (!sequenceName || sequenceName == "undefined" || sequenceName == "None") {
-				Debug.err("Please select a valid sequence name to make public from the 'Select sequence' dropdown menu.");
+				Debug.err("Please select a valid MoM sequence name to make public from the 'Select MoM Sequence' dropdown menu.");
 				return;
 			}
 
@@ -3713,7 +3894,7 @@ Here is the json string received:
 				"&name=" + sequenceName,
 				"",
 				function () {
-					Debug.info("The sequence '" + sequenceName + "' was made publicly accessible for all users.");
+					Debug.info("The MoM sequence '" + sequenceName + "' was made publicly accessible for all users.");
 				} //end makeSequencePublic handler
 			);
 		} //end makeSequencePublic()
@@ -4005,6 +4186,24 @@ Here is the json string received:
 
 			isSequenceRunning = true;
 			updateRunButtonState();
+
+			if (currentIndex === 0) {
+				var sequenceName = document.getElementById("select-sequence").value;
+				if (sequenceName && sequenceName !== "undefined" && sequenceName !== "None") {
+					var momMarkerRecord = {
+						"feClass": "",
+						"feUID": "",
+						"macroType": "__mom_marker__",
+						"macroName": sequenceName,
+						"inputArgs": "",
+						"outputArgs": "",
+						"saveOutputs": 0,
+						"launchTime": Math.floor(Date.now() / 1000),
+						"completeTime": Math.floor(Date.now() / 1000)
+					};
+					appendHistoryRecord(JSON.stringify(momMarkerRecord));
+				}
+			}
 
 			var keys = Object.keys(selectedSequence_);
 			var totalMacros = keys.length;
@@ -4364,8 +4563,8 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-	<a onclick="toggleView()">Toggle View</a>
-	<a id="#macroModule-sequence" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Sequence Mode</a><br>
+	<a onclick="toggleView()">Toggle 2-Column View</a>
+	<a id="#macroModule-sequence" style="margin-left: 20px;" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Toggle Macro-of-Macros (MoM) Sequence Pane</a><br>
 	<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>
@@ -4454,7 +4653,7 @@ Here is the json string received:
 
 	<div id="popupSaveSequence" class="smallPopup">
 		<center>
-			<h4>Type a name for the sequence</h4>
+			<h4>Type a name for the MoM sequence</h4>
 			<input type="text" id="sequenceName" maxlength="30" onkeypress="return handleEnterPressSaveSequence(event)"></input>
 			<span id="sequenceName-error" style="color: red; display: block; margin-top: 10px;"></span>
 			<div class="buttongroup" style="margin-top: 10px;">
@@ -4462,6 +4661,18 @@ Here is the json string received:
 				<button onclick="hideSmallPopup(this)">Cancel</button>
 		</center>
 	</div>
+	</div>
+
+	<div id="popupSaveMoM" class="smallPopup">
+		<center>
+			<h4>Name this Macro-of-Macros</h4>
+			<input type="text" id="momName" maxlength="30" onkeypress="return handleEnterPressSaveMoM(event)"></input>
+			<span id="momName-error" style="color: red; display: block; margin-top: 10px;"></span>
+			<div class="buttongroup" style="margin-top: 10px;">
+				<button onclick="saveMoM()">Confirm</button>
+				<button onclick="hidePopupMoM()">Cancel</button>
+			</div>
+		</center>
 	</div>
 
 	<div id='display'></div>
