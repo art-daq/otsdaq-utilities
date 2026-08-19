@@ -46,6 +46,10 @@
 			border: 0;
 		}
 
+		.macroModuleTable td:first-child {
+			min-width: 170px;
+		}
+
 		body .macroModule {
 			margin: auto;
 		}
@@ -2369,6 +2373,10 @@ Here is the json string received:
 					if (self._scrollCollapseTimeout)
 						clearTimeout(self._scrollCollapseTimeout);
 					self._scrollCollapseTimeout = setTimeout(function () {
+						var filterId = self.id.replace("macroNameSelect-", "macroNameFilter-");
+						var filterEl = document.getElementById(filterId);
+						if (filterEl && document.activeElement === filterEl)
+							return;
 						self.size = macroNameCollapseSize(self);
 						self._scrollCollapseTimeout = null;
 						self._expanded = false;
@@ -2424,6 +2432,16 @@ Here is the json string received:
 							macroNameCancelCollapseTimer(selectRef);
 						});
 						siblingEls[s].addEventListener("mouseleave", function () {
+							macroNameStartCollapseTimer(selectRef);
+						});
+					})(el);
+				}
+				if (filterInputEl) {
+					(function(selectRef) {
+						filterInputEl.addEventListener("focus", function () {
+							macroNameCancelCollapseTimer(selectRef);
+						});
+						filterInputEl.addEventListener("blur", function () {
 							macroNameStartCollapseTimer(selectRef);
 						});
 					})(el);
