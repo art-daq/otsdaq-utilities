@@ -1943,10 +1943,13 @@ SubsystemLaunch.create = function() {
 						DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTSInstance" +
 						"&targetSubsystem=" + targetSubsystem,
 						"",
-							function (req) {
+							function (req, reqParam, errStr) {
 								if(!req) {
+									if(errStr)
+										Debug.err("Reboot failed for '" + targetSubsystem + "': " + errStr);
 									SubsystemLaunch.subsystems[subsystemIndex].status = "";
 									SubsystemLaunch.subsystems[subsystemIndex]._rebootTime = undefined;
+									displayStatus();
 									window.clearTimeout(_getStatusTimer);
 									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 									return;
