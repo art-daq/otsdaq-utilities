@@ -2785,7 +2785,7 @@ Here is the json string received:
 		//=====================================================================================
 		function getHistoryRecordSignature(recordObj) {
 			if (recordObj["macroType"] === "__mom_marker__")
-				return "__mom_marker__" + recordObj["launchTime"];
+				return "__mom_marker__" + recordObj["launchTime"] + ":" + recordObj["macroName"];
 			return JSON.stringify({
 				feClass: recordObj["feClass"],
 				feUID: recordObj["feUID"],
