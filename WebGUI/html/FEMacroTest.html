@@ -3651,7 +3651,7 @@ Here is the json string received:
 					Debug.info("Macro-of-Macros '" + momName + "' was successfully saved as a MoM sequence!");
 					hidePopupMoM();
 
-					if (sequenceMode_) {
+					if (sequenceMode_ && sequenceSelector) {
 						sequenceSelector.value = momName;
 						selectSequence(momName);
 					}
