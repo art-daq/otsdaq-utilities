@@ -2728,6 +2728,12 @@ Here is the json string received:
 
 			if (selectedIndex >= 0)
 				selectEl.selectedIndex = selectedIndex;
+			else if (count > 0)
+				selectEl.selectedIndex = 0;
+			else
+				selectEl.selectedIndex = -1;
+			macroModules_[r][c].feMacroNameSelected =
+				(selectEl.selectedIndex >= 0) ? selectEl.value : "";
 		} //end filterMacroNames
 
 		//=====================================================================================
