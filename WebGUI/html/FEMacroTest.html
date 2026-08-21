@@ -3617,8 +3617,12 @@ Here is the json string received:
 			}
 
 			var sequenceObj = {};
-			for (var i = 0; i < groupRecords.length; i++)
-				sequenceObj[String(i)] = JSON.stringify(groupRecords[i]);
+			var seqIndex = 0;
+			for (var i = 0; i < groupRecords.length; i++) {
+				if (groupRecords[i]["macroType"] === "__mom_marker__")
+					continue;
+				sequenceObj[String(seqIndex++)] = JSON.stringify(groupRecords[i]);
+			}
 
 			var postData = "FEsequence=" + encodeURIComponent(JSON.stringify(sequenceObj)) +
 				"&sequenceName=" + encodeURIComponent(momName);
