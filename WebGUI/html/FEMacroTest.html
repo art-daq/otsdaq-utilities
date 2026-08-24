@@ -2339,114 +2339,10 @@ Here is the json string received:
 			el.style.minWidth = "";
 			var normalSize = Math.min(Math.max(i, 2), 10);
 			el.size = normalSize;
-			el._normalSize = normalSize;
-			el._scrollCollapseTimeout = null;
 			var newWidth = el.offsetWidth;
 			if (!el._maxWidth || newWidth > el._maxWidth)
 				el._maxWidth = newWidth;
 			el.style.minWidth = el._maxWidth + "px";
-
-			if (!el._scrollListenerAdded) {
-				el._scrollListenerAdded = true;
-
-				function macroNameExpandSelect(self) {
-					var rect = self.getBoundingClientRect();
-					var rowHeight = rect.height / self.size;
-					var availableHeight = window.innerHeight - rect.top - 20;
-					var expandedSize = Math.min(self.options.length,
-						Math.floor(availableHeight / rowHeight));
-					if (self.size < expandedSize)
-						self.size = expandedSize;
-				}
-				function macroNameCollapseSize(self) {
-					return self._hasSelection ? 1 : self._normalSize;
-				}
-				function macroNameShowFilter(self, show) {
-					var id = self.id.replace("macroNameSelect-", "macroNameFilter-");
-					var filterEl = document.getElementById(id);
-					if (filterEl) filterEl.style.display = show ? "" : "none";
-					var clearId = self.id.replace("macroNameSelect-", "macroNameFilterClear-");
-					var clearBtn = document.getElementById(clearId);
-					if (clearBtn && !show) clearBtn.style.display = "none";
-				}
-				function macroNameStartCollapseTimer(self) {
-					if (self._scrollCollapseTimeout)
-						clearTimeout(self._scrollCollapseTimeout);
-					self._scrollCollapseTimeout = setTimeout(function () {
-						var filterId = self.id.replace("macroNameSelect-", "macroNameFilter-");
-						var filterEl = document.getElementById(filterId);
-						if (filterEl && document.activeElement === filterEl)
-							return;
-						self.size = macroNameCollapseSize(self);
-						self._scrollCollapseTimeout = null;
-						self._expanded = false;
-						if (self._hasSelection)
-							macroNameShowFilter(self, false);
-					}, 500);
-				}
-				function macroNameCancelCollapseTimer(self) {
-					if (self._scrollCollapseTimeout) {
-						clearTimeout(self._scrollCollapseTimeout);
-						self._scrollCollapseTimeout = null;
-					}
-				}
-
-				el.addEventListener("wheel", function (ev) {
-					if (!this._expanded) {
-						macroNameExpandSelect(this);
-						this._expanded = true;
-					}
-					ev.preventDefault();
-					this.scrollTop += ev.deltaY;
-				}, {passive: false});
-				el.addEventListener("mouseenter", function () {
-					macroNameCancelCollapseTimer(this);
-					if (this._hasSelection && this.size < this._normalSize) {
-						this.size = this._normalSize;
-						if (this.selectedIndex >= 0)
-							this.options[this.selectedIndex].scrollIntoView({
-									behavior: 'smooth',
-									block: "nearest",
-									inline: "nearest",
-								});
-						macroNameShowFilter(this, true);
-					}
-				});
-				el.addEventListener("mousemove", function () {
-					if (this._expanded)
-						macroNameCancelCollapseTimer(this);
-				});
-				el.addEventListener("mouseleave", function () {
-					macroNameStartCollapseTimer(this);
-				});
-
-				var filterInputEl = document.getElementById("macroNameFilter-row-" +
-					r + "-col-" + c);
-				var clearBtnEl = document.getElementById("macroNameFilterClear-row-" +
-					r + "-col-" + c);
-				var siblingEls = [filterInputEl, clearBtnEl];
-				for (var s = 0; s < siblingEls.length; ++s) {
-					if (!siblingEls[s]) continue;
-					(function(selectRef) {
-						siblingEls[s].addEventListener("mouseenter", function () {
-							macroNameCancelCollapseTimer(selectRef);
-						});
-						siblingEls[s].addEventListener("mouseleave", function () {
-							macroNameStartCollapseTimer(selectRef);
-						});
-					})(el);
-				}
-				if (filterInputEl) {
-					(function(selectRef) {
-						filterInputEl.addEventListener("focus", function () {
-							macroNameCancelCollapseTimer(selectRef);
-						});
-						filterInputEl.addEventListener("blur", function () {
-							macroNameStartCollapseTimer(selectRef);
-						});
-					})(el);
-				}
-			}
 
 			el.selectedIndex = selectedIndex;
 
@@ -2501,16 +2397,8 @@ Here is the json string received:
 
 			if (!feMacroNameSelected || feMacroNameSelected == "") {
 				Debug.log("No macro name selected.");
-				selectEl._hasSelection = false;
 				return;
 			}
-
-			selectEl._hasSelection = true;
-			selectEl.size = 1;
-			var filterEl = document.getElementById("macroNameFilter-row-" + r + "-col-" + c);
-			if (filterEl) filterEl.style.display = "none";
-			var clearBtn = document.getElementById("macroNameFilterClear-row-" + r + "-col-" + c);
-			if (clearBtn) clearBtn.style.display = "none";
 
 			if (macroNameObject == undefined ||
 				macroNameObject[feMacroNameSelected] === undefined) {
@@ -2722,9 +2610,7 @@ Here is the json string received:
 			}
 
 			selectEl.innerHTML = str;
-			var normalSize = Math.min(Math.max(count, 2), 10);
-			selectEl.size = normalSize;
-			selectEl._normalSize = normalSize;
+			selectEl.size = Math.min(Math.max(count, 2), 10);
 
 			if (selectedIndex >= 0)
 				selectEl.selectedIndex = selectedIndex;
