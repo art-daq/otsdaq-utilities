@@ -2315,17 +2315,15 @@ void ConsoleSupervisor::addMessageToResponse(HttpXmlDocument* xmlOut,
 	// for all fields, give value
 	for(auto& field : msg.fields)
 	{
-		if(field.first == ConsoleMessageStruct::FieldType::SOURCE)
-			continue;  // skip, not userful
 		if(field.first == ConsoleMessageStruct::FieldType::SOURCEID)
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SEQID)
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::TIMESTAMP)  //use Time instead
-			continue;  // skip, not userful
+			continue;  // skip, not useful
 		if(field.first ==
 		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
-			continue;                               // skip, not userful
+			continue;                               // skip, not useful
 
 		xmlOut->addTextElementToParent(
 		    "message_" + ConsoleMessageStruct::fieldNames.at(field.first),
@@ -2364,8 +2362,6 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 	// for all fields, give value
 	for(auto& field : msg.fields)
 	{
-		if(field.first == ConsoleMessageStruct::FieldType::SOURCE)
-			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SOURCEID)
 			continue;  // skip, not useful
 		if(field.first == ConsoleMessageStruct::FieldType::SEQID)
@@ -2376,18 +2372,13 @@ void ConsoleSupervisor::addMessageToResponse(std::string& xmlValue,
 		   ConsoleMessageStruct::FieldType::LEVEL)  //use modified getLevel instead
 			continue;                               // skip, not useful
 
-		if(field.first ==
-		   ConsoleMessageStruct::FieldType::MSG)  //only need to escape message field
+		if(field.first == ConsoleMessageStruct::FieldType::MSG ||
+		   field.first == ConsoleMessageStruct::FieldType::SOURCE)
 			xmlValue += "\"" + ConsoleMessageStruct::fieldNames.at(field.first) +
 			            "\":\"" + StringMacros::escapeString(field.second) + "\",";
 		else
 			xmlValue += "\"" + ConsoleMessageStruct::fieldNames.at(field.first) +
 			            "\":\"" + field.second + "\",";
-
-		// xmlOut->addTextElementToParent(
-		//     "message_" + ConsoleMessageStruct::fieldNames.at(field.first),
-		//     field.second,
-		//     refreshParent_);
 	}  //end msg field loop
 
 	// give modified level also
