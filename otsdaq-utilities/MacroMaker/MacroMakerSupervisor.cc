@@ -1034,6 +1034,8 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 
 		getFEMacroList(xmldoc, userInfo.username_);
 	}
+	else if(Command == "getFEMacroInputDefaults")
+		getFEMacroInputDefaults(xmldoc, cgi, userInfo);
 	else if(Command == "runFEMacro")  // called by FE Macro Test returns FE Macros and
 	                                  // Macro Maker Macros
 		runFEMacro(xmldoc, cgi, userInfo);
@@ -4292,3 +4294,72 @@ void MacroMakerSupervisor::getFEMacroList(HttpXmlDocument&   xmldoc,
 			                            xmlMacroStream.str());
 		}
 }  //end getFEMacroList()
+
+//==============================================================================
+/// getFEMacroInputDefaults
+/// Fetch read-only, target-specific defaults for one FE macro. Dynamic defaults
+/// are deliberately limited to a single FE because one editable form can not
+/// represent different values for multiple targets.
+void MacroMakerSupervisor::getFEMacroInputDefaults(
+    HttpXmlDocument&                 xmldoc,
+    cgicc::Cgicc&                    cgi,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	const std::string feUID =
+	    CgiDataUtilities::getData(cgi, "feUIDSelected");
+	const std::string macroName = StringMacros::decodeURIComponent(
+	    CgiDataUtilities::getData(cgi, "macroName"));
+	const std::string inputArgs = CgiDataUtilities::postData(cgi, "inputArgs");
+
+	if(feUID.empty() || feUID == "*" || feUID.find(',') != std::string::npos)
+	{
+		__SUP_SS__ << "Dynamic FE macro defaults require exactly one selected FE UID; "
+		           << "received '" << feUID << "'." << __E__;
+		__SUP_SS_THROW__;
+	}
+	if(macroName.empty())
+	{
+		__SUP_SS__ << "Dynamic FE macro defaults require a macro name." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	auto feIt = FEtoSupervisorMap_.find(feUID);
+	if(feIt == FEtoSupervisorMap_.end())
+	{
+		__SUP_SS__ << "Destination front end interface ID '" << feUID
+		           << "' was not found in the configured FE list." << __E__;
+		__SUP_SS_THROW__;
+	}
+	auto supervisorIt = allFESupervisorInfo_.find(feIt->second);
+	if(supervisorIt == allFESupervisorInfo_.end())
+	{
+		__SUP_SS__ << "FE Supervisor LID " << feIt->second << " for FE UID '" << feUID
+		           << "' was not found. Is the state machine configured?" << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	SOAPParameters txParameters;
+	txParameters.addParameter("Request", "GetInterfaceMacroInputDefaults");
+	txParameters.addParameter("InterfaceID", feUID);
+	txParameters.addParameter("feMacroName", macroName);
+	txParameters.addParameter("inputArgs", inputArgs);
+	txParameters.addParameter(
+	    "userPermissions",
+	    StringMacros::mapToString(userInfo.getGroupPermissionLevels()));
+
+	SOAPParameters rxParameters;
+	rxParameters.addParameter("InputDefaults");
+	rxParameters.addParameter("Error");
+	xoap::MessageReference retMsg = SOAPMessenger::sendWithSOAPReply(
+	    supervisorIt->second.getDescriptor(),
+	    "MacroMakerSupervisorRequest",
+	    txParameters);
+	SOAPUtilities::receive(retMsg, rxParameters);
+
+	const std::string error = rxParameters.getValue("Error");
+	if(!error.empty())
+		throw std::runtime_error(error);
+
+	xmldoc.addTextElementToData(
+	    "InputDefaults", rxParameters.getValue("InputDefaults"));
+}

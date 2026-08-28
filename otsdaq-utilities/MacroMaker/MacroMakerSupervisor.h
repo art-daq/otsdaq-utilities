@@ -157,6 +157,10 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 	void getFElist(HttpXmlDocument& xmldoc);
 	void getFEMacroList(HttpXmlDocument& xmldoc, const std::string& username);
+	void getFEMacroInputDefaults(
+	    HttpXmlDocument&                 xmldoc,
+	    cgicc::Cgicc&                    cgi,
+	    const WebUsers::RequestUserInfo& userInfo);
 
 	void writeData(HttpXmlDocument&   xmldoc,
 	               cgicc::Cgicc&      cgi,

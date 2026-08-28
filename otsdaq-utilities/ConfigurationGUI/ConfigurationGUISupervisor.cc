@@ -8740,12 +8740,25 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	                     modifiedTables,
 	                     false /* refreshAll */);
 
+	// if a context group was specified, also load it so that
+	// getARTDAQSystem() can find XDAQContextTable and the ARTDAQSupervisor.
+	// Note: loadTableGroup(doActivate=false) only fills the table's raw row/column
+	//	data -- it deliberately does NOT call TableBase::init(), so derived/extracted
+	//	state (like XDAQContextTable::artdaqSupervisorContext_, computed in
+	//	XDAQContextTable::init()->extractContexts()) is left stale from whatever
+	//	group was last activated/initialized. We only want that one derived field
+	//	recomputed for the group we asked for -- calling full init() is NOT safe here:
+	//	it also runs configManager->isOwnerFirstAppInContext(), which looks up THIS
+	//	process's own (unrelated) ownerContextUID_ within whatever XDAQContextTable
+	//	rows now happen to be loaded, and on a lookup miss defaults to "yes" and
+	//	truncates/rewrites the live XDAQ_RUN_FILE. So call extractContexts() directly
+	//	(the read-only half of init()) instead of init() itself.
 	if(contextGroup != "" && !contextGroupKey.isInvalid())
 	{
+		__SUP_COUT__ << "Also loading context group '" << contextGroup << "("
+		             << contextGroupKey << ")' for ARTDAQ node lookup..." << __E__;
 		cfgMgr->loadTableGroup(contextGroup, contextGroupKey, false /*doActivate*/);
-	}
 
-	{
 		TableBase* ctxTableBase =
 		    cfgMgr->getTableByName(ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME);
 		XDAQContextTable* ctxTable = dynamic_cast<XDAQContextTable*>(ctxTableBase);
@@ -8753,7 +8766,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 		{
 			__SUP_SS__ << "Failed to cast "
 			           << ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME
-			           << " to XDAQContextTable." << __E__;
+			           << " to XDAQContextTable for context group '" << contextGroup
+			           << "(" << contextGroupKey << ")'." << __E__;
 			__SS_THROW__;
 		}
 		ctxTable->extractContexts(cfgMgr);

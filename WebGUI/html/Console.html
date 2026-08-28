@@ -544,7 +544,7 @@
         var _consoleMessageFields = [
             "Level",
             "Label",
-            "Source",
+            //"Source", //not useful (innacurate)
             //"SourceID", //not useful (innacurate)
             "Msg",
             "Time",
@@ -557,7 +557,6 @@
         ];
         var _MESSAGE_FIELD_LEVEL = _consoleMessageFields.indexOf("Level"),
             _MESSAGE_FIELD_LABEL = _consoleMessageFields.indexOf("Label"),
-            _MESSAGE_FIELD_SOURCE = _consoleMessageFields.indexOf("Source"),
             _MESSAGE_FIELD_MSG = _consoleMessageFields.indexOf("Msg"),
             _MESSAGE_FIELD_TIME = _consoleMessageFields.indexOf("Time"),
             _MESSAGE_FIELD_FILE = _consoleMessageFields.indexOf("File"),
@@ -580,7 +579,7 @@
             ["transparent", DesktopContent.getDefaultDesktopColor(), DesktopContent.getInvertedColor(DesktopContent.getDefaultDesktopColor())]
         ];
 
-        var _FIELDS_TO_OBSERVE = ["Level", "Label", "Source", "Custom", "Hostname"];
+        var _FIELDS_TO_OBSERVE = ["Level", "Label", "Custom", "Hostname"];
         var _FIELDS_TO_OBSERVE_CUSTOM = _FIELDS_TO_OBSERVE.indexOf("Custom");
         var _observed = {};
         for (var f in _FIELDS_TO_OBSERVE) //accumulate field values and their counts
@@ -1632,8 +1631,6 @@
             for (var i = 0; i < _consoleMessageArray.length; ++i) {
                 tmp.Label = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_LABEL]];
                 tmp.Level = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_LEVEL]];
-                tmp.Source = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_SOURCE]];
-                if(tmp.Source == "xdaq.exe") tmp.Source = "OTSDAQ";
                 tmp.Custom = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_CUSTOM]];
                 tmp.Hostname = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_HOSTNAME]];
                 tmp.Count = _consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_COUNT]];
@@ -1663,11 +1660,10 @@
                     //getColorForLevel(tmp.Level) +  //CHANGED to css based
                     "'>" +
                     "<span class='" + tmp.Hostname + "_HostnameEntry'>" +
-                    "<span class='" + tmp.Source + "_SourceEntry'>" +
                     "<span class='" + tmp.Label + "_LabelEntry'>" +
                     "<span class='" + tmp.Level + "_LevelEntry'>" +
                     "<span class='hostDisplayEntry'>" + getShortenedHostname(tmp.Hostname) + " | </span>" +
-                    "<span class='" + tmp.Custom + "_CustomEntry'>" + //open hostname source label level custom span (for filtering)
+                    "<span class='" + tmp.Custom + "_CustomEntry'>" + //open hostname label level custom span (for filtering)
                     "<span class='elaboratedEntry'><b>" +
                     tmp.Level + " " +
                     "(" + formatTime(_consoleMessageArray[i][_consoleMessageFields[_MESSAGE_FIELD_TIME]]) + ") ";
@@ -1687,7 +1683,7 @@
                         true /*doCloseTag*/) + "\t" +
                     // firstMsg +
                     "</span>" + secondMsg +
-                    "</span></span></span></span></span>" + //close custom level label source hostname span (for filtering)
+                    "</span></span></span></span>" + //close custom level label hostname span (for filtering)
                     "</div>"; //important to only have one /div> per entry for truncate
 
                 //aggragate stats for each observed field

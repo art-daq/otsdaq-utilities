@@ -46,10 +46,6 @@
 			border: 0;
 		}
 
-		.macroModuleTable td:first-child {
-			min-width: 170px;
-		}
-
 		body .macroModule {
 			margin: auto;
 		}
@@ -125,7 +121,6 @@
 			max-height: fit-content;
 			overflow-y: auto;
 			resize: horizontal;
-			padding-left: 24px;
 		}
 
 		.history-group {
@@ -133,7 +128,6 @@
 			align-items: stretch;
 			gap: 3px;
 			margin: 2px 0;
-			position: relative;
 		}
 
 		.history-group-bar {
@@ -250,42 +244,6 @@
 			margin: -26px 0px -35px 15px;
 			position: relative;
 			z-index: 10;
-		}
-
-		.history-group-mom-btn {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			background-color: #2ecc40;
-			color: white;
-			font-size: 14px;
-			font-weight: bold;
-			line-height: 1;
-			cursor: pointer;
-			border: none;
-			padding: 0;
-			flex-shrink: 0;
-			position: absolute;
-			left: -22px;
-			top: 50%;
-			transform: translateY(-50%);
-		}
-
-		.history-group-mom-btn:hover {
-			background-color: #27ae60;
-		}
-
-		.record.mom-marker {
-			background-color: #2ecc40;
-			color: white;
-			font-weight: bold;
-			cursor: default;
-			padding: 4px 6px;
-			border-radius: 3px;
-			margin: 2px 0;
 		}
 	</style>
 
@@ -456,8 +414,6 @@
 
 		var _sequenceOnComplete = null;
 
-		var pendingMoMGroupId_ = null;
-
 		/////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////
 
@@ -515,9 +471,9 @@
 				"The panel on the right tracks your history. You can launch previously executed FE Macros, by clicking on them in the history pane. " +
 				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait between repeat executions. " +
 				"\n\n" +
-				"Clicking on <b>MoM Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros (a Macro-of-Macros). " +
-				"<b>MoM Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
-				"Note that MoM sequences in the admin user's folder are considered public and will be accessible by all users." +
+				"Clicking on <b>Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros. " +
+				"<b>Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
+				"Note that sequences in the admin user's folder are considered public and will be accessible by all users." +
 				"\n\nAlso, some FE Macros have a tooltip defined for additional information; click on the tooltip icon <span class='macroInfo' style='display:inline-block; width: 50px; height: 50px; margin: -7px 0 0 -10px;'></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next to the FE Macro name to view the tooltip info. ";
 
 			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
@@ -1019,7 +975,7 @@
 
 			var outputFileFound = false;
 			for (var i = 0; i < feMacroRunArgNames.length; ++i) {
-				var name = decodeURIComponent(feMacroRunArgNames[i].getAttribute("value"));
+				var name = feMacroRunArgNames[i].getAttribute("value");
 				//first decode URI, then convert html entities
 				var value = Debug.errorPopConditionString(decodeURIComponent(
 					feMacroRunArgValues[i].getAttribute("value")),
@@ -1115,7 +1071,7 @@
 
 
 				for (var i = 0; i < outputArgNames.length; ++i) {
-					var name = decodeURIComponent(outputArgNames[i].getAttribute("value"));
+					var name = outputArgNames[i].getAttribute("value");
 					//first decode URI, then convert html entities
 					var value = decodeURIComponent(
 						outputArgValues[i].getAttribute("value"));
@@ -1599,7 +1555,7 @@ Here is the json string received:
 							"class": "macroModule",
 							"rowspan": maxRow,
 							"width": "400px",
-							"style": "white-space:normal; min-width:400px;"
+							"style": "white-space:normal"
 						},
 						"<h3 style='display: flex; align-items: center;justify-content: center; white-space: nowrap;'>" +
 						"Macro output will be displayed here" +
@@ -1646,7 +1602,7 @@ Here is the json string received:
 						},
 						"<div style='display: flex; flex-direction: column; align-items: flex-start; width: 100%;'>" +
 						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
-						"<h3>MoM Sequence Mode</h3>" +
+						"<h3>Sequence Mode</h3>" +
 						"<span id='currentMacroDisplay'>No Macro Running</span>" +
 						"</div>" +
 						"<div style='display: flex; justify-content: flex-end; width: 100%;'>" +
@@ -1801,23 +1757,7 @@ Here is the json string received:
 
 					{ //Macro Name html
 						str += DesktopContent.htmlOpen("tr"); //start row for Macro Name
-						str += DesktopContent.htmlOpen("td", {},
-							"<b>Macro Name:</b><br>" +
-							DesktopContent.htmlOpen(
-								"input",
-								{
-									"type": "text",
-									"id": "macroNameFilter-row-" + r + "-col-" + c,
-									"class": "macroNameFilter",
-									"placeholder": "Type to filter Macros",
-									"oninput": "filterMacroNames(" + r + "," + c + ");",
-									"style": "color:gray; margin-top:4px; margin-right:5px; width:150px; font-size:calc(1em - 2px);",
-								}) +
-							"<div id='macroNameFilterClear-row-" + r + "-col-" + c + "' " +
-								"onclick='clearMacroNameFilter(" + r + "," + c + ");' " +
-								"style='display:none; color:red; cursor:pointer; font-weight:bold; font-size:calc(1em - 2px); margin-top:2px;'>" +
-								"&#10006; Clear Filter</div>"
-							/*innerHTML*/, true /*doCloseTag*/);
+						str += DesktopContent.htmlOpen("td", {}, "<b>Macro Name:</b>" /*innerHTML*/, true /*doCloseTag*/);
 						str += DesktopContent.htmlOpen("td");
 						{
 							str += DesktopContent.htmlOpen(
@@ -2319,37 +2259,17 @@ Here is the json string received:
 			} //end Macro Names loop
 
 			if (feMacroNameSelected != "" && selectedIndex == -1) {
-				Debug.log("Macro Name '" + feMacroNameSelected + "' not found in new selection, resetting.");
+				Debug.log("Invalid Macro Name '" + feMacroNameSelected + "' specified for layout module.",
+					Debug.WARN_PRIORITY);
 				Debug.log("macroNameObject", macroNameObject);
 				selectedIndex = 0;
-
-				var outputEl = document.getElementById("macroModule-output");
-				if (outputEl) {
-					var newFirstMacro = Object.keys(macroNameObject)[0] || "N/A";
-					outputEl.innerHTML = "<b style='color:darkorange;'>Warning:</b> Previously selected Macro Name '<b>" +
-						feMacroNameSelected + "</b>' is not available for FE Type '<b>" +
-						feClassSelected + "</b>'. " +
-						"Macro Name has been reset to '<b>" + newFirstMacro + "</b>'.";
-				}
 			}
 
 			el = document.getElementById("macroNameSelect-row-" +
 				r + "-col-" + c);
 			el.innerHTML = str;
-			el.style.minWidth = "";
-			var normalSize = Math.min(Math.max(i, 2), 10);
-			el.size = normalSize;
-			var newWidth = el.offsetWidth;
-			if (!el._maxWidth || newWidth > el._maxWidth)
-				el._maxWidth = newWidth;
-			el.style.minWidth = el._maxWidth + "px";
 
 			el.selectedIndex = selectedIndex;
-
-			var filterEl = document.getElementById("macroNameFilter-row-" +
-				r + "-col-" + c);
-			if (filterEl && filterEl.value)
-				filterMacroNames(r, c);
 
 			handleSelectedMacroName(r, c);
 
@@ -2385,9 +2305,8 @@ Here is the json string received:
 			var feUIDSelected = macroModules_[r][c].feUIDSelected;
 			var feMacroTypeSelected = macroModules_[r][c].feMacroTypeSelected;
 
-			var selectEl = document.getElementById("macroNameSelect-row-" +
-				r + "-col-" + c);
-			var feMacroNameSelected = selectEl.value;
+			var feMacroNameSelected = document.getElementById("macroNameSelect-row-" +
+				r + "-col-" + c).value;
 			macroModules_[r][c].feMacroNameSelected = feMacroNameSelected;
 			Debug.log("feMacroNameSelected", feMacroNameSelected);
 
@@ -2493,6 +2412,8 @@ Here is the json string received:
 						"class": "macroInput " + "macroInput-row-" + r + "-col-" + c,
 						"value": inputVal,
 						"onclick": "setCaretPosition(this,0,this.value.length);",
+						"onchange": inputsArr[i].indexOf("Target ROC or Mask") == 0 ?
+							"loadFEMacroInputDefaults(" + r + "," + c + ",true);" : "",
 						"autocomplete": "off",
 						"autocorrect": "off",
 						"autocapitalize": "off",
@@ -2574,61 +2495,112 @@ Here is the json string received:
 			el = document.getElementById("macroDetail-row-" +
 				r + "-col-" + c);
 			el.innerHTML = str;
+			loadFEMacroInputDefaults(r, c);
 		} //end handleSelectedMacroName
 
 		//=====================================================================================
-		//filterMacroNames ~~
-		function filterMacroNames(r, c) {
-			var filterEl = document.getElementById("macroNameFilter-row-" +
-				r + "-col-" + c);
-			var selectEl = document.getElementById("macroNameSelect-row-" +
-				r + "-col-" + c);
-			var filterText = filterEl.value.toLowerCase();
-			var macroNameObject = macroModules_[r][c].feMacroNameObject;
-			var currentSelected = macroModules_[r][c].feMacroNameSelected;
+		//loadFEMacroInputDefaults ~~
+		// Ask the selected FE for read-only, target-specific defaults after the
+		// editable inputs exist. Only a single FE target can populate one form.
+		function loadFEMacroInputDefaults(r, c, clearPreviousDefaults) {
+			var module = macroModules_[r] && macroModules_[r][c];
+			if (!module || module.feMacroTypeSelected != MACRO_TYPE_FE_)
+				return;
 
-			filterEl.style.color = filterText ? "black" : "gray";
+			var feUIDs = (module.feUIDSelected || "").split(",").filter(
+				function (uid) { return uid.length != 0; });
+			if (feUIDs.length != 1 || feUIDs[0] == "*")
+				return;
 
-			var clearBtn = document.getElementById("macroNameFilterClear-row-" +
-				r + "-col-" + c);
-			if (clearBtn)
-				clearBtn.style.display = filterText ? "block" : "none";
+			var macroName = module.feMacroNameSelected;
+			var macroObj = module.feMacroNameObject &&
+				module.feMacroNameObject[macroName];
+			if (!macroObj || !macroObj.inputs.length)
+				return;
 
-			var str = "";
-			var count = 0;
-			var selectedIndex = -1;
-			for (var macroName in macroNameObject) {
-				if (filterText && macroName.toLowerCase().indexOf(filterText) < 0)
-					continue;
-				str += DesktopContent.htmlOpen(
-					"option",
-					{},
-					macroName /*innerHTML*/, true /*doCloseTag*/);
-				if (macroName == currentSelected)
-					selectedIndex = count;
-				count++;
+			if (clearPreviousDefaults && module.dynamicDefaultInputNames) {
+				for (var i = 0; i < module.dynamicDefaultInputNames.length; ++i) {
+					var previousIndex = macroObj.inputs.indexOf(
+						module.dynamicDefaultInputNames[i]);
+					if (previousIndex < 0)
+						continue;
+					var previousElement = document.getElementById(
+						"macroInput-row-" + r + "-col-" + c +
+						"-i-" + previousIndex);
+					if (previousElement) {
+						previousElement.value = "Default";
+						previousElement.title = "";
+					}
+				}
+				module.dynamicDefaultInputNames = [];
 			}
 
-			selectEl.innerHTML = str;
-			selectEl.size = Math.min(Math.max(count, 2), 10);
-
-			if (selectedIndex >= 0)
-				selectEl.selectedIndex = selectedIndex;
-			else {
-				selectEl.selectedIndex = -1;
-				macroModules_[r][c].feMacroNameSelected = "";
-				handleSelectedMacroName(r, c);
+			var inputElements = document.getElementsByClassName(
+				"macroInput-row-" + r + "-col-" + c);
+			var inputData = "";
+			for (var i = 0; i < macroObj.inputs.length; ++i) {
+				if (i) inputData += ";";
+				inputData += encodeURIComponent(macroObj.inputs[i]) + "," +
+					encodeURIComponent(inputElements[i] ? inputElements[i].value : "");
 			}
-		} //end filterMacroNames
 
-		//=====================================================================================
-		//clearMacroNameFilter ~~
-		function clearMacroNameFilter(r, c) {
-			var filterEl = document.getElementById("macroNameFilter-row-" +
-				r + "-col-" + c);
-			filterEl.value = "";
-			filterMacroNames(r, c);
-		} //end clearMacroNameFilter
+			module.dynamicDefaultsRequestSerial =
+				(module.dynamicDefaultsRequestSerial || 0) + 1;
+			var requestSerial = module.dynamicDefaultsRequestSerial;
+			var requestedUID = feUIDs[0];
+			var requestedMacro = macroName;
+
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getFEMacroInputDefaults" +
+				"&feUIDSelected=" + encodeURIComponent(requestedUID) +
+				"&macroName=" + encodeURIComponent(requestedMacro),
+				"inputArgs=" + inputData,
+				function (req) {
+					var currentModule = macroModules_[r] && macroModules_[r][c];
+					if (!currentModule ||
+						currentModule.dynamicDefaultsRequestSerial != requestSerial ||
+						currentModule.feUIDSelected != requestedUID ||
+						currentModule.feMacroNameSelected != requestedMacro)
+						return; //selection changed while the request was in flight
+
+					var error = DesktopContent.getXMLValue(req, "Error");
+					if (error) {
+						Debug.log("Failed to load dynamic defaults for FE Macro '" +
+							requestedMacro + "' on '" + requestedUID + "': " + error,
+							Debug.HIGH_PRIORITY);
+						return;
+					}
+
+					var encodedDefaults =
+						DesktopContent.getXMLValue(req, "InputDefaults");
+					if (!encodedDefaults)
+						return; //this macro has no dynamic defaults provider
+
+					var defaults = encodedDefaults.split(";");
+					currentModule.dynamicDefaultInputNames = [];
+					for (var i = 0; i < defaults.length; ++i) {
+						var comma = defaults[i].indexOf(",");
+						if (comma < 0)
+							continue;
+						var inputName = decodeURIComponent(
+							defaults[i].substring(0, comma));
+						var inputValue = decodeURIComponent(
+							defaults[i].substring(comma + 1));
+						var inputIndex = macroObj.inputs.indexOf(inputName);
+						if (inputIndex < 0)
+							continue;
+						var inputElement = document.getElementById(
+							"macroInput-row-" + r + "-col-" + c +
+							"-i-" + inputIndex);
+						if (inputElement) {
+							inputElement.value = inputValue;
+							currentModule.dynamicDefaultInputNames.push(inputName);
+							inputElement.title =
+								"Loaded from the active configuration for " + requestedUID;
+						}
+					}
+				});
+		} //end loadFEMacroInputDefaults()
 
 		//=====================================================================================
 		//setCaretPosition ~~
@@ -2670,8 +2642,6 @@ Here is the json string received:
 
 		//=====================================================================================
 		function getHistoryRecordSignature(recordObj) {
-			if (recordObj["macroType"] === "__mom_marker__")
-				return "__mom_marker__" + recordObj["launchTime"] + ":" + recordObj["macroName"];
 			return JSON.stringify({
 				feClass: recordObj["feClass"],
 				feUID: recordObj["feUID"],
@@ -2685,8 +2655,6 @@ Here is the json string received:
 
 		//=====================================================================================
 		function getHistoryRecordDescription(recordObj, useHtmlBreaks) {
-			if (recordObj["macroType"] === "__mom_marker__")
-				return "MoM - " + recordObj["macroName"];
 			var lineBreak = useHtmlBreaks ? "<br>&nbsp;&nbsp;&nbsp;&nbsp;" : "\n    ";
 			var recordName = "";
 			var inputArgs = recordObj["inputArgs"].split(";");
@@ -2841,18 +2809,6 @@ Here is the json string received:
 		//=====================================================================================
 		function renderHistoryNode(node, renderState) {
 			if (node.type === "record") {
-				if (node.record["macroType"] === "__mom_marker__") {
-					renderState.rowIndex++;
-					return DesktopContent.htmlOpen(
-						"div",
-						{
-							"class": "record mom-marker",
-							"title": "Macro-of-Macros sequence started"
-						},
-						"<span class='history-record-label'>MoM - " +
-						escapeHistoryHtml(node.record["macroName"]) + "</span>",
-						true);
-				}
 				var recordId = historyRenderRecordId_++;
 				historyRenderRecordMap_[recordId] = node.record;
 				var className = "record " + ((renderState.rowIndex++ % 2 === 0) ? "light" : "dark");
@@ -2873,15 +2829,9 @@ Here is the json string received:
 			historyRenderGroupMap_[groupId] = node.records;
 			var groupTitle = escapeHistoryHtml(getHistoryGroupTitle(node.records, node.repeatCount));
 			var childHtml = renderHistoryNodes(node.children, renderState);
-			var momBtn = "";
-			if (node.records.length > 1)
-				momBtn = "<button class='history-group-mom-btn' title='Create Macro-of-Macros (MoM) Sequence from this group. Toggle MoM Sequence Pane using the link at the top-left of the page.'" +
-					" onClick='event.stopPropagation(); showPopupMoM(" + groupId + ");'>+</button>";
 			return "<div class='history-group'>" +
-				momBtn +
 				"<div class='history-group-bar' title='" + groupTitle + "' onClick='onClickHistoryGroup(" + groupId + ");'>" +
-				"<span>" + node.repeatCount + "x</span>" +
-				"</div>" +
+				"<span>" + node.repeatCount + "x</span></div>" +
 				"<div class='history-group-content'>" + childHtml + "</div>" +
 				"</div>";
 		} //end renderHistoryNode()
@@ -3430,125 +3380,6 @@ Here is the json string received:
 		} //end hidePopupSaveSequence()
 
 		//=====================================================================================
-		//showPopupMoM ~~
-		function showPopupMoM(groupId) {
-			Debug.log("showPopupMoM()", groupId);
-			pendingMoMGroupId_ = groupId;
-			var popup = document.getElementById("popupSaveMoM");
-			var nameInput = document.getElementById("momName");
-			var errorMsg = document.getElementById("momName-error");
-			errorMsg.innerText = "";
-			nameInput.value = "";
-			popup.style.display = "grid";
-			popup.style.gridTemplateColumns = "1fr";
-			nameInput.focus();
-		} //end showPopupMoM()
-
-		//=====================================================================================
-		//hidePopupMoM ~~
-		function hidePopupMoM() {
-			Debug.log("hidePopupMoM()");
-			var popup = document.getElementById("popupSaveMoM");
-			popup.style.display = "none";
-			pendingMoMGroupId_ = null;
-			document.getElementById("momName").value = "";
-			document.getElementById("momName-error").innerText = "";
-		} //end hidePopupMoM()
-
-		//=====================================================================================
-		//handleEnterPressSaveMoM ~~
-		function handleEnterPressSaveMoM(event) {
-			if (event.key === "Enter" || event.keyCode === 13) {
-				event.preventDefault();
-				saveMoM();
-				return false;
-			}
-			return true;
-		} //end handleEnterPressSaveMoM()
-
-		//=====================================================================================
-		//saveMoM ~~
-		function saveMoM() {
-			Debug.log("saveMoM()");
-
-			var nameInput = document.getElementById("momName");
-			var errorMsg = document.getElementById("momName-error");
-			var momName = nameInput.value.trim();
-
-			if (momName === "") {
-				errorMsg.innerText = "Name cannot be empty!";
-				return;
-			}
-
-			var invalidCharacters = /[<>:"/\\|?*]/;
-			if (invalidCharacters.test(momName)) {
-				errorMsg.innerText = "Name contains invalid characters!";
-				return;
-			}
-
-			var groupRecords = historyRenderGroupMap_[pendingMoMGroupId_];
-			if (!groupRecords || !groupRecords.length) {
-				errorMsg.innerText = "Error: history group not found.";
-				return;
-			}
-
-			var sequenceSelector = document.getElementById("select-sequence");
-			if (sequenceSelector) {
-				for (var i = 0; i < sequenceSelector.options.length; i++) {
-					if (sequenceSelector.options[i].value === momName) {
-						errorMsg.innerText = "Name already in use!";
-						return;
-					}
-				}
-			}
-
-			var sequenceObj = {};
-			var seqIndex = 0;
-			for (var i = 0; i < groupRecords.length; i++) {
-				if (groupRecords[i]["macroType"] === "__mom_marker__")
-					continue;
-				sequenceObj[String(seqIndex++)] = JSON.stringify(groupRecords[i]);
-			}
-
-			var postData = "FEsequence=" + encodeURIComponent(JSON.stringify(sequenceObj)) +
-				"&sequenceName=" + encodeURIComponent(momName);
-
-			DesktopContent.XMLHttpRequest("Request?RequestType=saveFEMacroSequence",
-				postData,
-				function (req, reqParam, errStr) {
-					if (!errStr)
-						errStr = "";
-					var err = DesktopContent.getXMLValue(req, "Error");
-					if (err && err != "")
-						errStr += "\n" + err;
-					if (errStr != "") {
-						Debug.err("Error while saving Macro-of-Macros: " + errStr);
-						return;
-					}
-
-					var sequenceSelector = document.getElementById("select-sequence");
-					if (sequenceSelector) {
-						var option = document.createElement("option");
-						option.text = momName;
-						option.value = momName;
-						sequenceSelector.add(option);
-					}
-
-					Debug.info("Macro-of-Macros '" + momName + "' was successfully saved as a MoM sequence!");
-					hidePopupMoM();
-
-					if (sequenceMode_ && sequenceSelector) {
-						sequenceSelector.value = momName;
-						selectSequence(momName);
-					}
-				},
-				0 /*reqParam*/,
-				0 /*progressHandler*/,
-				true /*callHandlerOnErr*/
-			);
-		} //end saveMoM()
-
-		//=====================================================================================
 		//popupSetSequenceDelay ~~
 		function popupSetSequenceDelay() {
 			var popup = document.getElementById("popupSetSequenceDelay");
@@ -3601,9 +3432,9 @@ Here is the json string received:
 					"id": "sequnce-selector",
 					"style": "margin:10px; display: inline-flex; gap: 15px;"
 				},
-				"<p><strong>Select MoM Sequence: </strong></p>" + select +
+				"<p><strong>Select sequence: </strong></p>" + select +
 				" <a onclick='makeSequencePublic()' " +
-				"title='Click to make this MoM sequence publicly accessible to all users (must have admin(255) privileges)' " +
+				"title='Click to make this sequence publicly accessible to all users (must have admin(255) privileges)' " +
 				">Make Public</a>",
 				true);
 			// space used to show the steps of each sequence
@@ -3766,7 +3597,7 @@ Here is the json string received:
 					if (err && err != "")
 						errStr += "\n" + err;
 					if (errStr != "") {
-						Debug.err("Error while loading FE Macro MoM Sequences: " + errStr);
+						Debug.err("Error while loading FE Macro Sequences: " + errStr);
 						return;
 					}
 
@@ -3799,7 +3630,7 @@ Here is the json string received:
 			var sequenceName = document.getElementById("select-sequence").value;
 			Debug.logv({ sequenceName });
 			if (!sequenceName || sequenceName == "undefined" || sequenceName == "None") {
-				Debug.err("Please select a valid MoM sequence name to make public from the 'Select MoM Sequence' dropdown menu.");
+				Debug.err("Please select a valid sequence name to make public from the 'Select sequence' dropdown menu.");
 				return;
 			}
 
@@ -3807,7 +3638,7 @@ Here is the json string received:
 				"&name=" + sequenceName,
 				"",
 				function () {
-					Debug.info("The MoM sequence '" + sequenceName + "' was made publicly accessible for all users.");
+					Debug.info("The sequence '" + sequenceName + "' was made publicly accessible for all users.");
 				} //end makeSequencePublic handler
 			);
 		} //end makeSequencePublic()
@@ -4099,24 +3930,6 @@ Here is the json string received:
 
 			isSequenceRunning = true;
 			updateRunButtonState();
-
-			if (currentIndex === 0) {
-				var sequenceName = document.getElementById("select-sequence").value;
-				if (sequenceName && sequenceName !== "undefined" && sequenceName !== "None") {
-					var momMarkerRecord = {
-						"feClass": "",
-						"feUID": "",
-						"macroType": "__mom_marker__",
-						"macroName": sequenceName,
-						"inputArgs": "",
-						"outputArgs": "",
-						"saveOutputs": 0,
-						"launchTime": Math.floor(Date.now() / 1000),
-						"completeTime": Math.floor(Date.now() / 1000)
-					};
-					appendHistoryRecord(JSON.stringify(momMarkerRecord));
-				}
-			}
 
 			var keys = Object.keys(selectedSequence_);
 			var totalMacros = keys.length;
@@ -4476,8 +4289,8 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-	<a onclick="toggleView()">Toggle 2-Column View</a>
-	<a id="#macroModule-sequence" style="margin-left: 20px;" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Toggle Macro-of-Macros (MoM) Sequence Pane</a><br>
+	<a onclick="toggleView()">Toggle View</a>
+	<a id="#macroModule-sequence" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Sequence Mode</a><br>
 	<div style='width:550px'></div>
 
 	<!--<a onclick='init();'>Refresh</a>
@@ -4566,7 +4379,7 @@ Here is the json string received:
 
 	<div id="popupSaveSequence" class="smallPopup">
 		<center>
-			<h4>Type a name for the MoM sequence</h4>
+			<h4>Type a name for the sequence</h4>
 			<input type="text" id="sequenceName" maxlength="30" onkeypress="return handleEnterPressSaveSequence(event)"></input>
 			<span id="sequenceName-error" style="color: red; display: block; margin-top: 10px;"></span>
 			<div class="buttongroup" style="margin-top: 10px;">
@@ -4574,18 +4387,6 @@ Here is the json string received:
 				<button onclick="hideSmallPopup(this)">Cancel</button>
 		</center>
 	</div>
-	</div>
-
-	<div id="popupSaveMoM" class="smallPopup">
-		<center>
-			<h4>Name this Macro-of-Macros</h4>
-			<input type="text" id="momName" maxlength="30" onkeypress="return handleEnterPressSaveMoM(event)"></input>
-			<span id="momName-error" style="color: red; display: block; margin-top: 10px;"></span>
-			<div class="buttongroup" style="margin-top: 10px;">
-				<button onclick="saveMoM()">Confirm</button>
-				<button onclick="hidePopupMoM()">Cancel</button>
-			</div>
-		</center>
 	</div>
 
 	<div id='display'></div>

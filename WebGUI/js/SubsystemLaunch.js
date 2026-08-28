@@ -1943,24 +1943,14 @@ SubsystemLaunch.create = function() {
 						DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTSInstance" +
 						"&targetSubsystem=" + targetSubsystem,
 						"",
-							function (req, reqParam, errStr) {
-								if(!req) {
-									if(errStr)
-										Debug.err("Reboot failed for '" + targetSubsystem + "': " + errStr);
-									SubsystemLaunch.subsystems[subsystemIndex].status = "";
-									SubsystemLaunch.subsystems[subsystemIndex]._rebootTime = undefined;
-									displayStatus();
-									window.clearTimeout(_getStatusTimer);
-									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
-									return;
-								}
+							function (req) {
 								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
 
 								window.clearTimeout(_getStatusTimer);
 								_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
 							}, //request handler
-						0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/,
+						0 /*reqParam*/, 0 /*progressHandler*/, false /*callHandlerOnErr*/,
 						false /*doNoShowLoadingOverlay*/,
 						true /*targetGatewaySupervisor*/);
 
@@ -2970,28 +2960,23 @@ SubsystemLaunch.create = function() {
 
 				var writeToEcl = false; // updated by checkbox onchange before popup is cleared
 				SubsystemLaunch._pendingWriteToEcl = false; // reset each time popup opens
-				SubsystemLaunch._pendingDiscardRun = false; // reset each time popup opens
 
 				DesktopContent.popUpVerification(
 					/* prompt */
 					"Please enter a logbook entry summarizing the run:" +
 					"<br><br><label style='cursor:pointer;'><input type='checkbox' " +
-					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>" +
-					"<br><label style='cursor:pointer;'><input type='checkbox' " +
-					"id='SubsystemLaunch-discardRun' onchange='SubsystemLaunch._pendingDiscardRun=this.checked;' /> Discard run for processing</label>"
+					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>"
 					,
 					/* continueFunc [optional] */
 					function (entry) {
 						Debug.log("User entered logbook entry " + entry);
 
 						var writeToEcl = SubsystemLaunch._pendingWriteToEcl || false;
-						var discardRun = SubsystemLaunch._pendingDiscardRun || false;
 						Debug.log("writeToEcl = " + writeToEcl);
-						Debug.log("discardRun = " + discardRun);
 
 						//save last entry
 						lastLogEntry = entry;
-						localStop(entry, writeToEcl, discardRun);
+						localStop(entry, writeToEcl);
 					} //end continueFunc handlere
 					,
 					/* val [optional] */ undefined,
@@ -3020,7 +3005,7 @@ SubsystemLaunch.create = function() {
 
 
 		//===========
-		function localStop(logEntry, writeToEcl, discardRun) {
+		function localStop(logEntry, writeToEcl) {
 			Debug.log("localStop()");
 			Debug.logv({logEntry});
 
@@ -3039,8 +3024,7 @@ SubsystemLaunch.create = function() {
 						"&fsmName=" + _fsmName +
 						"&StateMachine=Stop", //end get data
 						"logEntry=" + encodeURIComponent(logEntry) +
-						"&writeToEcl=" + (writeToEcl ? "1" : "0") +
-						"&discardRun=" + (discardRun ? "1" : "0"), //end post data
+						"&writeToEcl=" + (writeToEcl ? "1" : "0"), //end post data
 					function(req) //start handler
 					{
 				Debug.log("stop() FSM handler");

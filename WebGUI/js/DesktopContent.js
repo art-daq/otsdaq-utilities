@@ -889,8 +889,7 @@ DesktopContent.handleBlur = function (e) {
 //=====================================================================================
 DesktopContent.handleScroll = function (e) {
 	//console.log("Scroll DesktopContent.handleScroll", DesktopContent._isFocused, DesktopContent._theWindowId);
-	if(!DesktopContent._isFocused)
-		window.focus();
+	window.focus();
 } //end DesktopContent.handleScroll()
 
 //=====================================================================================

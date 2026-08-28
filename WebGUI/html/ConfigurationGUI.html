@@ -4199,7 +4199,7 @@
 							cols[cols.length - 1].push("");
 
 						for (var c = 0; c < colHdrs.length; ++c)
-							cols[cols.length - 1].push(colArrays[c] !== undefined && colArrays[c][r] !== undefined ? colArrays[c][r] : "");
+							cols[cols.length - 1].push(colArrays[c][r]);
 					}
 				}
 
@@ -20991,7 +20991,6 @@
 						str += "<th>";
 					else if (r >= _CONFIG_DATA_ROW_OFFSET &&	//data cells
 						c >= _CONFIG_DATA_COL_OFFSET) {
-						if(val === undefined) val = "";
 						titleVal = (val.replace(/"/g, "&quot;").replace(/'/g, "&apos;"));
 						if (titleVal.length > 50)
 							titleVal = titleVal.substr(0, 50) + "...";
