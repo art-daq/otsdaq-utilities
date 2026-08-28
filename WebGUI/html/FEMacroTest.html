@@ -408,6 +408,7 @@
 		var multiSelectToggleSetting_ = {}; //true for multiselect display
 
 		var focusedMacroCell = [-1, -1]; //when enter is pressed which macro to run
+		var _useDynamicDropdown = false;
 
 		var firstTime = true;
 		var liveViewActive = false;
@@ -488,6 +489,76 @@
 			Debug.log("feMacroTest toggleView ", verticalOrientation_);
 			init();
 		} //end toggleView()
+
+		//=====================================================================================
+		//toggleSettingsPopup ~~
+		function toggleSettingsPopup() {
+			var el = document.getElementById("popupSettings");
+			if (el.style.display == "block")
+				el.style.display = "none";
+			else
+				el.style.display = "block";
+		} //end toggleSettingsPopup()
+
+		//=====================================================================================
+		//applyAndSavePreferences ~~
+		function applyAndSavePreferences() {
+			var twoCol = document.getElementById("pref-twoColumnView").checked;
+			var showSeq = document.getElementById("pref-showSequencePane").checked;
+			var dynDrop = document.getElementById("pref-dynamicDropdown").checked;
+
+			if (twoCol != !verticalOrientation_) {
+				toggleView();
+			}
+			if (showSeq != sequenceMode_) {
+				toggleSequenceMode();
+				DesktopContent.scrollIntoViewX('macroModule-sequence', false);
+			}
+			_useDynamicDropdown = dynDrop;
+
+			saveFEMacroTestPreferences();
+		} //end applyAndSavePreferences()
+
+		//=====================================================================================
+		//saveFEMacroTestPreferences ~~
+		function saveFEMacroTestPreferences() {
+			var twoCol = document.getElementById("pref-twoColumnView").checked ? 1 : 0;
+			var showSeq = document.getElementById("pref-showSequencePane").checked ? 1 : 0;
+			var dynDrop = document.getElementById("pref-dynamicDropdown").checked ? 1 : 0;
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=saveFEMacroTestPreferences",
+				"twoColumnView=" + twoCol +
+				"&showSequencePane=" + showSeq +
+				"&dynamicDropdown=" + dynDrop);
+		} //end saveFEMacroTestPreferences()
+
+		//=====================================================================================
+		//loadFEMacroTestPreferences ~~
+		function loadFEMacroTestPreferences() {
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=loadFEMacroTestPreferences", "",
+				function (req) {
+					var twoCol = DesktopContent.getXMLValue(req, "twoColumnView");
+					var showSeq = DesktopContent.getXMLValue(req, "showSequencePane");
+					var dynDrop = DesktopContent.getXMLValue(req, "dynamicDropdown");
+
+					if (!twoCol && twoCol !== "0") return;
+
+					var twoColVal = (twoCol | 0) ? true : false;
+					var showSeqVal = (showSeq | 0) ? true : false;
+					var dynDropVal = (dynDrop | 0) ? true : false;
+
+					document.getElementById("pref-twoColumnView").checked = twoColVal;
+					document.getElementById("pref-showSequencePane").checked = showSeqVal;
+					document.getElementById("pref-dynamicDropdown").checked = dynDropVal;
+
+					if (twoColVal != !verticalOrientation_)
+						toggleView();
+					if (showSeqVal != sequenceMode_)
+						toggleSequenceMode();
+					_useDynamicDropdown = dynDropVal;
+				});
+		} //end loadFEMacroTestPreferences()
 
 		//=====================================================================================
 		//init ~~
@@ -743,6 +814,7 @@
 					Debug.log("macroModules_", macroModules_);
 
 					redraw();
+					loadFEMacroTestPreferences();
 					return;
 
 				}); //end getFEMacroList handler
@@ -2375,6 +2447,7 @@ Here is the json string received:
 				el._scrollListenerAdded = true;
 
 				function macroNameExpandSelect(self) {
+					if (!_useDynamicDropdown) return;
 					var rect = self.getBoundingClientRect();
 					var rowHeight = rect.height / self.size;
 					var availableHeight = window.innerHeight - rect.top - 20;
@@ -2384,6 +2457,7 @@ Here is the json string received:
 						self.size = expandedSize;
 				}
 				function macroNameCollapseSize(self) {
+					if (!_useDynamicDropdown) return self._normalSize;
 					return self._hasSelection ? 1 : self._normalSize;
 				}
 				function macroNameShowFilter(self, show) {
@@ -2425,6 +2499,7 @@ Here is the json string received:
 					this.scrollTop += ev.deltaY;
 				}, {passive: false});
 				el.addEventListener("mouseenter", function () {
+					if (!_useDynamicDropdown) return;
 					macroNameCancelCollapseTimer(this);
 					if (this._hasSelection && this.size < this._normalSize) {
 						this.size = this._normalSize;
@@ -2531,9 +2606,10 @@ Here is the json string received:
 			}
 
 			selectEl._hasSelection = true;
-			selectEl.size = 1;
+			if (_useDynamicDropdown)
+				selectEl.size = 1;
 			var filterEl = document.getElementById("macroNameFilter-row-" + r + "-col-" + c);
-			if (filterEl) filterEl.style.display = "none";
+			if (_useDynamicDropdown && filterEl) filterEl.style.display = "none";
 			var clearBtn = document.getElementById("macroNameFilterClear-row-" + r + "-col-" + c);
 			if (clearBtn) clearBtn.style.display = "none";
 
@@ -4981,12 +5057,30 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-	<a onclick="toggleView()">Toggle 2-Column View</a>
-	<a id="#macroModule-sequence" style="margin-left: 20px;" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Toggle Macro-of-Macros (MoM) Sequence Pane</a><br>
-	<div style='width:550px'></div>
+	<div id="settingsIconContainer" style="display:inline-block; cursor:pointer; padding: 4px;"
+		onclick="toggleSettingsPopup()" title="Click to open FE Macro Test settings">
+		<img src="/WebPath/images/dashboardImages/icon-Settings.png"
+			style="width:22px; height:22px; vertical-align:middle;">
+	</div>
 
-	<!--<a onclick='init();'>Refresh</a>
-		<br>-->
+	<div id="popupSettings" class="smallPopup" style="width:320px; min-height:auto; left:30%; margin-left:0; top:60px;">
+		<h4 style="margin-top:0;">FE Macro Test Settings</h4>
+		<div style="text-align:left; margin: 10px 0;">
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-twoColumnView" onchange="applyAndSavePreferences()">
+				Use 2-Column View
+			</label>
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-showSequencePane" onchange="applyAndSavePreferences()">
+				Show Macro-of-Macros Sequence Pane
+			</label>
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-dynamicDropdown" onchange="applyAndSavePreferences()">
+				Use Dynamic FE Macro Dropdown
+			</label>
+		</div>
+		<button onclick="toggleSettingsPopup()">Close</button>
+	</div>
 
 	<div id="popupClearHistoryConfirm" class="smallPopup">
 		<h4>You will be clearing command history. Do you wish to continue?</h4>

@@ -23,6 +23,9 @@
 #define MACROS_HIST_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/MacroHistory/"
 #define MACROS_SEQUENCE_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/MacroSequence/"
 #define MACROS_EXPORT_PATH std::string("/MacroExport/")
+#define USER_FEMACROTEST_PREF_PATH \
+	std::string(__ENV__("SERVICE_DATA_PATH")) + "/FEMacroTestPreferences/"
+#define FEMACROTEST_PREF_FILETYPE "pref"
 
 #define SEQUENCE_FILE_NAME \
 	std::string(__ENV__("SERVICE_DATA_PATH")) + "/OtsWizardData/sequence.dat"
@@ -49,6 +52,7 @@ MacroMakerSupervisor::MacroMakerSupervisor(xdaq::ApplicationStub* stub)
 	mkdir(((std::string)MACROS_HIST_PATH).c_str(), 0755);
 	mkdir(((std::string)MACROS_SEQUENCE_PATH).c_str(), 0755);
 	mkdir((__ENV__("SERVICE_DATA_PATH") + MACROS_EXPORT_PATH).c_str(), 0755);
+	mkdir(((std::string)USER_FEMACROTEST_PREF_PATH).c_str(), 0755);
 
 	xoap::bind(this,
 	           &MacroMakerSupervisor::frontEndCommunicationRequest,
@@ -1054,6 +1058,71 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 		deleteFEMacroSequence(cgi, userInfo.username_);
 	else if(Command == "makeSequencePublic")
 		makeSequencePublic(cgi, userInfo.username_);
+	else if(Command == "saveFEMacroTestPreferences")
+	{
+		int twoColumnView  = CgiDataUtilities::postDataAsInt(cgi, "twoColumnView");
+		int showSequencePane = CgiDataUtilities::postDataAsInt(cgi, "showSequencePane");
+		int dynamicDropdown = CgiDataUtilities::postDataAsInt(cgi, "dynamicDropdown");
+
+		if(userInfo.username_ == "")
+		{
+			__SUP_COUT_ERR__ << "Invalid user found! user=" << userInfo.username_
+			                 << __E__;
+			xmldoc.addTextElementToData("Error", "Error - Invalid user found.");
+			return;
+		}
+
+		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ + "." +
+		                 (std::string)FEMACROTEST_PREF_FILETYPE;
+
+		FILE* fp = fopen(fn.c_str(), "w");
+		if(!fp)
+		{
+			__SS__;
+			__THROW__(ss.str() + "Could not open file: " + fn);
+		}
+		fprintf(fp, "twoColumnView %d\n", twoColumnView);
+		fprintf(fp, "showSequencePane %d\n", showSequencePane);
+		fprintf(fp, "dynamicDropdown %d\n", dynamicDropdown);
+		fclose(fp);
+	}
+	else if(Command == "loadFEMacroTestPreferences")
+	{
+		if(userInfo.username_ == "")
+		{
+			__SUP_COUT_ERR__ << "Invalid user found! user=" << userInfo.username_
+			                 << __E__;
+			xmldoc.addTextElementToData("Error", "Error - Invalid user found.");
+			return;
+		}
+
+		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ + "." +
+		                 (std::string)FEMACROTEST_PREF_FILETYPE;
+
+		FILE* fp = fopen(fn.c_str(), "r");
+		if(!fp)
+		{
+			__SUP_COUT__ << "Returning defaults." << __E__;
+			xmldoc.addTextElementToData("twoColumnView", "0");
+			xmldoc.addTextElementToData("showSequencePane", "0");
+			xmldoc.addTextElementToData("dynamicDropdown", "0");
+			return;
+		}
+		unsigned int twoColumnView, showSequencePane, dynamicDropdown;
+		fscanf(fp, "%*s %u", &twoColumnView);
+		fscanf(fp, "%*s %u", &showSequencePane);
+		if(fscanf(fp, "%*s %u", &dynamicDropdown) != 1)
+			dynamicDropdown = 0;
+		fclose(fp);
+
+		char tmpStr[20];
+		sprintf(tmpStr, "%u", twoColumnView);
+		xmldoc.addTextElementToData("twoColumnView", tmpStr);
+		sprintf(tmpStr, "%u", showSequencePane);
+		xmldoc.addTextElementToData("showSequencePane", tmpStr);
+		sprintf(tmpStr, "%u", dynamicDropdown);
+		xmldoc.addTextElementToData("dynamicDropdown", tmpStr);
+	}
 	else
 		xmldoc.addTextElementToData("Error",
 		                            "Command '" + Command +
