@@ -10,6 +10,7 @@
 #include <dirent.h>    //for DIR
 #include <stdio.h>     //for file rename
 #include <sys/stat.h>  //for mkdir
+#include <unistd.h>    //for truncate
 #include <chrono>
 #include <cstdio>
 #include <filesystem>  //for std::filesytem
@@ -2036,21 +2037,50 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 	if(completeTime == 0)
 		completeTime = launchTime;
 
-	//prevent repeats to FE command history (otherwise live view can overwhelm history)
-	auto feHistoryIt = lastFeCommandToHistory_.find(username);
-	if(feHistoryIt != lastFeCommandToHistory_.end() && feHistoryIt->second.size() == 7 &&
-	   feHistoryIt->second[0] == feClass && feHistoryIt->second[1] == feUID &&
-	   feHistoryIt->second[2] == macroType && feHistoryIt->second[3] == macroName &&
-	   feHistoryIt->second[4] == inputArgs && feHistoryIt->second[5] == outputArgs &&
-	   feHistoryIt->second[6] == (saveOutputs ? "1" : "0"))
-	{
-		__SUP_COUTT__ << "Not saving repeat command to history from user " << username
-		              << __E__;
-		return;
-	}
-
 	std::string fileName = "FEhistory.hist";
 	std::string fullPath = (std::string)MACROS_HIST_PATH + username + "/" + fileName;
+
+	auto feHistoryIt = lastFeCommandToHistory_.find(username);
+	bool isRepeat = (feHistoryIt != lastFeCommandToHistory_.end() &&
+	                 feHistoryIt->second.size() == 7 &&
+	                 feHistoryIt->second[0] == feClass &&
+	                 feHistoryIt->second[1] == feUID &&
+	                 feHistoryIt->second[2] == macroType &&
+	                 feHistoryIt->second[3] == macroName);
+
+	unsigned int repeatCount;
+	time_t       origLaunchTime;
+
+	if(isRepeat)
+	{
+		repeatCount    = lastFeRepeatCount_[username] + 1;
+		origLaunchTime = lastFeLaunchTime_[username];
+
+		auto posIt = lastFeRecordFilePos_.find(username);
+		if(posIt != lastFeRecordFilePos_.end() && posIt->second > 0)
+		{
+			struct stat fileStat;
+			if(stat(fullPath.c_str(), &fileStat) == 0 &&
+			   fileStat.st_size >= posIt->second)
+			{
+				truncate(fullPath.c_str(), posIt->second);
+			}
+		}
+
+		__SUP_COUTT__ << "Incrementing repeat count to " << repeatCount
+		              << " for command to history from user " << username << __E__;
+	}
+	else
+	{
+		repeatCount    = 1;
+		origLaunchTime = launchTime;
+	}
+
+	struct stat fileStat;
+	off_t       filePos = 0;
+	if(stat(fullPath.c_str(), &fileStat) == 0)
+		filePos = fileStat.st_size;
+
 	__SUP_COUT__ << fullPath << __E__;
 	std::ofstream histfile(fullPath.c_str(), std::ios::app);
 	if(histfile.is_open())
@@ -2062,8 +2092,10 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		histfile << "\"macroName\":\"" << macroName << "\",\n";
 		histfile << "\"inputArgs\":\"" << inputArgs << "\",\n";
 		histfile << "\"outputArgs\":\"" << outputArgs << "\",\n";
-		histfile << "\"launchTime\":\"" << launchTime << "\",\n";
+		histfile << "\"launchTime\":\"" << origLaunchTime << "\",\n";
 		histfile << "\"completeTime\":\"" << completeTime << "\",\n";
+		if(repeatCount > 1)
+			histfile << "\"repeatCount\":\"" << repeatCount << "\",\n";
 		if(saveOutputs)
 			histfile << "\"saveOutputs\":\"" << 1 << "\"\n";
 		else
@@ -2071,7 +2103,7 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		histfile << "}#" << __E__;
 		histfile.close();
 
-		lastFeCommandToHistory_[username].clear();  //create instance and/or clear
+		lastFeCommandToHistory_[username].clear();
 		feHistoryIt = lastFeCommandToHistory_.find(username);
 		feHistoryIt->second.push_back(feClass);
 		feHistoryIt->second.push_back(feUID);
@@ -2080,6 +2112,10 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		feHistoryIt->second.push_back(inputArgs);
 		feHistoryIt->second.push_back(outputArgs);
 		feHistoryIt->second.push_back((saveOutputs ? "1" : "0"));
+
+		lastFeRepeatCount_[username]    = repeatCount;
+		lastFeRecordFilePos_[username]  = filePos;
+		lastFeLaunchTime_[username]     = origLaunchTime;
 	}
 	else
 	{

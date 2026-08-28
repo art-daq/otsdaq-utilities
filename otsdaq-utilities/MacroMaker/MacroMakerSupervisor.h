@@ -256,6 +256,9 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	std::map<std::string /* username */,
 	         std::vector<std::string> /* last command */>
 	    lastFeCommandToHistory_;  ///<prevent repeats to history
+	std::map<std::string /* username */, unsigned int>  lastFeRepeatCount_;
+	std::map<std::string /* username */, off_t>         lastFeRecordFilePos_;
+	std::map<std::string /* username */, time_t>        lastFeLaunchTime_;
 
 	std::vector<std::shared_ptr<runFEMacroGroupStruct>> feMacroRunThreadStruct_;
 	std::atomic<uint64_t>                               feMacroRunGroupIDCounter_{0};
