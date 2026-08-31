@@ -1060,9 +1060,9 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 		makeSequencePublic(cgi, userInfo.username_);
 	else if(Command == "saveFEMacroTestPreferences")
 	{
-		int twoColumnView  = CgiDataUtilities::postDataAsInt(cgi, "twoColumnView");
+		int twoColumnView    = CgiDataUtilities::postDataAsInt(cgi, "twoColumnView");
 		int showSequencePane = CgiDataUtilities::postDataAsInt(cgi, "showSequencePane");
-		int dynamicDropdown = CgiDataUtilities::postDataAsInt(cgi, "dynamicDropdown");
+		int dynamicDropdown  = CgiDataUtilities::postDataAsInt(cgi, "dynamicDropdown");
 
 		if(userInfo.username_ == "")
 		{
@@ -1072,8 +1072,8 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 			return;
 		}
 
-		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ + "." +
-		                 (std::string)FEMACROTEST_PREF_FILETYPE;
+		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ +
+		                 "." + (std::string)FEMACROTEST_PREF_FILETYPE;
 
 		FILE* fp = fopen(fn.c_str(), "w");
 		if(!fp)
@@ -1096,8 +1096,8 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 			return;
 		}
 
-		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ + "." +
-		                 (std::string)FEMACROTEST_PREF_FILETYPE;
+		std::string fn = (std::string)USER_FEMACROTEST_PREF_PATH + userInfo.username_ +
+		                 "." + (std::string)FEMACROTEST_PREF_FILETYPE;
 
 		FILE* fp = fopen(fn.c_str(), "r");
 		if(!fp)
@@ -2110,12 +2110,11 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 	std::string fullPath = (std::string)MACROS_HIST_PATH + username + "/" + fileName;
 
 	auto feHistoryIt = lastFeCommandToHistory_.find(username);
-	bool isRepeat = (feHistoryIt != lastFeCommandToHistory_.end() &&
-	                 feHistoryIt->second.size() == 7 &&
-	                 feHistoryIt->second[0] == feClass &&
-	                 feHistoryIt->second[1] == feUID &&
-	                 feHistoryIt->second[2] == macroType &&
-	                 feHistoryIt->second[3] == macroName);
+	bool isRepeat =
+	    (feHistoryIt != lastFeCommandToHistory_.end() &&
+	     feHistoryIt->second.size() == 7 && feHistoryIt->second[0] == feClass &&
+	     feHistoryIt->second[1] == feUID && feHistoryIt->second[2] == macroType &&
+	     feHistoryIt->second[3] == macroName);
 
 	unsigned int repeatCount;
 	time_t       origLaunchTime;
@@ -2182,9 +2181,9 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 		feHistoryIt->second.push_back(outputArgs);
 		feHistoryIt->second.push_back((saveOutputs ? "1" : "0"));
 
-		lastFeRepeatCount_[username]    = repeatCount;
-		lastFeRecordFilePos_[username]  = filePos;
-		lastFeLaunchTime_[username]     = origLaunchTime;
+		lastFeRepeatCount_[username]   = repeatCount;
+		lastFeRecordFilePos_[username] = filePos;
+		lastFeLaunchTime_[username]    = origLaunchTime;
 	}
 	else
 	{
