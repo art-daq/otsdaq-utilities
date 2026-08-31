@@ -46,9 +46,6 @@
 			border: 0;
 		}
 
-		.macroModuleTable td:first-child {
-			min-width: 170px;
-		}
 
 		body .macroModule {
 			margin: auto;
@@ -1930,14 +1927,13 @@ Here is the json string received:
 						str += "</td></tr>"; //end row for Macro Name
 					} //end Macro Name html
 
+					str += "</table>"; //end macroModuleTable before detail (so detail content does not influence column widths)
+
 					{ //Macro Detail html
-						str += DesktopContent.htmlOpen("tr"); //start row for Macro Detail
-						str += DesktopContent.htmlOpen("td", {
-							"colspan": "2",
+						str += DesktopContent.htmlOpen("div", {
 							"id": "macroDetail-row-" + r + "-col-" + c,
 							"class": "macroDetail",
 						}, "" /*innerHTML*/, true /*doCloseTag*/);
-						str += "</tr>"; //end row for Macro Detail
 					} //end Macro Detail html
 
 					el = document.getElementById("macroModule-row-" +
@@ -2787,6 +2783,7 @@ Here is the json string received:
 			el = document.getElementById("macroDetail-row-" +
 				r + "-col-" + c);
 			el.innerHTML = str;
+
 		} //end handleSelectedMacroName
 
 		//=====================================================================================
@@ -5057,11 +5054,8 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-	<div id="settingsIconContainer" style="display:inline-block; cursor:pointer; padding: 4px;"
-		onclick="toggleSettingsPopup()" title="Click to open FE Macro Test settings">
-		<img src="/WebPath/images/dashboardImages/icon-Settings.png"
-			style="width:22px; height:22px; vertical-align:middle;">
-	</div>
+	<div id="settingsIconContainer" style="display:inline-block; cursor:pointer; margin: -5px 0 -15px 22px; font-size:44px; color:#555; line-height:0.8; height:36px; overflow:hidden;"
+		onclick="toggleSettingsPopup()" title="Click to open FE Macro user settings">&#9881;</div>
 
 	<div id="popupSettings" class="smallPopup" style="width:320px; min-height:auto; left:30%; margin-left:0; top:60px;">
 		<h4 style="margin-top:0;">FE Macro Test Settings</h4>
