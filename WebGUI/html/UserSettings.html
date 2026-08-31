@@ -76,6 +76,7 @@
 		//colorEditHandler(e)
 		//setLayout(i,mouseEvent)
 		//updateAccount(i)
+		//resetAccountPassword(i)
 		//deleteAccount(i)
 		//createNewAccount(event)
 		//reallyDelete(event)			//really delete the user accout
@@ -662,6 +663,9 @@
 
 			var el = document.getElementById("jumpToAccounts");
 			var htmlStr = "";
+			var canManageAccounts = DesktopContent._sequence ||
+				(_desktopUserPermissions &&
+					_desktopUserPermissions.indexOf("allUsers: 255") >= 0);
 
 			if (el) //in wiz mode, there is now jump link
 			{
@@ -738,8 +742,10 @@
 					"<a onmouseup='sortAccountsBy(" + j + ")';event.stopPropagation(); return false;'" +
 					" title='Sort by " + _accountFields[j] + "'>" +
 					_accountFieldNames[j] + "<a/></td>";
-			htmlStr += "<td class='accountsHeaderFld' title='Make Account Changes'>Update</td>" +
-				"<td class='accountsHeaderFld' title='Delete Account'>Remove</td>";
+			if (canManageAccounts)
+				htmlStr += "<td class='accountsHeaderFld' title='Make Account Changes'>Update</td>" +
+					"<td class='accountsHeaderFld' title='Delete Account'>Remove</td>";
+			htmlStr += "<td class='accountsHeaderFld' title='Generate a New Account Code'>Reset Password</td>";
 			htmlStr += "<td class='accountsHeaderFld' title='New Account Code'>NAC</td>" +
 				"<td class='accountsHeaderFld' title='Lock ots to single user'>Lock</td>";
 			htmlStr += "</tr>";
@@ -747,37 +753,46 @@
 			var lockModeTmp;
 			for (i = _AccountsPageIndex * _AccountsPageSize; i < _AccountsOrderArray.length &&
 				i < _AccountsPageIndex * _AccountsPageSize + _AccountsPageSize; ++i) {
+				var accountIndex = _AccountsOrderArray[i];
+				var accountUsername = _accountsArray[0][accountIndex].getAttribute('value');
 				htmlStr += "<tr><td class='accountsUsername'>" +
-					_accountsArray[0][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
-				htmlStr += "<td><input type='text' class='actEmailInput' id='accountsEmail" + _AccountsOrderArray[i] + "' value='" +
-					_accountsArray[1][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-					"onkeydown='return handleEmailInputKeyDown(event);'" +
-					"></td>";
-				htmlStr += "<td><input type='text' class='actDispNameInput' id='accountsDisplayName" + _AccountsOrderArray[i] + "' value='" +
-					_accountsArray[2][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-					"onkeydown='return handleAccountsInputKeyDown(event);'" +
-					"></td>";
-				htmlStr += "<td><input type='text' class='actPermInput' id='accountsPermissions" + _AccountsOrderArray[i] + "' value='" +
-					_accountsArray[3][_AccountsOrderArray[i]].getAttribute('value') + "' " +
-					"onkeydown='return handleAccountsInputKeyDown(event)'" +
-					"></td>";
-				htmlStr += "<td><a onmouseup='updateAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
-					" title='Make Account Changes'>Update</a></td>";
-				htmlStr += "<td><a onmouseup='deleteAccount(" + _AccountsOrderArray[i] + "); event.stopPropagation(); return false;'" +
-					" title='Delete Account'>X</a></td>";
+					escapeHtml(accountUsername) + "</td>";
+				if (canManageAccounts) {
+					htmlStr += "<td><input type='text' class='actEmailInput' id='accountsEmail" + accountIndex + "' value='" +
+						escapeHtml(_accountsArray[1][accountIndex].getAttribute('value')) + "' " +
+						"onkeydown='return handleEmailInputKeyDown(event);'></td>";
+					htmlStr += "<td><input type='text' class='actDispNameInput' id='accountsDisplayName" + accountIndex + "' value='" +
+						escapeHtml(_accountsArray[2][accountIndex].getAttribute('value')) + "' " +
+						"onkeydown='return handleAccountsInputKeyDown(event);'></td>";
+					htmlStr += "<td><input type='text' class='actPermInput' id='accountsPermissions" + accountIndex + "' value='" +
+						escapeHtml(_accountsArray[3][accountIndex].getAttribute('value')) + "' " +
+						"onkeydown='return handleAccountsInputKeyDown(event)'></td>";
+					htmlStr += "<td><a onmouseup='updateAccount(" + accountIndex + "); event.stopPropagation(); return false;'" +
+						" title='Make Account Changes'>Update</a></td>";
+					htmlStr += "<td><a onmouseup='deleteAccount(" + accountIndex + "); event.stopPropagation(); return false;'" +
+						" title='Delete Account'>X</a></td>";
+				}
+				else {
+					htmlStr += "<td>" + escapeHtml(_accountsArray[1][accountIndex].getAttribute('value')) + "</td>";
+					htmlStr += "<td>" + escapeHtml(_accountsArray[2][accountIndex].getAttribute('value')) + "</td>";
+					htmlStr += "<td>" + escapeHtml(_accountsArray[3][accountIndex].getAttribute('value')) + "</td>";
+				}
+				htmlStr += "<td><input type='submit' onmouseup='resetAccountPassword(" + accountIndex + "); " +
+					"event.stopPropagation(); return false;' value='Reset Password' " +
+					"title='Reset password and generate a new NAC'></td>";
 				htmlStr += "<td class='accountsNac' title='New Account Code'>" +
-					_accountsArray[4][_AccountsOrderArray[i]].getAttribute('value') + "</td>";
+					escapeHtml(_accountsArray[4][accountIndex].getAttribute('value')) + "</td>";
 				htmlStr += "<td>";
 
 				//for user lock
 				if (_usernameWithLock == "") //no one has lock
 					lockModeTmp = 1;
-				else if (_usernameWithLock == _accountsArray[0][_AccountsOrderArray[i]].getAttribute('value')) //user has lock
+				else if (_usernameWithLock == accountUsername) //user has lock
 					lockModeTmp = 0;
 				else lockModeTmp = 2;
 
 				if (lockModeTmp != 2) //only output something if mode 0 or 1
-					htmlStr += "<a onmouseup='lockToUsername(" + _AccountsOrderArray[i] + "," +
+					htmlStr += "<a onmouseup='lockToUsername(" + accountIndex + "," +
 						lockModeTmp + ")'; event.stopPropagation(); return false;' title='Lock ots to single user'>" +
 						"<img src='/WebPath/images/dashboardImages/icon-Settings-" +
 						(lockModeTmp ? "Unl" : "L") + "ock.png'></a>";
@@ -804,20 +819,22 @@
 			htmlStr += "<center style='padding-top: 5px;'><input id='theRealDelete' style='display:none' type='submit' onmouseup='reallyDelete(event);' value='Really Delete!'></center><br>";
 			//////////////////////////////////////////////////////
 			//add new account option
-			htmlStr += "<div class='accountsWidthMatch'>";
-			htmlStr += "<h3 style='margin-bottom: -30px; margin-top: 10px;'>Create New Account:</h3>";
-			htmlStr += "<table><tr>";
-			for (j = 0; j < _accountFields.length - 1; ++j) //omit nac field
-				htmlStr += "<td class='accountsHeaderFld'>" + _accountFieldNames[j] + "</td>";
-			htmlStr += "</tr><tr>";
-			htmlStr += "<td><input type='text' id='accountsUsernameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-			htmlStr += "<td><input type='text' id='accountsEmailNew' value='' onkeydown='return handleEmailInputKeyDown(event)'></td> ";
-			htmlStr += "<td><input type='text' id='accountsDisplayNameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-			htmlStr += "<td><input type='text' id='accountsPermissionsNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
-			htmlStr += "<td></td><br><br>";
-			htmlStr += "</tr></table>";
-			htmlStr += "<center><div style='padding-top: 10px'><input id='newacct' type='submit' onmouseup='createNewAccount(event);' value='Create New Account'></div></center>";
-			htmlStr += "</div>";
+			if (canManageAccounts) {
+				htmlStr += "<div class='accountsWidthMatch'>";
+				htmlStr += "<h3 style='margin-bottom: -30px; margin-top: 10px;'>Create New Account:</h3>";
+				htmlStr += "<table><tr>";
+				for (j = 0; j < _accountFields.length - 1; ++j) //omit nac field
+					htmlStr += "<td class='accountsHeaderFld'>" + _accountFieldNames[j] + "</td>";
+				htmlStr += "</tr><tr>";
+				htmlStr += "<td><input type='text' id='accountsUsernameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+				htmlStr += "<td><input type='text' id='accountsEmailNew' value='' onkeydown='return handleEmailInputKeyDown(event)'></td> ";
+				htmlStr += "<td><input type='text' id='accountsDisplayNameNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+				htmlStr += "<td><input type='text' id='accountsPermissionsNew' value='' onkeydown='return handleAccountsInputKeyDown(event)'></td> ";
+				htmlStr += "<td></td><br><br>";
+				htmlStr += "</tr></table>";
+				htmlStr += "<center><div style='padding-top: 10px'><input id='newacct' type='submit' onmouseup='createNewAccount(event);' value='Create New Account'></div></center>";
+				htmlStr += "</div>";
+			}
 
 			el.innerHTML = htmlStr;
 
@@ -1535,6 +1552,29 @@
 		} //end updateAccount()
 
 		//=====================================================================================
+		function resetAccountPassword(i) {
+			var username = _accountsArray[0][i].getAttribute('value');
+			DesktopContent.popUpVerification(
+				"Reset the password for <b>" + escapeHtml(username) + "</b>?<br><br>" +
+				"The current password will stop working and a new NAC will be generated.",
+				function () {
+					var data = "type=resetPassword&username=" + encodeURIComponent(username) + "&";
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=accountSettings&accounts=1", data,
+						function (req) {
+							settingsRequestHandler(req);
+							for (var accountIndex = 0; accountIndex < _accountsArray[0].length; ++accountIndex)
+								if (_accountsArray[0][accountIndex].getAttribute('value') == username) {
+									var nac = _accountsArray[4][accountIndex].getAttribute('value');
+									Debug.info("Password reset for <b>" + escapeHtml(username) +
+										"</b>. New NAC: <b>" + escapeHtml(nac) + "</b>");
+									break;
+								}
+						});
+				});
+		} //end resetAccountPassword()
+
+		//=====================================================================================
 		function deleteAccount(i) {
 			Debug.log("Settings deleteAccount-" + i);
 			_theDeleteIndex = i;
@@ -1638,9 +1678,8 @@
 		function showPermissionsTooltip(alwaysShow) {
 			DesktopContent.tooltip(alwaysShow ? "ALWAYS" : "Password Reset and User Permissions",
 				(alwaysShow ? "<b>Help with Password Reset and User Permissions:</b>\n\n" : "") +
-				"First off, to do a <b>password reset</b> for a user, a system admin must toggle the user's " +
-				"<b>permissions string</b>. Setting it to 0, and then back to a valid <b>permissions string</b> should force " +
-				"the user to have to create a new password with a <b>New Account Code</b> (NAC)." +
+				"Use <b>Reset Password</b> to invalidate the current password and generate a " +
+				"<b>New Account Code</b> (NAC). Each user can reset their own password, and admins can reset any user's password." +
 				"\n\n" +
 				"Now, for more on permissions..." +
 				"\n\n" +
@@ -1663,7 +1702,7 @@
 				"and 0 (i.e. <i>inactive</i>) for Calorimeter requests." +
 				"\n\n\n" +
 				"The expected interpretation of <b>permission index</b> values are as follows (any number from 0 to 255 is valid): " +
-				"\n\n<INDENT><b>0 := Inactive (reset account password)\n10 := Standard User\n100 := Expert\n255 := Admin" +
+				"\n\n<INDENT><b>0 := Inactive\n10 := Standard User\n100 := Expert\n255 := Admin" +
 				"</b></INDENT>" +
 				"\n\n" +
 				"On the server side, system administrators must setup <b>Application Supervisor</b> request handling for custom <b>group names</b> to be effective. " +
