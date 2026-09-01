@@ -9936,6 +9936,11 @@
 					}
 
 
+					if (colType == "UID" || colType == "UniqueData")
+					{
+						str += _OK_CANCEL_DIALOG_STR;
+					}
+					else
 					{
 						var sibCtx = getSiblingContext();
 						var sibBtns = " | " +
@@ -11489,8 +11494,9 @@
 						controlString += "</div>";
 					}
 					else {
-						var hasGroupId = localTableHasGroupIdForRow(r);
-						var tableW = hasGroupId ? 490 : 325;
+						var isUniqueCol = (colType == "UID" || colType == "UniqueData");
+						var hasGroupId = !isUniqueCol && localTableHasGroupIdForRow(r);
+						var tableW = isUniqueCol ? 95 : (hasGroupId ? 490 : 325);
 						controlString = "<div title='' style='padding:5px;background-color:#eeeeee;" +
 							"border:1px solid #555555;position:relative;z-index:2000;" +
 							"width:" + tableW + "px;height:20px;margin:0 -" + (tableW + 27) + "px -32px 10px;" +
@@ -11500,11 +11506,12 @@
 							"<b style='color:green;font-size: 16px;'>OK</b></a> | " +
 							"<a class='popUpOkCancel' onclick='editCellCancel(); event.stopPropagation();' " +
 							"onmouseup='event.stopPropagation();' title='Discard Changes' style='color:red'>" +
-							"<b style='color:red;font-size: 16px;'>Cancel</b></a> | " +
-							"<a class='popUpOkCancel' onclick='editCellSetAllInTable(); event.stopPropagation();' " +
-							"onmouseup='event.stopPropagation();' " +
-							"title='Set this value for all records in the table' style='color:blue'>" +
-							"<b style='color:blue;font-size: 14px;'>Set for all in Table</b></a>" +
+							"<b style='color:red;font-size: 16px;'>Cancel</b></a>" +
+							(isUniqueCol ? "" :
+								" | <a class='popUpOkCancel' onclick='editCellSetAllInTable(); event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"title='Set this value for all records in the table' style='color:blue'>" +
+								"<b style='color:blue;font-size: 14px;'>Set for all in Table</b></a>") +
 							(hasGroupId ?
 								" | <a class='popUpOkCancel' onclick='editCellSetAllInGroup(); event.stopPropagation();' " +
 								"onmouseup='event.stopPropagation();' " +
@@ -15013,7 +15020,6 @@
 					Debug.log("No group context found.", Debug.WARN_PRIORITY);
 					return;
 				}
-				Debug.log("Group container idString: " + ctx.groupContainerIdString);
 				var childrenContainer = document.getElementById(
 					"treeNode-ChildrenOf-" + ctx.groupContainerIdString);
 				if (!childrenContainer) {
@@ -15022,18 +15028,13 @@
 				}
 				var allUidEls = childrenContainer.getElementsByClassName(
 					"treeNode-Value-nodeEditType-uid");
-				Debug.log("Total recursive uid els in container: " + allUidEls.length);
 				var siblingUidEls = [];
 				for (var i = 0; i < allUidEls.length; ++i) {
 					var sibIdStr = allUidEls[i].id.substr("treeNode-Value-".length);
 					var sibParentEl = document.getElementById("treeNode-ParentId-" + sibIdStr);
-					Debug.log("  uid el[" + i + "] id=" + sibIdStr +
-						" parentId=" + (sibParentEl ? sibParentEl.textContent : "null") +
-						" match=" + (sibParentEl ? (sibParentEl.textContent == ctx.groupContainerIdString) : false));
 					if (sibParentEl && sibParentEl.textContent == ctx.groupContainerIdString)
 						siblingUidEls.push(allUidEls[i]);
 				}
-				Debug.log("Filtered sibling uid els: " + siblingUidEls.length);
 				if (!siblingUidEls.length) {
 					Debug.log("No sibling records found in group.", Debug.WARN_PRIORITY);
 					return;
