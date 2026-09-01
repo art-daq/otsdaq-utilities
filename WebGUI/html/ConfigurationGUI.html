@@ -16536,7 +16536,7 @@
 
 			var numDataRows;
 			if (_tableViewIsTransposed)
-				numDataRows = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td").length - (_CONFIG_DATA_ROW_OFFSET);
+				numDataRows = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td").length + 1 - _CONFIG_DATA_ROW_OFFSET;
 			else
 				numDataRows = rows.length - _CONFIG_DATA_ROW_OFFSET;
 
@@ -16557,7 +16557,7 @@
 			for (var ri = 0; ri < numDataRows; ++ri) {
 				var cell;
 				if (_tableViewIsTransposed)
-					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET + ri];
+					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri];
 				else
 					cell = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c];
 
@@ -16640,7 +16640,7 @@
 				(rows.length - _CONFIG_DATA_COL_OFFSET) :
 				(rows[0].getElementsByTagName("td").length - _CONFIG_DATA_COL_OFFSET);
 			var numDataRows = _tableViewIsTransposed ?
-				(rows[_CONFIG_DATA_COL_OFFSET].getElementsByTagName("td").length - _CONFIG_DATA_ROW_OFFSET) :
+				(rows[_CONFIG_DATA_COL_OFFSET].getElementsByTagName("td").length + 1 - _CONFIG_DATA_ROW_OFFSET) :
 				(rows.length - _CONFIG_DATA_ROW_OFFSET);
 
 			var myGroupIds = [];
@@ -16718,7 +16718,7 @@
 				var ri = matchingRows[mi];
 				var cell;
 				if (_tableViewIsTransposed)
-					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET + ri];
+					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri];
 				else
 					cell = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c];
 
