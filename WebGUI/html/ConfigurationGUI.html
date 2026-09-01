@@ -775,6 +775,7 @@
 
 		var _siblingSaveQueue_ = [];
 		var _siblingSaving_ = false;
+		var _siblingSavedUIDs_ = [];
 
 		var _memberMapForGroupSave = {}; //used by saveTableGroupAsNewKey()
 
@@ -11488,7 +11489,8 @@
 						controlString += "</div>";
 					}
 					else {
-						var tableW = 325;
+						var hasGroupId = localTableHasGroupIdForRow(r);
+						var tableW = hasGroupId ? 490 : 325;
 						controlString = "<div title='' style='padding:5px;background-color:#eeeeee;" +
 							"border:1px solid #555555;position:relative;z-index:2000;" +
 							"width:" + tableW + "px;height:20px;margin:0 -" + (tableW + 27) + "px -32px 10px;" +
@@ -11503,6 +11505,12 @@
 							"onmouseup='event.stopPropagation();' " +
 							"title='Set this value for all records in the table' style='color:blue'>" +
 							"<b style='color:blue;font-size: 14px;'>Set for all in Table</b></a>" +
+							(hasGroupId ?
+								" | <a class='popUpOkCancel' onclick='editCellSetAllInGroup(); event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"title='Set this value for all records sharing the same GroupID' style='color:blue'>" +
+								"<b style='color:blue;font-size: 14px;'>Set for all in Group</b></a>"
+								: "") +
 							"</div>";
 					}
 
@@ -15005,14 +15013,27 @@
 					Debug.log("No group context found.", Debug.WARN_PRIORITY);
 					return;
 				}
+				Debug.log("Group container idString: " + ctx.groupContainerIdString);
 				var childrenContainer = document.getElementById(
 					"treeNode-ChildrenOf-" + ctx.groupContainerIdString);
 				if (!childrenContainer) {
 					Debug.log("Cannot find group sibling container.", Debug.WARN_PRIORITY);
 					return;
 				}
-				var siblingUidEls = childrenContainer.getElementsByClassName(
+				var allUidEls = childrenContainer.getElementsByClassName(
 					"treeNode-Value-nodeEditType-uid");
+				Debug.log("Total recursive uid els in container: " + allUidEls.length);
+				var siblingUidEls = [];
+				for (var i = 0; i < allUidEls.length; ++i) {
+					var sibIdStr = allUidEls[i].id.substr("treeNode-Value-".length);
+					var sibParentEl = document.getElementById("treeNode-ParentId-" + sibIdStr);
+					Debug.log("  uid el[" + i + "] id=" + sibIdStr +
+						" parentId=" + (sibParentEl ? sibParentEl.textContent : "null") +
+						" match=" + (sibParentEl ? (sibParentEl.textContent == ctx.groupContainerIdString) : false));
+					if (sibParentEl && sibParentEl.textContent == ctx.groupContainerIdString)
+						siblingUidEls.push(allUidEls[i]);
+				}
+				Debug.log("Filtered sibling uid els: " + siblingUidEls.length);
 				if (!siblingUidEls.length) {
 					Debug.log("No sibling records found in group.", Debug.WARN_PRIORITY);
 					return;
@@ -15038,6 +15059,7 @@
 				}
 
 				editCellCancel();
+				_siblingSavedUIDs_ = [];
 				processSiblingSaveQueue();
 			}
 			else if (mode == "table") {
@@ -15078,7 +15100,15 @@
 							Debug.log("No data rows in table.", Debug.WARN_PRIORITY);
 							return;
 						}
-						var csvVal = colCSVEls[0].getAttribute("value");
+						var colTypeEls = req.responseXML.getElementsByTagName(
+							"CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnType");
+						var uidColIndex = 0;
+						for (var ci = 0; ci < colTypeEls.length; ++ci)
+							if (colTypeEls[ci].getAttribute("value") == "UID") {
+								uidColIndex = ci;
+								break;
+							}
+						var csvVal = colCSVEls[uidColIndex].getAttribute("value");
 						var allUIDs = csvVal.length ?
 							csvVal.split(",").map(decodeURIComponent) : [];
 						if (!allUIDs.length) {
@@ -15104,6 +15134,7 @@
 						}
 
 						editCellCancel();
+						_siblingSavedUIDs_ = [];
 						processSiblingSaveQueue();
 					},
 					0, 0, true
@@ -15194,6 +15225,7 @@
 									break;
 								}
 						}
+						_siblingSavedUIDs_.push(item.uid);
 					}
 
 					var lastItem = _siblingSaveQueue_[0];
@@ -15204,6 +15236,8 @@
 							item.uid + "'. " + _siblingSaveQueue_.length +
 							" remaining saves skipped.", Debug.HIGH_PRIORITY);
 						_siblingSaveQueue_ = [];
+						refreshTreeTableVersions();
+						return;
 					}
 
 					if (!_siblingSaveQueue_.length) {
@@ -15211,10 +15245,11 @@
 						refreshTreeTableVersions();
 						updateSiblingFieldDisplays(
 							lastItem.tableName, lastItem.column,
-							lastItem.newValue, lastItem.editNodeType);
+							lastItem.newValue, lastItem.editNodeType,
+							_siblingSavedUIDs_);
 						Debug.log("Set-for-all complete for column '" +
 							lastItem.column + "' in table '" +
-							lastItem.tableName + "'.", Debug.INFO_PRIORITY);
+							lastItem.tableName + "'.");
 					}
 
 					processSiblingSaveQueue();
@@ -15225,7 +15260,7 @@
 
 		//==============================================================================
 		//updateSiblingFieldDisplays ~~
-		function updateSiblingFieldDisplays(tableName, columnName, newValue, editNodeType) {
+		function updateSiblingFieldDisplays(tableName, columnName, newValue, editNodeType, savedUIDs) {
 			var els = document.getElementsByClassName(
 				"treeNode-Value-leafNode-ColumnName-" + columnName);
 			var decodedValue = decodeURIComponent(newValue);
@@ -15257,6 +15292,22 @@
 				}
 
 				if (table != tableName) continue;
+
+				if (savedUIDs && savedUIDs.length) {
+					var uidEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidEl) continue;
+					var uidText = "";
+					for (var k = 0; k < uidEl.childNodes.length; ++k)
+						if (uidEl.childNodes[k].nodeType === 3)
+							uidText += uidEl.childNodes[k].nodeValue;
+					uidText = uidText.trim();
+					if (depth != 2) {
+						var parts = uidText.split('=');
+						if (parts.length > 1)
+							uidText = parts[parts.length - 1].split(')')[0].trim();
+					}
+					if (savedUIDs.indexOf(uidText) < 0) continue;
+				}
 
 				if (editNodeType == "value-bool") {
 					var color = (decodedValue == "On" || decodedValue == "Yes" ||
@@ -16525,6 +16576,167 @@
 
 			editCellOK();
 		} //end editCellSetAllInTable()
+
+		//==============================================================================
+		//localTableHasGroupIdForRow ~~
+		function localTableHasGroupIdForRow(r) {
+			var tableEl = document.getElementById("SubSystemTable");
+			if (!tableEl) return false;
+			var rows = tableEl.getElementsByTagName("tr");
+			var numCols = _tableViewIsTransposed ?
+				(rows.length - _CONFIG_DATA_COL_OFFSET) :
+				(rows[0].getElementsByTagName("td").length - _CONFIG_DATA_COL_OFFSET);
+			for (var ci = 0; ci < numCols; ++ci) {
+				var ct;
+				if (_tableViewIsTransposed)
+					ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+				else
+					ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+				if (ct.indexOf("GroupID") != 0) continue;
+				var cellVal;
+				if (_tableViewIsTransposed)
+					cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim();
+				else
+					cellVal = rows[_CONFIG_DATA_ROW_OFFSET + r].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+				if (cellVal && cellVal != "" && cellVal != "DEFAULT")
+					return true;
+			}
+			return false;
+		} //end localTableHasGroupIdForRow()
+
+		//==============================================================================
+		//editCellSetAllInGroup ~~
+		function editCellSetAllInGroup() {
+			if (!_editingCellEl) return;
+
+			var r = _editingCellPos[0];
+			var c = _editingCellPos[1];
+
+			var newValue;
+			try {
+				var sel;
+				if ((sel = _editingCellEl.getElementsByTagName("select")).length) {
+					sel = sel[0];
+					if (sel.style.display == "none")
+						newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+					else {
+						if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+						newValue = sel.options[sel.selectedIndex].value;
+					}
+				}
+				else if ((sel = _editingCellEl.getElementsByTagName("textarea")).length)
+					newValue = sel[0].value;
+				else
+					newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+			}
+			catch(err) {
+				Debug.log("Error extracting value: " + err);
+				return;
+			}
+
+			var tableEl = document.getElementById("SubSystemTable");
+			var rows = tableEl.getElementsByTagName("tr");
+
+			var numCols = _tableViewIsTransposed ?
+				(rows.length - _CONFIG_DATA_COL_OFFSET) :
+				(rows[0].getElementsByTagName("td").length - _CONFIG_DATA_COL_OFFSET);
+			var numDataRows = _tableViewIsTransposed ?
+				(rows[_CONFIG_DATA_COL_OFFSET].getElementsByTagName("td").length - _CONFIG_DATA_ROW_OFFSET) :
+				(rows.length - _CONFIG_DATA_ROW_OFFSET);
+
+			var myGroupIds = [];
+			for (var ci = 0; ci < numCols; ++ci) {
+				var ct;
+				if (_tableViewIsTransposed)
+					ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+				else
+					ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+				if (ct.indexOf("GroupID") != 0) continue;
+				var cellVal;
+				if (_tableViewIsTransposed)
+					cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim();
+				else
+					cellVal = rows[_CONFIG_DATA_ROW_OFFSET + r].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+				if (cellVal && cellVal != "" && cellVal != "DEFAULT") {
+					var parts = cellVal.split('|');
+					for (var pi = 0; pi < parts.length; ++pi) {
+						var gid = parts[pi].trim();
+						if (gid && myGroupIds.indexOf(gid) < 0)
+							myGroupIds.push(gid);
+					}
+				}
+			}
+
+			if (!myGroupIds.length) {
+				Debug.log("No GroupID found for this record.", Debug.WARN_PRIORITY);
+				return;
+			}
+
+			var matchingRows = [];
+			for (var ri = 0; ri < numDataRows; ++ri) {
+				if (ri == r) { matchingRows.push(ri); continue; }
+				var isMatch = false;
+				for (var ci = 0; ci < numCols && !isMatch; ++ci) {
+					var ct;
+					if (_tableViewIsTransposed)
+						ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+					else
+						ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+					if (ct.indexOf("GroupID") != 0) continue;
+					var cellVal;
+					if (_tableViewIsTransposed)
+						cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri].textContent.trim();
+					else
+						cellVal = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+					if (!cellVal || cellVal == "" || cellVal == "DEFAULT") continue;
+					var parts = cellVal.split('|');
+					for (var pi = 0; pi < parts.length; ++pi) {
+						if (myGroupIds.indexOf(parts[pi].trim()) >= 0) {
+							isMatch = true;
+							break;
+						}
+					}
+				}
+				if (isMatch) matchingRows.push(ri);
+			}
+
+			if (!confirm("Set this column to '" + newValue +
+				"' for " + matchingRows.length + " record" +
+				(matchingRows.length != 1 ? "s" : "") +
+				" in the group (GroupID: " + myGroupIds.join(", ") + ")?"))
+				return;
+
+			var boolTypeTrues = ["On","True","Yes"];
+			var statusTypeFalses = ["Off","False","No"];
+			var isTrue = false;
+			var isFalse = false;
+			for (var i = 0; i < boolTypeTrues.length; ++i)
+				if (boolTypeTrues[i] == newValue) { isTrue = true; break; }
+			for (var i = 0; !isTrue && i < statusTypeFalses.length; ++i)
+				if (statusTypeFalses[i] == newValue) { isFalse = true; break; }
+
+			for (var mi = 0; mi < matchingRows.length; ++mi) {
+				var ri = matchingRows[mi];
+				var cell;
+				if (_tableViewIsTransposed)
+					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET + ri];
+				else
+					cell = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c];
+
+				if (!cell) continue;
+				if (cell == _editingCellEl) continue;
+
+				cell.innerHTML = "";
+				cell.appendChild(document.createTextNode(newValue));
+
+				if (isTrue)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_TRUE_COLOR;
+				else if (isFalse)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_FALSE_COLOR;
+			}
+
+			editCellOK();
+		} //end editCellSetAllInGroup()
 
 		//==============================================================================
 		//tableLinkTooltip
