@@ -1135,10 +1135,7 @@ xoap::MessageReference MacroMakerSupervisor::frontEndCommunicationRequest(
     xoap::MessageReference message)
 try
 {
-	__COUTT__;  //mark for debugging
-	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs() << " tid=" << gettid()
-	             << " FE Request received: " << SOAPUtilities::translate(message)
-	             << __E__;
+	__COUTT__;
 
 	SOAPParameters typeParameter, rxParameters;  // params for xoap to recv
 	typeParameter.addParameter("type");
@@ -1393,10 +1390,6 @@ try
 			}
 			SOAPUtilities::addParameters(freshMessage, fwdParams);
 
-			__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
-			             << " Forwarding request: "
-			             << SOAPUtilities::translate(freshMessage) << __E__;
-
 			xoap::MessageReference replyMessage = SOAPMessenger::sendWithSOAPReply(
 			    it->second.getDescriptor(), freshMessage);
 
@@ -1404,8 +1397,6 @@ try
 			{
 				std::string replyStr =
 				    SOAPUtilities::translate(replyMessage).getCommand();
-				__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
-				             << " Forwarding FE Macro response: " << replyStr << __E__;
 
 				if(replyStr == "Fault")
 				{
@@ -2114,7 +2105,9 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 	    (feHistoryIt != lastFeCommandToHistory_.end() &&
 	     feHistoryIt->second.size() == 7 && feHistoryIt->second[0] == feClass &&
 	     feHistoryIt->second[1] == feUID && feHistoryIt->second[2] == macroType &&
-	     feHistoryIt->second[3] == macroName);
+	     feHistoryIt->second[3] == macroName && feHistoryIt->second[4] == inputArgs &&
+	     feHistoryIt->second[5] == outputArgs &&
+	     feHistoryIt->second[6] == (saveOutputs ? "1" : "0"));
 
 	unsigned int repeatCount;
 	time_t       origLaunchTime;
@@ -3457,13 +3450,7 @@ try
 	{
 		std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 
-		__SUP_COUT__
-		    << "DIAG ms=" << StringMacros::nowEpochMs()
-		    << " Checking if recent FE macro group has completed for NotDoneID = "
-		    << NotDoneID << __E__;
-
-		for(const auto& g : feMacroRunThreadStruct_)
-			__SUP_COUTT__ << "[] groupID_ = " << g->groupID_ << __E__;
+		__SUP_COUTT__ << "Checking NotDoneID = " << NotDoneID << __E__;
 
 		time_t now      = time(0);
 		size_t target_i = -1;
@@ -3677,9 +3664,6 @@ try
 	// supervisor) can not complete until this handler returns -- a circular
 	// wait. Serve only quick macros synchronously; everything else goes async
 	// and the GUI polls with NotDoneID.
-	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
-	             << " runFEMacro xgi entering sync wait loop, groupID=" << group->groupID_
-	             << __E__;
 	size_t sleepTime = 10 * 1000;  //10ms
 	usleep(sleepTime);
 	//if not all done quickly, track in "not-done" queue
@@ -3700,10 +3684,6 @@ try
 			usleep(sleepTime);
 		}
 	}  //end wait loop
-	__SUP_COUT__ << "DIAG ms=" << StringMacros::nowEpochMs()
-	             << " runFEMacro xgi exiting sync wait loop, allDone="
-	             << (group->allDone() ? "1" : "0") << __E__;
-
 	if(!group->allDone())  //not all done - go async
 	{
 		xmldoc.addNumberElementToData("NotDoneID", group->groupID_);
@@ -4154,17 +4134,10 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			}
 
 			// have FE supervisor descriptor, so send
-			__SUP_COUT_INFO__
-			    << "DIAG ms=" << StringMacros::nowEpochMs()
-			    << " Sending MacroMakerSupervisorRequest to FESupervisor LID="
-			    << FESupervisorIndex << __E__;
 			xoap::MessageReference retMsg = SOAPMessenger::sendWithSOAPReply(
 			    it->second.getDescriptor(),  // supervisor descriptor
 			    "MacroMakerSupervisorRequest",
 			    txParameters);
-
-			__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
-			                  << " Received initial response from FESupervisor." << __E__;
 
 			SOAPUtilities::receive(retMsg, rxParameters);
 
@@ -4178,10 +4151,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 				useconds_t  pollSleepUs    = 100 * 1000;  //100ms, doubling to 2s cap
 				if(!notDoneTaskID.empty())
 				{
-					__SUP_COUT_INFO__
-					    << "DIAG ms=" << StringMacros::nowEpochMs()
-					    << " Async task started, NotDoneTaskID=" << notDoneTaskID
-					    << ". Polling for completion..." << __E__;
 					usleep(pollSleepUs);
 				}
 				while(notDoneTaskID != "")
@@ -4192,9 +4161,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					pollTxParams.addParameter("Request", "CheckMacro");
 					pollTxParams.addParameter("TaskID", notDoneTaskID);
 
-					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
-					                  << " Poll #" << asyncPollCount
-					                  << " sending CheckMacro..." << __E__;
 					xoap::MessageReference pollRetMsg =
 					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
 					                                     "MacroMakerSupervisorRequest",
@@ -4216,9 +4182,6 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 					}
 
 					notDoneTaskID = rxParameters.getValue("NotDoneTaskID");
-					__SUP_COUT_INFO__ << "DIAG ms=" << StringMacros::nowEpochMs()
-					                  << " Poll #" << asyncPollCount << " notDoneTaskID='"
-					                  << notDoneTaskID << "'" << __E__;
 
 					if(!notDoneTaskID.empty())
 					{
