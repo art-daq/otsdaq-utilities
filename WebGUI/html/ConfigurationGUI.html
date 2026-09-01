@@ -15076,7 +15076,6 @@
 					return;
 				}
 
-				var savedEditingCellEl = _editingCellEl;
 				DesktopContent.XMLHttpRequest(
 					"Request?RequestType=getSpecificTable" +
 					"&dataOffset=0&chunkSize=0" +
@@ -16507,7 +16506,6 @@
 		function editCellSetAllInTable() {
 			if (!_editingCellEl) return;
 
-			var r = _editingCellPos[0];
 			var c = _editingCellPos[1];
 
 			var newValue;
