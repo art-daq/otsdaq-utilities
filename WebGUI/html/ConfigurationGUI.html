@@ -773,6 +773,10 @@
 		var treeEditingInitGroupMembers_ = [];
 		var treeEditingGroupMembersLastSelect_ = "";
 
+		var _siblingSaveQueue_ = [];
+		var _siblingSaving_ = false;
+		var _siblingSavedUIDs_ = [];
+
 		var _memberMapForGroupSave = {}; //used by saveTableGroupAsNewKey()
 
 		var firstInit_ = true;
@@ -9932,7 +9936,38 @@
 					}
 
 
-					str += _OK_CANCEL_DIALOG_STR;
+					if (colType == "UID" || colType == "UniqueData")
+					{
+						str += _OK_CANCEL_DIALOG_STR;
+					}
+					else
+					{
+						var sibCtx = getSiblingContext();
+						var sibBtns = " | " +
+							"<a class='popUpOkCancel' onclick='editCellSetAllSiblings(\"table\"); event.stopPropagation();' " +
+							"onmouseup='event.stopPropagation();' " +
+							"title='Set this value for all records in the table' style='color:blue'>" +
+							"<b style='color:blue;font-size: 14px;'>Set for all in Table</b></a>";
+						if (sibCtx.groupContainerIdString)
+							sibBtns += " | " +
+								"<a class='popUpOkCancel' onclick='editCellSetAllSiblings(\"group\"); event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"title='Set this value for all records in the group' style='color:blue'>" +
+								"<b style='color:blue;font-size: 14px;'>Set for all in Group</b></a>";
+						var sibW = sibCtx.groupContainerIdString ? 490 : 325;
+						str += "<div title='' style='padding:5px;background-color:#eeeeee;" +
+							"border:1px solid #555555;position:relative;z-index:2000;" +
+							"width:" + sibW + "px;height:20px;margin:0 -" + (sibW + 27) + "px -32px 10px;" +
+							" font-size: 16px; white-space:nowrap; text-align:center;'>" +
+							"<a class='popUpOkCancel' onclick='editCellOK(); event.stopPropagation();' " +
+							"onmouseup='event.stopPropagation();' title='Accept Changes' style='color:green'>" +
+							"<b style='color:green;font-size: 16px;'>OK</b></a> | " +
+							"<a class='popUpOkCancel' onclick='editCellCancel(); event.stopPropagation();' " +
+							"onmouseup='event.stopPropagation();' title='Discard Changes' style='color:red'>" +
+							"<b style='color:red;font-size: 16px;'>Cancel</b></a>" +
+							sibBtns +
+							"</div>";
+					}
 
 					el.innerHTML = str;
 
@@ -11458,8 +11493,33 @@
 
 						controlString += "</div>";
 					}
-					else
-						controlString = _OK_CANCEL_DIALOG_STR;
+					else {
+						var isUniqueCol = (colType == "UID" || colType == "UniqueData");
+						var hasGroupId = !isUniqueCol && localTableHasGroupIdForRow(r);
+						var tableW = isUniqueCol ? 95 : (hasGroupId ? 490 : 325);
+						controlString = "<div title='' style='padding:5px;background-color:#eeeeee;" +
+							"border:1px solid #555555;position:relative;z-index:2000;" +
+							"width:" + tableW + "px;height:20px;margin:0 -" + (tableW + 27) + "px -32px 10px;" +
+							" font-size: 16px; white-space:nowrap; text-align:center;'>" +
+							"<a class='popUpOkCancel' onclick='editCellOK(); event.stopPropagation();' " +
+							"onmouseup='event.stopPropagation();' title='Accept Changes' style='color:green'>" +
+							"<b style='color:green;font-size: 16px;'>OK</b></a> | " +
+							"<a class='popUpOkCancel' onclick='editCellCancel(); event.stopPropagation();' " +
+							"onmouseup='event.stopPropagation();' title='Discard Changes' style='color:red'>" +
+							"<b style='color:red;font-size: 16px;'>Cancel</b></a>" +
+							(isUniqueCol ? "" :
+								" | <a class='popUpOkCancel' onclick='editCellSetAllInTable(); event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"title='Set this value for all records in the table' style='color:blue'>" +
+								"<b style='color:blue;font-size: 14px;'>Set for all in Table</b></a>") +
+							(hasGroupId ?
+								" | <a class='popUpOkCancel' onclick='editCellSetAllInGroup(); event.stopPropagation();' " +
+								"onmouseup='event.stopPropagation();' " +
+								"title='Set this value for all records sharing the same GroupID' style='color:blue'>" +
+								"<b style='color:blue;font-size: 14px;'>Set for all in Group</b></a>"
+								: "") +
+							"</div>";
+					}
 
 					str += controlString;
 				}
@@ -14876,6 +14936,415 @@
 		} //end updateStatusFieldDisplayForRecord()
 
 		//==============================================================================
+		//getSiblingContext ~~
+		//	Returns context for "Set for all" buttons when editing a leaf value.
+		//	tableName: always set (from treeEditingTargetTable_)
+		//	groupContainerIdString: set only when the parent UID is under a GroupID link
+		function getSiblingContext() {
+			var ctx = {
+				tableName: treeEditingTargetTable_,
+				groupContainerIdString: null
+			};
+			if (!treeEditingNodeParentIdString_) return ctx;
+
+			var parentDepth = parseInt(treeEditingNodeParentIdString_.split('-')[0]);
+			if (parentDepth > 1) {
+				var grandparentEl = document.getElementById("treeNode-ParentId-" +
+					treeEditingNodeParentIdString_);
+				if (grandparentEl) {
+					var grandparentIdString = grandparentEl.textContent;
+					var linkTypeEl = document.getElementById("treeNode-childLinkIdType-" +
+						grandparentIdString);
+					if (linkTypeEl && linkTypeEl.textContent == "GroupID")
+						ctx.groupContainerIdString = grandparentIdString;
+				}
+			}
+			return ctx;
+		} //end getSiblingContext()
+
+		//==============================================================================
+		//extractCurrentEditValue ~~
+		//	Reads the new value from the currently active tree-view edit input.
+		function extractCurrentEditValue() {
+			if (!_editingCellEl) return undefined;
+			var newValue;
+
+			if (treeEditingNodeType_ == "value-bool") {
+				var sel = _editingCellEl.getElementsByTagName("select")[0];
+				if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+				newValue = sel.options[sel.selectedIndex].value;
+			}
+			else if (treeEditingNodeType_ == "value-bitmap") {
+				newValue = encodeURIComponent(_editingCellEl.textContent);
+			}
+			else {
+				var sel;
+				if ((sel = _editingCellEl.getElementsByTagName("textarea")).length)
+					newValue = sel[0].value;
+				else if ((sel = _editingCellEl.getElementsByTagName("select")).length) {
+					if (sel[0].style.display == "none")
+						newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+					else
+						newValue = sel[0].options[sel[0].selectedIndex].value;
+				}
+				else
+					newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+
+				newValue = encodeURIComponent(newValue.trim());
+			}
+			return newValue;
+		} //end extractCurrentEditValue()
+
+		//==============================================================================
+		//editCellSetAllSiblings ~~
+		//	mode: "table" or "group"
+		//	"table" - sets value for ALL UIDs in the table (fetches from server)
+		//	"group" - sets value for group-member UIDs visible under the GroupID link
+		function editCellSetAllSiblings(mode) {
+			if (_siblingSaving_) {
+				Debug.log("Already processing a Set-for-all operation. Please wait.");
+				return;
+			}
+			if (!_editingCellEl) return;
+
+			var newValue = extractCurrentEditValue();
+			if (newValue === undefined) return;
+
+			var targetTable = treeEditingTargetTable_;
+			var targetColumn = treeEditingTargetColumn_;
+			var editNodeType = treeEditingNodeType_;
+
+			if (mode == "group") {
+				var ctx = getSiblingContext();
+				if (!ctx.groupContainerIdString) {
+					Debug.log("No group context found.", Debug.WARN_PRIORITY);
+					return;
+				}
+				var childrenContainer = document.getElementById(
+					"treeNode-ChildrenOf-" + ctx.groupContainerIdString);
+				if (!childrenContainer) {
+					Debug.log("Cannot find group sibling container.", Debug.WARN_PRIORITY);
+					return;
+				}
+				var allUidEls = childrenContainer.getElementsByClassName(
+					"treeNode-Value-nodeEditType-uid");
+				var siblingUidEls = [];
+				for (var i = 0; i < allUidEls.length; ++i) {
+					var sibIdStr = allUidEls[i].id.substr("treeNode-Value-".length);
+					var sibParentEl = document.getElementById("treeNode-ParentId-" + sibIdStr);
+					if (sibParentEl && sibParentEl.textContent == ctx.groupContainerIdString)
+						siblingUidEls.push(allUidEls[i]);
+				}
+				if (!siblingUidEls.length) {
+					Debug.log("No sibling records found in group.", Debug.WARN_PRIORITY);
+					return;
+				}
+
+				var decodedVal = decodeURIComponent(newValue);
+				if (!confirm("Set '" + targetColumn + "' to '" +
+					decodedVal + "' for " + siblingUidEls.length +
+					" record" + (siblingUidEls.length != 1 ? "s" : "") +
+					" in the group?"))
+					return;
+
+				for (var i = 0; i < siblingUidEls.length; ++i) {
+					var sibUid = localExtractUidFromNode(siblingUidEls[i]);
+					if (sibUid)
+						_siblingSaveQueue_.push({
+							tableName: targetTable,
+							uid: sibUid,
+							column: targetColumn,
+							newValue: newValue,
+							editNodeType: editNodeType
+						});
+				}
+
+				editCellCancel();
+				_siblingSavedUIDs_ = [];
+				processSiblingSaveQueue();
+			}
+			else if (mode == "table") {
+				var tableVersion = -1;
+				for (var j = 0; j < treeMemberNames_.length; ++j)
+					if (targetTable == treeMemberNames_[j] &&
+						(treeMemberVersions_[j] | 0) != -1) {
+						tableVersion = treeMemberVersions_[j];
+						break;
+					}
+				if (tableVersion == -1) {
+					Debug.log("Could not find table '" + targetTable +
+						"' in tree members.", Debug.HIGH_PRIORITY);
+					return;
+				}
+
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=getSpecificTable" +
+					"&dataOffset=0&chunkSize=0" +
+					"&tableName=" + targetTable +
+					"&version=" + tableVersion,
+					"",
+					function(req, reqParam, errStr) {
+						if (errStr) {
+							Debug.err(errStr);
+							return;
+						}
+						var err = DesktopContent.getXMLValue(req, "Error");
+						if (err) {
+							Debug.err(err);
+							return;
+						}
+
+						var colCSVEls = req.responseXML.getElementsByTagName(
+							"CurrentVersionRows")[0].getElementsByTagName("ColCSV");
+						if (!colCSVEls.length) {
+							Debug.log("No data rows in table.", Debug.WARN_PRIORITY);
+							return;
+						}
+						var colTypeEls = req.responseXML.getElementsByTagName(
+							"CurrentVersionColumnHeaders")[0].getElementsByTagName("ColumnType");
+						var uidColIndex = 0;
+						for (var ci = 0; ci < colTypeEls.length; ++ci)
+							if (colTypeEls[ci].getAttribute("value") == "UID") {
+								uidColIndex = ci;
+								break;
+							}
+						var csvVal = colCSVEls[uidColIndex].getAttribute("value");
+						var allUIDs = csvVal.length ?
+							csvVal.split(",").map(decodeURIComponent) : [];
+						if (!allUIDs.length) {
+							Debug.log("No UIDs found in table.", Debug.WARN_PRIORITY);
+							return;
+						}
+
+						var decodedVal = decodeURIComponent(newValue);
+						if (!confirm("Set '" + targetColumn + "' to '" +
+							decodedVal + "' for " + allUIDs.length +
+							" record" + (allUIDs.length != 1 ? "s" : "") +
+							" in table '" + targetTable + "'?"))
+							return;
+
+						for (var i = 0; i < allUIDs.length; ++i) {
+							_siblingSaveQueue_.push({
+								tableName: targetTable,
+								uid: allUIDs[i],
+								column: targetColumn,
+								newValue: newValue,
+								editNodeType: editNodeType
+							});
+						}
+
+						editCellCancel();
+						_siblingSavedUIDs_ = [];
+						processSiblingSaveQueue();
+					},
+					0, 0, true
+				);
+			}
+
+			function localExtractUidFromNode(uidEl) {
+				var sibIdString = uidEl.id.substr("treeNode-Value-".length);
+				var sibDepth = parseInt(sibIdString.split('-')[0]);
+				if (sibDepth == 1) {
+					var uidText = "";
+					for (var k = 0; k < uidEl.childNodes.length; ++k)
+						if (uidEl.childNodes[k].nodeType === 3)
+							uidText += uidEl.childNodes[k].nodeValue;
+					return uidText.trim();
+				}
+				else {
+					var txt = uidEl.textContent;
+					var parts = txt.split('=');
+					if (parts.length > 1)
+						return parts[parts.length - 1].split(')')[0].trim();
+					return txt.trim();
+				}
+			}
+		} //end editCellSetAllSiblings()
+
+		//==============================================================================
+		//processSiblingSaveQueue ~~
+		function processSiblingSaveQueue() {
+			if (_siblingSaving_) return;
+			if (!_siblingSaveQueue_.length) return;
+			var item = _siblingSaveQueue_[0];
+
+			var tableVersion = -1;
+			var tableIndex = -1;
+			for (var j = 0; j < treeMemberNames_.length; ++j)
+				if (item.tableName == treeMemberNames_[j] &&
+					(treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					tableIndex = j;
+					break;
+				}
+			if (tableIndex == -1) {
+				Debug.err("Could not find tree member table '" + item.tableName +
+					"' for sibling save.");
+				_siblingSaveQueue_ = [];
+				return;
+			}
+
+			_siblingSaving_ = true;
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=" + item.editNodeType +
+				"&targetTable=" + item.tableName +
+				"&targetTableVersion=" + tableVersion +
+				"&targetUID=" + encodeURIComponent(item.uid) +
+				"&targetColumn=" + item.column,
+				"newValue=" + item.newValue,
+				function(req, reqParam, errStr) {
+					_siblingSaving_ = false;
+					var failed = false;
+
+					if (errStr) {
+						Debug.err(errStr);
+						failed = true;
+					}
+					else {
+						var err = DesktopContent.getXMLValue(req, "Error");
+						if (err) {
+							if (err.indexOf("is the same as the current value") > 0)
+								Debug.log(err);
+							else {
+								Debug.err(err);
+								failed = true;
+							}
+						}
+					}
+
+					if (!failed && req && req.responseXML) {
+						var names = req.responseXML.getElementsByTagName("savedName");
+						var versions = req.responseXML.getElementsByTagName("savedVersion");
+						for (var i = 0; i < names.length; ++i) {
+							var rn = DesktopContent.getXMLValue(names[i]);
+							for (var j = 0; j < treeMemberNames_.length; ++j)
+								if (rn == treeMemberNames_[j]) {
+									treeMemberVersions_[j] =
+										DesktopContent.getXMLValue(versions[i]);
+									break;
+								}
+						}
+						_siblingSavedUIDs_.push(item.uid);
+					}
+
+					var lastItem = _siblingSaveQueue_[0];
+					_siblingSaveQueue_.shift();
+
+					if (failed) {
+						Debug.log("Aborting Set-for-all after error on UID '" +
+							item.uid + "'. " + _siblingSaveQueue_.length +
+							" remaining saves skipped.", Debug.HIGH_PRIORITY);
+						_siblingSaveQueue_ = [];
+						refreshTreeTableVersions();
+						return;
+					}
+
+					if (!_siblingSaveQueue_.length) {
+						treeHasChanged();
+						refreshTreeTableVersions();
+						updateSiblingFieldDisplays(
+							lastItem.tableName, lastItem.column,
+							lastItem.newValue, lastItem.editNodeType,
+							_siblingSavedUIDs_);
+						Debug.log("Set-for-all complete for column '" +
+							lastItem.column + "' in table '" +
+							lastItem.tableName + "'.");
+					}
+
+					processSiblingSaveQueue();
+				},
+				0, 0, true
+			);
+		} //end processSiblingSaveQueue()
+
+		//==============================================================================
+		//updateSiblingFieldDisplays ~~
+		function updateSiblingFieldDisplays(tableName, columnName, newValue, editNodeType, savedUIDs) {
+			var els = document.getElementsByClassName(
+				"treeNode-Value-leafNode-ColumnName-" + columnName);
+			var decodedValue = decodeURIComponent(newValue);
+
+			for (var i = 0; i < els.length; ++i) {
+				var idString = els[i].id.substr("treeNode-Value-leafNode-".length);
+				var parentIdEl = document.getElementById("treeNode-ParentId-" + idString);
+				if (!parentIdEl) continue;
+				var parentIdString = parentIdEl.textContent;
+				var depth = parseInt(idString.split('-')[0]);
+
+				var table;
+				if (depth == 2) {
+					var gpIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+					if (!gpIdEl) continue;
+					var tableEl = document.getElementById("treeNode-Value-" + gpIdEl.textContent);
+					if (!tableEl) continue;
+					table = tableEl.textContent;
+				}
+				else {
+					var pel = document.getElementById("treeNode-linkTableName-" + parentIdString);
+					if (!pel) {
+						var gpIdEl = document.getElementById("treeNode-ParentId-" + parentIdString);
+						if (gpIdEl)
+							pel = document.getElementById("treeNode-linkTableName-" + gpIdEl.textContent);
+					}
+					if (!pel) continue;
+					table = pel.textContent;
+				}
+
+				if (table != tableName) continue;
+
+				if (savedUIDs && savedUIDs.length) {
+					var uidEl = document.getElementById("treeNode-Value-" + parentIdString);
+					if (!uidEl) continue;
+					var uidText = "";
+					for (var k = 0; k < uidEl.childNodes.length; ++k)
+						if (uidEl.childNodes[k].nodeType === 3)
+							uidText += uidEl.childNodes[k].nodeValue;
+					uidText = uidText.trim();
+					if (depth != 2) {
+						var parts = uidText.split('=');
+						if (parts.length > 1)
+							uidText = parts[parts.length - 1].split(')')[0].trim();
+					}
+					if (savedUIDs.indexOf(uidText) < 0) continue;
+				}
+
+				if (editNodeType == "value-bool") {
+					var color = (decodedValue == "On" || decodedValue == "Yes" ||
+						decodedValue == "True") ?
+						"rgb(16, 204, 16)" : "rgb(255, 0, 0)";
+					els[i].innerHTML =
+						"<div style='float:left'>" + decodedValue + "</div>" +
+						"<div style='width:10px;height:10px;background-color:" + color +
+						";float:left;border-radius:7px;border:2px solid white;" +
+						"margin:2px 0 0 6px;'></div>";
+
+					if (columnName == "Status" || columnName == "Enabled")
+						updateParentStatusDot(parentIdString,
+							(decodedValue == "On" || decodedValue == "Yes" ||
+								decodedValue == "True"));
+				}
+				else {
+					els[i].innerHTML = "";
+					els[i].appendChild(document.createTextNode(decodedValue));
+				}
+
+				var titleEl = document.getElementById("treeNode-Field-title-" + idString);
+				if (titleEl) {
+					var titleStr = titleEl.title;
+					if (titleStr) {
+						var ti = titleStr.indexOf("Value: ");
+						if (ti > 0)
+							titleStr = titleStr.substr(0, ti) +
+								"Value: \t" + decodedValue + "\n";
+						titleEl.title = titleStr;
+						els[i].title = titleStr;
+					}
+				}
+			}
+		} //end updateSiblingFieldDisplays()
+
+		//==============================================================================
 		//editTreeNodePropagateChange ~~
 		//	arguments are different depending on treeEditingNodeType_.
 		//	After propagating change,
@@ -16031,6 +16500,242 @@
 
 			versionHasChanged();
 		} //end editCellOK()
+
+		//==============================================================================
+		//editCellSetAllInTable ~~
+		//	Sets the current edit value for all rows in the table (Table View only).
+		function editCellSetAllInTable() {
+			if (!_editingCellEl) return;
+
+			var c = _editingCellPos[1];
+
+			var newValue;
+			try {
+				var sel;
+				if ((sel = _editingCellEl.getElementsByTagName("select")).length) {
+					sel = sel[0];
+					if (sel.style.display == "none")
+						newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+					else {
+						if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+						newValue = sel.options[sel.selectedIndex].value;
+					}
+				}
+				else if ((sel = _editingCellEl.getElementsByTagName("textarea")).length)
+					newValue = sel[0].value;
+				else
+					newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+			}
+			catch(err) {
+				Debug.log("Error extracting value: " + err);
+				return;
+			}
+
+			var tableEl = document.getElementById("SubSystemTable");
+			var rows = tableEl.getElementsByTagName("tr");
+
+			var numDataRows;
+			if (_tableViewIsTransposed)
+				numDataRows = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td").length + 1 - _CONFIG_DATA_ROW_OFFSET;
+			else
+				numDataRows = rows.length - _CONFIG_DATA_ROW_OFFSET;
+
+			if (!confirm("Set this column to '" + newValue +
+				"' for " + numDataRows + " record" +
+				(numDataRows != 1 ? "s" : "") + " in the table?"))
+				return;
+
+			var boolTypeTrues = ["On","True","Yes"];
+			var statusTypeFalses = ["Off","False","No"];
+			var isTrue = false;
+			var isFalse = false;
+			for (var i = 0; i < boolTypeTrues.length; ++i)
+				if (boolTypeTrues[i] == newValue) { isTrue = true; break; }
+			for (var i = 0; !isTrue && i < statusTypeFalses.length; ++i)
+				if (statusTypeFalses[i] == newValue) { isFalse = true; break; }
+
+			for (var ri = 0; ri < numDataRows; ++ri) {
+				var cell;
+				if (_tableViewIsTransposed)
+					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri];
+				else
+					cell = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c];
+
+				if (!cell) continue;
+				if (cell == _editingCellEl) continue;
+
+				cell.innerHTML = "";
+				cell.appendChild(document.createTextNode(newValue));
+
+				if (isTrue)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_TRUE_COLOR;
+				else if (isFalse)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_FALSE_COLOR;
+			}
+
+			editCellOK();
+		} //end editCellSetAllInTable()
+
+		//==============================================================================
+		//localTableHasGroupIdForRow ~~
+		function localTableHasGroupIdForRow(r) {
+			var tableEl = document.getElementById("SubSystemTable");
+			if (!tableEl) return false;
+			var rows = tableEl.getElementsByTagName("tr");
+			var numCols = _tableViewIsTransposed ?
+				(rows.length - _CONFIG_DATA_COL_OFFSET) :
+				(rows[0].getElementsByTagName("td").length - _CONFIG_DATA_COL_OFFSET);
+			for (var ci = 0; ci < numCols; ++ci) {
+				var ct;
+				if (_tableViewIsTransposed)
+					ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+				else
+					ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+				if (ct.indexOf("GroupID") != 0) continue;
+				var cellVal;
+				if (_tableViewIsTransposed)
+					cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim();
+				else
+					cellVal = rows[_CONFIG_DATA_ROW_OFFSET + r].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+				if (cellVal && cellVal != "" && cellVal != "DEFAULT")
+					return true;
+			}
+			return false;
+		} //end localTableHasGroupIdForRow()
+
+		//==============================================================================
+		//editCellSetAllInGroup ~~
+		function editCellSetAllInGroup() {
+			if (!_editingCellEl) return;
+
+			var r = _editingCellPos[0];
+			var c = _editingCellPos[1];
+
+			var newValue;
+			try {
+				var sel;
+				if ((sel = _editingCellEl.getElementsByTagName("select")).length) {
+					sel = sel[0];
+					if (sel.style.display == "none")
+						newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+					else {
+						if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+						newValue = sel.options[sel.selectedIndex].value;
+					}
+				}
+				else if ((sel = _editingCellEl.getElementsByTagName("textarea")).length)
+					newValue = sel[0].value;
+				else
+					newValue = _editingCellEl.getElementsByTagName("input")[0].value;
+			}
+			catch(err) {
+				Debug.log("Error extracting value: " + err);
+				return;
+			}
+
+			var tableEl = document.getElementById("SubSystemTable");
+			var rows = tableEl.getElementsByTagName("tr");
+
+			var numCols = _tableViewIsTransposed ?
+				(rows.length - _CONFIG_DATA_COL_OFFSET) :
+				(rows[0].getElementsByTagName("td").length - _CONFIG_DATA_COL_OFFSET);
+			var numDataRows = _tableViewIsTransposed ?
+				(rows[_CONFIG_DATA_COL_OFFSET].getElementsByTagName("td").length + 1 - _CONFIG_DATA_ROW_OFFSET) :
+				(rows.length - _CONFIG_DATA_ROW_OFFSET);
+
+			var myGroupIds = [];
+			for (var ci = 0; ci < numCols; ++ci) {
+				var ct;
+				if (_tableViewIsTransposed)
+					ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+				else
+					ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+				if (ct.indexOf("GroupID") != 0) continue;
+				var cellVal;
+				if (_tableViewIsTransposed)
+					cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + r].textContent.trim();
+				else
+					cellVal = rows[_CONFIG_DATA_ROW_OFFSET + r].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+				if (cellVal && cellVal != "" && cellVal != "DEFAULT") {
+					var parts = cellVal.split('|');
+					for (var pi = 0; pi < parts.length; ++pi) {
+						var gid = parts[pi].trim();
+						if (gid && myGroupIds.indexOf(gid) < 0)
+							myGroupIds.push(gid);
+					}
+				}
+			}
+
+			if (!myGroupIds.length) {
+				Debug.log("No GroupID found for this record.", Debug.WARN_PRIORITY);
+				return;
+			}
+
+			var matchingRows = [];
+			for (var ri = 0; ri < numDataRows; ++ri) {
+				if (ri == r) { matchingRows.push(ri); continue; }
+				var isMatch = false;
+				for (var ci = 0; ci < numCols && !isMatch; ++ci) {
+					var ct;
+					if (_tableViewIsTransposed)
+						ct = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[0].childNodes[0].childNodes[0].innerText;
+					else
+						ct = rows[0].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].childNodes[0].childNodes[0].innerText;
+					if (ct.indexOf("GroupID") != 0) continue;
+					var cellVal;
+					if (_tableViewIsTransposed)
+						cellVal = rows[_CONFIG_DATA_COL_OFFSET + ci].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri].textContent.trim();
+					else
+						cellVal = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + ci].textContent.trim();
+					if (!cellVal || cellVal == "" || cellVal == "DEFAULT") continue;
+					var parts = cellVal.split('|');
+					for (var pi = 0; pi < parts.length; ++pi) {
+						if (myGroupIds.indexOf(parts[pi].trim()) >= 0) {
+							isMatch = true;
+							break;
+						}
+					}
+				}
+				if (isMatch) matchingRows.push(ri);
+			}
+
+			if (!confirm("Set this column to '" + newValue +
+				"' for " + matchingRows.length + " record" +
+				(matchingRows.length != 1 ? "s" : "") +
+				" in the group (GroupID: " + myGroupIds.join(", ") + ")?"))
+				return;
+
+			var boolTypeTrues = ["On","True","Yes"];
+			var statusTypeFalses = ["Off","False","No"];
+			var isTrue = false;
+			var isFalse = false;
+			for (var i = 0; i < boolTypeTrues.length; ++i)
+				if (boolTypeTrues[i] == newValue) { isTrue = true; break; }
+			for (var i = 0; !isTrue && i < statusTypeFalses.length; ++i)
+				if (statusTypeFalses[i] == newValue) { isFalse = true; break; }
+
+			for (var mi = 0; mi < matchingRows.length; ++mi) {
+				var ri = matchingRows[mi];
+				var cell;
+				if (_tableViewIsTransposed)
+					cell = rows[_CONFIG_DATA_COL_OFFSET + c].getElementsByTagName("td")[_CONFIG_DATA_ROW_OFFSET - 1 + ri];
+				else
+					cell = rows[_CONFIG_DATA_ROW_OFFSET + ri].getElementsByTagName("td")[_CONFIG_DATA_COL_OFFSET + c];
+
+				if (!cell) continue;
+				if (cell == _editingCellEl) continue;
+
+				cell.innerHTML = "";
+				cell.appendChild(document.createTextNode(newValue));
+
+				if (isTrue)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_TRUE_COLOR;
+				else if (isFalse)
+					cell.style.backgroundColor = _TABLE_BOOL_TYPE_FALSE_COLOR;
+			}
+
+			editCellOK();
+		} //end editCellSetAllInGroup()
 
 		//==============================================================================
 		//tableLinkTooltip

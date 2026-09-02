@@ -46,9 +46,6 @@
 			border: 0;
 		}
 
-		.macroModuleTable td:first-child {
-			min-width: 170px;
-		}
 
 		body .macroModule {
 			margin: auto;
@@ -88,6 +85,7 @@
 			font-size: inherit;
 			font-weight: bold;
 		}
+
 
 		.smallPopup {
 			width: 360px;
@@ -175,9 +173,17 @@
 		.component {
 			height: fit-content;
 			display: grid;
-			grid-template-columns: 4fr 1fr;
+			grid-template-columns: 1fr auto;
 			height: auto;
+			overflow: hidden;
 		}
+
+			.component > span {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				min-width: 0;
+			}
 
 			.component button {
 				float: right;
@@ -227,9 +233,8 @@
 		}
 
 		#sequence-builder, #show-sequence {
-			max-height: 500px;
 			overflow-y: auto;
-			resize: horizontal;
+			resize: both;
 		}
 
 		.vbox {
@@ -269,9 +274,8 @@
 			padding: 0;
 			flex-shrink: 0;
 			position: absolute;
-			left: -22px;
-			top: 50%;
-			transform: translateY(-50%);
+			left: -4px;
+			top: calc(50% + 9px);
 		}
 
 		.history-group-mom-btn:hover {
@@ -408,6 +412,7 @@
 		var multiSelectToggleSetting_ = {}; //true for multiselect display
 
 		var focusedMacroCell = [-1, -1]; //when enter is pressed which macro to run
+		var _useDynamicDropdown = false;
 
 		var firstTime = true;
 		var liveViewActive = false;
@@ -488,6 +493,76 @@
 			Debug.log("feMacroTest toggleView ", verticalOrientation_);
 			init();
 		} //end toggleView()
+
+		//=====================================================================================
+		//toggleSettingsPopup ~~
+		function toggleSettingsPopup() {
+			var el = document.getElementById("popupSettings");
+			if (el.style.display == "block")
+				el.style.display = "none";
+			else
+				el.style.display = "block";
+		} //end toggleSettingsPopup()
+
+		//=====================================================================================
+		//applyAndSavePreferences ~~
+		function applyAndSavePreferences() {
+			var twoCol = document.getElementById("pref-twoColumnView").checked;
+			var showSeq = document.getElementById("pref-showSequencePane").checked;
+			var dynDrop = document.getElementById("pref-dynamicDropdown").checked;
+
+			if (twoCol != !verticalOrientation_) {
+				toggleView();
+			}
+			if (showSeq != sequenceMode_) {
+				toggleSequenceMode();
+				DesktopContent.scrollIntoViewX('macroModule-sequence', false);
+			}
+			_useDynamicDropdown = dynDrop;
+
+			saveFEMacroTestPreferences();
+		} //end applyAndSavePreferences()
+
+		//=====================================================================================
+		//saveFEMacroTestPreferences ~~
+		function saveFEMacroTestPreferences() {
+			var twoCol = document.getElementById("pref-twoColumnView").checked ? 1 : 0;
+			var showSeq = document.getElementById("pref-showSequencePane").checked ? 1 : 0;
+			var dynDrop = document.getElementById("pref-dynamicDropdown").checked ? 1 : 0;
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=saveFEMacroTestPreferences",
+				"twoColumnView=" + twoCol +
+				"&showSequencePane=" + showSeq +
+				"&dynamicDropdown=" + dynDrop);
+		} //end saveFEMacroTestPreferences()
+
+		//=====================================================================================
+		//loadFEMacroTestPreferences ~~
+		function loadFEMacroTestPreferences() {
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=loadFEMacroTestPreferences", "",
+				function (req) {
+					var twoCol = DesktopContent.getXMLValue(req, "twoColumnView");
+					var showSeq = DesktopContent.getXMLValue(req, "showSequencePane");
+					var dynDrop = DesktopContent.getXMLValue(req, "dynamicDropdown");
+
+					if (!twoCol && twoCol !== "0") return;
+
+					var twoColVal = (twoCol | 0) ? true : false;
+					var showSeqVal = (showSeq | 0) ? true : false;
+					var dynDropVal = (dynDrop | 0) ? true : false;
+
+					document.getElementById("pref-twoColumnView").checked = twoColVal;
+					document.getElementById("pref-showSequencePane").checked = showSeqVal;
+					document.getElementById("pref-dynamicDropdown").checked = dynDropVal;
+
+					if (twoColVal != !verticalOrientation_)
+						toggleView();
+					if (showSeqVal != sequenceMode_)
+						toggleSequenceMode();
+					_useDynamicDropdown = dynDropVal;
+				});
+		} //end loadFEMacroTestPreferences()
 
 		//=====================================================================================
 		//init ~~
@@ -743,6 +818,7 @@
 					Debug.log("macroModules_", macroModules_);
 
 					redraw();
+					loadFEMacroTestPreferences();
 					return;
 
 				}); //end getFEMacroList handler
@@ -852,9 +928,12 @@
 				el = document.getElementById(
 					"macroResults-row-" + r + "-col-" + c);
 
-			el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
-			el.innerHTML = str;
-
+			if (!verticalOrientation_)
+				el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
+			if (verticalOrientation_)
+				el.innerHTML = "<div id='verticalLayoutOutputDiv' style='width:" + verticalOutputDivSize_[0] + "px; height:" + verticalOutputDivSize_[1] + "px;'>" + str + "</div>";
+			else
+				el.innerHTML = str;
 			// if I am building a sequence I do not have to run
 			if (!sequenceBuilding_) {
 				_pollStartTime = Date.now();
@@ -907,7 +986,8 @@
 			else
 				el = document.getElementById("macroResults-row-" + row + "-col-" + col);	// r is not defined
 
-			el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
+			if (!verticalOrientation_)
+				el.style.whiteSpace = "nowrap"; // to keep line breaks where developer intended
 
 			var str = "";
 
@@ -934,6 +1014,9 @@
 				isRunningCommandBlock = false;
 				commandBlockQueue = [];
 				commandBlockIndex = 0;
+				if (commandBlockStartIndex_ >= 0)
+					renderHistoryDisplay();
+				commandBlockStartIndex_ = -1;
 				if (_sequenceOnComplete) {
 					var cb = _sequenceOnComplete;
 					_sequenceOnComplete = null;
@@ -978,8 +1061,17 @@
 				}
 
 				str += "<br>";
-				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
-				el.innerHTML = str;
+				if (verticalOrientation_) {
+					var outputDiv = document.getElementById("verticalLayoutOutputDiv");
+					if (outputDiv) {
+						outputDiv.style.whiteSpace = "normal";
+						outputDiv.innerHTML = str;
+					} else
+						el.innerHTML = "<div id='verticalLayoutOutputDiv' style='white-space:normal; width:" + verticalOutputDivSize_[0] + "px; height:" + verticalOutputDivSize_[1] + "px;'>" + str + "</div>";
+				} else {
+					el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
+					el.innerHTML = str;
+				}
 
 				var pollDelay = (Date.now() - _pollStartTime < 10000) ? 1000 : 5000;
 				window.setTimeout(function () {
@@ -1048,8 +1140,9 @@
 						.replace(/DONE/g, "<label class='goodValue'>DONE</label>")
 						.replace(/GOOD/g, "<label class='goodValue'>GOOD</label>")
 						.replace(/LOCKED/g, "<label class='goodValue'>LOCKED</label>")
+						.replace(/Note:/g, "<label class='goodValue'>Note:</label>")
 
-						.replace(/Not/g, "<label class='badValue'>Not</label>")
+						.replace(/\bNot\b/g, "<label class='badValue'>Not</label>")
 						.replace(/DEAD/g, "<label class='badValue'>DEAD</label>")
 						.replace(/FAILED/g, "<label class='badValue'>FAILED</label>")
 						.replace(/FAIL/g, "<label class='badValue'>FAIL</label>")
@@ -1213,7 +1306,8 @@ Here is the json string received:
 							.replace(/DONE/g, "<label class='goodValue'>DONE</label>")
 							.replace(/GOOD/g, "<label class='goodValue'>GOOD</label>")
 							.replace(/LOCKED/g, "<label class='goodValue'>LOCKED</label>")
-							.replace(/Not/g, "<label class='badValue'>Not</label>")
+							.replace(/Note:/g, "<label class='goodValue'>Note:</label>")
+							.replace(/\bNot\b/g, "<label class='badValue'>Not</label>")
 							.replace(/DEAD/g, "<label class='badValue'>DEAD</label>")
 							.replace(/FAILED/g, "<label class='badValue'>FAILED</label>")
 							.replace(/FAIL/g, "<label class='badValue'>FAIL</label>")
@@ -1509,6 +1603,15 @@ Here is the json string received:
 					isRunningCommandBlock = false;
 					commandBlockQueue = [];
 					commandBlockIndex = 0;
+					if (commandBlockStartIndex_ >= 0) {
+						if (historyRecords_.length > commandBlockStartIndex_ + 1) {
+							var blockId = nextBlockId_++;
+							for (var bi = commandBlockStartIndex_; bi < historyRecords_.length; ++bi)
+								historyRecords_[bi]["_blockId"] = blockId;
+						}
+						renderHistoryDisplay();
+						commandBlockStartIndex_ = -1;
+					}
 				}
 			}
 			//prepare for next live view command
@@ -1631,7 +1734,9 @@ Here is the json string received:
 						"<div style='margin-bottom: 5px;'>Alert For: <span id='keywordValue'>" + (flagKeyword ? escapeHtml(flagKeyword) : '[None]') + "</span></div>" +
 						"<div>Flag Status: <span id='flagStatusValue'>" + escapeHtml(flagStatusString) + "</span></div>" +
 						"</div>" +
-						"</div>",
+						"</div>" +
+						"<div id='history-mom-warning' style='display:none;background-color:#fff3cd;border:1px solid #ffc107;padding:4px 8px;margin-top:5px;margin-bottom:5px;font-size:18px;border-radius:3px;'>" +
+						"MoM edit mode active: clicking commands will append them to the MoM Sequence instead of executing.</div>",
 						true
 					);
 
@@ -1646,7 +1751,7 @@ Here is the json string received:
 						},
 						"<div style='display: flex; flex-direction: column; align-items: flex-start; width: 100%;'>" +
 						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
-						"<h3>MoM Sequence Mode</h3>" +
+						"<h3>Macro-of-Macros (MoM) Sequence Mode</h3>" +
 						"<span id='currentMacroDisplay'>No Macro Running</span>" +
 						"</div>" +
 						"<div style='display: flex; justify-content: flex-end; width: 100%;'>" +
@@ -1833,14 +1938,13 @@ Here is the json string received:
 						str += "</td></tr>"; //end row for Macro Name
 					} //end Macro Name html
 
+					str += "</table>"; //end macroModuleTable before detail (so detail content does not influence column widths)
+
 					{ //Macro Detail html
-						str += DesktopContent.htmlOpen("tr"); //start row for Macro Detail
-						str += DesktopContent.htmlOpen("td", {
-							"colspan": "2",
+						str += DesktopContent.htmlOpen("div", {
 							"id": "macroDetail-row-" + r + "-col-" + c,
 							"class": "macroDetail",
 						}, "" /*innerHTML*/, true /*doCloseTag*/);
-						str += "</tr>"; //end row for Macro Detail
 					} //end Macro Detail html
 
 					el = document.getElementById("macroModule-row-" +
@@ -2350,6 +2454,7 @@ Here is the json string received:
 				el._scrollListenerAdded = true;
 
 				function macroNameExpandSelect(self) {
+					if (!_useDynamicDropdown) return;
 					var rect = self.getBoundingClientRect();
 					var rowHeight = rect.height / self.size;
 					var availableHeight = window.innerHeight - rect.top - 20;
@@ -2359,6 +2464,7 @@ Here is the json string received:
 						self.size = expandedSize;
 				}
 				function macroNameCollapseSize(self) {
+					if (!_useDynamicDropdown) return self._normalSize;
 					return self._hasSelection ? 1 : self._normalSize;
 				}
 				function macroNameShowFilter(self, show) {
@@ -2400,6 +2506,7 @@ Here is the json string received:
 					this.scrollTop += ev.deltaY;
 				}, {passive: false});
 				el.addEventListener("mouseenter", function () {
+					if (!_useDynamicDropdown) return;
 					macroNameCancelCollapseTimer(this);
 					if (this._hasSelection && this.size < this._normalSize) {
 						this.size = this._normalSize;
@@ -2506,9 +2613,10 @@ Here is the json string received:
 			}
 
 			selectEl._hasSelection = true;
-			selectEl.size = 1;
+			if (_useDynamicDropdown)
+				selectEl.size = 1;
 			var filterEl = document.getElementById("macroNameFilter-row-" + r + "-col-" + c);
-			if (filterEl) filterEl.style.display = "none";
+			if (_useDynamicDropdown && filterEl) filterEl.style.display = "none";
 			var clearBtn = document.getElementById("macroNameFilterClear-row-" + r + "-col-" + c);
 			if (clearBtn) clearBtn.style.display = "none";
 
@@ -2686,6 +2794,7 @@ Here is the json string received:
 			el = document.getElementById("macroDetail-row-" +
 				r + "-col-" + c);
 			el.innerHTML = str;
+
 		} //end handleSelectedMacroName
 
 		//=====================================================================================
@@ -2761,6 +2870,8 @@ Here is the json string received:
 		} //end handleKeyInput()
 
 		var historyRecords_ = []; // chronological order: oldest -> newest
+		var commandBlockStartIndex_ = -1; // start index in historyRecords_ for multi-command block re-runs
+		var nextBlockId_ = 1;
 		var historyRenderRecordMap_ = {};
 		var historyRenderGroupMap_ = {};
 		var historyRenderRecordId_ = 0;
@@ -2774,11 +2885,15 @@ Here is the json string received:
 
 		//=====================================================================================
 		function normalizeHistoryRecord(record) {
+			if (typeof record === "string")
+				record = record.replace(/[\x00-\x1f\x7f]+/g, '');
 			var normalized = (typeof record === "string") ? JSON.parse(record) : record;
 			normalized["launchTime"] = parseHistoryTimestamp(normalized["launchTime"]);
 			normalized["completeTime"] = parseHistoryTimestamp(normalized["completeTime"]);
 			if (!normalized["completeTime"] && normalized["launchTime"])
 				normalized["completeTime"] = normalized["launchTime"];
+			normalized["repeatCount"] = parseInt(normalized["repeatCount"]) || 1;
+			normalized["saveOutputs"] = "" + (normalized["saveOutputs"] || "0");
 			return normalized;
 		}
 
@@ -2792,8 +2907,9 @@ Here is the json string received:
 				macroType: recordObj["macroType"],
 				macroName: recordObj["macroName"],
 				inputArgs: recordObj["inputArgs"],
-				outputArgs: recordObj["outputArgs"],
-				saveOutputs: recordObj["saveOutputs"]
+				saveOutputs: recordObj["saveOutputs"],
+				repeatCount: recordObj["repeatCount"] || 1,
+				_blockId: recordObj["_blockId"] || 0
 			});
 		}
 
@@ -2853,6 +2969,142 @@ Here is the json string received:
 					getHistoryRecordSignature(records[compareStart + i]))
 					return false;
 			return true;
+		}
+
+		//=====================================================================================
+		function getHistoryRecordCommandSignature(recordObj) {
+			if (recordObj["macroType"] === "__mom_marker__")
+				return "__mom_marker__" + recordObj["launchTime"] + ":" + recordObj["macroName"];
+			return JSON.stringify({
+				feClass: recordObj["feClass"],
+				feUID: recordObj["feUID"],
+				macroType: recordObj["macroType"],
+				macroName: recordObj["macroName"],
+				inputArgs: recordObj["inputArgs"],
+				saveOutputs: recordObj["saveOutputs"]
+			});
+		}
+
+		//=====================================================================================
+		function getNodeNormalizedSignature(node) {
+			if (node.type === "record")
+				return getHistoryRecordCommandSignature(node.record);
+			if (node.records.length === 1)
+				return getHistoryRecordCommandSignature(node.records[0]);
+			var sigs = [];
+			for (var i = 0; i < node.children.length; ++i)
+				sigs.push(getNodeNormalizedSignature(node.children[i]));
+			return "G[" + sigs.join("||") + "]";
+		}
+
+		//=====================================================================================
+		function nodeSlicesMatchNormalized(nodes, endIndex, blockLength, repeatIndex) {
+			var newestBlockStart = endIndex - blockLength;
+			var compareStart = newestBlockStart - repeatIndex * blockLength;
+			for (var i = 0; i < blockLength; ++i)
+				if (getNodeNormalizedSignature(nodes[newestBlockStart + i]) !==
+					getNodeNormalizedSignature(nodes[compareStart + i]))
+					return false;
+			return true;
+		}
+
+		//=====================================================================================
+		function flattenNodesToRecords(nodes) {
+			var records = [];
+			for (var i = 0; i < nodes.length; ++i) {
+				if (nodes[i].type === "record")
+					records.push(nodes[i].record);
+				else if (nodes[i].type === "group")
+					records = records.concat(nodes[i].records);
+			}
+			return records;
+		}
+
+		//=====================================================================================
+		function expandSequenceBlock(blockNodes, outputArray) {
+			var groupChildren = [];
+			var leftovers = [];
+			for (var i = 0; i < blockNodes.length; ++i) {
+				var node = blockNodes[i];
+				if (node.type === "group" && node.records.length === 1 && node.repeatCount > 1) {
+					groupChildren.push({ type: "record", record: node.records[0] });
+					var leftoverCount = node.repeatCount - 1;
+					if (leftoverCount > 1)
+						leftovers.push({
+							type: "group",
+							repeatCount: leftoverCount,
+							records: node.records.slice(),
+							children: [{ type: "record", record: node.records[0] }]
+						});
+					else
+						leftovers.push({ type: "record", record: node.records[0] });
+				} else {
+					groupChildren.push(node);
+				}
+			}
+			for (var i = 0; i < leftovers.length; ++i)
+				outputArray.push(leftovers[i]);
+			var groupRecords = flattenNodesToRecords(groupChildren);
+			outputArray.push({
+				type: "group",
+				repeatCount: 1,
+				records: groupRecords,
+				children: groupChildren
+			});
+		}
+
+		//=====================================================================================
+		function compressNodeSequences(nodes) {
+			if (nodes.length < 4) return nodes;
+			var result = [];
+			for (var endIndex = nodes.length; endIndex > 0; ) {
+				var bestMatch = null;
+				for (var blockLen = 2; 2 * blockLen <= endIndex; ++blockLen) {
+					var repeatCount = 1;
+					while ((repeatCount + 1) * blockLen <= endIndex &&
+						nodeSlicesMatchNormalized(nodes, endIndex, blockLen, repeatCount))
+						++repeatCount;
+					if (repeatCount > 1) {
+						var span = blockLen * repeatCount;
+						var candidate = {
+							blockLength: blockLen,
+							repeatCount: repeatCount,
+							span: span
+						};
+						if (!bestMatch || candidate.span > bestMatch.span ||
+							(candidate.span === bestMatch.span &&
+								candidate.blockLength < bestMatch.blockLength))
+							bestMatch = candidate;
+					}
+				}
+				if (bestMatch) {
+					var blockStart = endIndex - bestMatch.blockLength;
+					var allSame = true;
+					var firstSig = getNodeNormalizedSignature(nodes[blockStart]);
+					for (var k = 1; k < bestMatch.blockLength; ++k) {
+						if (getNodeNormalizedSignature(nodes[blockStart + k]) !== firstSig) {
+							allSame = false;
+							break;
+						}
+					}
+					if (allSame) bestMatch = null;
+				}
+				if (bestMatch) {
+					var spanStart = endIndex - bestMatch.span;
+					var expanded = [];
+					for (var rep = 0; rep < bestMatch.repeatCount; ++rep) {
+						var bStart = spanStart + rep * bestMatch.blockLength;
+						var blockNodes = nodes.slice(bStart, bStart + bestMatch.blockLength);
+						expandSequenceBlock(blockNodes, expanded);
+					}
+					for (var i = expanded.length - 1; i >= 0; --i)
+						result.unshift(expanded[i]);
+					endIndex = spanStart;
+				} else {
+					result.unshift(nodes[--endIndex]);
+				}
+			}
+			return result;
 		}
 
 		//=====================================================================================
@@ -2928,16 +3180,33 @@ Here is the json string received:
 				if (bestMatch) {
 					var blockStart = endIndex - bestMatch.blockLength;
 					var blockRecords = records.slice(blockStart, endIndex);
+					var groupRepeatCount = bestMatch.repeatCount;
+					if (bestMatch.blockLength === 1) {
+						groupRepeatCount = 0;
+						for (var r = endIndex - bestMatch.span; r < endIndex; ++r)
+							groupRepeatCount += (records[r]["repeatCount"] || 1);
+					}
 					nodes.unshift({
 						type: "group",
-						repeatCount: bestMatch.repeatCount,
+						repeatCount: groupRepeatCount,
 						records: blockRecords,
 						children: buildCompressedHistoryNodes(blockRecords)
 					});
 					endIndex -= bestMatch.span;
 				}
-				else
-					nodes.unshift({ type: "record", record: records[--endIndex] });
+				else {
+					var rec = records[--endIndex];
+					var serverCount = rec["repeatCount"] || 1;
+					if (serverCount > 1) {
+						nodes.unshift({
+							type: "group",
+							repeatCount: serverCount,
+							records: [rec],
+							children: [{ type: "record", record: rec }]
+						});
+					} else
+						nodes.unshift({ type: "record", record: rec });
+				}
 			}
 			return nodes;
 		} //end buildCompressedHistoryNodes()
@@ -2989,7 +3258,7 @@ Here is the json string received:
 			var childHtml = renderHistoryNodes(node.children, renderState);
 			var momBtn = "";
 			if (node.records.length > 1)
-				momBtn = "<button class='history-group-mom-btn' title='Create Macro-of-Macros (MoM) Sequence from this group. Toggle MoM Sequence Pane using the link at the top-left of the page.'" +
+				momBtn = "<button class='history-group-mom-btn' title='Append this group to the Macro-of-Macros (MoM) Sequence editor. Opens the Sequence pane if not already visible.'" +
 					" onClick='event.stopPropagation(); showPopupMoM(" + groupId + ");'>+</button>";
 			return "<div class='history-group'>" +
 				momBtn +
@@ -3020,6 +3289,128 @@ Here is the json string received:
 			historyRenderGroupId_ = 0;
 
 			var nodes = buildCompressedHistoryNodes(historyRecords_);
+
+			if (commandBlockStartIndex_ >= 0) {
+				var blockRecordCount = historyRecords_.length - commandBlockStartIndex_;
+				if (blockRecordCount > 1) {
+					var tailNodes = [];
+					var counted = 0;
+					while (nodes.length > 0 && counted < blockRecordCount) {
+						var n = nodes.pop();
+						tailNodes.unshift(n);
+						if (n.type === "record")
+							counted++;
+						else
+							counted += (n.records.length * (n.repeatCount || 1));
+					}
+					var blockRecords = [];
+					for (var bi = 0; bi < tailNodes.length; ++bi) {
+						if (tailNodes[bi].type === "record")
+							blockRecords.push(tailNodes[bi].record);
+						else
+							for (var bj = 0; bj < tailNodes[bi].records.length; ++bj)
+								blockRecords.push(tailNodes[bi].records[bj]);
+					}
+					nodes.push({
+						type: "group",
+						repeatCount: 1,
+						records: blockRecords,
+						children: tailNodes
+					});
+					}
+			}
+
+			var regrouped = [];
+			var ri = 0;
+			while (ri < nodes.length) {
+				var bid = 0;
+				if (nodes[ri].type === "record")
+					bid = nodes[ri].record["_blockId"] || 0;
+				else if (nodes[ri].records && nodes[ri].records.length > 0)
+					bid = nodes[ri].records[0]["_blockId"] || 0;
+				if (bid > 0) {
+					var blockNodes = [nodes[ri]];
+					var rj = ri + 1;
+					while (rj < nodes.length) {
+						var nbid = 0;
+						if (nodes[rj].type === "record")
+							nbid = nodes[rj].record["_blockId"] || 0;
+						else if (nodes[rj].records && nodes[rj].records.length > 0)
+							nbid = nodes[rj].records[0]["_blockId"] || 0;
+						if (nbid === bid) { blockNodes.push(nodes[rj]); rj++; }
+						else break;
+					}
+					if (blockNodes.length > 1) {
+						var bRecs = [];
+						for (var bk = 0; bk < blockNodes.length; ++bk) {
+							if (blockNodes[bk].type === "record")
+								bRecs.push(blockNodes[bk].record);
+							else
+								for (var bl = 0; bl < blockNodes[bk].records.length; ++bl)
+									bRecs.push(blockNodes[bk].records[bl]);
+						}
+						regrouped.push({ type: "group", repeatCount: 1, records: bRecs, children: blockNodes });
+					} else {
+						regrouped.push(blockNodes[0]);
+					}
+					ri = rj;
+				} else {
+					regrouped.push(nodes[ri]);
+					ri++;
+				}
+			}
+			nodes = regrouped;
+
+			nodes = compressNodeSequences(nodes);
+			var wrapped = [];
+			var wi = 0;
+			while (wi < nodes.length) {
+				if (nodes[wi].type === "record") {
+					var runStart = wi;
+					while (wi < nodes.length && nodes[wi].type === "record") wi++;
+					if (wi - runStart >= 2) {
+						var runNodes = nodes.slice(runStart, wi);
+						var runRecs = [];
+						for (var rri = 0; rri < runNodes.length; rri++)
+							runRecs.push(runNodes[rri].record);
+						wrapped.push({ type: "group", repeatCount: 1, records: runRecs, children: runNodes });
+					} else {
+						wrapped.push(nodes[runStart]);
+					}
+				} else {
+					wrapped.push(nodes[wi]);
+					wi++;
+				}
+			}
+			nodes = wrapped;
+
+			var merged = [];
+			for (var mi = 0; mi < nodes.length; mi++) {
+				var mc = nodes[mi];
+				if (mc.type === "group" && mc.records.length > 1) {
+					var mSig = getNodeNormalizedSignature(mc);
+					var mCount = mc.repeatCount || 1;
+					var mLatest = mc;
+					while (mi + 1 < nodes.length &&
+						nodes[mi + 1].type === "group" &&
+						nodes[mi + 1].records.length > 1 &&
+						getNodeNormalizedSignature(nodes[mi + 1]) === mSig) {
+						mCount += (nodes[mi + 1].repeatCount || 1);
+						mi++;
+						mLatest = nodes[mi];
+					}
+					if (mCount > (mc.repeatCount || 1)) {
+						merged.push({ type: "group", repeatCount: mCount, records: mLatest.records, children: mLatest.children });
+					} else {
+						merged.push(mc);
+					}
+				} else {
+					merged.push(mc);
+				}
+			}
+			nodes = merged;
+
+
 			historyContent.innerHTML = renderHistoryNodes(nodes, { rowIndex: 0 });
 		}
 
@@ -3066,11 +3457,15 @@ Here is the json string received:
 					Debug.log("History is empty!");
 					return;
 				}
-				// split the commands
 				var commandList = historyString.split("#");
 				for (var i = 0; i < commandList.length; i++) {
-					if (commandList[i])
-						historyRecords_.push(normalizeHistoryRecord(commandList[i]));
+					if (commandList[i]) {
+						try {
+							historyRecords_.push(normalizeHistoryRecord(commandList[i]));
+						} catch (e) {
+							Debug.log("loadHistory: skipped unparseable record[" + i + "]: " + e.message);
+						}
+					}
 				}
 				renderHistoryDisplay();
 			});
@@ -3080,9 +3475,21 @@ Here is the json string received:
 		//=====================================================================================
 		//appendHistoryRecord ~~
 		function appendHistoryRecord(record) {
-			Debug.log("appendHistoryRecord()");
-			historyRecords_.push(normalizeHistoryRecord(record));
-			renderHistoryDisplay();
+			var normalized = normalizeHistoryRecord(record);
+			normalized["repeatCount"] = 1;
+			delete normalized["_blockId"];
+			if (historyRecords_.length > 0 && commandBlockStartIndex_ < 0) {
+				var last = historyRecords_[historyRecords_.length - 1];
+				if (getHistoryRecordCommandSignature(last) ===
+					getHistoryRecordCommandSignature(normalized)) {
+					last["repeatCount"] = (last["repeatCount"] || 1) + 1;
+					renderHistoryDisplay();
+					return;
+				}
+			}
+			historyRecords_.push(normalized);
+			if (commandBlockStartIndex_ < 0)
+				renderHistoryDisplay();
 		} //end appendHistoryRecord()
 
 		function onClickHistoryRecordByIndex(recordId) {
@@ -3095,10 +3502,25 @@ Here is the json string received:
 			if (!groupRecords || !groupRecords.length)
 				return false;
 
+			if (sequenceBuilding_) {
+				var log = getMomAppendLog();
+				for (var i = 0; i < groupRecords.length; i++) {
+					if (groupRecords[i]["macroType"] === "__mom_marker__")
+						continue;
+					appendMacroToSequence(JSON.stringify(groupRecords[i]));
+					if (log)
+						log.innerHTML += "+" + groupRecords[i]["macroName"] + "<br>";
+				}
+				return false;
+			}
+
 			// Set up command block execution queue
 			isRunningCommandBlock = true;
 			commandBlockQueue = groupRecords;
 			commandBlockIndex = 0;
+
+			if (groupRecords.length > 1)
+				commandBlockStartIndex_ = historyRecords_.length;
 
 			// Execute the first command
 			if (commandBlockQueue.length > 0) {
@@ -3115,9 +3537,12 @@ Here is the json string received:
 
 			currentHistoryRecord = recordObj;
 
-			// in bulding sequence mode add the macro to the sequence
+			// in building sequence mode add the macro to the sequence
 			if (sequenceBuilding_) {
 				appendMacroToSequence(JSON.stringify(recordObj));
+				var log = getMomAppendLog();
+				if (log)
+					log.innerHTML += "+" + recordObj["macroName"] + "<br>";
 				return;
 			}
 
@@ -3138,7 +3563,7 @@ Here is the json string received:
 					"'... " + getDateString(new Date) +
 					".. waiting for response...";
 				str += "<hr width='80%' style='min-width:" + (verticalOutputDivSize_[0] - 3) + "px;'><br>";
-				el.innerHTML = str;
+				el.innerHTML = "<div id='verticalLayoutOutputDiv' style='width:" + verticalOutputDivSize_[0] + "px; height:" + verticalOutputDivSize_[1] + "px;'>" + str + "</div>";
 			}
 
 			var str = "";
@@ -3151,6 +3576,7 @@ Here is the json string received:
 
 			//save input args to history
 			//recordObj["inputArgs"] is encoded ;-separated field/value pairs (pair separated by ,)
+			var historyInputMap = {};
 			var inputArgsSplit = recordObj["inputArgs"].split(';');
 			for (var i = 0; i < inputArgsSplit.length; ++i) {
 				var inputArgsPair = inputArgsSplit[i].split(',');
@@ -3159,10 +3585,50 @@ Here is the json string received:
 				Debug.log("inputArgs field " + inputArgsPair[0]);
 				Debug.log("inputArgs value " + inputArgsPair[1]);
 				inputValueHistory_[inputArgsPair[0]] = inputArgsPair[1];
+				historyInputMap[inputArgsPair[0]] = inputArgsPair[1];
 			}
 			Debug.log("Updated inputValueHistory_ based on history call");
 
-			var postData = "inputArgs=" + recordObj["inputArgs"] + "&outputArgs=" + recordObj["outputArgs"];
+			// reconcile history inputArgs/outputArgs with current macro definition
+			//	so that if the macro has changed (added/removed inputs or outputs),
+			//	the history record can still be run using "Default" for missing inputs
+			var reconciledInputArgs = recordObj["inputArgs"];
+			var reconciledOutputArgs = recordObj["outputArgs"];
+			var currentMacroObj;
+			if (recordObj["macroType"] == MACRO_TYPE_PUBLIC_)
+				currentMacroObj = publicMacros_[recordObj["macroName"]];
+			else if (recordObj["macroType"] == MACRO_TYPE_PRIVATE_)
+				currentMacroObj = privateMacros_[recordObj["macroName"]];
+			else if (feToMacrosMap_[recordObj["feUID"]])
+				currentMacroObj = feToMacrosMap_[recordObj["feUID"]][recordObj["macroName"]];
+			else {
+				// feUID may be "*" or a comma-separated list; search all FEs for the macro
+				for (var feUID in feToMacrosMap_) {
+					if (feToMacrosMap_[feUID][recordObj["macroName"]]) {
+						currentMacroObj = feToMacrosMap_[feUID][recordObj["macroName"]];
+						break;
+					}
+				}
+			}
+			if (currentMacroObj) {
+				var inputData = "";
+				for (var i = 0; i < currentMacroObj.inputs.length; ++i) {
+					var argName = currentMacroObj.inputs[i];
+					var argValue = (historyInputMap[argName] !== undefined) ? historyInputMap[argName] : "Default";
+					if (i) inputData += ";";
+					inputData += encodeURIComponent(argName) + "," + encodeURIComponent(argValue);
+				}
+				reconciledInputArgs = inputData;
+
+				var outputData = "";
+				for (var i = 0; i < currentMacroObj.outputs.length; ++i) {
+					if (i) outputData += ",";
+					outputData += encodeURIComponent(currentMacroObj.outputs[i]);
+				}
+				reconciledOutputArgs = outputData;
+			}
+
+			var postData = "inputArgs=" + reconciledInputArgs + "&outputArgs=" + reconciledOutputArgs;
 			_pollStartTime = Date.now(); //so NotDoneID polling starts at fast 1s cadence
 			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 				//"&feSupervisorID=" + feSupervisorID +
@@ -3170,7 +3636,7 @@ Here is the json string received:
 				"&feUIDSelected=" + recordObj["feUID"] +
 				"&macroType=" + recordObj["macroType"] +
 				"&macroName=" + recordObj["macroName"] +
-				"&saveOutputs=" + parseInt(["saveOutputs"])
+				"&saveOutputs=" + parseInt(recordObj["saveOutputs"])
 				, postData,
 				handleMacroResponse,
 				0 /*reqParam*/, 0 /*progressHandler*/,
@@ -3405,6 +3871,18 @@ Here is the json string received:
 		//=====================================================================================
 
 		var sequenceBuilding_ = false;
+		var _momAppendLogTime = 0;
+		function getMomAppendLog() {
+			var el = document.getElementById("macroModule-output");
+			if (!el) return null;
+			var now = Date.now();
+			if (!el.querySelector("#mom-append-log") || (now - _momAppendLogTime > 120000)) {
+				el.innerHTML = "<div id='mom-append-log' style='padding:6px;'>" +
+					"<b>Appended to MoM Sequence:</b><br></div>";
+			}
+			_momAppendLogTime = now;
+			return el.querySelector("#mom-append-log");
+		}
 		var selectedSequence_ = {};
 		var tempSequence_ = {}
 
@@ -3457,13 +3935,18 @@ Here is the json string received:
 
 				// create the record name
 				var recordName = "";
+				var titleArgs = "";
 				var inputArgs = command["inputArgs"].split(";");
 				for (var j = 0; j < inputArgs.length; j++) {
 					var tuple = inputArgs[j].split(",");
-					if (j)
-						recordName += "<br>&nbsp;&nbsp;&nbsp;&nbsp;"
-					if (tuple[0] !== "")
-						recordName += decodeURIComponent(tuple[0]) + "=" + decodeURIComponent(tuple[1]) + ";";
+					if (tuple[0] !== "") {
+						var argName = decodeURIComponent(tuple[0]);
+						var argVal = decodeURIComponent(tuple[1]);
+						if (j)
+							recordName += "; ";
+						recordName += argName + "=" + argVal;
+						titleArgs += "\n    " + argName + "=" + argVal;
+					}
 				}
 
 				// build the record text
@@ -3473,7 +3956,10 @@ Here is the json string received:
 				else
 					recordText = "(" + command["feUID"] + ") ";
 
-				recordText += command["macroName"] + ": ";
+				recordText += command["macroName"];
+
+				var titleText = "#" + (GUIIndex + 1) + " " + recordText +
+					(titleArgs === "" ? "\n    No arguments" : titleArgs);
 
 				container.innerHTML += DesktopContent.htmlOpen(
 					"div",
@@ -3481,7 +3967,7 @@ Here is the json string received:
 						"id": "sequenceComponent-" + index,
 						"class": className,
 					},
-					"<span><i>#" + (GUIIndex + 1) + "</i> " + recordText + "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + (recordName === "" ? "No arguments" : recordName) + "</span>",
+					"<span title='" + titleText.replace(/'/g, "&#39;") + "'><i>#" + (GUIIndex + 1) + "</i> " + recordText + ": " + (recordName === "" ? "No arguments" : recordName) + "</span>",
 					true);
 
 				GUIIndex++;
@@ -3547,15 +4033,27 @@ Here is the json string received:
 		//showPopupMoM ~~
 		function showPopupMoM(groupId) {
 			Debug.log("showPopupMoM()", groupId);
-			pendingMoMGroupId_ = groupId;
-			var popup = document.getElementById("popupSaveMoM");
-			var nameInput = document.getElementById("momName");
-			var errorMsg = document.getElementById("momName-error");
-			errorMsg.innerText = "";
-			nameInput.value = "";
-			popup.style.display = "grid";
-			popup.style.gridTemplateColumns = "1fr";
-			nameInput.focus();
+
+			var groupRecords = historyRenderGroupMap_[groupId];
+			if (!groupRecords || !groupRecords.length)
+				return;
+
+			if (!sequenceMode_)
+				toggleSequenceMode();
+
+			if (!sequenceBuilding_)
+				newSequence();
+
+			var log = getMomAppendLog();
+			for (var i = 0; i < groupRecords.length; i++) {
+				if (groupRecords[i]["macroType"] === "__mom_marker__")
+					continue;
+				appendMacroToSequence(JSON.stringify(groupRecords[i]));
+				if (log)
+					log.innerHTML += "+" + groupRecords[i]["macroName"] + "<br>";
+			}
+
+			DesktopContent.scrollIntoViewX('macroModule-sequence', false);
 		} //end showPopupMoM()
 
 		//=====================================================================================
@@ -3847,6 +4345,22 @@ Here is the json string received:
 				runButton + pauseButton + stopButton + delayButton + editButton + deleteButton + newButton,
 				true);
 
+			var builderButtonsHtml =
+				"<button onclick='showPopupSaveSequence()'>Save as</button>" +
+				"<button onclick='resetSequence()'>Reset</button>" +
+				"<button onclick='closeSequence()'>Close</button>" +
+				"<button onclick='showPopupSaveSequence(1)'>Overwrite</button>";
+
+			// top builder buttons
+			str += DesktopContent.htmlOpen(
+				"div",
+				{
+					"id": "sequence-builder-buttons-top",
+					"style": "margin-top:10px; display: none; gap: 20px"
+				},
+				builderButtonsHtml,
+				true);
+
 			// area to build the sequence
 			str += DesktopContent.htmlOpen(
 				"div",
@@ -3945,12 +4459,15 @@ Here is the json string received:
 
 			// allow editing
 			sequenceBuilding_ = true;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "";
 			// empty builder
 			tempSequence_ = {};
 			showSequence("sequence-builder", tempSequence_);
 			// show edit buttons
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "flex";
+			document.getElementById("sequence-builder-buttons-top").style.display = "flex";
 		} //end newSequence()
 
 		//=====================================================================================
@@ -4001,12 +4518,15 @@ Here is the json string received:
 			// disable action buttons
 			statusActionButtons(false);
 			sequenceBuilding_ = true;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "";
 			// close active view
 			tempSequence_ = selectedSequence_;
 			selectSequence();
 			showSequence("sequence-builder", tempSequence_);
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "flex";
+			document.getElementById("sequence-builder-buttons-top").style.display = "flex";
 			document.getElementById("sequenceName").value = document.getElementById("select-sequence").value;
 		} //end editSequence()
 
@@ -4276,7 +4796,50 @@ Here is the json string received:
 
 				updateCurrentMacroDisplay(command["macroName"], currentIndex + 1, totalMacros);
 
-				var postData = "inputArgs=" + command["inputArgs"] + "&outputArgs=" + command["outputArgs"];
+				// reconcile sequence inputArgs/outputArgs with current macro definition
+				var seqReconciledInputArgs = command["inputArgs"];
+				var seqReconciledOutputArgs = command["outputArgs"];
+				var seqMacroObj;
+				if (command["macroType"] == MACRO_TYPE_PUBLIC_)
+					seqMacroObj = publicMacros_[command["macroName"]];
+				else if (command["macroType"] == MACRO_TYPE_PRIVATE_)
+					seqMacroObj = privateMacros_[command["macroName"]];
+				else if (feToMacrosMap_[command["feUID"]])
+					seqMacroObj = feToMacrosMap_[command["feUID"]][command["macroName"]];
+				else {
+					for (var feUID in feToMacrosMap_) {
+						if (feToMacrosMap_[feUID][command["macroName"]]) {
+							seqMacroObj = feToMacrosMap_[feUID][command["macroName"]];
+							break;
+						}
+					}
+				}
+
+				if (seqMacroObj) {
+					var seqHistoryInputMap = {};
+					var seqInputArgsSplit = command["inputArgs"].split(';');
+					for (var si = 0; si < seqInputArgsSplit.length; ++si) {
+						var seqPair = seqInputArgsSplit[si].split(',');
+						seqHistoryInputMap[decodeURIComponent(seqPair[0])] = decodeURIComponent(seqPair[1]);
+					}
+					var seqInputData = "";
+					for (var si = 0; si < seqMacroObj.inputs.length; ++si) {
+						var seqArgName = seqMacroObj.inputs[si];
+						var seqArgValue = (seqHistoryInputMap[seqArgName] !== undefined) ? seqHistoryInputMap[seqArgName] : "Default";
+						if (si) seqInputData += ";";
+						seqInputData += encodeURIComponent(seqArgName) + "," + encodeURIComponent(seqArgValue);
+					}
+					seqReconciledInputArgs = seqInputData;
+
+					var seqOutputData = "";
+					for (var si = 0; si < seqMacroObj.outputs.length; ++si) {
+						if (si) seqOutputData += ",";
+						seqOutputData += encodeURIComponent(seqMacroObj.outputs[si]);
+					}
+					seqReconciledOutputArgs = seqOutputData;
+				}
+
+				var postData = "inputArgs=" + seqReconciledInputArgs + "&outputArgs=" + seqReconciledOutputArgs;
 
 				_pollStartTime = Date.now();
 				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
@@ -4403,8 +4966,15 @@ Here is the json string received:
 			// hide the edit buttons
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "none";
+			document.getElementById("sequence-builder-buttons-top").style.display = "none";
 			// stop building
 			sequenceBuilding_ = false;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "none";
+			var outputEl = document.getElementById("macroModule-output");
+			if (outputEl)
+				outputEl.innerHTML = "<h3 style='display:flex;align-items:center;justify-content:center;white-space:nowrap;'>" +
+					"Macro output will be displayed here</h3>";
 			Debug.log("close", tempSequence_);
 		} //end closeSequence()
 
@@ -4590,12 +5160,27 @@ Here is the json string received:
 
 	<!-- <center> -->
 
-	<a onclick="toggleView()">Toggle 2-Column View</a>
-	<a id="#macroModule-sequence" style="margin-left: 20px;" onclick="toggleSequenceMode(); DesktopContent.scrollIntoViewX('macroModule-sequence', false)">Toggle Macro-of-Macros (MoM) Sequence Pane</a><br>
-	<div style='width:550px'></div>
+	<div id="settingsIconContainer" style="display:inline-block; cursor:pointer; margin: -5px 0 -15px 22px; font-size:44px; color:#555; line-height:0.8; height:36px; overflow:hidden;"
+		onclick="toggleSettingsPopup()" title="Click to open FE Macro user settings">&#9881;</div>
 
-	<!--<a onclick='init();'>Refresh</a>
-		<br>-->
+	<div id="popupSettings" class="smallPopup" style="width:320px; min-height:auto; left:30%; margin-left:0; top:60px;">
+		<h4 style="margin-top:0;">FE Macro Test Settings</h4>
+		<div style="text-align:left; margin: 10px 0;">
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-twoColumnView" onchange="applyAndSavePreferences()">
+				Use 2-Column View
+			</label>
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-showSequencePane" onchange="applyAndSavePreferences()">
+				Show Macro-of-Macros Sequence Pane
+			</label>
+			<label style="display:block; margin:8px 0; cursor:pointer; color:inherit; font-size:inherit;">
+				<input type="checkbox" id="pref-dynamicDropdown" onchange="applyAndSavePreferences()">
+				Use Dynamic FE Macro Dropdown
+			</label>
+		</div>
+		<button onclick="toggleSettingsPopup()">Close</button>
+	</div>
 
 	<div id="popupClearHistoryConfirm" class="smallPopup">
 		<h4>You will be clearing command history. Do you wish to continue?</h4>
