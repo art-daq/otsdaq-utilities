@@ -173,9 +173,17 @@
 		.component {
 			height: fit-content;
 			display: grid;
-			grid-template-columns: 4fr 1fr;
+			grid-template-columns: 1fr auto;
 			height: auto;
+			overflow: hidden;
 		}
+
+			.component > span {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				min-width: 0;
+			}
 
 			.component button {
 				float: right;
@@ -1742,7 +1750,7 @@ Here is the json string received:
 						},
 						"<div style='display: flex; flex-direction: column; align-items: flex-start; width: 100%;'>" +
 						"<div style='display: flex; justify-content: space-between; align-items: center; width: 100%;'>" +
-						"<h3>MoM Sequence Mode</h3>" +
+						"<h3>Macro-of-Macros (MoM) Sequence Mode</h3>" +
 						"<span id='currentMacroDisplay'>No Macro Running</span>" +
 						"</div>" +
 						"<div style='display: flex; justify-content: flex-end; width: 100%;'>" +
@@ -3249,7 +3257,7 @@ Here is the json string received:
 			var childHtml = renderHistoryNodes(node.children, renderState);
 			var momBtn = "";
 			if (node.records.length > 1)
-				momBtn = "<button class='history-group-mom-btn' title='Create Macro-of-Macros (MoM) Sequence from this group. Once created, you can access your new MoM sequence by toggling the Sequence Mode pane at the top-left of the page.'" +
+				momBtn = "<button class='history-group-mom-btn' title='Append this group to the Macro-of-Macros (MoM) Sequence editor. Opens the Sequence pane if not already visible.'" +
 					" onClick='event.stopPropagation(); showPopupMoM(" + groupId + ");'>+</button>";
 			return "<div class='history-group'>" +
 				momBtn +
@@ -3899,13 +3907,18 @@ Here is the json string received:
 
 				// create the record name
 				var recordName = "";
+				var titleArgs = "";
 				var inputArgs = command["inputArgs"].split(";");
 				for (var j = 0; j < inputArgs.length; j++) {
 					var tuple = inputArgs[j].split(",");
-					if (j)
-						recordName += "<br>&nbsp;&nbsp;&nbsp;&nbsp;"
-					if (tuple[0] !== "")
-						recordName += decodeURIComponent(tuple[0]) + "=" + decodeURIComponent(tuple[1]) + ";";
+					if (tuple[0] !== "") {
+						var argName = decodeURIComponent(tuple[0]);
+						var argVal = decodeURIComponent(tuple[1]);
+						if (j)
+							recordName += "; ";
+						recordName += argName + "=" + argVal;
+						titleArgs += "\n    " + argName + "=" + argVal;
+					}
 				}
 
 				// build the record text
@@ -3915,7 +3928,10 @@ Here is the json string received:
 				else
 					recordText = "(" + command["feUID"] + ") ";
 
-				recordText += command["macroName"] + ": ";
+				recordText += command["macroName"];
+
+				var titleText = "#" + (GUIIndex + 1) + " " + recordText +
+					(titleArgs === "" ? "\n    No arguments" : titleArgs);
 
 				container.innerHTML += DesktopContent.htmlOpen(
 					"div",
@@ -3923,7 +3939,7 @@ Here is the json string received:
 						"id": "sequenceComponent-" + index,
 						"class": className,
 					},
-					"<span><i>#" + (GUIIndex + 1) + "</i> " + recordText + "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + (recordName === "" ? "No arguments" : recordName) + "</span>",
+					"<span title='" + titleText.replace(/'/g, "&#39;") + "'><i>#" + (GUIIndex + 1) + "</i> " + recordText + ": " + (recordName === "" ? "No arguments" : recordName) + "</span>",
 					true);
 
 				GUIIndex++;
@@ -3989,15 +4005,24 @@ Here is the json string received:
 		//showPopupMoM ~~
 		function showPopupMoM(groupId) {
 			Debug.log("showPopupMoM()", groupId);
-			pendingMoMGroupId_ = groupId;
-			var popup = document.getElementById("popupSaveMoM");
-			var nameInput = document.getElementById("momName");
-			var errorMsg = document.getElementById("momName-error");
-			errorMsg.innerText = "";
-			nameInput.value = "";
-			popup.style.display = "grid";
-			popup.style.gridTemplateColumns = "1fr";
-			nameInput.focus();
+
+			var groupRecords = historyRenderGroupMap_[groupId];
+			if (!groupRecords || !groupRecords.length)
+				return;
+
+			if (!sequenceMode_)
+				toggleSequenceMode();
+
+			if (!sequenceBuilding_)
+				newSequence();
+
+			for (var i = 0; i < groupRecords.length; i++) {
+				if (groupRecords[i]["macroType"] === "__mom_marker__")
+					continue;
+				appendMacroToSequence(JSON.stringify(groupRecords[i]));
+			}
+
+			DesktopContent.scrollIntoViewX('macroModule-sequence', false);
 		} //end showPopupMoM()
 
 		//=====================================================================================
