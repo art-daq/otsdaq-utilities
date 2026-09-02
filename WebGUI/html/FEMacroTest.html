@@ -1007,6 +1007,8 @@
 				isRunningCommandBlock = false;
 				commandBlockQueue = [];
 				commandBlockIndex = 0;
+				if (commandBlockStartIndex_ >= 0)
+					renderHistoryDisplay();
 				commandBlockStartIndex_ = -1;
 				if (_sequenceOnComplete) {
 					var cb = _sequenceOnComplete;
