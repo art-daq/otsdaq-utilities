@@ -233,9 +233,8 @@
 		}
 
 		#sequence-builder, #show-sequence {
-			max-height: 500px;
 			overflow-y: auto;
-			resize: horizontal;
+			resize: both;
 		}
 
 		.vbox {
@@ -4314,6 +4313,22 @@ Here is the json string received:
 				runButton + pauseButton + stopButton + delayButton + editButton + deleteButton + newButton,
 				true);
 
+			var builderButtonsHtml =
+				"<button onclick='showPopupSaveSequence()'>Save as</button>" +
+				"<button onclick='resetSequence()'>Reset</button>" +
+				"<button onclick='closeSequence()'>Close</button>" +
+				"<button onclick='showPopupSaveSequence(1)'>Overwrite</button>";
+
+			// top builder buttons
+			str += DesktopContent.htmlOpen(
+				"div",
+				{
+					"id": "sequence-builder-buttons-top",
+					"style": "margin-top:10px; display: none; gap: 20px"
+				},
+				builderButtonsHtml,
+				true);
+
 			// area to build the sequence
 			str += DesktopContent.htmlOpen(
 				"div",
@@ -4418,6 +4433,7 @@ Here is the json string received:
 			// show edit buttons
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "flex";
+			document.getElementById("sequence-builder-buttons-top").style.display = "flex";
 		} //end newSequence()
 
 		//=====================================================================================
@@ -4474,6 +4490,7 @@ Here is the json string received:
 			showSequence("sequence-builder", tempSequence_);
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "flex";
+			document.getElementById("sequence-builder-buttons-top").style.display = "flex";
 			document.getElementById("sequenceName").value = document.getElementById("select-sequence").value;
 		} //end editSequence()
 
@@ -4913,6 +4930,7 @@ Here is the json string received:
 			// hide the edit buttons
 			var builderActions = document.getElementById("sequence-builder-buttons");
 			builderActions.style.display = "none";
+			document.getElementById("sequence-builder-buttons-top").style.display = "none";
 			// stop building
 			sequenceBuilding_ = false;
 			Debug.log("close", tempSequence_);
