@@ -1108,11 +1108,10 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 			xmldoc.addTextElementToData("dynamicDropdown", "0");
 			return;
 		}
-		unsigned int twoColumnView, showSequencePane, dynamicDropdown;
+		unsigned int twoColumnView = 0, showSequencePane = 0, dynamicDropdown = 0;
 		fscanf(fp, "%*s %u", &twoColumnView);
 		fscanf(fp, "%*s %u", &showSequencePane);
-		if(fscanf(fp, "%*s %u", &dynamicDropdown) != 1)
-			dynamicDropdown = 0;
+		fscanf(fp, "%*s %u", &dynamicDropdown);
 		fclose(fp);
 
 		char tmpStr[20];
