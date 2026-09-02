@@ -1734,7 +1734,9 @@ Here is the json string received:
 						"<div style='margin-bottom: 5px;'>Alert For: <span id='keywordValue'>" + (flagKeyword ? escapeHtml(flagKeyword) : '[None]') + "</span></div>" +
 						"<div>Flag Status: <span id='flagStatusValue'>" + escapeHtml(flagStatusString) + "</span></div>" +
 						"</div>" +
-						"</div>",
+						"</div>" +
+						"<div id='history-mom-warning' style='display:none;background-color:#fff3cd;border:1px solid #ffc107;padding:4px 8px;margin-top:5px;margin-bottom:5px;font-size:18px;border-radius:3px;'>" +
+						"MoM edit mode active: clicking commands will append them to the MoM Sequence instead of executing.</div>",
 						true
 					);
 
@@ -3500,6 +3502,18 @@ Here is the json string received:
 			if (!groupRecords || !groupRecords.length)
 				return false;
 
+			if (sequenceBuilding_) {
+				var log = getMomAppendLog();
+				for (var i = 0; i < groupRecords.length; i++) {
+					if (groupRecords[i]["macroType"] === "__mom_marker__")
+						continue;
+					appendMacroToSequence(JSON.stringify(groupRecords[i]));
+					if (log)
+						log.innerHTML += "+" + groupRecords[i]["macroName"] + "<br>";
+				}
+				return false;
+			}
+
 			// Set up command block execution queue
 			isRunningCommandBlock = true;
 			commandBlockQueue = groupRecords;
@@ -3523,9 +3537,12 @@ Here is the json string received:
 
 			currentHistoryRecord = recordObj;
 
-			// in bulding sequence mode add the macro to the sequence
+			// in building sequence mode add the macro to the sequence
 			if (sequenceBuilding_) {
 				appendMacroToSequence(JSON.stringify(recordObj));
+				var log = getMomAppendLog();
+				if (log)
+					log.innerHTML += "+" + recordObj["macroName"] + "<br>";
 				return;
 			}
 
@@ -3854,6 +3871,18 @@ Here is the json string received:
 		//=====================================================================================
 
 		var sequenceBuilding_ = false;
+		var _momAppendLogTime = 0;
+		function getMomAppendLog() {
+			var el = document.getElementById("macroModule-output");
+			if (!el) return null;
+			var now = Date.now();
+			if (!el.querySelector("#mom-append-log") || (now - _momAppendLogTime > 120000)) {
+				el.innerHTML = "<div id='mom-append-log' style='padding:6px;'>" +
+					"<b>Appended to MoM Sequence:</b><br></div>";
+			}
+			_momAppendLogTime = now;
+			return el.querySelector("#mom-append-log");
+		}
 		var selectedSequence_ = {};
 		var tempSequence_ = {}
 
@@ -4015,10 +4044,13 @@ Here is the json string received:
 			if (!sequenceBuilding_)
 				newSequence();
 
+			var log = getMomAppendLog();
 			for (var i = 0; i < groupRecords.length; i++) {
 				if (groupRecords[i]["macroType"] === "__mom_marker__")
 					continue;
 				appendMacroToSequence(JSON.stringify(groupRecords[i]));
+				if (log)
+					log.innerHTML += "+" + groupRecords[i]["macroName"] + "<br>";
 			}
 
 			DesktopContent.scrollIntoViewX('macroModule-sequence', false);
@@ -4427,6 +4459,8 @@ Here is the json string received:
 
 			// allow editing
 			sequenceBuilding_ = true;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "";
 			// empty builder
 			tempSequence_ = {};
 			showSequence("sequence-builder", tempSequence_);
@@ -4484,6 +4518,8 @@ Here is the json string received:
 			// disable action buttons
 			statusActionButtons(false);
 			sequenceBuilding_ = true;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "";
 			// close active view
 			tempSequence_ = selectedSequence_;
 			selectSequence();
@@ -4933,6 +4969,12 @@ Here is the json string received:
 			document.getElementById("sequence-builder-buttons-top").style.display = "none";
 			// stop building
 			sequenceBuilding_ = false;
+			var momWarn = document.getElementById("history-mom-warning");
+			if (momWarn) momWarn.style.display = "none";
+			var outputEl = document.getElementById("macroModule-output");
+			if (outputEl)
+				outputEl.innerHTML = "<h3 style='display:flex;align-items:center;justify-content:center;white-space:nowrap;'>" +
+					"Macro output will be displayed here</h3>";
 			Debug.log("close", tempSequence_);
 		} //end closeSequence()
 
