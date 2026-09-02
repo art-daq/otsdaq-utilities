@@ -3452,6 +3452,7 @@ Here is the json string received:
 						try {
 							historyRecords_.push(normalizeHistoryRecord(commandList[i]));
 						} catch (e) {
+							Debug.log("loadHistory: skipped unparseable record[" + i + "]: " + e.message);
 						}
 					}
 				}
