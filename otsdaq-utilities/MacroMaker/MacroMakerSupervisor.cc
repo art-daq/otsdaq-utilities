@@ -3683,7 +3683,7 @@ try
 			sleepTime *= 5;  //50ms, 250ms
 			usleep(sleepTime);
 		}
-	}  //end wait loop
+	}                      //end wait loop
 	if(!group->allDone())  //not all done - go async
 	{
 		xmldoc.addNumberElementToData("NotDoneID", group->groupID_);

@@ -2874,12 +2874,15 @@ Here is the json string received:
 
 		//=====================================================================================
 		function normalizeHistoryRecord(record) {
+			if (typeof record === "string")
+				record = record.replace(/[\x00-\x1f\x7f]+/g, '');
 			var normalized = (typeof record === "string") ? JSON.parse(record) : record;
 			normalized["launchTime"] = parseHistoryTimestamp(normalized["launchTime"]);
 			normalized["completeTime"] = parseHistoryTimestamp(normalized["completeTime"]);
 			if (!normalized["completeTime"] && normalized["launchTime"])
 				normalized["completeTime"] = normalized["launchTime"];
 			normalized["repeatCount"] = parseInt(normalized["repeatCount"]) || 1;
+			normalized["saveOutputs"] = "" + (normalized["saveOutputs"] || "0");
 			return normalized;
 		}
 
@@ -2965,7 +2968,9 @@ Here is the json string received:
 				feClass: recordObj["feClass"],
 				feUID: recordObj["feUID"],
 				macroType: recordObj["macroType"],
-				macroName: recordObj["macroName"]
+				macroName: recordObj["macroName"],
+				inputArgs: recordObj["inputArgs"],
+				saveOutputs: recordObj["saveOutputs"]
 			});
 		}
 
@@ -3075,6 +3080,9 @@ Here is the json string received:
 				}
 				if (bestMatch) {
 					var spanStart = endIndex - bestMatch.span;
+					//console.log("compressNodeSeq: match blockLen=" + bestMatch.blockLength +
+					//	" repeat=" + bestMatch.repeatCount + " span=" + bestMatch.span +
+					//	" sigs=[" + (function() { var s=[]; for (var k=spanStart;k<endIndex;k++) s.push(getNodeNormalizedSignature(nodes[k])); return s.join(", "); })() + "]");
 					var expanded = [];
 					for (var rep = 0; rep < bestMatch.repeatCount; ++rep) {
 						var bStart = spanStart + rep * bestMatch.blockLength;
@@ -3170,6 +3178,11 @@ Here is the json string received:
 						for (var r = endIndex - bestMatch.span; r < endIndex; ++r)
 							groupRepeatCount += (records[r]["repeatCount"] || 1);
 					}
+					//console.log("buildCompressed: merging blockLength=" + bestMatch.blockLength +
+					//	" repeatCount=" + groupRepeatCount + " span=" + bestMatch.span +
+					//	" endIndex=" + endIndex +
+					//	" sig=" + getHistoryRecordSignature(records[blockStart]) +
+					//	" inputArgs=" + (records[blockStart]["inputArgs"] || ""));
 					nodes.unshift({
 						type: "group",
 						repeatCount: groupRepeatCount,
@@ -3379,11 +3392,13 @@ Here is the json string received:
 						nodes[mi + 1].type === "group" &&
 						nodes[mi + 1].records.length > 1 &&
 						getNodeNormalizedSignature(nodes[mi + 1]) === mSig) {
+						//console.log("mergeLoop: merging node[" + (mi+1) + "] into node, mSig=" + mSig);
 						mCount += (nodes[mi + 1].repeatCount || 1);
 						mi++;
 						mLatest = nodes[mi];
 					}
 					if (mCount > (mc.repeatCount || 1)) {
+						//console.log("mergeLoop: produced merged group with repeatCount=" + mCount + " mSig=" + mSig);
 						merged.push({ type: "group", repeatCount: mCount, records: mLatest.records, children: mLatest.children });
 					} else {
 						merged.push(mc);
@@ -3441,12 +3456,47 @@ Here is the json string received:
 					Debug.log("History is empty!");
 					return;
 				}
-				// split the commands
-				var commandList = historyString.split("#");
-				for (var i = 0; i < commandList.length; i++) {
-					if (commandList[i])
-						historyRecords_.push(normalizeHistoryRecord(commandList[i]));
+				var rawCommands = historyString.split("#");
+				var rawCount = 0;
+				for (var rc = 0; rc < rawCommands.length; rc++) if (rawCommands[rc].trim()) rawCount++;
+				console.log("=== RAW server response: " + rawCount + " non-empty records, showing last 5 ===");
+				var shown = 0;
+				for (var ri = rawCommands.length - 1; ri >= 0 && shown < 5; ri--) {
+					if (!rawCommands[ri].trim()) continue;
+					shown++;
+					var m = rawCommands[ri].match(/"macroName":"([^"]*)"/);
+					var inp = rawCommands[ri].match(/"inputArgs":"([^"]*)"/);
+					var rep = rawCommands[ri].match(/"repeatCount":"([^"]*)"/);
+					console.log("  raw[" + ri + "] macro=" + (m ? m[1] : "?") +
+						" repeatCount=" + (rep ? rep[1] : "1") +
+						" inputArgs(first120)=" + (inp ? inp[1].substring(0, 120) : ""));
 				}
+				// split the commands
+				var commandList = rawCommands;
+				var parseErrors = 0;
+				for (var i = 0; i < commandList.length; i++) {
+					if (commandList[i]) {
+						try {
+							historyRecords_.push(normalizeHistoryRecord(commandList[i]));
+						} catch (e) {
+							parseErrors++;
+							if (parseErrors <= 3) {
+								var cleaned = commandList[i].replace(/[\x00-\x1f\x7f]+/g, '');
+								console.log("loadHistory: PARSE ERROR record[" + i + "]: " + e.message);
+								console.log("  cleaned JSON=" + cleaned);
+							}
+						}
+					}
+				}
+				if (parseErrors > 0)
+					console.log("loadHistory: skipped " + parseErrors + " unparseable records");
+				console.log("=== loadHistory: " + historyRecords_.length + " records loaded (showing last 5) ===");
+				var diagStart = Math.max(0, historyRecords_.length - 5);
+				for (var di = diagStart; di < historyRecords_.length; di++)
+					console.log("  record[" + di + "] sig=" + getHistoryRecordSignature(historyRecords_[di]) +
+						" cmdSig=" + getHistoryRecordCommandSignature(historyRecords_[di]) +
+						" repeatCount=" + (historyRecords_[di]["repeatCount"] || 1) +
+						" inputArgs=" + (historyRecords_[di]["inputArgs"] || ""));
 				renderHistoryDisplay();
 			});
 
@@ -3458,6 +3508,26 @@ Here is the json string received:
 			var normalized = normalizeHistoryRecord(record);
 			normalized["repeatCount"] = 1;
 			delete normalized["_blockId"];
+			if (historyRecords_.length > 0 && commandBlockStartIndex_ < 0) {
+				var last = historyRecords_[historyRecords_.length - 1];
+				var lastSig = getHistoryRecordCommandSignature(last);
+				var newSig = getHistoryRecordCommandSignature(normalized);
+				console.log("appendHistoryRecord: match=" + (lastSig === newSig) +
+					" lastSaveOutputs=" + JSON.stringify(last["saveOutputs"]) + "(" + typeof last["saveOutputs"] + ")" +
+					" newSaveOutputs=" + JSON.stringify(normalized["saveOutputs"]) + "(" + typeof normalized["saveOutputs"] + ")");
+				if (lastSig !== newSig) {
+					var lp = JSON.parse(lastSig);
+					var np = JSON.parse(newSig);
+					for (var k in np)
+						if (JSON.stringify(lp[k]) !== JSON.stringify(np[k]))
+							console.log("  DIFF field=" + k + " last=" + JSON.stringify(lp[k]) + " new=" + JSON.stringify(np[k]));
+				}
+				if (lastSig === newSig) {
+					last["repeatCount"] = (last["repeatCount"] || 1) + 1;
+					renderHistoryDisplay();
+					return;
+				}
+			}
 			historyRecords_.push(normalized);
 			if (commandBlockStartIndex_ < 0)
 				renderHistoryDisplay();
