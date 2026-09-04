@@ -49,6 +49,7 @@
 
 #define LIVEDQM_DIR std::string("LIVE_DQM")
 #define PRE_MADE_ROOT_CFG_DIR std::string("Pre-made Views")
+#define HISTORY_DIR std::string("History")
 
 #define PRE_MADE_ROOT_CFG_FILE_EXT std::string(".rcfg")
 
@@ -456,6 +457,13 @@ void VisualSupervisor::request(const std::string&               requestType,
 			dirpath = std::string(ROOT_DISPLAY_CONFIG_PATH) + "/" +
 			          path.substr(PRE_MADE_ROOT_CFG_DIR.length() + 2);
 
+		// If looking for the History virtual dir, remap to ROOT_BROWSER_PATH
+		if(path == "/" + HISTORY_DIR + "/")
+			dirpath = std::string(ROOT_BROWSER_PATH) + "/";
+		else if(path.find("/" + HISTORY_DIR + "/") == 0)
+			dirpath = std::string(ROOT_BROWSER_PATH) + "/" +
+			          path.substr(HISTORY_DIR.length() + 2);
+
 		////STDLINE(std::string("dirpath                  : ")+ dirpath,"") ;
 		__SUP_COUT__ << "rootpath:-" << rootpath << "-path:-" << path << "-dirpath:-"
 		             << dirpath << "-" << __E__;
@@ -505,8 +513,11 @@ void VisualSupervisor::request(const std::string&               requestType,
 					if(recheck)
 						closedir(pRtDIR);
 				}
+
+				xmlOut.addTextElementToData("dir", HISTORY_DIR);  // add to xml
 			}
 			////STDLINE(std::string("Opening ")+ dirpath,"") ;
+			if(path != "/")
 			while((entry = readdir(pDIR)))
 			{
 				//__SUP_COUT__ << int(entry->d_type) << " " << entry->d_name << "\n" <<
@@ -564,12 +575,17 @@ void VisualSupervisor::request(const std::string&               requestType,
 		std::string path = CgiDataUtilities::postData(cgiIn, "RootPath");
 		__SUP_COUTV__(path);
 
-		unsigned splitter = path.find(".root") + 5;  // 5 = std::string(".root").size();
+		// Strip History virtual directory prefix for file resolution, keep original path for response
+		std::string filePath = path;
+		if(filePath.find("/" + HISTORY_DIR + "/") == 0)
+			filePath = filePath.substr(HISTORY_DIR.length() + 1);
+
+		unsigned splitter = filePath.find(".root") + 5;  // 5 = std::string(".root").size();
 		std::string rootFileName =
-		    std::string(__ENV__("ROOT_BROWSER_PATH")) + path.substr(0, splitter);
+		    std::string(__ENV__("ROOT_BROWSER_PATH")) + filePath.substr(0, splitter);
 		__SUP_COUTV__(rootFileName);
 
-		std::string rootDirectoryName = path.substr(splitter, path.length() - splitter);
+		std::string rootDirectoryName = filePath.substr(splitter, filePath.length() - splitter);
 		__SUP_COUTV__(rootDirectoryName);
 
 		// std::string fullPathToObject = rootFileName + ":" + rootDirectoryName;
