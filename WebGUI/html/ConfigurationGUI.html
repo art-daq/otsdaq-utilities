@@ -5612,6 +5612,13 @@
 			pathHTML = pathHTML.replace(/</g, "&lt");
 			pathHTML = pathHTML.replace(/>/g, "&gt");
 
+			var collapsedKeyValue = "";
+			var collapsedKeyPending = false;
+			var collapsedKeyDepth = 0;
+			var collapsedKeyUid = 0;
+			var collapsedKeyNodeName = "";
+			var collapsedKeyValueType = "";
+
 			for (i = 0; i < nodes.length; ++i) {
 				uid = treeNodeUID_++;
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
@@ -5693,6 +5700,32 @@
 					value = value.replace(/</g, "&lt");
 					value = value.replace(/>/g, "&gt");
 
+					if(!isDiffNode && nodeName.toLowerCase().includes("key")) {
+						collapsedKeyValue = value;
+						collapsedKeyPending = true;
+						collapsedKeyDepth = depth;
+						collapsedKeyUid = uid;
+						collapsedKeyNodeName = nodeName;
+						collapsedKeyValueType = valueType;
+
+						treeViewHandlerStr_ +=
+							"<div id='treeNode-path-" +
+							(depth + "-" + uid) + "' style='display:none'>" +
+							pathHTML +
+							"</div>" +
+							"<div id='treeNode-ParentId-" +
+							(depth + "-" + uid) + "' style='display:none'>" +
+							parentIdString +
+							"</div>" +
+							"<div class='treeNode-Value treeNode-ValueType-" + valueType +
+							"' id='treeNode-Value-" +
+							(depth + "-" + uid) + "' style='display:none'>" +
+							"<b>" + nodeName + "</b>" +
+							"</div>";
+
+						continue;
+					}
+
 					//this is a value node!
 					//////////=======================
 					treeViewHandlerStr_ +=
@@ -5762,15 +5795,59 @@
 						titleStr += "Path: \t" + path + nodeName + "\n";
 						titleStr += "Value: \t" + value + "\n";
 
-						//left side of value
-						treeViewHandlerStr_ +=
-							"<div style='float:left' id='treeNode-Field-title-" +
-							(depth + "-" + uid) + "' title='" + titleStr + "'>" +
-							"<b class='treeNode-Value-leafNode-fieldName bold-header'>" +
-							nodeName + "</b>" +
-							"</div><div style='float:left'>&nbsp;:</div>";
+						var displayLabel;
+						var isCollapsedRow = false;
+						var savedKeyDepth, savedKeyUid;
+						if(collapsedKeyPending && nodeName.toLowerCase().includes("value")) {
+							displayLabel = collapsedKeyValue;
+							isCollapsedRow = true;
+							savedKeyDepth = collapsedKeyDepth;
+							savedKeyUid = collapsedKeyUid;
+							collapsedKeyPending = false;
+							collapsedKeyValue = "";
+						} else {
+							displayLabel = nodeName;
+							if(collapsedKeyPending) {
+								collapsedKeyPending = false;
+								collapsedKeyValue = "";
+							}
+						}
 
-						//normal edit icon
+						//left side of value
+						if(isCollapsedRow) {
+							treeViewHandlerStr_ +=
+								"<div style='float:left' id='treeNode-Value-leafNode-" +
+								(savedKeyDepth + "-" + savedKeyUid) +
+								"' class='treeNode-Value-leafNode-fieldValue " +
+								"treeNode-Value-leafNode-ColumnName-" + collapsedKeyNodeName +
+								"' title='" + titleStr + "'>" +
+								"<b class='treeNode-Value-leafNode-fieldName bold-header'>" +
+								displayLabel + "</b>" +
+								"</div>";
+						} else {
+							treeViewHandlerStr_ +=
+								"<div style='float:left' id='treeNode-Field-title-" +
+								(depth + "-" + uid) + "' title='" + titleStr + "'>" +
+								"<b class='treeNode-Value-leafNode-fieldName bold-header'>" +
+								displayLabel + "</b>" +
+								"</div>";
+						}
+
+						if(isCollapsedRow) {
+							//edit icon for the key field (left of colon)
+							treeViewHandlerStr_ +=
+								"<div class='treeNode-Value-editIcon' id='treeNode-Value-editKeyIcon-" +
+								(depth + "-" + uid) + "' " +
+								"onclick='handleTreeNodeClick(" +
+								savedKeyDepth + "," + savedKeyUid + "," +
+								"1,\"value\"); event.stopPropagation();' " +
+								"title='Edit the key of this node.' " +
+								"></div>";
+						}
+
+						treeViewHandlerStr_ += "<div style='float:left'>&nbsp;:</div>";
+
+						//normal edit icon (right of colon)
 						treeViewHandlerStr_ +=
 							"<div class='treeNode-Value-editIcon' id='treeNode-Value-editIcon-" +
 							(depth + "-" + uid) + "' " +
@@ -22253,6 +22330,13 @@
 				}
 				catch (e) { }
 
+				//try bringing along the key edit icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel) {
 					if (vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
@@ -22295,6 +22379,13 @@
 			//try bringing along the copy-record icon, and ignore fails
 			try {
 				document.getElementById("treeNode-Value-copyIcon-" +
+					treeEditingEditIconShownIdString_).style.display = "block";
+			}
+			catch (e) { }
+
+			//try bringing along the key edit icon, and ignore fails
+			try {
+				document.getElementById("treeNode-Value-editKeyIcon-" +
 					treeEditingEditIconShownIdString_).style.display = "block";
 			}
 			catch (e) { }
