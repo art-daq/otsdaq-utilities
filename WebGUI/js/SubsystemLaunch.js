@@ -1530,14 +1530,16 @@ SubsystemLaunch.create = function() {
 				else {
 					el = document.getElementById("subsystem_" + s + "_" + fieldIds[i]);
 
-					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusChangeTime &&
-							SubsystemLaunch.subsystems[s].lastStatusChangeTime != "0")
+					if(fieldIds[i] == "detail")
 					{
 						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
 						const tel = document.createElement("textarea");
 						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
 
-						const detailText = tel.value + " ( " +
+						var detailText = tel.value;
+						if(SubsystemLaunch.subsystems[s].lastStatusChangeTime &&
+								SubsystemLaunch.subsystems[s].lastStatusChangeTime != "0")
+							detailText += " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusChangeTime + " )";
 
 						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
@@ -2968,25 +2970,28 @@ SubsystemLaunch.create = function() {
 				if(lastLogEntry && lastLogEntry != "")
 					lastLogEntry = decodeURIComponent(lastLogEntry);
 
-				var writeToEcl = false; // updated by checkbox onchange before popup is cleared
 				SubsystemLaunch._pendingWriteToEcl = false; // reset each time popup opens
+				SubsystemLaunch._pendingDiscardRun = false;
 
 				DesktopContent.popUpVerification(
 					/* prompt */
 					"Please enter a logbook entry summarizing the run:" +
 					"<br><br><label style='cursor:pointer;'><input type='checkbox' " +
-					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>"
+					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>" +
+					"<br><label style='cursor:pointer;'><input type='checkbox' " +
+					"id='SubsystemLaunch-discardRun' onchange='SubsystemLaunch._pendingDiscardRun=this.checked;' /> Discard run for processing</label>"
 					,
 					/* continueFunc [optional] */
 					function (entry) {
 						Debug.log("User entered logbook entry " + entry);
 
 						var writeToEcl = SubsystemLaunch._pendingWriteToEcl || false;
-						Debug.log("writeToEcl = " + writeToEcl);
+						var discardRun = SubsystemLaunch._pendingDiscardRun || false;
+						Debug.log("writeToEcl = " + writeToEcl + ", discardRun = " + discardRun);
 
 						//save last entry
 						lastLogEntry = entry;
-						localStop(entry, writeToEcl);
+						localStop(entry, writeToEcl, discardRun);
 					} //end continueFunc handlere
 					,
 					/* val [optional] */ undefined,
@@ -3015,7 +3020,7 @@ SubsystemLaunch.create = function() {
 
 
 		//===========
-		function localStop(logEntry, writeToEcl) {
+		function localStop(logEntry, writeToEcl, discardRun) {
 			Debug.log("localStop()");
 			Debug.logv({logEntry});
 
@@ -3034,7 +3039,8 @@ SubsystemLaunch.create = function() {
 						"&fsmName=" + _fsmName +
 						"&StateMachine=Stop", //end get data
 						"logEntry=" + encodeURIComponent(logEntry) +
-						"&writeToEcl=" + (writeToEcl ? "1" : "0"), //end post data
+						"&writeToEcl=" + (writeToEcl ? "1" : "0") +
+						"&discardRun=" + (discardRun ? "1" : "0"), //end post data
 					function(req) //start handler
 					{
 				Debug.log("stop() FSM handler");
