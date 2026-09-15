@@ -6539,8 +6539,15 @@
 			var uidRef = JSON.stringify(uidName);
 			var colRef = JSON.stringify(colName);
 
+			// Hide both pencil icons while editing
+			var _kvKeyIcon = document.getElementById("treeNode-inlineKV-editKeyIcon-" + uidIdString);
+			var _kvValIcon = document.getElementById("treeNode-inlineKV-editValueIcon-" + uidIdString);
+			if(_kvKeyIcon) _kvKeyIcon.style.display = "none";
+			if(_kvValIcon) _kvValIcon.style.display = "none";
+
 			var editWrap = document.createElement("span");
 			editWrap.id = "treeNode-inlineKV-editWrap-" + leafIdString;
+			editWrap.setAttribute("data-uid-idstring", uidIdString);
 			editWrap.style.cssText = "display:inline-block; white-space:nowrap;";
 			editWrap.innerHTML =
 				"<input type='text' value=\"" + safeVal + "\" " +
@@ -6632,7 +6639,16 @@
 						localHiddenSpan.style.display = "";
 						localHiddenSpan.id = "";
 					}
-					if(localEditWrap) localEditWrap.remove();
+					if(localEditWrap) {
+						var _uidId = localEditWrap.getAttribute("data-uid-idstring");
+						localEditWrap.remove();
+						if(_uidId) {
+							var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+							var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+							if(_k) _k.style.display = "none";
+							if(_v) _v.style.display = "none";
+						}
+					}
 				}
 			);
 		} //end inlineKVSave()
@@ -6644,7 +6660,17 @@
 			var editWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
 			var hiddenSpan = document.getElementById("treeNode-inlineKV-hiddenSpan-" + leafIdString);
 			if(hiddenSpan) { hiddenSpan.style.display = ""; hiddenSpan.id = ""; }
-			if(editWrap) editWrap.remove();
+			if(editWrap) {
+				var _uidId = editWrap.getAttribute("data-uid-idstring");
+				editWrap.remove();
+				// Pencil icons are re-shown on next hover; reset to hidden default now
+				if(_uidId) {
+					var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+					var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+					if(_k) _k.style.display = "none";
+					if(_v) _v.style.display = "none";
+				}
+			}
 		} //end inlineKVEditCancel()
 
 		//==============================================================================
@@ -22637,15 +22663,16 @@
 				catch (e) { }
 			}
 
-			//try bringing along the inline KV edit icons, and ignore fails
+			//try bringing along the inline KV edit icons, but suppress if this node is being edited
 			try {
-				document.getElementById("treeNode-inlineKV-editKeyIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "inline-block";
-			}
-			catch (e) { }
-			try {
-				document.getElementById("treeNode-inlineKV-editValueIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "inline-block";
+				var _kvWrap = document.querySelector("[id^='treeNode-inlineKV-editWrap-']");
+				var _kvEditing = _kvWrap && _kvWrap.getAttribute("data-uid-idstring") == treeEditingEditIconShownIdString_;
+				if(!_kvEditing) {
+					document.getElementById("treeNode-inlineKV-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+					document.getElementById("treeNode-inlineKV-editValueIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+				}
 			}
 			catch (e) { }
 
