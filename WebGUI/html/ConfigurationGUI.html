@@ -5278,6 +5278,8 @@
 
 			el.innerHTML = treeViewHandlerStr_;
 
+			collapseLinkedTableUIDs();
+
 			//addTableToConfigurationGroup("ARTDAQParamT"); //for Debuggin!!!
 			if (treeViewExpandedCapture_ && treeViewExpandedCapture_.length) {
 				Debug.log("Nodes to expand from treeViewExpandedCapture_", treeViewExpandedCapture_);
@@ -5613,8 +5615,16 @@
 			pathHTML = pathHTML.replace(/>/g, "&gt");
 
 			for (i = 0; i < nodes.length; ++i) {
-				uid = treeNodeUID_++;
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
+
+				// Skip UID-record metadata elements that appear in children when depth=3
+				// loads linked-table records; they're consumed at the parent level only.
+				if (!isDiffNode && (nodes[i].nodeName == "comment" ||
+					nodes[i].nodeName == "nodeStatus" ||
+					nodes[i].nodeName == "nodeDiff"))
+					continue;
+
+				uid = treeNodeUID_++;
 
 				nodeName = nodes[i].getAttribute("value");
 
@@ -5693,12 +5703,16 @@
 					value = value.replace(/</g, "&lt");
 					value = value.replace(/>/g, "&gt");
 
+					var isLinkedTableKeyField_ = !isDiffNode && depth > 2 && nodeName.toLowerCase().includes("key");
+
 					//this is a value node!
 					//////////=======================
 					treeViewHandlerStr_ +=
 						"<div class='treeNode" + (isDiffNode ? " diffTreeNode" : "") +
 						"' id='treeNode-" +
-						(depth + "-" + uid) + "' >" +
+						(depth + "-" + uid) + "'" +
+						(isLinkedTableKeyField_ ? " style='display:none'" : "") +
+						" >" +
 						"<div class='treeNode-Path' style='display:none' id='treeNode-path-" +
 						(depth + "-" + uid) + "'>" + // end path id
 						pathHTML + //save path for future use.. and a central place to edit when changes occur
@@ -5870,7 +5884,10 @@
 				tableLinkName = "";
 
 				//get value and table link name for this parent
-				if (childrenLength && (value = nodes[i].children[offset]).nodeName != "value") {
+				// Note: link nodes have children with nodeName "GroupID"/"UID"/"valueType".
+				//       UID record parents (from depth=3) have children with nodeName "node".
+				if (childrenLength && (value = nodes[i].children[offset]).nodeName != "value" &&
+					value.nodeName != "node") {
 					--childrenLength; //subtract the link ID node from children length
 
 					//this is a link node!
@@ -6342,6 +6359,321 @@
 		} //end recursiveDrawTree()
 
 		//==============================================================================
+		//collapseLinkedTableUIDs ~
+		//	Post-render pass: for UID records under linked tables,
+		//	find key/value leaf fields in children and display inline on the UID row.
+		function collapseLinkedTableUIDs() {
+			// Pass 1: re-hide children of already-processed inline KV nodes (link node re-expand)
+			var doneEls = document.querySelectorAll(".treeNode-Value-nodeEditType-uid.inlineKV-done");
+			for(var d = 0; d < doneEls.length; ++d) {
+				var doneIdString = doneEls[d].id.replace("treeNode-Value-", "");
+				var doneChildrenEl = document.getElementById("treeNode-ChildrenOf-" + doneIdString);
+				if(doneChildrenEl && doneChildrenEl.style.display != "none") {
+					doneChildrenEl.style.display = "none";
+					var doneToggleEl = document.getElementById("treeNode-toggle-" + doneIdString);
+					if(doneToggleEl) doneToggleEl.style.backgroundImage =
+						"url(/WebPath/images/windowContentImages/ConfigurationGUI-expandTree.png)";
+				}
+			}
+
+			// Pass 2: process new UID nodes under linked tables
+			var uidEls = document.querySelectorAll(".treeNode-Value-nodeEditType-uid:not(.inlineKV-done)");
+			for(var u = 0; u < uidEls.length; ++u) {
+				var uidValueEl = uidEls[u];
+				var idString = uidValueEl.id.replace("treeNode-Value-", "");
+				var parts = idString.split("-");
+				var uidDepth = parseInt(parts[0]);
+				if(uidDepth <= 1) continue;
+
+				var childrenEl = document.getElementById("treeNode-ChildrenOf-" + idString);
+				if(!childrenEl || !childrenEl.children.length) continue;
+
+				var keyVal = "", valueVal = "";
+				var keyIdString = "", valueIdString = "";
+				var keyColName = "", valueColName = "";
+				var fieldNodes = childrenEl.querySelectorAll(".treeNode-Value-leafNode-fieldValue");
+				for(var f = 0; f < fieldNodes.length; ++f) {
+					var colClass = "";
+					var classes = fieldNodes[f].className.split(" ");
+					for(var c = 0; c < classes.length; ++c) {
+						if(classes[c].indexOf("treeNode-Value-leafNode-ColumnName-") === 0) {
+							colClass = classes[c].replace("treeNode-Value-leafNode-ColumnName-", "");
+							break;
+						}
+					}
+					var leafId = fieldNodes[f].id.replace("treeNode-Value-leafNode-", "");
+					if(colClass.toLowerCase().indexOf("key") >= 0) {
+						keyVal = fieldNodes[f].textContent;
+						keyIdString = leafId;
+						keyColName = colClass;
+					}
+					else if(colClass.toLowerCase().indexOf("value") >= 0) {
+						valueVal = fieldNodes[f].textContent;
+						valueIdString = leafId;
+						valueColName = colClass;
+					}
+				}
+
+				if(!valueVal) continue;
+
+				var uidName = uidValueEl.textContent;
+				uidValueEl.setAttribute("data-original-uid", uidName);
+
+				var statusDotEl = uidValueEl.querySelector(".treeNode-statusDotWrap");
+				var statusDotHtml = "";
+				if(statusDotEl) {
+					statusDotHtml = statusDotEl.outerHTML;
+					statusDotEl.remove();
+				}
+
+				var keyDepthUid = keyIdString.split("-");
+				var valueDepthUid = valueIdString.split("-");
+
+				var html = statusDotHtml;
+
+				// format: [status] keyVal [pencil] : valueVal [pencil]
+				html += "<span class='inlineKV-text'>" + (keyVal || uidName) + "</span>";
+
+				if(keyIdString) {
+					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editKeyIcon' " +
+						"id='treeNode-inlineKV-editKeyIcon-" + idString + "' " +
+						"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
+						"onclick='inlineKVEdit(" +
+						keyDepthUid[0] + "," + keyDepthUid[1] +
+						"); event.stopPropagation();' " +
+						"title='Edit the key field.' " +
+						"></div>";
+				}
+
+				html += "<span style='margin:0 4px'> : </span>";
+
+				html += "<span class='inlineKV-text'>" + valueVal + "</span>";
+
+				if(valueIdString) {
+					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editValueIcon' " +
+						"id='treeNode-inlineKV-editValueIcon-" + idString + "' " +
+						"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
+						"onclick='inlineKVEdit(" +
+						valueDepthUid[0] + "," + valueDepthUid[1] +
+						"); event.stopPropagation();' " +
+						"title='Edit the value field.' " +
+						"></div>";
+				}
+
+				uidValueEl.innerHTML = html;
+				uidValueEl.classList.add("inlineKV-done");
+				uidValueEl.onclick = function(e) { e.stopPropagation(); };
+
+				// Keep expander visible so user can expand UID record to see all fields
+				childrenEl.style.display = "none";
+
+				var uidEditIcon = document.getElementById("treeNode-Value-editIcon-" + idString);
+				if(uidEditIcon) uidEditIcon.style.display = "none";
+				var uidCopyIcon = document.getElementById("treeNode-Value-copyIcon-" + idString);
+				if(uidCopyIcon) uidCopyIcon.style.display = "none";
+			}
+		} //end collapseLinkedTableUIDs()
+
+		//==============================================================================
+		//inlineKVEdit ~
+		//	Show an inline text input on the UID row for the given leaf field.
+		//	Editing happens in-place without expanding the tree children.
+		function inlineKVEdit(leafDepth, leafUid) {
+			var leafIdString = leafDepth + "-" + leafUid;
+
+			// Prevent double edit
+			if(document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString)) return;
+
+			// Navigate: leaf → UID record → link node
+			var uidParentEl = document.getElementById("treeNode-ParentId-" + leafIdString);
+			if(!uidParentEl) return;
+			var uidIdString = uidParentEl.textContent.trim();
+
+			var linkParentEl = document.getElementById("treeNode-ParentId-" + uidIdString);
+			if(!linkParentEl) return;
+			var linkIdString = linkParentEl.textContent.trim();
+
+			var linkTableNameEl = document.getElementById("treeNode-linkTableName-" + linkIdString);
+			var linkTableName = linkTableNameEl ? linkTableNameEl.textContent.trim() : "";
+
+			var uidValueEl = document.getElementById("treeNode-Value-" + uidIdString);
+			var uidName = uidValueEl ? (uidValueEl.getAttribute("data-original-uid") || "") : "";
+
+			// Get column name and current value from hidden leaf DOM
+			var leafFieldEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+			var colName = "";
+			var currentVal = "";
+			if(leafFieldEl) {
+				var classes = leafFieldEl.className.split(" ");
+				for(var c = 0; c < classes.length; ++c) {
+					if(classes[c].indexOf("treeNode-Value-leafNode-ColumnName-") === 0) {
+						colName = classes[c].replace("treeNode-Value-leafNode-ColumnName-", "");
+						break;
+					}
+				}
+				currentVal = leafFieldEl.textContent.trim();
+			}
+
+			// Get table version
+			var tableVersion = -1;
+			for(var j = 0; j < treeMemberNames_.length; ++j) {
+				if(linkTableName == treeMemberNames_[j] && (treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					break;
+				}
+			}
+
+			// Find which inlineKV-text span to replace (key=first, value=last)
+			var isKeyField = colName.toLowerCase().indexOf("key") >= 0;
+			var textSpans = uidValueEl ? uidValueEl.querySelectorAll("span.inlineKV-text") : [];
+			var targetSpan = isKeyField ? textSpans[0] : textSpans[textSpans.length - 1];
+			if(!targetSpan) return;
+
+			// Tag the span so we can find it on save/cancel
+			targetSpan.id = "treeNode-inlineKV-hiddenSpan-" + leafIdString;
+			targetSpan.style.display = "none";
+
+			var safeVal = currentVal.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+			var leafRef = JSON.stringify(leafIdString);
+			var tableRef = JSON.stringify(linkTableName);
+			var uidRef = JSON.stringify(uidName);
+			var colRef = JSON.stringify(colName);
+
+			// Hide both pencil icons while editing
+			var _kvKeyIcon = document.getElementById("treeNode-inlineKV-editKeyIcon-" + uidIdString);
+			var _kvValIcon = document.getElementById("treeNode-inlineKV-editValueIcon-" + uidIdString);
+			if(_kvKeyIcon) _kvKeyIcon.style.display = "none";
+			if(_kvValIcon) _kvValIcon.style.display = "none";
+
+			var editWrap = document.createElement("span");
+			editWrap.id = "treeNode-inlineKV-editWrap-" + leafIdString;
+			editWrap.setAttribute("data-uid-idstring", uidIdString);
+			editWrap.style.cssText = "display:inline-block; white-space:nowrap;";
+			editWrap.innerHTML =
+				"<input type='text' value=\"" + safeVal + "\" " +
+				"style='width:120px;color:black;background:white;border:1px solid #888;padding:1px 3px;border-radius:2px;vertical-align:middle;' " +
+				"onkeydown='event.stopPropagation();if(event.keyCode==13){inlineKVSave(" + leafRef + "," + tableRef + "," + tableVersion + "," + uidRef + "," + colRef + ");}else if(event.keyCode==27){inlineKVEditCancel(" + leafRef + ");}' " +
+				"onkeyup='event.stopPropagation();' " +
+				"onkeypress='event.stopPropagation();' " +
+				"onclick='event.stopPropagation();' " +
+				"/>" +
+				"<span style='cursor:pointer;color:green;font-weight:bold;padding:0 4px;vertical-align:middle;' " +
+				"title='Save' " +
+				"onclick='inlineKVSave(" + leafRef + "," + tableRef + "," + tableVersion + "," + uidRef + "," + colRef + ");event.stopPropagation();'>&#10003;</span>" +
+				"<span style='cursor:pointer;color:red;font-weight:bold;padding:0 2px;vertical-align:middle;' " +
+				"title='Cancel' " +
+				"onclick='inlineKVEditCancel(" + leafRef + ");event.stopPropagation();'>&#10007;</span>";
+
+			targetSpan.parentNode.insertBefore(editWrap, targetSpan.nextSibling);
+			var inp = editWrap.querySelector("input");
+			inp.focus();
+			inp.select();
+		} //end inlineKVEdit()
+
+		//==============================================================================
+		//inlineKVSave ~
+		//	Save the value from an inline edit input to the server, update display.
+		function inlineKVSave(leafIdString, tableName, tableVersion, uid, colName) {
+			var editWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+			if(!editWrap) return;
+
+			var inputEl = editWrap.querySelector("input");
+			var newVal = inputEl ? inputEl.value.trim() : "";
+
+			var leafFieldEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+			var oldVal = leafFieldEl ? leafFieldEl.textContent.trim() : "";
+
+			if(newVal === oldVal) {
+				inlineKVEditCancel(leafIdString);
+				return;
+			}
+
+			// Find table version if stale (use latest treeMemberVersions_)
+			var currentVersion = tableVersion;
+			for(var j = 0; j < treeMemberNames_.length; ++j) {
+				if(tableName == treeMemberNames_[j] && (treeMemberVersions_[j] | 0) != -1) {
+					currentVersion = treeMemberVersions_[j];
+					break;
+				}
+			}
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=value" +
+				"&targetTable=" + tableName +
+				"&targetTableVersion=" + currentVersion +
+				"&targetUID=" + uid +
+				"&targetColumn=" + colName,
+				"newValue=" + encodeURIComponent(newVal),
+				function(req, reqParam, errStr) {
+					var localEditWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+					var localHiddenSpan = document.getElementById("treeNode-inlineKV-hiddenSpan-" + leafIdString);
+					var localLeafEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+
+					if(errStr) { Debug.err(errStr); return; }
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if(err) {
+						if(err.indexOf("is the same as the current value. No need to save node.") > 0)
+							Debug.log(err);
+						else { Debug.err(err); return; }
+					}
+
+					// Update cached table versions
+					var savedNames = req.responseXML.getElementsByTagName("savedName");
+					var savedVersions = req.responseXML.getElementsByTagName("savedVersion");
+					for(var i = 0; i < savedNames.length; ++i) {
+						var sName = DesktopContent.getXMLValue(savedNames[i]);
+						for(var j = 0; j < treeMemberNames_.length; ++j) {
+							if(sName == treeMemberNames_[j]) {
+								treeMemberVersions_[j] = DesktopContent.getXMLValue(savedVersions[i]);
+								break;
+							}
+						}
+					}
+
+					// Update hidden leaf DOM value
+					if(localLeafEl) localLeafEl.textContent = newVal;
+
+					// Restore inline span with new value
+					if(localHiddenSpan) {
+						localHiddenSpan.textContent = newVal;
+						localHiddenSpan.style.display = "";
+						localHiddenSpan.id = "";
+					}
+					if(localEditWrap) {
+						var _uidId = localEditWrap.getAttribute("data-uid-idstring");
+						localEditWrap.remove();
+						if(_uidId) {
+							var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+							var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+							if(_k) _k.style.display = "none";
+							if(_v) _v.style.display = "none";
+						}
+					}
+				}
+			);
+		} //end inlineKVSave()
+
+		//==============================================================================
+		//inlineKVEditCancel ~
+		//	Cancel an inline edit, restoring the original value span.
+		function inlineKVEditCancel(leafIdString) {
+			var editWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+			var hiddenSpan = document.getElementById("treeNode-inlineKV-hiddenSpan-" + leafIdString);
+			if(hiddenSpan) { hiddenSpan.style.display = ""; hiddenSpan.id = ""; }
+			if(editWrap) {
+				var _uidId = editWrap.getAttribute("data-uid-idstring");
+				editWrap.remove();
+				// Pencil icons are re-shown on next hover; reset to hidden default now
+				if(_uidId) {
+					var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+					var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+					if(_k) _k.style.display = "none";
+					if(_v) _v.style.display = "none";
+				}
+			}
+		} //end inlineKVEditCancel()
+
+		//==============================================================================
 		//getTreeViewTableStrings ~
 		function getTreeViewTableStrings(tableLinkName, isLink, linkId,
 			childLinkIndex, isGroupLink) {
@@ -6751,7 +7083,7 @@
 						treeEditingTargetTable_ = pel.textContent;
 					}
 
-					treeEditingTargetUID_ = el.textContent;
+					treeEditingTargetUID_ = el.getAttribute("data-original-uid") || el.textContent;
 					treeEditingTargetColumn_ = "UID";
 					Debug.log("edit uid mode target=" + treeEditingTargetTable_ +
 						"/" + treeEditingTargetUID_ + "/" +
@@ -7543,6 +7875,8 @@
 					toggleEl.style.backgroundImage =
 						"url(/WebPath/images/windowContentImages/ConfigurationGUI-hideTree.png)";
 
+					if(document.getElementById("treeNode-linkTableName-" + idString))
+						collapseLinkedTableUIDs();
 					return true;
 				}
 				else //else shown, so hide and "+"
@@ -7590,7 +7924,7 @@
 						) : ""
 					) +
 					"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
-					"&depth=1",
+					"&depth=" + (document.getElementById("treeNode-linkTableName-" + idString) ? 3 : 1),
 					"startPath=" + path + nodeName + "/" +
 					"&modifiedTables=" + modifiedTables,
 					function (req, parentId, err) {
@@ -9659,7 +9993,7 @@
 
 					//edit record uid
 					el = document.getElementById("treeNode-Value-" + idString);
-					_editingCellElOldValue = el.textContent;
+					_editingCellElOldValue = el.getAttribute("data-original-uid") || el.textContent;
 					treeEditingNodeInitValue_ = _editingCellElOldValue;
 
 					var str = "";
@@ -11600,6 +11934,13 @@
 				Debug.log("Ignoring key press and giving searchbar priority...");
 				return;
 			}
+			//ignore typing inside inline KV edit inputs (otherwise tree-view hotkeys
+			// fire during inline editing because the handler runs in capture phase)
+			var _activeEl = document.activeElement;
+			if (_activeEl && _activeEl.tagName == "INPUT" &&
+				_activeEl.parentNode && _activeEl.parentNode.id &&
+				_activeEl.parentNode.id.indexOf("treeNode-inlineKV-editWrap-") === 0)
+				return;
 			//ignore typing inside the verification popup's input field
 			// (otherwise tree-view hotkeys hijack characters as the user types
 			//  the new UID / value in the popup prompt)
@@ -15152,6 +15493,8 @@
 					return uidText.trim();
 				}
 				else {
+					var origUid = uidEl.getAttribute("data-original-uid");
+					if(origUid) return origUid.trim();
 					var txt = uidEl.textContent;
 					var parts = txt.split('=');
 					if (parts.length > 1)
@@ -15551,7 +15894,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -15660,7 +16003,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -15668,6 +16011,8 @@
 							//Debug.log("link-idString " + idString + " " + uid);
 							Debug.log("uid-idString CHANGE to " + newValue);
 
+							els[i].classList.remove("inlineKV-done");
+							els[i].removeAttribute("data-original-uid");
 							els[i].innerHTML = "";
 							els[i].appendChild(document.createTextNode(decodeURIComponent(newValue)));
 
@@ -15798,7 +16143,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -16200,7 +16545,7 @@
 
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -16868,6 +17213,9 @@
 			_editingCell = false;
 			_editingCellEl = 0;
 			_handlingTreeNodeOK = false;
+
+			if(document.getElementById("treeView-ConfigGroupLink"))
+				collapseLinkedTableUIDs();
 		} //end editCellCancel()
 
 		//addRow ~~
@@ -22253,6 +22601,18 @@
 				}
 				catch (e) { }
 
+				//try hiding the inline KV edit icons, and ignore fails
+				try {
+					document.getElementById("treeNode-inlineKV-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+				try {
+					document.getElementById("treeNode-inlineKV-editValueIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel) {
 					if (vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
@@ -22280,22 +22640,39 @@
 			//Debug.log("handleTreeNodeMouseMove setting ");
 			treeEditingEditIconShownIdString_ = idString;
 			treeEditingEditIconShownEl_ = el;
-			treeEditingEditIconShownEl_.style.display = "block";
 			var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
+			var isInlineKV = vel && vel.classList.contains("inlineKV-done");
+			if(!isInlineKV)
+				treeEditingEditIconShownEl_.style.display = "block";
 			treeEditingEditIconShownElBackground_ = vel.style.backgroundColor;
 			vel.style.backgroundColor = "rgb(218, 194, 194)";
 
-			//try bringing along the comment edit icon, and ignore fails
-			try {
-				document.getElementById("treeNode-Value-editCommentIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "block";
-			}
-			catch (e) { }
+			if(!isInlineKV) {
+				//try bringing along the comment edit icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-editCommentIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "block";
+				}
+				catch (e) { }
 
-			//try bringing along the copy-record icon, and ignore fails
+				//try bringing along the copy-record icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-copyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "block";
+				}
+				catch (e) { }
+			}
+
+			//try bringing along the inline KV edit icons, but suppress if this node is being edited
 			try {
-				document.getElementById("treeNode-Value-copyIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "block";
+				var _kvWrap = document.querySelector("[id^='treeNode-inlineKV-editWrap-']");
+				var _kvEditing = _kvWrap && _kvWrap.getAttribute("data-uid-idstring") == treeEditingEditIconShownIdString_;
+				if(!_kvEditing) {
+					document.getElementById("treeNode-inlineKV-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+					document.getElementById("treeNode-inlineKV-editValueIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+				}
 			}
 			catch (e) { }
 
