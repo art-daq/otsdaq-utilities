@@ -992,6 +992,28 @@
 
 			Debug.log("postData", postData);
 
+			var command = {
+				"feClass": feClassSelected,
+				"feUID": feUIDSelected,
+				"macroType": feMacroTypeSelected,
+				"macroName": macroName,
+				"inputArgs": inputData,
+				"outputArgs": outputData,
+				"saveOutputs": saveOutputs,
+			}
+
+			// add to the MoM sequence instead of running
+			if (verticalOrientation_ && sequenceBuilding_) {
+				appendMacroToSequence(JSON.stringify(command));
+				var log = getMomAppendLog();
+				if (log) {
+					var pos = Object.keys(tempSequence_).length;
+					log.innerHTML += "#" + pos + " " + macroName + " &mdash; " +
+						getDateString(new Date()) + "<br>";
+				}
+				return;
+			}
+
 			var str = "";
 			str += "Launched '" + macroName +
 				"'... " + getDateString(new Date) +
@@ -1011,38 +1033,22 @@
 				el.innerHTML = "<div id='verticalLayoutOutputDiv' style='height:" + verticalOutputDivSize_[1] + "px;'>" + str + "</div>";
 			else
 				el.innerHTML = str;
-			// if I am building a sequence I do not have to run
-			if (!sequenceBuilding_) {
-				_pollStartTime = Date.now();
-				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
-					//"&feSupervisorID=" + feSupervisorID +
-					"&feClassSelected=" + feClassSelected +
-					"&feUIDSelected=" + feUIDSelected +
-					"&macroType=" + feMacroTypeSelected +
-					"&macroName=" + macroName +
-					"&saveOutputs=" + saveOutputs
-					, postData,
-					handleMacroResponse,
-					0 /*reqParam*/, 0 /*progressHandler*/,
-					true /*callHandlerOnErr*/,
-					true /*doNotShowLoadingOverlay*/
-				);
-			}
 
-			var command = {
-				"feClass": feClassSelected,
-				"feUID": feUIDSelected,
-				"macroType": feMacroTypeSelected,
-				"macroName": macroName,
-				"inputArgs": inputData,
-				"outputArgs": outputData,
-				"saveOutputs": saveOutputs,
-			}
-			// add to the sequence
-			if (verticalOrientation_ && sequenceBuilding_) {
-				appendMacroToSequence(JSON.stringify(command));
-				return;
-			}
+			_runningMacroName = macroName;
+			_pollStartTime = Date.now();
+			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
+				//"&feSupervisorID=" + feSupervisorID +
+				"&feClassSelected=" + feClassSelected +
+				"&feUIDSelected=" + feUIDSelected +
+				"&macroType=" + feMacroTypeSelected +
+				"&macroName=" + macroName +
+				"&saveOutputs=" + saveOutputs
+				, postData,
+				handleMacroResponse,
+				0 /*reqParam*/, 0 /*progressHandler*/,
+				true /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/
+			);
 
 			if (verticalOrientation_)
 				appendHistoryRecord(JSON.stringify(command));
@@ -1050,6 +1056,7 @@
 
 		var _pollStartTime = 0;
 		var _lastNotDoneID = 0;
+		var _runningMacroName = "";
 
 		//=====================================================================================
 		//handleMacroResponse ~~
@@ -1088,9 +1095,11 @@
 				str += "Received error... " + getDateString(new Date);
 				str += "</label>";
 				str += "<br>";
-				Debug.err("Error while running FE Macro: " + errStr);
+				var errLabel = "Error while running FE Macro" +
+					(_runningMacroName ? " '" + _runningMacroName + "'" : "") + ":";
+				Debug.err(errLabel + " " + errStr);
 				el.innerHTML = copyBtnStr + "<br><br><br>" +
-					str + "<br><br>Error while running FE Macro: " + Debug.callOutDebugLocales(errStr);
+					str + "<br><br>" + errLabel + " " + Debug.callOutDebugLocales(errStr);
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				// reset command-block state so future runs start clean
 				isRunningCommandBlock = false;
@@ -3827,6 +3836,7 @@ Here is the json string received:
 			}
 
 			var postData = "inputArgs=" + reconciledInputArgs + "&outputArgs=" + reconciledOutputArgs;
+			_runningMacroName = recordObj["macroName"];
 			_pollStartTime = Date.now(); //so NotDoneID polling starts at fast 1s cadence
 			DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 				//"&feSupervisorID=" + feSupervisorID +
@@ -5544,6 +5554,7 @@ Here is the json string received:
 				seqReconciledInputArgs = substituteVariables(seqReconciledInputArgs);
 				var postData = "inputArgs=" + seqReconciledInputArgs + "&outputArgs=" + seqReconciledOutputArgs;
 
+				_runningMacroName = command["macroName"];
 				_pollStartTime = Date.now();
 				DesktopContent.XMLHttpRequest("Request?RequestType=runFEMacro" +
 					"&feClassSelected=" + command["feClass"] +
@@ -5867,13 +5878,30 @@ Here is the json string received:
 
 			var v0 = vars[varNames[0]];
 			var html = "<strong>Input Variables: </strong>" + selectHtml +
-				" Value: <input type='text' id='var-value' value='" + v0.value + "' style='width:60px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
+				" Value: <input type='text' id='var-value' value='" + v0.value + "' style='width:60px;' oninput='updateVariableControlVisibility()' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
+				"<span id='var-step-span' hidden>" +
 				" Step: <input type='text' id='var-step' value='" + v0.step + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
-				"<span id='var-max-span'" + (parseFloat(v0.step) !== 0 ? "" : " hidden") + ">" +
+				"</span><span id='var-max-span' hidden>" +
 				" Max: <input type='text' id='var-max' value='" + v0.max + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"</span>";
 			container.innerHTML = html;
+			updateVariableControlVisibility();
 		} //end updateVariableUI()
+
+		//=====================================================================================
+		//updateVariableControlVisibility ~~
+		function updateVariableControlVisibility() {
+			var valueEl = document.getElementById("var-value");
+			var stepEl = document.getElementById("var-step");
+			if (!valueEl || !stepEl) return;
+			// Require a complete finite number, not a numeric prefix or an empty value.
+			var value = valueEl.value.trim();
+			var isNumeric = value !== "" && Number.isFinite(Number(value));
+			var stepSpan = document.getElementById("var-step-span");
+			if (stepSpan) stepSpan.hidden = !isNumeric;
+			var maxSpan = document.getElementById("var-max-span");
+			if (maxSpan) maxSpan.hidden = !isNumeric || parseFloat(stepEl.value) === 0;
+		} //end updateVariableControlVisibility()
 
 		//=====================================================================================
 		//onVariableSelectChange ~~
@@ -5886,8 +5914,7 @@ Here is the json string received:
 			document.getElementById("var-value").value = v.value;
 			document.getElementById("var-step").value = v.step;
 			document.getElementById("var-max").value = v.max;
-			var maxSpan = document.getElementById("var-max-span");
-			if (maxSpan) maxSpan.hidden = (parseFloat(v.step) === 0);
+			updateVariableControlVisibility();
 		} //end onVariableSelectChange()
 
 		//=====================================================================================
@@ -5901,8 +5928,7 @@ Here is the json string received:
 				step: document.getElementById("var-step").value,
 				max: document.getElementById("var-max").value
 			};
-			var maxSpan = document.getElementById("var-max-span");
-			if (maxSpan) maxSpan.hidden = (parseFloat(sequenceVariables_[varName].step) === 0);
+			updateVariableControlVisibility();
 			persistSequenceVariables();
 		} //end onVariableFieldChange()
 
