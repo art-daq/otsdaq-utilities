@@ -569,9 +569,11 @@ Desktop.createDesktop = function (security) {
 			" - " + msgArr[1]
 		);
 
+		var isUserMsg = tmp.indexOf("%5BUSER%5D") >= 0 || tmp.indexOf("[USER]") >= 0;
+
 		++_sysMsgId; //increment to new ID
 		var sysMsgEl = document.createElement("div");
-		sysMsgEl.setAttribute("class", "Desktop-systemMessageBox");
+		sysMsgEl.setAttribute("class", "Desktop-systemMessageBox" + (isUserMsg ? " Desktop-systemMessageBox-user" : ""));
 		sysMsgEl.setAttribute("id", "Desktop-systemMessageBox-" + _sysMsgId);
 		sysMsgEl.style.left = (50 + _sysMsgId % 5 * 10) + "px";
 		sysMsgEl.style.top = (50 + _sysMsgId % 5 * 10) + "px";
@@ -593,6 +595,7 @@ Desktop.createDesktop = function (security) {
 		for (var i = 0; i + 1 < msgArr.length; i += 2) {
 			str += "<div style='font-size:12px'>System Message Received at " + Desktop.formatTime(msgArr[i]) + "</div>";
 			var decoded = decodeURIComponent(msgArr[i + 1]);
+			if(isUserMsg) decoded = decoded.replace(/^\[USER\]\s*/, '');
 			str += "<div>" +
 				//first decode URI, then convert html entities
 				decoded.replace(/[\u00A0-\u9999<>\&]/gim,

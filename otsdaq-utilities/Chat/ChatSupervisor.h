@@ -36,6 +36,7 @@ class ChatSupervisor : public CoreSupervisorBase
 	/// each new chat is a string/displayName pair and is given a running index (0 is
 	/// skipped)
 	std::vector<std::string> ChatHistoryEntry_, ChatHistoryAuthor_;
+	std::vector<std::string> ChatHistoryType_;
 	std::vector<time_t>      ChatHistoryTime_;
 	std::vector<uint64_t>    ChatHistoryIndex_;
 
@@ -60,7 +61,8 @@ class ChatSupervisor : public CoreSupervisorBase
 	bool     isChatOld(uint64_t chatIndex, uint64_t last);
 
 	void newUser(const std::string& user);
-	void newChat(const std::string& chat, const std::string& user, bool fromSlack = false);
+	void newChat(const std::string& chat, const std::string& user,
+	             const std::string& type = "", bool fromSlack = false);
 	void sendToSlack(const std::string& user, const std::string& message);
 	void receiveFromSlack();
 	void startSlackDaemon();
