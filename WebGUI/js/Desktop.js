@@ -569,7 +569,19 @@ Desktop.createDesktop = function (security) {
 			" - " + msgArr[1]
 		);
 
-		var isUserMsg = tmp.indexOf("%5BUSER%5D") >= 0 || tmp.indexOf("[USER]") >= 0;
+		var isReportMsg = tmp.indexOf("%5BREPORT%5D") >= 0 || tmp.indexOf("[REPORT]") >= 0;
+		var isUserMsg = isReportMsg || tmp.indexOf("%5BUSER%5D") >= 0 || tmp.indexOf("[USER]") >= 0;
+
+		// [REPORT] messages: show only the large errorPop, skip the small system message box
+		if(isReportMsg) {
+			for (var i = 0; i + 1 < msgArr.length; i += 2) {
+				var decoded = decodeURIComponent(msgArr[i + 1]).replace(/^\[REPORT\]\s*/, '');
+				_lastSystemMessage = msgArr[i] + "|" + msgArr[i + 1];
+				if(typeof Debug !== "undefined" && Debug.errorPop)
+					Debug.errorPop(decoded, Debug.USER_PRIORITY.DEBUG_PRIORITY);
+			}
+			return;
+		}
 
 		++_sysMsgId; //increment to new ID
 		var sysMsgEl = document.createElement("div");
