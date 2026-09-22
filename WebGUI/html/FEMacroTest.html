@@ -5402,9 +5402,6 @@ Here is the json string received:
 						if (isSavedSequenceName(sequenceName))
 							appendMomMarker("__mom_marker_end__", sequenceName, currentIteration_ + 1, iterationCount_);
 						currentIteration_++;
-						for (var v in sequenceVariables_)
-							stepVariableValue(sequenceVariables_[v]);
-						updateVariableUI();
 						if (isSavedSequenceName(sequenceName))
 							appendMomMarker("__mom_marker__", sequenceName, currentIteration_ + 1, iterationCount_);
 						currentIndex = 0;
@@ -5793,26 +5790,10 @@ Here is the json string received:
 		}
 
 		//=====================================================================================
-		//stepVariableValue ~~
-		//	advance one $variable's working value by its step, keeping the unit suffix
-		//	and clamping at max. Non-numeric values and zero/blank steps are left untouched.
-		function stepVariableValue(v) {
-			var step = parseFloat(v.step);
-			if (!step) return; // 0, NaN, or blank
-			var parts = splitNumericValue(v.value);
-			if (!parts) return; // e.g. "auto" or "0x0c": nothing sensible to step
-			var cur = parts.num + step;
-			var maxParts = splitNumericValue(v.max);
-			if (maxParts) {
-				if (step > 0 && cur > maxParts.num) cur = maxParts.num;
-				else if (step < 0 && cur < maxParts.num) cur = maxParts.num;
-			}
-			// toPrecision keeps 3.4 + 0.1 from turning into 3.5000000000000004
-			v.value = Number(cur.toPrecision(12)) + parts.unit;
-		}
-
-		//=====================================================================================
 		//substituteVariables ~~
+		//	Compute the effective value for the current iteration on the fly so
+		//	sequenceVariables_.value is never mutated during the run.  Unit suffixes
+		//	like "3.4us" are preserved; non-numeric values pass through unchanged.
 		function substituteVariables(inputArgs) {
 			if (Object.keys(sequenceVariables_).length === 0) return inputArgs;
 			var pairs = inputArgs.split(";");
@@ -5822,10 +5803,22 @@ Here is the json string received:
 				if (tuple.length < 2) { result.push(pairs[i]); continue; }
 				var val = decodeURIComponent(tuple[1]);
 				for (var varName in sequenceVariables_) {
-					// .value is already the working value for this iteration (advanced by
-					// stepVariableValue at each pass boundary), so use it verbatim: units like
-					// "3.4us" stay intact and the step is not applied a second time
-					val = val.split(varName).join(sequenceVariables_[varName].value);
+					var sv = sequenceVariables_[varName];
+					var effective = sv.value;
+					if (isIteratedRun_ && currentIteration_ > 0) {
+						var parts = splitNumericValue(sv.value);
+						var stepVal = parseFloat(sv.step);
+						if (parts && stepVal) {
+							var cur = parts.num + currentIteration_ * stepVal;
+							var maxParts = splitNumericValue(sv.max);
+							if (maxParts) {
+								if (stepVal > 0 && cur > maxParts.num) cur = maxParts.num;
+								else if (stepVal < 0 && cur < maxParts.num) cur = maxParts.num;
+							}
+							effective = Number(cur.toPrecision(12)) + parts.unit;
+						}
+					}
+					val = val.split(varName).join(effective);
 				}
 				result.push(tuple[0] + "," + encodeURIComponent(val));
 			}

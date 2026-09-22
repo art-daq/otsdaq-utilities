@@ -39,6 +39,7 @@
 		//popUpMacroNameOnChange(paramIndex)
 		//macroArgsParse(str) / macroArgsSerialize(args) / macroArgsSummary(str)
 		//macroArgsFromLoopTree(linkNode)
+		//getPlanOutputFilesHtml(req)
 		//getEnclosingLabels(commandIndex,isInsert)
 		//getCommandRunCount(commandIndex) / commandRunCountBadge(commandIndex)
 		//getMacroArgsHelpText() / showMacroArgsHelp()
@@ -719,6 +720,7 @@
 		//cache of live FE/macro info per remote subsystem, from getRemoteSubsystemFEMacroInfo:
 		//	{ fes: {uid: {type, supervisor, macros: {name: {inputs:[], outputs:[]}}}}, publicMacros: {name: {inputs:[], outputs:[]}} }
 		var _remoteFEMacroInfo = {};
+		var _codeEditorAppId = 0; //local Code Editor app id, to open plan output files
 
 		var _COMMAND_TYPES = {}; //for now, keys are same as value, but value is (intended to be) display name
 		_COMMAND_TYPES.BEGIN_LABEL 				= "BEGIN_LABEL";
@@ -862,6 +864,19 @@
 			//	calls paint() and adds resize listener when done
 			initIterateData();
 
+			//fill in local Code Editor appId (for output file links, like Console.html)
+			DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
+					"&classNeedle=ots::CodeEditorSupervisor",
+					"", //end post data,
+					function(req)
+					{
+						_codeEditorAppId = DesktopContent.getXMLValue(req,"id") | 0;
+						Debug.log("_codeEditorAppId " + _codeEditorAppId);
+					}, //end handler
+					0,0,true, //reqParam, progressHandler, callHandlerOnErr,
+					false, //doNotShowLoadingOverlay,
+					true //targetGatewaySupervisor
+			); //end getAppId request
 
 			//be careful to not override the window.onmousemove DesktopContent action
 			DesktopContent.mouseMoveSubscriber(bodyMouseMoveHandler);
@@ -3198,14 +3213,30 @@
 									popUpRenderMacroNameControl(idx, ts); }; }(i, initTS), 0);
 						}
 						else //default field input
-							str += DesktopContent.htmlOpen("input",
-									{
-											"id":("popUp-param-" + i),
-											"class":"popUp-param",
-											"type":"text",
-											"value":initValue,
-											"onchange":"_popUpParamsModified = true;"
-									}, 0 /*innerHTML*/, true /*closeTag*/);
+						{
+							var inputAttrs = {
+									"id":("popUp-param-" + i),
+									"class":"popUp-param",
+									"type":"text",
+									"value":initValue,
+									"onchange":"_popUpParamsModified = true;"
+							};
+							//grayed-out placeholder tells the user what a blank value means
+							if(_COMMAND_PARAMS[commandKey][i] == "OutputFilePath")
+							{
+								inputAttrs["placeholder"] = "$OTSDAQ_DATA";
+								inputAttrs["title"] = "Directory for saved macro outputs. Blank = $OTSDAQ_DATA of the front-end host. " +
+										"Not applied to remote subsystems (their MacroMaker always writes under its own $OTSDAQ_DATA).";
+							}
+							else if(_COMMAND_PARAMS[commandKey][i] == "OutputFileRadix")
+							{
+								inputAttrs["placeholder"] = "(none)";
+								inputAttrs["title"] = "Prefix for the saved output file name: <radix><MacroName>_<time>.txt. " +
+										"Not applied to remote subsystems.";
+							}
+							str += DesktopContent.htmlOpen("input", inputAttrs,
+									0 /*innerHTML*/, true /*closeTag*/);
+						}
 
 
 						str += "</td></tr>";
@@ -4645,6 +4676,79 @@
 		} //end macroArgsFromLoopTree()
 
 		//=====================================================================================
+		//getPlanOutputFilesHtml ~~
+		//	builds the "Output files" section of the plan completion popup from the
+		//	getIterationPlanStatus response: one line per file written by a macro command,
+		//	with Code Editor links (same pattern as Console.html snapshot links).
+		//	Local (Self) files open in this gateway's Code Editor; remote files open in the
+		//	remote subsystem's Code Editor desktop icon (Desktop resolves origin/LID by name).
+		//	Returns "" when the plan wrote no files.
+		function getPlanOutputFilesHtml(req)
+		{
+			var subsystems = req.responseXML.getElementsByTagName("output_file_subsystem");
+			var paths      = req.responseXML.getElementsByTagName("output_file_path");
+			var labels     = req.responseXML.getElementsByTagName("output_file_label");
+			var icons      = req.responseXML.getElementsByTagName("output_file_icon");
+			if(!paths.length) return "";
+
+			var str = "<br><br>Output file" + (paths.length == 1 ? "" : "s") + " (" + paths.length + "):<br>";
+			for(var i=0;i<paths.length;++i)
+			{
+				var subsystem = i < subsystems.length ? subsystems[i].getAttribute("value") : "";
+				var path      = paths[i].getAttribute("value");
+				var label     = i < labels.length ? labels[i].getAttribute("value") : "";
+				var icon      = i < icons.length ? icons[i].getAttribute("value") : "";
+
+				//Display without the "//" MacroMaker puts after $OTSDAQ_DATA, but keep the
+				//	reported path in the link: Code Editors built before the "$OTSDAQ_DATA/"
+				//	offset fix (CodeEditor.cc) drop one character unless that extra "/" is there
+				var displayPath = path.replace(/([^:])\/\/+/g, "$1/");
+				var cleanPath = path;
+				var where = (subsystem == "") ? "Self" : subsystem;
+
+				//e.g. "CFO_HardwareGateway - DTC Read on Calo14_DTC0 iteration #2 [address = 37376 (0x9200)]: $OTSDAQ_DATA/macroOutput_....txt"
+				str += "&nbsp;&nbsp;" + where + " - " + label + ": <b>" + displayPath + "</b> &nbsp;";
+
+				if(subsystem == "") //local: open in this gateway's Code Editor (Console.html pattern)
+				{
+					var localUrl = "/WebPath/html/CodeEditor.html?urn=" + _codeEditorAppId +
+							"&startFilePrimary=" + encodeURIComponent(cleanPath);
+					str += "<a onclick='DesktopContent.openNewWindow(" +
+							"\"Code Editor\",\"" + label.replace(/"/g,"") + "\"," +
+							"\"" + localUrl + "\",0 /*unique*/);' " +
+							"title='Click to open this output file in the Code Editor.'>" +
+							"Open</a> &nbsp;&nbsp;&nbsp;";
+					str += "<a onclick='DesktopContent.openNewBrowserTab(" +
+							"\"Code Editor\",\"" + label.replace(/"/g,"") + "\"," +
+							"\"" + localUrl + "\",0 /*unique*/);' " +
+							"title='Click to open this output file in a new browser tab.'>" +
+							"New Tab</a>";
+				}
+				else if(icon != "") //remote: open the subsystem's Code Editor icon by name, passing the file
+				{
+					//name-only open (subname/unique undefined) makes Desktop look up the icon,
+					//	which carries the remote origin and gateway LID; the path is appended as GET params
+					var remoteParams = "?startFilePrimary=" + encodeURIComponent(cleanPath);
+					str += "<a onclick='DesktopContent.openNewWindow(" +
+							"\"" + icon.replace(/"/g,"") + "\",undefined /*subname undefined for icon lookup*/," +
+							"\"" + remoteParams + "\",undefined /*unique undefined for icon lookup*/);' " +
+							"title='Click to open this output file in the Code Editor of " + where + ".'>" +
+							"Open</a> &nbsp;&nbsp;&nbsp;";
+					str += "<a onclick='DesktopContent.openNewBrowserTab(" +
+							"\"" + icon.replace(/"/g,"") + "\",undefined /*subname undefined for icon lookup*/," +
+							"\"" + remoteParams + "\",undefined /*unique undefined for icon lookup*/);' " +
+							"title='Click to open this output file in a new browser tab.'>" +
+							"New Tab</a>";
+				}
+				else //remote, but no Code Editor icon known for that subsystem
+					str += "<label style='font-size:12px;'>(file is on " + where +
+							"; no Code Editor icon found for that subsystem)</label>";
+				str += "<br>";
+			}
+			return str;
+		} //end getPlanOutputFilesHtml()
+
+		//=====================================================================================
 		//getEnclosingLabels ~~
 		//	labels whose BEGIN_LABEL is before commandIndex and matching REPEAT_LABEL after,
 		//	innermost first: [{label, passes}]. commandIndex may equal _commands.length
@@ -5699,14 +5803,16 @@
 				if(_need_plan_complete && _old_active_plan_status != "" && //require twice to avoid race conditions with startup
 						active_plan_status == "Inactive")
 				{
-					Debug.log("Iteration plan was completed.",
+					Debug.log("Iteration plan was completed." +
+							getPlanOutputFilesHtml(req),
 							Debug.INFO_PRIORITY);
 					_need_plan_complete = false;
 				}
 				else if(_need_plan_halted && _old_active_plan_status != "" && //require twice to avoid race conditions with startup
 						active_plan_status == "Inactive")
 				{
-					Debug.log("Iteration plan was halted.",
+					Debug.log("Iteration plan was halted." +
+							getPlanOutputFilesHtml(req),
 							Debug.INFO_PRIORITY);
 					_need_plan_halted = false;
 				}
