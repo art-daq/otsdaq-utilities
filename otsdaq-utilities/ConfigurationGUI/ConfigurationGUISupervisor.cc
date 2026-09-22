@@ -5176,11 +5176,12 @@ try
 		}
 		catch(...)
 		{
-			__SUP_COUT_WARN__ << "Table '" << IterateTable::MACRO_DIM_LOOP_TABLE
-			                  << "' has no '" << IterateTable::macroDimLoopCols_.StepLabel_
-			                  << "' column; macro argument step labels will not be saved. "
-			                     "Save a new version of the table to add the column."
-			                  << __E__;
+			__SUP_COUT_WARN__
+			    << "Table '" << IterateTable::MACRO_DIM_LOOP_TABLE << "' has no '"
+			    << IterateTable::macroDimLoopCols_.StepLabel_
+			    << "' column; macro argument step labels will not be saved. "
+			       "Save a new version of the table to add the column."
+			    << __E__;
 		}
 		unsigned int loopParamGroupIdCol =
 		    loopParamTable.tableView_->findCol(IterateTable::macroParamCols_.GroupID_);
@@ -5193,7 +5194,8 @@ try
 		std::string loopGroupLinkIndex =
 		    loopTable.tableView_->getColumnInfo(loopGroupIdCol).getChildLinkIndex();
 		std::string loopParamGroupLinkIndex =
-		    loopParamTable.tableView_->getColumnInfo(loopParamGroupIdCol).getChildLinkIndex();
+		    loopParamTable.tableView_->getColumnInfo(loopParamGroupIdCol)
+		        .getChildLinkIndex();
 
 		std::string groupLinkIndex =
 		    planTable.tableView_->getColumnInfo(groupIdCol).getChildLinkIndex();
@@ -5287,7 +5289,8 @@ try
 							    IterateTable::commandExecuteMacroParams_
 							        .MacroParameterLinkGroupID_);
 							std::string loopGroupName =
-							    cmdTypeTableEdit.tableView_->getDataView()[cmdRow][cmdCol];
+							    cmdTypeTableEdit.tableView_
+							        ->getDataView()[cmdRow][cmdCol];
 
 							for(unsigned int lrow = 0;
 							    loopGroupName != "" &&
@@ -5306,7 +5309,9 @@ try
 								    prow < loopParamTable.tableView_->getNumberOfRows();
 								    ++prow)
 									if(loopParamTable.tableView_->isEntryInGroup(
-									       prow, loopParamGroupLinkIndex, paramGroupName) &&
+									       prow,
+									       loopParamGroupLinkIndex,
+									       paramGroupName) &&
 									   loopParamTable.tableView_->removeRowFromGroup(
 									       prow,
 									       loopParamGroupIdCol,
@@ -5317,7 +5322,8 @@ try
 										--prow;  // since row was deleted, go back!
 									}
 
-								__SUP_COUT__ << "Removing macro argument loop row." << __E__;
+								__SUP_COUT__ << "Removing macro argument loop row."
+								             << __E__;
 								if(loopTable.tableView_->removeRowFromGroup(
 								       lrow,
 								       loopGroupIdCol,
@@ -5567,14 +5573,17 @@ try
 						    cmdUID + "_Loops", cmdRow, cmdCol);
 
 						std::vector<std::string> labelOrder;
-						std::map<std::string /*label*/,
-						         std::vector<std::vector<std::string> /*name,start,step*/>>
+						std::map<
+						    std::string /*label*/,
+						    std::vector<std::vector<std::string> /*name,start,step*/>>
 						    argsByLabel;
 
-						if(macroArgsIt != command.params_.end() && macroArgsIt->second != "")
+						if(macroArgsIt != command.params_.end() &&
+						   macroArgsIt->second != "")
 						{
 							std::vector<std::string> entries =
-							    StringMacros::getVectorFromString(macroArgsIt->second, {','});
+							    StringMacros::getVectorFromString(macroArgsIt->second,
+							                                      {','});
 							for(const auto& entry : entries)
 							{
 								if(entry == "")
@@ -5584,9 +5593,10 @@ try
 								        entry, {':'}, {} /*keep whitespace*/);
 								if(pieces.size() != 4 || pieces[0] == "")
 								{
-									__SUP_SS__ << "Invalid macro argument entry '" << entry
-									           << "' for command '" << command.type_
-									           << ".' Expected name:start:step:label." << __E__;
+									__SUP_SS__
+									    << "Invalid macro argument entry '" << entry
+									    << "' for command '" << command.type_
+									    << ".' Expected name:start:step:label." << __E__;
 									__SUP_SS_THROW__;
 								}
 								for(auto& piece : pieces)
@@ -5601,9 +5611,9 @@ try
 
 						for(size_t li = 0; li < labelOrder.size(); ++li)
 						{
-							const std::string& label    = labelOrder[li];
-							std::string paramGroupName  = cmdUID + "_L" + std::to_string(li) +
-							                             "_Params";
+							const std::string& label = labelOrder[li];
+							std::string        paramGroupName =
+							    cmdUID + "_L" + std::to_string(li) + "_Params";
 
 							unsigned int lrow = loopTable.tableView_->addRow(
 							    author, true /*incrementUniqueData*/, cmdUID + "_Dim");
@@ -5611,12 +5621,15 @@ try
 							    lrow, loopGroupIdCol, cmdUID + "_Loops");
 							loopTable.tableView_->setValueAsString(
 							    std::to_string(li), lrow, loopPriorityCol);
-							loopTable.tableView_->setValueAsString("1", lrow, loopNumIterCol);
+							loopTable.tableView_->setValueAsString(
+							    "1", lrow, loopNumIterCol);
 							if(loopStepLabelCol != (unsigned int)-1)
 								loopTable.tableView_->setURIEncodedValue(
 								    label, lrow, loopStepLabelCol);
 							loopTable.tableView_->setValueAsString(
-							    IterateTable::MACRO_DIM_LOOP_PARAM_TABLE, lrow, loopParamLinkCol);
+							    IterateTable::MACRO_DIM_LOOP_PARAM_TABLE,
+							    lrow,
+							    loopParamLinkCol);
 							loopTable.tableView_->setValueAsString(
 							    paramGroupName, lrow, loopParamLinkGroupIdCol);
 							loopTable.modified_ = true;
@@ -5624,7 +5637,9 @@ try
 							for(const auto& arg : argsByLabel[label])
 							{
 								unsigned int prow = loopParamTable.tableView_->addRow(
-								    author, true /*incrementUniqueData*/, cmdUID + "_Param");
+								    author,
+								    true /*incrementUniqueData*/,
+								    cmdUID + "_Param");
 								loopParamTable.tableView_->addRowToGroup(
 								    prow, loopParamGroupIdCol, paramGroupName);
 								loopParamTable.tableView_->setURIEncodedValue(
@@ -5789,8 +5804,8 @@ try
 			if(editTable->createdTemporaryVersion_)  // if temporary version created here
 			{
 				__SUP_COUT__ << "Erasing unmodified temporary version "
-				             << editTable->tableName_ << "-v" << editTable->temporaryVersion_
-				             << __E__;
+				             << editTable->tableName_ << "-v"
+				             << editTable->temporaryVersion_ << __E__;
 				cfgMgr->eraseTemporaryVersion(editTable->tableName_,
 				                              editTable->temporaryVersion_);
 			}
@@ -5805,8 +5820,8 @@ try
 		    editTable->table_,
 		    editTable->temporaryVersion_,
 		    true /*ignoreDuplicates*/);  // save temporary version properly
-		__SUP_COUT__ << "Final version is " << editTable->tableName_ << "-v" << finalVersion
-		             << __E__;
+		__SUP_COUT__ << "Final version is " << editTable->tableName_ << "-v"
+		             << finalVersion << __E__;
 	}
 
 	for(auto& modifiedConfig : commandTableToEditMap)
