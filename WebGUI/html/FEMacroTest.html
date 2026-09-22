@@ -4265,7 +4265,7 @@ Here is the json string received:
 						"onmousemove": "showSequenceTooltip(event, this)",
 						"onmouseleave": "hideSequenceTooltip()",
 					},
-					"<span><i>#" + (GUIIndex + 1) + "</i> " + recordText + ": " + (recordName === "" ? "No arguments" : recordName) + "</span>",
+					"<span><i>#" + (GUIIndex + 1) + "</i> " + escapeHistoryHtml(recordText) + ": " + escapeHistoryHtml(recordName === "" ? "No arguments" : recordName) + "</span>",
 					true));
 
 				GUIIndex++;
@@ -6184,10 +6184,13 @@ Here is the json string received:
 					recordText += command["macroName"];
 
 					var seqNum = span.querySelector("i").textContent;
-					span.innerHTML = "<i>" + seqNum + "</i> " + recordText + ": " +
-						(recordName === "" ? "No arguments" : recordName);
-					span.title = seqNum + " " + recordText +
+					var safeRecordText = escapeHistoryHtml(recordText);
+					var safeRecordName = escapeHistoryHtml(recordName === "" ? "No arguments" : recordName);
+					span.innerHTML = "<i>" + seqNum + "</i> " + safeRecordText + ": " + safeRecordName;
+					var newTitleText = seqNum + " " + recordText +
 						(titleArgs === "" ? "\n    No arguments" : titleArgs);
+					span.title = newTitleText;
+					component.setAttribute("data-sequence-tooltip", escapeHistoryHtml(newTitleText));
 				}
 			}
 			// feedback in the MoM status display and output pane
