@@ -114,6 +114,7 @@ SubsystemLaunch.create = function() {
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
+	var _settlingAfterRestart = 0;
 
 	// Track the iframe document's scrollTop continuously so it can be restored after
 	// the Desktop framework resizes the iframe (which collapses scrollHeight to
@@ -1478,7 +1479,7 @@ SubsystemLaunch.create = function() {
 						}
 					}
 					if (el.value != SubsystemLaunch.subsystems[s][fieldIds[i]]) {
-						if(SubsystemLaunch.subsystems[s].configAliasChoices)
+						if(SubsystemLaunch.subsystems[s].configAliasChoices && !_settlingAfterRestart)
 							Debug.warn("The selected " + fieldIds[i] + " for Subsystem '" +
 								SubsystemLaunch.subsystems[s].name + "' has changed from '" +
 								el.value + "' to '" + SubsystemLaunch.subsystems[s][fieldIds[i]] + ".'");
@@ -1491,7 +1492,17 @@ SubsystemLaunch.create = function() {
 							}
 
 						if (f == el.options.length) {
-							if(_getAutoInitCount > 0)
+							if (_settlingAfterRestart) {
+								Debug.log("Still settling after restart, refreshing page...",
+									Debug.INFO_PRIORITY);
+								_settlingAfterRestart = 10;
+								_getAutoInitCount = 2;
+								window.clearTimeout(_getStatusTimer);
+								_getStatusTimer = window.setTimeout(
+									function () { init(); }, 5000);
+								return false;
+							}
+							else if(_getAutoInitCount > 0)
 								Debug.err("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
 									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
@@ -1530,14 +1541,16 @@ SubsystemLaunch.create = function() {
 				else {
 					el = document.getElementById("subsystem_" + s + "_" + fieldIds[i]);
 
-					if(fieldIds[i] == "detail" && SubsystemLaunch.subsystems[s].lastStatusChangeTime &&
-							SubsystemLaunch.subsystems[s].lastStatusChangeTime != "0")
+					if(fieldIds[i] == "detail")
 					{
 						//use a temporary element to decode html entities (like &lt; &apos; and &gt;)
 						const tel = document.createElement("textarea");
 						tel.innerHTML = decodeURIComponent(SubsystemLaunch.subsystems[s][fieldIds[i]]);
 
-						const detailText = tel.value + " ( " +
+						var detailText = tel.value;
+						if(SubsystemLaunch.subsystems[s].lastStatusChangeTime &&
+								SubsystemLaunch.subsystems[s].lastStatusChangeTime != "0")
+							detailText += " ( " +
 										SubsystemLaunch.subsystems[s].lastStatusChangeTime + " )";
 
 						const scrollEl = document.getElementById("subsystem_" + s + "_detail_scroll");
@@ -1570,6 +1583,8 @@ SubsystemLaunch.create = function() {
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
 		_recomputeDetailScrollWidths();
 
+		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
+			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
 		return true;
 
 		//////////////////////////////
@@ -1691,7 +1706,8 @@ SubsystemLaunch.create = function() {
 						}
 
 						if (!ipFound) {
-							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
+							if (!_settlingAfterRestart)
+								Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
 							document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							return;
 						}
@@ -2023,6 +2039,7 @@ SubsystemLaunch.create = function() {
 											if(countDown == 0) {
 												DesktopContent.systemBlackout(false);
 												Debug.log("And we are back!", Debug.INFO_PRIORITY);
+												_settlingAfterRestart = 10;
 												window.clearTimeout(_getStatusTimer);
 												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
 												return;
@@ -2968,25 +2985,28 @@ SubsystemLaunch.create = function() {
 				if(lastLogEntry && lastLogEntry != "")
 					lastLogEntry = decodeURIComponent(lastLogEntry);
 
-				var writeToEcl = false; // updated by checkbox onchange before popup is cleared
 				SubsystemLaunch._pendingWriteToEcl = false; // reset each time popup opens
+				SubsystemLaunch._pendingDiscardRun = false;
 
 				DesktopContent.popUpVerification(
 					/* prompt */
 					"Please enter a logbook entry summarizing the run:" +
 					"<br><br><label style='cursor:pointer;'><input type='checkbox' " +
-					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>"
+					"id='SubsystemLaunch-writeToEcl' onchange='SubsystemLaunch._pendingWriteToEcl=this.checked;' /> Write end-of-run summary to ECL</label>" +
+					"<br><label style='cursor:pointer;'><input type='checkbox' " +
+					"id='SubsystemLaunch-discardRun' onchange='SubsystemLaunch._pendingDiscardRun=this.checked;' /> Discard run for processing</label>"
 					,
 					/* continueFunc [optional] */
 					function (entry) {
 						Debug.log("User entered logbook entry " + entry);
 
 						var writeToEcl = SubsystemLaunch._pendingWriteToEcl || false;
-						Debug.log("writeToEcl = " + writeToEcl);
+						var discardRun = SubsystemLaunch._pendingDiscardRun || false;
+						Debug.log("writeToEcl = " + writeToEcl + ", discardRun = " + discardRun);
 
 						//save last entry
 						lastLogEntry = entry;
-						localStop(entry, writeToEcl);
+						localStop(entry, writeToEcl, discardRun);
 					} //end continueFunc handlere
 					,
 					/* val [optional] */ undefined,
@@ -3015,7 +3035,7 @@ SubsystemLaunch.create = function() {
 
 
 		//===========
-		function localStop(logEntry, writeToEcl) {
+		function localStop(logEntry, writeToEcl, discardRun) {
 			Debug.log("localStop()");
 			Debug.logv({logEntry});
 
@@ -3034,7 +3054,8 @@ SubsystemLaunch.create = function() {
 						"&fsmName=" + _fsmName +
 						"&StateMachine=Stop", //end get data
 						"logEntry=" + encodeURIComponent(logEntry) +
-						"&writeToEcl=" + (writeToEcl ? "1" : "0"), //end post data
+						"&writeToEcl=" + (writeToEcl ? "1" : "0") +
+						"&discardRun=" + (discardRun ? "1" : "0"), //end post data
 					function(req) //start handler
 					{
 				Debug.log("stop() FSM handler");
