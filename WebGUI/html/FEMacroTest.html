@@ -1098,8 +1098,14 @@
 				var errLabel = "Error while running FE Macro" +
 					(_runningMacroName ? " '" + _runningMacroName + "'" : "") + ":";
 				Debug.err(errLabel + " " + errStr);
+				var errHint = "";
+				if (/mismatch in number of input arguments/i.test(errStr))
+					errHint += "<br><br><i>The FE macro's inputs have changed since this page was loaded " +
+						"(e.g. after a rebuild and restart). Refresh the page to reload macro definitions.</i>";
+				if (_sequenceOnComplete)
+					errHint += "<br><br><b>MoM paused at this step.</b> Press Play to continue with the next step, or Stop.";
 				el.innerHTML = copyBtnStr + "<br><br><br>" +
-					str + "<br><br>" + errLabel + " " + Debug.callOutDebugLocales(errStr);
+					str + "<br><br>" + errLabel + " " + Debug.callOutDebugLocales(errStr) + errHint;
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				// reset command-block state so future runs start clean
 				isRunningCommandBlock = false;
@@ -1109,9 +1115,12 @@
 					renderHistoryDisplay();
 				commandBlockStartIndex_ = -1;
 				if (_sequenceOnComplete) {
+					// a failed step pauses the MoM instead of silently running on; Play resumes at the next step
 					var cb = _sequenceOnComplete;
 					_sequenceOnComplete = null;
+					pauseSequenceFlag = true;
 					cb();
+					statusActionButtons(false);
 				}
 				return;
 			}
@@ -5393,16 +5402,8 @@ Here is the json string received:
 						if (isSavedSequenceName(sequenceName))
 							appendMomMarker("__mom_marker_end__", sequenceName, currentIteration_ + 1, iterationCount_);
 						currentIteration_++;
-						for (var v in sequenceVariables_) {
-							var sv = sequenceVariables_[v];
-							var step = parseFloat(sv.step);
-							if (step === 0) continue;
-							var cur = parseFloat(sv.value) + step;
-							var max = parseFloat(sv.max);
-							if (step > 0 && cur > max) cur = max;
-							else if (step < 0 && cur < max) cur = max;
-							sv.value = String(cur);
-						}
+						for (var v in sequenceVariables_)
+							stepVariableValue(sequenceVariables_[v]);
 						updateVariableUI();
 						if (isSavedSequenceName(sequenceName))
 							appendMomMarker("__mom_marker__", sequenceName, currentIteration_ + 1, iterationCount_);
@@ -5782,6 +5783,35 @@ Here is the json string received:
 		} //end extractVariables()
 
 		//=====================================================================================
+		//splitNumericValue ~~
+		//	"3.4us" -> {num: 3.4, unit: "us"}; "42" -> {num: 42, unit: ""}; "0x0c" or "auto" -> null
+		//	The unit must be letters only so hex values are left alone rather than stepped.
+		function splitNumericValue(str) {
+			var m = /^\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*([a-zA-Z]*)\s*$/.exec(String(str));
+			if (!m) return null;
+			return { num: parseFloat(m[1]), unit: m[2] };
+		}
+
+		//=====================================================================================
+		//stepVariableValue ~~
+		//	advance one $variable's working value by its step, keeping the unit suffix
+		//	and clamping at max. Non-numeric values and zero/blank steps are left untouched.
+		function stepVariableValue(v) {
+			var step = parseFloat(v.step);
+			if (!step) return; // 0, NaN, or blank
+			var parts = splitNumericValue(v.value);
+			if (!parts) return; // e.g. "auto" or "0x0c": nothing sensible to step
+			var cur = parts.num + step;
+			var maxParts = splitNumericValue(v.max);
+			if (maxParts) {
+				if (step > 0 && cur > maxParts.num) cur = maxParts.num;
+				else if (step < 0 && cur < maxParts.num) cur = maxParts.num;
+			}
+			// toPrecision keeps 3.4 + 0.1 from turning into 3.5000000000000004
+			v.value = Number(cur.toPrecision(12)) + parts.unit;
+		}
+
+		//=====================================================================================
 		//substituteVariables ~~
 		function substituteVariables(inputArgs) {
 			if (Object.keys(sequenceVariables_).length === 0) return inputArgs;
@@ -5792,19 +5822,10 @@ Here is the json string received:
 				if (tuple.length < 2) { result.push(pairs[i]); continue; }
 				var val = decodeURIComponent(tuple[1]);
 				for (var varName in sequenceVariables_) {
-					var currentVal;
-					if (isIteratedRun_) {
-						var v = sequenceVariables_[varName];
-						var numVal = parseFloat(v.value) + currentIteration_ * parseFloat(v.step);
-						if (parseFloat(v.step) > 0 && numVal > parseFloat(v.max))
-							numVal = parseFloat(v.max);
-						else if (parseFloat(v.step) < 0 && numVal < parseFloat(v.max))
-							numVal = parseFloat(v.max);
-						currentVal = String(numVal);
-					} else {
-						currentVal = sequenceVariables_[varName].value;
-					}
-					val = val.split(varName).join(currentVal);
+					// .value is already the working value for this iteration (advanced by
+					// stepVariableValue at each pass boundary), so use it verbatim: units like
+					// "3.4us" stay intact and the step is not applied a second time
+					val = val.split(varName).join(sequenceVariables_[varName].value);
 				}
 				result.push(tuple[0] + "," + encodeURIComponent(val));
 			}
@@ -5894,9 +5915,8 @@ Here is the json string received:
 			var valueEl = document.getElementById("var-value");
 			var stepEl = document.getElementById("var-step");
 			if (!valueEl || !stepEl) return;
-			// Require a complete finite number, not a numeric prefix or an empty value.
-			var value = valueEl.value.trim();
-			var isNumeric = value !== "" && Number.isFinite(Number(value));
+			// A number, optionally with a unit suffix ("3.4us"), can be stepped; "auto"/hex cannot.
+			var isNumeric = splitNumericValue(valueEl.value) !== null;
 			var stepSpan = document.getElementById("var-step-span");
 			if (stepSpan) stepSpan.hidden = !isNumeric;
 			var maxSpan = document.getElementById("var-max-span");
