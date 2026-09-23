@@ -61,8 +61,7 @@ class ChatSupervisor : public CoreSupervisorBase
 	bool     isChatOld(uint64_t chatIndex, uint64_t last);
 
 	void newUser(const std::string& user);
-	void newChat(const std::string& chat, const std::string& user,
-	             const std::string& type = "", bool fromSlack = false);
+	void newChat(const std::string& chat, const std::string& user, const std::string& type = "", bool fromSlack = false);
 	void sendToSlack(const std::string& user, const std::string& message);
 	void receiveFromSlack();
 	void startSlackDaemon();
