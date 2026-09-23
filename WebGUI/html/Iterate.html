@@ -4634,7 +4634,7 @@
 				out += args[i].name + "=" + args[i].start;
 				if(args[i].step == "DEFAULT" || args[i].step == "Default")
 					out += " (const)";
-				else
+				else if(parseFloat(args[i].step) != 0) //a step of 0 changes nothing, so do not show "+0"
 					out += "+" + args[i].step;
 				if(args[i].label) out += "@" + args[i].label;
 			}
@@ -5270,7 +5270,8 @@
 				for(var l=0;l<labels.length;++l) if(labels[l].label == label) return labels[l].passes;
 				return 1;
 			};
-			var isConst = function(step) { return step == "DEFAULT" || step == "Default"; };
+			var isConst = function(step) { return step == "DEFAULT" || step == "Default" ||
+					(step !== "" && parseFloat(step) === 0); }; //step 0 is also a constant, value passed through as-is
 			var isNum = function(s) { return s !== "" && !isNaN(parseFloat(s)); };
 
 			var str = "";
