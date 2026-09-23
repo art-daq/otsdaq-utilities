@@ -231,8 +231,7 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 		    "chat_entry", ChatHistoryEntry_[i], "chat_history");
 		xmlOut->addTextElementToParent(
 		    "chat_author", ChatHistoryAuthor_[i], "chat_history");
-		xmlOut->addTextElementToParent(
-		    "chat_type", ChatHistoryType_[i], "chat_history");
+		xmlOut->addTextElementToParent("chat_type", ChatHistoryType_[i], "chat_history");
 		sprintf(tempStr, "%lu", ChatHistoryTime_[i]);
 		xmlOut->addTextElementToParent("chat_time", tempStr, "chat_history");
 	}

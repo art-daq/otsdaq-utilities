@@ -22,7 +22,8 @@
 		//createEmptyIterateGroup()
 		//createIterationPlan(useTargetPlanName,useCommandsFromGUI)
 		//deleteIterationPlan()
-		//addCommand(type,params)
+		//defaultCommandParamValue(paramName)
+		//addCommand(type,params,insertPos,targetSubsystem)
 		//deleteCommand(i,noPrompt,noDraw)
 		//savePlanCommandSequence(plan,commands,respsonseHandler)
 
@@ -30,7 +31,22 @@
 		//showCommandDialog(insertIndex,modifyExisting)
 		//	localShowCommandDialog()
 		//	localShowParamControls(commandKey)
-		//popUpParamSystemAliasOnChange(value)
+		//getSystemAliasChoices(targetSubsystem)
+		//getRemoteFEMacroInfo(targetSubsystem,handler)
+		//getPopUpTargetSubsystem()
+		//popUpTargetSubsystemOnChange(targetSubsystem)
+		//popUpRenderMacroNameControl(paramIndex,targetSubsystem)
+		//popUpMacroNameOnChange(paramIndex)
+		//macroArgsParse(str) / macroArgsSerialize(args) / macroArgsSummary(str)
+		//macroArgsFromLoopTree(linkNode)
+		//getPlanOutputFilesHtml(req)
+		//getEnclosingLabels(commandIndex,isInsert)
+		//getCommandRunCount(commandIndex) / commandRunCountBadge(commandIndex)
+		//getMacroArgsHelpText() / showMacroArgsHelp()
+		//renderMacroArgsEditor(paramIndex,targetSubsystem)
+		//	macroArgsEditorRead/Changed/Add/AddAll/Remove/Preview
+		//	macroArgsCurrentInputs() / macroArgsDefaultRow(name)
+		//popUpParamSystemAliasOnChange(value,targetSubsystem)
 				//for targets:
 			//showParamTargetWizDialog(paramIndex)
 			//	localClearTargets()
@@ -700,6 +716,11 @@
 		var _fsmNames = [];	//array of names
 		var _tableGroups = []; //array of objects:{name,key,groupComment}, only configuration groups
 		var _commands = [];
+		var _remoteSubsystems = [];
+		//cache of live FE/macro info per remote subsystem, from getRemoteSubsystemFEMacroInfo:
+		//	{ fes: {uid: {type, supervisor, macros: {name: {inputs:[], outputs:[]}}}}, publicMacros: {name: {inputs:[], outputs:[]}} }
+		var _remoteFEMacroInfo = {};
+		var _codeEditorAppId = 0; //local Code Editor app id, to open plan output files
 
 		var _COMMAND_TYPES = {}; //for now, keys are same as value, but value is (intended to be) display name
 		_COMMAND_TYPES.BEGIN_LABEL 				= "BEGIN_LABEL";
@@ -730,19 +751,21 @@
 		_COMMAND_PARAM_FIELDS.ServerTargetTablesName			= "CSVTargetTables";
 		_COMMAND_PARAM_FIELDS.ServerTargetUIDsName				= "CSVTargetUIDs";
 		_COMMAND_PARAM_FIELDS.RelativePathToField				= "RelativePathToField";
-		_COMMAND_PARAM_FIELDS.LinkToMacroDimensions				= "LinkToMacroDimensionalLoopTable";
+		_COMMAND_PARAM_FIELDS.LinkToMacroDimensions				= "LinkToMacroDimensionalLoopTable"; //tree column name (load side)
+		_COMMAND_PARAM_FIELDS.MacroArgs							= "MacroArgs"; //"name:start:step:label,..." each piece URI-encoded; server writes the loop tables
 		_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile			= "EnableSavingOutputsToFile";
+		_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured			= "SkipIfAlreadyConfigured"; //Configure commands: leave an already-Configured FSM as-is
 
 		var _COMMAND_PARAMS = {}; //NOTE!!! Fields must be in same order as the tables (in the future could ask server for this order, or not)
 		_COMMAND_PARAMS[_COMMAND_TYPES.BEGIN_LABEL] 			= ["Label"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.CHOOSE_FSM] 				= [_COMMAND_PARAM_FIELDS.NameOfStateMachine];
-		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_ACTIVE_GROUP] 	= [];
-		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_ALIAS] 		= [_COMMAND_PARAM_FIELDS.SystemAlias];
-		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_GROUP] 		= ["GroupName","GroupKey"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured];
+		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_ALIAS] 		= [_COMMAND_PARAM_FIELDS.SystemAlias,_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured];
+		_COMMAND_PARAMS[_COMMAND_TYPES.CONFIGURE_GROUP] 		= ["GroupName","GroupKey",_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured];
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_ALIAS] 			= [_COMMAND_PARAM_FIELDS.SystemAlias];
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_GROUP] 			= ["GroupName","GroupKey"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_FE_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.LinkToMacroDimensions,"LinkToMacroDimensionalLoopGroupID","EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MACRO] 			= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.LinkToMacroDimensions,"LinkToMacroDimensionalLoopGroupID","EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_FE_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MACRO] 			= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
@@ -753,6 +776,21 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.RESUME] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.HALT] 	= [];
 
+		//command types the Iterator backend can dispatch to a remote subsystem
+		//	(ACTIVATE_*, MODIFY_ACTIVE_GROUP and RUN act on the local config manager
+		//	 or local run timing and are not routable; the backend rejects them if targeted)
+		var _REMOTE_TARGET_COMMAND_TYPES = {};
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_ACTIVE_GROUP] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_ALIAS] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_GROUP] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_FE_MACRO] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_MACRO] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.START] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.STOP] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.PAUSE] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.RESUME] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.HALT] = true;
+
 		var _DEBUG_WOUT_SERVER = 0;
 
 		var _shownAddCommandIndex = -1;
@@ -760,10 +798,14 @@
 		var _shownDragOverCommandIndex = -1;
 		var _planIsModified = false;
 		var _popUpParamsModified = false
+		var _popUpCommandIndex = -1; //command position edited/inserted by the open command dialog (for enclosing-label lookup)
+		var _popUpCommandIsInsert = false; //true when the open command dialog inserts a NEW command in front of _popUpCommandIndex
+		var _macroArgsTooltipShown = false; //macro-argument help tooltip offered once per page load (server remembers per-user dismissal)
 
 		var _cmdTargetObj = {"tables":[],"uids":[]}; //array of target tables/UIDs
 		var _cmdTargetWizParentTable = "";
 		var _cmdTargetParentSelArr = [];
+		var _cmdTargetWizRemoteSubsystem = ""; //non-empty while the target wizard browses a remote subsystem's live FEs
 
 
 		var _HEADER_ERROR_BGCLR 		= "rgb(226, 205, 197)";
@@ -773,7 +815,6 @@
 
 		var _FE_TABLE 					= "FEInterfaceTable";
 		var _FE_SUPERVISOR_TABLE		= "FESupervisorTable";
-		var _MACRO_DIM_LOOP_TABLE		= "IterationCommandMacroDimensionalLoopTable";
 
 
 		//=====================================================================================
@@ -823,6 +864,19 @@
 			//	calls paint() and adds resize listener when done
 			initIterateData();
 
+			//fill in local Code Editor appId (for output file links, like Console.html)
+			DesktopContent.XMLHttpRequest("Request?RequestType=getAppId" +
+					"&classNeedle=ots::CodeEditorSupervisor",
+					"", //end post data,
+					function(req)
+					{
+						_codeEditorAppId = DesktopContent.getXMLValue(req,"id") | 0;
+						Debug.log("_codeEditorAppId " + _codeEditorAppId);
+					}, //end handler
+					0,0,true, //reqParam, progressHandler, callHandlerOnErr,
+					false, //doNotShowLoadingOverlay,
+					true //targetGatewaySupervisor
+			); //end getAppId request
 
 			//be careful to not override the window.onmousemove DesktopContent action
 			DesktopContent.mouseMoveSubscriber(bodyMouseMoveHandler);
@@ -980,7 +1034,7 @@
 
 				if(!_DEBUG_WOUT_SERVER)
 					ConfigurationAPI.getTree(_ITERATE_BASE_PATH + "/" + plan,
-										 6, //down through command parameters
+										 8, //down through macro loop parameter rows
 										 _modifiedTables,
 										 localExtractTree
 										 );
@@ -1012,7 +1066,8 @@
 				"type" : _COMMAND_TYPES.CONFIGURE_ALIAS,
 				"param" : {"SystemAlias":(_tableGroupAliases.length? //use first alias, if any exist
 						_tableGroupAliases[0].alias
-						:"")},
+						:""),
+						"SkipIfAlreadyConfigured":0},
 				});
 				commands.push({		//RUN 5 minutes
 				"type" : _COMMAND_TYPES.RUN,
@@ -1065,7 +1120,7 @@
 					var targetChildren;
 					var countCommands = 0;
 
-					var type,params; //to make command
+					var type,params,type_targetSubsystem,type_legacyLoopNote; //to make command
 
 					//for each plan field
 					//	find link to command group
@@ -1095,6 +1150,13 @@
 											{
 												type = commandChildren[k].children[0].getAttribute("value");
 												params = [];
+											}
+											else if(commandChildren[k].getAttribute("value") == "TargetSubsystem")
+											{
+												type_targetSubsystem = commandChildren[k].children[0].getAttribute("value");
+												//an unset table column reads back as the "DEFAULT" sentinel = Self
+												if(type_targetSubsystem == "DEFAULT" || type_targetSubsystem == "Default")
+													type_targetSubsystem = "";
 											}
 											else if(commandChildren[k].getAttribute("value") == "LinkToCommandTable")
 											{
@@ -1146,11 +1208,12 @@
 														}
 														else if(parameterName == _COMMAND_PARAM_FIELDS.LinkToMacroDimensions )
 														{
-															//for execute FEMacro and Macro commands
-
-															//first push table, then groupID value
-															params.push(parameterChildren[l].children[1].getAttribute("value"));
-															params.push(parameterChildren[l].children[0].getAttribute("value"));
+															//for execute FEMacro and Macro commands:
+															//	walk loop rows -> parameter rows into the MacroArgs wire string
+															var loopResult = macroArgsFromLoopTree(parameterChildren[l]);
+															params.push(loopResult.macroArgs);
+															if(loopResult.legacy)
+																type_legacyLoopNote = loopResult.legacy;
 														}
 														else
 															params.push(parameterChildren[l].children[0].getAttribute("value"));
@@ -1167,6 +1230,12 @@
 									console.log(type);
 									console.log(params);
 									addCommand(type,params);
+									if(type_targetSubsystem)
+										_commands[_commands.length-1].targetSubsystem = type_targetSubsystem;
+									type_targetSubsystem = "";
+									if(type_legacyLoopNote)
+										_commands[_commands.length-1].legacyLoopNote = type_legacyLoopNote;
+									type_legacyLoopNote = "";
 								}
 							}
 
@@ -1308,9 +1377,16 @@
 								0 /*style*/,
 								0 /*mouseup*/,
 								0);//"handlePlanParamsMouseMove(" + i + ",event);" /*mousemove*/);
+						if(commands[i].targetSubsystem && commands[i].targetSubsystem != "")
+							str += "<span style='background:rgb(218,194,194); border-radius:3px; " +
+								"padding:0 4px; font-size:11px; position:relative; top:-1px;'>@ " +
+								commands[i].targetSubsystem + "</span>";
+						str += commandRunCountBadge(i);
 						for(var j=0;j<paramKeys.length;++j)
 							str += " " + paramKeys[j] + "=" +
-							commands[i].param[paramKeys[j]];
+							(paramKeys[j] == _COMMAND_PARAM_FIELDS.MacroArgs ?
+								macroArgsSummary(commands[i].param[paramKeys[j]]) :
+								commands[i].param[paramKeys[j]]);
 						str += "</div>";
 
 						//up overlay
@@ -1819,9 +1895,30 @@
 				str += "<b>" + paramKeys[j] + ":</b> ";
 				str += "</td>";
 				str += "<td style='padding-right:10px'>"; 	//for nice spacing after scroll right
-				str += _commands[i].param[paramKeys[j]];
+				str += (paramKeys[j] == _COMMAND_PARAM_FIELDS.MacroArgs ?
+						macroArgsSummary(_commands[i].param[paramKeys[j]]) :
+						_commands[i].param[paramKeys[j]]);
 				str += "</td>";
 				str += "</tr>";
+			}
+			{	//how often this command executes per play of the plan
+				var rc = getCommandRunCount(i);
+				var runsText;
+				if(_commands[i].type == _COMMAND_TYPES.BEGIN_LABEL)
+					runsText = rc.passes == 0 ? "no matching REPEAT_LABEL" :
+						"entered " + rc.runs + " time" + (rc.runs == 1 ? "" : "s") + ", " +
+						rc.passes + " pass" + (rc.passes == 1 ? "" : "es") + " each = body runs " +
+						(rc.runs * rc.passes) + " time" + (rc.runs * rc.passes == 1 ? "" : "s");
+				else
+					runsText = rc.runs + " time" + (rc.runs == 1 ? "" : "s") + " per play";
+				if(rc.loops.length)
+				{
+					runsText += " (inside ";
+					for(var l=0;l<rc.loops.length;++l)
+						runsText += (l ? ", " : "") + rc.loops[l].label + ": " + rc.loops[l].passes + " passes";
+					runsText += ")";
+				}
+				str += "<tr><td><b>Runs:</b> </td><td style='padding-right:10px'>" + runsText + "</td></tr>";
 			}
 			str += "</table>";
 
@@ -2104,6 +2201,35 @@
 			} //end localGetNamesOfFSMs()
 			localGetNamesOfFSMs();
 
+			function localGetRemoteSubsystems()
+			{
+				DesktopContent.XMLHttpRequest(
+					"Request?RequestType=getRemoteSubsystemStatus",
+					"",
+					function(req)
+					{
+						var names = req.responseXML.getElementsByTagName("subsystem_name");
+						var aliasChoices = req.responseXML.getElementsByTagName("subsystem_configAliasChoices");
+						_remoteSubsystems = [];
+						for(var i=0;i<names.length;++i)
+						{
+							var aliases = [];
+							if(i < aliasChoices.length)
+							{
+								var csv = aliasChoices[i].getAttribute('value');
+								if(csv && csv != "")
+									aliases = csv.split(',');
+							}
+							_remoteSubsystems.push({
+								name: names[i].getAttribute('value'),
+								aliases: aliases});
+						}
+						console.log("_remoteSubsystems",_remoteSubsystems);
+					},
+					0,0,false,false,
+					true /*targetGatewaySupervisor*/);
+			} //end localGetRemoteSubsystems()
+			localGetRemoteSubsystems();
 
 		}	//end initIterateData()
 
@@ -2417,7 +2543,8 @@
 							addCommand(_COMMAND_TYPES.CONFIGURE_ALIAS,
 									[(_tableGroupAliases.length? //use first alias, if any exist
 											_tableGroupAliases[0].alias
-											:"")]);//"SystemAlias"
+											:""), //"SystemAlias"
+									 0]); //"SkipIfAlreadyConfigured"
 							addCommand(_COMMAND_TYPES.BEGIN_LABEL,
 									["Main"]);
 							addCommand(_COMMAND_TYPES.RUN,
@@ -2595,6 +2722,8 @@
 		function showCommandDialog(insertIndex, modifyExisting)
 		{
 			Debug.log("showCommandDialog");
+			_popUpCommandIndex = (insertIndex === undefined || insertIndex < 0) ? _commands.length : insertIndex;
+			_popUpCommandIsInsert = !modifyExisting;
 
 			var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
 			if(!el)
@@ -2786,10 +2915,41 @@
 							"]</b><br>";
 
 					str += "<center>";
-					str += "<table>";
 
 					var initValue;
 					var hDelta =  32*_COMMAND_PARAMS[commandKey].length;
+
+					str += "<table>";
+
+					var initTS = "";
+					if(modifyExisting && _commands[insertIndex].targetSubsystem !== undefined)
+						initTS = _commands[insertIndex].targetSubsystem;
+
+					//target subsystem row shares the parameter table so the label
+					//	column lines up with the parameter labels below
+					if(_remoteSubsystems.length > 0 && _REMOTE_TARGET_COMMAND_TYPES[commandKey])
+					{
+						str += "<tr><td style='text-align:right;" +
+								"vertical-align: top;" +
+								"padding-top: 7px;'>";
+						str += "TargetSubsystem: ";
+						str += "</td><td>";
+						str += DesktopContent.htmlOpen("select",
+							{
+								"id":"popUp-targetSubsystem",
+								"class":"popUp-param",
+								"onchange":"popUpTargetSubsystemOnChange(this.value); _popUpParamsModified = true;"
+							});
+						str += DesktopContent.htmlOpen("option" + (initTS == "" ? " selected" : ""),
+							{"value":""}, "Self", true);
+						for(var j=0;j<_remoteSubsystems.length;++j)
+							str += DesktopContent.htmlOpen("option" +
+								(_remoteSubsystems[j].name == initTS ? " selected" : ""),
+								{"value":_remoteSubsystems[j].name},
+								_remoteSubsystems[j].name, true);
+						str += "</select></td></tr>";
+						hDelta += 32;
+					}
 
 					//each parameter, display name and edit control
 					for(var i=0;i<_COMMAND_PARAMS[commandKey].length;++i)
@@ -2849,19 +3009,20 @@
 											"onchange":"popUpParamSystemAliasOnChange(this.value); _popUpParamsModified = true;",
 
 									});
-							var selectedAliasIndex = 0;
-							for(var j=0;j<_tableGroupAliases.length;++j)
+							var aliasChoices = getSystemAliasChoices(initTS);
+							var selectedAlias = aliasChoices.length ? aliasChoices[0] : "";
+							for(var j=0;j<aliasChoices.length;++j)
 							{
-								if(_tableGroupAliases[j].alias == initValue)
-									selectedAliasIndex = j;
+								if(aliasChoices[j] == initValue)
+									selectedAlias = aliasChoices[j];
 
 								str += DesktopContent.htmlOpen("option" +
-										(_tableGroupAliases[j].alias == initValue? //select the init value if match
+										(aliasChoices[j] == initValue? //select the init value if match
 												" selected":""),
 										{
-												"value":_tableGroupAliases[j].alias
+												"value":aliasChoices[j]
 										},
-										_tableGroupAliases[j].alias/*innerHTML*/, true /*closeTag*/);
+										aliasChoices[j]/*innerHTML*/, true /*closeTag*/);
 							}
 
 							str += "</select>";
@@ -2870,9 +3031,8 @@
 									{
 											"id":"popUp-param-systemAliasDetails"
 									});
-							if(_tableGroupAliases.length)
-								str += popUpParamSystemAliasOnChange(
-										_tableGroupAliases[selectedAliasIndex].alias);
+							if(selectedAlias != "")
+								str += popUpParamSystemAliasOnChange(selectedAlias, initTS);
 							str += "</div>";
 							hDelta += 90;
 						}
@@ -2948,6 +3108,9 @@
 								_COMMAND_PARAM_FIELDS.DoTrackGroupChanges ||
 
 								_COMMAND_PARAMS[commandKey][i] ==  //booleans
+								_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured ||
+
+								_COMMAND_PARAMS[commandKey][i] ==  //booleans
 								_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile)
 						{
 							//boolean field, show select box and set value to 1/0
@@ -2988,11 +3151,48 @@
 
 							str += "</select>";
 						}
-						else if(_COMMAND_PARAMS[commandKey][i] == // Macro Parameter table link
-								_COMMAND_PARAM_FIELDS.LinkToMacroDimensions)
+						else if(_COMMAND_PARAMS[commandKey][i] == // macro input arguments
+								_COMMAND_PARAM_FIELDS.MacroArgs)
 						{
-							if(initValue == "") //set default table name
-								initValue = _MACRO_DIM_LOOP_TABLE;
+							//hidden input holds the wire value read by submit/clone handlers;
+							//	the value cell keeps the one-line explanation (aligned with the other
+							//	Field: Value rows); the 4-column editor itself goes in a second row
+							//	spanning both columns, which renderMacroArgsEditor() pulls to 10px
+							//	from the popup's left edge so all columns fit
+							str += DesktopContent.htmlOpen("input",
+									{
+											"id":("popUp-param-" + i),
+											"type":"hidden",
+											"value":initValue
+									}, 0 /*innerHTML*/, true /*closeTag*/);
+							str += "<div style='font-size:11px; color:#333; margin:4px 0 4px 0; text-align:left;'>" +
+									"Each argument's value on a given pass of the plan loop is " +
+									"<i>start&nbsp;value + (step &times; pass&nbsp;number)</i>. " +
+									//note: htmlOpen wraps attribute values in single quotes, so no quotes in onclick
+									DesktopContent.htmlOpen("a",
+										{"href":"#", "title":"How do arguments advance with plan loops?",
+										 "style":"text-decoration:none; font-weight:bold; margin-left:6px;",
+										 "onclick":"showMacroArgsHelp(); return false;"},
+										"[?]", true) +
+									"</div>";
+							if(modifyExisting && _commands[insertIndex].legacyLoopNote)
+								str += "<div style='font-size:11px; color:#a60; margin-bottom:3px; text-align:left;'>" +
+										_commands[insertIndex].legacyLoopNote + "</div>";
+							//second row: the editor table (loop below closes this row's cell)
+							str += "</td></tr><tr><td colspan='2' style='text-align:left;'>";
+							str += DesktopContent.htmlOpen("div",
+									{"id":"popUp-macroArgsEditor-" + i,
+									 "style":"position:relative; left:0px; text-align:left;"}, "", true /*closeTag*/);
+							hDelta += 70 + 30*Math.max(1, macroArgsParse(initValue).length);
+							setTimeout(function(idx,ts){ return function() {
+								renderMacroArgsEditor(idx, ts); }; }(i, initTS), 0);
+						}
+						else if(_COMMAND_PARAMS[commandKey][i] == "MacroName")
+						{
+							//wrapper div is re-rendered by popUpRenderMacroNameControl()
+							//	when the target subsystem changes (remote: select of live macros)
+							str += DesktopContent.htmlOpen("div",
+									{"id":"popUp-macroNameWrapper-" + i});
 							str += DesktopContent.htmlOpen("input",
 									{
 											"id":("popUp-param-" + i),
@@ -3001,16 +3201,42 @@
 											"value":initValue,
 											"onchange":"_popUpParamsModified = true;"
 									}, 0 /*innerHTML*/, true /*closeTag*/);
+							str += "</div>";
+							str += DesktopContent.htmlOpen("div",
+									{
+											"id":"popUp-macroInputsHint-" + i,
+											"style":"font-size:11px; color:#555; max-width:300px;"
+									}, "", true /*closeTag*/);
+							hDelta += 40; //room for the input/output argument hint
+							if(initTS != "")
+								setTimeout(function(idx,ts){ return function() {
+									popUpRenderMacroNameControl(idx, ts); }; }(i, initTS), 0);
 						}
 						else //default field input
-							str += DesktopContent.htmlOpen("input",
-									{
-											"id":("popUp-param-" + i),
-											"class":"popUp-param",
-											"type":"text",
-											"value":initValue,
-											"onchange":"_popUpParamsModified = true;"
-									}, 0 /*innerHTML*/, true /*closeTag*/);
+						{
+							var inputAttrs = {
+									"id":("popUp-param-" + i),
+									"class":"popUp-param",
+									"type":"text",
+									"value":initValue,
+									"onchange":"_popUpParamsModified = true;"
+							};
+							//grayed-out placeholder tells the user what a blank value means
+							if(_COMMAND_PARAMS[commandKey][i] == "OutputFilePath")
+							{
+								inputAttrs["placeholder"] = "$OTSDAQ_DATA";
+								inputAttrs["title"] = "Directory for saved macro outputs. Blank = $OTSDAQ_DATA of the front-end host. " +
+										"Not applied to remote subsystems (their MacroMaker always writes under its own $OTSDAQ_DATA).";
+							}
+							else if(_COMMAND_PARAMS[commandKey][i] == "OutputFileRadix")
+							{
+								inputAttrs["placeholder"] = "(none)";
+								inputAttrs["title"] = "Prefix for the saved output file name: <radix><MacroName>_<time>.txt. " +
+										"Not applied to remote subsystems.";
+							}
+							str += DesktopContent.htmlOpen("input", inputAttrs,
+									0 /*innerHTML*/, true /*closeTag*/);
+						}
 
 
 						str += "</td></tr>";
@@ -3084,9 +3310,13 @@
 								"popUp-param-" + i).value);
 					}
 
+					var targetSubsystem = "";
+					var tsEl = document.getElementById("popUp-targetSubsystem");
+					if(tsEl) targetSubsystem = tsEl.value;
+
 					if(modifyExisting)
 						deleteCommand(insertIndex,true /*noPrompt*/,true /*noDraw*/);
-					addCommand(type,params,insertIndex);
+					addCommand(type,params,insertIndex,targetSubsystem);
 					drawIterationPlan();
 
 					var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
@@ -3113,9 +3343,13 @@
 							params.push(document.getElementById(
 									"popUp-param-" + i).value);
 						}
+						var targetSubsystem = "";
+						var tsEl = document.getElementById("popUp-targetSubsystem");
+						if(tsEl) targetSubsystem = tsEl.value;
+
 						insertIndex =  document.getElementById(
 								"popUp-cloneButtonPosition").value;
-						addCommand(type,params,insertIndex);
+						addCommand(type,params,insertIndex,targetSubsystem);
 						drawIterationPlan();
 
 						var el = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
@@ -3384,7 +3618,7 @@
 				str += DesktopContent.htmlOpen("div",
 						{
 								"id":"popUp-targetWiz-firstBox",
-								"style":"height:160px; margin-top: -16px;"
+								"style":"height:160px; margin-top:4px;"
 						},
 						0,true);
 
@@ -3466,12 +3700,37 @@
 
 
 				if(el) el.parentNode.removeChild(el); //close popup
+
+				//remote mode: the set of macros common to the targets may have changed
+				var wizTS = getPopUpTargetSubsystem();
+				if(wizTS != "")
+				{
+					var type = document.getElementById("popUp-commandType").value;
+					var macroIndex = _COMMAND_PARAMS[type].indexOf("MacroName");
+					if(macroIndex >= 0)
+						popUpRenderMacroNameControl(macroIndex, wizTS);
+				}
 				return false;
 			}; //end submit onmouseup handler
 
+			//remote subsystem mode: only live front-ends (from the remote MacroMaker) can be
+			//	browsed, so force the Front-ends-only filter on and lock it
+			var wizTargetSubsystem = getPopUpTargetSubsystem();
+			_cmdTargetWizRemoteSubsystem = wizTargetSubsystem;
+			if(wizTargetSubsystem != "")
+			{
+				var feOnlyEl = document.getElementById("popUp-targetWizFEOnly");
+				feOnlyEl.checked = false; //handler below toggles to true
+				feOnlyEl.disabled = true;
+				document.getElementById("popUp-targetWizFEOnlyName").innerHTML =
+						"Live front-ends on '" + wizTargetSubsystem + "'";
+				document.getElementById("popUp-targetWizFEOnlyName").style.cursor = "default";
+			}
+
 			//fe checkbox handlers
 			document.getElementById("popUp-targetWizFEOnly").onchange = localFeCheckboxChanged;
-			document.getElementById("popUp-targetWizFEOnlyName").onmouseup = localFeCheckboxHandler;
+			document.getElementById("popUp-targetWizFEOnlyName").onmouseup =
+					(wizTargetSubsystem != "") ? function(){} : localFeCheckboxHandler;
 
 			//all-in-parent checkbox handlers
 			document.getElementById("popUp-targetWizAllUIDs").onchange = localAllUIDsCheckboxChanged;
@@ -3481,7 +3740,7 @@
 
 			//init handling of targets
 
-			localFeCheckboxHandler(); //get first box of UIDs
+			localFeCheckboxHandler(); //get first box of UIDs (toggles FE-only to true in remote mode)
 			localAllUIDsCheckboxHandler(); //deafult to true for all UIDs
 
 			//assume targets are already extracted by parameter dialog
@@ -3543,6 +3802,47 @@
 				}
 				Debug.log("localFeCheckboxHandler " + el.checked);
 
+				if(_cmdTargetWizRemoteSubsystem != "")
+				{
+					//remote mode: first box = FE supervisors of the live front-ends
+					el.checked = true;
+					getRemoteFEMacroInfo(_cmdTargetWizRemoteSubsystem, function(info, errStr)
+					{
+						var firstBox = document.getElementById("popUp-targetWiz-firstBox");
+						if(!firstBox) return; //wizard closed
+						if(errStr && errStr != "")
+						{
+							firstBox.innerHTML = "";
+							var div = document.createElement("div");
+							div.style.color = "#a00";
+							div.style.whiteSpace = "pre-wrap";
+							div.textContent = errStr;
+							firstBox.appendChild(div);
+							return; //getRemoteFEMacroInfo() already raised Debug.err()
+						}
+						var supervisors = {};
+						for(var uid in info.fes)
+							supervisors[info.fes[uid].supervisor || "(unknown supervisor)"] = true;
+						var msValues = Object.keys(supervisors).sort();
+						if(msValues.length == 0)
+						{
+							var msg = "Remote subsystem '" + _cmdTargetWizRemoteSubsystem +
+									"' answered the MacroMaker UDP request but reported zero live " +
+									"front-ends. Check that its front-ends are enabled and that the " +
+									"subsystem finished Configuring (FE instances only exist while Configured).";
+							firstBox.innerHTML = "";
+							var div = document.createElement("div");
+							div.style.color = "#a00";
+							div.textContent = msg;
+							firstBox.appendChild(div);
+							Debug.err(msg);
+							return;
+						}
+						localMakeFirstBox(msValues);
+					});
+					return;
+				}
+
 				var path = el.checked?_FE_SUPERVISOR_TABLE:"/";
 				ConfigurationAPI.getTree(path,
 						1, //down through command parameters
@@ -3580,6 +3880,12 @@
 						return;
 					}
 
+					localMakeFirstBox(msValues);
+				} //end localExtractTargetTree()
+
+				//::::::::::::::::::::::::::::::::::::
+				function localMakeFirstBox(msValues)
+				{
 					//////////// make multiselect box
 					{
 						var noMultiSelect = false; // true or false (false for multiselect functionality)
@@ -3673,7 +3979,25 @@
 			var path = feMode?
 					_FE_SUPERVISOR_TABLE:"";
 
-
+			//remote mode: children come from the cached live FE list instead of getTree;
+			//	synthesize the same {children:[{nodeName:"node", value}]} shape so
+			//	localExtractTargetTree() below is shared with the local path
+			var localRemoteChildren = function(supervisorName)
+			{
+				var info = _remoteFEMacroInfo[_cmdTargetWizRemoteSubsystem];
+				var children = [];
+				if(info)
+				{
+					var uids = [];
+					for(var uid in info.fes)
+						if((info.fes[uid].supervisor || "(unknown supervisor)") == supervisorName)
+							uids.push(uid);
+					uids.sort();
+					for(var u=0;u<uids.length;++u)
+						children.push({nodeName:"node", getAttribute:function(v){ return function(){ return v; }; }(uids[u])});
+				}
+				return {children:children};
+			};
 
 			//compare selected array to last selected array
 			//	if allUidMode and different
@@ -3698,6 +4022,14 @@
 								_FE_TABLE:
 								MultiSelectBox.getSelectionElementByIndex(
 									sel,i).innerText;
+
+						if(_cmdTargetWizRemoteSubsystem != "")
+						{
+							localExtractTargetTree(
+									localRemoteChildren(MultiSelectBox.getSelectionElementByIndex(sel,i).innerText),
+									[parentTable,selArr[i]]);
+							continue;
+						}
 
 						ConfigurationAPI.getTree(
 								path +
@@ -3724,6 +4056,13 @@
 
 			_cmdTargetWizParentTable = feMode?
 					_FE_TABLE:sel.innerText;
+
+			if(_cmdTargetWizRemoteSubsystem != "")
+			{
+				localExtractTargetTree(localRemoteChildren(sel.innerText),
+						[_cmdTargetWizParentTable,isChoiceSelected]);
+				return;
+			}
 
 			path += "/" + sel.innerText;
 			path += feMode?
@@ -3883,14 +4222,1100 @@
 		} //end targetWizDisplayTargets()
 
 		//=====================================================================================
+		//getSystemAliasChoices ~~
+		//	returns array of alias names: local aliases for Self, or the
+		//	remote subsystem's advertised aliases when targetSubsystem is set
+		function getSystemAliasChoices(targetSubsystem)
+		{
+			if(targetSubsystem && targetSubsystem != "")
+			{
+				for(var j=0;j<_remoteSubsystems.length;++j)
+					if(_remoteSubsystems[j].name == targetSubsystem)
+						return _remoteSubsystems[j].aliases.slice();
+				return [];
+			}
+			var aliases = [];
+			for(var j=0;j<_tableGroupAliases.length;++j)
+				aliases.push(_tableGroupAliases[j].alias);
+			return aliases;
+		} //end getSystemAliasChoices()
+
+		//=====================================================================================
+		//getRemoteFEMacroInfo ~~
+		//	fetch (or serve from cache) the live FE/macro info of a remote subsystem
+		//	handler(info, errStr): info is undefined when errStr is non-empty
+		function getRemoteFEMacroInfo(targetSubsystem, handler)
+		{
+			if(_remoteFEMacroInfo[targetSubsystem])
+			{
+				handler(_remoteFEMacroInfo[targetSubsystem], "");
+				return;
+			}
+
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getRemoteSubsystemFEMacroInfo" +
+				"&targetSubsystem=" + encodeURIComponent(targetSubsystem),
+				"",
+				function(req, reqParam, errStr)
+				{
+					//with callHandlerOnErr, application-level errors arrive as an <Error>
+					//	element in an otherwise successful response, so check both
+					if(!errStr) errStr = "";
+					var appErr = DesktopContent.getXMLValue(req, "Error");
+					if(appErr && appErr != "")
+						errStr += (errStr != "" ? "\n" : "") + appErr;
+					if(errStr != "")
+					{
+						Debug.err("Could not get live front-end macro info from remote subsystem '" +
+								targetSubsystem + "':\n\n" + errStr);
+						handler(undefined, errStr);
+						return;
+					}
+
+					var info = {fes:{}, publicMacros:{}};
+					var localParseMacro = function(macroEl)
+					{
+						var macro = {inputs:[], outputs:[]};
+						for(var c=0;c<macroEl.children.length;++c)
+						{
+							if(macroEl.children[c].nodeName == "input")
+								macro.inputs.push(macroEl.children[c].getAttribute("value"));
+							else if(macroEl.children[c].nodeName == "output")
+								macro.outputs.push(macroEl.children[c].getAttribute("value"));
+						}
+						return macro;
+					};
+
+					var feEls = req.responseXML.getElementsByTagName("fe");
+					for(var i=0;i<feEls.length;++i)
+					{
+						var fe = {type:"", supervisor:"", macros:{}};
+						for(var c=0;c<feEls[i].children.length;++c)
+						{
+							var child = feEls[i].children[c];
+							if(child.nodeName == "fe_type")
+								fe.type = child.getAttribute("value");
+							else if(child.nodeName == "fe_supervisor")
+								fe.supervisor = child.getAttribute("value");
+							else if(child.nodeName == "macro")
+								fe.macros[child.getAttribute("value")] = localParseMacro(child);
+						}
+						info.fes[feEls[i].getAttribute("value")] = fe;
+					}
+					var pubEls = req.responseXML.getElementsByTagName("public_macro");
+					for(var i=0;i<pubEls.length;++i)
+						info.publicMacros[pubEls[i].getAttribute("value")] = localParseMacro(pubEls[i]);
+
+					_remoteFEMacroInfo[targetSubsystem] = info;
+					console.log("_remoteFEMacroInfo[" + targetSubsystem + "]", info);
+					handler(info, "");
+				},
+				0 /*reqParam*/, 0 /*progressHandler*/,
+				true /*callHandlerOnErr*/, false /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);
+		} //end getRemoteFEMacroInfo()
+
+		//=====================================================================================
+		//getPopUpTargetSubsystem ~~
+		//	returns the TargetSubsystem currently selected in the command dialog, or "" for Self
+		function getPopUpTargetSubsystem()
+		{
+			var tsEl = document.getElementById("popUp-targetSubsystem");
+			return tsEl ? tsEl.value : "";
+		} //end getPopUpTargetSubsystem()
+
+		//=====================================================================================
+		//popUpTargetSubsystemOnChange ~~
+		//	rebuild the SystemAlias select (if this command has one) for the new target
+		function popUpTargetSubsystemOnChange(targetSubsystem)
+		{
+			Debug.log("popUpTargetSubsystemOnChange " + targetSubsystem);
+
+			var type = document.getElementById("popUp-commandType").value;
+
+			//re-render the macro controls for the new mode (remote select vs local text)
+			var macroIndex = _COMMAND_PARAMS[type].indexOf("MacroName");
+			if(macroIndex >= 0)
+				popUpRenderMacroNameControl(macroIndex, targetSubsystem);
+
+			var aliasIndex = _COMMAND_PARAMS[type].indexOf(_COMMAND_PARAM_FIELDS.SystemAlias);
+			if(aliasIndex < 0) return; //no alias parameter for this command
+
+			var sel = document.getElementById("popUp-param-" + aliasIndex);
+			if(!sel) return;
+
+			var previous = sel.value;
+			var aliasChoices = getSystemAliasChoices(targetSubsystem);
+			var str = "";
+			var selectedAlias = aliasChoices.length ? aliasChoices[0] : "";
+			for(var j=0;j<aliasChoices.length;++j)
+			{
+				if(aliasChoices[j] == previous)
+					selectedAlias = aliasChoices[j];
+				str += DesktopContent.htmlOpen("option" +
+						(aliasChoices[j] == previous? " selected":""),
+						{"value":aliasChoices[j]},
+						aliasChoices[j] /*innerHTML*/, true /*closeTag*/);
+			}
+			sel.innerHTML = str;
+
+			popUpParamSystemAliasOnChange(selectedAlias, targetSubsystem);
+		} //end popUpTargetSubsystemOnChange()
+
+		//=====================================================================================
+		//popUpRenderMacroNameControl ~~
+		//	Self: plain text input. Remote: select of live macros common to the selected
+		//	target FEs (EXECUTE_FE_MACRO) or of MacroMaker public macros (EXECUTE_MACRO),
+		//	plus an "Other..." entry that reveals a text input. Preserves the current value.
+		function popUpRenderMacroNameControl(paramIndex, targetSubsystem)
+		{
+			var wrapper = document.getElementById("popUp-macroNameWrapper-" + paramIndex);
+			var hint = document.getElementById("popUp-macroInputsHint-" + paramIndex);
+			if(!wrapper) return;
+
+			var curEl = document.getElementById("popUp-param-" + paramIndex);
+			var current = curEl ? curEl.value : "";
+
+			var localRenderText = function()
+			{
+				wrapper.innerHTML = DesktopContent.htmlOpen("input",
+						{
+								"id":("popUp-param-" + paramIndex),
+								"class":"popUp-param",
+								"type":"text",
+								"value":current,
+								"onchange":"_popUpParamsModified = true;"
+						}, 0 /*innerHTML*/, true /*closeTag*/);
+				if(hint) hint.innerHTML = "";
+			};
+
+			if(!targetSubsystem || targetSubsystem == "")
+			{
+				localRenderText();
+				return;
+			}
+
+			if(hint) hint.innerHTML = "Loading live macros from '" + targetSubsystem + "'...";
+
+			getRemoteFEMacroInfo(targetSubsystem, function(info, errStr)
+			{
+				//dialog may have changed while waiting
+				if(getPopUpTargetSubsystem() != targetSubsystem ||
+						!document.getElementById("popUp-macroNameWrapper-" + paramIndex))
+					return;
+
+				if(errStr && errStr != "")
+				{
+					localRenderText();
+					if(hint)
+					{
+						var span = document.createElement("span");
+						span.style.color = "#a00";
+						span.textContent = errStr; //escape server text
+						hint.innerHTML = "";
+						hint.appendChild(span);
+					}
+					return;
+				}
+
+				var type = document.getElementById("popUp-commandType").value;
+				var isFEMacro = (type == _COMMAND_TYPES.EXECUTE_FE_MACRO);
+
+				//candidate macro names
+				var names = [];
+				if(isFEMacro)
+				{
+					//intersection of macros across selected target UIDs
+					var targetsIndex = _COMMAND_PARAMS[type].indexOf(_COMMAND_PARAM_FIELDS.Targets);
+					var targetsEl = document.getElementById("popUp-param-" + targetsIndex);
+					var uids = [];
+					if(targetsEl)
+					{
+						var arr = targetsEl.value.split(',');
+						for(var i=0;i<arr.length;++i)
+							if(arr[i].indexOf('/') >= 0)
+								uids.push(arr[i].split('/')[1]);
+					}
+					var counts = {};
+					var liveUids = 0;
+					for(var u=0;u<uids.length;++u)
+					{
+						var fe = info.fes[uids[u]];
+						if(!fe) continue; //hand-typed or not live; ignore for intersection
+						++liveUids;
+						for(var m in fe.macros)
+							counts[m] = (counts[m] || 0) + 1;
+					}
+					if(liveUids == 0) //no live targets selected yet: offer union of all FE macros
+					{
+						for(var uid in info.fes)
+							for(var m in info.fes[uid].macros)
+								counts[m] = 1, liveUids = 1;
+					}
+					for(var m in counts)
+						if(counts[m] == liveUids)
+							names.push(m);
+				}
+				else //EXECUTE_MACRO: only PUBLIC MacroMaker macros can be run remotely
+					for(var m in info.publicMacros)
+						names.push(m);
+				names.sort();
+
+				var str = "";
+				str += DesktopContent.htmlOpen("select",
+						{
+								"id":("popUp-param-" + paramIndex + "-select"),
+								"class":"popUp-param",
+								"onchange":"popUpMacroNameOnChange(" + paramIndex + "); _popUpParamsModified = true;"
+						});
+				var foundCurrent = false;
+				for(var i=0;i<names.length;++i)
+				{
+					if(names[i] == current) foundCurrent = true;
+					str += DesktopContent.htmlOpen("option" + (names[i] == current ? " selected" : ""),
+							{"value":names[i]}, names[i], true /*closeTag*/);
+				}
+				var useOther = (!foundCurrent && current != "") || names.length == 0;
+				str += DesktopContent.htmlOpen("option" + (useOther ? " selected" : ""),
+						{"value":"__OTHER__"}, "Other...", true /*closeTag*/);
+				str += "</select>";
+				//hidden text input holds the actual parameter value read at submit
+				str += DesktopContent.htmlOpen("input",
+						{
+								"id":("popUp-param-" + paramIndex),
+								"class":"popUp-param",
+								"type":"text",
+								"value":(useOther ? current : (names.length ? (foundCurrent ? current : names[0]) : current)),
+								"style":(useOther ? "" : "display:none;"),
+								"onchange":"_popUpParamsModified = true;"
+						}, 0 /*innerHTML*/, true /*closeTag*/);
+				wrapper.innerHTML = str;
+
+				popUpMacroNameOnChange(paramIndex, true /*noValueChange*/);
+			});
+		} //end popUpRenderMacroNameControl()
+
+		//=====================================================================================
+		//popUpMacroNameOnChange ~~
+		//	sync the hidden MacroName text input with the select, and show input arg names
+		function popUpMacroNameOnChange(paramIndex, noValueChange)
+		{
+			var sel = document.getElementById("popUp-param-" + paramIndex + "-select");
+			var txt = document.getElementById("popUp-param-" + paramIndex);
+			var hint = document.getElementById("popUp-macroInputsHint-" + paramIndex);
+			if(!sel || !txt) return;
+
+			if(sel.value == "__OTHER__")
+			{
+				txt.style.display = "";
+				if(hint) hint.innerHTML = "Type a macro name; it will be validated when the plan runs.";
+				return;
+			}
+
+			txt.style.display = "none";
+			if(!noValueChange || txt.value == "")
+				txt.value = sel.value;
+
+			if(!hint) return;
+			var ts = getPopUpTargetSubsystem();
+			var info = _remoteFEMacroInfo[ts];
+			if(!info) { hint.innerHTML = ""; return; }
+
+			var type = document.getElementById("popUp-commandType").value;
+			var macro;
+			if(type == _COMMAND_TYPES.EXECUTE_FE_MACRO)
+			{
+				for(var uid in info.fes)
+					if(info.fes[uid].macros[sel.value])
+					{ macro = info.fes[uid].macros[sel.value]; break; }
+			}
+			else
+				macro = info.publicMacros[sel.value];
+
+			if(!macro) { hint.innerHTML = ""; return; }
+			hint.innerHTML = "<b>Inputs:</b> " +
+					(macro.inputs.length ? macro.inputs.join(", ") : "(none)") +
+					"<br><b>Outputs:</b> " +
+					(macro.outputs.length ? macro.outputs.join(", ") : "(none)");
+
+			//argument editor depends on the selected macro's input names
+			var argsIndex = _COMMAND_PARAMS[type].indexOf(_COMMAND_PARAM_FIELDS.MacroArgs);
+			if(argsIndex >= 0 && document.getElementById("popUp-macroArgsEditor-" + argsIndex))
+				renderMacroArgsEditor(argsIndex, ts);
+		} //end popUpMacroNameOnChange()
+
+		//=====================================================================================
+		//macroArgsParse ~~
+		//	"name:start:step:label,..." (pieces URI-encoded) -> [{name,start,step,label}]
+		function macroArgsParse(str)
+		{
+			var args = [];
+			if(!str) return args;
+			var entries = str.split(',');
+			for(var i=0;i<entries.length;++i)
+			{
+				if(entries[i] == "") continue;
+				var p = entries[i].split(':');
+				if(p.length < 3) continue;
+				args.push({
+					"name": decodeURIComponent(p[0]),
+					"start": decodeURIComponent(p[1]),
+					"step": decodeURIComponent(p[2]),
+					"label": p.length > 3 ? decodeURIComponent(p[3]) : ""});
+			}
+			return args;
+		} //end macroArgsParse()
+
+		//=====================================================================================
+		//macroArgsSerialize ~~
+		function macroArgsSerialize(args)
+		{
+			var str = "";
+			for(var i=0;i<args.length;++i)
+			{
+				if(args[i].name == "") continue;
+				if(str != "") str += ",";
+				str += encodeURIComponent(args[i].name) + ":" +
+						encodeURIComponent(args[i].start) + ":" +
+						encodeURIComponent(args[i].step) + ":" +
+						encodeURIComponent(args[i].label || "");
+			}
+			return str;
+		} //end macroArgsSerialize()
+
+		//=====================================================================================
+		//macroArgsSummary ~~
+		//	compact display for the plan list, e.g. "dtcIndex=0+1@inner, gain=5+2"
+		function macroArgsSummary(str)
+		{
+			var args = macroArgsParse(str);
+			if(args.length == 0) return "(no args)";
+			var out = "";
+			for(var i=0;i<args.length;++i)
+			{
+				if(i) out += ", ";
+				out += args[i].name + "=" + args[i].start;
+				if(args[i].step == "DEFAULT" || args[i].step == "Default")
+					out += " (const)";
+				else
+					out += "+" + args[i].step;
+				if(args[i].label) out += "@" + args[i].label;
+			}
+			return out;
+		} //end macroArgsSummary()
+
+		//=====================================================================================
+		//macroArgsFromLoopTree ~~
+		//	load side: convert the LinkToMacroDimensionalLoopTable tree node (loop rows ->
+		//	parameter rows) into the MacroArgs wire string. Returns {macroArgs, legacy}.
+		function macroArgsFromLoopTree(linkNode)
+		{
+			var result = {"macroArgs":"", "legacy":""};
+			var loops = [];
+			var loopNodes = linkNode.children;
+			for(var m=0;m<loopNodes.length;++m)
+			{
+				if(loopNodes[m].nodeName != "node") continue; //skip GroupID/LinkTableName/etc
+				var loop = {"priority":0, "nIter":"1", "label":"", "args":[]};
+				var fields = loopNodes[m].children;
+				for(var f=0;f<fields.length;++f)
+				{
+					if(fields[f].nodeName != "node") continue;
+					var fname = fields[f].getAttribute("value");
+					var fchildren = fields[f].children;
+					if(fname == "DimensionalLoopPriority" && fchildren.length)
+						loop.priority = parseInt(fchildren[0].getAttribute("value")) || 0;
+					else if(fname == "NumberOfIterations" && fchildren.length)
+						loop.nIter = fchildren[0].getAttribute("value");
+					else if(fname == "StepLabel" && fchildren.length)
+					{
+						//an unset table column reads back as the "DEFAULT" sentinel = innermost loop
+						loop.label = fchildren[0].getAttribute("value") || "";
+						if(loop.label == "DEFAULT" || loop.label == "Default")
+							loop.label = "";
+					}
+					else if(fname == "LinkToDimensionalLoopParameterTable")
+					{
+						for(var p=0;p<fchildren.length;++p)
+						{
+							if(fchildren[p].nodeName != "node") continue;
+							var arg = {"name":"", "start":"", "step":"", "label":""};
+							var pfields = fchildren[p].children;
+							for(var q=0;q<pfields.length;++q)
+							{
+								if(pfields[q].nodeName != "node" || !pfields[q].children.length) continue;
+								var pname = pfields[q].getAttribute("value");
+								var pval = pfields[q].children[0].getAttribute("value");
+								if(pname == "ParameterName") arg.name = pval;
+								else if(pname == "ParameterInitialValue") arg.start = pval;
+								else if(pname == "ParameterStepSize") arg.step = pval;
+							}
+							if(arg.name != "") loop.args.push(arg);
+						}
+					}
+				}
+				loops.push(loop);
+			}
+			loops.sort(function(a,b){ return a.priority - b.priority; });
+
+			var args = [];
+			for(var m=0;m<loops.length;++m)
+			{
+				if(loops[m].nIter != "1")
+					result.legacy = "This command's loop tables were made outside the GUI " +
+						"(NumberOfIterations=" + loops[m].nIter + "). They run unchanged until " +
+						"this command is saved, which converts them to per-pass stepping.";
+				for(var a=0;a<loops[m].args.length;++a)
+				{
+					loops[m].args[a].label = loops[m].label;
+					args.push(loops[m].args[a]);
+				}
+			}
+			result.macroArgs = macroArgsSerialize(args);
+			return result;
+		} //end macroArgsFromLoopTree()
+
+		//=====================================================================================
+		//getPlanOutputFilesHtml ~~
+		//	builds the "Output files" section of the plan completion popup from the
+		//	getIterationPlanStatus response: one line per file written by a macro command,
+		//	with Code Editor links (same pattern as Console.html snapshot links).
+		//	Local (Self) files open in this gateway's Code Editor; remote files open in the
+		//	remote subsystem's Code Editor desktop icon (Desktop resolves origin/LID by name).
+		//	Returns "" when the plan wrote no files.
+		function getPlanOutputFilesHtml(req)
+		{
+			var subsystems = req.responseXML.getElementsByTagName("output_file_subsystem");
+			var paths      = req.responseXML.getElementsByTagName("output_file_path");
+			var labels     = req.responseXML.getElementsByTagName("output_file_label");
+			var icons      = req.responseXML.getElementsByTagName("output_file_icon");
+			if(!paths.length) return "";
+
+			var str = "<br><br>Output file" + (paths.length == 1 ? "" : "s") + " (" + paths.length + "):<br>";
+			for(var i=0;i<paths.length;++i)
+			{
+				var subsystem = i < subsystems.length ? subsystems[i].getAttribute("value") : "";
+				var path      = paths[i].getAttribute("value");
+				var label     = i < labels.length ? labels[i].getAttribute("value") : "";
+				var icon      = i < icons.length ? icons[i].getAttribute("value") : "";
+
+				//Display without the "//" MacroMaker puts after $OTSDAQ_DATA, but keep the
+				//	reported path in the link: Code Editors built before the "$OTSDAQ_DATA/"
+				//	offset fix (CodeEditor.cc) drop one character unless that extra "/" is there
+				var displayPath = path.replace(/([^:])\/\/+/g, "$1/");
+				var cleanPath = path;
+				var where = (subsystem == "") ? "Self" : subsystem;
+
+				//e.g. "CFO_HardwareGateway - DTC Read on Calo14_DTC0 iteration #2 [address = 37376 (0x9200)]: $OTSDAQ_DATA/macroOutput_....txt"
+				str += "&nbsp;&nbsp;" + where + " - " + label + ": <b>" + displayPath + "</b> &nbsp;";
+
+				if(subsystem == "") //local: open in this gateway's Code Editor (Console.html pattern)
+				{
+					var localUrl = "/WebPath/html/CodeEditor.html?urn=" + _codeEditorAppId +
+							"&startFilePrimary=" + encodeURIComponent(cleanPath);
+					str += "<a onclick='DesktopContent.openNewWindow(" +
+							"\"Code Editor\",\"" + label.replace(/"/g,"") + "\"," +
+							"\"" + localUrl + "\",0 /*unique*/);' " +
+							"title='Click to open this output file in the Code Editor.'>" +
+							"Open</a> &nbsp;&nbsp;&nbsp;";
+					str += "<a onclick='DesktopContent.openNewBrowserTab(" +
+							"\"Code Editor\",\"" + label.replace(/"/g,"") + "\"," +
+							"\"" + localUrl + "\",0 /*unique*/);' " +
+							"title='Click to open this output file in a new browser tab.'>" +
+							"New Tab</a>";
+				}
+				else if(icon != "") //remote: open the subsystem's Code Editor icon by name, passing the file
+				{
+					//name-only open (subname/unique undefined) makes Desktop look up the icon,
+					//	which carries the remote origin and gateway LID; the path is appended as GET params
+					var remoteParams = "?startFilePrimary=" + encodeURIComponent(cleanPath);
+					str += "<a onclick='DesktopContent.openNewWindow(" +
+							"\"" + icon.replace(/"/g,"") + "\",undefined /*subname undefined for icon lookup*/," +
+							"\"" + remoteParams + "\",undefined /*unique undefined for icon lookup*/);' " +
+							"title='Click to open this output file in the Code Editor of " + where + ".'>" +
+							"Open</a> &nbsp;&nbsp;&nbsp;";
+					str += "<a onclick='DesktopContent.openNewBrowserTab(" +
+							"\"" + icon.replace(/"/g,"") + "\",undefined /*subname undefined for icon lookup*/," +
+							"\"" + remoteParams + "\",undefined /*unique undefined for icon lookup*/);' " +
+							"title='Click to open this output file in a new browser tab.'>" +
+							"New Tab</a>";
+				}
+				else //remote, but no Code Editor icon known for that subsystem
+					str += "<label style='font-size:12px;'>(file is on " + where +
+							"; no Code Editor icon found for that subsystem)</label>";
+				str += "<br>";
+			}
+			return str;
+		} //end getPlanOutputFilesHtml()
+
+		//=====================================================================================
+		//getEnclosingLabels ~~
+		//	labels whose BEGIN_LABEL is before commandIndex and matching REPEAT_LABEL after,
+		//	innermost first: [{label, passes}]. commandIndex may equal _commands.length
+		//	(inserting at end) -- then nothing encloses it.
+		//	isInsert: the command is NEW and goes in front of the command currently at
+		//	commandIndex, so that command still counts (e.g. it may be the REPEAT_LABEL that
+		//	closes the loop). Otherwise the command at commandIndex is being modified/replaced
+		//	and is ignored.
+		function getEnclosingLabels(commandIndex, isInsert)
+		{
+			var open = []; //stack of {label, beginIndex}
+			var enclosing = []; //captured when reaching commandIndex
+			for(var i=0;i<_commands.length;++i)
+			{
+				if(i == commandIndex)
+				{
+					for(var s=open.length-1;s>=0;--s)
+						enclosing.push({"label":open[s].label, "passes":0, "beginIndex":open[s].beginIndex});
+					if(!isInsert)
+						continue; //the command being modified does not count
+				}
+				var isAfterCommand = isInsert ? (i >= commandIndex) : (i > commandIndex);
+				if(_commands[i].type == _COMMAND_TYPES.BEGIN_LABEL)
+					open.push({"label":_commands[i].param["Label"], "beginIndex":i});
+				else if(_commands[i].type == _COMMAND_TYPES.REPEAT_LABEL)
+				{
+					var reps = parseInt(_commands[i].param["NumberOfRepetitions"]) || 0;
+					for(var s=open.length-1;s>=0;--s)
+						if(open[s].label == _commands[i].param["Label"])
+						{
+							if(isAfterCommand)
+								for(var e=0;e<enclosing.length;++e)
+									if(enclosing[e].beginIndex == open[s].beginIndex)
+										enclosing[e].passes = reps + 1;
+							open.splice(s, 1);
+							break;
+						}
+				}
+			}
+			//labels never closed after the command do not enclose it
+			var closed = [];
+			for(var e=0;e<enclosing.length;++e)
+				if(enclosing[e].passes > 0)
+					closed.push(enclosing[e]);
+			return closed;
+		} //end getEnclosingLabels()
+
+		//=====================================================================================
+		//getCommandRunCount ~~
+		//	how many times the command at commandIndex executes in one play of the plan:
+		//	the product of the pass counts of every enclosing Label/Repeat loop.
+		//	For a BEGIN_LABEL the "runs" is how many times the label is entered from outside;
+		//	the body of that loop then runs (runs x passes) times.
+		//	Returns {runs, passes, loops:[{label,passes}]}; passes is only set for BEGIN_LABEL.
+		function getCommandRunCount(commandIndex)
+		{
+			var result = {"runs":1, "passes":0, "loops":getEnclosingLabels(commandIndex)};
+			for(var l=0;l<result.loops.length;++l)
+				result.runs *= result.loops[l].passes;
+
+			if(_commands[commandIndex] &&
+					_commands[commandIndex].type == _COMMAND_TYPES.BEGIN_LABEL)
+			{
+				//find this label's own REPEAT_LABEL to get its pass count
+				var label = _commands[commandIndex].param["Label"];
+				var depth = 0;
+				for(var i=commandIndex+1;i<_commands.length;++i)
+				{
+					if(_commands[i].type == _COMMAND_TYPES.BEGIN_LABEL)
+						++depth;
+					else if(_commands[i].type == _COMMAND_TYPES.REPEAT_LABEL)
+					{
+						if(depth == 0 && _commands[i].param["Label"] == label)
+						{
+							result.passes = (parseInt(_commands[i].param["NumberOfRepetitions"]) || 0) + 1;
+							break;
+						}
+						--depth;
+					}
+				}
+			}
+			return result;
+		} //end getCommandRunCount()
+
+		//=====================================================================================
+		//commandRunCountBadge ~~ small html badge for the plan list; "" when nothing to say
+		function commandRunCountBadge(commandIndex)
+		{
+			var rc = getCommandRunCount(commandIndex);
+			var cmd = _commands[commandIndex];
+			if(!cmd) return "";
+			var text = "", title = "";
+			var loopList = "";
+			for(var l=0;l<rc.loops.length;++l)
+				loopList += (l ? " × " : "") + rc.loops[l].label + " (" + rc.loops[l].passes + ")";
+
+			if(cmd.type == _COMMAND_TYPES.BEGIN_LABEL)
+			{
+				if(rc.passes == 0)
+					return "<span style='color:#a00; font-size:11px;'>(no matching REPEAT_LABEL)</span>";
+				var bodyRuns = rc.runs * rc.passes;
+				text = rc.passes + " pass" + (rc.passes == 1 ? "" : "es") +
+						(rc.runs > 1 ? " × " + rc.runs + " = " + bodyRuns + " total" : "");
+				title = "Label '" + cmd.param["Label"] + "' is entered " + rc.runs + " time" +
+						(rc.runs == 1 ? "" : "s") + (rc.loops.length ? " (enclosing loops: " + loopList + ")" : "") +
+						" and repeats " + rc.passes + " pass" + (rc.passes == 1 ? "" : "es") +
+						" each time, so the commands inside run " + bodyRuns + " time" + (bodyRuns == 1 ? "" : "s") + ".";
+			}
+			else if(cmd.type == _COMMAND_TYPES.REPEAT_LABEL || cmd.type == _COMMAND_TYPES.CHOOSE_FSM)
+				return ""; //bookkeeping commands; count is not informative
+			else
+			{
+				if(rc.loops.length == 0) return ""; //runs once, nothing to flag
+				text = "runs ×" + rc.runs;
+				title = "This command runs " + rc.runs + " time" + (rc.runs == 1 ? "" : "s") +
+						" per play of the plan (enclosing loops: " + loopList + ").";
+			}
+			return "<span title='" + title.replace(/'/g, "&#39;") + "' style='background:rgb(213,224,205); " +
+					"border-radius:3px; padding:0 4px; font-size:11px; position:relative; top:-1px; " +
+					"margin-left:4px; white-space:nowrap;'>" + text + "</span>";
+		} //end commandRunCountBadge()
+
+		//=====================================================================================
+		//getMacroArgsHelpText ~~
+		//	explanation shown by DesktopContent.tooltip when the argument editor opens
+		function getMacroArgsHelpText()
+		{
+			return "This editor sets the <b>input arguments</b> that the FE Macro (or Macro) receives " +
+				"each time this command runs. In an Iteration Plan a command usually sits inside a " +
+				"<b>BEGIN_LABEL ... REPEAT_LABEL</b> pair, so it runs once per <i>pass</i> of that loop. " +
+				"The arguments can change from pass to pass.\n\n" +
+
+				"<b>Each argument row has four fields:</b>\n" +
+				"<INDENT>" +
+				"- <b>Input argument</b>: which macro input this row sets (pick from the list the macro " +
+				"reports, or choose <i>Other...</i> to type a name).\n" +
+				"- <b>Start value</b>: the value used on the first pass.\n" +
+				"- <b>Step per pass</b>: how much is added each pass. Use <b>0</b> to keep a number fixed, " +
+				"or <b>DEFAULT</b> to pass a fixed piece of text (e.g. <i>true</i> or <i>auto</i>).\n" +
+				"- <b>Advance with loop</b>: which enclosing Label/Repeat loop counts the passes for this " +
+				"row. <i>nearest loop</i> means the innermost loop around the command." +
+				"</INDENT>\n" +
+
+				"On a given pass the value sent is: <b>start + step &times; pass number</b> " +
+				"(pass numbers start at 0). A REPEAT_LABEL with <i>NumberOfRepetitions</i> = N gives " +
+				"N+1 passes.\n\n" +
+
+				"<b>Example - one loop:</b>\n" +
+				"<INDENT>" +
+				"1. BEGIN_LABEL scan\n" +
+				"2. EXECUTE_FE_MACRO   with   dtcIndex: start 0, step 1, advance with <i>scan</i>\n" +
+				"3. REPEAT_LABEL scan, 3\n" +
+				"</INDENT>" +
+				"The macro runs 4 times with dtcIndex = 0, 1, 2, 3.\n\n" +
+
+				"<b>Example - two dimensions (an A x B grid):</b>\n" +
+				"Nest two loops and bind one argument to each. Any other commands (configure, run, " +
+				"wait...) can sit inside the loops as well.\n" +
+				"<INDENT>" +
+				"1. BEGIN_LABEL outer\n" +
+				"2.    BEGIN_LABEL inner\n" +
+				"3.       EXECUTE_FE_MACRO   with   gain: 5, step 2, advance with <i>outer</i>;   " +
+				"dtcIndex: 0, step 1, advance with <i>inner</i>\n" +
+				"4.    REPEAT_LABEL inner, 3\n" +
+				"5. REPEAT_LABEL outer, 2\n" +
+				"</INDENT>" +
+				"The macro runs 3 x 4 = 12 times. <i>dtcIndex</i> cycles 0,1,2,3 and resets each time " +
+				"<i>outer</i> advances; <i>gain</i> holds 5 for the first four runs, then 7, then 9. " +
+				"Add a third loop for a third dimension.\n\n" +
+
+				"<b>Tips:</b>\n" +
+				"<INDENT>" +
+				"- <i>+ add all macro inputs</i> creates a row for every input, prefilled from the " +
+				"default shown in the input's name (e.g. <i>(Default := -1)</i>).\n" +
+				"- The macro will refuse to run until every input it declares has a row; the red " +
+				"text below the table lists what is missing.\n" +
+				"- The preview line under the table shows how many times the macro will run and the " +
+				"values each argument will take, so you can check the plan before saving.\n" +
+				"- If a row says <i>(not enclosing!)</i>, the command was moved outside the loop it " +
+				"was bound to - pick another loop." +
+				"</INDENT>";
+		} //end getMacroArgsHelpText()
+
+		//=====================================================================================
+		//showMacroArgsHelp ~~ re-open the argument help regardless of per-user dismissal
+		function showMacroArgsHelp()
+		{
+			DesktopContent.tooltip("Iterate Macro Arguments", getMacroArgsHelpText(),
+					true /*alwaysShow*/);
+		} //end showMacroArgsHelp()
+
+		//=====================================================================================
+		//renderMacroArgsEditor ~~
+		//	visible editor for the MacroArgs parameter: rows of
+		//	[argument select][start][step][steps-with label select][x], plus preview
+		function renderMacroArgsEditor(paramIndex, targetSubsystem)
+		{
+			var wrapper = document.getElementById("popUp-macroArgsEditor-" + paramIndex);
+			var hidden = document.getElementById("popUp-param-" + paramIndex);
+			if(!wrapper || !hidden) return;
+			if(targetSubsystem === undefined) targetSubsystem = getPopUpTargetSubsystem();
+
+			var args = macroArgsParse(hidden.value);
+			var type = document.getElementById("popUp-commandType").value;
+
+			//known input names for the selected macro (if info is cached)
+			var inputNames = [];
+			var info = _remoteFEMacroInfo[targetSubsystem];
+			var macroIndex = _COMMAND_PARAMS[type].indexOf("MacroName");
+			var macroEl = macroIndex >= 0 ? document.getElementById("popUp-param-" + macroIndex) : null;
+			var macroName = macroEl ? macroEl.value : "";
+			if(info && macroName != "")
+			{
+				var macro;
+				if(type == _COMMAND_TYPES.EXECUTE_FE_MACRO)
+				{
+					for(var uid in info.fes)
+						if(info.fes[uid].macros[macroName])
+						{ macro = info.fes[uid].macros[macroName]; break; }
+				}
+				else
+					macro = info.publicMacros[macroName];
+				if(macro) inputNames = macro.inputs.slice();
+			}
+
+			//enclosing labels for this command position
+			var labels = getEnclosingLabels(_popUpCommandIndex, _popUpCommandIsInsert);
+
+			//one-time (per user) explanation of how arguments advance with plan loops
+			if(!_macroArgsTooltipShown)
+			{
+				_macroArgsTooltipShown = true;
+				DesktopContent.tooltip("Iterate Macro Arguments", getMacroArgsHelpText());
+			}
+
+			//(the one-line explanation and legacy note are in the MacroArgs value cell, see localShowParamControls)
+			var str = "";
+			var td = "style='padding:2px 6px 2px 0; vertical-align:middle;'";
+			str += "<table style='font-size:12px; border-collapse:collapse;'>";
+			if(args.length)
+				str += "<tr style='color:#555; font-size:11px;'>" +
+					"<td " + td + ">Input-arg</td>" +
+					"<td " + td + ">Start-val</td>" +
+					"<td " + td + ">Step-size</td>" +
+					"<td " + td + ">Step-with-loop</td>" +
+					"<td " + td + "></td></tr>";
+			for(var a=0;a<args.length;++a)
+			{
+				str += "<tr>";
+				//argument name: select of known inputs + Other
+				str += "<td " + td + ">";
+				var known = inputNames.indexOf(args[a].name) >= 0;
+				if(inputNames.length)
+				{
+					str += DesktopContent.htmlOpen("select",
+							{"id":"popUp-macroArg-name-" + paramIndex + "-" + a,
+							 "style":"width:130px",
+							 "onchange":"macroArgsEditorChanged(" + paramIndex + ")"});
+					for(var n=0;n<inputNames.length;++n)
+						str += DesktopContent.htmlOpen("option" + (inputNames[n] == args[a].name ? " selected" : ""),
+								{"value":inputNames[n]}, inputNames[n], true);
+					str += DesktopContent.htmlOpen("option" + (!known ? " selected" : ""),
+							{"value":"__OTHER__"}, "Other...", true);
+					str += "</select>";
+				}
+				str += DesktopContent.htmlOpen("input",
+						{"id":"popUp-macroArg-nameText-" + paramIndex + "-" + a,
+						 "type":"text", "value":args[a].name,
+						 "style":"width:120px;" + ((inputNames.length && known) ? "display:none;" : ""),
+						 "onchange":"macroArgsEditorChanged(" + paramIndex + ")"}, 0, true);
+				str += "</td>";
+				str += "<td " + td + ">" + DesktopContent.htmlOpen("input",
+						{"id":"popUp-macroArg-start-" + paramIndex + "-" + a,
+						 "type":"text", "value":args[a].start, "style":"width:70px",
+						 "title":"Value on the first pass",
+						 "onchange":"macroArgsEditorChanged(" + paramIndex + ")"}, 0, true) + "</td>";
+				str += "<td " + td + ">" + DesktopContent.htmlOpen("input",
+						{"id":"popUp-macroArg-step-" + paramIndex + "-" + a,
+						 "type":"text", "value":args[a].step, "style":"width:70px",
+						 "title":"Added to the value on every pass. Use DEFAULT to keep a fixed text value.",
+						 "onchange":"macroArgsEditorChanged(" + paramIndex + ")"}, 0, true) + "</td>";
+				//which enclosing Label/Repeat loop counts the passes
+				str += "<td " + td + ">";
+				str += DesktopContent.htmlOpen("select",
+						{"id":"popUp-macroArg-label-" + paramIndex + "-" + a,
+						 "style":"width:150px",
+						 "title":"The BEGIN_LABEL/REPEAT_LABEL pair whose pass number is used",
+						 "onchange":"macroArgsEditorChanged(" + paramIndex + ")"});
+				str += DesktopContent.htmlOpen("option" + (args[a].label == "" ? " selected" : ""),
+						{"value":""}, labels.length ? "nearest loop: " + labels[0].label : "(no enclosing loop)", true);
+				var labelFound = (args[a].label == "");
+				for(var l=0;l<labels.length;++l)
+				{
+					if(labels[l].label == args[a].label) labelFound = true;
+					str += DesktopContent.htmlOpen("option" + (labels[l].label == args[a].label ? " selected" : ""),
+							{"value":labels[l].label},
+							labels[l].label + " (" + labels[l].passes + " pass" + (labels[l].passes == 1 ? "" : "es") + ")", true);
+				}
+				if(!labelFound) //bound label no longer encloses this command
+					str += DesktopContent.htmlOpen("option selected", {"value":args[a].label},
+							args[a].label + " (not enclosing!)", true);
+				str += "</select></td>";
+				str += "<td " + td + ">" + DesktopContent.htmlOpen("a",
+						{"href":"#", "title":"Remove this argument", "style":"text-decoration:none; color:#a00; font-weight:bold;",
+						 "onclick":"macroArgsEditorRemove(" + paramIndex + "," + a + "); return false;"}, "x", true) + "</td>";
+				str += "</tr>";
+			}
+			str += "</table>";
+			str += DesktopContent.htmlOpen("a",
+					{"href":"#", "style":"font-size:12px; margin-right:12px;",
+					 "onclick":"macroArgsEditorAdd(" + paramIndex + "); return false;"}, "+ add argument", true);
+			//offer to add every macro input that has no row yet (prefilled from "(Default := x)" hints)
+			var missing = [];
+			for(var n=0;n<inputNames.length;++n)
+			{
+				var have = false;
+				for(var a=0;a<args.length;++a) if(args[a].name == inputNames[n]) have = true;
+				if(!have) missing.push(inputNames[n]);
+			}
+			if(missing.length)
+				str += DesktopContent.htmlOpen("a",
+						{"href":"#", "style":"font-size:12px;",
+						 "title":"Adds one row per macro input, using the input's default value as the start value",
+						 "onclick":"macroArgsEditorAddAll(" + paramIndex + "); return false;"},
+						"+ add all " + missing.length + " macro input" + (missing.length == 1 ? "" : "s"), true);
+
+			//preview + warnings
+			str += "<div id='popUp-macroArgs-preview-" + paramIndex + "' style='font-size:11px; color:#333; margin-top:3px;'></div>";
+			wrapper.innerHTML = str;
+
+			//the parameter table is centered in the popup; shift the editor (visually only,
+			//	position:relative) so its left edge sits 10px in from the popup's left edge
+			//	and all four columns fit in the 550px dialog
+			wrapper.style.position = "relative";
+			wrapper.style.left = "0px";
+			var popEl = document.getElementById(ConfigurationAPI._POP_UP_DIALOG_ID);
+			if(popEl)
+			{
+				var shift = wrapper.getBoundingClientRect().left -
+						(popEl.getBoundingClientRect().left + 10 /*px from popup edge*/);
+				if(shift > 0)
+					wrapper.style.left = (-shift) + "px";
+			}
+
+			macroArgsEditorPreview(paramIndex, args, labels, inputNames);
+		} //end renderMacroArgsEditor()
+
+		//=====================================================================================
+		//macroArgsEditorRead ~~ read editor rows back into [{name,start,step,label}]
+		function macroArgsEditorRead(paramIndex)
+		{
+			var args = [];
+			for(var a=0;;++a)
+			{
+				var startEl = document.getElementById("popUp-macroArg-start-" + paramIndex + "-" + a);
+				if(!startEl) break;
+				var sel = document.getElementById("popUp-macroArg-name-" + paramIndex + "-" + a);
+				var txt = document.getElementById("popUp-macroArg-nameText-" + paramIndex + "-" + a);
+				var name = txt.value;
+				if(sel && sel.value != "__OTHER__") name = sel.value;
+				args.push({
+					"name": name,
+					"start": startEl.value,
+					"step": document.getElementById("popUp-macroArg-step-" + paramIndex + "-" + a).value,
+					"label": document.getElementById("popUp-macroArg-label-" + paramIndex + "-" + a).value});
+			}
+			return args;
+		} //end macroArgsEditorRead()
+
+		//=====================================================================================
+		function macroArgsEditorChanged(paramIndex)
+		{
+			_popUpParamsModified = true;
+			var args = macroArgsEditorRead(paramIndex);
+			//when Other... is chosen, keep the row's name empty so the text box shows for typing
+			for(var a=0;a<args.length;++a)
+			{
+				var sel = document.getElementById("popUp-macroArg-name-" + paramIndex + "-" + a);
+				var txt = document.getElementById("popUp-macroArg-nameText-" + paramIndex + "-" + a);
+				if(sel && sel.value == "__OTHER__" && txt) args[a].name = txt.value;
+			}
+			document.getElementById("popUp-param-" + paramIndex).value = macroArgsSerialize(args);
+			renderMacroArgsEditor(paramIndex); //re-render so Other/name text and labels stay in sync
+		} //end macroArgsEditorChanged()
+
+		//=====================================================================================
+		//macroArgsCurrentInputs ~~ input names of the macro selected in the open dialog ([] if unknown)
+		function macroArgsCurrentInputs()
+		{
+			var type = document.getElementById("popUp-commandType").value;
+			var info = _remoteFEMacroInfo[getPopUpTargetSubsystem()];
+			var macroIndex = _COMMAND_PARAMS[type].indexOf("MacroName");
+			var macroEl = macroIndex >= 0 ? document.getElementById("popUp-param-" + macroIndex) : null;
+			if(!info || !macroEl) return [];
+			var macro;
+			if(type == _COMMAND_TYPES.EXECUTE_FE_MACRO)
+			{
+				for(var uid in info.fes)
+					if(info.fes[uid].macros[macroEl.value])
+					{ macro = info.fes[uid].macros[macroEl.value]; break; }
+			}
+			else macro = info.publicMacros[macroEl.value];
+			return macro ? macro.inputs.slice() : [];
+		} //end macroArgsCurrentInputs()
+
+		//=====================================================================================
+		//macroArgsDefaultRow ~~
+		//	FE macro input names often carry a hint like "(Default := 0x0c)" or "(Default = -1 := all)";
+		//	use it: numeric default -> start=default, step=1; text default -> fixed text (step DEFAULT)
+		function macroArgsDefaultRow(name)
+		{
+			var row = {"name":name, "start":"0", "step":"1", "label":""};
+			var m = /\(\s*Default\s*(?::=|=)\s*([^,)\s:]+)/i.exec(name);
+			if(m)
+			{
+				var def = m[1];
+				if(def.toLowerCase() == "default") def = "";
+				if(def != "" && (!isNaN(parseFloat(def)) || /^0x[0-9a-f]+$/i.test(def)))
+					row.start = def;
+				else if(def != "")
+				{ row.start = def; row.step = "DEFAULT"; }
+			}
+			return row;
+		} //end macroArgsDefaultRow()
+
+		//=====================================================================================
+		function macroArgsEditorAdd(paramIndex)
+		{
+			_popUpParamsModified = true;
+			var args = macroArgsEditorRead(paramIndex);
+			//default to the first known input not yet used
+			var name = "";
+			var inputs = macroArgsCurrentInputs();
+			for(var n=0;n<inputs.length;++n)
+			{
+				var used = false;
+				for(var a=0;a<args.length;++a) if(args[a].name == inputs[n]) used = true;
+				if(!used) { name = inputs[n]; break; }
+			}
+			//serialize drops empty names, so give a placeholder that the user overwrites
+			args.push(macroArgsDefaultRow(name != "" ? name : "arg" + (args.length+1)));
+			document.getElementById("popUp-param-" + paramIndex).value = macroArgsSerialize(args);
+			renderMacroArgsEditor(paramIndex);
+		} //end macroArgsEditorAdd()
+
+		//=====================================================================================
+		function macroArgsEditorAddAll(paramIndex)
+		{
+			_popUpParamsModified = true;
+			var args = macroArgsEditorRead(paramIndex);
+			var inputs = macroArgsCurrentInputs();
+			for(var n=0;n<inputs.length;++n)
+			{
+				var used = false;
+				for(var a=0;a<args.length;++a) if(args[a].name == inputs[n]) used = true;
+				if(!used) args.push(macroArgsDefaultRow(inputs[n]));
+			}
+			document.getElementById("popUp-param-" + paramIndex).value = macroArgsSerialize(args);
+			renderMacroArgsEditor(paramIndex);
+		} //end macroArgsEditorAddAll()
+
+		//=====================================================================================
+		function macroArgsEditorRemove(paramIndex, argIndex)
+		{
+			_popUpParamsModified = true;
+			var args = macroArgsEditorRead(paramIndex);
+			args.splice(argIndex, 1);
+			document.getElementById("popUp-param-" + paramIndex).value = macroArgsSerialize(args);
+			renderMacroArgsEditor(paramIndex);
+		} //end macroArgsEditorRemove()
+
+		//=====================================================================================
+		//macroArgsEditorPreview ~~ combinations + per-argument value lists + warnings
+		function macroArgsEditorPreview(paramIndex, args, labels, inputNames)
+		{
+			var el = document.getElementById("popUp-macroArgs-preview-" + paramIndex);
+			if(!el) return;
+			var passesOf = function(label)
+			{
+				if(labels.length == 0) return 1;
+				if(label == "") return labels[0].passes;
+				for(var l=0;l<labels.length;++l) if(labels[l].label == label) return labels[l].passes;
+				return 1;
+			};
+			var isConst = function(step) { return step == "DEFAULT" || step == "Default"; };
+			var isNum = function(s) { return s !== "" && !isNaN(parseFloat(s)); };
+
+			var str = "";
+			var warnings = [];
+			var boundLabels = {};
+			var combos = 1;
+			var lists = [];
+			for(var a=0;a<args.length;++a)
+			{
+				if(args[a].name == "") { warnings.push("An argument has no name."); continue; }
+				if(inputNames.length && inputNames.indexOf(args[a].name) < 0)
+					warnings.push("'" + args[a].name + "' is not an input of the selected macro.");
+				if(isConst(args[a].step)) { lists.push(args[a].name + " = '" + args[a].start + "' (constant)"); continue; }
+				if(!isNum(args[a].start) || !isNum(args[a].step))
+				{
+					warnings.push("'" + args[a].name + "' needs numeric start and step (or step DEFAULT for a constant string).");
+					continue;
+				}
+				var key = args[a].label == "" ? (labels.length ? labels[0].label : "") : args[a].label;
+				var n = passesOf(args[a].label);
+				if(!boundLabels[key]) { boundLabels[key] = n; combos *= n; }
+				var vals = [];
+				for(var p=0;p<n && p<6;++p)
+					vals.push(+(parseFloat(args[a].start) + parseFloat(args[a].step)*p).toPrecision(10));
+				lists.push(args[a].name + " &isin; {" + vals.join(", ") + (n > 6 ? ", &hellip;" : "") + "}" +
+						(key ? " @" + key : ""));
+			}
+			var uncovered = [];
+			for(var n=0;n<inputNames.length;++n)
+			{
+				var covered = false;
+				for(var a=0;a<args.length;++a) if(args[a].name == inputNames[n]) covered = true;
+				if(!covered) uncovered.push(inputNames[n]);
+			}
+			if(uncovered.length)
+				warnings.push("The macro will not run until every input has a row. Missing: " +
+						uncovered.join("; ") + ".");
+
+			if(args.length == 0)
+				str += inputNames.length ?
+						"No arguments defined yet &mdash; use <i>+ add all macro inputs</i> above." :
+						"No input arguments.";
+			else if(labels.length == 0)
+				str += "This command is not inside a Label/Repeat loop, so it runs once with the start values.";
+			else
+				str += "<b>" + combos + "</b> run" + (combos == 1 ? "" : "s") + " of the macro: " + lists.join("; ");
+			for(var w=0;w<warnings.length;++w)
+				str += "<br><span style='color:#a00'>" + warnings[w] + "</span>";
+			el.innerHTML = str;
+		} //end macroArgsEditorPreview()
+
+		//=====================================================================================
 		//popUpParamSystemAliasOnChange ~~
-		function popUpParamSystemAliasOnChange(value)
+		//	targetSubsystem is optional; when omitted, read the popup's TargetSubsystem select
+		function popUpParamSystemAliasOnChange(value, targetSubsystem)
 		{
 			Debug.log("popUpParamSystemAliasOnChange " + value);
 
 			var el = document.getElementById("popUp-param-systemAliasDetails");
 			var str = "";
 
+			if(targetSubsystem === undefined)
+			{
+				var tsEl = document.getElementById("popUp-targetSubsystem");
+				targetSubsystem = tsEl ? tsEl.value : "";
+			}
+
+			if(targetSubsystem != "")
+			{
+				//remote aliases only advertise their name, not group/key/comments
+				str += DesktopContent.htmlClearDiv();
+				str += "<table><tr><td style='white-space:nowrap;font-weight:bold;'>" +
+						"Remote alias:</td><td style='white-space:nowrap'>";
+				str += (value != "" ? value : "(none available)") +
+						" on subsystem '" + targetSubsystem + "'";
+				str += "</td></tr></table>";
+
+				if(!el)
+					return str;
+				el.innerHTML = str;
+				return str;
+			}
 
 			for(var j=0;j<_tableGroupAliases.length;++j)
 			{
@@ -3929,18 +5354,41 @@
 		//=====================================================================================
 		//addCommand ~~
 		//	push to _commands object
-		function addCommand(type,params,insertPos)
+		//defaultCommandParamValue ~~
+		//	value assumed for a parameter absent from an older plan/table version
+		function defaultCommandParamValue(paramName)
+		{
+			if(paramName == _COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured ||
+					paramName == _COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile ||
+					paramName == _COMMAND_PARAM_FIELDS.DoTrackGroupChanges ||
+					paramName == _COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread)
+				return 0; //booleans default to No
+			return ""; //free text / links default to empty
+		} //end defaultCommandParamValue()
+
+		function addCommand(type,params,insertPos,targetSubsystem)
 		{
 			Debug.log("addCommand type = " + type);
 
 			//if valid type, build command based on parameter key array
 			if(_COMMAND_PARAMS.hasOwnProperty(type))
 			{
-				//if targets field, reduce to single field
+				//plans saved before a parameter column was added to a command table load
+				//	with fewer values; pad the missing trailing ones with their defaults
+				while(params.length < _COMMAND_PARAMS[type].length)
+				{
+					var missingName = _COMMAND_PARAMS[type][params.length];
+					Debug.log("Command " + type + " is missing parameter '" + missingName +
+							"' (older table version); assuming default '" +
+							defaultCommandParamValue(missingName) + "'.");
+					params.push(defaultCommandParamValue(missingName));
+				}
+
 				if(params.length != _COMMAND_PARAMS[type].length)
 				{
 					Debug.log("Fatal error. Mismatch in number of parameters at command " +
-							(insertPos+1) + ". " + type + "! Alert admins as to how you got here. " +
+							(insertPos === undefined ? _commands.length + 1 : insertPos + 1) +
+							". " + type + "! Alert admins as to how you got here. " +
 							params.length + " vs " + _COMMAND_PARAMS[type].length, Debug.HIGH_PRIORITY);
 					return;
 				}
@@ -3964,6 +5412,7 @@
 				Debug.log("addCommand at #" + (cmdIndex+1));
 
 				_commands[cmdIndex].type = type;
+				_commands[cmdIndex].targetSubsystem = targetSubsystem || "";
 
 				//fill parameters
 				for(var i=0;i<_COMMAND_PARAMS[type].length;++i)
@@ -4029,6 +5478,9 @@
 			for(var i=0;i<commands.length;++i)
 			{
 				cmdStr += "type," + encodeURIComponent(commands[i].type);
+
+				if(commands[i].targetSubsystem && commands[i].targetSubsystem != "")
+					cmdStr += ",TargetSubsystem," + encodeURIComponent(commands[i].targetSubsystem);
 
 				pkeys = Object.keys(commands[i].param);
 				for(var j=0;j<pkeys.length;++j)
@@ -4334,9 +5786,11 @@
 				//first time through, paint target plan
 				if(_targetPlan == "")
 				{
-					if(active_plan != "")
+					//only accept a remembered plan if it exists in the Iterate table;
+					//	generated plans (---GENERATED_PLAN---) and deleted plans do not
+					if(active_plan != "" && _planUIDs.indexOf(active_plan) >= 0)
 						_targetPlan = active_plan;
-					else if(last_started_plan != "")
+					else if(last_started_plan != "" && _planUIDs.indexOf(last_started_plan) >= 0)
 						_targetPlan = last_started_plan;
 					else if(_planUIDs.length)
 						_targetPlan = _planUIDs[0];
@@ -4349,14 +5803,16 @@
 				if(_need_plan_complete && _old_active_plan_status != "" && //require twice to avoid race conditions with startup
 						active_plan_status == "Inactive")
 				{
-					Debug.log("Iteration plan was completed.",
+					Debug.log("Iteration plan was completed." +
+							getPlanOutputFilesHtml(req),
 							Debug.INFO_PRIORITY);
 					_need_plan_complete = false;
 				}
 				else if(_need_plan_halted && _old_active_plan_status != "" && //require twice to avoid race conditions with startup
 						active_plan_status == "Inactive")
 				{
-					Debug.log("Iteration plan was halted.",
+					Debug.log("Iteration plan was halted." +
+							getPlanOutputFilesHtml(req),
 							Debug.INFO_PRIORITY);
 					_need_plan_halted = false;
 				}
