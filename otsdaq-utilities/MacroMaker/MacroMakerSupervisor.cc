@@ -504,6 +504,12 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 		       << ". Perhaps it is already in use? Exiting Remote Control "
 		          "SOAPUtilities::receive loop."
 		       << __E__;
+		ss << "TIP: this IP/port comes from the env vars OTS_MACROMAKER_UDP_IP and "
+		      "OTS_MACROMAKER_UDP_PORT. If two otsdaq subsystems (e.g. gateway and "
+		      "a MacroMaker-mode instance) were launched with the same values on this "
+		      "host, they collide here. Check with: ss -ulpn | grep "
+		   << portForRemoteControlOverUDP
+		   << "  (a leftover xdaq.exe holding the port must be killed first)." << __E__;
 		__SS_THROW__;
 		return;
 	}
