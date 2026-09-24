@@ -145,6 +145,19 @@ ViewerRoot.hardRefresh = true;
 
 ViewerRoot.autoRefreshTimer = 0;
 
+//Data-path status strip (top-left): arrival rate at the TCP listener, drain rate at
+//	the histogram consumer, and the backlog waiting between them. Polled independently
+//	of the plot auto-refresh so it also works while refresh is paused.
+ViewerRoot.STATUS_POLL_PERIOD = 2000; //ms
+ViewerRoot.STATUS_RATE_WINDOW = 10000; //ms; rates are deltas over this sliding window.
+	//	Senders emit one snapshot every ~1-10 s, so anything shorter reads as 0 then a spike.
+	//	The per-stream "age" fields still show the instantaneous burst/stall structure.
+ViewerRoot.statusTimer = 0;
+ViewerRoot.statusEl = null;
+ViewerRoot.statusHistory = []; //recent samples {time, sum}, oldest first
+ViewerRoot.liveReady = undefined; //last known "taking data" state from the status poll
+ViewerRoot.statusInFlightSince = 0; //ms timestamp of the outstanding poll, 0 = none
+
 
 ViewerRoot.iterLoading = false;
 ViewerRoot.iterNumberRemaining;
@@ -220,6 +233,16 @@ ViewerRoot.init = function () {
 	};
 	ViewerRoot.omni.appendChild(ViewerRoot.rootContainer);
 
+	ViewerRoot.statusEl = document.createElement('div');
+	ViewerRoot.statusEl.setAttribute("id","ViewerRoot-dataStatus");
+	ViewerRoot.statusEl.title = "Live DQM data flow. in = bytes and packets (one packet = one send from a DQM module) " +
+		"reaching the visualizer; drain = bytes and histograms unpacked into the live file; " +
+		"unpack busy = share of time the unpacker is working; backlog = bytes waiting unread in the " +
+		"senders' sockets plus filled ring buffers. Per-stream columns show time since that stream's last packet. " +
+		"READ LIMITED when the backlog exceeds 1 MB or the unpacker is saturated.";
+	ViewerRoot.statusEl.innerHTML = "waiting for first sample...";
+	ViewerRoot.omni.appendChild(ViewerRoot.statusEl);
+
 	ViewerRoot.hud = new ViewerRoot.createHud();
 	window.onresize = ViewerRoot.handleWindowResize;
 	ViewerRoot.handleWindowResize();
@@ -230,10 +253,215 @@ ViewerRoot.init = function () {
 	ViewerRoot.autoRefreshPeriod
 	);
 
+	window.clearInterval(ViewerRoot.statusTimer);
+	ViewerRoot.statusTimer = window.setInterval(
+	ViewerRoot.statusTick,
+	ViewerRoot.STATUS_POLL_PERIOD
+	);
+	ViewerRoot.statusTick();
+
 	document.getElementById("loaderStatus").innerHTML =
 	"Root Viewer Loaded.<br>Use drop-down to make selections.";
 	ViewerRoot.getDirectoryContents("/");
 }; //end init()
+
+//=====================================================================================
+// ViewerRoot.statusTick ~~
+//	poll the visualizer for data-path counters
+ViewerRoot.statusTick = function () {
+	//skip if a poll is outstanding, unless it is so old the handler was never called
+	//	(DesktopContent stops calling handlers after repeated failures)
+	var now = Date.now();
+	if(ViewerRoot.statusInFlightSince &&
+	   now - ViewerRoot.statusInFlightSince < 3 * ViewerRoot.STATUS_POLL_PERIOD) return;
+	ViewerRoot.statusInFlightSince = now;
+	DesktopContent.XMLHttpRequest("Request?RequestType=getDataStatus", "",
+		ViewerRoot.statusHandler,
+		0 /*reqParam*/, 0 /*progressHandler*/,
+		true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
+}; //end statusTick()
+
+//=====================================================================================
+// ViewerRoot.statusHandler ~~
+//	turn cumulative counters into rates using the previous sample, then render.
+//	Counters are summed over producers and over consumers so one line covers the
+//	whole path regardless of how many plugins are configured.
+ViewerRoot.statusHandler = function (req, reqParam, errStr) {
+	ViewerRoot.statusInFlightSince = 0;
+	if(!ViewerRoot.statusEl) return;
+
+	if(errStr || !req || !req.responseXML) {
+		ViewerRoot.statusEl.innerHTML = "<span class='ViewerRoot-statusBad'>no response from visualizer</span>";
+		ViewerRoot.statusHistory = [];
+		return;
+	}
+
+	var serverTime = parseInt(DesktopContent.getXMLValue(req, "serverTime")) || Date.now();
+	var ready = DesktopContent.getXMLValue(req, "ready") == "1";
+
+	//running state changed since the last poll: the LIVE entry in the tree comes and goes
+	if(ViewerRoot.liveReady !== undefined && ViewerRoot.liveReady !== ready &&
+	   ViewerRoot.hud && ViewerRoot.hud.onLiveStateChange)
+		ViewerRoot.hud.onLiveStateChange(ready);
+	ViewerRoot.liveReady = ready;
+
+	var procs = DesktopContent.getXMLChildren(req, "processor");
+	var cur = {}; //name -> counters
+	var sum = { producer: { packets: 0, bytes: 0, errors: 0, queued: 0, capacity: 0,
+				clients: 0, socketBacklogBytes: 0 },
+		    consumer: { packets: 0, bytes: 0, errors: 0, busyNanos: 0, objects: 0,
+				runNumber: "", runStartMs: 0, lastPacketAgeMs: -1, streams: {} } };
+	var haveProducer = false, haveConsumer = false;
+	var sample = {};
+	for(var i = 0; i < procs.length; ++i) {
+		var p = procs[i];
+		var get = function(tag) {
+			var els = p.getElementsByTagName(tag);
+			return els.length ? els[0].getAttribute("value") : undefined;
+		};
+		var role = get("role");
+		var name = get("name");
+		var c = { packets: parseInt(get("packets")) || 0,
+			  bytes: parseInt(get("bytes")) || 0,
+			  errors: parseInt(get("errors")) || 0,
+			  busyNanos: parseInt(get("busyNanos")) || 0 };
+		sample[name] = c;
+		var s = sum[role];
+		if(!s) continue;
+		if(role == "producer") haveProducer = true; else haveConsumer = true;
+		s.packets += c.packets; s.bytes += c.bytes; s.errors += c.errors;
+		if(role == "producer") {
+			s.queued += parseInt(get("queued")) || 0;
+			s.capacity += parseInt(get("capacity")) || 0;
+			s.clients += parseInt(get("clients")) || 0;
+			s.socketBacklogBytes += parseInt(get("socketBacklogBytes")) || 0;
+		}
+		else {
+			s.busyNanos += c.busyNanos;
+			s.objects += parseInt(get("objects")) || 0;
+			var rn = get("runNumber");
+			if(rn) s.runNumber = rn;
+			var rs = parseInt(get("runStartEpochMs")) || 0;
+			if(rs > s.runStartMs) s.runStartMs = rs;
+			var age = get("lastPacketAgeMs");
+			if(age !== undefined) {
+				age = parseInt(age);
+				if(age >= 0 && (s.lastPacketAgeMs < 0 || age < s.lastPacketAgeMs))
+					s.lastPacketAgeMs = age; //freshest across consumers
+			}
+			//per-stream entries: <stream_crv value="412,830"/> = packets,msSinceLast
+			var kids = p.childNodes;
+			for(var k = 0; k < kids.length; ++k) {
+				var tag = kids[k].nodeName;
+				if(!tag || tag.indexOf("stream_") != 0) continue;
+				var parts = (kids[k].getAttribute("value") || "").split(",");
+				s.streams[tag.substr(7)] = { packets: parseInt(parts[0]) || 0,
+							     ageMs: parseInt(parts[1]) };
+			}
+		}
+	}
+
+	//sliding window: keep samples covering STATUS_RATE_WINDOW, compare newest to oldest
+	var hist = ViewerRoot.statusHistory;
+	hist.push({ time: serverTime, sum: sum });
+	while(hist.length > 2 && serverTime - hist[1].time >= ViewerRoot.STATUS_RATE_WINDOW)
+		hist.shift();
+	var prev = hist[0];
+
+	var field = function(cls, html) { //fixed-width column so the strip never jumps
+		return "<span class='ViewerRoot-statusField " + cls + "'>" + html + "</span>";
+	};
+
+	if(!ready) {
+		ViewerRoot.statusEl.innerHTML = "<span class='ViewerRoot-statusIdle'>DQM not running</span>" +
+			(sum.producer.socketBacklogBytes ? " &nbsp; backlog " + ViewerRoot.fmtBytes(sum.producer.socketBacklogBytes) : "");
+		return;
+	}
+	if(!haveProducer && !haveConsumer) {
+		ViewerRoot.statusEl.innerHTML = "<span class='ViewerRoot-statusIdle'>no data processors</span>";
+		return;
+	}
+	if(hist.length < 2 || prev.time >= serverTime) {
+		ViewerRoot.statusEl.innerHTML = "sampling...";
+		return;
+	}
+
+	var dt = (serverTime - prev.time) / 1000.0; //s, up to STATUS_RATE_WINDOW
+
+	var inBps    = (sum.producer.bytes   - prev.sum.producer.bytes)   / dt;
+	var inPps    = (sum.producer.packets - prev.sum.producer.packets) / dt;
+	var outBps   = (sum.consumer.bytes   - prev.sum.consumer.bytes)   / dt;
+	var outHps   = (sum.consumer.objects - prev.sum.consumer.objects) / dt; //histograms+graphs per s
+	var busyFrac = (sum.consumer.busyNanos - prev.sum.consumer.busyNanos) / (dt * 1e9);
+	var dErrors  = (sum.producer.errors + sum.consumer.errors) -
+		       (prev.sum.producer.errors + prev.sum.consumer.errors);
+
+	var backlog = sum.producer.socketBacklogBytes;
+	var readLimited = backlog > 1024*1024 || (busyFrac > 0.9 && inBps > outBps * 1.1);
+
+	//"in" is what reaches the listener (one pkt = one send call from a module);
+	//"drain" is what the consumer unpacks into the live file, counted in histograms.
+	var str = "";
+	//run number, wall-clock start (local time) and elapsed since, from the server clock
+	var runStr = "run <b>" + (sum.consumer.runNumber || "-") + "</b>";
+	if(sum.consumer.runStartMs > 0) {
+		var d = new Date(sum.consumer.runStartMs);
+		var hh = ("0" + d.getHours()).slice(-2), mm = ("0" + d.getMinutes()).slice(-2);
+		runStr += " " + hh + ":" + mm + " +" + ViewerRoot.fmtAge(serverTime - sum.consumer.runStartMs);
+	}
+	str += field("ViewerRoot-statusF-run", runStr);
+	str += field("ViewerRoot-statusF-rate", "in <b>" + ViewerRoot.fmtBytes(inBps) + "/s</b> " + inPps.toFixed(1) + " pkt/s");
+	str += field("ViewerRoot-statusF-rate", "drain <b>" + ViewerRoot.fmtBytes(outBps) + "/s</b> " + outHps.toFixed(0) + " hist/s");
+	str += field("ViewerRoot-statusF-busy", "unpack " + (busyFrac*100).toFixed(0) + "% busy");
+	str += field("ViewerRoot-statusF-backlog", "backlog <b class='" + (backlog > 1024*1024 ? "ViewerRoot-statusBad" : "") + "'>" +
+		ViewerRoot.fmtBytes(backlog) + "</b>" +
+		(sum.producer.capacity ? " " + sum.producer.queued + "/" + sum.producer.capacity + " buf" : ""));
+	str += field("ViewerRoot-statusF-senders", sum.producer.clients + " sender" + (sum.producer.clients == 1 ? "" : "s"));
+
+	//per-stream freshness: name and time since its last packet, red if stale.
+	//	This is the instantaneous view: a sender that blocks for 10 s shows 10s here.
+	var streamNames = Object.keys(sum.consumer.streams).sort();
+	if(streamNames.length) {
+		for(var si = 0; si < streamNames.length; ++si) {
+			var st = sum.consumer.streams[streamNames[si]];
+			var stale = st.ageMs < 0 || st.ageMs > 30000;
+			str += field("ViewerRoot-statusF-stream", "<span class='" + (stale ? "ViewerRoot-statusBad" : "") + "'>" +
+				streamNames[si] + " " + ViewerRoot.fmtAge(st.ageMs) + "</span>");
+		}
+	}
+	else if(sum.consumer.lastPacketAgeMs >= 0)
+		str += field("ViewerRoot-statusF-stream", "last pkt " + ViewerRoot.fmtAge(sum.consumer.lastPacketAgeMs));
+	else
+		str += field("ViewerRoot-statusF-stream", "<span class='ViewerRoot-statusIdle'>no packets</span>");
+
+	//flags column: always present so the strip width is stable
+	var flags = "";
+	if(dErrors > 0)
+		flags += "<span class='ViewerRoot-statusBad'>" + dErrors + " sock err</span> ";
+	if(readLimited)
+		flags += "<span class='ViewerRoot-statusBad'>READ LIMITED</span>";
+	str += field("ViewerRoot-statusF-flags", flags || "&nbsp;");
+
+	ViewerRoot.statusEl.innerHTML = str;
+}; //end statusHandler()
+
+//=====================================================================================
+ViewerRoot.fmtAge = function (ms) {
+	if(!(ms >= 0)) return "never";
+	if(ms < 1000) return "<1s";
+	if(ms < 60000) return (ms/1000).toFixed(0) + "s";
+	if(ms < 3600000) return (ms/60000).toFixed(1) + "m";
+	return (ms/3600000).toFixed(1) + "h";
+}; //end fmtAge()
+
+//=====================================================================================
+ViewerRoot.fmtBytes = function (b) {
+	if(!(b > 0)) return "0 B";
+	if(b < 1024) return b.toFixed(0) + " B";
+	if(b < 1024*1024) return (b/1024).toFixed(1) + " kB";
+	if(b < 1024*1024*1024) return (b/1024/1024).toFixed(2) + " MB";
+	return (b/1024/1024/1024).toFixed(2) + " GB";
+}; //end fmtBytes()
 
 ViewerRoot.autoRefreshMatchArr = []; //use array to match request returns to index
 
@@ -632,6 +860,9 @@ ViewerRoot.handleWindowResize = function() {
 	ViewerRoot.omni.style.width = w + "px";
 	ViewerRoot.omni.style.height = h + "px";
 
+	if (ViewerRoot.statusEl) //status strip sits in the ROOT_CONTAINER_OFFY band above the plots
+		ViewerRoot.statusEl.style.width = (w - 8) + "px";
+
 	if (ViewerRoot.hud && ViewerRoot.hud.handleWindowResize)
 		ViewerRoot.hud.handleWindowResize();
 	ViewerRoot.resizeRootObjects(true);
@@ -728,19 +959,21 @@ ViewerRoot.checkStreamerInfoLoaded = function() {
 //=====================================================================================
 // ViewerRoot.getDirectoryContents ~~
 //	request directory contents from server for path
-ViewerRoot.getDirectoryContents = function(path) {
+//	navigate: true when the user clicked the directory name (change into it), false/undefined
+//		when only expanding it in place. Passed through to the HUD handler.
+ViewerRoot.getDirectoryContents = function(path, navigate) {
 
-	Debug.log("ViewerRoot getDirectoryContents " + path);
+	Debug.log("ViewerRoot getDirectoryContents " + path + (navigate ? " (navigate)" : ""));
 
 	if(path.indexOf(".root/") >=0)
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRoot", "RootPath="+path, ViewerRoot.getDirContentsHandler,
-					  0 /*reqParam*/,
+					  navigate ? 1 : 0 /*reqParam*/,
 					  0 /*progressHandler*/,
 					  0 /*callHandlerOnErr*/,
 					  false /*doNoShowLoadingOverlay*/);
 	else
 	DesktopContent.XMLHttpRequest("Request?RequestType=getDirectoryContents", "Path="+path, ViewerRoot.getDirContentsHandler,
-					  0 /*reqParam*/,
+					  navigate ? 1 : 0 /*reqParam*/,
 					  0 /*progressHandler*/,
 					  0 /*callHandlerOnErr*/,
 					  true /*doNoShowLoadingOverlay*/);
@@ -748,7 +981,7 @@ ViewerRoot.getDirectoryContents = function(path) {
 
 //=====================================================================================
 // ViewerRoot.getDirContentsHandler ~~
-ViewerRoot.getDirContentsHandler = function(req) {
+ViewerRoot.getDirContentsHandler = function(req, navigate) {
 	Debug.log("ViewerRoot getDirContentsHandler " + req.responseText);
 
 	var permissions = DesktopContent.getXMLValue(req,'permissions');
@@ -759,7 +992,7 @@ ViewerRoot.getDirContentsHandler = function(req) {
 	ViewerRoot.userPermissions = permissions;
 	ViewerRoot.hud.handleWindowResize();
 	}
-	ViewerRoot.hud.handleDirContents(req);
+	ViewerRoot.hud.handleDirContents(req, navigate ? true : false);
 }
 
 //=====================================================================================
