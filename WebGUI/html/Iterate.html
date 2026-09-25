@@ -632,7 +632,7 @@
 		//				#note: always must (so that macro things work) have a CONFIGURE_ACTIVE_GROUP after a MODIFY_ACTIVE_GROUP
 		//				#	but can group modifies together and do one CONFIGURE_ACTIVE_GROUP.
 		//			- CONFIGURE_ACTIVE_GROUP
-		//			- EXECUTE_MACRO <macro name> <target Group #which can span multiple FE-Managers or whatever>
+		//			- EXECUTE_MM_MACRO <macro name> <target Group #which can span multiple FE-Managers or whatever>
 		//				<parameter group of name, value, iteration step size to adjust in macro>
 		//				#note: must be a public macro
 		//			- EXECUTE_FE_MACRO <FE macro name> <target Group #which can span multiple FE-Managers or whatever>
@@ -750,7 +750,7 @@
 		_COMMAND_TYPES.ACTIVATE_ALIAS 			= "ACTIVATE_ALIAS";
 		_COMMAND_TYPES.ACTIVATE_GROUP 			= "ACTIVATE_GROUP";
 		_COMMAND_TYPES.EXECUTE_FE_MACRO 		= "EXECUTE_FE_MACRO";
-		_COMMAND_TYPES.EXECUTE_MACRO 			= "EXECUTE_MACRO";
+		_COMMAND_TYPES.EXECUTE_MM_MACRO 		= "EXECUTE_MM_MACRO";
 		_COMMAND_TYPES.MODIFY_ACTIVE_GROUP 		= "MODIFY_ACTIVE_GROUP";
 		_COMMAND_TYPES.REPEAT_LABEL 			= "REPEAT_LABEL";
 		_COMMAND_TYPES.RUN 						= "RUN";
@@ -784,7 +784,7 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_ALIAS] 			= [_COMMAND_PARAM_FIELDS.SystemAlias];
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_GROUP] 			= ["GroupName","GroupKey"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_FE_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MACRO] 			= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MM_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds","WriteToECL"];
@@ -803,7 +803,7 @@
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_ALIAS] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_GROUP] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_FE_MACRO] = true;
-		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_MACRO] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_MM_MACRO] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.START] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.STOP] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.PAUSE] = true;
@@ -4402,7 +4402,7 @@
 		//=====================================================================================
 		//popUpRenderMacroNameControl ~~
 		//	Self: plain text input. Remote: select of live macros common to the selected
-		//	target FEs (EXECUTE_FE_MACRO) or of MacroMaker public macros (EXECUTE_MACRO),
+		//	target FEs (EXECUTE_FE_MACRO) or of MacroMaker public macros (EXECUTE_MM_MACRO),
 		//	plus an "Other..." entry that reveals a text input. Preserves the current value.
 		function popUpRenderMacroNameControl(paramIndex, targetSubsystem)
 		{
@@ -4493,7 +4493,7 @@
 						if(counts[m] == liveUids)
 							names.push(m);
 				}
-				else //EXECUTE_MACRO: only PUBLIC MacroMaker macros can be run remotely
+				else //EXECUTE_MM_MACRO: only PUBLIC MacroMaker macros can be run remotely
 					for(var m in info.publicMacros)
 						names.push(m);
 				names.sort();
