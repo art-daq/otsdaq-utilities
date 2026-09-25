@@ -36,12 +36,12 @@
 
 #include <xdaq/NamespaceURI.h>
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <mutex>
-#include <chrono>
 #include <memory>
+#include <mutex>
 
 #include "otsdaq/DataManager/DataConsumer.h"
 #include "otsdaq/DataManager/DataProducerBase.h"
@@ -326,11 +326,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       std::chrono::system_clock::now().time_since_epoch())
 		                       .count()));
-		xmlOut.addTextElementToData("ready",
-		                            theDataManager_ != nullptr &&
-		                                    theDataManager_->isReady()
-		                                ? "1"
-		                                : "0");
+		xmlOut.addTextElementToData(
+		    "ready",
+		    theDataManager_ != nullptr && theDataManager_->isReady() ? "1" : "0");
 
 		if(theDataManager_ != nullptr)
 		{
@@ -376,7 +374,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 						{
 						}  // producer not registered yet (before Configure)
 					}
-					addProcessor("producer", bufferPair.first, producer, queued, capacity);
+					addProcessor(
+					    "producer", bufferPair.first, producer, queued, capacity);
 				}
 				for(auto const* consumer : buffer.consumers_)
 					addProcessor("consumer", bufferPair.first, consumer, 0, 0);
@@ -690,7 +689,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 			const std::string top = "/" + LIVE_TOP_DIR;
 			if(rootDirectoryName.empty() || rootDirectoryName == "/")
 				rootDirectoryName = top;
-			else if(rootDirectoryName != top && rootDirectoryName.rfind(top + "/", 0) != 0)
+			else if(rootDirectoryName != top &&
+			        rootDirectoryName.rfind(top + "/", 0) != 0)
 				rootDirectoryName = top + rootDirectoryName;
 			__SUP_COUTV__(rootDirectoryName);
 		}
