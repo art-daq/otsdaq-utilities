@@ -42,6 +42,7 @@
 		//getPlanOutputFilesHtml(req)
 		//getEnclosingLabels(commandIndex,isInsert)
 		//getCommandRunCount(commandIndex) / commandRunCountBadge(commandIndex)
+		//repeatHintText(value) / popUpUpdateRepeatHint(paramIndex)
 		//getMacroArgsHelpText() / showMacroArgsHelp()
 		//renderMacroArgsEditor(paramIndex,targetSubsystem)
 		//	macroArgsEditorRead/Changed/Add/AddAll/Remove/Preview
@@ -271,6 +272,20 @@
 			margin: 4px 0 0 0;
 			float: left;
 		}
+		#recordEditDiv {
+			float: left;
+			margin: 4px 0 0 6px;
+		}
+		.treeNode-editIcon {
+			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-pencilEdit.png);
+			width: 				24px;
+			height: 			20px;
+			border: 			0;
+		}
+		.treeNode-editIcon:hover {
+			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
+			cursor: 			pointer;
+		}
 
 		.treeNode-deleteIcon {
 			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-trashCan.png);
@@ -293,6 +308,9 @@
 		}
 		#preloadImage-treeEditTrashIconHover {
 			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-trashCanHover.png);
+		}
+		#preloadImage-treeEditPencilIconHover {
+			background-image: 	url(..//images/windowContentImages/ConfigurationGUI-pencilEditHover.png);
 		}
 
 		#planSelector {
@@ -395,19 +413,13 @@
 			z-index:			198;
 		}
 		.plan-command-bounceBall-vconnector {
-			position: 			absolute;
-			width:				3px;
-			height:				10px;
-			left: 				9px;
-			top:				16px;
-			background-color: 	rgb(48, 63, 109);
-			z-index:			198;
+			display:			none;
 		}
 		.plan-command-bounceBall-status {
 			position: 			absolute;
 			padding:			3px;
-			left: 				9px;
-			top:				22px;
+			left: 				280px;
+			top:				0px;
 			background-color: 	rgb(48, 63, 109);
 			/*border:				1px solid white;*/
 			color:				white;
@@ -416,6 +428,12 @@
 
 		.plan-command-bounceBall-status b {
 			color:				white;
+		}
+		.plan-command-bounceBall-status .plan-command-statusLabel {
+			color:				rgb(222, 222, 222);
+		}
+		#plan-command-parameterDisplay .plan-command-statusLabel {
+			color:				rgb(100, 70, 70);
 		}
 
 		.plan-command-addCommand {
@@ -615,7 +633,7 @@
 		//				#note: always must (so that macro things work) have a CONFIGURE_ACTIVE_GROUP after a MODIFY_ACTIVE_GROUP
 		//				#	but can group modifies together and do one CONFIGURE_ACTIVE_GROUP.
 		//			- CONFIGURE_ACTIVE_GROUP
-		//			- EXECUTE_MACRO <macro name> <target Group #which can span multiple FE-Managers or whatever>
+		//			- EXECUTE_MM_MACRO <macro name> <target Group #which can span multiple FE-Managers or whatever>
 		//				<parameter group of name, value, iteration step size to adjust in macro>
 		//				#note: must be a public macro
 		//			- EXECUTE_FE_MACRO <FE macro name> <target Group #which can span multiple FE-Managers or whatever>
@@ -688,6 +706,8 @@
 		var _UPDATE_TIMER_PERIOD = 1000; //ms
 		var _old_active_plan_status;
 		var _old_command_index;
+		var _activeStatusHtml = "";
+		var _ACTIVE_COMMAND_BGCLR = "rgb(176, 196, 244)"; //light blue highlight of the running command row
 		var _need_plan_complete = false;
 		var _need_plan_halted = false;
 		var _need_plan_paused = false;
@@ -731,7 +751,7 @@
 		_COMMAND_TYPES.ACTIVATE_ALIAS 			= "ACTIVATE_ALIAS";
 		_COMMAND_TYPES.ACTIVATE_GROUP 			= "ACTIVATE_GROUP";
 		_COMMAND_TYPES.EXECUTE_FE_MACRO 		= "EXECUTE_FE_MACRO";
-		_COMMAND_TYPES.EXECUTE_MACRO 			= "EXECUTE_MACRO";
+		_COMMAND_TYPES.EXECUTE_MM_MACRO 		= "EXECUTE_MM_MACRO";
 		_COMMAND_TYPES.MODIFY_ACTIVE_GROUP 		= "MODIFY_ACTIVE_GROUP";
 		_COMMAND_TYPES.REPEAT_LABEL 			= "REPEAT_LABEL";
 		_COMMAND_TYPES.RUN 						= "RUN";
@@ -765,10 +785,10 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_ALIAS] 			= [_COMMAND_PARAM_FIELDS.SystemAlias];
 		_COMMAND_PARAMS[_COMMAND_TYPES.ACTIVATE_GROUP] 			= ["GroupName","GroupKey"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_FE_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MACRO] 			= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MM_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds","WriteToECL"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.WAIT] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.START] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.STOP] 	= [];
@@ -784,7 +804,7 @@
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_ALIAS] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.CONFIGURE_GROUP] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_FE_MACRO] = true;
-		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_MACRO] = true;
+		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.EXECUTE_MM_MACRO] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.START] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.STOP] = true;
 		_REMOTE_TARGET_COMMAND_TYPES[_COMMAND_TYPES.PAUSE] = true;
@@ -988,6 +1008,14 @@
 			if(_planUIDs.length == 0) str += "style='display:none' ";
 			str += "onclick='deleteIterationPlan(); return false;' " +
 					"title='Delete the selected " + _recordsAlias + ".'" +
+					">";
+			str += "</div>";
+
+			str += "<div id='recordEditDiv' class='treeNode-editIcon' ";
+			if(_planUIDs.length == 0) str += "style='display:none' ";
+			str += "onclick='enterPlanEditMode(); return false;' " +
+					"title='Edit the selected " + _recordsAlias +
+					" (enter edit mode to Save, Save As, or Discard Changes).'" +
 					">";
 			str += "</div>";
 
@@ -1444,17 +1472,15 @@
 
 
 
-						str += htmlOpenDiv( //start bounceball vertical connector -----------
+						str += htmlOpenDiv( //start bounceball horizontal connector to status -----------
 								"plan-command-bounceBall-vconnector-" + i,
-								"plan-command-bounceBall-vconnector",
-								"left:-" + (30*(depth)+22) + "px;"
+								"plan-command-bounceBall-vconnector"
 								/*style*/);
-						str += "</div>"; //end bounceball vertical connector -----------
+						str += "</div>"; //end bounceball horizontal connector to status -----------
 
 						str += htmlOpenDiv( //start bounceball status display -----------
 								"plan-command-bounceBall-status-" + i,
-								"plan-command-bounceBall-status",
-								"left:-" + (30*(depth)+28) + "px;"
+								"plan-command-bounceBall-status"
 								/*style*/);
 						str += "Status";
 						str += "</div>"; //end bounceball status display -----------
@@ -1780,7 +1806,9 @@
 					document.getElementById("plan-command-delete-" +
 							_shownDeleteCommandIndex).style.display = "none";
 					document.getElementById("plan-command-name-" +
-							_shownDeleteCommandIndex).style.backgroundColor = "transparent";
+							_shownDeleteCommandIndex).style.backgroundColor =
+							(_activeStatusHtml && _old_command_index == _shownDeleteCommandIndex) ?
+							_ACTIVE_COMMAND_BGCLR : "transparent";
 				}
 			}
 			catch(e){} //ignore
@@ -1792,7 +1820,9 @@
 						_shownDeleteCommandIndex).style.display = "block";
 				document.getElementById("plan-command-name-" +
 						_shownDeleteCommandIndex).style.backgroundColor =
-								ConfigurationAPI.editableField_SELECTED_COLOR_;
+						(_activeStatusHtml && _old_command_index == _shownDeleteCommandIndex) ?
+						_ACTIVE_COMMAND_BGCLR :
+						ConfigurationAPI.editableField_SELECTED_COLOR_;
 			}
 		} //end handlePlanNameMouseMove()
 
@@ -1922,6 +1952,12 @@
 			}
 			str += "</table>";
 
+			if(_activeStatusHtml && _old_command_index == i)
+			{
+				str += "<hr style='border-color:rgb(160,102,102); margin:4px 0;'>";
+				str += _activeStatusHtml;
+			}
+
 			el.innerHTML = str;
 
 			//get x, y from offset parents
@@ -1981,7 +2017,9 @@
 					document.getElementById("plan-command-delete-" +
 							_shownDeleteCommandIndex).style.display = "none";
 					document.getElementById("plan-command-name-" +
-							_shownDeleteCommandIndex).style.backgroundColor = "transparent";
+							_shownDeleteCommandIndex).style.backgroundColor =
+							(_activeStatusHtml && _old_command_index == _shownDeleteCommandIndex) ?
+							_ACTIVE_COMMAND_BGCLR : "transparent";
 				}
 				catch(e){}
 				_shownDeleteCommandIndex = -1; //clear
@@ -2957,7 +2995,10 @@
 						str += "<tr><td style='text-align:right;" +
 								"vertical-align: top;" +
 								"padding-top: 7px;'>";
-						str += _COMMAND_PARAMS[commandKey][i] + ": ";
+						str += _COMMAND_PARAMS[commandKey][i];
+						if(_COMMAND_PARAMS[commandKey][i] == "NumberOfRepetitions")
+							str += "<br><span style='font-size:11px; color:#555;'>(extra passes after the first)</span>";
+						str += ": ";
 						str += "</td><td>";
 
 						initValue = "";
@@ -3234,8 +3275,29 @@
 								inputAttrs["title"] = "Prefix for the saved output file name: <radix><MacroName>_<time>.txt. " +
 										"Not applied to remote subsystems.";
 							}
+							else if(_COMMAND_PARAMS[commandKey][i] == "NumberOfRepetitions")
+							{
+								//the stored number counts jumps back to the label, so
+								//	total passes = number + 1; show the total live as the user types
+								if(initValue === "") initValue = inputAttrs["value"] = "0";
+								inputAttrs["title"] = "How many times to jump back to the BEGIN_LABEL. " +
+										"The loop body always runs once first, so total passes = this number + 1. " +
+										"0 = run the loop body once and move on.";
+								inputAttrs["style"] = "width:60px;";
+								inputAttrs["oninput"] = "_popUpParamsModified = true; " +
+										"popUpUpdateRepeatHint(" + i + ");";
+								hDelta += 14; //room for the second line under the parameter name
+							}
 							str += DesktopContent.htmlOpen("input", inputAttrs,
 									0 /*innerHTML*/, true /*closeTag*/);
+							if(_COMMAND_PARAMS[commandKey][i] == "NumberOfRepetitions")
+							{
+								str += DesktopContent.htmlOpen("span",
+										{
+												"id":"popUp-repeatHint-" + i,
+												"style":"font-size:11px; color:#555; margin-left:6px;"
+										}, repeatHintText(initValue), true /*closeTag*/);
+							}
 						}
 
 
@@ -4365,7 +4427,7 @@
 		//=====================================================================================
 		//popUpRenderMacroNameControl ~~
 		//	Self: plain text input. Remote: select of live macros common to the selected
-		//	target FEs (EXECUTE_FE_MACRO) or of MacroMaker public macros (EXECUTE_MACRO),
+		//	target FEs (EXECUTE_FE_MACRO) or of MacroMaker public macros (EXECUTE_MM_MACRO),
 		//	plus an "Other..." entry that reveals a text input. Preserves the current value.
 		function popUpRenderMacroNameControl(paramIndex, targetSubsystem)
 		{
@@ -4456,7 +4518,7 @@
 						if(counts[m] == liveUids)
 							names.push(m);
 				}
-				else //EXECUTE_MACRO: only PUBLIC MacroMaker macros can be run remotely
+				else //EXECUTE_MM_MACRO: only PUBLIC MacroMaker macros can be run remotely
 					for(var m in info.publicMacros)
 						names.push(m);
 				names.sort();
@@ -4597,7 +4659,7 @@
 				out += args[i].name + "=" + args[i].start;
 				if(args[i].step == "DEFAULT" || args[i].step == "Default")
 					out += " (const)";
-				else
+				else if(parseFloat(args[i].step) != 0) //a step of 0 changes nothing, so do not show "+0"
 					out += "+" + args[i].step;
 				if(args[i].label) out += "@" + args[i].label;
 			}
@@ -4857,8 +4919,21 @@
 						" and repeats " + rc.passes + " pass" + (rc.passes == 1 ? "" : "es") +
 						" each time, so the commands inside run " + bodyRuns + " time" + (bodyRuns == 1 ? "" : "s") + ".";
 			}
-			else if(cmd.type == _COMMAND_TYPES.REPEAT_LABEL || cmd.type == _COMMAND_TYPES.CHOOSE_FSM)
-				return ""; //bookkeeping commands; count is not informative
+			else if(cmd.type == _COMMAND_TYPES.REPEAT_LABEL)
+			{
+				//the stored number is how many times the iterator jumps BACK to the
+				//	label, so the body always runs one more time than the number says
+				var reps = parseInt(cmd.param["NumberOfRepetitions"]) || 0;
+				var passes = reps + 1;
+				text = passes + " pass" + (passes == 1 ? "" : "es") + " total";
+				title = "NumberOfRepetitions = " + reps + " means the loop body runs once, then " +
+						"repeats " + reps + " more time" + (reps == 1 ? "" : "s") + ", so " +
+						passes + " pass" + (passes == 1 ? "" : "es") + " in total" +
+						(rc.loops.length ? " each time label '" + cmd.param["Label"] +
+						"' is entered (enclosing loops: " + loopList + ")" : "") + ".";
+			}
+			else if(cmd.type == _COMMAND_TYPES.CHOOSE_FSM)
+				return ""; //bookkeeping command; count is not informative
 			else
 			{
 				if(rc.loops.length == 0) return ""; //runs once, nothing to flag
@@ -4870,6 +4945,26 @@
 					"border-radius:3px; padding:0 4px; font-size:11px; position:relative; top:-1px; " +
 					"margin-left:4px; white-space:nowrap;'>" + text + "</span>";
 		} //end commandRunCountBadge()
+
+		//=====================================================================================
+		//repeatHintText ~~ plain-language total for a NumberOfRepetitions value
+		function repeatHintText(value)
+		{
+			var reps = parseInt(value);
+			if(isNaN(reps)) return "enter a whole number, 0 or more";
+			if(reps < 0) return "= 1 pass total (negative counts as 0)";
+			var passes = reps + 1;
+			return "= " + passes + " pass" + (passes == 1 ? "" : "es") + " total";
+		} //end repeatHintText()
+
+		//=====================================================================================
+		//popUpUpdateRepeatHint ~~ refresh the total-passes hint next to the input in the command dialog
+		function popUpUpdateRepeatHint(paramIndex)
+		{
+			var inEl = document.getElementById("popUp-param-" + paramIndex);
+			var hintEl = document.getElementById("popUp-repeatHint-" + paramIndex);
+			if(inEl && hintEl) hintEl.innerHTML = repeatHintText(inEl.value);
+		} //end popUpUpdateRepeatHint()
 
 		//=====================================================================================
 		//getMacroArgsHelpText ~~
@@ -5157,10 +5252,10 @@
 		//=====================================================================================
 		//macroArgsDefaultRow ~~
 		//	FE macro input names often carry a hint like "(Default := 0x0c)" or "(Default = -1 := all)";
-		//	use it: numeric default -> start=default, step=1; text default -> fixed text (step DEFAULT)
+		//	use it: numeric default -> start=default, step=0; text default -> fixed text (step DEFAULT)
 		function macroArgsDefaultRow(name)
 		{
-			var row = {"name":name, "start":"0", "step":"1", "label":""};
+			var row = {"name":name, "start":"0", "step":"0", "label":""};
 			var m = /\(\s*Default\s*(?::=|=)\s*([^,)\s:]+)/i.exec(name);
 			if(m)
 			{
@@ -5233,7 +5328,8 @@
 				for(var l=0;l<labels.length;++l) if(labels[l].label == label) return labels[l].passes;
 				return 1;
 			};
-			var isConst = function(step) { return step == "DEFAULT" || step == "Default"; };
+			var isConst = function(step) { return step == "DEFAULT" || step == "Default" ||
+					(step !== "" && parseFloat(step) === 0); }; //step 0 is also a constant, value passed through as-is
 			var isNum = function(s) { return s !== "" && !isNaN(parseFloat(s)); };
 
 			var str = "";
@@ -5619,6 +5715,16 @@
 
 
 		//=====================================================================================
+		//enterPlanEditMode ~~
+		function enterPlanEditMode()
+		{
+			if(!_targetPlan) return;
+			_planIsModified = true;
+			drawIterationPlan();
+		}	//end enterPlanEditMode()
+
+
+		//=====================================================================================
 		//startTargetIterationPlan ~~
 		function startTargetIterationPlan()
 		{
@@ -5742,6 +5848,25 @@
 		} //end haltTargetIterationPlan
 
 		//=====================================================================================
+		//formatDurationHMS ~~
+		//	seconds -> "h:mm:ss" (hours omitted when 0)
+		function formatDurationHMS(totalSeconds)
+		{
+			totalSeconds = totalSeconds | 0;
+			var hours = (totalSeconds/60.0/60.0)|0;
+			var mins = ((totalSeconds%(60*60))/60.0)|0;
+			var secs = totalSeconds%60;
+			var str = "";
+			if(hours)
+				str += hours + ":";
+			if(mins < 10)	str += "0"; //keep to 2 digits
+			str += mins + ":";
+			if(secs < 10)	str += "0"; //keep to 2 digits
+			str += secs;
+			return str;
+		} //end formatDurationHMS()
+
+		//=====================================================================================
 		//updateIterateStatus ~~
 		function updateIterateStatus()
 		{
@@ -5831,13 +5956,15 @@
 				_old_active_plan_status = active_plan_status;
 
 
-				//hide old bouncing ball
+				//hide old bouncing ball and clear old highlight
 				if(_old_command_index != command_index)
 				{
 					try
 					{
 						document.getElementById("plan-command-bounceBall-container-" +
 								_old_command_index).style.display = 'none';
+						document.getElementById("plan-command-name-" +
+								_old_command_index).style.backgroundColor = "transparent";
 					}
 					catch(e)
 					{} //ignore failure to hide
@@ -5845,7 +5972,7 @@
 					_old_command_index = command_index;
 				}
 
-				//update current bouncing ball
+				//update current bouncing ball and active highlight
 				if(active_plan_status != "Inactive")
 				{
 					try
@@ -5874,34 +6001,41 @@
 						document.getElementById("plan-command-bounceBall-text-" +
 								command_index + "-depth-" + 0).innerHTML = val;
 
-						//create status string
+						//build status string for hover display
+						var activeCommand = _commands[(command_index|0)];
 						var str = "";
-						str += "<b>Command " + command_index + ". " + _commands[(command_index|0)].type + "</b>";
+						str += "<b>Command " + command_index + ". " + activeCommand.type + "</b>";
 						str += "<br>";
 						str += "<table>";
-						str += "<tr><td style='text-align:left; color:rgb(222, 222, 222);'>Duration [h:mm:ss]:</td>" +
+						str += "<tr><td class='plan-command-statusLabel' style='text-align:left;'>Duration [h:mm:ss]:</td>" +
 								"<td style='text-align:left;'>";
+						str += formatDurationHMS(command_duration);
+						if(activeCommand.type == _COMMAND_TYPES.RUN ||
+								activeCommand.type == _COMMAND_TYPES.WAIT)
 						{
-							var hours = (command_duration/60.0/60.0)|0;
-							var mins = ((command_duration%(60*60))/60.0)|0;
-							var secs = command_duration%60;
-
-							if(hours)
-								str += hours + ":";
-							if(mins < 10)	str += "0"; //keep to 2 digits
-							str += mins + ":";
-							if(secs < 10)	str += "0"; //keep to 2 digits
-							str += secs ;
+							//show the configured end condition of a RUN/WAIT command
+							var waitOnThreads = activeCommand.param[_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread];
+							var targetSeconds = activeCommand.param["DurationInSeconds"] | 0;
+							if(waitOnThreads == 1 || waitOnThreads == "true" || waitOnThreads == "TRUE")
+								str += " (until all front-ends finish)";
+							else if(targetSeconds > 0)
+								str += " / " + formatDurationHMS(targetSeconds) +
+									" (" + Math.min(100, ((100*command_duration/targetSeconds)|0)) + "%)";
 						}
 						str += "</td></tr>";
-						str += "<tr><td style='text-align:left; color:rgb(222, 222, 222);'>Number of Executions:</td>" +
+						str += "<tr><td class='plan-command-statusLabel' style='text-align:left;'>Number of Executions:</td>" +
 								"<td style='text-align:left;'>" + command_iteration + "</td></tr>";
 						str += "</table>";
 
+						_activeStatusHtml = str;
+
+						//highlight the active command row in blue
+						document.getElementById("plan-command-name-" +
+								command_index).style.backgroundColor = _ACTIVE_COMMAND_BGCLR;
+
+						//display bounce balls and the status box (styled like the hover popup, to the right)
 						document.getElementById("plan-command-bounceBall-status-" +
 								command_index).innerHTML = str;
-
-						//display
 						document.getElementById("plan-command-bounceBall-container-" +
 								command_index).style.display = 'block';
 
@@ -5910,6 +6044,16 @@
 					{
 						console.log(e);
 					} //ignore failure to show
+				}
+				else
+				{
+					_activeStatusHtml = "";
+					try
+					{
+						document.getElementById("plan-command-name-" +
+								_old_command_index).style.backgroundColor = "transparent";
+					}
+					catch(e) {}
 				}
 
 
@@ -6006,6 +6150,7 @@
 	<!-- body content populated by javascript paint(), etc. -->
 
 	<div class='preloadImage' id='preloadImage-treeEditTrashIconHover'></div>
+	<div class='preloadImage' id='preloadImage-treeEditPencilIconHover'></div>
 	<div class='preloadImage' id='ConfigurationAPI-popUpDialog-preloadImage-editIconHover'></div>
 </body>
 
