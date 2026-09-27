@@ -775,6 +775,7 @@
 		_COMMAND_PARAM_FIELDS.MacroArgs							= "MacroArgs"; //"name:start:step:label,..." each piece URI-encoded; server writes the loop tables
 		_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile			= "EnableSavingOutputsToFile";
 		_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured			= "SkipIfAlreadyConfigured"; //Configure commands: leave an already-Configured FSM as-is
+		_COMMAND_PARAM_FIELDS.WriteToECL						= "WriteToECL"; //Run commands: post a run summary to the ECL
 
 		var _COMMAND_PARAMS = {}; //NOTE!!! Fields must be in same order as the tables (in the future could ask server for this order, or not)
 		_COMMAND_PARAMS[_COMMAND_TYPES.BEGIN_LABEL] 			= ["Label"];
@@ -788,7 +789,7 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.EXECUTE_MM_MACRO] 		= [_COMMAND_PARAM_FIELDS.Targets,"MacroName",_COMMAND_PARAM_FIELDS.MacroArgs,"EnableSavingOutputsToFile","OutputFilePath","OutputFileRadix"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.MODIFY_ACTIVE_GROUP] 	= [_COMMAND_PARAM_FIELDS.Targets,_COMMAND_PARAM_FIELDS.DoTrackGroupChanges,_COMMAND_PARAM_FIELDS.RelativePathToField,"FieldStartValue","FieldIterationStepSize"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.REPEAT_LABEL] 			= ["Label","NumberOfRepetitions"];
-		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds","WriteToECL"];
+		_COMMAND_PARAMS[_COMMAND_TYPES.RUN] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds",_COMMAND_PARAM_FIELDS.WriteToECL];
 		_COMMAND_PARAMS[_COMMAND_TYPES.WAIT] 					= [_COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread,"DurationInSeconds"];
 		_COMMAND_PARAMS[_COMMAND_TYPES.START] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.STOP] 	= [];
@@ -3152,7 +3153,10 @@
 								_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured ||
 
 								_COMMAND_PARAMS[commandKey][i] ==  //booleans
-								_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile)
+								_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile ||
+
+								_COMMAND_PARAMS[commandKey][i] ==  //booleans
+								_COMMAND_PARAM_FIELDS.WriteToECL)
 						{
 							//boolean field, show select box and set value to 1/0
 
@@ -5457,7 +5461,8 @@
 			if(paramName == _COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured ||
 					paramName == _COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile ||
 					paramName == _COMMAND_PARAM_FIELDS.DoTrackGroupChanges ||
-					paramName == _COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread)
+					paramName == _COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread ||
+					paramName == _COMMAND_PARAM_FIELDS.WriteToECL)
 				return 0; //booleans default to No
 			return ""; //free text / links default to empty
 		} //end defaultCommandParamValue()
