@@ -9038,7 +9038,7 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	// parentEl anchors all child XML elements; create it from the artdaq supervisor
 	// record when one exists, otherwise use a placeholder so that online-monitor
 	// nodes (below) can still be emitted.
-	xercesc::DOMElement* parentEl = nullptr;
+	xercesc::DOMElement* parentEl   = nullptr;
 	unsigned int         paramIndex = 0;
 	std::string          typeString;
 
@@ -9046,7 +9046,7 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	{
 		paramIndex = 0;
 		parentEl   = xmlOut.addTextElementToData("artdaqSupervisor",
-		                                         artdaqSupervisorInfo[paramIndex++]);
+                                               artdaqSupervisorInfo[paramIndex++]);
 		typeString = "artdaqSupervisor";
 		xmlOut.addTextElementToParent(
 		    typeString + "-status", artdaqSupervisorInfo[paramIndex++], parentEl);
@@ -9060,17 +9060,16 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 			typeString = "subsystem";
 
 			__SUP_COUT__ << "\t\t"
-			             << "Found " << typeString << " " << subsystem.first
-			             << " \t := '" << subsystem.second.label << "'" << __E__;
+			             << "Found " << typeString << " " << subsystem.first << " \t := '"
+			             << subsystem.second.label << "'" << __E__;
 
 			xmlOut.addTextElementToParent(typeString, subsystem.second.label, parentEl);
 			xmlOut.addTextElementToParent(
 			    typeString + "-id", std::to_string(subsystem.first), parentEl);
 
-			xmlOut.addTextElementToParent(
-			    typeString + "-sourcesCount",
-			    std::to_string(subsystem.second.sources.size()),
-			    parentEl);
+			xmlOut.addTextElementToParent(typeString + "-sourcesCount",
+			                              std::to_string(subsystem.second.sources.size()),
+			                              parentEl);
 
 			xmlOut.addTextElementToParent(typeString + "-destination",
 			                              std::to_string(subsystem.second.destination),
@@ -9200,9 +9199,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 					{
 						__SUP_COUT_WARN__
 						    << "Could not follow supervisor config link for "
-						    << app.applicationUID_ << " in context "
-						    << ctx.contextUID_ << "; using application UID as label."
-						    << __E__;
+						    << app.applicationUID_ << " in context " << ctx.contextUID_
+						    << "; using application UID as label." << __E__;
 					}
 
 					// Strip scheme from context address for hostname
@@ -9213,13 +9211,11 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 							hostname = hostname.substr(pos + 3);
 					}
 
-					__SUP_COUT__ << "\t\tFound online monitor '"
-					             << monitorLabel << "' on " << hostname << __E__;
+					__SUP_COUT__ << "\t\tFound online monitor '" << monitorLabel
+					             << "' on " << hostname << __E__;
 
-					xmlOut.addTextElementToParent(
-					    typeString, monitorLabel, parentEl);
-					xmlOut.addTextElementToParent(
-					    typeString + "-status", "1", parentEl);
+					xmlOut.addTextElementToParent(typeString, monitorLabel, parentEl);
+					xmlOut.addTextElementToParent(typeString + "-status", "1", parentEl);
 					xmlOut.addTextElementToParent(
 					    typeString + "-hostname",
 					    StringMacros::encodeURIComponent(hostname),
@@ -9231,8 +9227,8 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 				}
 			}
 
-			__SUP_COUT__ << "Found " << monitorCount
-			             << " online monitor supervisor(s)." << __E__;
+			__SUP_COUT__ << "Found " << monitorCount << " online monitor supervisor(s)."
+			             << __E__;
 		}
 	}  // end online monitor handling
 
