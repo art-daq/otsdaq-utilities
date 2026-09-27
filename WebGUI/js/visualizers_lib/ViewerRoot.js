@@ -306,10 +306,9 @@ ViewerRoot.statusHandler = function (req, reqParam, errStr) {
 	ViewerRoot.liveReady = ready;
 
 	var procs = DesktopContent.getXMLChildren(req, "processor");
-	var cur = {}; //name -> counters
 	var sum = { producer: { packets: 0, bytes: 0, errors: 0, queued: 0, capacity: 0,
 				clients: 0, socketBacklogBytes: 0 },
-		    consumer: { packets: 0, bytes: 0, errors: 0, busyNanos: 0, objects: 0,
+		    consumer: { packets: 0, bytes: 0, errors: 0, busyNanos: 0, objects: 0, count: 0,
 				runNumber: "", runStartMs: 0, lastPacketAgeMs: -1, streams: {} } };
 	var haveProducer = false, haveConsumer = false;
 	var sample = {};
@@ -338,6 +337,7 @@ ViewerRoot.statusHandler = function (req, reqParam, errStr) {
 		}
 		else {
 			s.busyNanos += c.busyNanos;
+			++s.count;
 			s.objects += parseInt(get("objects")) || 0;
 			var rn = get("runNumber");
 			if(rn) s.runNumber = rn;
@@ -392,7 +392,10 @@ ViewerRoot.statusHandler = function (req, reqParam, errStr) {
 	var inPps    = (sum.producer.packets - prev.sum.producer.packets) / dt;
 	var outBps   = (sum.consumer.bytes   - prev.sum.consumer.bytes)   / dt;
 	var outHps   = (sum.consumer.objects - prev.sum.consumer.objects) / dt; //histograms+graphs per s
-	var busyFrac = (sum.consumer.busyNanos - prev.sum.consumer.busyNanos) / (dt * 1e9);
+	//busyNanos is summed over all consumers, so divide by their number to get the
+	//	average fraction of wall time each one spent busy (otherwise >1 with several)
+	var busyFrac = (sum.consumer.busyNanos - prev.sum.consumer.busyNanos) /
+		       (dt * 1e9 * Math.max(1, sum.consumer.count));
 	var dErrors  = (sum.producer.errors + sum.consumer.errors) -
 		       (prev.sum.producer.errors + prev.sum.consumer.errors);
 
