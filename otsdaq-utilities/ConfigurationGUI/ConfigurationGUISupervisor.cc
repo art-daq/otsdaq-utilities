@@ -9032,51 +9032,56 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	                                     artdaqSupervisorInfo,
 	                                     suppressMultiNode);
 
-	if(artdaqSupervisorInfo.size() != 4 /*expecting 4 artdaq Supervisor parameters*/)
+	bool hasArtdaqSupervisor =
+	    (artdaqSupervisorInfo.size() == 4 /*expecting 4 artdaq Supervisor parameters*/);
+
+	// parentEl anchors all child XML elements; create it from the artdaq supervisor
+	// record when one exists, otherwise use a placeholder so that online-monitor
+	// nodes (below) can still be emitted.
+	xercesc::DOMElement* parentEl   = nullptr;
+	unsigned int         paramIndex = 0;
+	std::string          typeString;
+
+	if(hasArtdaqSupervisor)
 	{
-		__SUP_COUT__ << "No artdaq supervisor found." << __E__;
-		return;
-	}
-
-	__SUP_COUT__ << "========== "
-	             << "Found " << info.subsystems.size() << " subsystems." << __E__;
-
-	unsigned int paramIndex = 0;  // start at first artdaq Supervisor parameter
-
-	auto parentEl = xmlOut.addTextElementToData("artdaqSupervisor",
-	                                            artdaqSupervisorInfo[paramIndex++]);
-
-	std::string typeString = "artdaqSupervisor";
-
-	xmlOut.addTextElementToParent(
-	    typeString + "-status", artdaqSupervisorInfo[paramIndex++], parentEl);
-	xmlOut.addTextElementToParent(
-	    typeString + "-contextAddress", artdaqSupervisorInfo[paramIndex++], parentEl);
-	xmlOut.addTextElementToParent(
-	    typeString + "-contextPort", artdaqSupervisorInfo[paramIndex++], parentEl);
-
-	for(auto& subsystem : info.subsystems)
-	{
-		typeString = "subsystem";
-
-		__SUP_COUT__ << "\t\t"
-		             << "Found " << typeString << " " << subsystem.first << " \t := '"
-		             << subsystem.second.label << "'" << __E__;
-
-		xmlOut.addTextElementToParent(typeString, subsystem.second.label, parentEl);
+		paramIndex = 0;
+		parentEl   = xmlOut.addTextElementToData("artdaqSupervisor",
+                                               artdaqSupervisorInfo[paramIndex++]);
+		typeString = "artdaqSupervisor";
 		xmlOut.addTextElementToParent(
-		    typeString + "-id", std::to_string(subsystem.first), parentEl);
+		    typeString + "-status", artdaqSupervisorInfo[paramIndex++], parentEl);
+		xmlOut.addTextElementToParent(
+		    typeString + "-contextAddress", artdaqSupervisorInfo[paramIndex++], parentEl);
+		xmlOut.addTextElementToParent(
+		    typeString + "-contextPort", artdaqSupervisorInfo[paramIndex++], parentEl);
 
-		xmlOut.addTextElementToParent(typeString + "-sourcesCount",
-		                              std::to_string(subsystem.second.sources.size()),
-		                              parentEl);
+		for(auto& subsystem : info.subsystems)
+		{
+			typeString = "subsystem";
 
-		// destination
-		xmlOut.addTextElementToParent(typeString + "-destination",
-		                              std::to_string(subsystem.second.destination),
-		                              parentEl);
+			__SUP_COUT__ << "\t\t"
+			             << "Found " << typeString << " " << subsystem.first << " \t := '"
+			             << subsystem.second.label << "'" << __E__;
 
-	}  // end subsystem handling
+			xmlOut.addTextElementToParent(typeString, subsystem.second.label, parentEl);
+			xmlOut.addTextElementToParent(
+			    typeString + "-id", std::to_string(subsystem.first), parentEl);
+
+			xmlOut.addTextElementToParent(typeString + "-sourcesCount",
+			                              std::to_string(subsystem.second.sources.size()),
+			                              parentEl);
+
+			xmlOut.addTextElementToParent(typeString + "-destination",
+			                              std::to_string(subsystem.second.destination),
+			                              parentEl);
+		}  // end subsystem handling
+	}
+	else
+	{
+		__SUP_COUT__ << "No artdaq supervisor found — scanning for online monitors."
+		             << __E__;
+		parentEl = xmlOut.addTextElementToData("artdaqSupervisor", "");
+	}
 
 	__SUP_COUT__ << "========== "
 	             << "Found " << nodeTypeToObjectMap.size() << " process types." << __E__;
@@ -9154,6 +9159,78 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 			    typeString + "-subsystem", artdaqNode.second[paramIndex], parentEl);
 		}
 	}  // end processor type handling
+
+	// Scan contexts for ARTDAQOnlineMonitorSupervisor applications.
+	// These are standalone XDAQ apps (not children of the artdaq supervisor)
+	// that run art-based online monitor jobs and generate their own FHiCL.
+	{
+		XDAQContextTable* ctxTable = dynamic_cast<XDAQContextTable*>(
+		    cfgMgr->getTableByName(ConfigurationManager::XDAQ_CONTEXT_TABLE_NAME));
+
+		if(ctxTable)
+		{
+			typeString                = "monitor";
+			unsigned int monitorCount = 0;
+
+			for(auto& ctx : ctxTable->getContexts())
+			{
+				if(!ctx.status_)
+					continue;
+
+				for(auto& app : ctx.applications_)
+				{
+					if(!app.status_)
+						continue;
+					if(app.class_.find("ARTDAQOnlineMonitorSupervisor") ==
+					   std::string::npos)
+						continue;
+
+					// Follow the supervisor config link to get the record UID
+					// used in FHiCL filename generation (monitor-<uid>.fcl).
+					std::string monitorLabel = app.applicationUID_;
+					try
+					{
+						ConfigurationTree supNode =
+						    XDAQContextTable::getSupervisorConfigNode(
+						        cfgMgr, ctx.contextUID_, app.applicationUID_);
+						monitorLabel = supNode.getValue();
+					}
+					catch(...)
+					{
+						__SUP_COUT_WARN__
+						    << "Could not follow supervisor config link for "
+						    << app.applicationUID_ << " in context " << ctx.contextUID_
+						    << "; using application UID as label." << __E__;
+					}
+
+					// Strip scheme from context address for hostname
+					std::string hostname = ctx.address_;
+					{
+						auto pos = hostname.find("://");
+						if(pos != std::string::npos)
+							hostname = hostname.substr(pos + 3);
+					}
+
+					__SUP_COUT__ << "\t\tFound online monitor '" << monitorLabel
+					             << "' on " << hostname << __E__;
+
+					xmlOut.addTextElementToParent(typeString, monitorLabel, parentEl);
+					xmlOut.addTextElementToParent(typeString + "-status", "1", parentEl);
+					xmlOut.addTextElementToParent(
+					    typeString + "-hostname",
+					    StringMacros::encodeURIComponent(hostname),
+					    parentEl);
+					xmlOut.addTextElementToParent(
+					    typeString + "-subsystem", "", parentEl);
+
+					++monitorCount;
+				}
+			}
+
+			__SUP_COUT__ << "Found " << monitorCount << " online monitor supervisor(s)."
+			             << __E__;
+		}
+	}  // end online monitor handling
 
 	__SUP_COUT__ << "Done retrieving artdaq nodes." << __E__;
 
