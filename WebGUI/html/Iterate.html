@@ -1258,6 +1258,11 @@
 									//at this point, have command type and params
 									console.log(type);
 									console.log(params);
+									// shared tables can have extra trailing columns
+									// (e.g. IterationCommandRunTable has WriteToECL
+									//  which WAIT doesn't use); trim to the expected count
+									if(params.length > _COMMAND_PARAMS[type].length)
+										params = params.slice(0, _COMMAND_PARAMS[type].length);
 									addCommand(type,params);
 									if(type_targetSubsystem)
 										_commands[_commands.length-1].targetSubsystem = type_targetSubsystem;
@@ -6090,6 +6095,11 @@
 						document.getElementById('topPane').style.backgroundColor = _HEADER_ERROR_BGCLR;
 					else
 						document.getElementById('topPane').style.backgroundColor = _HEADER_INACTIVE_BGCLR;
+
+					document.getElementById('topPane-controls-playButton').title =
+						active_plan_status == "Error"
+							? "Retry failed command (press to resume from the error)"
+							: "Start Iteration Plan";
 
 					document.getElementById('topPane-status-field').innerHTML =
 							active_plan_status;
