@@ -36,18 +36,26 @@
 
 #include <xdaq/NamespaceURI.h>
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <mutex>
 
-// #include <chrono>
+#include "otsdaq/DataManager/DataConsumer.h"
+#include "otsdaq/DataManager/DataProducerBase.h"
+
 // #include <thread>
 
 #define ROOT_BROWSER_PATH __ENV__("ROOT_BROWSER_PATH")
 #define ROOT_DISPLAY_CONFIG_PATH __ENV__("ROOT_DISPLAY_CONFIG_PATH")
 
 #define LIVEDQM_DIR std::string("LIVE_DQM")
+// Top-level directory the DQM consumer books everything under (see
+// DQMMu2eHistoConsumer::startProcessingData). Hidden from the browser: a live path
+// without it is mapped onto it, a path that already names it passes through.
+#define LIVE_TOP_DIR std::string("Mu2eHistos")
 #define PRE_MADE_ROOT_CFG_DIR std::string("Pre-made Views")
 #define HISTORY_DIR std::string("History")
 
@@ -200,7 +208,7 @@ void VisualSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AllowNoLoginRequestTypes,
 	    "setUserPreferences |  getUserPreferences | getDirectoryContents | getRoot | "
-	    "getEvents");
+	    "getEvents | getDataStatus");
 
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
@@ -214,10 +222,10 @@ void VisualSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "getRoot | getEvents");
+	    "getRoot | getEvents | getDataStatus");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NoXmlWhiteSpaceRequestTypes,
-	    "getRoot | getEvents");
+	    "getRoot | getEvents | getDataStatus");
 	//Note: json data in ROOTJS library expects no funny characters
 }  //end forceSupervisorPropertyValues()
 
@@ -298,6 +306,80 @@ void VisualSupervisor::request(const std::string&               requestType,
 			}
 			__SUP_COUT_INFO__ << "ERROR! Something went wrong trying to get raw data."
 			                  << __E__;
+		}
+	}
+	else if(
+	    requestType ==
+	    "getDataStatus")  // ################################################################################################################
+	{
+		// Throughput snapshot of the live-DQM data path, for the viewer status strip.
+		// One <processor> per producer/consumer with cumulative counters; the browser
+		// keeps the previous sample and turns deltas into rates. Cumulative counters
+		// mean a missed poll loses nothing.
+		//
+		//	<processor name= role=producer|consumer buffer= packets= bytes= errors=
+		//	           busyNanos= queued= capacity= [clients= socketBacklogBytes=]/>
+		//	<serverTime value=ms since epoch/>
+		//	<ready value=0|1/>
+		xmlOut.addTextElementToData(
+		    "serverTime",
+		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+		                       std::chrono::system_clock::now().time_since_epoch())
+		                       .count()));
+		xmlOut.addTextElementToData(
+		    "ready",
+		    theDataManager_ != nullptr && theDataManager_->isReady() ? "1" : "0");
+
+		if(theDataManager_ != nullptr)
+		{
+			auto addProcessor = [&xmlOut](const std::string&   role,
+			                              const std::string&   bufferName,
+			                              const DataProcessor* processor,
+			                              unsigned int         queued,
+			                              unsigned int         capacity) {
+				xercesc::DOMElement* el = xmlOut.addTextElementToData("processor", "");
+				xmlOut.addTextElementToParent("name", processor->getProcessorID(), el);
+				xmlOut.addTextElementToParent("role", role, el);
+				xmlOut.addTextElementToParent("buffer", bufferName, el);
+				xmlOut.addTextElementToParent(
+				    "packets", std::to_string(processor->getStatPackets()), el);
+				xmlOut.addTextElementToParent(
+				    "bytes", std::to_string(processor->getStatBytes()), el);
+				xmlOut.addTextElementToParent(
+				    "errors", std::to_string(processor->getStatErrors()), el);
+				xmlOut.addTextElementToParent(
+				    "busyNanos", std::to_string(processor->getStatBusyNanos()), el);
+				xmlOut.addTextElementToParent("queued", std::to_string(queued), el);
+				xmlOut.addTextElementToParent("capacity", std::to_string(capacity), el);
+				for(auto const& extra : processor->getExtraStatus())
+					xmlOut.addTextElementToParent(extra.first, extra.second, el);
+			};
+
+			for(auto const& bufferPair : theDataManager_->getBuffers())
+			{
+				const auto& buffer = bufferPair.second;
+				for(auto const* producer : buffer.producers_)
+				{
+					unsigned int queued = 0, capacity = 0;
+					if(buffer.buffer_ != nullptr)
+					{
+						try
+						{
+							capacity = buffer.buffer_->getProducerBufferSize(
+							    producer->getProcessorID());
+							queued = buffer.buffer_->getProducerWrittenBuffers(
+							    producer->getProcessorID());
+						}
+						catch(...)
+						{
+						}  // producer not registered yet (before Configure)
+					}
+					addProcessor(
+					    "producer", bufferPair.first, producer, queued, capacity);
+				}
+				for(auto const* consumer : buffer.consumers_)
+					addProcessor("consumer", bufferPair.first, consumer, 0, 0);
+			}
 		}
 	}
 	else if(
@@ -485,9 +567,12 @@ void VisualSupervisor::request(const std::string&               requestType,
 				         << " Live: " << theDataManager_->getLiveDQMHistos() << std::endl;
 			if(path == "/")
 			{
-				// Add live histos
-				xmlOut.addTextElementToData("dir",
-				                            LIVEDQM_DIR + ".root");  // add to xml
+				// Add live histos, but only while the data manager is taking data.
+				// The browser polls getDataStatus and refreshes this listing when the
+				// running state changes.
+				if(theDataManager_ != nullptr && theDataManager_->isReady())
+					xmlOut.addTextElementToData("dir",
+					                            LIVEDQM_DIR + ".root");  // add to xml
 
 				// check for ROOT_DISPLAY_CONFIG_PATH
 				DIR* pRtDIR  = opendir(ROOT_DISPLAY_CONFIG_PATH);
@@ -597,6 +682,19 @@ void VisualSupervisor::request(const std::string&               requestType,
 		bool isLiveDQM = (path.find("/" + LIVEDQM_DIR + ".root/") == 0) ? true : false;
 		__SUP_COUTV__(isLiveDQM);
 
+		if(isLiveDQM)
+		{
+			// Skip the LIVE_TOP_DIR level: "/" lists the streams directly. Older saved
+			// views that spell out the level keep working.
+			const std::string top = "/" + LIVE_TOP_DIR;
+			if(rootDirectoryName.empty() || rootDirectoryName == "/")
+				rootDirectoryName = top;
+			else if(rootDirectoryName != top &&
+			        rootDirectoryName.rfind(top + "/", 0) != 0)
+				rootDirectoryName = top + rootDirectoryName;
+			__SUP_COUTV__(rootDirectoryName);
+		}
+
 		TFile*      rootFile   = nullptr;
 		TObject*    tObject    = nullptr;
 		TDirectory* tDirectory = nullptr;
@@ -610,6 +708,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 				__SUP_SS__ << "Failed to access ROOT file: " << rootFileName << __E__;
 				__SUP_SS_THROW__;
 			}
+			// Own the file for the rest of this block so every exit path closes it.
+			// Before this guard the single-object branch returned without closing,
+			// leaking one descriptor per History plot request.
+			std::unique_ptr<TFile> rootFileGuard(rootFile);
 			// First I check if I can find the object to return directly. If not an object
 			// it is a directory
 			if((tObject = rootFile->Get(rootDirectoryName.c_str())) !=
@@ -681,12 +783,11 @@ void VisualSupervisor::request(const std::string&               requestType,
 						__SUP_COUTV__(json.Data());
 					}
 				}
-				rootFile->Close();
 			}
 			else
 				__SUP_COUT_ERR__ << "Failed to find object " << rootDirectoryName
 				                 << " in " << rootFileName << __E__;
-			return;
+			return;  // rootFileGuard closes the file
 		}
 		// LIVE DQM PLOTS
 		else if(theDataManager_ != nullptr && theDataManager_->isReady())
