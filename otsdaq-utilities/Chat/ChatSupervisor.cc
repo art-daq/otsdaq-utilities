@@ -1,5 +1,6 @@
 #include "otsdaq-utilities/Chat/ChatSupervisor.h"
 #include "otsdaq/CgiDataUtilities/CgiDataUtilities.h"
+#include "otsdaq/GatewaySupervisor/GatewaySupervisor.h"
 #include "otsdaq/Macros/CoutMacros.h"
 #include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
@@ -131,12 +132,17 @@ void ChatSupervisor::request(const std::string& requestType,
 	}
 	else if(requestType == "SendChat")
 	{
-		std::string chat = CgiDataUtilities::postData(cgiIn, "chat");
-		std::string user = CgiDataUtilities::postData(cgiIn, "user");
+		std::string chat   = CgiDataUtilities::postData(cgiIn, "chat");
+		std::string user   = CgiDataUtilities::postData(cgiIn, "user");
+		std::string type   = CgiDataUtilities::postData(cgiIn, "type");
+		std::string notify = CgiDataUtilities::postData(cgiIn, "notify");
 
 		escapeChat(chat);
 
-		newChat(chat, user);
+		newChat(chat, user, type);
+
+		if(notify == "1" || notify == "true")
+			GatewaySupervisor::addSystemMessage("*", "[USER] " + chat);
 	}
 	else if(requestType == "PageUser")
 	{
@@ -225,6 +231,7 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 		    "chat_entry", ChatHistoryEntry_[i], "chat_history");
 		xmlOut->addTextElementToParent(
 		    "chat_author", ChatHistoryAuthor_[i], "chat_history");
+		xmlOut->addTextElementToParent("chat_type", ChatHistoryType_[i], "chat_history");
 		sprintf(tempStr, "%lu", ChatHistoryTime_[i]);
 		xmlOut->addTextElementToParent("chat_time", tempStr, "chat_history");
 	}
@@ -255,10 +262,12 @@ void ChatSupervisor::newUser(const std::string& user)
 ///	create new chat, and increment update
 void ChatSupervisor::newChat(const std::string& chat,
                              const std::string& user,
+                             const std::string& type,
                              bool               fromSlack)
 {
 	ChatHistoryEntry_.push_back(chat);
 	ChatHistoryAuthor_.push_back(user);
+	ChatHistoryType_.push_back(type);
 	ChatHistoryTime_.push_back(time(0));
 	ChatHistoryIndex_.push_back(incrementAndGetLastUpdate());
 	if(enableSlackChat && !fromSlack)
@@ -321,8 +330,9 @@ void ChatSupervisor::cleanupExpiredChats()
 void ChatSupervisor::removeChatHistoryEntry(uint64_t i)
 {
 	ChatHistoryEntry_.erase(ChatHistoryEntry_.begin() + i);
-	ChatHistoryTime_.erase(ChatHistoryTime_.begin() + i);
 	ChatHistoryAuthor_.erase(ChatHistoryAuthor_.begin() + i);
+	ChatHistoryType_.erase(ChatHistoryType_.begin() + i);
+	ChatHistoryTime_.erase(ChatHistoryTime_.begin() + i);
 	ChatHistoryIndex_.erase(ChatHistoryIndex_.begin() + i);
 }  // end removeChatHistoryEntry()
 
@@ -583,6 +593,6 @@ void ChatSupervisor::receiveFromSlack()
 
 		__COUT__ << "receiveFromSlack: injecting message from user '" << user << "' ("
 		         << message.size() << " bytes)" << __E__;
-		newChat(message, "[slack] " + user, /*fromSlack=*/true);
+		newChat(message, "[slack] " + user, "" /*type*/, /*fromSlack=*/true);
 	}
 }  // end receiveFromSlack()

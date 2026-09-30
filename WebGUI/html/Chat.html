@@ -113,6 +113,21 @@
 				display: none;
 			}
 
+			.chatEntry-report {
+				background: rgba(80, 0, 120, 0.15);
+				border-left: 3px solid rgb(140, 60, 200);
+				padding: 6px;
+				margin: 4px 0;
+				white-space: pre-wrap;
+			}
+			.chatEntry-alert {
+				background: rgba(80, 0, 120, 0.1);
+				border-left: 3px solid rgb(140, 60, 200);
+				padding: 4px 6px;
+				margin: 4px 0;
+				font-weight: bold;
+			}
+
 			/* ***************** INPUT AREA ******************************************/
 			#inputArea {
 				border: 1px solid #9C774F;
@@ -247,7 +262,7 @@
 			var _displayName;
 
 			var _chatHistoryArray;
-			var _chatHistoryFields = ["chat_entry","chat_author","chat_time"];
+			var _chatHistoryFields = ["chat_entry","chat_author","chat_type","chat_time"];
 			var _CHAT_HISTORY_MAX_LENGTH = 10000;
 			var _lastReceivedChat = "", _lastTypedChat = "", _lastSentChat = ""; //keep last chats to prevent repeats
 
@@ -726,12 +741,31 @@
 				{
 					if(_lastReceivedChat != _chatHistoryArray[0][i].getAttribute('value')) //avoid accidental request duplication (timer conflict)
 					{
-						str += "<div class='chatEntry' style='color:" + getColorForUser(_chatHistoryArray[1][i].getAttribute('value')) + "'>" +
+						var chatType = _chatHistoryArray[2][i].getAttribute('value');
+						var entryClass = 'chatEntry';
+						var entryColor = getColorForUser(_chatHistoryArray[1][i].getAttribute('value'));
+
+						if(chatType === "report")
+						{
+							entryClass = 'chatEntry chatEntry-report';
+							entryColor = 'rgb(140, 60, 200)';
+						}
+						else if(chatType === "alert")
+						{
+							entryClass = 'chatEntry chatEntry-alert';
+							entryColor = 'rgb(140, 60, 200)';
+						}
+
+						str += "<div class='" + entryClass + "' style='color:" + entryColor + "'>" +
 							"<b><label style='width:85px; display:inline-block; font-family:monospace; font-weight:normal;'>(" +
-								formatTime(_chatHistoryArray[2][i].getAttribute('value')) +
+								formatTime(_chatHistoryArray[3][i].getAttribute('value')) +
 							")</label> " +
 							_chatHistoryArray[1][i].getAttribute('value') + ":</b> " +
 							convertForClient(_chatHistoryArray[0][i].getAttribute('value')) + "</div>"; //important to only have one /div> per entry for truncate
+
+						if(chatType === "report" && typeof Debug !== "undefined")
+							Debug.errorPop(convertForClient(_chatHistoryArray[0][i].getAttribute('value')),
+								Debug.USER_PRIORITY.DEBUG_PRIORITY);
 
 						if(!newChatFound && _soundsEnabled && !_muteSoundsCheckbox.checked) { //only one sound per chat received
 							_chatSound.src = _SOUND_PATH;

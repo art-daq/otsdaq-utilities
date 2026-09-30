@@ -418,6 +418,13 @@ legend {
     overflow-y: scroll;
 }
 
+#Desktop .Desktop-systemMessageBox-user {
+    background-color: rgba(80, 0, 120, 0.7);
+    background-image: -webkit-linear-gradient(bottom, rgba(50, 0, 80, 0.8) 0%, rgba(140, 60, 200, 0.8) 100%);
+    background-image: -moz-linear-gradient(bottom, rgba(50, 0, 80, 0.8) 0%, rgba(140, 60, 200, 0.8) 100%);
+    background-image: linear-gradient(bottom, rgba(50, 0, 80, 0.8) 0%, rgba(140, 60, 200, 0.8) 100%);
+}
+
 #Desktop #Desktop-loginDiv {
     position: absolute;
     z-index: 100000;

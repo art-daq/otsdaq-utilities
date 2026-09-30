@@ -114,6 +114,7 @@ SubsystemLaunch.create = function() {
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
+	var _settlingAfterRestart = 0;
 
 	// Track the iframe document's scrollTop continuously so it can be restored after
 	// the Desktop framework resizes the iframe (which collapses scrollHeight to
@@ -181,7 +182,6 @@ SubsystemLaunch.create = function() {
 
 
 			window.onclick = function () {
-				Debug.log("DIAG: window.onclick fired, resetting timer. nonce=",_statusRequestNonce);
 				window.clearTimeout(_getStatusTimer);
 				_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 			}; //end window onclick handler
@@ -1070,13 +1070,11 @@ SubsystemLaunch.create = function() {
 		++_statusRequestNonce;
 	}
 	function getCurrentStatus() {
-		Debug.log("DIAG: getCurrentStatus() called, prevNonce=",_statusRequestNonce);
 		window.clearTimeout(_getStatusTimer);
 
 		if(DesktopContent._isSystemBlackout) return;
 
 		const currentStatusNonce = ++_statusRequestNonce;
-		Debug.log("DIAG: getCurrentStatus() nonce now=",currentStatusNonce);
 
 		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
 		//	.. so only get run number 1:10
@@ -1101,11 +1099,10 @@ SubsystemLaunch.create = function() {
 		//===========
 		function localGetStatusHandler(req, responseNonce) {
 			if(responseNonce != _statusRequestNonce) {
-				Debug.log("DIAG: Ignoring stale status response, responseNonce=",responseNonce,
+				Debug.log("Ignoring stale status response, responseNonce=",responseNonce,
 					"currentNonce=",_statusRequestNonce);
 				return;
 			}
-			Debug.log("DIAG: Processing status response, nonce=",responseNonce);
 
 			//subsystems --------------------
 			{
@@ -1147,10 +1144,9 @@ SubsystemLaunch.create = function() {
 						if (i == SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS) {
 							var status = subsystemArrs[fields[i]][j].getAttribute('value');
 							if(status != SubsystemLaunch.subsystems[j][fields[i]])
-								Debug.log("DIAG: status change for",SubsystemLaunch.subsystems[j].name,
+								Debug.log("Status change for",SubsystemLaunch.subsystems[j].name,
 									"old=",SubsystemLaunch.subsystems[j][fields[i]],
-									"new=",status,
-									"nonce=",responseNonce);
+									"new=",status);
 							if(SubsystemLaunch.subsystems[j].fsmIncluded && //give popup warning if subsystem included and new unknown status
 									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN &&
 								status != SubsystemLaunch.subsystems[j][fields[i]]) {
@@ -1478,7 +1474,7 @@ SubsystemLaunch.create = function() {
 						}
 					}
 					if (el.value != SubsystemLaunch.subsystems[s][fieldIds[i]]) {
-						if(SubsystemLaunch.subsystems[s].configAliasChoices)
+						if(SubsystemLaunch.subsystems[s].configAliasChoices && !_settlingAfterRestart)
 							Debug.warn("The selected " + fieldIds[i] + " for Subsystem '" +
 								SubsystemLaunch.subsystems[s].name + "' has changed from '" +
 								el.value + "' to '" + SubsystemLaunch.subsystems[s][fieldIds[i]] + ".'");
@@ -1491,7 +1487,17 @@ SubsystemLaunch.create = function() {
 							}
 
 						if (f == el.options.length) {
-							if(_getAutoInitCount > 0)
+							if (_settlingAfterRestart) {
+								Debug.log("Still settling after restart, refreshing page...",
+									Debug.INFO_PRIORITY);
+								_settlingAfterRestart = 10;
+								_getAutoInitCount = 2;
+								window.clearTimeout(_getStatusTimer);
+								_getStatusTimer = window.setTimeout(
+									function () { init(); }, 5000);
+								return false;
+							}
+							else if(_getAutoInitCount > 0)
 								Debug.err("Could not find '" + SubsystemLaunch.subsystems[s][fieldIds[i]] +
 									"' in the " + fieldIds[i] +" list of Subsystem '" +
 									SubsystemLaunch.subsystems[s].name + "!' Maybe the system is still loading or credentials have expired (it may take 20+ seconds at startup)? Please fix the issue and refresh this page, or notify admins.");
@@ -1552,10 +1558,6 @@ SubsystemLaunch.create = function() {
 					}
 					else if(fieldIds[i] == "status")
 					{
-						Debug.log("DIAG: displayStatus rendering s=",s,
-							"name=",SubsystemLaunch.subsystems[s].name,
-							"status=",SubsystemLaunch.subsystems[s].status.substring(0,40),
-							"nonce=",_statusRequestNonce);
 						localDisplayState(el,
 							SubsystemLaunch.subsystems[s].status,
 							SubsystemLaunch.subsystems[s].progress);
@@ -1572,6 +1574,8 @@ SubsystemLaunch.create = function() {
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
 		_recomputeDetailScrollWidths();
 
+		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
+			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
 		return true;
 
 		//////////////////////////////
@@ -1693,7 +1697,8 @@ SubsystemLaunch.create = function() {
 						}
 
 						if (!ipFound) {
-							Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
+							if (!_settlingAfterRestart)
+								Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
 							document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
 							return;
 						}
@@ -1956,6 +1961,16 @@ SubsystemLaunch.create = function() {
 									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 									return;
 								}
+								var err = DesktopContent.getXMLValue(req, "Error");
+								if(err) {
+									Debug.err("Reboot failed for '" + targetSubsystem + "': " + err);
+									SubsystemLaunch.subsystems[subsystemIndex].status = "";
+									SubsystemLaunch.subsystems[subsystemIndex]._rebootTime = undefined;
+									displayStatus();
+									window.clearTimeout(_getStatusTimer);
+									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
+									return;
+								}
 								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
 
 								window.clearTimeout(_getStatusTimer);
@@ -2025,6 +2040,7 @@ SubsystemLaunch.create = function() {
 											if(countDown == 0) {
 												DesktopContent.systemBlackout(false);
 												Debug.log("And we are back!", Debug.INFO_PRIORITY);
+												_settlingAfterRestart = 10;
 												window.clearTimeout(_getStatusTimer);
 												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
 												return;
@@ -2205,7 +2221,7 @@ SubsystemLaunch.create = function() {
 					SubsystemLaunch.system.state == "Failed" ||
 					SubsystemLaunch.system.state == "Initial"))
 			{
-				Debug.log("DIAG: Entering batch Halt path. fsmName=",_fsmName,
+				Debug.log("Entering batch Halt path. fsmName=",_fsmName,
 					"system.state=",SubsystemLaunch.system.state,
 					"numSubsystems=",SubsystemLaunch.subsystems.length);
 
@@ -2231,14 +2247,6 @@ SubsystemLaunch.create = function() {
 
 				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
-					Debug.log("DIAG: batch Halt loop s=",s,
-						"name=",SubsystemLaunch.subsystems[s].name,
-						"fsmIncluded=",SubsystemLaunch.subsystems[s].fsmIncluded,
-						"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
-						"status=",SubsystemLaunch.subsystems[s].status,
-						"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode,
-						"fsmMode==DoNotHalt?",SubsystemLaunch.subsystems[s].fsmMode == "Do Not Halt",
-						"status.startsWith(Failed)?",SubsystemLaunch.subsystems[s].status.startsWith("Failed"));
 					if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 						!SubsystemLaunch.subsystems[s].inTransition)
 					{
@@ -2252,14 +2260,17 @@ SubsystemLaunch.create = function() {
 							if(SubsystemLaunch.subsystems[s].status == "Running" ||
 							   SubsystemLaunch.subsystems[s].status == "Paused")
 							{
-								Debug.log("DIAG: Sending Stop (DoNotHalt mode) to subsystem",s,SubsystemLaunch.subsystems[s]);
+								Debug.log("Sending Stop (DoNotHalt mode) to subsystem",s,
+									"name=",SubsystemLaunch.subsystems[s].name);
 								SubsystemLaunch.launcher.handleSubsystemActionSelect(stopEl,s);
 							}
 							else
-								Debug.log("DIAG: Skipping DoNotHalt subsystem for batch Halt",s,SubsystemLaunch.subsystems[s]);
+								Debug.log("Skipping DoNotHalt subsystem for batch Halt",s,
+									"name=",SubsystemLaunch.subsystems[s].name,
+									"status=",SubsystemLaunch.subsystems[s].status);
 							continue;
 						}
-						Debug.log("DIAG: Sending Halt to subsystem",s,
+						Debug.log("Sending Halt to subsystem",s,
 							"name=",SubsystemLaunch.subsystems[s].name,
 							"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode,
 							"status=",SubsystemLaunch.subsystems[s].status);
@@ -2267,7 +2278,7 @@ SubsystemLaunch.create = function() {
 					}
 					else
 					{
-						Debug.log("DIAG: Skipping subsystem (not included or in transition) s=",s,
+						Debug.log("Skipping subsystem (not included or in transition) s=",s,
 							"name=",SubsystemLaunch.subsystems[s].name);
 					}
 				}
@@ -2315,15 +2326,8 @@ SubsystemLaunch.create = function() {
 								displayStatus();
 
 								var allSubsystemsHalted = true;
-								Debug.log("DIAG: polling loop, checking subsystems for halted...");
 								for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 								{
-									Debug.log("DIAG: poll s=",s,
-										"name=",SubsystemLaunch.subsystems[s].name,
-										"fsmIncluded=",SubsystemLaunch.subsystems[s].fsmIncluded,
-										"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
-										"status=",SubsystemLaunch.subsystems[s].status,
-										"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode);
 									if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 										(SubsystemLaunch.subsystems[s].inTransition ||
 											SubsystemLaunch.subsystems[s].status != "Halted"))
@@ -2338,13 +2342,13 @@ SubsystemLaunch.create = function() {
 											SubsystemLaunch.subsystems[s].status != "Paused" &&
 											!SubsystemLaunch.subsystems[s].status.startsWith("Failed"))
 										{
-											Debug.log("DIAG: DoNotHalt subsystem treated as done s=",s,
+											Debug.log("DoNotHalt subsystem treated as done s=",s,
 												"name=",SubsystemLaunch.subsystems[s].name,
 												"status=",SubsystemLaunch.subsystems[s].status);
 											continue;
 										}
 
-										Debug.log("DIAG: Not yet halted at subsystem s=",s,
+										Debug.log("Not yet halted at subsystem s=",s,
 											"name=",SubsystemLaunch.subsystems[s].name,
 											"status=",SubsystemLaunch.subsystems[s].status,
 											"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
@@ -2395,14 +2399,13 @@ SubsystemLaunch.create = function() {
 			}
 			else
 			{
-				Debug.log("DIAG: Taking standard (non-batch) path for command=",command,
+				Debug.log("Taking standard (non-batch) path for command=",command,
 					"system.state=",SubsystemLaunch.system.state,
 					"fsmName=",_fsmName);
 
 
 				window.clearTimeout(_getStatusTimer);
 				invalidatePendingStatusResponses();
-				Debug.log("DIAG: standard path invalidated, nonce now=",_statusRequestNonce);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -2456,7 +2459,7 @@ SubsystemLaunch.create = function() {
 
 		//at this point, ready to send command!
 
-		Debug.log("DIAG: commandRemoteSubsystem dispatch, subsystemIndex=",subsystemIndex,
+		Debug.log("commandRemoteSubsystem dispatch, subsystemIndex=",subsystemIndex,
 			"name=",SubsystemLaunch.subsystems[subsystemIndex].name,
 			"command=",command,
 			"fsmName=",SubsystemLaunch.launcher.getFsmName(),
