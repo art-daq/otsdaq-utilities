@@ -2876,7 +2876,7 @@ SubsystemLaunch.create = function() {
 						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
-						SubsystemLaunch.system.transition = "Launching " + "Stop";
+						SubsystemLaunch.system.transition = "Launching " + "Halt";
 						SubsystemLaunch.system.progress = 0;
 						displayStatus();
 
