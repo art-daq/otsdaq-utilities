@@ -170,6 +170,8 @@
 			DesktopContent.XMLHttpRequest("Request?RequestType=getSettings&accounts=1",
 				"", layoutSettingsHandler);
 
+			updateConfigTreeToggleBtn();
+
 			////////Tooltips/////////
 			DesktopContent.tooltip("User Settings Introduction", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
@@ -1635,6 +1637,28 @@
 		} //end silenceUserTooltips()
 
 		//=====================================================================================
+		var _PREF_CONFIG_TREE_INLINE_KV = "ots_pref_configTreeInlineKV";
+
+		function getConfigTreeInlineKVPref() {
+			var val = localStorage.getItem(_PREF_CONFIG_TREE_INLINE_KV);
+			return val === null ? true : val === "1";
+		}
+
+		function toggleConfigTreeInlineKV() {
+			var current = getConfigTreeInlineKVPref();
+			localStorage.setItem(_PREF_CONFIG_TREE_INLINE_KV, current ? "0" : "1");
+			updateConfigTreeToggleBtn();
+		}
+
+		function updateConfigTreeToggleBtn() {
+			var el = document.getElementById("configTreeInlineKVToggle");
+			if (!el) return;
+			var enabled = getConfigTreeInlineKVPref();
+			el.textContent = enabled ? "Disable Inline KV Tree Format" : "Enable Inline KV Tree Format";
+			el.style.background = enabled ? "#3072ed" : "#888";
+		}
+
+		//=====================================================================================
 		function showPermissionsTooltip(alwaysShow) {
 			DesktopContent.tooltip(alwaysShow ? "ALWAYS" : "Password Reset and User Permissions",
 				(alwaysShow ? "<b>Help with Password Reset and User Permissions:</b>\n\n" : "") +
@@ -1719,6 +1743,10 @@
 								<button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
 
 								<button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
+
+								<hr style='margin: 8px 0; border-color: #ccc;'>
+								<div style='font-size:12px; margin-bottom:4px; color:#444;'>Configuration Tree View:</div>
+								<button id='configTreeInlineKVToggle' class='reset' onclick='Javascript:toggleConfigTreeInlineKV()'>Disable Inline KV Tree Format</button>
 							</div>
 						</center>
 					</div>

@@ -749,6 +749,12 @@
 		var treeViewHideStatus_ = false;
 		var treeFilterApplied_ = false;
 		var treeViewHideInfo_ = true;
+
+		var _PREF_CONFIG_TREE_INLINE_KV = "ots_pref_configTreeInlineKV";
+		function _isInlineKVEnabled() {
+			var v = localStorage.getItem(_PREF_CONFIG_TREE_INLINE_KV);
+			return v === null || v === "1";
+		}
 		var treeDiffModeApplied_ = false;
 		var treeDiffModeGroupName_, treeDiffModeGroupKey_;
 		var treeDiffTablesWithDiff_; //map of tables with diff for quick lookup and display in tree diff
@@ -5278,7 +5284,7 @@
 
 			el.innerHTML = treeViewHandlerStr_;
 
-			collapseLinkedTableUIDs();
+			if (_isInlineKVEnabled()) collapseLinkedTableUIDs();
 
 			//addTableToConfigurationGroup("ARTDAQParamT"); //for Debuggin!!!
 			if (treeViewExpandedCapture_ && treeViewExpandedCapture_.length) {
@@ -7875,7 +7881,7 @@
 					toggleEl.style.backgroundImage =
 						"url(/WebPath/images/windowContentImages/ConfigurationGUI-hideTree.png)";
 
-					if(document.getElementById("treeNode-linkTableName-" + idString))
+					if(document.getElementById("treeNode-linkTableName-" + idString) && _isInlineKVEnabled())
 						collapseLinkedTableUIDs();
 					return true;
 				}
@@ -17214,7 +17220,7 @@
 			_editingCellEl = 0;
 			_handlingTreeNodeOK = false;
 
-			if(document.getElementById("treeView-ConfigGroupLink"))
+			if(document.getElementById("treeView-ConfigGroupLink") && _isInlineKVEnabled())
 				collapseLinkedTableUIDs();
 		} //end editCellCancel()
 
