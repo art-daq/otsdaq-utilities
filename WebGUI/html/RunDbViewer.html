@@ -212,6 +212,7 @@
 				clear: left;
 				float: left;
 				padding: 20px;
+				overflow-x: auto;
 
 				font-size: 18px;
 			}
@@ -235,11 +236,69 @@
 				color: rgb(212, 172, 111);
 			}
 
-			.RunDbViewer-entryTable tr.subsystemRow {
-				display: table-cell;
+			.RunDbViewer-entryTable {
+				table-layout: fixed; /* so the groups cell is width-constrained and can scroll */
 			}
-			.RunDbViewer-entryTable tr.subsystemRow td {
-				display: block;
+			.RunDbViewer-entryTable tr td:nth-child(1) {
+				width: 170px;
+			}
+			.RunDbViewer-entryTable td.subsystemGroupsCell {
+				text-align: left;
+				color: rgb(212, 172, 111);
+				font-weight: normal;
+			}
+			.RunDbViewer-entryTable td.notesCell {
+				text-align: left;
+			}
+			.noteLabel {
+				color: rgb(255,183,74);
+				font-weight: bold;
+			}
+			.subsystemGroupsLabel {
+				color: rgb(255,183,74);
+				font-weight: bold;
+				font-size: 18px;
+				margin: 6px 0 2px 0;
+			}
+			.restoreRunConfigLink {
+				margin-left: 16px;
+				font-size: 13px;
+				font-weight: 800;
+				color: rgb(180,207,237);
+				text-decoration: underline;
+				cursor: pointer;
+			}
+			.restoreRunConfigResult {
+				font-size: 13px;
+				margin: 2px 0 4px 0;
+			}
+			.restoreRunConfigResult .restoreDone { color: #9fe29f; }
+			.RunDbViewer-entryTable table.subsystemGroups {
+				width: 100%;
+			}
+			.subsystemGroupsWrap {
+				overflow-x: auto;
+				max-width: 100%;
+			}
+			.RunDbViewer-entryTable table.subsystemGroups {
+				border-collapse: collapse;
+				margin: 4px 0;
+				white-space: normal;
+			}
+			.RunDbViewer-entryTable table.subsystemGroups th,
+			.RunDbViewer-entryTable table.subsystemGroups td {
+				border: 1px solid rgb(245, 198, 127);
+				padding: 2px 8px;
+				font-size: 13px;
+				text-align: left;
+				vertical-align: top;
+				word-break: break-word;
+				color: rgb(212, 172, 111);
+				font-weight: normal;
+			}
+			.RunDbViewer-entryTable table.subsystemGroups th {
+				color: rgb(255,183,74);
+				font-weight: bold;
 			}
 
 			.RunDbViewer-entryUploads {
@@ -279,6 +338,28 @@
 				float: left;
 				color: #d18b21;
 				font-weight: 800;
+			}
+
+			#filterArea {
+				padding: 0 10px 8px 10px;
+			}
+			#filterArea select, #filterArea input {
+				color: #333;
+				border: 1px solid gray;
+				padding: 2px 6px;
+				border-radius: 3px;
+				background: rgba(255,255,255,0.75);
+				font-family: inherit;
+				font-size: 14px;
+				height: 32px;
+				line-height: normal;
+				vertical-align: middle;
+				margin-right: 25px;
+			}
+			#filterArea label {
+				color: rgb(255,183,74);
+				font-weight: 800;
+				margin-right: 5px;
 			}
 
 		</style>
@@ -332,7 +413,7 @@
 
 			//refreshing rundbviewer
 			var _refreshDayIndex = 0; 	//init to most recent because two undefines, 0=today, 1=yesterday, etc..
-			var _refreshDuration = 14;	//init to 2-weeks
+			var _refreshDuration = 2;	//init to 2 days
 			var _mostRecentDayIndex = -1;
 			var _rundbviewerUpdateTimer = 0;
 			var _REFRESH_INTERVAL = 10000; //10 seconds
@@ -357,7 +438,12 @@
 			var _XML_RUNDBVIEWER_ENTRY_RUN_CONTEXT_VERSION	 		= "context_version"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION	= "online_software_version"
 			var _XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE				= "shifter_note"
+			var _XML_RUNDBVIEWER_ENTRY_RUN_STATUS					= "run_status"
+			var _XML_RUNDBVIEWER_ENTRY_RUN_END_NOTE					= "end_note"
 			var _XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD 	 	= "subsystem_config_record"
+
+			var _allEntries = []; //raw XML entry elements from last response
+			var _activeStatusFilter = ""; //empty = show all
 
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
@@ -410,20 +496,22 @@
 				// 1. Create label
 				const label = document.createElement("label");
 				label.setAttribute("for", "runType");
-				label.textContent = "Select or enter a run type ";
+				label.textContent = "Run type:";
 
 				// 2. Create input with datalist
 				const input = document.createElement("input");
 				input.setAttribute("list", "runTypes");
 				input.setAttribute("id", "runType");
 				input.setAttribute("name", "runType");
+				input.value = _defaultRunType || "All";
 
 				// 3. Create datalist
 				const datalist = document.createElement("datalist");
 				datalist.id = "runTypes";
 
 				const runTypes = [
-					  "production"
+					  "All"
+					, "production"
 					, "calo"
 					, "tracker"
 					, "crv"
@@ -470,7 +558,7 @@
 				});
 
 				// 5. Append everything to the page
-				const container = document.getElementById("selectionArea");
+				const container = document.getElementById("runTypeFilterArea");
 				container.appendChild(label);
 				container.appendChild(input);
 				container.appendChild(datalist);
@@ -479,6 +567,7 @@
 			//=====================================================================================
 			//performRunTypeSelection ~
 			function performRunTypeSelection(runType) {
+				if(runType == "All" || runType == "*") runType = "";
 				console.log("Action triggered for run type: " + runType);
 				setActiveSelection(runType);
 				refreshRunDbViewer(); //and refresh now!
@@ -496,7 +585,7 @@
 				str += "<center>";
 				str += "<div id='runTypeHeaderLabel'>";
 				if(!_activeRunType || _activeRunType == "")
-				{	_activeRunType = ""; str += "No run type filter Set"; 	}
+				{	_activeRunType = ""; str += "Showing all run types"; 	}
 				else
 					str += "<font color='white'>Active run type filter is </font><font style='color:orange'>" + _activeRunType + "</font>";
 				str += "</div>";
@@ -514,6 +603,9 @@
 				var w = DesktopContent.getWindowWidth();
 				if(w < 600) w = 600; //prevent super squeeze
 
+				//keep the page scrollable out to the right margin when the window is narrower than the areas
+				document.documentElement.style.minWidth = w + "px";
+
 				for(var i=0;i<_AREAS.length;++i)
 				{
 					_areaEls[i].style.display = "block";
@@ -521,6 +613,12 @@
 					_areaEls[i].style.left = _MARGIN + "px";
 					_areaEls[i].style.width = (w - _MARGIN*2) + "px";
 				}
+
+				//entry bodies carry a fixed pixel width set when toggled; refresh them to the new header width
+				var entryBodyWidth = Math.max(500, currentSelectionHeader.offsetWidth - 130);
+				var entryBodies = document.getElementsByClassName("RunDbViewer-entryBody");
+				for(var i=0;i<entryBodies.length;++i)
+					entryBodies[i].style.width = entryBodyWidth + "px";
 			} //end redrawRunDbViewer()
 
 			//=====================================================================================
@@ -623,8 +721,7 @@
 
 			//=====================================================================================
 			//handleRefreshRunDbViewer ~~
-			//	receives entries from oldest to newest, but display
-			//	from newest to oldest
+			//	receives entries newest to oldest and displays them in that order
 			function handleRefreshRunDbViewer(req)
 			{
 				Debug.log("RunDbViewer handleRefreshRunDbViewer", req.responseText.length);
@@ -655,25 +752,19 @@
 
 					refreshDateDisplay();
 
-					//extract rundbviewer display
-					var entries = req.responseXML.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY);
+					//store all entries for client-side filtering
+					_allEntries = Array.from(req.responseXML.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY));
 
-					var rundbviewerEl = document.getElementById("rundbviewerDiv");
-					rundbviewerEl.innerHTML = "";
+					//collect unique run_status values for the filter dropdown
+					var statusSet = {};
+					for(var i=0;i<_allEntries.length;++i)
+					{
+						var statusNode = _allEntries[i].getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STATUS)[0];
+						if(statusNode) statusSet[statusNode.getAttribute("value")] = true;
+					}
+					buildStatusFilterDropdown(Object.keys(statusSet).sort());
 
-					//display from newest to oldest
-					console.log("Run DB Viewer entries.length " + entries.length);
-
-					for(var i=entries.length-1;i>=0;--i)
-						displayRunDbViewerEntry(rundbviewerEl,entries[i]);
-
-					//add helper to move starting date back
-					var tmp = document.createElement("div");
-					tmp.setAttribute("id", "clearDiv");
-					rundbviewerEl.appendChild(tmp);
-					var tmp = document.createElement("div");
-					tmp.innerText = "Note: If you are expecting more entries for the selected critieria, try moving the selected date back in time.";
-					rundbviewerEl.appendChild(tmp);
+					applyFilters();
 				}
 
 				 //schedule next update
@@ -683,6 +774,85 @@
 																								//currently user must use manual refresh
 				redrawRunDbViewer(); //in case of new scroll bars
 			} //end handleRefreshRunDbViewer()
+
+			//=====================================================================================
+			//buildStatusFilterDropdown ~~
+			//	creates or updates the run status filter dropdown in the Run Filters section
+			function buildStatusFilterDropdown(statusValues)
+			{
+				var container = document.getElementById("statusFilterArea");
+				if(!container) return;
+				container.innerHTML = "";
+
+				var statusLabel = document.createElement("label");
+				statusLabel.setAttribute("for", "statusFilter");
+				statusLabel.textContent = "Run status:";
+				container.appendChild(statusLabel);
+
+				var statusSelect = document.createElement("select");
+				statusSelect.id = "statusFilter";
+				var opt = document.createElement("option");
+				opt.value = "";
+				opt.textContent = "All (" + _allEntries.length + ")";
+				statusSelect.appendChild(opt);
+				for(var i=0;i<statusValues.length;++i)
+				{
+					var count = 0;
+					for(var j=0;j<_allEntries.length;++j)
+					{
+						var el = _allEntries[j].getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STATUS)[0];
+						if(el && el.getAttribute("value") == statusValues[i]) count++;
+					}
+					opt = document.createElement("option");
+					opt.value = statusValues[i];
+					opt.textContent = statusValues[i] + " (" + count + ")";
+					if(statusValues[i] == _activeStatusFilter) opt.selected = true;
+					statusSelect.appendChild(opt);
+				}
+				statusSelect.addEventListener("change", function(){
+					_activeStatusFilter = this.value;
+					applyFilters();
+				});
+				container.appendChild(statusSelect);
+			} //end buildStatusFilterDropdown()
+
+			//=====================================================================================
+			//applyFilters ~~
+			//	filters _allEntries by _activeStatusFilter, then renders
+			function applyFilters()
+			{
+				var rundbviewerEl = document.getElementById("rundbviewerDiv");
+				rundbviewerEl.innerHTML = "";
+
+				var shown = 0;
+				//server returns newest first (ORDER BY run_number DESC), so keep that order
+				for(var i=0;i<_allEntries.length;++i)
+				{
+					var entry = _allEntries[i];
+
+					if(_activeStatusFilter)
+					{
+						var statusNode = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STATUS)[0];
+						if(!statusNode || statusNode.getAttribute("value") != _activeStatusFilter) continue;
+					}
+					displayRunDbViewerEntry(rundbviewerEl, entry);
+					shown++;
+				}
+
+				//show count
+				var countEl = document.getElementById("filterCount");
+				if(countEl) countEl.textContent = "Showing " + shown + " of " + _allEntries.length + " runs";
+
+				//add helper to move starting date back
+				var tmp = document.createElement("div");
+				tmp.setAttribute("id", "clearDiv");
+				rundbviewerEl.appendChild(tmp);
+				tmp = document.createElement("div");
+				tmp.innerText = "Note: If you are expecting more entries for the selected criteria, try moving the selected date back in time.";
+				rundbviewerEl.appendChild(tmp);
+
+				redrawRunDbViewer();
+			} //end applyFilters()
 
 			//=====================================================================================
 			//replaceBrWithSpace ~~
@@ -696,9 +866,9 @@
 					br.replaceWith(space);
 				});
 
-				var condensedWidth = currentSelectionHeader.offsetWidth;
-				el.setAttribute("style", "white-space: nowrap; overflow-x: hidden; width: " +
-					(condensedWidth-130) + "px;" +
+				var condensedWidth = Math.max(500, currentSelectionHeader.offsetWidth - 130);
+				el.setAttribute("style", "white-space: nowrap; overflow-x: auto; width: " +
+					condensedWidth + "px;" +
 					"padding-top: 2px; padding-bottom: 10px; color: rgb(216 189 139);");
 			} //end replaceBrWithSpace()
 
@@ -714,9 +884,9 @@
 						node.replaceWith(br);
 					}
 				});
-				var condensedWidth = currentSelectionHeader.offsetWidth;
+				var condensedWidth = Math.max(500, currentSelectionHeader.offsetWidth - 130);
 				el.setAttribute("style", "overflow-x: auto; width: " +
-					(condensedWidth-130) + "px;" +
+					condensedWidth + "px;" +
 					"padding-top: 20px; padding-bottom: 20px; color: rgb(252 217 164);");
 				el.style.display = "none";
 			} //end restoreBr()
@@ -781,6 +951,8 @@
 				var runType = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_TYPE)[0].getAttribute("value");
 				var artdaqPartition = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ARTDAQ_PARTITION)[0].getAttribute("value");
 				var hostName = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME)[0].getAttribute("value");
+				var runStatusEl = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STATUS)[0];
+				var runStatus = runStatusEl ? runStatusEl.getAttribute("value") : "";
 
 				//var entryText = //convertForClient(
 				//	entry.getElementsByTagName("rundbviewer_entry_text")[0].getAttribute("value"));
@@ -828,6 +1000,11 @@
 				tmp.setAttribute("class", "RunDbViewer-entryCreator");
 				tmp.innerHTML = "artdaq partition: " + artdaqPartition;
 				header.appendChild(tmp);
+				//run status
+				tmp = document.createElement("div");
+				tmp.setAttribute("class", "RunDbViewer-entryCreator");
+				tmp.innerHTML = "status: " + runStatus;
+				header.appendChild(tmp);
 				//body text
 				var table = document.createElement("table");
 				table.setAttribute("class", "RunDbViewer-entryTable");
@@ -846,9 +1023,13 @@
 				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_HOST_NAME)[0].getAttribute("value")) + "</td>";
 				table.appendChild(entryText);
 				entryText = document.createElement("tr");
-				entryText.setAttribute("title", "Click to load run conditions");
-				entryText.innerHTML = "<td>Condiotion ID</td><td><a href=\"#\" onclick=\"getRunConditionByID(this); return false;\">" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID)[0].getAttribute("value")) + "</a></td>";
+				entryText.innerHTML = "<td>Gateway config alias</td><td>" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_CONDIOTION_ID)[0].getAttribute("value")) + "</td>";
+				table.appendChild(entryText);
+				entryText = document.createElement("tr");
+				entryText.setAttribute("title", "Click to open the full run-condition dump for every subsystem");
+				entryText.innerHTML = "<td>Run conditions</td><td><a href=\"#\" onclick=\"getRunConditionByID(this); return false;\">" + convertForClient(
+				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_NUMBER)[0].getAttribute("value")) + "</a></td>";
 				table.appendChild(entryText);
 				//entryText = document.createElement("tr");
 				//entryText.innerHTML = "<td>Configuration name</td><td>" + convertForClient(
@@ -870,86 +1051,23 @@
 				//entryText.innerHTML = "<td>Online software version</td><td>" + convertForClient(
 				//entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_ONLINE_SOFTWARE_VERSION)[0].getAttribute("value")) + "</td>";
 				//table.appendChild(entryText);
+				var startNote = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE)[0].getAttribute("value") || "";
+				var endNoteEl = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_END_NOTE)[0];
+				var endNote = endNoteEl ? (endNoteEl.getAttribute("value") || "") : "";
+				var notes = "";
+				if(startNote) notes += "<span class='noteLabel'>start:</span> " + convertForClient(startNote);
+				if(endNote)   notes += (notes ? "<br>" : "") + "<span class='noteLabel'>end:</span> " + convertForClient(endNote);
 				entryText = document.createElement("tr");
-				entryText.innerHTML = "<td>Notes</td><td>" + convertForClient(
-				entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE)[0].getAttribute("value")) + "</td>";
+				entryText.innerHTML = "<td>Notes</td><td class='notesCell'>" + notes + "</td>";
 				table.appendChild(entryText);
+				var runNumberForRestore = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_NUMBER)[0].getAttribute("value");
 				entryText = document.createElement("tr");
-
-				var subsystemInfo = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD)[0].getAttribute("value");
-
-				var sanitize = function(xml) {
-				return xml.replace(/(\s+)([^\s=<>\/]+)\s*=\s*([^"'\s=<>`][^\s<>]*)/g,
-					(m, ws, name, val) => `${ws}${name}="${val.replace(/"/g, '&quot;')}"`
-				);
-				};
-
-				var parseConfigRecord = function(record){
-					const obj = {};
-
-					// attributes
-					for (let a of record.attributes){
-						obj[a.name]=a.value;
-					}
-
-					// children
-					for (let child of record.children){
-						const key = child.tagName;
-						const value = child.textContent.trim();
-						obj[key] = obj[key] ? [].concat(obj[key], value) : value;
-					}
-
-					return obj;
-				};
-
-				var tableFromObj = function(o, i){
-					let t = "<tr class='subsystemRow'>";
-					let fr = "<tr class='subsystemRow'>";
-
-					const entries = Object.entries(o);
-
-					for (let j = 0; j < entries.length; j++) {
-						if(i == 0) {
-							if(Array.isArray(entries[j][0]))
-								fr += `<td>${entries[j][0].join("<br>")}</td>`;
-							else
-								fr += `<td>${entries[j][0]}</td>`;
-						}
-
-						if(Array.isArray(entries[j][1]))
-							t += `<td>${entries[j][1].join("<br>")}</td>`;
-						else
-							t += `<td>${entries[j][1]}</td>`;
-					}
-
-					if(i == 0)
-						t = fr + "</tr>" + t;
-
-					return t + "</tr>";
-				};
-
-				var xmlToTables = function(xml){
-					xml = sanitize(xml);
-					const wrappedXML = `<ROOT>${xml}</ROOT>`;
-
-					const parser = new DOMParser();
-					const doc = parser.parseFromString(wrappedXML,"application/xml");
-
-					const records = doc.getElementsByTagName("config_record");
-					if (records.length == 0) return "";
-
-					let html = "<table border='1' cellpadding='4' style='border-collapse:collapse;margin:8px 0;'>";
-					for(let i=0;i<records.length;i++){
-						const obj = parseConfigRecord(records[i]);
-						//html += `<h3>config_record #${i+1}</h3>`;
-						html += tableFromObj(obj, i);
-					}
-
-					return html+"</table>";
-				};
-
-				entryText.innerHTML = "<td>Subsystem Configuration</td><td>" + xmlToTables(subsystemInfo) + "</td>";
-
+				entryText.innerHTML = "<td colspan='2' class='subsystemGroupsCell' data-run='" + convertForClient(runNumberForRestore) + "'>" +
+					"<div class='subsystemGroupsLabel'>Subsystem groups" +
+					"<a class='restoreRunConfigLink' href='#' onclick='restoreRunConfig(this); return false;' " +
+					"title='Create the aliases RunRestoreConfig and RunRestoreContext in every subsystem, pointing at the groups this run used'>Restore Run Config</a></div>" +
+					"<div class='restoreRunConfigResult'></div>" +
+					subsystemGroupsTable(entry) + "</td>";
 				table.appendChild(entryText);
 				body.appendChild(table);
 				//condition for condensed-view single line by removing <br>
@@ -960,101 +1078,167 @@
 			} //end displayRunDbViewerEntry()
 
 			//=====================================================================================
-			//getRunConditionByID ~~
-			function getRunConditionByID(e)
+			//subsystemGroupsTable ~~
+			//	builds an HTML table (one row per subsystem) of the configuration and context
+			//	groups recorded for the run, from the <subsystem_config_record> children
+			function subsystemGroupsTable(entry)
 			{
-				DesktopContent.XMLHttpRequest("Request?RequestType=getRunConditionByID", 		//update category list
-						"condition_ID=" 		+ e.innerText +
-						"&runInfoPluginName="	+ _runInfoPluginName +
-						"&runInfoPluginUID="	+ _runInfoPluginUID,
-						handlegetRunConditionByID);
-			} //end getRunConditionByID()
+				var recs = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD);
+				if(recs.length == 0) return "<i>(no subsystem records)</i>";
+
+				//each record value is '|'-joined:
+				//  subsystem|alias|cfgName|cfgKey|ctxName|ctxKey|bbName|bbKey
+				var grp = function(n, k) {
+					if(!n && (!k || k == "-1")) return "";
+					return convertForClient(n) + " <span style='opacity:0.7'>(" + convertForClient(k) + ")</span>";
+				};
+
+				var html = "<div class='subsystemGroupsWrap'><table class='subsystemGroups'>";
+				html += "<tr><th>Subsystem</th><th>Config alias</th><th>Configuration group</th><th>Context group</th><th>Backbone group</th></tr>";
+				for(var i=0;i<recs.length;++i)
+				{
+					var f = (recs[i].getAttribute("value") || "").split("|");
+					while(f.length < 8) f.push("");
+					html += "<tr>"
+						+ "<td>" + convertForClient(f[0]) + "</td>"
+						+ "<td>" + convertForClient(f[1]) + "</td>"
+						+ "<td>" + grp(f[2], f[3]) + "</td>"
+						+ "<td>" + grp(f[4], f[5]) + "</td>"
+						+ "<td>" + grp(f[6], f[7]) + "</td>"
+						+ "</tr>";
+				}
+				return html + "</table></div>";
+			} //end subsystemGroupsTable()
 
 			//=====================================================================================
-			//handlegetRunConditionByID ~~
-			function handlegetRunConditionByID(req)
+			//restoreRunConfig ~~
+			//	asks the Gateway to create/overwrite the aliases RunRestoreConfig and
+			//	RunRestoreContext in every subsystem that took part in the run, pointing at
+			//	the Configuration and Context groups recorded for that run.
+			function restoreRunConfig(linkElement)
 			{
-				Debug.log("RunDbViewer handlegetRunConditionByID", req.responseText.length);
+				var groupsCell = linkElement.closest("td.subsystemGroupsCell");
+				var runNumber = groupsCell.getAttribute("data-run");
+				var resultElement = groupsCell.querySelector(".restoreRunConfigResult");
 
-				var condition_id = convertForClient(req.responseXML.getElementsByTagName("condition_id")[0].getAttribute("value"));
-				var blob = convertForClient(req.responseXML.getElementsByTagName("blob")[0].getAttribute("value"));
-				var commitTime = convertForClient(req.responseXML.getElementsByTagName("commit_time")[0].getAttribute("value"));
+				var summaryLines = [];
+				var groupRows = groupsCell.querySelectorAll("table.subsystemGroups tr");
+				for(var rowIndex = 1; rowIndex < groupRows.length; ++rowIndex) //skip header row
+				{
+					var cells = groupRows[rowIndex].children;
+					summaryLines.push("  " + cells[0].innerText + ": " +
+						cells[2].innerText + "  /  " + cells[3].innerText);
+				}
 
-				var url =
-						"<html>\
-							<head>\
-								<title>Nuova Finestra</title>\
-								<style type=\"text/css\">\
-									body  {\
-										background-color:#5a4d3f;\
-										color: rgb(255,230,204);\
-										text-shadow: 0.1em 0.1em 0.2em black;\
-									}\
-									button {\
-										background-color: orange;\
-										color: white;\
-										border: 2px solid darkorange;\
-										padding: 10px 20px;\
-										border-radius: 8px;\
-										font-size: 16px;\
-										cursor: pointer;\
-										margin-bottom: 20px;\
-										transition: background-color 0.3s;\
-									}\
-									button:hover {\
-										background-color: darkorange;\
-									}\
-									.custom-alert {\
-										position: fixed;\
-										top: 50%;\
-										left: 50%;\
-										transform: translate(-50%, -50%);\
-										background-color: #333;\
-										color: white;\
-										padding: 20px 30px;\
-										border-radius: 10px;\
-										box-shadow: 0 0 10px rgba(0,0,0,0.5);\
-										z-index: 1000;\
-										font-size: 16px;\
-										display: none;\
-										opacity: 0;\
-										transition: opacity 0.3s ease;\
-									}\
-								</style>\
-							</head>\
-							<body>\
-								<button \
-								onclick=\"(async () => {\
-									try {\
-									const text = document.body.innerText;\
-									await navigator.clipboard.writeText(text);\
-									let alert = document.getElementById('inlineCustomAlert');\
-									if (!alert) {\
-										alert = document.createElement('div');\
-										alert.id = 'inlineCustomAlert';\
-										alert.className = 'custom-alert';\
-										document.body.appendChild(alert);\
-									}\
-									alert.textContent = 'Text copied to clipboard!';\
-									alert.style.display = 'block';\
-									setTimeout(() => { alert.style.opacity = 1; }, 10);\
-									setTimeout(() => {\
-										alert.style.opacity = 0;\
-										setTimeout(() => { alert.style.display = 'none'; }, 300);\
-									}, 2000);\
-									} catch (err) {\
-									console.error('Copy failed:', err);\
-									}\
-								})()\">Copy Page Text</button>\
-								<div>" + blob + "</div>\
-								<!-- Custom alert box -->\
-								<div id=\"customAlert\"></div>\
-							</body>\
-						</html>\
-					";
-				Debug.log({url});
-				DesktopContent.openNewWindow("Run condition ID", condition_id, url, false /*unique*/);
-			} //end handlegetRunConditionByID()
+				var confirmText = "Restore the configuration of run " + runNumber + "?\n\n" +
+					"This creates (or overwrites) the group aliases RunRestoreConfig and " +
+					"RunRestoreContext in the configuration database of every subsystem below, " +
+					"pointing at the Configuration / Context groups that run used:\n\n" +
+					summaryLines.join("\n") + "\n\n" +
+					"Afterwards choose 'RunRestoreConfig' in the Configure dialog to redo that run's setup.\n" +
+					"Each subsystem saves and activates a new Backbone group, so this can take up to a minute.";
+				if(!confirm(confirmText)) return;
+
+				resultElement.innerHTML = "<i>Restoring run " + runNumber + " configuration aliases...</i>";
+				linkElement.style.pointerEvents = "none";
+
+				DesktopContent.XMLHttpRequest("Request?RequestType=restoreRunConfigAliases",
+					"runNumber=" + encodeURIComponent(runNumber) +
+					"&runInfoPluginName=" + encodeURIComponent(_runInfoPluginName) +
+					"&runInfoPluginUID=" + encodeURIComponent(_runInfoPluginUID),
+					function(req, reqParam, errStr) { handleRestoreRunConfig(req, errStr, linkElement, resultElement); },
+					0 /*reqParam*/, 0 /*progressHandler*/,
+					true /*callHandlerOnErr*/, false /*doNotShowLoadingOverlay*/,
+					true /*targetGatewaySupervisor*/);
+			} //end restoreRunConfig()
+
+			//=====================================================================================
+			//handleRestoreRunConfig ~~
+			function handleRestoreRunConfig(req, errStr, linkElement, resultElement)
+			{
+				linkElement.style.pointerEvents = "";
+
+				var groupsCell = resultElement.closest("td.subsystemGroupsCell");
+				var runNumber = groupsCell.getAttribute("data-run");
+
+				//subsystem -> "config group / context group" from the groups table in this entry
+				var groupsBySubsystem = {};
+				var groupRows = groupsCell.querySelectorAll("table.subsystemGroups tr");
+				for(var rowIndex = 1; rowIndex < groupRows.length; ++rowIndex) //skip header row
+				{
+					var cells = groupRows[rowIndex].children;
+					groupsBySubsystem[cells[0].innerText.trim()] =
+						"config " + cells[2].innerText.trim() + ", context " + cells[3].innerText.trim();
+				}
+				var describeSubsystem = function(subsystemName) {
+					return "<b>" + subsystemName + "</b>" + (groupsBySubsystem[subsystemName] ? " [" + groupsBySubsystem[subsystemName] + "]" : "");
+				};
+
+				//inline under the link: only the subsystems that succeeded;
+				//	warnings and errors go to Debug popups instead
+				var requestErrors = errStr ? [errStr] : DesktopContent.getXMLRequestErrors(req);
+				var doneSubsystems = [];
+				var unavailableSubsystems = [];
+				var failedSubsystems = requestErrors.slice();
+				if(req && req.responseXML)
+				{
+					var subsystemNodes = req.responseXML.getElementsByTagName("subsystem");
+					var resultNodes = req.responseXML.getElementsByTagName("result");
+					for(var subsystemIndex = 0; subsystemIndex < subsystemNodes.length; ++subsystemIndex)
+					{
+						var subsystemName = subsystemNodes[subsystemIndex].getAttribute("value");
+						var resultText = resultNodes[subsystemIndex] ? resultNodes[subsystemIndex].getAttribute("value") : "";
+						if(resultText.indexOf("Done") == 0)
+							doneSubsystems.push(describeSubsystem(subsystemName));
+						else if(resultText.indexOf("Warning") == 0)
+							unavailableSubsystems.push(describeSubsystem(subsystemName));
+						else
+							failedSubsystems.push(describeSubsystem(subsystemName) + " - " + resultText.replace(/^Error:\s*/, ""));
+					}
+				}
+
+				if(doneSubsystems.length)
+					resultElement.innerHTML = "<span class='restoreDone'>Aliases set to restore run.</span>";
+				else
+					resultElement.innerHTML = "";
+
+				if(!doneSubsystems.length && !unavailableSubsystems.length && !failedSubsystems.length)
+					failedSubsystems.push("No response from Gateway.");
+
+				var doneSummary = doneSubsystems.length
+					? "Aliases RunRestoreConfig / RunRestoreContext were set for " + doneSubsystems.length + " subsystem(s):\n" +
+						doneSubsystems.join("\n")
+					: "The aliases were not set for any subsystem.";
+
+				if(unavailableSubsystems.length)
+					Debug.warn("Run " + runNumber + " config restore: " + doneSummary + "\n\n" +
+						"NOT set for " + unavailableSubsystems.length + " subsystem(s) that are not currently available:\n" +
+						unavailableSubsystems.join("\n") +
+						"\n\nStart the missing subsystems and click 'Restore Run Config' again to set their aliases.");
+				if(failedSubsystems.length)
+					Debug.err("Run " + runNumber + " config restore: " + doneSummary + "\n\n" +
+						"FAILED for " + failedSubsystems.length + " subsystem(s):\n" +
+						failedSubsystems.join("\n"));
+				if(!unavailableSubsystems.length && !failedSubsystems.length)
+					Debug.info("Run " + runNumber + " config restore: " + doneSummary);
+			} //end handleRestoreRunConfig()
+
+			//=====================================================================================
+			//getRunConditionByID ~~
+			//	opens the full per-subsystem condition dump for the run in a new browser tab.
+			//	Served as plain HTML by the supervisor (RunConditionReport) because the
+			//	blobs are ~1 MB and far too large for the XML response path.
+			function getRunConditionByID(e)
+			{
+				var urn = DesktopContent._localUrnLid?DesktopContent._localUrnLid:DesktopContent._serverUrnLid;
+				var url = "/urn:xdaq-application:lid=" + urn +
+					"/Request?RequestType=RunConditionReport" +
+					"&run=" + encodeURIComponent(e.innerText) +
+					"&runInfoPluginName=" + encodeURIComponent(_runInfoPluginName) +
+					"&runInfoPluginUID=" + encodeURIComponent(_runInfoPluginUID) +
+					"&CookieCode=" + DesktopContent._cookieCodeMailbox;
+				window.open(url, '_blank');
+			} //end getRunConditionByID()
 
 			//=====================================================================================
 			//showCalendar ~~
@@ -1113,13 +1297,17 @@
 	<div class='area' id='selectionArea'>
 		<!-- area where show query selections -->
 		<table width='100%'>
-			<td width='105px'>
-				<div class='sectionHeader'>Run type </div>
+			<td width='115px'>
+				<div class='sectionHeader'>Run Filters</div>
 			</td>
 			<td>
 				<div class='sectionLine'><hr width='100%'></div>
 			</td>
 		</table>
+		<div id='filterArea'>
+			<span id='runTypeFilterArea'></span>
+			<span id='statusFilterArea'></span>
+		</div>
 	</div>
 
 	<!------------------------------------------------------------------------------>
@@ -1165,6 +1353,10 @@
 			<div id='refreshRecords' style='float:right' onmouseup='refreshRunDbViewer();' title='Refresh'
 				><img style='margin:-7px 8px 8px 8px' height='32px'
 				src='/WebPath/images/windowContentImages/logbook-refresh.png'></div>
+
+			<div style='clear:both; padding:8px 0; text-align:center;'>
+				<span id='filterCount' style='color:rgb(255,183,74); font-weight:800;'></span>
+			</div>
 
 			<div id='rundbviewerDiv'>
 			</div>
