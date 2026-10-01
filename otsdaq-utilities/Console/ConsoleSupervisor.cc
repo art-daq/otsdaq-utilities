@@ -582,14 +582,26 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		__SUP_SS_THROW__;
 	}
 
-	//all FSM commands include a system message
-	if(triggeredAction.action != "Count Only")
+	//all FSM commands include a system message (rate-limited to once per 5 minutes)
+	constexpr time_t TRIGGER_SYSTEM_MESSAGE_COOLDOWN_S = 5 * 60;
+	bool sendSystemMessage = (triggeredAction.action != "Count Only") &&
+	    (time(0) - lastTriggeredSystemMessageTime_ >= TRIGGER_SYSTEM_MESSAGE_COOLDOWN_S);
+
+	if(triggeredAction.action != "Count Only" && !sendSystemMessage)
+		__SUP_COUT_INFO__ << "Suppressing repeated system message for triggered action '"
+		                  << triggeredAction.action << "' (cooldown "
+		                  << TRIGGER_SYSTEM_MESSAGE_COOLDOWN_S << "s)" << __E__;
+
+	if(sendSystemMessage)
+	{
+		lastTriggeredSystemMessageTime_ = time(0);
 		theRemoteWebUsers_.sendSystemMessage(
 		    "*" /* to all users*/,
 		    "In the Console Supervisor, a custom count fired the action '" +
 		        triggeredAction.action + "' on the search string '" +
 		        StringMacros::vectorToString(triggeredAction.needleSubstrings, {'*'}) +
 		        "'");
+	}
 
 	if(triggeredAction.action == "Halt")
 	{
@@ -600,9 +612,10 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(...)
 		{
-			theRemoteWebUsers_.sendSystemMessage(
-			    "*" /* to all users*/,
-			    "FSM Halt from Console Supervisor Triggered Action has failed!");
+			if(sendSystemMessage)
+				theRemoteWebUsers_.sendSystemMessage(
+				    "*" /* to all users*/,
+				    "FSM Halt from Console Supervisor Triggered Action has failed!");
 		}
 		__SUP_COUTV__("FSM Halt triggered from console");
 	}
@@ -615,9 +628,10 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(...)
 		{
-			theRemoteWebUsers_.sendSystemMessage(
-			    "*" /* to all users*/,
-			    "FSM Pause from Console Supervisor Triggered Action has failed!");
+			if(sendSystemMessage)
+				theRemoteWebUsers_.sendSystemMessage(
+				    "*" /* to all users*/,
+				    "FSM Pause from Console Supervisor Triggered Action has failed!");
 		}
 		__SUP_COUTV__("FSM Pause triggered from console");
 	}
@@ -630,9 +644,10 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 		}
 		catch(const std::exception& e)
 		{
-			theRemoteWebUsers_.sendSystemMessage(
-			    "*" /* to all users*/,
-			    "FSM Stop from Console Supervisor Triggered Action has failed!");
+			if(sendSystemMessage)
+				theRemoteWebUsers_.sendSystemMessage(
+				    "*" /* to all users*/,
+				    "FSM Stop from Console Supervisor Triggered Action has failed!");
 		}
 		__SUP_COUTV__("FSM Stop triggered from console");
 	}
