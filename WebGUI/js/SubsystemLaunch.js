@@ -164,9 +164,40 @@ SubsystemLaunch.create = function() {
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
 				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
+
+			var iterationTooltip = "\n\n<b>Iteration Types:</b>\n<INDENT>" +
+				"A state machine transition (e.g. Configure or Start) can run in several steps. " +
+				"There are 3 kinds of steps, from widest to narrowest:" +
+				"\n<INDENT>" +
+				"1. <b>Subsystem-iteration:</b>\n<INDENT>The only kind synchronized across subsystems. The top-level Gateway waits " +
+				"until every subsystem finishes the current subsystem-iteration, then sends the next one. Each adds roughly 2 seconds " +
+				"of round-trip time, so use it only when a step in one subsystem must wait for a step in another (e.g. CFO and DTC timing-chain setup).</INDENT>" +
+				"\n2. <b>Iteration:</b>\n<INDENT>Synchronized only among the applications inside one subsystem, by that " +
+				"subsystem's Gateway. No top-level round-trip, so many iterations can run in quick succession.</INDENT>" +
+				"\n3. <b>Sub-iteration:</b>\n<INDENT>Internal to one application/supervisor. Only that application is re-sent the " +
+				"transition; no other application waits on it.</INDENT>" +
+				"</INDENT>" +
+				"\nEach subsystem-iteration runs iterations until every application in the subsystem is done; each iteration runs " +
+				"sub-iterations until that application is done. " +
+				"Front-end code requests more steps with indicateSubsystemIterationWork(), indicateIterationWork(), or indicateSubIterationWork()." +
+				"\n\n<b>How iteration numbering works in practice:</b>\n<INDENT>" +
+				"The iteration index keeps counting up (0, 1, 2, 3, ...) for the whole transition, even across subsystem-iteration " +
+				"boundaries - it never resets to 0. This means front-end code that says 'on iteration 5 do X, on iteration 12 do Y' " +
+				"works the same whether the system is standalone or under a top-level Gateway." +
+				"\n\nA subsystem-iteration is a <b>barrier</b>: it marks the point where the top-level waits for all subsystems to " +
+				"catch up before any of them continue. When an application calls indicateSubsystemIterationWork(), it is saying " +
+				"'I need more iterations, AND the next one should be a cross-subsystem sync point.'" +
+				"\n\nFor example, suppose your front-end runs iterations 0-4 locally, then needs a subsystem sync, then runs " +
+				"iterations 5-8 locally:" +
+				"\n<INDENT>- Subsystem-iteration 0: iterations 0-4 run fast (local only). Then the top-level waits for all subsystems (~2 s)." +
+				"\n- Subsystem-iteration 1: iterations 5-8 run fast (local only). Transition complete.</INDENT>" +
+				"\ngetIterationIndex() always returns the cumulative iteration number (0-8 above). " +
+				"getSubsystemIterationIndex() returns which barrier you are in (0 or 1 above)." +
+				"</INDENT></INDENT>";
+
 			Debug.log("Subsystem Launch init ");
 			DesktopContent.tooltip("Subsystem Launch", windowTooltip);
-			DesktopContent.setWindowTooltip(windowTooltip);
+			DesktopContent.setWindowTooltip(windowTooltip + iterationTooltip);
 
 			_fsmName = DesktopContent.getParameter(0,"fsm_name");
 			if(_fsmName && _fsmName != "")
