@@ -782,6 +782,8 @@
 			{
 				var container = document.getElementById("statusFilterArea");
 				if(!container) return;
+				if(_activeStatusFilter && statusValues.indexOf(_activeStatusFilter) == -1)
+					_activeStatusFilter = "";
 				container.innerHTML = "";
 
 				var statusLabel = document.createElement("label");
