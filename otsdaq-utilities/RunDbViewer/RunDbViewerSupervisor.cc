@@ -180,7 +180,7 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 	{
 		// Served as plain HTML: the per-subsystem condition blobs are ~1 MB of JSON,
 		// far too large to push through the XML response escaper.
-		uint64_t    runNumber  = CgiDataUtilities::getDataAsInt(cgiIn, "run");
+		uint64_t    runNumber  = CgiDataUtilities::getDataAsUint64_t(cgiIn, "run");
 		std::string pluginName = CgiDataUtilities::getData(cgiIn, "runInfoPluginName");
 		std::string runInfoUID = CgiDataUtilities::getData(cgiIn, "runInfoPluginUID");
 
