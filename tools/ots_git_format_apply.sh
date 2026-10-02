@@ -157,8 +157,14 @@ if command -v black >/dev/null 2>&1; then
 	py_files=$(find . -type f ! -wholename "*/Data_*" ! -wholename "*/ViewerRoot_lib/*" ! -name "*.root" -name "*.py")
 	if [ -n "$py_files" ]; then
 		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Checking Python files with black..."
-		black_output=$(echo "$py_files" | xargs black --check 2>&1) || true
+		black_output=$(echo "$py_files" | xargs black --check 2>&1)
+		black_status=$?
 		black_needs_format=$(echo "$black_output" | grep "^would reformat" | sed 's/^would reformat //' || true)
+		if [ "$black_status" -ne 0 ] && [ -z "$black_needs_format" ]; then
+			printf '%s\n' "$black_output" >&2
+			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: black check failed" >&2
+			exit "$black_status"
+		fi
 		if [ -n "$black_needs_format" ]; then
 			echo
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Python files that need black formatting:"
