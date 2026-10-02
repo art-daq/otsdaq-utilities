@@ -21820,6 +21820,9 @@
 				treeViewHideInfo_ ?
 					"Show Info Fields" :
 					"Hide Info Fields",
+				_isInlineKVEnabled() ?
+					"Disable Inline Key:Value Formatting" :
+					"Enable Inline Key:Value Formatting",
 				"Record Creation Wizard",
 				"Record Deletion Wizard",
 				treeDiffModeApplied_ ?
@@ -21847,6 +21850,7 @@
 				"treeFilterApplied_?applyTreeFilter():popUpFilterTreeForm()",
 				"treeViewHideInfo_ = !treeViewHideInfo_; " +
 				"applyTreeFilter('',0,1)",
+				"toggleInlineKVFormatting()",
 				"launchRecordCreationWizard(\"tree\")",
 				"launchRecordDeletionWizard(\"tree\")",
 				"toggleTreeDiffMode()"
@@ -21862,6 +21866,13 @@
 				true /*useDefaultHighlightColors*/
 			);
 		} //end createTreeViewMenu()
+
+		//==============================================================================
+		function toggleInlineKVFormatting() {
+			localStorage.setItem(_PREF_CONFIG_TREE_INLINE_KV,
+				_isInlineKVEnabled() ? "0" : "1");
+			refreshTreeView();
+		}
 
 		//==============================================================================
 		//addTableToConfigurationGroup ~~
