@@ -482,12 +482,10 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 	    "OTS_MACROMAKER_UDP_IP");  //configLinkNode.getNode("IPAddressForStateChangesOverUDP").getValue<std::string>();
 	int  portForRemoteControlOverUDP = atoi(__ENV__(
         "OTS_MACROMAKER_UDP_PORT"));  //configLinkNode.getNode("PortForStateChangesOverUDP").getValue<int>();
-	bool acknowledgementEnabled =
-	    true;  //configLinkNode.getNode("EnableAckForStateChangesOverUDP").getValue<bool>();
-
-	__COUTV__(ipAddressForRemoteControlOverUDP);
-	__COUTV__(portForRemoteControlOverUDP);
-	__COUTV__(acknowledgementEnabled);
+	__COUT_INFO__ << "OTS_MACROMAKER_UDP_IP = " << ipAddressForRemoteControlOverUDP
+	              << ", OTS_MACROMAKER_UDP_PORT = " << portForRemoteControlOverUDP
+	              << " -- test with: ots_mm_udp_test " << ipAddressForRemoteControlOverUDP
+	              << " " << portForRemoteControlOverUDP << __E__;
 
 	TransceiverSocket sock(ipAddressForRemoteControlOverUDP,
 	                       portForRemoteControlOverUDP);  // Take Port from Table
