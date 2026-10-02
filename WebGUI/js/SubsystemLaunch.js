@@ -1605,8 +1605,8 @@ SubsystemLaunch.create = function() {
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
 		_recomputeDetailScrollWidths();
 
-		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
-			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
+		if (_settlingAfterRestart > 0)
+			--_settlingAfterRestart;
 		return true;
 
 		//////////////////////////////
@@ -2004,6 +2004,7 @@ SubsystemLaunch.create = function() {
 								}
 								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
 
+								_settlingAfterRestart = 10;
 								window.clearTimeout(_getStatusTimer);
 								_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
@@ -2835,10 +2836,6 @@ SubsystemLaunch.create = function() {
 
 						if(error_message && error_message != "")
 							Debug.log(error_message,Debug.HIGH_PRIORITY);
-						else {
-							Debug.log("Launched the run(s)!",
-									Debug.INFO_PRIORITY);
-						}
 
 							}, //end handler
 							0, //handler param
@@ -2873,7 +2870,6 @@ SubsystemLaunch.create = function() {
 						invalidatePendingStatusResponses();
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
-						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
 						SubsystemLaunch.system.transition = "Launching " + "Halt";
