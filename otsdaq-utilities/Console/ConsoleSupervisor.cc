@@ -584,7 +584,8 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 
 	//all FSM commands include a system message (rate-limited to once per 5 minutes)
 	constexpr time_t TRIGGER_SYSTEM_MESSAGE_COOLDOWN_S = 5 * 60;
-	bool sendSystemMessage = (triggeredAction.action != "Count Only") &&
+	bool             sendSystemMessage =
+	    (triggeredAction.action != "Count Only") &&
 	    (time(0) - lastTriggeredSystemMessageTime_ >= TRIGGER_SYSTEM_MESSAGE_COOLDOWN_S);
 
 	if(triggeredAction.action != "Count Only" && !sendSystemMessage)

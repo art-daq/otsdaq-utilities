@@ -180,7 +180,7 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 	{
 		// Served as plain HTML: the per-subsystem condition blobs are ~1 MB of JSON,
 		// far too large to push through the XML response escaper.
-		uint64_t runNumber = CgiDataUtilities::getDataAsInt(cgiIn, "run");
+		uint64_t    runNumber  = CgiDataUtilities::getDataAsInt(cgiIn, "run");
 		std::string pluginName = CgiDataUtilities::getData(cgiIn, "runInfoPluginName");
 		std::string runInfoUID = CgiDataUtilities::getData(cgiIn, "runInfoPluginUID");
 
@@ -219,7 +219,8 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 		};
 
 		out << "<!DOCTYPE HTML><html lang='en'><head><meta charset='utf-8'><title>Run "
-		    << runNumber << " conditions</title><style>"
+		    << runNumber
+		    << " conditions</title><style>"
 		       "body{background:#5a4d3f;color:rgb(255,230,204);font-family:sans-serif;"
 		       "padding:12px}"
 		       "h1{margin:0 0 12px 0}h2{color:orange;margin:24px 0 4px 0}"
@@ -231,7 +232,8 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 		       ".tree{background:rgba(0,0,0,0.3);padding:8px 12px;border-radius:6px;"
 		       "font-family:monospace;font-size:12px;line-height:1.5}"
 		       ".tree details{margin-left:0}"
-		       ".tree details>div{margin-left:1.6em;border-left:1px solid rgba(255,230,204,0.15);"
+		       ".tree details>div{margin-left:1.6em;border-left:1px solid "
+		       "rgba(255,230,204,0.15);"
 		       "padding-left:6px}"
 		       ".tree summary{cursor:pointer;list-style:none}"
 		       ".tree summary::before{content:'\\25B8';display:inline-block;width:1.1em;"
@@ -278,12 +280,10 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
 			out << "<h2 id='" << sub << "'>" << sub << " <span>" << htmlEscape(rec[1])
 			    << "</span>"
 			    << "<a class='top' href='#top' title='Back to top'>&#8679; top</a>"
-			    << "<a class='tool' onclick=\"expandAll('" << sub
-			    << "')\">expand all</a>"
+			    << "<a class='tool' onclick=\"expandAll('" << sub << "')\">expand all</a>"
 			    << "<a class='tool' onclick=\"collapseAll('" << sub
 			    << "')\">collapse all</a>"
-			    << "<a class='tool' onclick=\"toggleRaw('" << sub
-			    << "')\">raw</a></h2>"
+			    << "<a class='tool' onclick=\"toggleRaw('" << sub << "')\">raw</a></h2>"
 			    << "<script type='application/json' id='json-" << sub << "'>"
 			    << jsonForScript(rec[2]) << "</script>"
 			    << "<div class='tree' id='tree-" << sub << "'></div>";
@@ -358,8 +358,8 @@ document.querySelectorAll("script[type='application/json']").forEach(function(s)
 </script>)JS";
 
 		out << "</body></html>";
-		__COUT__ << "RunConditionReport for run " << runNumber << " records = "
-		         << conditionRecords.size() << __E__;
+		__COUT__ << "RunConditionReport for run " << runNumber
+		         << " records = " << conditionRecords.size() << __E__;
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
@@ -449,7 +449,7 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		__SS_THROW__;
 	}
 
-	auto dbStart = std::chrono::steady_clock::now();
+	auto                                  dbStart = std::chrono::steady_clock::now();
 	std::vector<std::vector<std::string>> runRecords =
 	    runInfoInterface->getRunRecords(startTime, endTime, "", runType);
 	__COUT__ << "getRunRecords: " << runRecords.size() << " runs in "
