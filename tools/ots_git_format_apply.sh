@@ -52,7 +52,7 @@ echo
 if [[ "${1:-}" != "noclang" ]]; then
 	if command -v clang-format >/dev/null 2>&1; then
 		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Applying Clang format rules recursively at ${PWD} (this may take a few seconds depending on size of directory)..."
-		if ! find . -type f ! -wholename "*/Data_*" ! -name "*.root" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \) -print0 | xargs -0 clang-format -i; then
+		if ! find . -type f ! -wholename "*/Data_*" ! -wholename "*/ViewerRoot_lib/*" ! -name "*.root" \( -name "*.cc" -o -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.icc" \) -print0 | xargs -0 clang-format -i; then
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
 			exit 1
 		fi
@@ -63,7 +63,7 @@ if [[ "${1:-}" != "noclang" ]]; then
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Warning: .clang-format-hpp not found; using default .clang-format for header files."
 			hpp_style=""
 		fi
-		if ! find . -type f ! -wholename "*/Data_*" ! -name "*.root" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \) -print0 | xargs -0 clang-format -i $hpp_style; then
+		if ! find . -type f ! -wholename "*/Data_*" ! -wholename "*/ViewerRoot_lib/*" ! -name "*.root" \( -name "*.h" -o -name "*.hh" -o -name "*.hxx" -o -name "*.hpp" \) -print0 | xargs -0 clang-format -i $hpp_style; then
 			echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Error: clang-format failed" >&2
 			exit 1
 		fi
@@ -154,7 +154,7 @@ fi
 
 # Python formatting check with black
 if command -v black >/dev/null 2>&1; then
-	py_files=$(find . -type f ! -wholename "*/Data_*" ! -name "*.root" -name "*.py")
+	py_files=$(find . -type f ! -wholename "*/Data_*" ! -wholename "*/ViewerRoot_lib/*" ! -name "*.root" -name "*.py")
 	if [ -n "$py_files" ]; then
 		echo -e "$(date +%d%b%y.%T) ots_git_format_apply.sh:${LINENO} \t Checking Python files with black..."
 		black_output=$(echo "$py_files" | xargs black --check 2>&1) || true
