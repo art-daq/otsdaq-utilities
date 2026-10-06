@@ -449,6 +449,35 @@
 				"<li><u>Alarms:</u>\n<INDENT>If you would like a reminder alarm (for example, to start or stop a run), click <b>Setup Alarm</b> in the bottom-right. You can then enter the desired countdown duration in minutes (fractional minutes are allowed with a decimal point), and click <b>Start</b> to begin the countdown. " +
 				"The countdown will be visible in the bottom-right of the State Machine web app. You can click <b>Close</b> while the countdown is runnning, to hide the Setup Alarm dialog box. You can click Setup Alarm at any time to re-open the alarm controls to <b>Pause</b> or <b>Stop</b> the countdown timer. When the timer reaches 0:00:00, a loud repeating tone is generated. " +
 				"\n\nIf you get tired of manually controlling the State Machine, consider using the <b>Iterator</b>. The Iterator tool allows for arbitrary run planning with predefined durations and iterations. Checkout the <a href='https://otsdaq.fnal.gov/tutorials_v2/tutorialPages/iterator_.php' target='_blank'>tutorial</a> for more info!" +
+				"</INDENT>\n\n<li><u>Iteration Types:</u>\n<INDENT>" +
+				"A state machine transition (e.g. Configure or Start) can run in several steps. " +
+				"There are 3 kinds of steps, from widest to narrowest:" +
+				"\n<INDENT>" +
+				"1. <b>Subsystem-iteration:</b>\n<INDENT>The only kind synchronized across subsystems. The top-level Gateway waits " +
+				"until every subsystem finishes the current subsystem-iteration, then sends the next one. Each adds roughly 2 seconds " +
+				"of round-trip time, so use it only when a step in one subsystem must wait for a step in another (e.g. CFO and DTC timing-chain setup).</INDENT>" +
+				"\n2. <b>Iteration:</b>\n<INDENT>Synchronized only among the applications inside one subsystem, by that " +
+				"subsystem's Gateway. No top-level round-trip, so many iterations can run in quick succession.</INDENT>" +
+				"\n3. <b>Sub-iteration:</b>\n<INDENT>Internal to one application/supervisor. Only that application is re-sent the " +
+				"transition; no other application waits on it.</INDENT>" +
+				"</INDENT>" +
+				"\nEach subsystem-iteration runs iterations until every application in the subsystem is done; each iteration runs " +
+				"sub-iterations until that application is done. " +
+				"Front-end code requests more steps with indicateSubsystemIterationWork(), indicateIterationWork(), or indicateSubIterationWork()." +
+				"\n\n<b>How iteration numbering works in practice:</b>\n<INDENT>" +
+				"The iteration index keeps counting up (0, 1, 2, 3, ...) for the whole transition, even across subsystem-iteration " +
+				"boundaries - it never resets to 0. This means front-end code that says 'on iteration 5 do X, on iteration 12 do Y' " +
+				"works the same whether the system is standalone or under a top-level Gateway." +
+				"\n\nA subsystem-iteration is a <b>barrier</b>: it marks the point where the top-level waits for all subsystems to " +
+				"catch up before any of them continue. When an application calls indicateSubsystemIterationWork(), it is saying " +
+				"'I need more iterations, AND the next one should be a cross-subsystem sync point.'" +
+				"\n\nFor example, suppose your front-end runs iterations 0-4 locally, then needs a subsystem sync, then runs " +
+				"iterations 5-8 locally:" +
+				"\n<INDENT>- Subsystem-iteration 0: iterations 0-4 run fast (local only). Then the top-level waits for all subsystems (~2 s)." +
+				"\n- Subsystem-iteration 1: iterations 5-8 run fast (local only). Transition complete.</INDENT>" +
+				"\ngetIterationIndex() always returns the cumulative iteration number (0-8 above). " +
+				"getSubsystemIterationIndex() returns which barrier you are in (0 or 1 above)." +
+				"</INDENT>" +
 				"</INDENT>\n\n<li><u>The State Machine in the Configuration Tree:</u>\n<INDENT>" +
 				"By default, no State Machine record is needed in the Configuration Tree, but to fully utilize the <i>ots</i> State Machine, you will need to use the Configuration Tree. " +
 				"The root of the State Machine configuration tree is your Gateway Supervisor. Locate your Gateway Superivsor app in the XDAQApplicationTable, and make sure it has a link to the GatewaySupervisor table. Here there are 3 important features: " +

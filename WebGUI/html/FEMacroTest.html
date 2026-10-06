@@ -356,6 +356,48 @@
 		.record.mom-marker-end {
 			background-color: #27ae60;
 		}
+		select::-webkit-scrollbar,
+		#verticalLayoutOutputDiv::-webkit-scrollbar,
+		#historyContent::-webkit-scrollbar,
+		#sequence-builder::-webkit-scrollbar,
+		#show-sequence::-webkit-scrollbar {
+			width: 14px;
+		}
+		select::-webkit-scrollbar-thumb,
+		#verticalLayoutOutputDiv::-webkit-scrollbar-thumb,
+		#historyContent::-webkit-scrollbar-thumb,
+		#sequence-builder::-webkit-scrollbar-thumb,
+		#show-sequence::-webkit-scrollbar-thumb {
+			background: rgba(0, 0, 0, 0.35);
+			border-radius: 7px;
+			border: 3px solid transparent;
+			background-clip: padding-box;
+		}
+		select::-webkit-scrollbar-thumb:hover,
+		#verticalLayoutOutputDiv::-webkit-scrollbar-thumb:hover,
+		#historyContent::-webkit-scrollbar-thumb:hover,
+		#sequence-builder::-webkit-scrollbar-thumb:hover,
+		#show-sequence::-webkit-scrollbar-thumb:hover {
+			background: rgba(0, 0, 0, 0.55);
+			border: 3px solid transparent;
+			background-clip: padding-box;
+		}
+		select::-webkit-scrollbar-track,
+		#verticalLayoutOutputDiv::-webkit-scrollbar-track,
+		#historyContent::-webkit-scrollbar-track,
+		#sequence-builder::-webkit-scrollbar-track,
+		#show-sequence::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		select,
+		#verticalLayoutOutputDiv,
+		#historyContent,
+		#sequence-builder,
+		#show-sequence {
+			scrollbar-width: auto;
+			scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+		}
 	</style>
 
 
@@ -590,6 +632,19 @@
 				DesktopContent.scrollIntoViewX('macroModule-sequence', false);
 			}
 			_useDynamicDropdown = dynDrop;
+
+			var selects = document.getElementsByClassName("macroNameSelect");
+			for (var i = 0; i < selects.length; ++i) {
+				var sel = selects[i];
+				if (sel._normalSize && sel.size < sel._normalSize)
+					sel.size = sel._normalSize;
+				var filterId = sel.id.replace("macroNameSelect-", "macroNameFilter-");
+				var filterEl = document.getElementById(filterId);
+				if (filterEl) filterEl.style.display = "";
+				var clearId = sel.id.replace("macroNameSelect-", "macroNameFilterClear-");
+				var clearBtn = document.getElementById(clearId);
+				if (clearBtn) clearBtn.style.display = (filterEl && filterEl.value) ? "block" : "none";
+			}
 
 			saveFEMacroTestPreferences();
 		} //end applyAndSavePreferences()
@@ -2603,7 +2658,7 @@ Here is the json string received:
 					if (filterEl) filterEl.style.display = show ? "" : "none";
 					var clearId = self.id.replace("macroNameSelect-", "macroNameFilterClear-");
 					var clearBtn = document.getElementById(clearId);
-					if (clearBtn && !show) clearBtn.style.display = "none";
+					if (clearBtn) clearBtn.style.display = (!show || !filterEl || !filterEl.value) ? "none" : "block";
 				}
 				function macroNameStartCollapseTimer(self) {
 					if (self._scrollCollapseTimeout)
@@ -2616,7 +2671,7 @@ Here is the json string received:
 						self.size = macroNameCollapseSize(self);
 						self._scrollCollapseTimeout = null;
 						self._expanded = false;
-						if (self._hasSelection)
+						if (self._hasSelection && _useDynamicDropdown)
 							macroNameShowFilter(self, false);
 					}, 500);
 				}
@@ -2746,9 +2801,8 @@ Here is the json string received:
 			if (_useDynamicDropdown)
 				selectEl.size = 1;
 			var filterEl = document.getElementById("macroNameFilter-row-" + r + "-col-" + c);
-			if (_useDynamicDropdown && filterEl) filterEl.style.display = "none";
 			var clearBtn = document.getElementById("macroNameFilterClear-row-" + r + "-col-" + c);
-			if (clearBtn) clearBtn.style.display = "none";
+			if (clearBtn) clearBtn.style.display = (filterEl && filterEl.value) ? "block" : "none";
 
 			if (macroNameObject == undefined ||
 				macroNameObject[feMacroNameSelected] === undefined) {
@@ -2961,9 +3015,10 @@ Here is the json string received:
 			}
 
 			selectEl.innerHTML = str;
-			var normalSize = Math.min(Math.max(count, 2), 10);
-			selectEl.size = normalSize;
-			selectEl._normalSize = normalSize;
+			if (_useDynamicDropdown) {
+				var filteredSize = Math.min(Math.max(count, 2), 10);
+				selectEl.size = filteredSize;
+			}
 
 			if (selectedIndex >= 0)
 				selectEl.selectedIndex = selectedIndex;
