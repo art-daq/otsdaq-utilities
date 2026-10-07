@@ -266,6 +266,67 @@
 			border-bottom: 3px solid #e67e22 !important;
 		}
 
+		/* Drag handle: sits in the left margin outside the table */
+		#SubSystemTable tr > td:first-child {
+			position: relative;
+		}
+		.rowDragHandle {
+			cursor: grab;
+			position: absolute;
+			left: -22px;
+			top: 50%;
+			transform: translateY(-50%);
+			font-size: 13px;
+			color: #837f7f;
+			line-height: 1;
+			padding: 3px 4px;
+			border-radius: 2px;
+			z-index: 1;
+		}
+		.rowDragHandle:hover {
+			color: #555;
+			background: rgba(0,0,0,0.10);
+		}
+		body.row-reorder-drag .rowDragHandle {
+			cursor: grabbing;
+		}
+
+		/* Column drag handle: sits above data columns in transposed view */
+		.colDragCell {
+			position: relative;
+			padding-top: 24px !important;
+		}
+		.colDragHandle {
+			cursor: grab;
+			position: absolute;
+			top: 3px;
+			left: 50%;
+			transform: translateX(-50%);
+			font-size: 13px;
+			color: #837f7f;
+			line-height: 1;
+			padding: 2px 4px;
+			border-radius: 2px;
+			z-index: 1;
+		}
+		.colDragHandle:hover {
+			color: #555;
+			background: rgba(0,0,0,0.10);
+		}
+		body.col-reorder-drag .colDragHandle {
+			cursor: grabbing;
+		}
+		body.col-reorder-drag {
+			cursor: grabbing !important;
+		}
+		/* Column drop indicators (vertical orange borders) */
+		.col-drop-left {
+			border-left: 3px solid #e67e22 !important;
+		}
+		.col-drop-right {
+			border-right: 3px solid #e67e22 !important;
+		}
+
 		.treeNode {
 			margin-left: 30px;
 			float: left;
@@ -794,6 +855,9 @@
 		var suppressBodyMouseupOnce_ = false; // one-shot guard to prevent tooltip/edit popup after drag mouseup
 		var isReorderDragging_ = false;  // true while drag-to-reorder of selected rows is active
 		var reorderDropIndex_ = -1;      // row index that will receive the drop (insert before)
+		var isColReorderDragging_ = false;  // true while drag-to-reorder of columns (transposed view) is active
+		var colReorderSourceCol_ = -1;      // column being dragged
+		var colReorderDropIndex_ = -1;      // column index that will receive the drop (insert before)
 
 		//==============================================================================
 		//init called once body has loaded
@@ -4315,6 +4379,25 @@
 					const idx = indexOfRow(tr);
 					if (idx === -1 || idx == 0) return;
 
+					// DRAG HANDLE: mousedown on the grip icon starts reorder immediately
+					if (e.target.closest('.rowDragHandle')) {
+						Debug.log("Drag handle grabbed at row index", idx);
+						if (!tr.classList.contains('selected')) {
+							clearSelection();
+							tr.classList.add('selected');
+							lastSelectedIndex_ = idx;
+						}
+						isReorderDragging_ = true;
+						reorderDropIndex_ = idx;
+						document.addEventListener('mousemove', _reorderDragMouseMove);
+						_reorderDragMouseMove(e);
+						document.body.classList.add('no-select');
+						document.body.classList.add('row-reorder-drag');
+						e.stopPropagation();
+						e.preventDefault();
+						return;
+					}
+
 					// REORDER DRAG: mousedown on an already-selected row without modifier keys
 					if (!e.shiftKey && !e.ctrlKey && !e.metaKey && tr.classList.contains('selected')) {
 						Debug.log("Starting row reorder drag from index", idx);
@@ -4413,6 +4496,24 @@
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered_) {
 				window.addEventListener('mouseup', (e) => {
+					// --- Finalize column reorder drag (transposed view) ---
+					if (isColReorderDragging_) {
+						_colReorderDragMouseMove(e, true);
+						Debug.log("Column reorder drag ended, drop col:", colReorderDropIndex_);
+						suppressBodyMouseupOnce_ = true;
+						isColReorderDragging_ = false;
+						document.body.classList.remove('col-reorder-drag');
+						document.body.classList.remove('no-select');
+						document.removeEventListener('mousemove', _colReorderDragMouseMove);
+						_clearColReorderDropIndicators();
+						if (colReorderDropIndex_ >= _CONFIG_DATA_ROW_OFFSET) {
+							moveColumnToIndex(colReorderSourceCol_, colReorderDropIndex_);
+						}
+						colReorderDropIndex_ = -1;
+						colReorderSourceCol_ = -1;
+						return;
+					}
+
 					// --- Finalize row reorder drag ---
 					if (isReorderDragging_) {
 						_reorderDragMouseMove(e, true); //capture final cursor position at mouse release
@@ -4426,6 +4527,7 @@
 						if (reorderDropIndex_ >= _CONFIG_DATA_ROW_OFFSET) {
 							moveSelectedRowsToIndex(reorderDropIndex_);
 						}
+						clearSelection();
 						reorderDropIndex_ = -1;
 						return;
 					}
@@ -4452,6 +4554,7 @@
 				});
 				windowMouseupRegistered_ = true;
 			}
+			if (_tableViewIsTransposed) registerColDragHandlers();
 		} //end registerOnClickActions()
 		//==============================================================================
 		//toggleTableDetails ~~
@@ -13358,7 +13461,10 @@
 			return Array.from(tbody.querySelectorAll('tr'));
 		}
 		function indexOfRow(row) { return getRows().indexOf(row); }
-		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+		function clearSelection() {
+			getRows().forEach(r => r.classList.remove('selected'));
+			lastSelectedIndex_ = null;
+		}
 
 		// Remove all reorder drop indicator classes
 		function _clearReorderDropIndicators() {
@@ -13465,6 +13571,7 @@
 			// Mark the table as modified
 			versionHasChanged();
 			_renumberVisibleTableRows();
+			_rebindDataCellCoordinates();
 			// Re-register click/drag listeners for any newly positioned rows
 			registerOnClickActions();
 			Debug.log("moveSelectedRowsToIndex: done");
@@ -13482,6 +13589,13 @@
 
 				const ro = r - _CONFIG_DATA_ROW_OFFSET;
 				firstCell.innerHTML = "";
+
+				const grip = document.createElement("span");
+				grip.className = "rowDragHandle";
+				grip.title = "Drag to reorder this row";
+				grip.innerHTML = "&#x2630;";
+				firstCell.appendChild(grip);
+
 				const center = document.createElement("center");
 				center.title = "Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.";
 
@@ -13520,6 +13634,205 @@
 			const start = Math.min(a, b);
 			const end = Math.max(a, b);
 			for (let i = start; i <= end; i++) setSelectedByIndex(i, state);
+		}
+
+		// --- Column reorder (transposed view) ---
+
+		function _clearColReorderDropIndicators() {
+			document.querySelectorAll('.col-drop-left, .col-drop-right').forEach(function(el) {
+				el.classList.remove('col-drop-left');
+				el.classList.remove('col-drop-right');
+			});
+		}
+
+		function _colReorderDragMouseMove(e, ignoreButtonState) {
+			if (!isColReorderDragging_) return;
+			if (!ignoreButtonState && e.buttons !== 1) {
+				_clearColReorderDropIndicators();
+				isColReorderDragging_ = false;
+				colReorderDropIndex_ = -1;
+				document.body.classList.remove('col-reorder-drag');
+				document.body.classList.remove('no-select');
+				document.removeEventListener('mousemove', _colReorderDragMouseMove);
+				return;
+			}
+
+			var tbody = document.getElementById("SubSystemTable");
+			var rows = Array.from(tbody.querySelectorAll('tr'));
+			_clearColReorderDropIndicators();
+
+			var refRow = rows[0];
+			if (!refRow) return;
+			var cells = Array.from(refRow.children);
+
+			var bestIdx = -1;
+			var insertAfter = false;
+
+			for (var c = _CONFIG_DATA_ROW_OFFSET; c < cells.length; c++) {
+				var rect = cells[c].getBoundingClientRect();
+				if (e.clientX < rect.right) {
+					bestIdx = c;
+					insertAfter = (e.clientX > rect.left + rect.width / 2);
+					break;
+				}
+				bestIdx = c;
+				insertAfter = true;
+			}
+
+			if (bestIdx === -1) return;
+
+			if (insertAfter) {
+				var nextIdx = bestIdx + 1;
+				if (nextIdx < cells.length) {
+					colReorderDropIndex_ = nextIdx;
+					rows.forEach(function(row) {
+						if (row.children[nextIdx])
+							row.children[nextIdx].classList.add('col-drop-left');
+					});
+				} else {
+					colReorderDropIndex_ = cells.length;
+					rows.forEach(function(row) {
+						if (row.children[bestIdx])
+							row.children[bestIdx].classList.add('col-drop-right');
+					});
+				}
+			} else {
+				colReorderDropIndex_ = bestIdx;
+				rows.forEach(function(row) {
+					if (row.children[bestIdx])
+						row.children[bestIdx].classList.add('col-drop-left');
+				});
+			}
+		}
+
+		function moveColumnToIndex(sourceCol, targetCol) {
+			var tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
+			if (sourceCol === targetCol || sourceCol + 1 === targetCol) return;
+
+			var allRows = Array.from(tbody.querySelectorAll('tr'));
+			Debug.log("moveColumnToIndex: moving col", sourceCol, "to", targetCol);
+
+			allRows.forEach(function(row) {
+				var cells = Array.from(row.children);
+				if (sourceCol >= cells.length) return;
+
+				var sourceCell = cells[sourceCol];
+				var refCell = (targetCol < cells.length) ? cells[targetCol] : null;
+				if (sourceCell === refCell) return;
+
+				row.removeChild(sourceCell);
+				if (refCell && refCell.parentNode === row)
+					row.insertBefore(sourceCell, refCell);
+				else
+					row.appendChild(sourceCell);
+			});
+
+			versionHasChanged();
+			_renumberVisibleTableColumns();
+			_rebindDataCellCoordinates();
+			registerColDragHandlers();
+		}
+
+		// Data cells capture [record,field] in inline handlers at render time; refresh them from the current DOM position after a manual move.
+		function _rebindDataCellCoordinates() {
+			var tableBody = document.getElementById("SubSystemTable");
+			if (!tableBody) return;
+			var displayRows = tableBody.querySelectorAll('tr');
+			for (var displayRowIndex = 0; displayRowIndex < displayRows.length; ++displayRowIndex) {
+				var displayCells = displayRows[displayRowIndex].cells;
+				for (var displayColumnIndex = 0; displayColumnIndex < displayCells.length; ++displayColumnIndex) {
+					var dataCell = displayCells[displayColumnIndex];
+					var mouseUpHandler = dataCell.getAttribute("onmouseup");
+					if (!mouseUpHandler || mouseUpHandler.indexOf("selectThisCell(") !== 0) continue;
+
+					var recordIndex = (_tableViewIsTransposed ? displayColumnIndex : displayRowIndex) - _CONFIG_DATA_ROW_OFFSET;
+					var fieldIndex = (_tableViewIsTransposed ? displayRowIndex : displayColumnIndex) - _CONFIG_DATA_COL_OFFSET;
+					var coordinates = recordIndex + "," + fieldIndex;
+
+					dataCell.setAttribute("onmouseup", "selectThisCell(" + coordinates + ",this,event);");
+					dataCell.setAttribute("onmouseover", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					dataCell.setAttribute("onmousemove", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					if (dataCell.title)
+						dataCell.title = dataCell.title.replace(/^\[row,col\] = \[-?\d+,-?\d+\]/, "[row,col] = [" + coordinates + "]");
+				}
+			}
+		} //end _rebindDataCellCoordinates()
+
+		function _renumberVisibleTableColumns() {
+			var tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
+			var firstRow = tbody.querySelector('tr');
+			if (!firstRow) return;
+			var cells = Array.from(firstRow.children);
+
+			for (var c = _CONFIG_DATA_ROW_OFFSET; c < cells.length; ++c) {
+				var cell = cells[c];
+				var co = c - _CONFIG_DATA_ROW_OFFSET;
+
+				cell.innerHTML = "";
+				cell.className = "colDragCell";
+
+				var grip = document.createElement("span");
+				grip.className = "colDragHandle";
+				grip.title = "Drag to reorder this row";
+				grip.innerHTML = "&#x2630;";
+				cell.appendChild(grip);
+
+				var center = document.createElement("center");
+				center.title = "Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.";
+				center.appendChild(document.createTextNode((_dataOffset + co) + ""));
+				center.appendChild(document.createElement("br"));
+
+				var addBtn = document.createElement("a");
+				addBtn.className = "tableAddRowButton";
+				addBtn.title = "Add a row before this row.";
+				addBtn.href = "#";
+				addBtn.onclick = (function(i) { return function() { addRow(i); return false; }; })(co);
+				addBtn.textContent = "+";
+				center.appendChild(addBtn);
+
+				center.appendChild(document.createTextNode("/"));
+
+				var delBtn = document.createElement("a");
+				delBtn.className = "tableDeleteRowButton";
+				delBtn.title = "Delete this row.";
+				delBtn.href = "#";
+				delBtn.onclick = (function(i) { return function() { deleteRow(i); registerOnClickActions(); return false; }; })(co);
+				delBtn.textContent = "-";
+				center.appendChild(delBtn);
+
+				cell.appendChild(center);
+			}
+		}
+
+		function registerColDragHandlers() {
+			var handles = document.querySelectorAll('#SubSystemTable .colDragHandle');
+			handles.forEach(function(handle) {
+				if (handle.dataset.colDragBound === "1") return;
+				handle.dataset.colDragBound = "1";
+
+				handle.addEventListener('mousedown', function(e) {
+					if (e.button !== 0) return;
+					var td = e.target.closest('td');
+					if (!td) return;
+					var tr = td.closest('tr');
+					if (!tr) return;
+					var colIdx = Array.from(tr.children).indexOf(td);
+					if (colIdx < _CONFIG_DATA_ROW_OFFSET) return;
+
+					Debug.log("Column drag handle grabbed at col", colIdx);
+					isColReorderDragging_ = true;
+					colReorderSourceCol_ = colIdx;
+					colReorderDropIndex_ = colIdx;
+					document.addEventListener('mousemove', _colReorderDragMouseMove);
+					_colReorderDragMouseMove(e);
+					document.body.classList.add('no-select');
+					document.body.classList.add('col-reorder-drag');
+					e.stopPropagation();
+					e.preventDefault();
+				});
+			});
 		}
 
 		//==============================================================================
@@ -21740,12 +22053,18 @@
 						str += "' " +
 							">";
 					}
+					else if (transposeOutput && c == 0 && r >= _CONFIG_DATA_ROW_OFFSET)
+						str += "<td class='colDragCell'>";
 					else
 						str += "<td>";
 
 					//cell value
 					//first column is row numbers
 					if (c == 0 && r >= _CONFIG_DATA_ROW_OFFSET) {
+						if (transposeOutput)
+							str += "<span class='colDragHandle' title='Drag to reorder this row'>&#x2630;</span>";
+						else
+							str += "<span class='rowDragHandle' title='Drag to reorder this row'>&#x2630;</span>";
 						str += "<center title='Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.'>";
 						str += (_dataOffset + ro);	//insert row index column
 						str += "<br>";
@@ -22035,6 +22354,7 @@
 
 			_tableViewIsTransposed = !_tableViewIsTransposed;
 			Debug.log("transposeTableView() transposed now =" + _tableViewIsTransposed);
+			registerOnClickActions();
 		} //end transposeTableView()
 
 		//==============================================================================
