@@ -73,6 +73,7 @@ SubsystemSquares.create = function() {
 
 	//for display
 	var _MARGIN = 10;
+	var _DETAIL_HEIGHT = 17; //px, height of one line of detail text at bottom of square (must match .subsystem_detail_line in css)
 
 	var _needEventListeners = true;
 
@@ -230,8 +231,8 @@ SubsystemSquares.create = function() {
 			} //end debug manual update
 
 			{ //Subsystem Squares -------------------------
-				var fields = ["State", "Subsystem", "Console"];
-				var fieldIds = ["status", "name", "console"];
+				var fields = ["State", "Subsystem", "Console", "Detail"];
+				var fieldIds = ["status", "name", "console", "detail"];
 
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
@@ -266,12 +267,22 @@ SubsystemSquares.create = function() {
 					SubsystemSquares.subsystems[s].name + "&apos;' ";
 			str += ">";
 
+			//progress bar behind text during transitions (like SubsystemLaunch.js)
+			str += "<div id='subsystem_" + s + "_progressBar' class='progressBar'></div>";
 
 			for(var i=0; i<fieldIds.length; ++i)
 			{
 				str += "<div id='subsystem_" + s + "_" + fieldIds[i] +
-						"' class='subsystem_" + fieldIds[i] +
-						"' >";
+						"' class='subsystem_" + fieldIds[i] + "'";
+				if(fieldIds[i] == "status") //red status click shows error only (square body opens landing page)
+					str += " onclick='SubsystemSquares.clickedStatus(event," + s + ");'";
+				else if(fieldIds[i] == "detail") //detail click copies to clipboard
+					str += " onclick='SubsystemSquares.copyText(event,this);' " +
+						"title='Click to copy detail text.'";
+				str += " >";
+				if(fieldIds[i] == "detail") //two truncated lines: Uptime/Time-in-state, then the rest
+					str += "<div class='subsystem_detail_line'></div>" +
+						"<div class='subsystem_detail_line'></div>";
 				str += "</div>";
 				str += "<div id='clearDiv'></div>";
 			}
@@ -356,9 +367,11 @@ SubsystemSquares.create = function() {
 			// els[0].style.display = "block";//redrawMode?"block":"none";
 			els = sdivs[i].getElementsByClassName("subsystem_console");
 			els[0].style.display = redrawMode?"block":"none";
+			els = sdivs[i].getElementsByClassName("subsystem_detail");
+			els[0].style.display = (redrawMode > 1)?"block":"none";
 			els = sdivs[i].getElementsByClassName("subsystem_status");
 			// els[0].style.display = redrawMode?"block":"none";
-			els[0].style.top = (hhh - 1*_MARGIN - 35) + "px";
+			els[0].style.top = (hhh - 1*_MARGIN - 35) + "px"; //adjusted in displayStatus() when detail is shown
 
 		} //end square resize loop
 
@@ -525,9 +538,13 @@ SubsystemSquares.create = function() {
 						statusString != "Running") //including SubsystemSquares.system.inTransition
 					sdivs[i].style.background = "lightgray";
 				else if(statusString == "Running")
-					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(0, 228, 60), rgb(106, 228, 141) 10%, rgb(5, 139, 40) 80%, rgb(6, 39, 69) 100%)";
 				else if(statusString == "Configured")
 					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(147, 213, 195) 10%, rgb(5, 148, 122) 60%, rgb(6, 39, 69) 100%)";
+				else if(statusString == "Halted")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(240, 185, 80), rgb(225, 190, 140) 10%, rgb(215, 118, 2) 80%, rgb(105, 58, 0) 100%)";
+				else if(statusString == "Initial")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
 				else
 					sdivs[i].style.background = "rgb(6 176 6)"; //"green";
 
@@ -542,7 +559,8 @@ SubsystemSquares.create = function() {
 				}
 				else
 				{
-					if(statusString == "Running" || statusString == "Configured")
+					if(statusString == "Running" || statusString == "Configured" ||
+							statusString == "Halted" || statusString == "Initial")
 					{
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";
@@ -559,6 +577,9 @@ SubsystemSquares.create = function() {
 
 				SubsystemSquares.system.isRed = isRed;
 
+				//mouse-over: keep click hint on first line, then system error (if any) on a new line
+				localSetSquareTitle(sdivs[i], SubsystemSquares.system.error);
+
 				els = sdivs[i].getElementsByClassName("subsystem_name");
 				els[0].innerText = "Primary Gateway";
 
@@ -569,9 +590,10 @@ SubsystemSquares.create = function() {
 					str = statusString;
 				if(SubsystemSquares.system.inTransition)
 					str += _dotDotDot;
-				else if(SubsystemSquares.system.redrawMode > 1) //add time-in-state
+				els[0].innerHTML = str;
+
+				//detail lines: line 1 time-in-state, line 2 fsm status (e.g. broadcast progress message)
 				{
-					//time in state display
 					let tstr = "";
 					var hours = (SubsystemSquares.system.timeInState/60.0/60.0)|0;
 					var mins = ((SubsystemSquares.system.timeInState%(60*60))/60.0)|0;
@@ -583,10 +605,15 @@ SubsystemSquares.create = function() {
 					if(secs < 10)	tstr += "0"; //keep to 2 digits
 					tstr += secs;
 
-					str += " <label style='font-size:14px; position: relative;" +
-						"top: -2px;'>(Time-in-state: " + tstr + ")</label>";
+					localDisplayDetail(sdivs[i], els[0], SubsystemSquares.system.redrawMode,
+						"Time-in-state: " + tstr,
+						SubsystemSquares.system.inTransition?
+							SubsystemSquares.decodeDetail(SubsystemSquares.system.activeFsmStatus):"");
 				}
-				els[0].innerHTML = str;
+
+				//progress bar during transition
+				localDisplayProgress(sdivs[i],
+					SubsystemSquares.system.inTransition?SubsystemSquares.system.progress:100);
 
 
 				els = sdivs[i].getElementsByClassName("subsystem_console");
@@ -613,13 +640,20 @@ SubsystemSquares.create = function() {
 						statusString != "Running")
 					sdivs[i].style.background = "lightgray";
 				else if(statusString == "Running")
-					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(0, 228, 60), rgb(106, 228, 141) 10%, rgb(5, 139, 40) 80%, rgb(6, 39, 69) 100%)";
 				else if(statusString == "Configured")
 					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(80, 236, 199), rgb(147, 213, 195) 10%, rgb(5, 148, 122) 60%, rgb(6, 39, 69) 100%)";
+				else if(statusString == "Halted")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(240, 185, 80), rgb(225, 190, 140) 10%, rgb(215, 118, 2) 80%, rgb(105, 58, 0) 100%)";
+				else if(statusString == "Initial")
+					sdivs[i].style.background = "radial-gradient(circle at 50% 120%, rgb(119, 208, 255), rgb(119, 208, 255) 10%, rgb(7, 105, 191) 80%, rgb(6, 39, 69) 100%)";
 				else
 					sdivs[i].style.background =  "rgb(6 176 6)"; //"green";
 
 				SubsystemSquares.subsystems[s].isRed = isRed;
+
+				//mouse-over: keep click hint on first line, then subsystem detail on a new line
+				localSetSquareTitle(sdivs[i], SubsystemSquares.decodeDetail(SubsystemSquares.subsystems[s].detail));
 
 				if(isRed)
 				{
@@ -631,7 +665,8 @@ SubsystemSquares.create = function() {
 				}
 				else
 				{
-					if(statusString == "Running" || statusString == "Configured")
+					if(statusString == "Running" || statusString == "Configured" ||
+							statusString == "Halted" || statusString == "Initial")
 					{
 						sdivs[i].style.color = "white";
 						sdivs[i].style.textShadow = "1px 1px black";
@@ -677,11 +712,25 @@ SubsystemSquares.create = function() {
 					str = statusString == "Failed"?statusString:SubsystemSquares.subsystems[s].status;
 				if(SubsystemSquares.subsystems[s].progress != "100" && SubsystemSquares.subsystems[s].progress != "0")
 					str += _dotDotDot;
-				if(SubsystemSquares.subsystems[s].redrawMode > 1)
-					str += " <label style='font-size:14px; position: relative;" +
-						"top: -2px;'>(" + decodeURIComponent(SubsystemSquares.subsystems[s].detail) + ")</label>";
-
 				els[0].innerHTML = str;
+
+				//detail below status, split into two truncated lines (no horizontal scroll):
+				//	line 1: "Uptime: ..., Time-in-state: ..."  line 2: anything after first " - "
+				var detailStr = SubsystemSquares.decodeDetail(SubsystemSquares.subsystems[s].detail);
+				var detailLines = ["",""];
+				var dashIdx = detailStr.indexOf(" - ");
+				if(dashIdx >= 0)
+				{
+					detailLines[0] = detailStr.substr(0,dashIdx);
+					detailLines[1] = detailStr.substr(dashIdx+3);
+				}
+				else
+					detailLines[0] = detailStr;
+				localDisplayDetail(sdivs[i], els[0], SubsystemSquares.subsystems[s].redrawMode,
+					detailLines[0], detailLines[1]);
+
+				//progress bar during transition
+				localDisplayProgress(sdivs[i], SubsystemSquares.subsystems[s].progress|0);
 
 
 				els = sdivs[i].getElementsByClassName("subsystem_console");
@@ -693,6 +742,51 @@ SubsystemSquares.create = function() {
 		} //end primary square status loop
 
 		return true; //to keep getting status
+
+		//===========
+		//	title attribute is set at creation with the click hint (single line);
+		//	append detail after a newline, replacing any previously appended detail
+		function localSetSquareTitle(square, detail)
+		{
+			var baseTitle = (square.title || "").split("\n")[0];
+			square.title = baseTitle + ((detail && detail != "")?"\n\n" + detail:"");
+		} //end localSetSquareTitle()
+
+		//===========
+		//	two truncated detail lines at bottom of square; in verbose mode always
+		//	reserve both lines so the state text stays at a fixed spot
+		function localDisplayDetail(square, statusEl, redrawMode, line1, line2)
+		{
+			var showDetail = redrawMode > 1;
+			var detailEl = square.getElementsByClassName("subsystem_detail")[0];
+			detailEl.setAttribute("data-copytext",
+				line1 + ((line2 && line2 != "")?" - " + line2:"")); //full text for copy-to-clipboard
+			var lineEls = detailEl.getElementsByClassName("subsystem_detail_line");
+			lineEls[0].innerText = line1;
+			lineEls[1].innerText = line2; //empty line keeps its height, so state stays put
+			detailEl.style.display = showDetail?"block":"none";
+			statusEl.style.top = ((parseInt(square.style.height)|0) - 1*_MARGIN - 35 -
+					(showDetail?2*_DETAIL_HEIGHT:0)) + "px";
+		} //end localDisplayDetail()
+
+		//===========
+		//	green bar growing left to right behind the text (like SubsystemLaunch.js);
+		//	hidden when progress is 100 (or 0, i.e. not started/unknown)
+		function localDisplayProgress(square, progressNum)
+		{
+			progressNum |= 0;
+			if(progressNum > 100) progressNum = 99; //cap, like SubsystemLaunch.js
+			var bar = square.getElementsByClassName("progressBar")[0];
+			if(!bar) return;
+			if(progressNum == 100 || progressNum == 0)
+			{
+				bar.style.display = "none";
+				return;
+			}
+			bar.style.display = "block";
+			bar.style.width = ((parseInt(square.style.width)|0) * progressNum / 100) + "px";
+			bar.style.height = square.style.height;
+		} //end localDisplayProgress()
 	} //end displayStatus()
 
 	//=====================================================================================
@@ -713,17 +807,24 @@ SubsystemSquares.create = function() {
 
 
 //=====================================================================================
+//decodeDetail ~~
+//	detail arrives URI-encoded and may contain html entities (like &lt; &apos; &gt;);
+//	use a temporary textarea to decode the entities (as in SubsystemLaunch.js)
+SubsystemSquares.decodeDetail = function(str)
+{
+	if(!str || str == "") return "";
+	const tel = document.createElement("textarea");
+	tel.innerHTML = decodeURIComponent(str);
+	return tel.value;
+} //end decodeDetail()
+
+//=====================================================================================
 SubsystemSquares.clickedSquare = function(s)
 {
 	Debug.log("clickedSquare()",s);
 
 	if(s == -1) //Landing Page link for Primary Gateway
 	{
-		if(SubsystemSquares.system.isRed)
-		{
-			Debug.err("Current State: " + SubsystemSquares.system.state + "\n\n" +
-				(SubsystemSquares.system.error?SubsystemSquares.system.error:""));
-		}
 		DesktopContent.popUpVerification(
 			"Do you want to open the Subsystem Launch GUI?",
 			function()
@@ -734,14 +835,6 @@ SubsystemSquares.clickedSquare = function(s)
 	}
 	else if(SubsystemSquares.subsystems[s])//subsystem
 	{
-		if(SubsystemSquares.subsystems[s].isRed)
-		{
-			Debug.err("From Subsystem '" +
-				SubsystemSquares.subsystems[s].name + "'... " +
-				SubsystemSquares.subsystems[s].status);
-
-		}
-
 		if(SubsystemSquares.subsystems[s].landingPage)
 			DesktopContent.popUpVerification(
 				"Do you want to open the landing page of Subsystem &apos;" +
@@ -758,6 +851,56 @@ SubsystemSquares.clickedSquare = function(s)
 	else
 		Debug.err("Notify admins. No Subsystem found for index",s);
 } //end clickedSquare()
+
+//=====================================================================================
+//clickedStatus ~~
+//	if status is red (Failed/Error/...), show the error and do not open landing page;
+//	otherwise let the click bubble to the square (landing page)
+SubsystemSquares.clickedStatus = function(event,s)
+{
+	Debug.log("clickedStatus()",s);
+
+	if(s == -1) //Primary Gateway
+	{
+		if(!SubsystemSquares.system.isRed) return; //bubble to square
+		event.stopPropagation();
+		Debug.err("Current State: " + SubsystemSquares.system.state + "\n\n" +
+			(SubsystemSquares.system.error?SubsystemSquares.system.error:""));
+	}
+	else if(SubsystemSquares.subsystems[s])//subsystem
+	{
+		if(!SubsystemSquares.subsystems[s].isRed) return; //bubble to square
+		event.stopPropagation();
+		Debug.err("From Subsystem '" +
+			SubsystemSquares.subsystems[s].name + "'... " +
+			SubsystemSquares.subsystems[s].status +
+			(SubsystemSquares.subsystems[s].detail?
+				"\n\n" + SubsystemSquares.decodeDetail(SubsystemSquares.subsystems[s].detail):""));
+	}
+} //end clickedStatus()
+
+//=====================================================================================
+//copyText ~~
+//	copy element text to clipboard with "Text copied!" popup (as in SubsystemLaunch.copyText)
+SubsystemSquares.copyText = function(event,el)
+{
+	event.stopPropagation(); //do not open landing page
+	const text = el.getAttribute("data-copytext") || el.innerText;
+	if(!text || text == "") return;
+
+	navigator.clipboard.writeText(text)
+		.then(() => {
+			Debug.log("Text copied to clipboard!",text);
+			DesktopContent.popUpVerification(
+				"Text copied!",0,
+				0,"#efeaea",0,"#770000",
+				0,0,0,0,0,0,0,0,
+				true /* justDisplayAndTimeoutPopup */);
+		})
+		.catch(err => {
+			Debug.err("Failed to copy: ", err);
+		});
+} //end SubsystemSquares.copyText()
 
 //=====================================================================================
 SubsystemSquares.initSubsystemRecords = function(returnHandler)
@@ -872,6 +1015,7 @@ SubsystemSquares.extractSystemStatus = function(req)
 	var tmpRunNumber = DesktopContent.getXMLValue(req,"run_number"); //undefined during transitions and 9:10 status requests
 	if(tmpRunNumber) SubsystemSquares.system.runNumber = tmpRunNumber;
 	SubsystemSquares.system.progress = DesktopContent.getXMLValue(req,"transition_progress") | 0;
+	SubsystemSquares.system.activeFsmStatus = DesktopContent.getXMLValue(req,"active_fsmStatus") || "";
 
 	var err = DesktopContent.getXMLValue(req,"system_error");
 	var fsmErr = DesktopContent.getXMLValue(req,"current_error");
