@@ -13461,7 +13461,10 @@
 			return Array.from(tbody.querySelectorAll('tr'));
 		}
 		function indexOfRow(row) { return getRows().indexOf(row); }
-		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+		function clearSelection() {
+			getRows().forEach(r => r.classList.remove('selected'));
+			lastSelectedIndex_ = null;
+		}
 
 		// Remove all reorder drop indicator classes
 		function _clearReorderDropIndicators() {
