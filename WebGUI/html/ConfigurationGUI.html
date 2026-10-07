@@ -13461,7 +13461,10 @@
 			return Array.from(tbody.querySelectorAll('tr'));
 		}
 		function indexOfRow(row) { return getRows().indexOf(row); }
-		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+		function clearSelection() {
+			getRows().forEach(r => r.classList.remove('selected'));
+			lastSelectedIndex_ = null;
+		}
 
 		// Remove all reorder drop indicator classes
 		function _clearReorderDropIndicators() {
@@ -13568,6 +13571,7 @@
 			// Mark the table as modified
 			versionHasChanged();
 			_renumberVisibleTableRows();
+			_rebindDataCellCoordinates();
 			// Re-register click/drag listeners for any newly positioned rows
 			registerOnClickActions();
 			Debug.log("moveSelectedRowsToIndex: done");
@@ -13726,8 +13730,34 @@
 
 			versionHasChanged();
 			_renumberVisibleTableColumns();
+			_rebindDataCellCoordinates();
 			registerColDragHandlers();
 		}
+
+		// Data cells capture [record,field] in inline handlers at render time; refresh them from the current DOM position after a manual move.
+		function _rebindDataCellCoordinates() {
+			var tableBody = document.getElementById("SubSystemTable");
+			if (!tableBody) return;
+			var displayRows = tableBody.querySelectorAll('tr');
+			for (var displayRowIndex = 0; displayRowIndex < displayRows.length; ++displayRowIndex) {
+				var displayCells = displayRows[displayRowIndex].cells;
+				for (var displayColumnIndex = 0; displayColumnIndex < displayCells.length; ++displayColumnIndex) {
+					var dataCell = displayCells[displayColumnIndex];
+					var mouseUpHandler = dataCell.getAttribute("onmouseup");
+					if (!mouseUpHandler || mouseUpHandler.indexOf("selectThisCell(") !== 0) continue;
+
+					var recordIndex = (_tableViewIsTransposed ? displayColumnIndex : displayRowIndex) - _CONFIG_DATA_ROW_OFFSET;
+					var fieldIndex = (_tableViewIsTransposed ? displayRowIndex : displayColumnIndex) - _CONFIG_DATA_COL_OFFSET;
+					var coordinates = recordIndex + "," + fieldIndex;
+
+					dataCell.setAttribute("onmouseup", "selectThisCell(" + coordinates + ",this,event);");
+					dataCell.setAttribute("onmouseover", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					dataCell.setAttribute("onmousemove", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					if (dataCell.title)
+						dataCell.title = dataCell.title.replace(/^\[row,col\] = \[-?\d+,-?\d+\]/, "[row,col] = [" + coordinates + "]");
+				}
+			}
+		} //end _rebindDataCellCoordinates()
 
 		function _renumberVisibleTableColumns() {
 			var tbody = document.getElementById("SubSystemTable");
@@ -13768,7 +13798,7 @@
 				delBtn.className = "tableDeleteRowButton";
 				delBtn.title = "Delete this row.";
 				delBtn.href = "#";
-				delBtn.onclick = (function(i) { return function() { deleteRow(i); return false; }; })(co);
+				delBtn.onclick = (function(i) { return function() { deleteRow(i); registerOnClickActions(); return false; }; })(co);
 				delBtn.textContent = "-";
 				center.appendChild(delBtn);
 
