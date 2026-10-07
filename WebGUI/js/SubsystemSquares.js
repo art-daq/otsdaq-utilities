@@ -741,8 +741,6 @@ SubsystemSquares.create = function() {
 			} //end subsystem
 		} //end primary square status loop
 
-		return true; //to keep getting status
-
 		//===========
 		//	title attribute is set at creation with the click hint (single line);
 		//	append detail after a newline, replacing any previously appended detail
@@ -787,6 +785,8 @@ SubsystemSquares.create = function() {
 			bar.style.width = ((parseInt(square.style.width)|0) * progressNum / 100) + "px";
 			bar.style.height = square.style.height;
 		} //end localDisplayProgress()
+
+		return true; //to keep getting status
 	} //end displayStatus()
 
 	//=====================================================================================
@@ -813,8 +813,17 @@ SubsystemSquares.create = function() {
 SubsystemSquares.decodeDetail = function(str)
 {
 	if(!str || str == "") return "";
+	var decoded = str;
+	try //a malformed percent-escape (raw '%' from upstream) throws; keep the raw string then
+	{
+		decoded = decodeURIComponent(str);
+	}
+	catch(e)
+	{
+		Debug.log("decodeDetail(): malformed URI component, using raw string", str);
+	}
 	const tel = document.createElement("textarea");
-	tel.innerHTML = decodeURIComponent(str);
+	tel.innerHTML = decoded;
 	return tel.value;
 } //end decodeDetail()
 
@@ -888,18 +897,46 @@ SubsystemSquares.copyText = function(event,el)
 	const text = el.getAttribute("data-copytext") || el.innerText;
 	if(!text || text == "") return;
 
-	navigator.clipboard.writeText(text)
-		.then(() => {
-			Debug.log("Text copied to clipboard!",text);
-			DesktopContent.popUpVerification(
-				"Text copied!",0,
-				0,"#efeaea",0,"#770000",
-				0,0,0,0,0,0,0,0,
-				true /* justDisplayAndTimeoutPopup */);
-		})
-		.catch(err => {
-			Debug.err("Failed to copy: ", err);
-		});
+	//===========
+	function localCopied()
+	{
+		Debug.log("Text copied to clipboard!",text);
+		DesktopContent.popUpVerification(
+			"Text copied!",0,
+			0,"#efeaea",0,"#770000",
+			0,0,0,0,0,0,0,0,
+			true /* justDisplayAndTimeoutPopup */);
+	} //end localCopied()
+
+	//===========
+	//	textarea + execCommand fallback for non-secure contexts (plain http),
+	//	where navigator.clipboard is unavailable
+	function localFallbackCopy()
+	{
+		var tel = document.createElement("textarea");
+		tel.value = text;
+		tel.style.position = "fixed"; //avoid scrolling to bottom
+		document.body.appendChild(tel);
+		tel.focus();
+		tel.select();
+		var ok = false;
+		try { ok = document.execCommand("copy"); } catch(e) { ok = false; }
+		document.body.removeChild(tel);
+		if(ok)
+			localCopied();
+		else
+			Debug.err("Copy to clipboard failed. Please select and copy the text manually:\n" + text);
+	} //end localFallbackCopy()
+
+	if(navigator.clipboard && navigator.clipboard.writeText)
+		navigator.clipboard.writeText(text)
+			.then(localCopied)
+			.catch(err => {
+				Debug.log("navigator.clipboard failed, trying fallback: ", err);
+				localFallbackCopy();
+			});
+	else
+		localFallbackCopy();
 } //end SubsystemSquares.copyText()
 
 //=====================================================================================

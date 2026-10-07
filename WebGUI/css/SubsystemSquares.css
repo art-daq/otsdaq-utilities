@@ -48,8 +48,11 @@
 			left: 5px;
 			right: 5px;
 			font-size: 14px;
-			color: black; /* bottom of square is bright; black for contrast */
-			text-shadow: none;
+			/* follow the square's state-dependent text color and shadow (white+shadow
+			   on colored/dark squares, black on light ones) so the detail stays
+			   readable on every background, including darkred error squares */
+			color: inherit;
+			text-shadow: inherit;
 			cursor: pointer;
 		}
 		.subsystem_detail_line {
