@@ -13798,7 +13798,7 @@
 				delBtn.className = "tableDeleteRowButton";
 				delBtn.title = "Delete this row.";
 				delBtn.href = "#";
-				delBtn.onclick = (function(i) { return function() { deleteRow(i); return false; }; })(co);
+				delBtn.onclick = (function(i) { return function() { deleteRow(i); registerOnClickActions(); return false; }; })(co);
 				delBtn.textContent = "-";
 				center.appendChild(delBtn);
 
