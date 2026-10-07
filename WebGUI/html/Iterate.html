@@ -1261,7 +1261,7 @@
 									// shared tables can have extra trailing columns
 									// (e.g. IterationCommandRunTable has WriteToECL
 									//  which WAIT doesn't use); trim to the expected count
-									if(params.length > _COMMAND_PARAMS[type].length)
+									if(_COMMAND_PARAMS[type] && params.length > _COMMAND_PARAMS[type].length)
 										params = params.slice(0, _COMMAND_PARAMS[type].length);
 									addCommand(type,params);
 									if(type_targetSubsystem)
