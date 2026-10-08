@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
+	<meta charset="utf-8">
 	<title>FE Macros</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
@@ -4391,10 +4392,23 @@ Here is the json string received:
 							"<select id='seqEditSelect-" + index + "' " +
 							"onchange='onSequenceEditInputChange(" + index + ")' " +
 							"style='font-size:calc(1em - 2px);max-width:55%;'></select> " +
+							"<select id='seqEditTargetSelect-" + index + "' " +
+							"onchange='onTargetSelectChange(" + index + ")' " +
+							"style='font-size:calc(1em - 2px);max-width:40%;display:none;'></select>" +
 							"<input type='text' id='seqEditValue-" + index + "' " +
 							"onfocus='this.select()' style='font-size:calc(1em - 2px);width:30%;' /> " +
+							"<button id='seqEditTargetFreeform-" + index + "' " +
+							"onclick='toggleTargetFreeform(" + index + ")' " +
+							"style='font-size:calc(1em - 2px);margin-left:2px;display:none;float:none;' " +
+							"title='Toggle free-form text entry'>&#9998;</button>" +
 							"<button onclick='onSequenceEditValueChange(" + index + ")' " +
-							"style='font-size:calc(1em - 2px);margin-left:2px;'>Set</button>";
+							"style='font-size:calc(1em - 2px);margin-left:2px;'>Set</button>" +
+							"<button id='seqEditSetAll-" + index + "' " +
+							"onclick='setTargetForSequenceEntries(" + index + ", false)' " +
+							"style='font-size:calc(1em - 2px);margin-left:4px;display:none;'>Set All</button>" +
+							"<button id='seqEditSetFollowing-" + index + "' " +
+							"onclick='setTargetForSequenceEntries(" + index + ", true)' " +
+							"style='font-size:calc(1em - 2px);margin-left:2px;display:none;'>Set All Following</button>";
 					}
 					FEsequence.appendChild(editDiv);
 				}
@@ -5048,8 +5062,10 @@ Here is the json string received:
 			sequenceBuilding_ = true;
 			var momWarn = document.getElementById("history-mom-warning");
 			if (momWarn) momWarn.style.display = "";
-			// close active view (clear read-only display without clearing selectedSequence_)
-			tempSequence_ = selectedSequence_;
+			// copy so edits to tempSequence_ do not mutate the saved selectedSequence_
+			tempSequence_ = {};
+			for (var sequenceKey in selectedSequence_)
+				tempSequence_[sequenceKey] = selectedSequence_[sequenceKey];
 			showSequence("show-sequence", {});
 			showSequence("sequence-builder", tempSequence_);
 			document.getElementById("show-sequence").style.display = "none";
@@ -5269,6 +5285,8 @@ Here is the json string received:
 			var sequenceName = document.getElementById("sequenceName");
 			var errorMessage = document.getElementById("sequenceName-error");
 			var isNewSequence = sequenceSelector.value === "Unnamed";
+			if (sequenceName.value.indexOf("/") !== -1)
+				sequenceName.value = sequenceName.value.substring(sequenceName.value.lastIndexOf("/") + 1);
 			Debug.log("saveSequence", sequenceName);
 
 			// check if name is empty
@@ -5871,6 +5889,8 @@ Here is the json string received:
 		function persistSequenceVariables() {
 			if (sequenceBuilding_) return;
 			var name = document.getElementById("select-sequence").value;
+			if (name && name.indexOf("/") !== -1)
+				name = name.substring(name.lastIndexOf("/") + 1);
 			if (!isSavedSequenceName(name) || !selectedSequence_ || Object.keys(selectedSequence_).length === 0)
 				return;
 
@@ -5907,6 +5927,29 @@ Here is the json string received:
 		} //end restoreIterationVariables()
 
 		//=====================================================================================
+		//buildVariableSummaryTooltip ~~
+		function buildVariableSummaryTooltip() {
+			var tooltipLines = [];
+			for (var variableName in sequenceVariables_) {
+				var variableSettings = sequenceVariables_[variableName];
+				tooltipLines.push(variableName + ":  value=" + variableSettings.value +
+					",  step=" + variableSettings.step +
+					",  max=" + variableSettings.max);
+			}
+			return tooltipLines.length > 0 ? tooltipLines.join("\n") : "";
+		} //end buildVariableSummaryTooltip()
+
+		//=====================================================================================
+		//updateVariableTooltips ~~
+		function updateVariableTooltips() {
+			var summaryTooltip = buildVariableSummaryTooltip();
+			var variableLabelElement = document.getElementById("variable-label");
+			if (variableLabelElement) variableLabelElement.title = summaryTooltip;
+			var variableSelectElement = document.getElementById("variable-select");
+			if (variableSelectElement) variableSelectElement.title = summaryTooltip;
+		} //end updateVariableTooltips()
+
+		//=====================================================================================
 		//updateVariableUI ~~
 		function updateVariableUI() {
 			var container = document.getElementById("variable-config-panel");
@@ -5930,7 +5973,7 @@ Here is the json string received:
 			selectHtml += "</select>";
 
 			var v0 = vars[varNames[0]];
-			var html = "<strong>Input Variables: </strong>" + selectHtml +
+			var html = "<strong id='variable-label'>Input Variables: </strong>" + selectHtml +
 				" Value: <input type='text' id='var-value' value='" + v0.value + "' style='width:60px;' oninput='updateVariableControlVisibility()' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"<span id='var-step-span' hidden>" +
 				" Step: <input type='text' id='var-step' value='" + v0.step + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
@@ -5938,6 +5981,7 @@ Here is the json string received:
 				" Max: <input type='text' id='var-max' value='" + v0.max + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"</span>";
 			container.innerHTML = html;
+			updateVariableTooltips();
 			updateVariableControlVisibility();
 		} //end updateVariableUI()
 
@@ -5980,6 +6024,7 @@ Here is the json string received:
 				step: document.getElementById("var-step").value,
 				max: document.getElementById("var-max").value
 			};
+			updateVariableTooltips();
 			updateVariableControlVisibility();
 			persistSequenceVariables();
 		} //end onVariableFieldChange()
@@ -6299,15 +6344,16 @@ Here is the json string received:
 				selectEl.appendChild(opt);
 			}
 
+			var targetOption = document.createElement("option");
+			targetOption.value = "target";
+			targetOption.textContent = "Target";
+			selectEl.insertBefore(targetOption, selectEl.firstChild);
+
 			if (!hasInputs) {
-				selectEl.innerHTML = "<option>No inputs</option>";
-				valueEl.value = "";
-				valueEl.disabled = true;
-			} else {
 				valueEl.disabled = false;
-				selectEl.selectedIndex = 0;
-				onSequenceEditInputChange(index);
 			}
+			selectEl.selectedIndex = 0;
+			onSequenceEditInputChange(index);
 
 			editDiv.style.display = "block";
 			if (valueEl && !valueEl.disabled) { valueEl.focus(); valueEl.select(); }
@@ -6319,13 +6365,94 @@ Here is the json string received:
 			var selectEl = document.getElementById("seqEditSelect-" + index);
 			var valueEl = document.getElementById("seqEditValue-" + index);
 			var command = JSON.parse(tempSequence_[index]);
-			var inputPairs = command["inputArgs"].split(";");
-			var pairIndex = parseInt(selectEl.value);
-			var tuple = inputPairs[pairIndex].split(",");
-			valueEl.value = decodeURIComponent(tuple[1] || "");
-			valueEl.focus();
-			valueEl.select();
+			var setAllButton = document.getElementById("seqEditSetAll-" + index);
+			var setFollowingButton = document.getElementById("seqEditSetFollowing-" + index);
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var freeformButton = document.getElementById("seqEditTargetFreeform-" + index);
+
+			if (selectEl.value === "target") {
+				var feClassForTarget = command["feClass"];
+				targetSelectEl.innerHTML = "";
+				var starOption = document.createElement("option");
+				starOption.value = "*|*";
+				starOption.textContent = "* (all FEs)";
+				targetSelectEl.appendChild(starOption);
+
+				for (var className in feClassToFEsMap_) {
+					var classOption = document.createElement("option");
+					classOption.value = "*|" + className;
+					classOption.textContent = "all " + className;
+					classOption.style.fontWeight = "bold";
+					targetSelectEl.appendChild(classOption);
+
+					var frontEndList = feClassToFEsMap_[className];
+					for (var feIndex = 0; feIndex < frontEndList.length; feIndex++) {
+						var feOption = document.createElement("option");
+						feOption.value = frontEndList[feIndex] + "|" + className;
+						feOption.textContent = "    " + frontEndList[feIndex];
+						targetSelectEl.appendChild(feOption);
+					}
+				}
+
+				var currentTargetKey = command["feUID"] + "|" + feClassForTarget;
+				targetSelectEl.value = currentTargetKey;
+				targetSelectEl.style.display = "";
+				valueEl.style.display = "none";
+				valueEl.value = command["feUID"];
+				valueEl.placeholder = "FE1, FE2";
+				if (freeformButton) freeformButton.style.display = "";
+				if (setAllButton) setAllButton.style.display = "";
+				if (setFollowingButton) setFollowingButton.style.display = "";
+			} else {
+				var inputPairs = command["inputArgs"].split(";");
+				var pairIndex = parseInt(selectEl.value);
+				var tuple = inputPairs[pairIndex].split(",");
+				valueEl.value = decodeURIComponent(tuple[1] || "");
+				valueEl.placeholder = "";
+				valueEl.style.display = "";
+				targetSelectEl.style.display = "none";
+				if (freeformButton) freeformButton.style.display = "none";
+				if (setAllButton) setAllButton.style.display = "none";
+				if (setFollowingButton) setFollowingButton.style.display = "none";
+			}
+			if (valueEl.style.display !== "none") {
+				valueEl.focus();
+				valueEl.select();
+			}
 		} //end onSequenceEditInputChange()
+
+		//=====================================================================================
+		//onTargetSelectChange ~~
+		function onTargetSelectChange(index) {
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var valueEl = document.getElementById("seqEditValue-" + index);
+			if (!targetSelectEl || !valueEl) return;
+			var targetParts = targetSelectEl.value.split("|");
+			valueEl.value = targetParts[0];
+		} //end onTargetSelectChange()
+
+		//=====================================================================================
+		//toggleTargetFreeform ~~
+		function toggleTargetFreeform(index) {
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var valueEl = document.getElementById("seqEditValue-" + index);
+			var freeformButton = document.getElementById("seqEditTargetFreeform-" + index);
+			if (!targetSelectEl || !valueEl) return;
+
+			if (valueEl.style.display === "none") {
+				var targetParts = targetSelectEl.value.split("|");
+				valueEl.value = targetParts[0];
+				valueEl.style.display = "";
+				targetSelectEl.style.display = "none";
+				if (freeformButton) freeformButton.title = "Switch to dropdown selection";
+				valueEl.focus();
+				valueEl.select();
+			} else {
+				targetSelectEl.style.display = "";
+				valueEl.style.display = "none";
+				if (freeformButton) freeformButton.title = "Toggle free-form text entry";
+			}
+		} //end toggleTargetFreeform()
 
 		//=====================================================================================
 		//onSequenceEditValueChange ~~
@@ -6333,26 +6460,46 @@ Here is the json string received:
 			var selectEl = document.getElementById("seqEditSelect-" + index);
 			var valueEl = document.getElementById("seqEditValue-" + index);
 			var command = JSON.parse(tempSequence_[index]);
-			var inputPairs = command["inputArgs"].split(";");
-			var pairIndex = parseInt(selectEl.value);
-			var tuple = inputPairs[pairIndex].split(",");
-			tuple[1] = encodeURIComponent(valueEl.value);
-			inputPairs[pairIndex] = tuple.join(",");
-			command["inputArgs"] = inputPairs.join(";");
-			tempSequence_[index] = JSON.stringify(command);
+
+			var feedbackMsg;
+
+			if (selectEl.value === "target") {
+				var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+				if (valueEl.style.display !== "none") {
+					command["feUID"] = valueEl.value;
+				} else {
+					var targetParts = targetSelectEl.value.split("|");
+					command["feUID"] = targetParts[0];
+					command["feClass"] = targetParts[1];
+				}
+				tempSequence_[index] = JSON.stringify(command);
+				feedbackMsg = "Set " + command["macroName"] + " Target = '" + command["feUID"] +
+					"' (" + command["feClass"] + ")";
+			} else {
+				var inputPairs = command["inputArgs"].split(";");
+				var pairIndex = parseInt(selectEl.value);
+				var tuple = inputPairs[pairIndex].split(",");
+				tuple[1] = encodeURIComponent(valueEl.value);
+				inputPairs[pairIndex] = tuple.join(",");
+				command["inputArgs"] = inputPairs.join(";");
+				tempSequence_[index] = JSON.stringify(command);
+				feedbackMsg = "Set " + command["macroName"] + " '" +
+					decodeURIComponent(tuple[0]) + "' = '" + valueEl.value + "'";
+			}
 
 			// update the displayed span text without re-rendering
 			var component = document.getElementById("sequenceComponent-" + index);
 			if (component) {
 				var span = component.querySelector("span");
 				if (span) {
+					var displayInputPairs = command["inputArgs"].split(";");
 					var recordName = "";
 					var titleArgs = "";
-					for (var j = 0; j < inputPairs.length; j++) {
-						var t = inputPairs[j].split(",");
-						if (t[0] !== "") {
-							var argName = decodeURIComponent(t[0]);
-							var argVal = decodeURIComponent(t[1]);
+					for (var j = 0; j < displayInputPairs.length; j++) {
+						var displayTuple = displayInputPairs[j].split(",");
+						if (displayTuple[0] !== "") {
+							var argName = decodeURIComponent(displayTuple[0]);
+							var argVal = decodeURIComponent(displayTuple[1]);
 							if (j) recordName += "; ";
 							recordName += argName + "=" + argVal;
 							titleArgs += "\n    " + argName + "=" + argVal;
@@ -6375,17 +6522,14 @@ Here is the json string received:
 					component.setAttribute("data-sequence-tooltip", escapeHistoryHtml(newTitleText));
 				}
 			}
-			// feedback in the MoM status display and output pane
-			var setArgName = decodeURIComponent(tuple[0]);
-			var setArgVal = valueEl.value;
-			var feedbackMsg = "Set " + command["macroName"] + " '" + setArgName + "' = '" + setArgVal + "'";
 
+			var setDisplayValue = valueEl.value;
 			var displayEl = document.getElementById("currentMacroDisplay");
 			if (displayEl) {
 				var prevText = displayEl.textContent;
-				displayEl.textContent = "Set to '" + setArgVal + "'";
+				displayEl.textContent = "Set to '" + setDisplayValue + "'";
 				setTimeout(function() {
-					if (displayEl.textContent === "Set to '" + setArgVal + "'")
+					if (displayEl.textContent === "Set to '" + setDisplayValue + "'")
 						displayEl.textContent = prevText;
 				}, 5000);
 			}
@@ -6396,13 +6540,61 @@ Here is the json string received:
 				editDiv.style.position = "relative";
 				var toast = document.createElement("span");
 				toast.style.cssText = "color:#cc5500; font-weight:bold; position:absolute; top:-1.4em; left:0;";
-				toast.textContent = "Set to '" + setArgVal + "'";
+				toast.textContent = "Set to '" + setDisplayValue + "'";
 				editDiv.appendChild(toast);
 				setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
 			}
 
 			appendOutputFeedback(feedbackMsg);
 		} //end onSequenceEditValueChange()
+
+		//=====================================================================================
+		//setTargetForSequenceEntries ~~
+		function setTargetForSequenceEntries(originIndex, onlyFollowing) {
+			var valueEl = document.getElementById("seqEditValue-" + originIndex);
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + originIndex);
+			if (!valueEl) return;
+			var newTargetUid;
+			var newTargetClass;
+			if (valueEl.style.display !== "none") {
+				newTargetUid = valueEl.value;
+			} else {
+				var targetParts = targetSelectEl.value.split("|");
+				newTargetUid = targetParts[0];
+				newTargetClass = targetParts[1];
+			}
+			var changedCount = 0;
+
+			for (var entryKey in tempSequence_) {
+				if (onlyFollowing && parseInt(entryKey) < parseInt(originIndex))
+					continue;
+				var entryCommand = JSON.parse(tempSequence_[entryKey]);
+				if (entryCommand["macroType"] === "__delay__" || entryCommand["macroType"] === "__mom__")
+					continue;
+				entryCommand["feUID"] = newTargetUid;
+				if (newTargetClass)
+					entryCommand["feClass"] = newTargetClass;
+				tempSequence_[entryKey] = JSON.stringify(entryCommand);
+				changedCount++;
+			}
+
+			showSequence("sequence-builder", tempSequence_);
+			toggleSequenceEdit(originIndex);
+
+			var scopeLabel = onlyFollowing ? "all following entries" : "all entries";
+			var feedbackMessage = "Set Target = '" + newTargetUid + "' on " + scopeLabel +
+				" (" + changedCount + " updated)";
+			appendOutputFeedback(feedbackMessage);
+			var displayEl = document.getElementById("currentMacroDisplay");
+			if (displayEl) {
+				var previousText = displayEl.textContent;
+				displayEl.textContent = feedbackMessage;
+				setTimeout(function() {
+					if (displayEl.textContent === feedbackMessage)
+						displayEl.textContent = previousText;
+				}, 5000);
+			}
+		} //end setTargetForSequenceEntries()
 
 		//=====================================================================================
 		//appendOutputFeedback ~~
