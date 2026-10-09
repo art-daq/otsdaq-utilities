@@ -1165,7 +1165,7 @@
 				if (_sequenceOnComplete)
 					errHint += "<br><br><b>MoM paused at this step.</b> Press Play to continue with the next step, or Stop.";
 				el.innerHTML = copyBtnStr + "<br><br><br>" +
-					str + "<br><br>" + errLabel + " " + Debug.callOutDebugLocales(errStr) + errHint;
+					str + "<br><br>" + errLabel + " " + (Debug.callOutDebugLocales(errStr) || errStr) + errHint;
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				// reset command-block state so future runs start clean
 				isRunningCommandBlock = false;
@@ -5520,7 +5520,7 @@ Here is the json string received:
 					};
 					showDelayCountdown();
 					var delayCountdownInterval = setInterval(function() {
-						if (stopSequenceFlag || pauseSequenceFlag) {
+						if (stopSequenceFlag) {
 							clearInterval(delayCountdownInterval);
 							return;
 						}
@@ -6246,7 +6246,7 @@ Here is the json string received:
 			for (var i = 0; i < currentMacroObj.inputs.length; ++i) {
 				var argumentName = currentMacroObj.inputs[i];
 				var argumentValue = "Default";
-				if (recordedInputMap.hasOwnProperty(argumentName))
+				if (Object.prototype.hasOwnProperty.call(recordedInputMap, argumentName))
 					argumentValue = recordedInputMap[argumentName];
 				else
 					addedInputNames.push(argumentName);
