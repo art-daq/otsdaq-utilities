@@ -6555,16 +6555,14 @@
 				html += "<span class='inlineKV-text'>" +
 					ConfigurationAPI.encodeHTML(valueVal) + "</span>";
 
-				if(valueIdString) {
-					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editValueIcon' " +
-						"id='treeNode-inlineKV-editValueIcon-" + idString + "' " +
-						"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
-						"onclick='inlineKVEdit(" +
-						valueDepthUid[0] + "," + valueDepthUid[1] +
-						"); event.stopPropagation();' " +
-						"title='Edit the value field.' " +
-						"></div>";
-				}
+				html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editValueIcon' " +
+					"id='treeNode-inlineKV-editValueIcon-" + idString + "' " +
+					"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
+					"onclick='inlineKVEdit(" +
+					valueDepthUid[0] + "," + valueDepthUid[1] +
+					"); event.stopPropagation();' " +
+					"title='Edit the value field.' " +
+					"></div>";
 
 				uidValueEl.innerHTML = html;
 				uidValueEl.classList.add("inlineKV-done");
