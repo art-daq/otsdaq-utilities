@@ -5812,15 +5812,12 @@
 					value = value.replace(/</g, "&lt");
 					value = value.replace(/>/g, "&gt");
 
-					var isLinkedTableKeyField_ = !isDiffNode && depth > 2 && nodeName.toLowerCase().includes("key");
-
 					//this is a value node!
 					//////////=======================
 					treeViewHandlerStr_ +=
 						"<div class='treeNode" + (isDiffNode ? " diffTreeNode" : "") +
 						"' id='treeNode-" +
 						(depth + "-" + uid) + "'" +
-						(isLinkedTableKeyField_ ? " style='display:none'" : "") +
 						" >" +
 						"<div class='treeNode-Path' style='display:none' id='treeNode-path-" +
 						(depth + "-" + uid) + "'>" + // end path id
@@ -6499,7 +6496,6 @@
 
 				var keyVal = "", valueVal = "";
 				var keyIdString = "", valueIdString = "";
-				var keyColName = "", valueColName = "";
 				var fieldNodes = childrenEl.querySelectorAll(".treeNode-Value-leafNode-fieldValue");
 				for(var f = 0; f < fieldNodes.length; ++f) {
 					var colClass = "";
@@ -6514,16 +6510,15 @@
 					if(colClass.toLowerCase().indexOf("key") >= 0) {
 						keyVal = fieldNodes[f].textContent;
 						keyIdString = leafId;
-						keyColName = colClass;
 					}
 					else if(colClass.toLowerCase().indexOf("value") >= 0) {
 						valueVal = fieldNodes[f].textContent;
 						valueIdString = leafId;
-						valueColName = colClass;
 					}
 				}
 
-				if(!valueVal) continue;
+				// format only when a Value column exists (an empty value still qualifies)
+				if(!valueIdString) continue;
 
 				var uidName = uidValueEl.textContent;
 				uidValueEl.setAttribute("data-original-uid", uidName);
@@ -6541,7 +6536,8 @@
 				var html = statusDotHtml;
 
 				// format: [status] keyVal [pencil] : valueVal [pencil]
-				html += "<span class='inlineKV-text'>" + (keyVal || uidName) + "</span>";
+				html += "<span class='inlineKV-text'>" +
+					ConfigurationAPI.encodeHTML(keyVal || uidName) + "</span>";
 
 				if(keyIdString) {
 					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editKeyIcon' " +
@@ -6556,7 +6552,8 @@
 
 				html += "<span style='margin:0 4px'> : </span>";
 
-				html += "<span class='inlineKV-text'>" + valueVal + "</span>";
+				html += "<span class='inlineKV-text'>" +
+					ConfigurationAPI.encodeHTML(valueVal) + "</span>";
 
 				if(valueIdString) {
 					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editValueIcon' " +
@@ -6642,11 +6639,13 @@
 			targetSpan.id = "treeNode-inlineKV-hiddenSpan-" + leafIdString;
 			targetSpan.style.display = "none";
 
-			var safeVal = currentVal.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-			var leafRef = JSON.stringify(leafIdString);
-			var tableRef = JSON.stringify(linkTableName);
-			var uidRef = JSON.stringify(uidName);
-			var colRef = JSON.stringify(colName);
+			var safeVal = ConfigurationAPI.encodeHTML(currentVal);
+			// JSON.stringify leaves ' and < untouched; encode so the string literal can
+			// sit inside a single-quoted inline handler attribute without breaking out
+			var leafRef = ConfigurationAPI.encodeHTML(JSON.stringify(leafIdString));
+			var tableRef = ConfigurationAPI.encodeHTML(JSON.stringify(linkTableName));
+			var uidRef = ConfigurationAPI.encodeHTML(JSON.stringify(uidName));
+			var colRef = ConfigurationAPI.encodeHTML(JSON.stringify(colName));
 
 			// Hide both pencil icons while editing
 			var _kvKeyIcon = document.getElementById("treeNode-inlineKV-editKeyIcon-" + uidIdString);
@@ -6666,10 +6665,10 @@
 				"onkeypress='event.stopPropagation();' " +
 				"onclick='event.stopPropagation();' " +
 				"/>" +
-				"<span style='cursor:pointer;color:green;font-weight:bold;padding:0 4px;vertical-align:middle;' " +
+				"<span style='cursor:pointer;color:green;font-weight:bold;font-family:Comfortaa;padding:0 4px;margin-left:10px;vertical-align:middle;' " +
 				"title='Save' " +
 				"onclick='inlineKVSave(" + leafRef + "," + tableRef + "," + tableVersion + "," + uidRef + "," + colRef + ");event.stopPropagation();'>&#10003;</span>" +
-				"<span style='cursor:pointer;color:red;font-weight:bold;padding:0 2px;vertical-align:middle;' " +
+				"<span style='cursor:pointer;color:red;font-weight:bold;font-family:system-ui;padding:0 4px;margin-left:10px;vertical-align:middle;' " +
 				"title='Cancel' " +
 				"onclick='inlineKVEditCancel(" + leafRef + ");event.stopPropagation();'>&#10007;</span>";
 
@@ -6708,10 +6707,10 @@
 
 			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
 				"&editNodeType=value" +
-				"&targetTable=" + tableName +
+				"&targetTable=" + encodeURIComponent(tableName) +
 				"&targetTableVersion=" + currentVersion +
-				"&targetUID=" + uid +
-				"&targetColumn=" + colName,
+				"&targetUID=" + encodeURIComponent(uid) +
+				"&targetColumn=" + encodeURIComponent(colName),
 				"newValue=" + encodeURIComponent(newVal),
 				function(req, reqParam, errStr) {
 					var localEditWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
@@ -8033,7 +8032,8 @@
 						) : ""
 					) +
 					"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
-					"&depth=" + (document.getElementById("treeNode-linkTableName-" + idString) ? 3 : 1),
+					"&depth=" + ((_isInlineKVEnabled() &&
+						document.getElementById("treeNode-linkTableName-" + idString)) ? 3 : 1),
 					"startPath=" + path + nodeName + "/" +
 					"&modifiedTables=" + modifiedTables,
 					function (req, parentId, err) {
