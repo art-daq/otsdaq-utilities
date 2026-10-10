@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
+	<meta charset="utf-8">
 	<title>FE Macros</title>
 
 	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
@@ -1154,13 +1155,17 @@
 					(_runningMacroName ? " '" + _runningMacroName + "'" : "") + ":";
 				Debug.err(errLabel + " " + errStr);
 				var errHint = "";
-				if (/mismatch in number of input arguments/i.test(errStr))
-					errHint += "<br><br><i>The FE macro's inputs have changed since this page was loaded " +
-						"(e.g. after a rebuild and restart). Refresh the page to reload macro definitions.</i>";
+				var argumentCountMatch = /(\d+) were given\.\s*(\d+) expected/i.exec(errStr);
+				if (argumentCountMatch)
+					errHint += "<br><br><i>This page sent " + argumentCountMatch[1] +
+						" input arguments, but the front-end expects " + argumentCountMatch[2] + ". " +
+						"This page's list of macro arguments does not match the running front-end, " +
+						"usually because the FE Macro was rebuilt after this page loaded. " +
+						"Refresh the page to reload macro definitions.</i>";
 				if (_sequenceOnComplete)
 					errHint += "<br><br><b>MoM paused at this step.</b> Press Play to continue with the next step, or Stop.";
 				el.innerHTML = copyBtnStr + "<br><br><br>" +
-					str + "<br><br>" + errLabel + " " + Debug.callOutDebugLocales(errStr) + errHint;
+					str + "<br><br>" + errLabel + " " + (Debug.callOutDebugLocales(errStr) || errStr) + errHint;
 				el.style.whiteSpace = "normal"; // to let errors wrap so user can read in small window
 				// reset command-block state so future runs start clean
 				isRunningCommandBlock = false;
@@ -3810,9 +3815,18 @@ Here is the json string received:
 			if (recordObj["macroType"] === "__delay__") {
 				var delaySec = getDelayRecordSeconds(recordObj);
 				var statusEl = document.getElementById("history-status");
-				if (statusEl) statusEl.innerHTML = "⏱ Delay " + delaySec + "s... " + getDateString(new Date);
+				var delayStartString = getDateString(new Date);
+				var delayEndTime = Date.now() + delaySec * 1000;
+				var showDelayCountdown = function() {
+					var secondsRemaining = Math.max(0, Math.ceil((delayEndTime - Date.now()) / 1000));
+					if (statusEl) statusEl.innerHTML = "⏱ Delay " + delaySec + "s... " +
+						secondsRemaining + "s left " + delayStartString;
+				};
+				showDelayCountdown();
+				var delayCountdownInterval = setInterval(showDelayCountdown, 1000);
 				appendHistoryRecord(JSON.stringify(recordObj));
 				setTimeout(function() {
+					clearInterval(delayCountdownInterval);
 					if (statusEl) statusEl.innerHTML = "";
 					if (isRunningCommandBlock) advanceCommandBlock();
 				}, delaySec * 1000);
@@ -3865,38 +3879,18 @@ Here is the json string received:
 			//	the history record can still be run using "Default" for missing inputs
 			var reconciledInputArgs = recordObj["inputArgs"];
 			var reconciledOutputArgs = recordObj["outputArgs"];
-			var currentMacroObj;
-			if (recordObj["macroType"] == MACRO_TYPE_PUBLIC_)
-				currentMacroObj = publicMacros_[recordObj["macroName"]];
-			else if (recordObj["macroType"] == MACRO_TYPE_PRIVATE_)
-				currentMacroObj = privateMacros_[recordObj["macroName"]];
-			else if (feToMacrosMap_[recordObj["feUID"]])
-				currentMacroObj = feToMacrosMap_[recordObj["feUID"]][recordObj["macroName"]];
-			else {
-				// feUID may be "*" or a comma-separated list; search all FEs for the macro
-				for (var feUID in feToMacrosMap_) {
-					if (feToMacrosMap_[feUID][recordObj["macroName"]]) {
-						currentMacroObj = feToMacrosMap_[feUID][recordObj["macroName"]];
-						break;
-					}
-				}
+			var reconciled = reconcileArgsWithCurrentMacro(recordObj);
+			if (reconciled && reconciled.errorMessage) {
+				var historyStatusEl = document.getElementById("history-status");
+				if (historyStatusEl) historyStatusEl.innerHTML = "";
+				_runningMacroName = recordObj["macroName"];
+				handleMacroResponse(null /*req*/, 0 /*reqParam*/,
+					"Not sent to the front-ends. " + reconciled.errorMessage);
+				return;
 			}
-			if (currentMacroObj) {
-				var inputData = "";
-				for (var i = 0; i < currentMacroObj.inputs.length; ++i) {
-					var argName = currentMacroObj.inputs[i];
-					var argValue = (historyInputMap[argName] !== undefined) ? historyInputMap[argName] : "Default";
-					if (i) inputData += ";";
-					inputData += encodeURIComponent(argName) + "," + encodeURIComponent(argValue);
-				}
-				reconciledInputArgs = inputData;
-
-				var outputData = "";
-				for (var i = 0; i < currentMacroObj.outputs.length; ++i) {
-					if (i) outputData += ",";
-					outputData += encodeURIComponent(currentMacroObj.outputs[i]);
-				}
-				reconciledOutputArgs = outputData;
+			if (reconciled) {
+				reconciledInputArgs = reconciled.inputArgs;
+				reconciledOutputArgs = reconciled.outputArgs;
 			}
 
 			var postData = "inputArgs=" + reconciledInputArgs + "&outputArgs=" + reconciledOutputArgs;
@@ -4398,10 +4392,23 @@ Here is the json string received:
 							"<select id='seqEditSelect-" + index + "' " +
 							"onchange='onSequenceEditInputChange(" + index + ")' " +
 							"style='font-size:calc(1em - 2px);max-width:55%;'></select> " +
+							"<select id='seqEditTargetSelect-" + index + "' " +
+							"onchange='onTargetSelectChange(" + index + ")' " +
+							"style='font-size:calc(1em - 2px);max-width:40%;display:none;'></select>" +
 							"<input type='text' id='seqEditValue-" + index + "' " +
 							"onfocus='this.select()' style='font-size:calc(1em - 2px);width:30%;' /> " +
+							"<button id='seqEditTargetFreeform-" + index + "' " +
+							"onclick='toggleTargetFreeform(" + index + ")' " +
+							"style='font-size:calc(1em - 2px);margin-left:2px;display:none;float:none;' " +
+							"title='Toggle free-form text entry'>&#9998;</button>" +
 							"<button onclick='onSequenceEditValueChange(" + index + ")' " +
-							"style='font-size:calc(1em - 2px);margin-left:2px;'>Set</button>";
+							"style='font-size:calc(1em - 2px);margin-left:2px;'>Set</button>" +
+							"<button id='seqEditSetAll-" + index + "' " +
+							"onclick='setTargetForSequenceEntries(" + index + ", false)' " +
+							"style='font-size:calc(1em - 2px);margin-left:4px;display:none;'>Set All</button>" +
+							"<button id='seqEditSetFollowing-" + index + "' " +
+							"onclick='setTargetForSequenceEntries(" + index + ", true)' " +
+							"style='font-size:calc(1em - 2px);margin-left:2px;display:none;'>Set All Following</button>";
 					}
 					FEsequence.appendChild(editDiv);
 				}
@@ -5055,8 +5062,10 @@ Here is the json string received:
 			sequenceBuilding_ = true;
 			var momWarn = document.getElementById("history-mom-warning");
 			if (momWarn) momWarn.style.display = "";
-			// close active view (clear read-only display without clearing selectedSequence_)
-			tempSequence_ = selectedSequence_;
+			// copy so edits to tempSequence_ do not mutate the saved selectedSequence_
+			tempSequence_ = {};
+			for (var sequenceKey in selectedSequence_)
+				tempSequence_[sequenceKey] = selectedSequence_[sequenceKey];
 			showSequence("show-sequence", {});
 			showSequence("sequence-builder", tempSequence_);
 			document.getElementById("show-sequence").style.display = "none";
@@ -5276,6 +5285,8 @@ Here is the json string received:
 			var sequenceName = document.getElementById("sequenceName");
 			var errorMessage = document.getElementById("sequenceName-error");
 			var isNewSequence = sequenceSelector.value === "Unnamed";
+			if (sequenceName.value.indexOf("/") !== -1)
+				sequenceName.value = sequenceName.value.substring(sequenceName.value.lastIndexOf("/") + 1);
 			Debug.log("saveSequence", sequenceName);
 
 			// check if name is empty
@@ -5501,9 +5512,23 @@ Here is the json string received:
 				if (command["macroType"] === "__delay__") {
 					var delayTuple = command["inputArgs"].split(",");
 					var delaySec = delayTuple.length > 1 ? parseFloat(decodeURIComponent(delayTuple[1])) : 0;
-					updateCurrentMacroDisplay("⏱ Delay " + delaySec + "s...", currentIndex + 1, totalMacros);
+					var delayEndTime = Date.now() + delaySec * 1000;
+					var showDelayCountdown = function() {
+						var secondsRemaining = Math.max(0, Math.ceil((delayEndTime - Date.now()) / 1000));
+						updateCurrentMacroDisplay("⏱ Delay " + delaySec + "s... " + secondsRemaining + "s left",
+							currentIndex + 1, totalMacros);
+					};
+					showDelayCountdown();
+					var delayCountdownInterval = setInterval(function() {
+						if (stopSequenceFlag) {
+							clearInterval(delayCountdownInterval);
+							return;
+						}
+						showDelayCountdown();
+					}, 1000);
 					appendHistoryRecord(JSON.stringify(command));
 					setTimeout(function() {
+						clearInterval(delayCountdownInterval);
 						++currentIndex;
 						if (!pauseSequenceFlag)
 							setTimeout(executeMacro, delayBetweenMacros);
@@ -5564,44 +5589,21 @@ Here is the json string received:
 				// reconcile sequence inputArgs/outputArgs with current macro definition
 				var seqReconciledInputArgs = command["inputArgs"];
 				var seqReconciledOutputArgs = command["outputArgs"];
-				var seqMacroObj;
-				if (command["macroType"] == MACRO_TYPE_PUBLIC_)
-					seqMacroObj = publicMacros_[command["macroName"]];
-				else if (command["macroType"] == MACRO_TYPE_PRIVATE_)
-					seqMacroObj = privateMacros_[command["macroName"]];
-				else if (feToMacrosMap_[command["feUID"]])
-					seqMacroObj = feToMacrosMap_[command["feUID"]][command["macroName"]];
-				else {
-					for (var feUID in feToMacrosMap_) {
-						if (feToMacrosMap_[feUID][command["macroName"]]) {
-							seqMacroObj = feToMacrosMap_[feUID][command["macroName"]];
-							break;
-						}
-					}
+				var seqReconciled = reconcileArgsWithCurrentMacro(command);
+				if (seqReconciled && seqReconciled.errorMessage) {
+					// same handling as a step that failed on the FE: pause here, Play resumes at the next step
+					_runningMacroName = command["macroName"];
+					_sequenceOnComplete = function () {
+						++currentIndex;
+						executeMacro();
+					};
+					handleMacroResponse(null /*req*/, 0 /*reqParam*/,
+						"Not sent to the front-ends. " + seqReconciled.errorMessage);
+					return;
 				}
-
-				if (seqMacroObj) {
-					var seqHistoryInputMap = {};
-					var seqInputArgsSplit = command["inputArgs"].split(';');
-					for (var si = 0; si < seqInputArgsSplit.length; ++si) {
-						var seqPair = seqInputArgsSplit[si].split(',');
-						seqHistoryInputMap[decodeURIComponent(seqPair[0])] = decodeURIComponent(seqPair[1]);
-					}
-					var seqInputData = "";
-					for (var si = 0; si < seqMacroObj.inputs.length; ++si) {
-						var seqArgName = seqMacroObj.inputs[si];
-						var seqArgValue = (seqHistoryInputMap[seqArgName] !== undefined) ? seqHistoryInputMap[seqArgName] : "Default";
-						if (si) seqInputData += ";";
-						seqInputData += encodeURIComponent(seqArgName) + "," + encodeURIComponent(seqArgValue);
-					}
-					seqReconciledInputArgs = seqInputData;
-
-					var seqOutputData = "";
-					for (var si = 0; si < seqMacroObj.outputs.length; ++si) {
-						if (si) seqOutputData += ",";
-						seqOutputData += encodeURIComponent(seqMacroObj.outputs[si]);
-					}
-					seqReconciledOutputArgs = seqOutputData;
+				if (seqReconciled) {
+					seqReconciledInputArgs = seqReconciled.inputArgs;
+					seqReconciledOutputArgs = seqReconciled.outputArgs;
 				}
 
 				seqReconciledInputArgs = substituteVariables(seqReconciledInputArgs);
@@ -5887,6 +5889,8 @@ Here is the json string received:
 		function persistSequenceVariables() {
 			if (sequenceBuilding_) return;
 			var name = document.getElementById("select-sequence").value;
+			if (name && name.indexOf("/") !== -1)
+				name = name.substring(name.lastIndexOf("/") + 1);
 			if (!isSavedSequenceName(name) || !selectedSequence_ || Object.keys(selectedSequence_).length === 0)
 				return;
 
@@ -5923,6 +5927,29 @@ Here is the json string received:
 		} //end restoreIterationVariables()
 
 		//=====================================================================================
+		//buildVariableSummaryTooltip ~~
+		function buildVariableSummaryTooltip() {
+			var tooltipLines = [];
+			for (var variableName in sequenceVariables_) {
+				var variableSettings = sequenceVariables_[variableName];
+				tooltipLines.push(variableName + ":  value=" + variableSettings.value +
+					",  step=" + variableSettings.step +
+					",  max=" + variableSettings.max);
+			}
+			return tooltipLines.length > 0 ? tooltipLines.join("\n") : "";
+		} //end buildVariableSummaryTooltip()
+
+		//=====================================================================================
+		//updateVariableTooltips ~~
+		function updateVariableTooltips() {
+			var summaryTooltip = buildVariableSummaryTooltip();
+			var variableLabelElement = document.getElementById("variable-label");
+			if (variableLabelElement) variableLabelElement.title = summaryTooltip;
+			var variableSelectElement = document.getElementById("variable-select");
+			if (variableSelectElement) variableSelectElement.title = summaryTooltip;
+		} //end updateVariableTooltips()
+
+		//=====================================================================================
 		//updateVariableUI ~~
 		function updateVariableUI() {
 			var container = document.getElementById("variable-config-panel");
@@ -5946,7 +5973,7 @@ Here is the json string received:
 			selectHtml += "</select>";
 
 			var v0 = vars[varNames[0]];
-			var html = "<strong>Input Variables: </strong>" + selectHtml +
+			var html = "<strong id='variable-label'>Input Variables: </strong>" + selectHtml +
 				" Value: <input type='text' id='var-value' value='" + v0.value + "' style='width:60px;' oninput='updateVariableControlVisibility()' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"<span id='var-step-span' hidden>" +
 				" Step: <input type='text' id='var-step' value='" + v0.step + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
@@ -5954,6 +5981,7 @@ Here is the json string received:
 				" Max: <input type='text' id='var-max' value='" + v0.max + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"</span>";
 			container.innerHTML = html;
+			updateVariableTooltips();
 			updateVariableControlVisibility();
 		} //end updateVariableUI()
 
@@ -5996,6 +6024,7 @@ Here is the json string received:
 				step: document.getElementById("var-step").value,
 				max: document.getElementById("var-max").value
 			};
+			updateVariableTooltips();
 			updateVariableControlVisibility();
 			persistSequenceVariables();
 		} //end onVariableFieldChange()
@@ -6135,6 +6164,114 @@ Here is the json string received:
 		} //end moveDownSequence()
 
 		//=====================================================================================
+		//reconcileArgsWithCurrentMacro ~~
+		//	rebuild a recorded command's inputArgs/outputArgs from the macro's current definition,
+		//	keeping recorded values by name and using "Default" for new inputs;
+		//	returns null when the macro is not in the current FE Macro list
+		function reconcileArgsWithCurrentMacro(command) {
+			var currentMacroObj;
+			if (command["macroType"] == MACRO_TYPE_PUBLIC_)
+				currentMacroObj = publicMacros_[command["macroName"]];
+			else if (command["macroType"] == MACRO_TYPE_PRIVATE_)
+				currentMacroObj = privateMacros_[command["macroName"]];
+			else if (feToMacrosMap_[command["feUID"]])
+				currentMacroObj = feToMacrosMap_[command["feUID"]][command["macroName"]];
+			else {
+				// feUID may be "*" or a comma-separated list; only search FEs of the recorded class,
+				//	because FEs of other classes (e.g. CFO vs DTC) can have a same-named macro with different arguments
+				var candidateFEUIDs;
+				if (command["feUID"] && command["feUID"] !== "*")
+					candidateFEUIDs = command["feUID"].split(",");
+				else if (command["feClass"] && command["feClass"] !== "*")
+					candidateFEUIDs = feClassToFEsMap_[command["feClass"]] || [];
+				else
+					candidateFEUIDs = Object.keys(feToMacrosMap_);
+				// every targeted FE must agree on the macro's arguments, otherwise there is no single list to send
+				var feUIDsBySignature = {};
+				var signatureOrder = [];
+				for (var i = 0; i < candidateFEUIDs.length; ++i) {
+					var candidateFEUID = candidateFEUIDs[i].trim();
+					if (!feToMacrosMap_[candidateFEUID] ||
+						!feToMacrosMap_[candidateFEUID][command["macroName"]])
+						continue;
+					var candidateMacroObj = feToMacrosMap_[candidateFEUID][command["macroName"]];
+					var signature = JSON.stringify([candidateMacroObj.inputs, candidateMacroObj.outputs]);
+					if (!feUIDsBySignature[signature]) {
+						feUIDsBySignature[signature] = [];
+						signatureOrder.push({ "signature": signature, "macroObj": candidateMacroObj });
+					}
+					feUIDsBySignature[signature].push(candidateFEUID +
+						" (" + candidateMacroObj.feClass + ")");
+					if (!currentMacroObj)
+						currentMacroObj = candidateMacroObj;
+				}
+				if (signatureOrder.length > 1) {
+					var conflictDescription = "";
+					for (var i = 0; i < signatureOrder.length; ++i) {
+						var conflictingMacroObj = signatureOrder[i].macroObj;
+						conflictDescription += "<br>&nbsp;&nbsp;- " +
+							escapeHistoryHtml(feUIDsBySignature[signatureOrder[i].signature].join(", ")) +
+							": " + conflictingMacroObj.inputs.length + " input" +
+							(conflictingMacroObj.inputs.length == 1 ? "" : "s") +
+							(conflictingMacroObj.inputs.length ?
+								" (" + escapeHistoryHtml(conflictingMacroObj.inputs.join(", ")) + ")" : "");
+					}
+					return {
+						"errorMessage": "FE Macro '" + escapeHistoryHtml(command["macroName"]) +
+							"' targets FE UID '" + escapeHistoryHtml(command["feUID"]) +
+							"' of FE class '" + escapeHistoryHtml(command["feClass"]) +
+							"', and those front-ends define this macro with different arguments:" +
+							conflictDescription +
+							"<br>Record it again with a specific FE class or FE, so there is one argument list to send.",
+					};
+				}
+			}
+			if (!currentMacroObj) return null;
+
+			var recordedInputMap = {};
+			var recordedInputNames = [];
+			var recordedInputPairs = (command["inputArgs"] || "").split(";");
+			for (var i = 0; i < recordedInputPairs.length; ++i) {
+				var recordedPair = recordedInputPairs[i].split(",");
+				if (recordedPair[0] === "") continue;
+				var recordedName = decodeURIComponent(recordedPair[0]);
+				recordedInputNames.push(recordedName);
+				// a name with no value at all means Default; an explicit empty value stays empty
+				recordedInputMap[recordedName] = (recordedPair.length > 1) ?
+					decodeURIComponent(recordedPair[1]) : "Default";
+			}
+
+			var inputArgs = "";
+			var addedInputNames = [];
+			for (var i = 0; i < currentMacroObj.inputs.length; ++i) {
+				var argumentName = currentMacroObj.inputs[i];
+				var argumentValue = "Default";
+				if (Object.prototype.hasOwnProperty.call(recordedInputMap, argumentName))
+					argumentValue = recordedInputMap[argumentName];
+				else
+					addedInputNames.push(argumentName);
+				if (i) inputArgs += ";";
+				inputArgs += encodeURIComponent(argumentName) + "," + encodeURIComponent(argumentValue);
+			}
+			var removedInputNames = recordedInputNames.filter(function (recordedInputName) {
+				return currentMacroObj.inputs.indexOf(recordedInputName) < 0;
+			});
+
+			var outputArgs = "";
+			for (var i = 0; i < currentMacroObj.outputs.length; ++i) {
+				if (i) outputArgs += ",";
+				outputArgs += encodeURIComponent(currentMacroObj.outputs[i]);
+			}
+
+			return {
+				"inputArgs": inputArgs,
+				"outputArgs": outputArgs,
+				"addedInputNames": addedInputNames,
+				"removedInputNames": removedInputNames,
+			};
+		} //end reconcileArgsWithCurrentMacro()
+
+		//=====================================================================================
 		//toggleSequenceEdit ~~
 		function toggleSequenceEdit(index) {
 			var editDiv = document.getElementById("sequenceEdit-" + index);
@@ -6155,6 +6292,41 @@ Here is the json string received:
 				return;
 			}
 
+			// pick up input/output signature changes from the latest compiled macro;
+			//	the updated entry is kept by Save or Save As
+			var reconciled = reconcileArgsWithCurrentMacro(command);
+			if (!reconciled) {
+				Debug.log("Macro '" + command["macroName"] + "' was not found in the current FE Macro list, " +
+					"so its input arguments could not be refreshed.", Debug.WARN_PRIORITY);
+			}
+			else if (reconciled.errorMessage) {
+				Debug.log(reconciled.errorMessage, Debug.WARN_PRIORITY);
+			}
+			else if (reconciled.inputArgs !== (command["inputArgs"] || "") ||
+				reconciled.outputArgs !== (command["outputArgs"] || "")) {
+				command["inputArgs"] = reconciled.inputArgs;
+				command["outputArgs"] = reconciled.outputArgs;
+				tempSequence_[index] = JSON.stringify(command);
+
+				var changeDescription = "";
+				if (reconciled.addedInputNames.length)
+					changeDescription += "<br>Added (set to Default): " +
+						escapeHistoryHtml(reconciled.addedInputNames.join(", "));
+				if (reconciled.removedInputNames.length)
+					changeDescription += "<br>Removed: " +
+						escapeHistoryHtml(reconciled.removedInputNames.join(", "));
+				if (changeDescription === "")
+					changeDescription = "<br>Argument order or outputs changed.";
+				Debug.log("Updated '" + escapeHistoryHtml(command["macroName"]) +
+					"' to its current argument list." + changeDescription +
+					"<br>Save or Save As to keep this change.", Debug.INFO_PRIORITY);
+
+				// re-render so the row text matches, then open the editor on the updated entry
+				showSequence("sequence-builder", tempSequence_);
+				toggleSequenceEdit(index);
+				return;
+			}
+
 			var selectEl = document.getElementById("seqEditSelect-" + index);
 			var valueEl = document.getElementById("seqEditValue-" + index);
 
@@ -6172,15 +6344,16 @@ Here is the json string received:
 				selectEl.appendChild(opt);
 			}
 
+			var targetOption = document.createElement("option");
+			targetOption.value = "target";
+			targetOption.textContent = "Target";
+			selectEl.insertBefore(targetOption, selectEl.firstChild);
+
 			if (!hasInputs) {
-				selectEl.innerHTML = "<option>No inputs</option>";
-				valueEl.value = "";
-				valueEl.disabled = true;
-			} else {
 				valueEl.disabled = false;
-				selectEl.selectedIndex = 0;
-				onSequenceEditInputChange(index);
 			}
+			selectEl.selectedIndex = 0;
+			onSequenceEditInputChange(index);
 
 			editDiv.style.display = "block";
 			if (valueEl && !valueEl.disabled) { valueEl.focus(); valueEl.select(); }
@@ -6192,13 +6365,94 @@ Here is the json string received:
 			var selectEl = document.getElementById("seqEditSelect-" + index);
 			var valueEl = document.getElementById("seqEditValue-" + index);
 			var command = JSON.parse(tempSequence_[index]);
-			var inputPairs = command["inputArgs"].split(";");
-			var pairIndex = parseInt(selectEl.value);
-			var tuple = inputPairs[pairIndex].split(",");
-			valueEl.value = decodeURIComponent(tuple[1] || "");
-			valueEl.focus();
-			valueEl.select();
+			var setAllButton = document.getElementById("seqEditSetAll-" + index);
+			var setFollowingButton = document.getElementById("seqEditSetFollowing-" + index);
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var freeformButton = document.getElementById("seqEditTargetFreeform-" + index);
+
+			if (selectEl.value === "target") {
+				var feClassForTarget = command["feClass"];
+				targetSelectEl.innerHTML = "";
+				var starOption = document.createElement("option");
+				starOption.value = "*|*";
+				starOption.textContent = "* (all FEs)";
+				targetSelectEl.appendChild(starOption);
+
+				for (var className in feClassToFEsMap_) {
+					var classOption = document.createElement("option");
+					classOption.value = "*|" + className;
+					classOption.textContent = "all " + className;
+					classOption.style.fontWeight = "bold";
+					targetSelectEl.appendChild(classOption);
+
+					var frontEndList = feClassToFEsMap_[className];
+					for (var feIndex = 0; feIndex < frontEndList.length; feIndex++) {
+						var feOption = document.createElement("option");
+						feOption.value = frontEndList[feIndex] + "|" + className;
+						feOption.textContent = "    " + frontEndList[feIndex];
+						targetSelectEl.appendChild(feOption);
+					}
+				}
+
+				var currentTargetKey = command["feUID"] + "|" + feClassForTarget;
+				targetSelectEl.value = currentTargetKey;
+				targetSelectEl.style.display = "";
+				valueEl.style.display = "none";
+				valueEl.value = command["feUID"];
+				valueEl.placeholder = "FE1, FE2";
+				if (freeformButton) freeformButton.style.display = "";
+				if (setAllButton) setAllButton.style.display = "";
+				if (setFollowingButton) setFollowingButton.style.display = "";
+			} else {
+				var inputPairs = command["inputArgs"].split(";");
+				var pairIndex = parseInt(selectEl.value);
+				var tuple = inputPairs[pairIndex].split(",");
+				valueEl.value = decodeURIComponent(tuple[1] || "");
+				valueEl.placeholder = "";
+				valueEl.style.display = "";
+				targetSelectEl.style.display = "none";
+				if (freeformButton) freeformButton.style.display = "none";
+				if (setAllButton) setAllButton.style.display = "none";
+				if (setFollowingButton) setFollowingButton.style.display = "none";
+			}
+			if (valueEl.style.display !== "none") {
+				valueEl.focus();
+				valueEl.select();
+			}
 		} //end onSequenceEditInputChange()
+
+		//=====================================================================================
+		//onTargetSelectChange ~~
+		function onTargetSelectChange(index) {
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var valueEl = document.getElementById("seqEditValue-" + index);
+			if (!targetSelectEl || !valueEl) return;
+			var targetParts = targetSelectEl.value.split("|");
+			valueEl.value = targetParts[0];
+		} //end onTargetSelectChange()
+
+		//=====================================================================================
+		//toggleTargetFreeform ~~
+		function toggleTargetFreeform(index) {
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+			var valueEl = document.getElementById("seqEditValue-" + index);
+			var freeformButton = document.getElementById("seqEditTargetFreeform-" + index);
+			if (!targetSelectEl || !valueEl) return;
+
+			if (valueEl.style.display === "none") {
+				var targetParts = targetSelectEl.value.split("|");
+				valueEl.value = targetParts[0];
+				valueEl.style.display = "";
+				targetSelectEl.style.display = "none";
+				if (freeformButton) freeformButton.title = "Switch to dropdown selection";
+				valueEl.focus();
+				valueEl.select();
+			} else {
+				targetSelectEl.style.display = "";
+				valueEl.style.display = "none";
+				if (freeformButton) freeformButton.title = "Toggle free-form text entry";
+			}
+		} //end toggleTargetFreeform()
 
 		//=====================================================================================
 		//onSequenceEditValueChange ~~
@@ -6206,26 +6460,46 @@ Here is the json string received:
 			var selectEl = document.getElementById("seqEditSelect-" + index);
 			var valueEl = document.getElementById("seqEditValue-" + index);
 			var command = JSON.parse(tempSequence_[index]);
-			var inputPairs = command["inputArgs"].split(";");
-			var pairIndex = parseInt(selectEl.value);
-			var tuple = inputPairs[pairIndex].split(",");
-			tuple[1] = encodeURIComponent(valueEl.value);
-			inputPairs[pairIndex] = tuple.join(",");
-			command["inputArgs"] = inputPairs.join(";");
-			tempSequence_[index] = JSON.stringify(command);
+
+			var feedbackMsg;
+
+			if (selectEl.value === "target") {
+				var targetSelectEl = document.getElementById("seqEditTargetSelect-" + index);
+				if (valueEl.style.display !== "none") {
+					command["feUID"] = valueEl.value;
+				} else {
+					var targetParts = targetSelectEl.value.split("|");
+					command["feUID"] = targetParts[0];
+					command["feClass"] = targetParts[1];
+				}
+				tempSequence_[index] = JSON.stringify(command);
+				feedbackMsg = "Set " + command["macroName"] + " Target = '" + command["feUID"] +
+					"' (" + command["feClass"] + ")";
+			} else {
+				var inputPairs = command["inputArgs"].split(";");
+				var pairIndex = parseInt(selectEl.value);
+				var tuple = inputPairs[pairIndex].split(",");
+				tuple[1] = encodeURIComponent(valueEl.value);
+				inputPairs[pairIndex] = tuple.join(",");
+				command["inputArgs"] = inputPairs.join(";");
+				tempSequence_[index] = JSON.stringify(command);
+				feedbackMsg = "Set " + command["macroName"] + " '" +
+					decodeURIComponent(tuple[0]) + "' = '" + valueEl.value + "'";
+			}
 
 			// update the displayed span text without re-rendering
 			var component = document.getElementById("sequenceComponent-" + index);
 			if (component) {
 				var span = component.querySelector("span");
 				if (span) {
+					var displayInputPairs = command["inputArgs"].split(";");
 					var recordName = "";
 					var titleArgs = "";
-					for (var j = 0; j < inputPairs.length; j++) {
-						var t = inputPairs[j].split(",");
-						if (t[0] !== "") {
-							var argName = decodeURIComponent(t[0]);
-							var argVal = decodeURIComponent(t[1]);
+					for (var j = 0; j < displayInputPairs.length; j++) {
+						var displayTuple = displayInputPairs[j].split(",");
+						if (displayTuple[0] !== "") {
+							var argName = decodeURIComponent(displayTuple[0]);
+							var argVal = decodeURIComponent(displayTuple[1]);
 							if (j) recordName += "; ";
 							recordName += argName + "=" + argVal;
 							titleArgs += "\n    " + argName + "=" + argVal;
@@ -6248,17 +6522,14 @@ Here is the json string received:
 					component.setAttribute("data-sequence-tooltip", escapeHistoryHtml(newTitleText));
 				}
 			}
-			// feedback in the MoM status display and output pane
-			var setArgName = decodeURIComponent(tuple[0]);
-			var setArgVal = valueEl.value;
-			var feedbackMsg = "Set " + command["macroName"] + " '" + setArgName + "' = '" + setArgVal + "'";
 
+			var setDisplayValue = valueEl.value;
 			var displayEl = document.getElementById("currentMacroDisplay");
 			if (displayEl) {
 				var prevText = displayEl.textContent;
-				displayEl.textContent = "Set to '" + setArgVal + "'";
+				displayEl.textContent = "Set to '" + setDisplayValue + "'";
 				setTimeout(function() {
-					if (displayEl.textContent === "Set to '" + setArgVal + "'")
+					if (displayEl.textContent === "Set to '" + setDisplayValue + "'")
 						displayEl.textContent = prevText;
 				}, 5000);
 			}
@@ -6269,13 +6540,61 @@ Here is the json string received:
 				editDiv.style.position = "relative";
 				var toast = document.createElement("span");
 				toast.style.cssText = "color:#cc5500; font-weight:bold; position:absolute; top:-1.4em; left:0;";
-				toast.textContent = "Set to '" + setArgVal + "'";
+				toast.textContent = "Set to '" + setDisplayValue + "'";
 				editDiv.appendChild(toast);
 				setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
 			}
 
 			appendOutputFeedback(feedbackMsg);
 		} //end onSequenceEditValueChange()
+
+		//=====================================================================================
+		//setTargetForSequenceEntries ~~
+		function setTargetForSequenceEntries(originIndex, onlyFollowing) {
+			var valueEl = document.getElementById("seqEditValue-" + originIndex);
+			var targetSelectEl = document.getElementById("seqEditTargetSelect-" + originIndex);
+			if (!valueEl) return;
+			var newTargetUid;
+			var newTargetClass;
+			if (valueEl.style.display !== "none") {
+				newTargetUid = valueEl.value;
+			} else {
+				var targetParts = targetSelectEl.value.split("|");
+				newTargetUid = targetParts[0];
+				newTargetClass = targetParts[1];
+			}
+			var changedCount = 0;
+
+			for (var entryKey in tempSequence_) {
+				if (onlyFollowing && parseInt(entryKey) < parseInt(originIndex))
+					continue;
+				var entryCommand = JSON.parse(tempSequence_[entryKey]);
+				if (entryCommand["macroType"] === "__delay__" || entryCommand["macroType"] === "__mom__")
+					continue;
+				entryCommand["feUID"] = newTargetUid;
+				if (newTargetClass)
+					entryCommand["feClass"] = newTargetClass;
+				tempSequence_[entryKey] = JSON.stringify(entryCommand);
+				changedCount++;
+			}
+
+			showSequence("sequence-builder", tempSequence_);
+			toggleSequenceEdit(originIndex);
+
+			var scopeLabel = onlyFollowing ? "all following entries" : "all entries";
+			var feedbackMessage = "Set Target = '" + newTargetUid + "' on " + scopeLabel +
+				" (" + changedCount + " updated)";
+			appendOutputFeedback(feedbackMessage);
+			var displayEl = document.getElementById("currentMacroDisplay");
+			if (displayEl) {
+				var previousText = displayEl.textContent;
+				displayEl.textContent = feedbackMessage;
+				setTimeout(function() {
+					if (displayEl.textContent === feedbackMessage)
+						displayEl.textContent = previousText;
+				}, 5000);
+			}
+		} //end setTargetForSequenceEntries()
 
 		//=====================================================================================
 		//appendOutputFeedback ~~
