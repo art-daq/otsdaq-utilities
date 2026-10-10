@@ -11,6 +11,6 @@ WebGUI/*Path
 WebGUI/js/Debug.js
 *.code-workspace
 spack-build-*
-build-*
+build-*/
 WebGUI/images/otsdaqIcons/generated/
 _codeql_detected_source_root
