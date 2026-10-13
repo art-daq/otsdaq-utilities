@@ -29,6 +29,8 @@
 #include <chrono>
 #include <map>
 #include <string>
+#include <memory>
+#include <vector>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 #include "otsdaq-utilities/ECLWriter/ECLConnection.h"

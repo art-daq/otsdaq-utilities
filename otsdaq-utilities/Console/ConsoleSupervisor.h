@@ -7,6 +7,12 @@
 
 #include <mutex>  //for std::mutex
 #include <queue>  //for std::queue
+#include <deque>
+#include <map>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace ots
 {

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <string>
+#include <vector>
 #include "otsdaq/Macros/CoutMacros.h"
 #include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"

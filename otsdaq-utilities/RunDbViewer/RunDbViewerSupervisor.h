@@ -3,6 +3,8 @@
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include <string>
+
 // clang-format off
 namespace ots
 {

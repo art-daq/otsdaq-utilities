@@ -22,6 +22,7 @@
 #include <iostream>
 #else
 #include <iostream.h>
+#include <string>
 #endif
 
 #define X(str) XStr(str).unicodeForm()

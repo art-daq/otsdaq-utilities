@@ -2,6 +2,9 @@
 #include "test/ots_mm_udp_interface.h"
 
 #include <chrono>
+#include <set>
+#include <string>
+#include <vector>
 
 #define MAXBUFLEN 5000
 

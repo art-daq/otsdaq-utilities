@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <map>
+#include <string>
 
 #define MAXBUFLEN 5000
 

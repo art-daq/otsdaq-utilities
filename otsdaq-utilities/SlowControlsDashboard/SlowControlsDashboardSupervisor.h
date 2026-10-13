@@ -2,6 +2,10 @@
 #define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_SLOWCONTROLSDASHBOARD_SLOWCONTROLSDASHBOARDSUPERVISOR_H_
 
 #include <chrono>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 // #include "otsdaq-utilities/SlowControlsInterfacePlugins/EpicsInterface.h"

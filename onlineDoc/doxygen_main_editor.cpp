@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <iostream>
+#include <string>
 
 /// use this for normal printouts
 #define __PRINTF__ printf

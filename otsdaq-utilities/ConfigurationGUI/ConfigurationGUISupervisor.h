@@ -4,6 +4,9 @@
 #include "otsdaq/ConfigurationInterface/ConfigurationManagerRW.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include <map>
+#include <string>
+
 namespace ots
 {
 // clang-format off

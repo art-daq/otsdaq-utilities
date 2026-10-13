@@ -7,6 +7,11 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <map>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace ots
 {

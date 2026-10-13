@@ -3,6 +3,9 @@
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include <string>
+#include <vector>
+
 namespace ots
 {
 /// ChatSupervisor
