@@ -61,7 +61,7 @@ const std::set<std::string> ConsoleSupervisor::CUSTOM_TRIGGER_ACTIONS({"Count On
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE      = "TRACE";
 const std::string ConsoleSupervisor::ConsoleMessageStruct::LABEL_TRACE_PLUS = "TRACE+";
 const std::map<ConsoleSupervisor::ConsoleMessageStruct::FieldType,
-               std::string /* fieldNames */>
+               std::string /** fieldNames  */>
     ConsoleSupervisor::ConsoleMessageStruct::fieldNames({
         {FieldType::TIMESTAMP, "Timestamp"},
         {FieldType::SEQID, "SequenceID"},
@@ -386,7 +386,7 @@ try
 
 					// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
 					// after startup grace period, generate special message to indicate missed packets
-					if(cs->getSupervisorUptime() > 20 /* seconds */ &&
+					if(cs->getSupervisorUptime() > 20 /** seconds  */ &&
 					   sourceLastSequenceID[newSourceId] !=
 					       1 &&  //veto missed error if sequenceID was 1 (this likely means a trace source was restarted)
 					   newSequenceId !=
@@ -676,7 +676,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 ///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
-                                                 uint32_t           priority, /* = -1 */
+                                                 uint32_t           priority, // = -1 
                                                  uint32_t           triggerOnCount,
                                                  bool               doLoop,
                                                  bool               isArmed)
@@ -1503,7 +1503,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		__SUP_COUTV__(hostList);
 
-		std::vector<std::string /*host*/> hosts;
+		std::vector<std::string /**host */> hosts;
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
@@ -1599,7 +1599,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 
 		__SUP_COUTV__(hostList);
 
-		std::vector<std::string /*host*/> hosts;
+		std::vector<std::string /**host */> hosts;
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
@@ -1697,7 +1697,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		__SUP_COUTV__(hostList);
 		__SUP_COUTV__(enable);
 
-		std::vector<std::string /*host*/> hosts;
+		std::vector<std::string /**host */> hosts;
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 
@@ -1798,7 +1798,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 		__SUP_COUTV__(filterFor);
 		__SUP_COUTV__(filterOut);
 
-		std::vector<std::string /*host*/> hosts;
+		std::vector<std::string /**host */> hosts;
 
 		auto& allTraceApps = allSupervisorInfo_.getAllTraceControllerSupervisorInfo();
 

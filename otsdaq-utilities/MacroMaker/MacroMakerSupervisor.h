@@ -1,5 +1,5 @@
-#ifndef _ots_MacroMakerSupervisor_h_
-#define _ots_MacroMakerSupervisor_h_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_MACROMAKER_MACROMAKERSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_MACROMAKER_MACROMAKERSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 #include "otsdaq/ProgressBar/ProgressBar.h"
@@ -174,7 +174,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	void loadMacroNames(
 	    const std::string&                                      username,
 	    std::pair<std::vector<std::string> /*public macros*/,
-	              std::vector<std::string> /*private macros*/>& returnMacroNames);
+	              std::vector<std::string> /***private macros  */>& returnMacroNames);
 	void        appendCommandToHistory(std::string        command,
 	                                   std::string        Format,
 	                                   std::string        time,
@@ -254,7 +254,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	bool        defaultSequence_;
 
 	std::map<std::string /* username */,
-	         std::vector<std::string> /* last command */>
+	         std::vector<std::string> /*** last command   */>
 	                                                   lastFeCommandToHistory_;  ///<prevent repeats to history
 	std::map<std::string /* username */, unsigned int> lastFeRepeatCount_;
 	std::map<std::string /* username */, off_t>        lastFeRecordFilePos_;
@@ -268,4 +268,4 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 };  // end MacroMakerSupervisor declaration
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_MACROMAKER_MACROMAKERSUPERVISOR_H_

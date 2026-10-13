@@ -1,5 +1,5 @@
-#ifndef _ots_SlowControlsDashboardSupervisor_h_
-#define _ots_SlowControlsDashboardSupervisor_h_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_SLOWCONTROLSDASHBOARD_SLOWCONTROLSDASHBOARDSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_SLOWCONTROLSDASHBOARD_SLOWCONTROLSDASHBOARDSUPERVISOR_H_
 
 #include <chrono>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
@@ -100,4 +100,4 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 };
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_SLOWCONTROLSDASHBOARD_SLOWCONTROLSDASHBOARDSUPERVISOR_H_

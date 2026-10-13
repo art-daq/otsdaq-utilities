@@ -1,5 +1,5 @@
-#ifndef _ots_VisualizationV2_version_h_
-#define _ots_VisualizationV2_version_h_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VERSION_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VERSION_H_
 
 #include "config/PackageInfo.h"
 
@@ -38,4 +38,4 @@ void                                           checkPackageDependencies();
 std::set<std::string, std::less<std::string> > getPackageDependencies();
 }  // namespace VisualizationV2
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VERSION_H_

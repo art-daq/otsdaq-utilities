@@ -1,5 +1,5 @@
-#ifndef _ots_ConfigurationGUISupervisor_h_
-#define _ots_ConfigurationGUISupervisor_h_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONFIGURATIONGUI_CONFIGURATIONGUISUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONFIGURATIONGUI_CONFIGURATIONGUISUPERVISOR_H_
 
 #include "otsdaq/ConfigurationInterface/ConfigurationManagerRW.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
@@ -87,7 +87,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	bool                    refreshAll      = true,
 																	bool                    getGroupInfo    = false,
 																	std::map<std::string /*name*/,
-																		TableVersion /*version*/>* returnMemberMap = 0,
+																		TableVersion /***version  */>* returnMemberMap = 0,
 																	bool         			outputActiveTables = true,
 																	std::string* 			accumulatedErrors  = 0);
 	void    				handleFillTreeViewXML					(HttpXmlDocument&       xmldoc,
@@ -289,4 +289,4 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 // clang-format on
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONFIGURATIONGUI_CONFIGURATIONGUISUPERVISOR_H_

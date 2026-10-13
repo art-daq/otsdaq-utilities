@@ -1,5 +1,5 @@
-#ifndef _ots_VisualSupervisor_h
-#define _ots_VisualSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 //================ new Dario
@@ -86,4 +86,4 @@ class VisualSupervisor : public CoreSupervisorBase
 };
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_
