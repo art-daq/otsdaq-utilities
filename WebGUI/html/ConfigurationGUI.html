@@ -5726,11 +5726,19 @@
 			for (i = 0; i < nodes.length; ++i) {
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
 
-				// Skip UID-record metadata elements that appear in children when depth=3
+				// Skip metadata elements that appear among children when depth=3
 				// loads linked-table records; they're consumed at the parent level only.
+				//	(UID-record metadata: comment/nodeStatus/nodeDiff;
+				//	 link metadata: UID/GroupID/LinkTableName/LinkIndex/fixedChoices/valueType)
 				if (!isDiffNode && (nodes[i].nodeName == "comment" ||
 					nodes[i].nodeName == "nodeStatus" ||
-					nodes[i].nodeName == "nodeDiff"))
+					nodes[i].nodeName == "nodeDiff" ||
+					nodes[i].nodeName == "UID" ||
+					nodes[i].nodeName == "GroupID" ||
+					nodes[i].nodeName == "LinkTableName" ||
+					nodes[i].nodeName == "LinkIndex" ||
+					nodes[i].nodeName == "fixedChoices" ||
+					nodes[i].nodeName == "valueType"))
 					continue;
 
 				uid = treeNodeUID_++;
