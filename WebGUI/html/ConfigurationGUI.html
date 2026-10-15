@@ -5726,11 +5726,19 @@
 			for (i = 0; i < nodes.length; ++i) {
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
 
-				// Skip UID-record metadata elements that appear in children when depth=3
+				// Skip metadata elements that appear among children when depth=3
 				// loads linked-table records; they're consumed at the parent level only.
+				//	(UID-record metadata: comment/nodeStatus/nodeDiff;
+				//	 link metadata: UID/GroupID/LinkTableName/LinkIndex/fixedChoices/valueType)
 				if (!isDiffNode && (nodes[i].nodeName == "comment" ||
 					nodes[i].nodeName == "nodeStatus" ||
-					nodes[i].nodeName == "nodeDiff"))
+					nodes[i].nodeName == "nodeDiff" ||
+					nodes[i].nodeName == "UID" ||
+					nodes[i].nodeName == "GroupID" ||
+					nodes[i].nodeName == "LinkTableName" ||
+					nodes[i].nodeName == "LinkIndex" ||
+					nodes[i].nodeName == "fixedChoices" ||
+					nodes[i].nodeName == "valueType"))
 					continue;
 
 				uid = treeNodeUID_++;
@@ -6443,10 +6451,14 @@
 				treeViewHandlerStr_ += "</td>";
 				treeViewHandlerStr_ += "</tr></table>"; //close pre/comment table row
 
+				//a nested link whose records arrived pre-loaded (depth=3 inline key/value
+				//	mode) must start collapsed, like a link the user has not expanded yet
+				var startChildrenCollapsed = (isLink && childrenLength && depth > 0);
 				treeViewHandlerStr_ +=
 					"<div id='clearDiv'></div>" +
 					"<div class='treeNode-Children' id='treeNode-ChildrenOf-" +
-					(depth + "-" + uid) + "'>";
+					(depth + "-" + uid) + "'" +
+					(startChildrenCollapsed ? " style='display:none'" : "") + ">";
 
 				if (childrenLength) {
 					recursiveDrawTree(nodes[i], depth + 1, path + nodeName + "/",
