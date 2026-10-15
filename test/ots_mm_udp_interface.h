@@ -14,8 +14,10 @@
 #include <unistd.h>
 
 #include <string.h>  //for strstr (not the same as <string>)
+#include <cmath>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <string>  //for string
@@ -99,6 +101,12 @@ class ots_mm_udp_interface
 	std::string        runCommand(const std::string& targetFE,
 	                              const std::string& command,
 	                              const std::string& inputs);
+	std::string        getSequenceList(void);
+	std::string        getSequenceInfo(const std::string& sequenceName);
+	std::string        runSequence(const std::string& sequenceName,
+	                               const std::string& variablesJSON,
+	                               unsigned int       iterationCount);
+	std::string        describeSequence(const std::string& sequenceJSON);
 
 	// static const int        MAXBUFLEN = 5000;
 

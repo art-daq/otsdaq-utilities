@@ -5944,9 +5944,9 @@ Here is the json string received:
 		function updateVariableTooltips() {
 			var summaryTooltip = buildVariableSummaryTooltip();
 			var variableLabelElement = document.getElementById("variable-label");
-			if (variableLabelElement) variableLabelElement.title = summaryTooltip;
+			if (variableLabelElement) variableLabelElement.setAttribute("data-sequence-tooltip", summaryTooltip);
 			var variableSelectElement = document.getElementById("variable-select");
-			if (variableSelectElement) variableSelectElement.title = summaryTooltip;
+			if (variableSelectElement) variableSelectElement.setAttribute("data-sequence-tooltip", summaryTooltip);
 		} //end updateVariableTooltips()
 
 		//=====================================================================================
@@ -5967,13 +5967,13 @@ Here is the json string received:
 				return;
 			}
 
-			var selectHtml = "<select id='variable-select' onchange='onVariableSelectChange()'>";
+			var selectHtml = "<select id='variable-select' onchange='onVariableSelectChange()' onmousemove='showSequenceTooltip(event, this)' onmouseleave='hideSequenceTooltip()'>";
 			for (var i = 0; i < varNames.length; i++)
 				selectHtml += "<option value='" + varNames[i] + "'>" + varNames[i] + "</option>";
 			selectHtml += "</select>";
 
 			var v0 = vars[varNames[0]];
-			var html = "<strong id='variable-label'>Input Variables: </strong>" + selectHtml +
+			var html = "<strong id='variable-label' onmousemove='showSequenceTooltip(event, this)' onmouseleave='hideSequenceTooltip()'>Input Variables: </strong>" + selectHtml +
 				" Value: <input type='text' id='var-value' value='" + v0.value + "' style='width:60px;' oninput='updateVariableControlVisibility()' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
 				"<span id='var-step-span' hidden>" +
 				" Step: <input type='text' id='var-step' value='" + v0.step + "' style='width:50px;' onchange='onVariableFieldChange()' onfocus='this.select()'>" +
