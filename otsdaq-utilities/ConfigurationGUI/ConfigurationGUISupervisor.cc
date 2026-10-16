@@ -7054,6 +7054,15 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		userLastUseTime_[mapKey] = userLastUseTime_.at(preLoadCfgMgrName);
 		//also set author!
 		userConfigurationManagers_.at(mapKey)->setUsername(username);
+
+		// remove the pre-load entries so only mapKey owns the manager;
+		//	otherwise the expiration sweep below deletes the shared object
+		//	through the stale ":0" entry and later double-deletes through mapKey
+		if(mapKey != preLoadCfgMgrName)
+		{
+			userConfigurationManagers_.erase(preLoadCfgMgrName);
+			userLastUseTime_.erase(preLoadCfgMgrName);
+		}
 	}
 
 	if(userConfigurationManagers_.find(mapKey) == userConfigurationManagers_.end())
@@ -7111,14 +7120,17 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		{
 			__SUP_COUT__ << now << ":" << it->second << " = " << now - it->second
 			             << __E__;
-			delete userConfigurationManagers_[it->first];       // call destructor
-			if(!(userConfigurationManagers_.erase(it->first)))  // erase by key
+			// look up with find (operator[] would silently insert a null entry)
+			auto expiredManagerIt = userConfigurationManagers_.find(it->first);
+			if(expiredManagerIt != userConfigurationManagers_.end())
 			{
-				__SUP_SS__ << "Fatal error erasing configuration manager by key!"
-				           << __E__;
-				__SUP_COUT_ERR__ << "\n" << ss.str();
-				__SS_THROW__;
+				delete expiredManagerIt->second;  // call destructor
+				userConfigurationManagers_.erase(expiredManagerIt);
 			}
+			else
+				__SUP_COUT_WARN__
+				    << "No configuration manager found for expired session key '"
+				    << it->first << "' - removing last-use entry only." << __E__;
 			userLastUseTime_.erase(it);  // erase by iterator
 
 			it =

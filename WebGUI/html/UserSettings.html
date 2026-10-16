@@ -888,7 +888,7 @@
 				el = document.getElementById("Settings-colorInput" + i + j);
 				el.value = parseInt(el.value);
 				if (el.value == "NaN") el.value = 0;
-				retstr += el.value + (j == 2 ? (i == 2 ? ",0.9)" : ")") : ",");
+				retstr += el.value + (j == 2 ? (i == 2 ? ",0.9)" : ")") : ",";
 			}
 			return retstr;
 		}
@@ -1635,6 +1635,7 @@
 		} //end silenceUserTooltips()
 
 		//=====================================================================================
+		//=====================================================================================
 		function showPermissionsTooltip(alwaysShow) {
 			DesktopContent.tooltip(alwaysShow ? "ALWAYS" : "Password Reset and User Permissions",
 				(alwaysShow ? "<b>Help with Password Reset and User Permissions:</b>\n\n" : "") +
@@ -1719,6 +1720,7 @@
 								<button class='reset' onmouseup='Javascript:resetUserTooltips()'>Reset My Tooltips</button> <!--onmouseup='Javascript:resetUserTooltips()'-->
 
 								<button class='silence' onclick='Javascript:silenceUserTooltips()'>Silence My Tooltips</button>
+
 							</div>
 						</center>
 					</div>
