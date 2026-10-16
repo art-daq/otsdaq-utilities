@@ -1,6 +1,8 @@
 
 #include "test/ots_mm_udp_interface.h"
 
+#include <limits>
+
 ///==============================================================================
 /// To access Macro Maker with this tool
 ///  	first export...
@@ -95,7 +97,9 @@ try
 			if(isSequenceMatch)
 			{
 				// ======== Sequence mode ========
-				std::string sequenceName = strippedTargetName;
+				// keep the user's exact name (including any public/ qualifier) so the
+				// server resolves the intended directory
+				std::string sequenceName = target_fe;
 
 				if(argc == 4)
 				{
@@ -120,19 +124,12 @@ try
 
 				// Run mode — argv[4] is iteration count, argv[5..] are variable overrides
 				unsigned int iterationCount = 0;
-				try
+				if(!ots_mm_udp_interface::parseIterationCount(argv[4], iterationCount))
 				{
-					iterationCount = std::stoul(argv[4]);
-				}
-				catch(...)
-				{
-					__COUT_ERR__ << "Invalid iteration count: " << argv[4]
-					             << ". Must be a positive integer." << __E__;
-					return 1;
-				}
-				if(iterationCount == 0)
-				{
-					__COUT_ERR__ << "Iteration count must be at least 1." << __E__;
+					__COUT_ERR__
+					    << "Invalid iteration count: '" << argv[4]
+					    << "'. Must be a positive integer (digits only) no larger than "
+					    << std::numeric_limits<unsigned int>::max() << "." << __E__;
 					return 1;
 				}
 
@@ -322,9 +319,14 @@ try
 
 						if(validOverrideCount > 0)
 							variablesJSON += ",";
-						variablesJSON += "\"" + overrideName + "\":{\"value\":\"" +
-						                 overrideValue + "\",\"step\":\"" + overrideStep +
-						                 "\",\"max\":\"" + overrideMax + "\"}";
+						variablesJSON +=
+						    "\"" + ots_mm_udp_interface::escapeJsonString(overrideName) +
+						    "\":{\"value\":\"" +
+						    ots_mm_udp_interface::escapeJsonString(overrideValue) +
+						    "\",\"step\":\"" +
+						    ots_mm_udp_interface::escapeJsonString(overrideStep) +
+						    "\",\"max\":\"" +
+						    ots_mm_udp_interface::escapeJsonString(overrideMax) + "\"}";
 						++validOverrideCount;
 					}
 					variablesJSON += "}";

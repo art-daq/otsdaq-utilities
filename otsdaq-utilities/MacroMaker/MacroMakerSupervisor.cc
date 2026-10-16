@@ -781,31 +781,32 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						else
 							fixedName += sequenceName[i];
 
-					std::string fullPath = (std::string)MACROS_SEQUENCE_PATH + "NO-USER" +
-					                       "/" + fixedName + ".dat";
-					__COUT__ << fullPath << __E__;
+					std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
+					                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" +
+					                             fixedName + ".dat";
+					std::string   fullPath;
+					std::ifstream readFile;
 
-					std::ifstream readFile(fullPath.c_str());
-
-					if(!isPublic && !readFile.is_open())
+					if(isPublic)
 					{
-						__COUT__ << "Unable to open " << fullPath
-						         << "! Trying public area..." << __E__;
-						std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
-						                             WebUsers::DEFAULT_ADMIN_USERNAME +
-						                             "/" + fixedName + ".dat";
-						__COUT__ << publicFullPath << __E__;
-						readFile.open(publicFullPath.c_str());
 						fullPath = publicFullPath;
+						__COUT__ << fullPath << __E__;
+						readFile.open(fullPath.c_str());
 					}
-					if(isPublic && !readFile.is_open())
+					else
 					{
-						std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
-						                             WebUsers::DEFAULT_ADMIN_USERNAME +
-						                             "/" + fixedName + ".dat";
-						__COUT__ << publicFullPath << __E__;
-						readFile.open(publicFullPath.c_str());
-						fullPath = publicFullPath;
+						fullPath = (std::string)MACROS_SEQUENCE_PATH + "NO-USER" + "/" +
+						           fixedName + ".dat";
+						__COUT__ << fullPath << __E__;
+						readFile.open(fullPath.c_str());
+						if(!readFile.is_open())
+						{
+							__COUT__ << "Unable to open " << fullPath
+							         << "! Trying public area..." << __E__;
+							fullPath = publicFullPath;
+							__COUT__ << fullPath << __E__;
+							readFile.open(fullPath.c_str());
+						}
 					}
 
 					if(!readFile.is_open())

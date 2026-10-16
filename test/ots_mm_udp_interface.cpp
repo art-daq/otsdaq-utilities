@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <iomanip>
+#include <limits>
 
 #define MAXBUFLEN 5000
 
@@ -541,6 +542,54 @@ std::string ots_mm_udp_interface::decodeHTMLEntities(const std::string& sourceSt
 	}
 	return retStr;
 }  // end decodeHTMLEntities()
+
+//==============================================================================
+///escapes a string for embedding in a JSON string literal, using only the
+///escape sequences understood by the sequence .dat decoder
+std::string ots_mm_udp_interface::escapeJsonString(const std::string& sourceStr)
+{
+	std::string escapedStr;
+	escapedStr.reserve(sourceStr.size());
+	for(size_t i = 0; i < sourceStr.size(); ++i)
+	{
+		char sourceChar = sourceStr[i];
+		if(sourceChar == '"')
+			escapedStr += "\\\"";
+		else if(sourceChar == '\\')
+			escapedStr += "\\\\";
+		else if(sourceChar == '\n')
+			escapedStr += "\\n";
+		else if(sourceChar == '\t')
+			escapedStr += "\\t";
+		else if(sourceChar == '\r')
+			escapedStr += "\\r";
+		else
+			escapedStr += sourceChar;
+	}
+	return escapedStr;
+}  // end escapeJsonString()
+
+//==============================================================================
+///accepts only a digits-only positive count that fits in unsigned int
+bool ots_mm_udp_interface::parseIterationCount(const std::string& text,
+                                               unsigned int&      iterationCount)
+{
+	if(text.empty())
+		return false;
+	unsigned long long accumulatedCount = 0;
+	for(size_t i = 0; i < text.size(); ++i)
+	{
+		if(text[i] < '0' || text[i] > '9')
+			return false;
+		accumulatedCount = accumulatedCount * 10 + (text[i] - '0');
+		if(accumulatedCount > std::numeric_limits<unsigned int>::max())
+			return false;
+	}
+	if(accumulatedCount == 0)
+		return false;
+	iterationCount = static_cast<unsigned int>(accumulatedCount);
+	return true;
+}  // end parseIterationCount()
 
 //==============================================================================
 ///returns CSV list of Front-end interface UIDs
@@ -1760,6 +1809,44 @@ std::string substituteSequenceVariables(
 	return result;
 }  //end substituteSequenceVariables()
 
+std::string serializeSequenceVariables(
+    const std::vector<std::pair<std::string, SequenceVariable>>& variableList)
+{
+	std::string variablesJSON = "{";
+	for(size_t variableIndex = 0; variableIndex < variableList.size(); ++variableIndex)
+	{
+		if(variableIndex > 0)
+			variablesJSON += ",";
+		variablesJSON +=
+		    "\"" +
+		    ots_mm_udp_interface::escapeJsonString(variableList[variableIndex].first) +
+		    "\":{\"value\":\"" +
+		    ots_mm_udp_interface::escapeJsonString(
+		        variableList[variableIndex].second.value) +
+		    "\",\"step\":\"" +
+		    ots_mm_udp_interface::escapeJsonString(
+		        variableList[variableIndex].second.step) +
+		    "\",\"max\":\"" +
+		    ots_mm_udp_interface::escapeJsonString(
+		        variableList[variableIndex].second.max) +
+		    "\"}";
+	}
+	variablesJSON += "}";
+	return variablesJSON;
+}  //end serializeSequenceVariables()
+
+struct ActiveSequenceChainGuard
+{
+	std::vector<std::string>& chain_;
+	ActiveSequenceChainGuard(std::vector<std::string>& chain,
+	                         const std::string&        sequenceName)
+	    : chain_(chain)
+	{
+		chain_.push_back(sequenceName);
+	}
+	~ActiveSequenceChainGuard() { chain_.pop_back(); }
+};
+
 }  //end anonymous namespace
 
 //==============================================================================
@@ -1767,8 +1854,191 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
                                               const std::string& variablesJSON,
                                               unsigned int       iterationCount)
 {
+	std::vector<std::string> activeSequenceChain;
+	return runSequenceRecursive(sequenceName,
+	                            variablesJSON,
+	                            iterationCount,
+	                            false /*isNestedCall*/,
+	                            0 /*outerIterationIndex*/,
+	                            activeSequenceChain);
+}  //end runSequence()
+
+//==============================================================================
+///Expands the saved FE target (exact UID, CSV list of UIDs, or '*' filtered by
+///FE class) to every front-end that defines the macro, requires all of them to
+///agree on the argument lists, and returns that single signature.
+void ots_mm_udp_interface::resolveMacroSignature(const std::string&        feClass,
+                                                 const std::string&        feUID,
+                                                 const std::string&        macroName,
+                                                 std::vector<std::string>& inputNames,
+                                                 std::vector<std::string>& outputNames)
+{
+	getFrontendMacroInfo();  //init fullXML_
+
+	const bool            isWildcardTarget = (feUID == "*");
+	std::set<std::string> explicitTargetUIDs;
+	if(!isWildcardTarget)
+	{
+		std::vector<std::string> targetFields = getVectorFromString(feUID, {','});
+		for(size_t targetIndex = 0; targetIndex < targetFields.size(); ++targetIndex)
+		{
+			size_t firstNonSpace = targetFields[targetIndex].find_first_not_of(" \t");
+			size_t lastNonSpace  = targetFields[targetIndex].find_last_not_of(" \t");
+			if(firstNonSpace == std::string::npos)
+				continue;
+			explicitTargetUIDs.insert(targetFields[targetIndex].substr(
+			    firstNonSpace, lastNonSpace - firstNonSpace + 1));
+		}
+	}
+
+	struct MacroSignature
+	{
+		std::vector<std::string> inputNames;
+		std::vector<std::string> outputNames;
+		std::vector<std::string> definingTargets;
+	};
+	std::vector<MacroSignature> distinctSignatures;
+
+	std::string xmlValue;
+	size_t      xmlAfter = 0;
+	while((xmlValue = extractXmlField(fullXML_, "FEMacros", 0, xmlAfter, &xmlAfter)) !=
+	      "")
+	{
+		std::vector<std::string> xmlFields = getVectorFromString(xmlValue, {';'});
+		if(xmlFields.size() < 6)
+			continue;
+		const std::string& candidateClass = xmlFields[2];
+		const std::string& candidateUID   = xmlFields[3];
+
+		if(isWildcardTarget)
+		{
+			if(feClass != "*" && candidateClass != feClass)
+				continue;
+		}
+		else if(!explicitTargetUIDs.count(candidateUID))
+			continue;
+
+		//i+0 = Macro Name, i+1 = Permissions, i+2 = Tooltip, i+3 = input count N,
+		//i+4..i+3+N = input names, i+4+N = output count M, then M output names
+		size_t fieldIndex = 4;
+		while(xmlFields.size() > fieldIndex + 5)
+		{
+			size_t inputCount       = atoi(xmlFields[fieldIndex + 3].c_str());
+			size_t outputCountIndex = fieldIndex + 4 + inputCount;
+			if(outputCountIndex >= xmlFields.size())
+				break;
+			size_t outputCount = atoi(xmlFields[outputCountIndex].c_str());
+			if(outputCountIndex + outputCount >= xmlFields.size())
+				break;
+
+			if(xmlFields[fieldIndex] == macroName)
+			{
+				std::vector<std::string> candidateInputs(
+				    xmlFields.begin() + fieldIndex + 4,
+				    xmlFields.begin() + outputCountIndex);
+				std::vector<std::string> candidateOutputs(
+				    xmlFields.begin() + outputCountIndex + 1,
+				    xmlFields.begin() + outputCountIndex + 1 + outputCount);
+				std::string targetDescription =
+				    candidateUID + " (" + candidateClass + ")";
+
+				bool matchedExisting = false;
+				for(size_t signatureIndex = 0; signatureIndex < distinctSignatures.size();
+				    ++signatureIndex)
+				{
+					if(distinctSignatures[signatureIndex].inputNames == candidateInputs &&
+					   distinctSignatures[signatureIndex].outputNames == candidateOutputs)
+					{
+						distinctSignatures[signatureIndex].definingTargets.push_back(
+						    targetDescription);
+						matchedExisting = true;
+						break;
+					}
+				}
+				if(!matchedExisting)
+				{
+					MacroSignature newSignature;
+					newSignature.inputNames  = candidateInputs;
+					newSignature.outputNames = candidateOutputs;
+					newSignature.definingTargets.push_back(targetDescription);
+					distinctSignatures.push_back(newSignature);
+				}
+				break;  //one definition per FE
+			}
+			fieldIndex = outputCountIndex + 1 + outputCount;
+		}
+	}  //end FE search loop
+
+	if(distinctSignatures.empty())
+	{
+		__SS__ << "No front-end matching UID '" << feUID << "' of class '" << feClass
+		       << "' defines FE Macro '" << macroName
+		       << "'. Check the saved sequence against the current FE Macro info."
+		       << __E__;
+		__SS_THROW__;
+	}
+	if(distinctSignatures.size() > 1)
+	{
+		__SS__ << "FE Macro '" << macroName << "' targets FE UID '" << feUID
+		       << "' of FE class '" << feClass
+		       << "', and those front-ends define this macro with different arguments:";
+		for(size_t signatureIndex = 0; signatureIndex < distinctSignatures.size();
+		    ++signatureIndex)
+		{
+			ss << "\n  - ";
+			for(size_t targetIndex = 0;
+			    targetIndex < distinctSignatures[signatureIndex].definingTargets.size();
+			    ++targetIndex)
+				ss << (targetIndex ? ", " : "")
+				   << distinctSignatures[signatureIndex].definingTargets[targetIndex];
+			ss << ": " << distinctSignatures[signatureIndex].inputNames.size()
+			   << " input(s)";
+			if(distinctSignatures[signatureIndex].inputNames.size())
+			{
+				ss << " (";
+				for(size_t inputIndex = 0;
+				    inputIndex < distinctSignatures[signatureIndex].inputNames.size();
+				    ++inputIndex)
+					ss << (inputIndex ? ", " : "")
+					   << distinctSignatures[signatureIndex].inputNames[inputIndex];
+				ss << ")";
+			}
+		}
+		ss << "\nRecord it again with a specific FE class or FE, so there is one "
+		      "argument list to send."
+		   << __E__;
+		__SS_THROW__;
+	}
+
+	inputNames  = distinctSignatures[0].inputNames;
+	outputNames = distinctSignatures[0].outputNames;
+}  //end resolveMacroSignature()
+
+//==============================================================================
+std::string ots_mm_udp_interface::runSequenceRecursive(
+    const std::string&        sequenceName,
+    const std::string&        variablesJSON,
+    unsigned int              iterationCount,
+    bool                      isNestedCall,
+    unsigned int              outerIterationIndex,
+    std::vector<std::string>& activeSequenceChain)
+{
 	__COUT_INFO__ << "runSequence() '" << sequenceName << "' for " << iterationCount
 	              << " iteration(s)" << __E__;
+
+	for(size_t chainIndex = 0; chainIndex < activeSequenceChain.size(); ++chainIndex)
+	{
+		if(activeSequenceChain[chainIndex] == sequenceName)
+		{
+			__SS__ << "Nested MoM cycle detected, refusing to run: ";
+			for(size_t describeIndex = 0; describeIndex < activeSequenceChain.size();
+			    ++describeIndex)
+				ss << activeSequenceChain[describeIndex] << " -> ";
+			ss << sequenceName << __E__;
+			__SS_THROW__;
+		}
+	}
+	ActiveSequenceChainGuard activeSequenceChainGuard(activeSequenceChain, sequenceName);
 
 	std::string sequenceJSON = getSequenceInfo(sequenceName);
 	__COUTV__(sequenceJSON.size());
@@ -1780,28 +2050,44 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
 	__COUT_INFO__ << "Parsed " << commandMap.size() << " step(s) and "
 	              << variableList.size() << " variable(s)" << __E__;
 
-	if(!variablesJSON.empty() && variablesJSON != "{}")
+	std::string resolvedVariablesJSON;
+	if(isNestedCall)
 	{
-		std::map<unsigned int, SequenceCommand>               unusedCommands;
-		std::vector<std::pair<std::string, SequenceVariable>> overrideVariables;
-		parseSequenceJSON("{\"__variables__\":" + variablesJSON + "}",
+		// match the browser runner: a nested MoM's own variable definitions are
+		// discarded and the outer sequence's resolved variables apply instead
+		variableList.clear();
+		resolvedVariablesJSON = variablesJSON.empty() ? "{}" : variablesJSON;
+		std::map<unsigned int, SequenceCommand> unusedCommands;
+		parseSequenceJSON("{\"__variables__\":" + resolvedVariablesJSON + "}",
 		                  unusedCommands,
-		                  overrideVariables);
-		for(size_t overrideIndex = 0; overrideIndex < overrideVariables.size();
-		    ++overrideIndex)
+		                  variableList);
+	}
+	else
+	{
+		if(!variablesJSON.empty() && variablesJSON != "{}")
 		{
-			for(size_t variableIndex = 0; variableIndex < variableList.size();
-			    ++variableIndex)
+			std::map<unsigned int, SequenceCommand>               unusedCommands;
+			std::vector<std::pair<std::string, SequenceVariable>> overrideVariables;
+			parseSequenceJSON("{\"__variables__\":" + variablesJSON + "}",
+			                  unusedCommands,
+			                  overrideVariables);
+			for(size_t overrideIndex = 0; overrideIndex < overrideVariables.size();
+			    ++overrideIndex)
 			{
-				if(variableList[variableIndex].first ==
-				   overrideVariables[overrideIndex].first)
+				for(size_t variableIndex = 0; variableIndex < variableList.size();
+				    ++variableIndex)
 				{
-					variableList[variableIndex].second =
-					    overrideVariables[overrideIndex].second;
-					break;
+					if(variableList[variableIndex].first ==
+					   overrideVariables[overrideIndex].first)
+					{
+						variableList[variableIndex].second =
+						    overrideVariables[overrideIndex].second;
+						break;
+					}
 				}
 			}
 		}
+		resolvedVariablesJSON = serializeSequenceVariables(variableList);
 	}
 
 	std::string  accumulatedOutput;
@@ -1814,6 +2100,10 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
 		if(iterationCount > 1)
 			__COUT_INFO__ << "\n=== Iteration " << (iterationIndex + 1) << " of "
 			              << iterationCount << " ===" << __E__;
+
+		// nested MoMs step variables with the outer run, as the browser runner does
+		unsigned int substitutionIterationIndex =
+		    isNestedCall ? outerIterationIndex : iterationIndex;
 
 		for(auto& commandEntry : commandMap)
 		{
@@ -1852,24 +2142,27 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
 				unsigned int innerIterationCount = 1;
 				if(momIterParts.size() > 1)
 				{
-					try
+					std::string innerIterationText = decodeURIComponent(momIterParts[1]);
+					if(!parseIterationCount(innerIterationText, innerIterationCount))
 					{
-						innerIterationCount =
-						    std::stoul(decodeURIComponent(momIterParts[1]));
-					}
-					catch(...)
-					{
+						__SS__ << "Invalid iteration count '" << innerIterationText
+						       << "' saved for nested MoM '" << innerSequenceName
+						       << "' at step " << stepIndex
+						       << ". Must be a positive integer." << __E__;
+						__SS_THROW__;
 					}
 				}
-				if(innerIterationCount < 1)
-					innerIterationCount = 1;
 
 				__COUT_INFO__ << "  [" << completedSteps << "/" << totalSteps
 				              << "] Nested MoM: " << innerSequenceName << " x"
 				              << innerIterationCount << __E__;
 
-				std::string innerResult =
-				    runSequence(innerSequenceName, variablesJSON, innerIterationCount);
+				std::string innerResult = runSequenceRecursive(innerSequenceName,
+				                                               resolvedVariablesJSON,
+				                                               innerIterationCount,
+				                                               true /*isNestedCall*/,
+				                                               substitutionIterationIndex,
+				                                               activeSequenceChain);
 				if(!innerResult.empty())
 				{
 					if(!accumulatedOutput.empty())
@@ -1886,121 +2179,72 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
 			std::string reconciledInputArgs  = command.inputArgs;
 			std::string reconciledOutputArgs = command.outputArgs;
 
+			// MacroMaker public/private macros are not described by the FE Macro info,
+			// so only FE macros can be reconciled against their current signature
+			if(command.macroType == "fe")
 			{
-				std::string lookupFeUID = command.feUID;
-				if(lookupFeUID == "*")
-				{
-					getFrontendMacroInfo();
-					std::string xmlValue;
-					size_t      xmlAfter = 0;
-					while((xmlValue = extractXmlField(
-					           fullXML_, "FEMacros", 0, xmlAfter, &xmlAfter)) != "")
-					{
-						std::vector<std::string> xmlFields =
-						    getVectorFromString(xmlValue, {';'});
-						if(xmlFields.size() < 6)
-							continue;
-						if(command.feClass != "*" && xmlFields[2] != command.feClass)
-							continue;
+				std::vector<std::string> currentInputNames, currentOutputNames;
+				resolveMacroSignature(command.feClass,
+				                      command.feUID,
+				                      command.macroName,
+				                      currentInputNames,
+				                      currentOutputNames);
 
-						unsigned int fieldIndex = 4;
-						bool         foundMacro = false;
-						while(xmlFields.size() > fieldIndex + 5)
-						{
-							if(xmlFields[fieldIndex] == command.macroName)
-							{
-								foundMacro = true;
-								break;
-							}
-							fieldIndex += 3 + 1 + atoi(xmlFields[fieldIndex + 3].c_str());
-							if(xmlFields.size() <= fieldIndex)
-								break;
-							fieldIndex += 1 + atoi(xmlFields[fieldIndex].c_str());
-						}
-						if(foundMacro)
-						{
-							lookupFeUID = xmlFields[3];
-							break;
-						}
-					}
-					if(lookupFeUID == "*")
-					{
-						__COUT_WARN__ << "    Could not resolve wildcard FE for macro '"
-						              << command.macroName << "', skipping reconciliation"
-						              << __E__;
-					}
+				// always rebuild from the current names so renames are honored too;
+				// saved values are kept by name and new inputs receive "Default"
+				std::map<std::string, std::string> savedInputsByName;
+				std::vector<std::string>           savedInputPairs =
+				    getVectorFromString(command.inputArgs, {';'}, {} /*whitespace*/);
+				for(size_t savedIndex = 0; savedIndex < savedInputPairs.size();
+				    ++savedIndex)
+				{
+					std::vector<std::string> nameAndValue = getVectorFromString(
+					    savedInputPairs[savedIndex], {','}, {} /*whitespace*/);
+					if(nameAndValue.size() >= 2)
+						savedInputsByName[decodeURIComponent(nameAndValue[0])] =
+						    nameAndValue[1];
 				}
 
-				if(lookupFeUID != "*")
+				reconciledInputArgs.clear();
+				size_t reusedSavedInputCount = 0;
+				for(size_t inputIndex = 0; inputIndex < currentInputNames.size();
+				    ++inputIndex)
 				{
-					unsigned int currentInputCount =
-					    getCommandInputCount(lookupFeUID, command.macroName);
-					std::vector<std::string> savedInputPairs =
-					    getVectorFromString(command.inputArgs, {';'}, {} /*whitespace*/);
-
-					if(currentInputCount != savedInputPairs.size())
+					if(inputIndex > 0)
+						reconciledInputArgs += ";";
+					reconciledInputArgs +=
+					    encodeURIComponent(currentInputNames[inputIndex]) + ",";
+					auto savedEntry =
+					    savedInputsByName.find(currentInputNames[inputIndex]);
+					if(savedEntry != savedInputsByName.end())
 					{
-						__COUT_INFO__ << "    Reconciling inputs: sequence has "
-						              << savedInputPairs.size() << ", FE expects "
-						              << currentInputCount << __E__;
-
-						std::map<std::string, std::string> savedInputsByName;
-						for(size_t savedIndex = 0; savedIndex < savedInputPairs.size();
-						    ++savedIndex)
-						{
-							std::vector<std::string> nameAndValue = getVectorFromString(
-							    savedInputPairs[savedIndex], {','}, {} /*whitespace*/);
-							if(nameAndValue.size() >= 2)
-								savedInputsByName[decodeURIComponent(nameAndValue[0])] =
-								    nameAndValue[1];
-						}
-
-						reconciledInputArgs.clear();
-						for(unsigned int inputIndex = 0; inputIndex < currentInputCount;
-						    ++inputIndex)
-						{
-							std::string currentInputName = getCommandInputName(
-							    lookupFeUID, command.macroName, inputIndex);
-							if(inputIndex > 0)
-								reconciledInputArgs += ";";
-							reconciledInputArgs +=
-							    encodeURIComponent(currentInputName) + ",";
-							auto savedEntry = savedInputsByName.find(currentInputName);
-							if(savedEntry != savedInputsByName.end())
-								reconciledInputArgs += savedEntry->second;
-							else
-								reconciledInputArgs += encodeURIComponent("Default");
-						}
+						reconciledInputArgs += savedEntry->second;
+						++reusedSavedInputCount;
 					}
+					else
+						reconciledInputArgs += encodeURIComponent("Default");
+				}
+				if(reusedSavedInputCount != savedInputsByName.size() ||
+				   reusedSavedInputCount != currentInputNames.size())
+					__COUT_INFO__ << "    Reconciled inputs: sequence saved "
+					              << savedInputsByName.size() << ", FE expects "
+					              << currentInputNames.size() << ", matched by name "
+					              << reusedSavedInputCount
+					              << " (unmatched FE inputs set to 'Default')" << __E__;
 
-					unsigned int currentOutputCount =
-					    getCommandOutputCount(lookupFeUID, command.macroName);
-					std::vector<std::string> savedOutputParts =
-					    getVectorFromString(command.outputArgs, {','}, {} /*whitespace*/);
-
-					if(currentOutputCount != savedOutputParts.size())
-					{
-						__COUT_INFO__ << "    Reconciling outputs: sequence has "
-						              << savedOutputParts.size() << ", FE expects "
-						              << currentOutputCount << __E__;
-
-						reconciledOutputArgs.clear();
-						for(unsigned int outputIndex = 0;
-						    outputIndex < currentOutputCount;
-						    ++outputIndex)
-						{
-							std::string currentOutputName = getCommandOutputName(
-							    lookupFeUID, command.macroName, outputIndex);
-							if(outputIndex > 0)
-								reconciledOutputArgs += ",";
-							reconciledOutputArgs += encodeURIComponent(currentOutputName);
-						}
-					}
+				reconciledOutputArgs.clear();
+				for(size_t outputIndex = 0; outputIndex < currentOutputNames.size();
+				    ++outputIndex)
+				{
+					if(outputIndex > 0)
+						reconciledOutputArgs += ",";
+					reconciledOutputArgs +=
+					    encodeURIComponent(currentOutputNames[outputIndex]);
 				}
 			}
 
 			std::string substitutedInputArgs = substituteSequenceVariables(
-			    reconciledInputArgs, variableList, iterationIndex);
+			    reconciledInputArgs, variableList, substitutionIterationIndex);
 
 			std::string sendMessage = "RunFrontendMacro";
 			sendMessage += ";" + command.feClass;
@@ -2067,7 +2311,7 @@ std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
 
 	__COUT_INFO__ << "Sequence '" << sequenceName << "' completed." << __E__;
 	return accumulatedOutput;
-}  //end runSequence()
+}  //end runSequenceRecursive()
 
 //==============================================================================
 std::string ots_mm_udp_interface::describeSequence(const std::string& sequenceJSON)
