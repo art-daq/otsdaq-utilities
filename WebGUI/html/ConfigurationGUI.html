@@ -5726,7 +5726,7 @@
 			for (i = 0; i < nodes.length; ++i) {
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
 
-				// Skip metadata elements that appear among children when depth=3
+				// Skip metadata elements that appear among children when depth=2
 				// loads linked-table records; they're consumed at the parent level only.
 				//	(UID-record metadata: comment/nodeStatus/nodeDiff;
 				//	 link metadata: UID/GroupID/LinkTableName/LinkIndex/fixedChoices/valueType)
@@ -5999,7 +5999,7 @@
 
 				//get value and table link name for this parent
 				// Note: link nodes have children with nodeName "GroupID"/"UID"/"valueType".
-				//       UID record parents (from depth=3) have children with nodeName "node".
+				//       UID record parents (from depth=2) have children with nodeName "node".
 				if (childrenLength && (value = nodes[i].children[offset]).nodeName != "value" &&
 					value.nodeName != "node") {
 					--childrenLength; //subtract the link ID node from children length
@@ -6451,9 +6451,13 @@
 				treeViewHandlerStr_ += "</td>";
 				treeViewHandlerStr_ += "</tr></table>"; //close pre/comment table row
 
-				//a nested link whose records arrived pre-loaded (depth=3 inline key/value
-				//	mode) must start collapsed, like a link the user has not expanded yet
-				var startChildrenCollapsed = (isLink && childrenLength && depth > 0);
+				//any node drawn here with pre-loaded children (depth=2 inline key/value
+				//	mode) starts collapsed, link or UID record alike, exactly as if the user
+				//	had not expanded it yet; only the clicked node's own children div is open
+				var startChildrenCollapsed = (childrenLength > 0);
+				if (startChildrenCollapsed)
+					Debug.log("recursiveDrawTree collapsing pre-loaded children of " +
+						nodeName + " (depth " + depth + ", " + childrenLength + " children)");
 				treeViewHandlerStr_ +=
 					"<div id='clearDiv'></div>" +
 					"<div class='treeNode-Children' id='treeNode-ChildrenOf-" +
@@ -6508,7 +6512,10 @@
 
 				var keyVal = "", valueVal = "";
 				var keyIdString = "", valueIdString = "";
-				var fieldNodes = childrenEl.querySelectorAll(".treeNode-Value-leafNode-fieldValue");
+				//only this record's own fields; a deep subtree search would match
+				//	descendant records' Key/Value columns and hide the expanded subtree
+				var fieldNodes = childrenEl.querySelectorAll(
+					":scope > .treeNode > .treeNode-Value > .treeNode-Value-leafNode-fieldValue");
 				for(var f = 0; f < fieldNodes.length; ++f) {
 					var colClass = "";
 					var classes = fieldNodes[f].className.split(" ");
@@ -8042,8 +8049,9 @@
 						) : ""
 					) +
 					"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
+					//inline key/value mode needs the records' fields too (depth 2), not deeper
 					"&depth=" + ((_isInlineKVEnabled() &&
-						document.getElementById("treeNode-linkTableName-" + idString)) ? 3 : 1),
+						document.getElementById("treeNode-linkTableName-" + idString)) ? 2 : 1),
 					"startPath=" + path + nodeName + "/" +
 					"&modifiedTables=" + modifiedTables,
 					function (req, parentId, err) {
