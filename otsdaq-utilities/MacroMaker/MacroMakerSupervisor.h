@@ -5,9 +5,9 @@
 #include "otsdaq/ProgressBar/ProgressBar.h"
 
 #include <atomic>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -177,7 +177,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 	               const std::string& username = "");
 	void loadMacros(HttpXmlDocument& xmldoc, const std::string& username);
 	void loadMacroNames(
-	    const std::string&                                      username,
+	    const std::string&                                          username,
 	    std::pair<std::vector<std::string> /*public macros*/,
 	              std::vector<std::string> /***private macros  */>& returnMacroNames);
 	void        appendCommandToHistory(std::string        command,

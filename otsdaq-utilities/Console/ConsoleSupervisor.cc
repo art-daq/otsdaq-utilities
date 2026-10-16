@@ -676,7 +676,7 @@ void ConsoleSupervisor::doTriggeredAction(const CustomTriggeredAction_t& trigger
 ///Never allow priority 0 to change, forced to be missed packets
 void ConsoleSupervisor::addCustomTriggeredAction(const std::string& triggerNeedle,
                                                  const std::string& triggerAction,
-                                                 uint32_t           priority, // = -1 
+                                                 uint32_t           priority,  // = -1
                                                  uint32_t           triggerOnCount,
                                                  bool               doLoop,
                                                  bool               isArmed)

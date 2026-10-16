@@ -2361,7 +2361,7 @@ try
 			{
 				cfgMgr->loadTableGroup(activeGroup.second.first,
 				                       activeGroup.second.second,
-				                       false //doActivate
+				                       false  //doActivate
 				);
 			}
 			catch(...)  //ignore errors
@@ -3710,8 +3710,8 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 
 				__SUP_COUT__ << "Getting AUTO filter fields!" << __E__;
 
-				std::vector<ConfigurationTree::RecordField> retFieldList;
-				std::vector<std::string /**relative-path */>  fieldAcceptList,
+				std::vector<ConfigurationTree::RecordField>  retFieldList;
+				std::vector<std::string /**relative-path */> fieldAcceptList,
 				    fieldRejectList;
 				fieldRejectList.push_back("*" + TableViewColumnInfo::COL_NAME_COMMENT);
 				retFieldList = startNode.getCommonFields(
@@ -3886,7 +3886,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 //groupTypeString
+		                       0  //groupTypeString
 		);
 
 		for(auto& activeTable : cfgMgr->getActiveVersions())
@@ -3982,7 +3982,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	);
 
 	if(memberMap.size() > ConfigurationManager::getFixedContextMemberNames().size() +
-	                          1 // for optional table 
+	                          1  // for optional table
 	   && startPath == "/")
 	{
 		__COUTT__ << "Checking for orphaned tables..." << __E__;
@@ -4793,7 +4793,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 //groupTypeString
+		                       0  //groupTypeString
 		);
 		__SUP_COUTV__(StringMacros::mapToString(memberMapAContext));
 
@@ -4807,7 +4807,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 //groupTypeString
+		                       0  //groupTypeString
 		);
 
 		__SUP_COUTV__(StringMacros::mapToString(memberMapBContext));
@@ -4826,7 +4826,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 //groupTypeString
+		                       0  //groupTypeString
 		);
 		__SUP_COUTV__(StringMacros::mapToString(memberMapAConfig));
 
@@ -4840,7 +4840,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 //groupTypeString
+		                       0  //groupTypeString
 		);
 
 		__SUP_COUTV__(StringMacros::mapToString(memberMapBConfig));

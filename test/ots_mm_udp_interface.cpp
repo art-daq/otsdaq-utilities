@@ -76,7 +76,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 	if(setsockopt(sockfd,
 	              SOL_SOCKET,
 	              SO_RCVBUF,
-	              (char*)&socketReceiveBufferSize, // NOLINT
+	              (char*)&socketReceiveBufferSize,  // NOLINT
 	              sizeof(socketReceiveBufferSize)) < 0)
 		__COUT_ERR__ << "Failed to set socket receive size to 0x" << std::hex
 		             << socketReceiveBufferSize << std::dec << "." << std::endl;
@@ -100,8 +100,8 @@ int                receive(int          sockfd,
                            unsigned int timeoutUSeconds,
                            bool         verbose)
 {
-	unsigned long  fromIPAddress; // NOLINT(runtime/int)
-	unsigned short fromPort; // NOLINT(runtime/int)
+	unsigned long  fromIPAddress;  // NOLINT(runtime/int)
+	unsigned short fromPort;       // NOLINT(runtime/int)
 
 	// set timeout period for select()
 	timeout_.tv_sec  = timeoutSeconds;

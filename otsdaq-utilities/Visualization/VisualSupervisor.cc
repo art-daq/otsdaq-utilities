@@ -31,8 +31,8 @@
 #include "TBufferFile.h"
 #include "TObject.h"
 
-#include <dirent.h>   //DIR and dirent
-#include <sys/stat.h> //mkdir
+#include <dirent.h>    //DIR and dirent
+#include <sys/stat.h>  //mkdir
 
 #include <xdaq/NamespaceURI.h>
 
@@ -184,7 +184,7 @@ catch(const std::runtime_error& e)
 	    ss.str() /* message*/,
 	    "VisualSupervisor::transitionConfiguring" /*module*/,
 	    __LINE__ /*line*/,
-	    __FUNCTION__ //function
+	    __FUNCTION__  //function
 	);
 }  // end transitionConfiguring() catch
 
@@ -1315,7 +1315,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 			loadedRunNumber_ = Run;
 		}
 
-		/**DOMElement* eventsParent = */xmlOut.addTextElementToData("events", "");
+		/**DOMElement* eventsParent = */ xmlOut.addTextElementToData("events", "");
 		// DOMElement* eventParent;
 		// char        str[40];
 
@@ -1377,7 +1377,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 		__SUP_COUT__ << "getGeometry" << __E__;
 
-		/**DOMElement* geometryParent = */xmlOut.addTextElementToData("geometry", "");
+		/**DOMElement* geometryParent = */ xmlOut.addTextElementToData("geometry", "");
 		//		const Visual3DShapes& shapes =
 		// theDataManager_->getVisual3DGeometry().getShapes();
 		//

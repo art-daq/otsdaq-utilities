@@ -9,8 +9,8 @@
 #include "otsdaq/TablePlugins/XDAQContextTable/XDAQContextTable.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
-#include <dirent.h>   //DIR and dirent
-#include <sys/stat.h> //mkdir
+#include <dirent.h>    //DIR and dirent
+#include <sys/stat.h>  //mkdir
 
 #include <xdaq/NamespaceURI.h>
 

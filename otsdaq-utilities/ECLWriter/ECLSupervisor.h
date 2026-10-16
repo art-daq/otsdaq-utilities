@@ -28,8 +28,8 @@
 
 #include <chrono>
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 

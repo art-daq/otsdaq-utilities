@@ -5,10 +5,10 @@
 #include <boost/tokenizer.hpp>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
-#include <mutex>  //for std::mutex
-#include <queue>  //for std::queue
 #include <deque>
 #include <map>
+#include <mutex>  //for std::mutex
+#include <queue>  //for std::queue
 #include <set>
 #include <string>
 #include <unordered_map>

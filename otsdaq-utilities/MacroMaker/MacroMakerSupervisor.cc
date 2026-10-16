@@ -1215,7 +1215,7 @@ try
 		                      ConfigurationManager::LoadGroupType::ALL_TYPES,
 		                      true /*ignoreVersionTracking*/,
 		                      mergeInTables /* mergeInTables */,
-		                      overrideTables // overrideTables 
+		                      overrideTables  // overrideTables
 		);
 
 		// for each FESupervisor
@@ -1897,7 +1897,7 @@ void MacroMakerSupervisor::loadMacro(const std::string& macroName,
 
 //==============================================================================
 void MacroMakerSupervisor::loadMacroNames(
-    const std::string&                                      username,
+    const std::string&                                        username,
     std::pair<std::vector<std::string> /*public macros*/,
               std::vector<std::string> /**private macros */>& returnMacroNames)
 {
@@ -1906,10 +1906,10 @@ void MacroMakerSupervisor::loadMacroNames(
 	std::string    fullPath = (std::string)MACROS_DB_PATH + username + "/";
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
-			// File name validation check 
+			// File name validation check
 			if((unsigned)strlen(ent->d_name) > 4)
 			{
 				std::string   line;
@@ -1935,10 +1935,10 @@ void MacroMakerSupervisor::loadMacroNames(
 	fullPath = (std::string)MACROS_DB_PATH + "publicMacros/";
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
-			// File name validation check 
+			// File name validation check
 			if((unsigned)strlen(ent->d_name) > 4)
 			{
 				std::string   line;
@@ -1975,10 +1975,10 @@ void MacroMakerSupervisor::loadMacros(HttpXmlDocument&   xmldoc,
 	std::string    fullPath  = (std::string)MACROS_DB_PATH + username + "/";
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
-			// File name validation check 
+			// File name validation check
 			if((unsigned)strlen(ent->d_name) > 4)
 			{
 				std::string   line;
@@ -2017,10 +2017,10 @@ void MacroMakerSupervisor::loadMacros(HttpXmlDocument&   xmldoc,
 	returnStr = "";
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
-			// File name validation check 
+			// File name validation check
 			if((unsigned)strlen(ent->d_name) > 4)
 			{
 				std::string   line;
@@ -2201,7 +2201,7 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 	__SUP_COUTV__(fullPath);
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
 			std::string   line;
@@ -2236,7 +2236,7 @@ void MacroMakerSupervisor::loadFEMacroSequences(HttpXmlDocument&   xmldoc,
 
 	if((dir = opendir(fullPath.c_str())) != NULL)
 	{
-		// print all the files and directories within directory 
+		// print all the files and directories within directory
 		while((ent = readdir(dir)) != NULL)
 		{
 			std::string   line;
@@ -3129,7 +3129,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 {
 	// int                                 numOfHexBytes;
 	std::set<std::string /**argInName */> argInHasBeenInitializedSet;
-	bool                                addressIsVariable, dataIsVariable;
+	bool                                  addressIsVariable, dataIsVariable;
 
 	out << tabOffset << "{";
 
