@@ -1,5 +1,5 @@
-#ifndef _ots_mm_udp_interface_h_
-#define _ots_mm_udp_interface_h_
+#ifndef OTSDAQ_UTILITIES_TEST_OTS_MM_UDP_INTERFACE_H_
+#define OTSDAQ_UTILITIES_TEST_OTS_MM_UDP_INTERFACE_H_
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -120,4 +120,4 @@ class ots_mm_udp_interface
 	                                    ///
 };                                      //end ots_mm_udp_interface class declaration
 
-#endif
+#endif  // OTSDAQ_UTILITIES_TEST_OTS_MM_UDP_INTERFACE_H_

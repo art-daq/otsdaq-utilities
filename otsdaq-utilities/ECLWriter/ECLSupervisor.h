@@ -1,5 +1,5 @@
-#ifndef _ots_ECLSupervisor_h
-#define _ots_ECLSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLSUPERVISOR_H_
 
 #include "otsdaq/FiniteStateMachine/RunControlStateMachine.h"
 #include "otsdaq/SOAPUtilities/SOAPMessenger.h"
@@ -28,7 +28,9 @@
 
 #include <chrono>
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 #include "otsdaq-utilities/ECLWriter/ECLConnection.h"
@@ -91,4 +93,4 @@ class ECLSupervisor : public CoreSupervisorBase
 }  // namespace ots
 // clang-format on
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLSUPERVISOR_H_

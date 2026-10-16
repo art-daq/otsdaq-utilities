@@ -1,12 +1,18 @@
-#ifndef _ots_ConsoleSupervisor_h_
-#define _ots_ConsoleSupervisor_h_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONSOLE_CONSOLESUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONSOLE_CONSOLESUPERVISOR_H_
 
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include <deque>
+#include <map>
 #include <mutex>  //for std::mutex
 #include <queue>  //for std::queue
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace ots
 {
@@ -24,13 +30,13 @@ class ConsoleSupervisor : public CoreSupervisorBase
 
 	struct CustomTriggeredAction_t
 	{
-		std::vector<std::string> 	needleSubstrings; /* custom trigger needle substrings */
-		std::string 				action; /* action */
-		size_t						triggeredMessageCountIndex = -1; /* message arrival count that fired the trigger */
+		std::vector<std::string> 	needleSubstrings; // custom trigger needle substrings 
+		std::string 				action; // action 
+		size_t						triggeredMessageCountIndex = -1; // message arrival count that fired the trigger 
 		size_t						occurrences = 0;
-		size_t					    triggerOnCount = 1; /* number of times event occurs before triggering action */
-		bool 						doLoop = 0; /* Wether to keep triggering on further occurrences */
-		bool						isArmed = 0; /* Wether to count occurrences towards trigger*/
+		size_t					    triggerOnCount = 1; // number of times event occurs before triggering action 
+		bool 						doLoop = 0; // Wether to keep triggering on further occurrences 
+		bool						isArmed = 0; // Wether to count occurrences towards trigger
 
 	}; //end CustomTriggeredAction_t struct
 
@@ -317,8 +323,8 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			MSG,
 		};
 
-		mutable std::unordered_map<FieldType, std::string /* fieldValue */> fields;
-		static const std::map<FieldType, std::string /* fieldNames */> fieldNames;
+		mutable std::unordered_map<FieldType, std::string /*** fieldValue   */> fields;
+		static const std::map<FieldType, std::string /*** fieldNames   */> fieldNames;
 
 	  private:
 		size_t countStamp; ///<count is incrementing number across all sources created at ConsoleSupervisor
@@ -355,4 +361,4 @@ class ConsoleSupervisor : public CoreSupervisorBase
 // clang-format on
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CONSOLE_CONSOLESUPERVISOR_H_

@@ -1,5 +1,5 @@
-#ifndef _ots_VisualSupervisor_h
-#define _ots_VisualSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 //================ new Dario
@@ -22,6 +22,7 @@
 #include <iostream>
 #else
 #include <iostream.h>
+#include <string>
 #endif
 
 #define X(str) XStr(str).unicodeForm()
@@ -86,4 +87,4 @@ class VisualSupervisor : public CoreSupervisorBase
 };
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATION_VISUALSUPERVISOR_H_

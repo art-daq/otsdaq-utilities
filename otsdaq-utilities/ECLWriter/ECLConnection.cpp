@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <string>
+#include <vector>
 #include "otsdaq/Macros/CoutMacros.h"
 #include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
@@ -114,12 +116,12 @@ bool ECLConnection::Get(std::string s, std::string& response)
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	/* init the curl session */
+	// init the curl session
 	curl_handle = curl_easy_init();
 
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
 
-	/* specify URL to get */
+	// specify URL to get
 
 	if(needSignature)
 	{
@@ -136,18 +138,18 @@ bool ECLConnection::Get(std::string s, std::string& response)
 	curl_easy_setopt(curl_handle, CURLOPT_URL, fullURL.c_str());
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);  // Allow redirects
 
-	/* send all data to this function  */
+	// send all data to this function
 	curl_easy_setopt(
 	    curl_handle, CURLOPT_WRITEFUNCTION, ECLConnection::WriteMemoryCallback);
 
-	/* we pass our 'chunk' struct to the callback function */
+	// we pass our 'chunk' struct to the callback function
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &responseBuffer);
 
 	/* some servers don't like requests that are made without a user-agent
    field, so we provide one */
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
-	/* get it! */
+	// get it!
 	CURLcode result = curl_easy_perform(curl_handle);
 
 	if(result != CURLE_OK)
@@ -267,13 +269,13 @@ bool ECLConnection::Post(ECLEntry_t& e)
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	/* init the curl session */
+	// init the curl session
 
 	curl_handle = curl_easy_init();
 
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errorBuffer);
 
-	/* specify URL to get */
+	// specify URL to get
 
 	struct curl_slist* headers = NULL;
 	std::string        buff    = "X-User: " + _user;

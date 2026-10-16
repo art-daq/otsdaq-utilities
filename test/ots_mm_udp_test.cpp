@@ -1,6 +1,9 @@
 
 #include "test/ots_mm_udp_interface.h"
 
+#include <string>
+#include <vector>
+
 ///==============================================================================
 /// To access Macro Maker with this tool
 ///  	first export...

@@ -831,7 +831,7 @@ try
 		__SUP_COUTV__(groupType);
 
 		std::vector<std::map<std::string /* group field key */,
-		                     std::string /* group field value */>>
+		                     std::string /** group field value  */>>
 		    groups = ConfigurationManager::loadGroupHistory(
 		        groupAction, groupType, true /* formatTime */);
 
@@ -1444,7 +1444,7 @@ try
 		std::map<std::string /* group type */,
 		         std::tuple<std::string /*group name*/,
 		                    TableGroupKey,
-		                    std::string /* time string*/>>
+		                    std::string /** time string */>>
 		    theGroups;
 
 		theRemoteWebUsers_.getLastTableGroups(theGroups);
@@ -2361,7 +2361,7 @@ try
 			{
 				cfgMgr->loadTableGroup(activeGroup.second.first,
 				                       activeGroup.second.second,
-				                       false /*doActivate*/
+				                       false  //doActivate
 				);
 			}
 			catch(...)  //ignore errors
@@ -3171,7 +3171,7 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 
 	try
 	{
-		std::vector<std::string /*relative-path*/> fieldPaths;
+		std::vector<std::string /**relative-path */> fieldPaths;
 		// extract field list
 		{
 			std::istringstream f(fieldList);
@@ -3185,7 +3185,7 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 				__SUP_COUT__ << "fieldPath " << field << __E__;
 		}
 
-		std::vector<std::string /*relative-path*/> fieldValues;
+		std::vector<std::string /**relative-path */> fieldValues;
 		// extract value list
 		{
 			std::istringstream f(valueList);
@@ -3223,7 +3223,7 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 			{
 				recordUID = StringMacros::decodeURIComponent(recordUID);
 
-				/*xercesc::DOMElement* parentEl =*/
+				//xercesc::DOMElement* parentEl =
 				xmlOut.addTextElementToData("fieldValues", recordUID);
 
 				// for each field, set value
@@ -3370,7 +3370,7 @@ void ConfigurationGUISupervisor::handleFillGetTreeNodeFieldValuesXML(
 
 	try
 	{
-		std::vector<std::string /*relative-path*/> fieldPaths;
+		std::vector<std::string /**relative-path */> fieldPaths;
 		// extract field list
 		{
 			std::istringstream f(fieldList);
@@ -3502,7 +3502,7 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
 				         // note: at the root level they will be flagged for the user
 			}
 
-			std::vector<std::string /*relative-path*/> fieldAcceptList, fieldRejectList;
+			std::vector<std::string /**relative-path */> fieldAcceptList, fieldRejectList;
 			if(fieldList != "")
 			{
 				// extract field filter list
@@ -3526,7 +3526,7 @@ void ConfigurationGUISupervisor::handleFillTreeNodeCommonFieldsXML(
 				}
 			}
 
-			std::vector<std::string /*relative-path*/> records;
+			std::vector<std::string /**relative-path */> records;
 			if(recordList == "*")  // handle all records case
 			{
 				records.clear();
@@ -3672,7 +3672,7 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 		}
 
 		// extract records list
-		std::vector<std::string /*relative-path*/> records;
+		std::vector<std::string /**relative-path */> records;
 		if(recordList == "*")  // handle all records case
 		{
 			records.clear();
@@ -3698,7 +3698,7 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 		}  // end records extraction
 
 		// extract fields to get
-		std::vector<std::string /*relative-path*/> fieldsToGet;
+		std::vector<std::string /**relative-path */> fieldsToGet;
 		if(fieldList != "")
 		{
 			// extract field filter list
@@ -3710,8 +3710,8 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 
 				__SUP_COUT__ << "Getting AUTO filter fields!" << __E__;
 
-				std::vector<ConfigurationTree::RecordField> retFieldList;
-				std::vector<std::string /*relative-path*/>  fieldAcceptList,
+				std::vector<ConfigurationTree::RecordField>  retFieldList;
+				std::vector<std::string /**relative-path */> fieldAcceptList,
 				    fieldRejectList;
 				fieldRejectList.push_back("*" + TableViewColumnInfo::COL_NAME_COMMENT);
 				retFieldList = startNode.getCommonFields(
@@ -3749,7 +3749,7 @@ void ConfigurationGUISupervisor::handleFillUniqueFieldValuesForRecordsXML(
 				//	this can be used to pre-select particular group(s)
 
 				// use set to force sorted unique values
-				std::set<std::string /*unique-values*/> uniqueValues =
+				std::set<std::string /**unique-values */> uniqueValues =
 				    startNode.getUniqueValuesForField(
 				        records, field, &fieldGroupIDChildLinkIndex);
 
@@ -3886,7 +3886,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 /*groupTypeString*/
+		                       0  //groupTypeString
 		);
 
 		for(auto& activeTable : cfgMgr->getActiveVersions())
@@ -3982,13 +3982,13 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 	);
 
 	if(memberMap.size() > ConfigurationManager::getFixedContextMemberNames().size() +
-	                          1 /* for optional table */
+	                          1  // for optional table
 	   && startPath == "/")
 	{
 		__COUTT__ << "Checking for orphaned tables..." << __E__;
 
 		//check Tree for orphaned tables
-		std::set<std::string /* table name that is linked to */> linkingTables;
+		std::set<std::string /** table name that is linked to  */> linkingTables;
 		for(const auto& tableInfo : cfgMgr->getAllTableInfo())
 		{
 			//for each existing active table, check table for links to tables
@@ -4163,7 +4163,7 @@ void ConfigurationGUISupervisor::handleFillTreeViewXML(
 			__SUP_COUTT__ << "Diff Tree recursive handling." << __E__;
 
 			//convert vector rootMap to set for searching
-			std::set<std::string /* treeNodeName */> rootMapToSearch;
+			std::set<std::string /** treeNodeName  */> rootMapToSearch;
 			for(const auto& rootMember : rootMap)
 				rootMapToSearch.emplace(rootMember.first);
 
@@ -4793,7 +4793,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 /*groupTypeString*/
+		                       0  //groupTypeString
 		);
 		__SUP_COUTV__(StringMacros::mapToString(memberMapAContext));
 
@@ -4807,7 +4807,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 /*groupTypeString*/
+		                       0  //groupTypeString
 		);
 
 		__SUP_COUTV__(StringMacros::mapToString(memberMapBContext));
@@ -4826,7 +4826,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 /*groupTypeString*/
+		                       0  //groupTypeString
 		);
 		__SUP_COUTV__(StringMacros::mapToString(memberMapAConfig));
 
@@ -4840,7 +4840,7 @@ try
 		                       0 /*groupAuthor*/,
 		                       0 /*groupCreationTime*/,
 		                       false /*doNotLoadMember*/,
-		                       0 /*groupTypeString*/
+		                       0  //groupTypeString
 		);
 
 		__SUP_COUTV__(StringMacros::mapToString(memberMapBConfig));
@@ -4852,12 +4852,12 @@ try
 	// merge
 
 	std::map<std::pair<std::string /*original table*/, std::string /*original uidB*/>,
-	         std::string /*converted uidB*/>
+	         std::string /**converted uidB */>
 	    uidConversionMap;
 	std::map<
 	    std::pair<std::string /*original table*/,
 	              std::pair<std::string /*group linkid*/, std::string /*original gidB*/>>,
-	    std::string /*converted gidB*/>
+	    std::string /**converted gidB */>
 	    groupidConversionMap;
 
 	std::stringstream mergeReport;
@@ -5402,7 +5402,7 @@ try
 						else
 							commands.back().params_.emplace(
 							    std::pair<std::string /*param name*/,
-							              std::string /*param value*/>(
+							              std::string /**param value */>(
 							        paramSubString,
 							        StringMacros::decodeURIComponent(paramValue)));
 					}
@@ -5575,7 +5575,7 @@ try
 						std::vector<std::string> labelOrder;
 						std::map<
 						    std::string /*label*/,
-						    std::vector<std::vector<std::string> /*name,start,step*/>>
+						    std::vector<std::vector<std::string> /**name,start,step */>>
 						    argsByLabel;
 
 						if(macroArgsIt != command.params_.end() &&
@@ -9034,7 +9034,7 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	std::map<std::string /*subsystemName*/, std::string /*destinationSubsystemName*/>
 	    subsystemObjectMap;
 
-	std::vector<std::string /*property*/> artdaqSupervisorInfo;
+	std::vector<std::string /**property */> artdaqSupervisorInfo;
 
 	std::string                        artdaqSupervisorName;
 	const ARTDAQTableBase::ARTDAQInfo& info =
@@ -9293,7 +9293,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 			nodeTypeToObjectMap.emplace(
 			    std::make_pair(StringMacros::decodeURIComponent(typePair.first),
 			                   std::map<std::string /*record*/,
-			                            std::vector<std::string /*property*/>>()));
+			                            std::vector<std::string /**property */>>()));
 
 			std::map<std::string /*node*/, std::string /*nodeRecordSetString*/>
 			    nodeRecordToStringMap;
@@ -9310,7 +9310,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 
 				__SUP_COUTV__(StringMacros::decodeURIComponent(nodePair.first));
 
-				std::vector<std::string /*property*/> nodePropertyVector;
+				std::vector<std::string /**property */> nodePropertyVector;
 
 				StringMacros::getVectorFromString(
 				    nodePair.second, nodePropertyVector, {','});
@@ -9797,7 +9797,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
 			continue;  // skip this group
 		}
 
-		std::set<TableGroupKey /*key*/> allGroupKeys = groupInfo.second.getKeys();
+		std::set<TableGroupKey /**key */> allGroupKeys = groupInfo.second.getKeys();
 		// convert set to vector for easier string handling
 		std::vector<TableGroupKey> groupKeysVec(allGroupKeys.begin(), allGroupKeys.end());
 		// convert vector to string for output
@@ -9829,7 +9829,7 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
 			}
 		}
 
-		std::set<TableGroupKey /*key*/> groupKeys;
+		std::set<TableGroupKey /**key */> groupKeys;
 		// make set of single active key for easier handling below
 		if(activeGroupsOnly)
 		{
