@@ -32,7 +32,8 @@
 #include <iostream>
 #include <string>
 
-/// use this for normal printouts
+// NOLINTBEGIN(build/define_used)
+// use this for normal printouts
 #define __PRINTF__ printf
 
 #define __MF_SUBJECT__ "doxy_main"
@@ -63,10 +64,11 @@
 #define QUOTE(X) Q(X)
 #define __COUTV__(X) __COUT__ << QUOTE(X) << " = " << X << __E__
 
-/// and use this to suppress
-/// #define __PRINTF__ if(0) printf
-/// #define __COUT__  if(0) std::cout
-///
+// and use this to suppress
+// #define __PRINTF__ if(0) printf
+// #define __COUT__  if(0) std::cout
+// NOLINTEND(build/define_used)
+
 int main(int argc, char** argv)
 {
 	__COUT__ << "Starting doxygen main.html editor..." << __E__;

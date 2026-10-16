@@ -49,7 +49,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 	}
 
 	// loop through all the results and make a socket
-	for(p = servinfo; p != NULL; p = p->ai_next)
+	for(p = servinfo; p != nullptr; p = p->ai_next)
 	{
 		if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
 		{
@@ -60,7 +60,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 		break;
 	}
 
-	if(p == NULL)
+	if(p == nullptr)
 	{
 		__SS__ << "sw: failed to create socket" << __E__;
 		__SS_THROW__;
@@ -76,7 +76,7 @@ int makeSocket(const char* ip, int port, struct sockaddr_in& mm_ai_addr)
 	if(setsockopt(sockfd,
 	              SOL_SOCKET,
 	              SO_RCVBUF,
-	              (char*)&socketReceiveBufferSize,
+	              (char*)&socketReceiveBufferSize, // NOLINT
 	              sizeof(socketReceiveBufferSize)) < 0)
 		__COUT_ERR__ << "Failed to set socket receive size to 0x" << std::hex
 		             << socketReceiveBufferSize << std::dec << "." << std::endl;
@@ -100,8 +100,8 @@ int                receive(int          sockfd,
                            unsigned int timeoutUSeconds,
                            bool         verbose)
 {
-	unsigned long  fromIPAddress;
-	unsigned short fromPort;
+	unsigned long  fromIPAddress; // NOLINT(runtime/int)
+	unsigned short fromPort; // NOLINT(runtime/int)
 
 	// set timeout period for select()
 	timeout_.tv_sec  = timeoutSeconds;
