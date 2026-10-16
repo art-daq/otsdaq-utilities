@@ -1292,17 +1292,15 @@ std::string ots_mm_udp_interface::getSequenceList()
 	std::string sequenceListValue =
 	    extractXmlField(responseXML, "FEsequences", 0, after, &after);
 
-	std::string cleanedSequenceList;
-	std::vector<std::string> rawEntries =
-	    getVectorFromString(sequenceListValue, {';'});
+	std::string              cleanedSequenceList;
+	std::vector<std::string> rawEntries = getVectorFromString(sequenceListValue, {';'});
 	for(size_t i = 0; i < rawEntries.size(); ++i)
 	{
 		std::string entry = rawEntries[i];
-		if(entry.size() > 4 &&
-		   entry.substr(entry.size() - 4) == ".dat")
+		if(entry.size() > 4 && entry.substr(entry.size() - 4) == ".dat")
 			entry = entry.substr(0, entry.size() - 4);
-		std::string baseName = entry;
-		size_t lastSlash = baseName.rfind('/');
+		std::string baseName  = entry;
+		size_t      lastSlash = baseName.rfind('/');
 		if(lastSlash != std::string::npos)
 			baseName = baseName.substr(lastSlash + 1);
 		if(baseName.empty() || baseName == "." || baseName == "..")
@@ -1340,19 +1338,18 @@ std::string ots_mm_udp_interface::getSequenceInfo(const std::string& sequenceNam
 	   !hasCompleteXmlRoot(responseXML))
 	{
 		__SS__ << "Error loading sequence '" << sequenceName
-		       << "'. Received: "
-		       << (responseXML.size() == 0 ? "<empty>" : responseXML) << __E__;
+		       << "'. Received: " << (responseXML.size() == 0 ? "<empty>" : responseXML)
+		       << __E__;
 		__SS_THROW__;
 	}
 
-	size_t after = 0;
-	std::string errorMessage =
-	    extractXmlField(responseXML, "Error", 0, after, &after);
+	size_t      after        = 0;
+	std::string errorMessage = extractXmlField(responseXML, "Error", 0, after, &after);
 	if(!errorMessage.empty())
 	{
 		errorMessage = decodeHTMLEntities(errorMessage);
-		__SS__ << "Error loading sequence '" << sequenceName << "': "
-		       << errorMessage << __E__;
+		__SS__ << "Error loading sequence '" << sequenceName << "': " << errorMessage
+		       << __E__;
 		__SS_THROW__;
 	}
 
@@ -1371,7 +1368,7 @@ namespace
 
 size_t findMatchingBrace(const std::string& jsonString, size_t openBracePosition)
 {
-	int  depth = 1;
+	int  depth       = 1;
 	bool insideQuote = false;
 	for(size_t i = openBracePosition + 1; i < jsonString.size(); ++i)
 	{
@@ -1511,8 +1508,8 @@ SequenceCommand parseCommandObject(const std::string& objectJSON)
 }
 
 void parseSequenceJSON(
-    const std::string&                                   sequenceJSON,
-    std::map<unsigned int, SequenceCommand>&              commandMap,
+    const std::string&                                     sequenceJSON,
+    std::map<unsigned int, SequenceCommand>&               commandMap,
     std::vector<std::pair<std::string, SequenceVariable>>& variableList)
 {
 	if(sequenceJSON.empty())
@@ -1546,8 +1543,7 @@ void parseSequenceJSON(
 		{
 			if(sequenceJSON[valueStart] == '{')
 			{
-				size_t variablesEnd =
-				    findMatchingBrace(sequenceJSON, valueStart);
+				size_t variablesEnd = findMatchingBrace(sequenceJSON, valueStart);
 				if(variablesEnd == std::string::npos)
 					break;
 				std::string variablesBlock =
@@ -1556,8 +1552,7 @@ void parseSequenceJSON(
 				size_t variablePosition = 1;
 				while(variablePosition < variablesBlock.size())
 				{
-					size_t variableNameStart =
-					    variablesBlock.find('"', variablePosition);
+					size_t variableNameStart = variablesBlock.find('"', variablePosition);
 					if(variableNameStart == std::string::npos)
 						break;
 					size_t variableNameEnd =
@@ -1565,11 +1560,9 @@ void parseSequenceJSON(
 					if(variableNameEnd == std::string::npos)
 						break;
 					std::string variableName = variablesBlock.substr(
-					    variableNameStart + 1,
-					    variableNameEnd - variableNameStart - 1);
+					    variableNameStart + 1, variableNameEnd - variableNameStart - 1);
 
-					size_t variableColon =
-					    variablesBlock.find(':', variableNameEnd + 1);
+					size_t variableColon = variablesBlock.find(':', variableNameEnd + 1);
 					if(variableColon == std::string::npos)
 						break;
 					size_t variableObjectStart =
@@ -1582,8 +1575,7 @@ void parseSequenceJSON(
 						break;
 
 					std::string variableObjectJSON = variablesBlock.substr(
-					    variableObjectStart,
-					    variableObjectEnd - variableObjectStart + 1);
+					    variableObjectStart, variableObjectEnd - variableObjectStart + 1);
 
 					SequenceVariable sequenceVariable;
 					sequenceVariable.value =
@@ -1638,7 +1630,7 @@ void parseSequenceJSON(
 			std::string commandObjectJSON =
 			    extractJsonStringValue(sequenceJSON, valueStart);
 			commandMap[stepIndex] = parseCommandObject(commandObjectJSON);
-			size_t closingQuote = findClosingQuote(sequenceJSON, valueStart);
+			size_t closingQuote   = findClosingQuote(sequenceJSON, valueStart);
 			position =
 			    (closingQuote != std::string::npos) ? closingQuote + 1 : valueStart + 1;
 		}
@@ -1650,7 +1642,7 @@ void parseSequenceJSON(
 			std::string commandObjectJSON =
 			    sequenceJSON.substr(valueStart, objectEnd - valueStart + 1);
 			commandMap[stepIndex] = parseCommandObject(commandObjectJSON);
-			position = objectEnd + 1;
+			position              = objectEnd + 1;
 		}
 		else
 		{
@@ -1672,7 +1664,7 @@ SplitNumericResult splitNumericValue(const std::string& valueString)
 {
 	static const std::regex numericPattern(
 	    "^\\s*([-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?)\\s*([a-zA-Z]*)\\s*$");
-	std::smatch matchResult;
+	std::smatch        matchResult;
 	SplitNumericResult result;
 	result.isValid = false;
 	if(std::regex_match(valueString, matchResult, numericPattern))
@@ -1685,9 +1677,9 @@ SplitNumericResult splitNumericValue(const std::string& valueString)
 }
 
 std::string substituteSequenceVariables(
-    const std::string&                                            inputArgs,
-    const std::vector<std::pair<std::string, SequenceVariable>>&  variableList,
-    unsigned int                                                  currentIteration)
+    const std::string&                                           inputArgs,
+    const std::vector<std::pair<std::string, SequenceVariable>>& variableList,
+    unsigned int                                                 currentIteration)
 {
 	if(variableList.empty())
 		return inputArgs;
@@ -1712,11 +1704,10 @@ std::string substituteSequenceVariables(
 		std::string decodedValue =
 		    ots_mm_udp_interface::decodeURIComponent(nameAndValue[1]);
 
-		for(size_t variableIndex = 0;
-		    variableIndex < variableList.size();
+		for(size_t variableIndex = 0; variableIndex < variableList.size();
 		    ++variableIndex)
 		{
-			const std::string&    variableName     = variableList[variableIndex].first;
+			const std::string&      variableName     = variableList[variableIndex].first;
 			const SequenceVariable& sequenceVariable = variableList[variableIndex].second;
 
 			size_t searchPosition = 0;
@@ -1748,21 +1739,17 @@ std::string substituteSequenceVariables(
 						{
 							if(stepValue > 0 && computedValue > maxParts.numericPart)
 								computedValue = maxParts.numericPart;
-							else if(stepValue < 0 &&
-							        computedValue < maxParts.numericPart)
+							else if(stepValue < 0 && computedValue < maxParts.numericPart)
 								computedValue = maxParts.numericPart;
 						}
 
 						std::ostringstream precisionStream;
-						precisionStream << std::setprecision(12)
-						                << computedValue;
-						effectiveValue =
-						    precisionStream.str() + valueParts.unitSuffix;
+						precisionStream << std::setprecision(12) << computedValue;
+						effectiveValue = precisionStream.str() + valueParts.unitSuffix;
 					}
 				}
 
-				decodedValue.replace(
-				    searchPosition, variableName.size(), effectiveValue);
+				decodedValue.replace(searchPosition, variableName.size(), effectiveValue);
 				searchPosition += effectiveValue.size();
 			}
 		}
@@ -1776,10 +1763,9 @@ std::string substituteSequenceVariables(
 }  //end anonymous namespace
 
 //==============================================================================
-std::string ots_mm_udp_interface::runSequence(
-    const std::string& sequenceName,
-    const std::string& variablesJSON,
-    unsigned int       iterationCount)
+std::string ots_mm_udp_interface::runSequence(const std::string& sequenceName,
+                                              const std::string& variablesJSON,
+                                              unsigned int       iterationCount)
 {
 	__COUT_INFO__ << "runSequence() '" << sequenceName << "' for " << iterationCount
 	              << " iteration(s)" << __E__;
@@ -1787,7 +1773,7 @@ std::string ots_mm_udp_interface::runSequence(
 	std::string sequenceJSON = getSequenceInfo(sequenceName);
 	__COUTV__(sequenceJSON.size());
 
-	std::map<unsigned int, SequenceCommand>              commandMap;
+	std::map<unsigned int, SequenceCommand>               commandMap;
 	std::vector<std::pair<std::string, SequenceVariable>> variableList;
 	parseSequenceJSON(sequenceJSON, commandMap, variableList);
 
@@ -1801,12 +1787,10 @@ std::string ots_mm_udp_interface::runSequence(
 		parseSequenceJSON("{\"__variables__\":" + variablesJSON + "}",
 		                  unusedCommands,
 		                  overrideVariables);
-		for(size_t overrideIndex = 0;
-		    overrideIndex < overrideVariables.size();
+		for(size_t overrideIndex = 0; overrideIndex < overrideVariables.size();
 		    ++overrideIndex)
 		{
-			for(size_t variableIndex = 0;
-			    variableIndex < variableList.size();
+			for(size_t variableIndex = 0; variableIndex < variableList.size();
 			    ++variableIndex)
 			{
 				if(variableList[variableIndex].first ==
@@ -1820,12 +1804,11 @@ std::string ots_mm_udp_interface::runSequence(
 		}
 	}
 
-	std::string accumulatedOutput;
-	unsigned int totalSteps = commandMap.size() * iterationCount;
+	std::string  accumulatedOutput;
+	unsigned int totalSteps     = commandMap.size() * iterationCount;
 	unsigned int completedSteps = 0;
 
-	for(unsigned int iterationIndex = 0;
-	    iterationIndex < iterationCount;
+	for(unsigned int iterationIndex = 0; iterationIndex < iterationCount;
 	    ++iterationIndex)
 	{
 		if(iterationCount > 1)
@@ -1834,8 +1817,8 @@ std::string ots_mm_udp_interface::runSequence(
 
 		for(auto& commandEntry : commandMap)
 		{
-			unsigned int   stepIndex = commandEntry.first;
-			SequenceCommand& command  = commandEntry.second;
+			unsigned int     stepIndex = commandEntry.first;
+			SequenceCommand& command   = commandEntry.second;
 			++completedSteps;
 
 			if(command.macroType == "__delay__")
@@ -1847,8 +1830,7 @@ std::string ots_mm_udp_interface::runSequence(
 				{
 					try
 					{
-						delaySeconds =
-						    std::stod(decodeURIComponent(delayParts[1]));
+						delaySeconds = std::stod(decodeURIComponent(delayParts[1]));
 					}
 					catch(...)
 					{
@@ -1864,7 +1846,7 @@ std::string ots_mm_udp_interface::runSequence(
 
 			if(command.macroType == "__mom__")
 			{
-				std::string innerSequenceName = command.macroName;
+				std::string              innerSequenceName = command.macroName;
 				std::vector<std::string> momIterParts =
 				    getVectorFromString(command.inputArgs, {','}, {} /*whitespace*/);
 				unsigned int innerIterationCount = 1;
@@ -1897,10 +1879,9 @@ std::string ots_mm_udp_interface::runSequence(
 				continue;
 			}
 
-			__COUT_INFO__ << "  [" << completedSteps << "/" << totalSteps
-			              << "] " << command.macroName << " on "
-			              << command.feUID << " (" << command.feClass << ")"
-			              << __E__;
+			__COUT_INFO__ << "  [" << completedSteps << "/" << totalSteps << "] "
+			              << command.macroName << " on " << command.feUID << " ("
+			              << command.feClass << ")" << __E__;
 
 			std::string reconciledInputArgs  = command.inputArgs;
 			std::string reconciledOutputArgs = command.outputArgs;
@@ -1919,12 +1900,11 @@ std::string ots_mm_udp_interface::runSequence(
 						    getVectorFromString(xmlValue, {';'});
 						if(xmlFields.size() < 6)
 							continue;
-						if(command.feClass != "*" &&
-						   xmlFields[2] != command.feClass)
+						if(command.feClass != "*" && xmlFields[2] != command.feClass)
 							continue;
 
 						unsigned int fieldIndex = 4;
-						bool foundMacro = false;
+						bool         foundMacro = false;
 						while(xmlFields.size() > fieldIndex + 5)
 						{
 							if(xmlFields[fieldIndex] == command.macroName)
@@ -1932,12 +1912,10 @@ std::string ots_mm_udp_interface::runSequence(
 								foundMacro = true;
 								break;
 							}
-							fieldIndex += 3 + 1 +
-							    atoi(xmlFields[fieldIndex + 3].c_str());
+							fieldIndex += 3 + 1 + atoi(xmlFields[fieldIndex + 3].c_str());
 							if(xmlFields.size() <= fieldIndex)
 								break;
-							fieldIndex += 1 +
-							    atoi(xmlFields[fieldIndex].c_str());
+							fieldIndex += 1 + atoi(xmlFields[fieldIndex].c_str());
 						}
 						if(foundMacro)
 						{
@@ -1948,8 +1926,8 @@ std::string ots_mm_udp_interface::runSequence(
 					if(lookupFeUID == "*")
 					{
 						__COUT_WARN__ << "    Could not resolve wildcard FE for macro '"
-						              << command.macroName
-						              << "', skipping reconciliation" << __E__;
+						              << command.macroName << "', skipping reconciliation"
+						              << __E__;
 					}
 				}
 
@@ -1967,29 +1945,26 @@ std::string ots_mm_udp_interface::runSequence(
 						              << currentInputCount << __E__;
 
 						std::map<std::string, std::string> savedInputsByName;
-						for(size_t savedIndex = 0;
-						    savedIndex < savedInputPairs.size();
+						for(size_t savedIndex = 0; savedIndex < savedInputPairs.size();
 						    ++savedIndex)
 						{
-							std::vector<std::string> nameAndValue =
-							    getVectorFromString(
-							        savedInputPairs[savedIndex], {','}, {} /*whitespace*/);
+							std::vector<std::string> nameAndValue = getVectorFromString(
+							    savedInputPairs[savedIndex], {','}, {} /*whitespace*/);
 							if(nameAndValue.size() >= 2)
 								savedInputsByName[decodeURIComponent(nameAndValue[0])] =
 								    nameAndValue[1];
 						}
 
 						reconciledInputArgs.clear();
-						for(unsigned int inputIndex = 0;
-						    inputIndex < currentInputCount;
+						for(unsigned int inputIndex = 0; inputIndex < currentInputCount;
 						    ++inputIndex)
 						{
-							std::string currentInputName =
-							    getCommandInputName(
-							        lookupFeUID, command.macroName, inputIndex);
+							std::string currentInputName = getCommandInputName(
+							    lookupFeUID, command.macroName, inputIndex);
 							if(inputIndex > 0)
 								reconciledInputArgs += ";";
-							reconciledInputArgs += encodeURIComponent(currentInputName) + ",";
+							reconciledInputArgs +=
+							    encodeURIComponent(currentInputName) + ",";
 							auto savedEntry = savedInputsByName.find(currentInputName);
 							if(savedEntry != savedInputsByName.end())
 								reconciledInputArgs += savedEntry->second;
@@ -2014,9 +1989,8 @@ std::string ots_mm_udp_interface::runSequence(
 						    outputIndex < currentOutputCount;
 						    ++outputIndex)
 						{
-							std::string currentOutputName =
-							    getCommandOutputName(
-							        lookupFeUID, command.macroName, outputIndex);
+							std::string currentOutputName = getCommandOutputName(
+							    lookupFeUID, command.macroName, outputIndex);
 							if(outputIndex > 0)
 								reconciledOutputArgs += ",";
 							reconciledOutputArgs += encodeURIComponent(currentOutputName);
@@ -2047,8 +2021,8 @@ std::string ots_mm_udp_interface::runSequence(
 			                      (struct sockaddr*)&mm_ai_addr,
 			                      sizeof(mm_ai_addr))) == -1)
 			{
-				__SS__ << "Error on runSequence() sendto for step " << stepIndex
-				       << " (" << command.macroName << ")!" << __E__;
+				__SS__ << "Error on runSequence() sendto for step " << stepIndex << " ("
+				       << command.macroName << ")!" << __E__;
 				__SS_THROW__;
 			}
 
@@ -2059,8 +2033,8 @@ std::string ots_mm_udp_interface::runSequence(
 			   !hasCompleteXmlRoot(runXML))
 			{
 				__SS__ << "Error running sequence step " << stepIndex << " ("
-				       << command.macroName << "): "
-				       << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
+				       << command.macroName
+				       << "): " << (runXML.size() == 0 ? "<empty>" : runXML) << __E__;
 				__SS_THROW__;
 			}
 
@@ -2080,8 +2054,8 @@ std::string ots_mm_udp_interface::runSequence(
 			while((outputName = extractXmlField(
 			           runXML, "outputArgs_name", 0, parseAfter, &parseAfter)) != "")
 			{
-				std::string outputValue =
-				    extractXmlField(runXML, "outputArgs_value", 0, parseAfter, &parseAfter);
+				std::string outputValue = extractXmlField(
+				    runXML, "outputArgs_value", 0, parseAfter, &parseAfter);
 				__COUT_INFO__ << "    Output: " << outputName << " = "
 				              << decodeURIComponent(outputValue) << __E__;
 				if(!accumulatedOutput.empty())
@@ -2131,13 +2105,13 @@ std::string ots_mm_udp_interface::describeSequence(const std::string& sequenceJS
 			std::string innerIterations = "1";
 			if(momParts.size() > 1)
 				innerIterations = decodeURIComponent(momParts[1]);
-			description << "[Nested MoM: " << command.macroName
-			            << " x" << innerIterations << "]\n";
+			description << "[Nested MoM: " << command.macroName << " x" << innerIterations
+			            << "]\n";
 			continue;
 		}
 
-		description << command.macroName << "  on  " << command.feUID
-		            << " (" << command.feClass << ")\n";
+		description << command.macroName << "  on  " << command.feUID << " ("
+		            << command.feClass << ")\n";
 
 		std::vector<std::string> inputPairs =
 		    getVectorFromString(command.inputArgs, {';'}, {} /*whitespace*/);
@@ -2161,8 +2135,7 @@ std::string ots_mm_udp_interface::describeSequence(const std::string& sequenceJS
 			    getVectorFromString(outputPairs[outputIndex], {','}, {} /*whitespace*/);
 			if(!nameAndValue.empty() && !nameAndValue[0].empty())
 				description << "      Output: " << decodeURIComponent(nameAndValue[0])
-				            << (command.saveOutputs == "1" ? " (saved)" : "")
-				            << "\n";
+				            << (command.saveOutputs == "1" ? " (saved)" : "") << "\n";
 		}
 	}
 
@@ -2173,8 +2146,7 @@ std::string ots_mm_udp_interface::describeSequence(const std::string& sequenceJS
 		size_t maxNameWidth  = 0;
 		size_t maxValueWidth = 0;
 		size_t maxStepWidth  = 0;
-		for(size_t variableIndex = 0;
-		    variableIndex < variableList.size();
+		for(size_t variableIndex = 0; variableIndex < variableList.size();
 		    ++variableIndex)
 		{
 			if(variableList[variableIndex].first.size() > maxNameWidth)
@@ -2185,17 +2157,17 @@ std::string ots_mm_udp_interface::describeSequence(const std::string& sequenceJS
 				maxStepWidth = variableList[variableIndex].second.step.size();
 		}
 
-		for(size_t variableIndex = 0;
-		    variableIndex < variableList.size();
+		for(size_t variableIndex = 0; variableIndex < variableList.size();
 		    ++variableIndex)
 		{
-			const std::string&       variableName     = variableList[variableIndex].first;
-			const SequenceVariable&  sequenceVariable = variableList[variableIndex].second;
-			description << "  #" << variableIndex << "  "
-			            << std::left << std::setw(maxNameWidth) << variableName
-			            << ":  value=" << std::setw(maxValueWidth) << sequenceVariable.value
-			            << "  step=" << std::setw(maxStepWidth) << sequenceVariable.step
-			            << "  max=" << sequenceVariable.max << "\n";
+			const std::string&      variableName     = variableList[variableIndex].first;
+			const SequenceVariable& sequenceVariable = variableList[variableIndex].second;
+			description << "  #" << variableIndex << "  " << std::left
+			            << std::setw(maxNameWidth) << variableName
+			            << ":  value=" << std::setw(maxValueWidth)
+			            << sequenceVariable.value << "  step=" << std::setw(maxStepWidth)
+			            << sequenceVariable.step << "  max=" << sequenceVariable.max
+			            << "\n";
 		}
 	}
 	else

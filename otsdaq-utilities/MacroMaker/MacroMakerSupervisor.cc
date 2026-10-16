@@ -763,8 +763,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					std::string sequenceName =
 					    StringMacros::decodeURIComponent(bufferFields[1]);
 
-					bool isPublic =
-					    (sequenceName.find("public/") == 0 ? true : false);
+					bool isPublic = (sequenceName.find("public/") == 0 ? true : false);
 
 					std::string fixedName = "";
 					for(size_t i = (isPublic ? std::string("public/").size() : 0);
@@ -782,8 +781,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 						else
 							fixedName += sequenceName[i];
 
-					std::string fullPath = (std::string)MACROS_SEQUENCE_PATH +
-					                       "NO-USER" + "/" + fixedName + ".dat";
+					std::string fullPath = (std::string)MACROS_SEQUENCE_PATH + "NO-USER" +
+					                       "/" + fixedName + ".dat";
 					__COUT__ << fullPath << __E__;
 
 					std::ifstream readFile(fullPath.c_str());
@@ -792,20 +791,18 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					{
 						__COUT__ << "Unable to open " << fullPath
 						         << "! Trying public area..." << __E__;
-						std::string publicFullPath =
-						    (std::string)MACROS_SEQUENCE_PATH +
-						    WebUsers::DEFAULT_ADMIN_USERNAME + "/" + fixedName +
-						    ".dat";
+						std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
+						                             WebUsers::DEFAULT_ADMIN_USERNAME +
+						                             "/" + fixedName + ".dat";
 						__COUT__ << publicFullPath << __E__;
 						readFile.open(publicFullPath.c_str());
 						fullPath = publicFullPath;
 					}
 					if(isPublic && !readFile.is_open())
 					{
-						std::string publicFullPath =
-						    (std::string)MACROS_SEQUENCE_PATH +
-						    WebUsers::DEFAULT_ADMIN_USERNAME + "/" + fixedName +
-						    ".dat";
+						std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
+						                             WebUsers::DEFAULT_ADMIN_USERNAME +
+						                             "/" + fixedName + ".dat";
 						__COUT__ << publicFullPath << __E__;
 						readFile.open(publicFullPath.c_str());
 						fullPath = publicFullPath;
@@ -820,7 +817,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 
 					readFile.seekg(0, std::ios::end);
 					unsigned long long fileSize = readFile.tellg();
-					std::string       fileContent(fileSize, '\0');
+					std::string        fileContent(fileSize, '\0');
 					readFile.seekg(0, std::ios::beg);
 					readFile.read(&fileContent[0], fileSize);
 					readFile.close();

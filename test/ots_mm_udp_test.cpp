@@ -30,8 +30,7 @@ try
 		fprintf(stderr,
 		        "\t Variable overrides use bracket syntax, e.g. [num_of_packets,200], "
 		        "and are named. Step and max are optional (default 0).\n");
-		fprintf(stderr,
-		        "\t The $ prefix on variable names is optional.\n");
+		fprintf(stderr, "\t The $ prefix on variable names is optional.\n");
 		exit(1);
 	}
 
@@ -70,7 +69,7 @@ try
 		if(fe >= fes.size())
 		{
 			// not a FE UID — check if it is a MoM sequence name
-			std::string sequenceListStr = mm.getSequenceList();
+			std::string              sequenceListStr = mm.getSequenceList();
 			std::vector<std::string> sequenceNames =
 			    getVectorFromString(sequenceListStr, {';'});
 
@@ -80,14 +79,12 @@ try
 				    strippedTargetName.substr(std::string("public/").size());
 
 			bool isSequenceMatch = false;
-			for(size_t sequenceIndex = 0;
-			    sequenceIndex < sequenceNames.size();
+			for(size_t sequenceIndex = 0; sequenceIndex < sequenceNames.size();
 			    ++sequenceIndex)
 			{
 				std::string candidateName = sequenceNames[sequenceIndex];
 				if(candidateName.find("public/") == 0)
-					candidateName =
-					    candidateName.substr(std::string("public/").size());
+					candidateName = candidateName.substr(std::string("public/").size());
 				if(candidateName == strippedTargetName)
 				{
 					isSequenceMatch = true;
@@ -103,25 +100,21 @@ try
 				if(argc == 4)
 				{
 					// Discovery mode — print commands and variables, then exit
-					__COUT_INFO__
-					    << "Loading sequence '" << sequenceName << "'..."
-					    << __E__;
+					__COUT_INFO__ << "Loading sequence '" << sequenceName << "'..."
+					              << __E__;
 
-					std::string sequenceJSON = mm.getSequenceInfo(sequenceName);
-					std::string sequenceDescription =
-					    mm.describeSequence(sequenceJSON);
+					std::string sequenceJSON        = mm.getSequenceInfo(sequenceName);
+					std::string sequenceDescription = mm.describeSequence(sequenceJSON);
 
 					__COUT_INFO__ << "\nSequence '" << sequenceName << "':\n"
 					              << sequenceDescription << __E__;
 
-					__COUT_INFO__
-					    << "To run: ots_mm_udp_test " << target_mm_ip << " "
-					    << target_mm_port << " \"" << sequenceName
-					    << "\" <iterations> [varName,value] ..." << __E__;
-					__COUT_INFO__
-					    << "  e.g.: ots_mm_udp_test " << target_mm_ip << " "
-					    << target_mm_port << " \"" << sequenceName
-					    << "\" 1 [var1,0]" << __E__;
+					__COUT_INFO__ << "To run: ots_mm_udp_test " << target_mm_ip << " "
+					              << target_mm_port << " \"" << sequenceName
+					              << "\" <iterations> [varName,value] ..." << __E__;
+					__COUT_INFO__ << "  e.g.: ots_mm_udp_test " << target_mm_ip << " "
+					              << target_mm_port << " \"" << sequenceName
+					              << "\" 1 [var1,0]" << __E__;
 					return 0;
 				}
 
@@ -151,8 +144,7 @@ try
 				// (Same approach as discovery mode but just collecting names)
 				std::vector<std::string> variableNamesInOrder;
 				{
-					size_t variablesKeyPosition =
-					    sequenceJSON.find("\"__variables__\"");
+					size_t variablesKeyPosition = sequenceJSON.find("\"__variables__\"");
 					if(variablesKeyPosition != std::string::npos)
 					{
 						size_t variablesObjectStart =
@@ -160,11 +152,10 @@ try
 						if(variablesObjectStart != std::string::npos)
 						{
 							size_t scanPosition = variablesObjectStart + 1;
-							int    depth = 1;
+							int    depth        = 1;
 							while(scanPosition < sequenceJSON.size() && depth > 0)
 							{
-								size_t nameStart =
-								    sequenceJSON.find('"', scanPosition);
+								size_t nameStart = sequenceJSON.find('"', scanPosition);
 								if(nameStart == std::string::npos)
 									break;
 
@@ -201,8 +192,7 @@ try
 									break;
 
 								size_t nameEnd = std::string::npos;
-								for(size_t i = nameStart + 1;
-								    i < sequenceJSON.size();
+								for(size_t i = nameStart + 1; i < sequenceJSON.size();
 								    ++i)
 								{
 									if(sequenceJSON[i] == '\\')
@@ -223,15 +213,13 @@ try
 								    nameStart + 1, nameEnd - nameStart - 1);
 
 								// skip past the value object {value, step, max}
-								size_t objectStart =
-								    sequenceJSON.find('{', nameEnd + 1);
+								size_t objectStart = sequenceJSON.find('{', nameEnd + 1);
 								if(objectStart == std::string::npos)
 									break;
-								int objectDepth = 1;
-								bool objectQuote = false;
-								size_t objectEnd = std::string::npos;
-								for(size_t i = objectStart + 1;
-								    i < sequenceJSON.size();
+								int    objectDepth = 1;
+								bool   objectQuote = false;
+								size_t objectEnd   = std::string::npos;
+								for(size_t i = objectStart + 1; i < sequenceJSON.size();
 								    ++i)
 								{
 									if(sequenceJSON[i] == '\\' && objectQuote)
@@ -273,10 +261,9 @@ try
 				std::string variablesJSON;
 				if(numberOfOverrides > 0)
 				{
-					variablesJSON = "{";
+					variablesJSON                   = "{";
 					unsigned int validOverrideCount = 0;
-					for(unsigned int overrideIndex = 0;
-					    overrideIndex < numberOfOverrides;
+					for(unsigned int overrideIndex = 0; overrideIndex < numberOfOverrides;
 					    ++overrideIndex)
 					{
 						std::string overrideArg = argv[5 + overrideIndex];
@@ -284,23 +271,21 @@ try
 						// Strip brackets
 						if(overrideArg.size() >= 2 && overrideArg[0] == '[' &&
 						   overrideArg[overrideArg.size() - 1] == ']')
-							overrideArg =
-							    overrideArg.substr(1, overrideArg.size() - 2);
+							overrideArg = overrideArg.substr(1, overrideArg.size() - 2);
 
 						std::vector<std::string> overrideParts =
 						    getVectorFromString(overrideArg, {','}, {} /*whitespace*/);
 
 						if(overrideParts.size() < 2)
 						{
-							__COUT_ERR__
-							    << "Invalid variable override: '"
-							    << argv[5 + overrideIndex]
-							    << "'. Expected [varName,value,step,max]."
-							    << __E__;
+							__COUT_ERR__ << "Invalid variable override: '"
+							             << argv[5 + overrideIndex]
+							             << "'. Expected [varName,value,step,max]."
+							             << __E__;
 							return 1;
 						}
 
-						std::string overrideName  = overrideParts[0];
+						std::string overrideName = overrideParts[0];
 						if(!overrideName.empty() && overrideName[0] != '$')
 							overrideName = "$" + overrideName;
 						std::string overrideValue =
@@ -324,9 +309,8 @@ try
 						}
 						if(!foundVariable)
 						{
-							__COUT_ERR__
-							    << "Unknown variable '" << overrideName
-							    << "'. Available variables:" << __E__;
+							__COUT_ERR__ << "Unknown variable '" << overrideName
+							             << "'. Available variables:" << __E__;
 							for(size_t variableIndex = 0;
 							    variableIndex < variableNamesInOrder.size();
 							    ++variableIndex)
@@ -338,25 +322,21 @@ try
 
 						if(validOverrideCount > 0)
 							variablesJSON += ",";
-						variablesJSON +=
-						    "\"" + overrideName +
-						    "\":{\"value\":\"" + overrideValue +
-						    "\",\"step\":\"" + overrideStep +
-						    "\",\"max\":\"" + overrideMax + "\"}";
+						variablesJSON += "\"" + overrideName + "\":{\"value\":\"" +
+						                 overrideValue + "\",\"step\":\"" + overrideStep +
+						                 "\",\"max\":\"" + overrideMax + "\"}";
 						++validOverrideCount;
 					}
 					variablesJSON += "}";
 				}
 
-				__COUT_INFO__ << "Running sequence '" << sequenceName
-				              << "' for " << iterationCount << " iteration(s)"
-				              << __E__;
+				__COUT_INFO__ << "Running sequence '" << sequenceName << "' for "
+				              << iterationCount << " iteration(s)" << __E__;
 
 				if(numberOfOverrides > 0)
 				{
 					__COUT_INFO__ << "Variable overrides:" << __E__;
-					for(unsigned int overrideIndex = 0;
-					    overrideIndex < numberOfOverrides;
+					for(unsigned int overrideIndex = 0; overrideIndex < numberOfOverrides;
 					    ++overrideIndex)
 						__COUT_INFO__ << "\t" << argv[5 + overrideIndex] << __E__;
 				}
@@ -376,8 +356,7 @@ try
 				__COUT_INFO__ << "\t\t" << fes[feIndex] << __E__;
 
 			__COUT_INFO__ << "\nAvailable MoM Sequences:" << __E__;
-			for(size_t sequenceIndex = 0;
-			    sequenceIndex < sequenceNames.size();
+			for(size_t sequenceIndex = 0; sequenceIndex < sequenceNames.size();
 			    ++sequenceIndex)
 			{
 				if(sequenceNames[sequenceIndex].empty() ||
@@ -400,13 +379,12 @@ try
 		// Also list available sequences
 		try
 		{
-			std::string sequenceListStr = mm.getSequenceList();
+			std::string              sequenceListStr = mm.getSequenceList();
 			std::vector<std::string> sequenceNames =
 			    getVectorFromString(sequenceListStr, {';'});
 
 			bool hasSequences = false;
-			for(size_t sequenceIndex = 0;
-			    sequenceIndex < sequenceNames.size();
+			for(size_t sequenceIndex = 0; sequenceIndex < sequenceNames.size();
 			    ++sequenceIndex)
 			{
 				if(sequenceNames[sequenceIndex].empty() ||
