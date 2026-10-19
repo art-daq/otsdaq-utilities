@@ -6451,10 +6451,14 @@
 				treeViewHandlerStr_ += "</td>";
 				treeViewHandlerStr_ += "</tr></table>"; //close pre/comment table row
 
+				//a nested link whose records arrived pre-loaded (depth=3 inline key/value
+				//	mode) must start collapsed, like a link the user has not expanded yet
+				var startChildrenCollapsed = (isLink && childrenLength && depth > 0);
 				treeViewHandlerStr_ +=
 					"<div id='clearDiv'></div>" +
 					"<div class='treeNode-Children' id='treeNode-ChildrenOf-" +
-					(depth + "-" + uid) + "'>";
+					(depth + "-" + uid) + "'" +
+					(startChildrenCollapsed ? " style='display:none'" : "") + ">";
 
 				if (childrenLength) {
 					recursiveDrawTree(nodes[i], depth + 1, path + nodeName + "/",
