@@ -113,11 +113,25 @@ class ots_mm_udp_interface
 	static std::string decodeURIComponent(const std::string& data);
 	static std::string encodeURIComponent(const std::string& data);
 	static std::string decodeHTMLEntities(const std::string& data);
+	static std::string escapeJsonString(const std::string& data);
+	static bool        parseIterationCount(const std::string& text,
+	                                       unsigned int&      iterationCount);
 
   private:
 	void               receiveXmlResponse(std::string&       response,
 	                                      const std::string& waitDescription,
 	                                      int                inactivityTimeoutSeconds);
+	std::string        runSequenceRecursive(const std::string&        sequenceName,
+	                                        const std::string&        resolvedVariablesJSON,
+	                                        unsigned int              iterationCount,
+	                                        bool                      isNestedCall,
+	                                        unsigned int              outerIterationIndex,
+	                                        std::vector<std::string>& activeSequenceChain);
+	void               resolveMacroSignature(const std::string&        feClass,
+	                                         const std::string&        feUID,
+	                                         const std::string&        macroName,
+	                                         std::vector<std::string>& inputNames,
+	                                         std::vector<std::string>& outputNames);
 	int                mm_sock_;
 	struct sockaddr_in mm_ai_addr;
 	std::string        buffer_;
