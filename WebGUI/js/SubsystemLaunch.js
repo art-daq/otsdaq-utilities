@@ -664,26 +664,6 @@ SubsystemLaunch.create = function() {
 				cel.appendChild(el);
 			} //end system status div
 
-			{ //subsystem reboot buttons div -------------------
-				el = document.createElement("div");
-				el.setAttribute("id","subsystemRebootDiv");
-				str = "";
-				str += "<div class='subsystemRebootButton' id='rebootSelectedSubsystemsButton' " +
-					"title='Click to reboot all SELECTED (included) subsystems' " +
-					"onclick='SubsystemLaunch.launcher.bootSelectedSubsystems();'>" +
-					"<div class='subsystemRebootButton_light'></div>" +
-				"</div>";
-				str += "<span class='subsystemRebootLabel'>Reboot Selected</span>";
-				str += "<div class='subsystemRebootButton' id='rebootAllSubsystemsButton' " +
-					"title='Click to reboot ALL subsystems' " +
-					"onclick='SubsystemLaunch.launcher.bootAllSubsystems();'>" +
-					"<div class='subsystemRebootButton_light'></div>" +
-				"</div>";
-				str += "<span class='subsystemRebootLabel'>Reboot All</span>";
-				el.innerHTML = str;
-				cel.appendChild(el);
-			} //end subsystem reboot buttons div
-
 			{ //subsystem control div -------------------------
 
 				var fields = ["Included", "Subsystem", "State", "Configure Alias", "Console", "Detail", "FSM Mode", "Manual FSM Action"];
@@ -693,10 +673,31 @@ SubsystemLaunch.create = function() {
 
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
+				str = "<div id='subsystemRebootDiv'>" +
+					"<span class='subsystemRebootLabel subsystemRebootHeading'>Subsystems Reboot:&nbsp;</span>" +
+					"<div class='subsystemRebootButton' " +
+						"title='Click to reboot all SELECTED (included) subsystems' " +
+						"onclick='SubsystemLaunch.launcher.bootSelectedSubsystems();'>" +
+						"<div class='subsystemRebootButton_light'></div>" +
+					"</div>" +
+					"<span class='subsystemRebootLabel'>Selected</span>" +
+					"<div class='subsystemRebootButton' " +
+						"title='Click to reboot all ACTIVE (currently on) subsystems' " +
+						"onclick='SubsystemLaunch.launcher.bootActiveSubsystems();'>" +
+						"<div class='subsystemRebootButton_light'></div>" +
+					"</div>" +
+					"<span class='subsystemRebootLabel'>Active</span>" +
+					"<div class='subsystemRebootButton' " +
+						"title='Click to reboot ALL subsystems' " +
+						"onclick='SubsystemLaunch.launcher.bootAllSubsystems();'>" +
+						"<div class='subsystemRebootButton_light'></div>" +
+					"</div>" +
+					"<span class='subsystemRebootLabel'>All</span>" +
+					"</div>";
 				if(redrawMode != 1)
-					str = "<table class='tableSingleRowMode' cellspacing='5px'>";
+					str += "<table class='tableSingleRowMode' cellspacing='5px'>";
 				else
-					str = "<table class='tableDoubleRowMode' cellspacing='5px'>";
+					str += "<table class='tableDoubleRowMode' cellspacing='5px'>";
 
 				str += "<tr><th colspan=" + fields.length + ">Subsystem Status</th></tr>";
 				//make field header row
@@ -1622,8 +1623,8 @@ SubsystemLaunch.create = function() {
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
 		_recomputeDetailScrollWidths();
 
-		if (_settlingAfterRestart > 0)
-			--_settlingAfterRestart;
+		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
+			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
 		return true;
 
 		//////////////////////////////
@@ -2193,6 +2194,49 @@ SubsystemLaunch.create = function() {
 			450); //end first verify
 
 	}	//end bootAllSubsystems()
+
+	//=====================================================================================
+	this.bootActiveSubsystems = function () {
+		Debug.log("bootActiveSubsystems()");
+
+		var activeSubsystemNames = [];
+		var activeSubsystemIndices = [];
+		for(var subsystemIndex=0; subsystemIndex<SubsystemLaunch.subsystems.length; ++subsystemIndex)
+			if(SubsystemLaunch.subsystems[subsystemIndex].status != SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) {
+				activeSubsystemNames.push(SubsystemLaunch.subsystems[subsystemIndex].name);
+				activeSubsystemIndices.push(subsystemIndex);
+			}
+
+		if(activeSubsystemNames.length == 0) {
+			Debug.err("No subsystems are currently active.");
+			return;
+		}
+
+		DesktopContent.popUpVerification(
+			"Are you sure you want to reboot all <b>" + activeSubsystemNames.length +
+				"</b> ACTIVE subsystem(s)?<br><br>" +
+				activeSubsystemNames.join(", "),
+			function () {
+				DesktopContent.popUpVerification(
+					"Are you REALLY sure you want to reboot <b>" + activeSubsystemNames.length +
+						"</b> active subsystem(s)?<br><br>" +
+						activeSubsystemNames.join(", "),
+					function () {
+						Debug.log("Rebooting active subsystems:", activeSubsystemNames);
+
+						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
+
+						issueMultiSubsystemReboot(activeSubsystemIndices);
+
+					}, //end handler
+					0,"#efeaea",0,"#770000",0,
+					450); //end second verify
+			},
+			0,"#efeaea",0,"#770000",0,
+			450); //end first verify
+
+	}	//end bootActiveSubsystems()
 
 	//=====================================================================================
 	this.bootTopLevel = function () {

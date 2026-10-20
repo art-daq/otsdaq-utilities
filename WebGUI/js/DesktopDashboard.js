@@ -900,11 +900,15 @@ else {
                         "Restore Window" : "Maximize Window",
                     targetWin.isMinimized() ?
                         "Restore Window" : "Minimize Window",
+                    "Open Standalone",
                     "Close Window"
                 ];
                 var menuItemHandlers = [
                     "Desktop.desktop.maximizeWindowById(" + winId + ")",
                     "Desktop.desktop.minimizeWindowById(" + winId + ")",
+                    "Desktop.openStandalone(\"" +
+                        targetWin.getWindowUrl().replace(/\\/g, "\\\\").replace(/"/g, "\\\"") +
+                        "\")",
                     "Desktop.desktop.closeWindowById(" + winId + ")",
                 ];
                 Debug.log("createEditTableMenu()");

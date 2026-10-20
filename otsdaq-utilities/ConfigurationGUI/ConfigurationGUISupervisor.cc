@@ -8373,8 +8373,7 @@ void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&       
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(versionAliasesTableName).getChildren();
 
-	const std::map<std::string, TableInfo>& allTableInfo =
-	    cfgMgr->getAllTableInfo();
+	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
 
 	for(auto& aliasNodePair : aliasNodePairs)
 	{
