@@ -1279,7 +1279,10 @@ SubsystemLaunch.create = function() {
 				} //end subsystem loop
 
 				if (foundSubsystemChange) {
-					Debug.warn("A change in Subsystem records was identified, reloading Subsystem Launch info!");
+					if(_settlingAfterRestart)
+						Debug.log("Subsystem records changed after restart, reloading Subsystem Launch info.");
+					else
+						Debug.warn("A change in Subsystem records was identified, reloading Subsystem Launch info!");
 					init();
 					return;
 				}
@@ -1537,8 +1540,7 @@ SubsystemLaunch.create = function() {
 
 						if (f == el.options.length) {
 							if (_settlingAfterRestart) {
-								Debug.log("Still settling after restart, refreshing page...",
-									Debug.INFO_PRIORITY);
+								Debug.log("Still settling after restart, refreshing page...");
 								_settlingAfterRestart = 10;
 								_getAutoInitCount = 2;
 								window.clearTimeout(_getStatusTimer);
@@ -1624,7 +1626,7 @@ SubsystemLaunch.create = function() {
 		_recomputeDetailScrollWidths();
 
 		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
-			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
+			Debug.log("Settling complete.");
 		return true;
 
 		//////////////////////////////
@@ -2020,7 +2022,7 @@ SubsystemLaunch.create = function() {
 									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 									return;
 								}
-								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
+								Debug.log("Reboot launched for '" + targetSubsystem + "'");
 
 								_settlingAfterRestart = 10;
 								window.clearTimeout(_getStatusTimer);
@@ -2098,7 +2100,7 @@ SubsystemLaunch.create = function() {
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 					return;
 				}
-				Debug.info("Reboot launched for '" + targetSubsystemCsvList + "'...!");
+				Debug.log("Reboot launched for '" + targetSubsystemCsvList + "'");
 
 				_settlingAfterRestart = 10;
 				window.clearTimeout(_getStatusTimer);
@@ -2273,25 +2275,50 @@ SubsystemLaunch.create = function() {
 										return;
 									}
 
-									var countDown = 20;
-									Debug.log("Attempting to restart the top-level system in Normal Mode... " +
-										"\n\n Please wait " + countDown +
-										" seconds.", Debug.INFO_PRIORITY);
-									localCountDown();
-									function localCountDown() {
-										Debug.log("Waiting " + countDown + " seconds for startup...",
-											Debug.INFO_PRIORITY);
+									var waitingSeconds = 0;
+									var serverWentDown = false;
+									Debug.log("Rebooting top-level system... waiting for shutdown.",
+										Debug.INFO_PRIORITY);
+									probeServerUntilBack();
+									function probeServerUntilBack() {
 										window.setTimeout(function() {
-											--countDown;
-											if(countDown == 0) {
-												DesktopContent.systemBlackout(false);
-												Debug.log("And we are back!", Debug.INFO_PRIORITY);
-												_settlingAfterRestart = 10;
-												window.clearTimeout(_getStatusTimer);
-												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
-												return;
-											}
-											localCountDown();
+											++waitingSeconds;
+											if(!serverWentDown)
+												Debug.log("Waiting for shutdown... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											else
+												Debug.log("Waiting for startup... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystemStatus",
+												"",
+												function(probeRequest, probeParam, probeErrStr) {
+													if(probeRequest) {
+														if(!serverWentDown) {
+															probeServerUntilBack();
+															return;
+														}
+														DesktopContent.systemBlackout(false);
+														Debug.log("And we are back!", Debug.INFO_PRIORITY);
+														_settlingAfterRestart = 10;
+														window.clearTimeout(_getStatusTimer);
+														_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
+														return;
+													}
+													if(!serverWentDown) {
+														serverWentDown = true;
+														waitingSeconds = 0;
+														Debug.log("Server is down, waiting for startup...",
+															Debug.INFO_PRIORITY);
+													}
+													probeServerUntilBack();
+												},
+												0 /*reqParam*/, 0 /*progressHandler*/,
+												true /*callHandlerOnErr*/,
+												true /*doNotShowLoadingOverlay*/,
+												true /*targetGatewaySupervisor*/,
+												true /*ignoreSystemBlock*/);
 										}, 1000);
 									}
 								},
