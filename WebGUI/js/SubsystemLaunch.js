@@ -664,8 +664,25 @@ SubsystemLaunch.create = function() {
 				cel.appendChild(el);
 			} //end system status div
 
-			el = document.createElement("div");
-			el.setAttribute("id","clearDiv");
+			{ //subsystem reboot buttons div -------------------
+				el = document.createElement("div");
+				el.setAttribute("id","subsystemRebootDiv");
+				str = "";
+				str += "<div class='subsystemRebootButton' id='rebootSelectedSubsystemsButton' " +
+					"title='Click to reboot all SELECTED (included) subsystems' " +
+					"onclick='SubsystemLaunch.launcher.bootSelectedSubsystems();'>" +
+					"<div class='subsystemRebootButton_light'></div>" +
+				"</div>";
+				str += "<span class='subsystemRebootLabel'>Reboot Selected</span>";
+				str += "<div class='subsystemRebootButton' id='rebootAllSubsystemsButton' " +
+					"title='Click to reboot ALL subsystems' " +
+					"onclick='SubsystemLaunch.launcher.bootAllSubsystems();'>" +
+					"<div class='subsystemRebootButton_light'></div>" +
+				"</div>";
+				str += "<span class='subsystemRebootLabel'>Reboot All</span>";
+				el.innerHTML = str;
+				cel.appendChild(el);
+			} //end subsystem reboot buttons div
 
 			{ //subsystem control div -------------------------
 
@@ -2023,6 +2040,159 @@ SubsystemLaunch.create = function() {
 
 
 	}	//end bootSubsystem()
+
+	//=====================================================================================
+	var issueMultiSubsystemReboot = function (subsystemIndices) {
+		var targetSubsystemNames = [];
+		for(var targetIndex=0; targetIndex<subsystemIndices.length; ++targetIndex)
+		{
+			var subsystemIndex = subsystemIndices[targetIndex];
+			if (subsystemIndex >= SubsystemLaunch.subsystems.length) {
+				Debug.err("The target subsystem-index #" + subsystemIndex +
+					" was not found. Perhaps a refresh is needed.");
+				continue;
+			}
+			targetSubsystemNames.push(SubsystemLaunch.subsystems[subsystemIndex].name);
+			SubsystemLaunch.subsystems[subsystemIndex].status = "Rebooting...";
+			SubsystemLaunch.subsystems[subsystemIndex].progress = 0;
+			SubsystemLaunch.subsystems[subsystemIndex]._rebootTime = Date.now();
+		}
+
+		if(targetSubsystemNames.length == 0)
+			return;
+
+		SubsystemLaunch.system.error = "";
+		displayStatus();
+
+		var targetSubsystemCsvList = targetSubsystemNames.join(",");
+		Debug.log("issueMultiSubsystemReboot", targetSubsystemCsvList);
+
+		DesktopContent.XMLHttpRequest("Request?RequestType=gatewayLaunchOTSInstance" +
+		"&targetSubsystem=" + targetSubsystemCsvList,
+		"",
+			function (req, reqParam, errStr) {
+				if(!req) {
+					if(errStr)
+						Debug.err("Reboot failed for '" + targetSubsystemCsvList + "': " + errStr);
+					for(var targetIndex=0; targetIndex<subsystemIndices.length; ++targetIndex)
+					{
+						SubsystemLaunch.subsystems[subsystemIndices[targetIndex]].status = "";
+						SubsystemLaunch.subsystems[subsystemIndices[targetIndex]]._rebootTime = undefined;
+					}
+					displayStatus();
+					window.clearTimeout(_getStatusTimer);
+					_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
+					return;
+				}
+				var err = DesktopContent.getXMLValue(req, "Error");
+				if(err) {
+					Debug.err("Reboot failed for '" + targetSubsystemCsvList + "': " + err);
+					for(var targetIndex=0; targetIndex<subsystemIndices.length; ++targetIndex)
+					{
+						SubsystemLaunch.subsystems[subsystemIndices[targetIndex]].status = "";
+						SubsystemLaunch.subsystems[subsystemIndices[targetIndex]]._rebootTime = undefined;
+					}
+					displayStatus();
+					window.clearTimeout(_getStatusTimer);
+					_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
+					return;
+				}
+				Debug.info("Reboot launched for '" + targetSubsystemCsvList + "'...!");
+
+				_settlingAfterRestart = 10;
+				window.clearTimeout(_getStatusTimer);
+				_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
+
+			}, //request handler
+		0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/,
+		false /*doNoShowLoadingOverlay*/,
+		true /*targetGatewaySupervisor*/);
+	}	//end issueMultiSubsystemReboot()
+
+	//=====================================================================================
+	this.bootSelectedSubsystems = function () {
+		Debug.log("bootSelectedSubsystems()");
+
+		var selectedSubsystemNames = [];
+		var selectedSubsystemIndices = [];
+		for(var subsystemIndex=0; subsystemIndex<SubsystemLaunch.subsystems.length; ++subsystemIndex)
+			if(SubsystemLaunch.subsystems[subsystemIndex].fsmIncluded) {
+				selectedSubsystemNames.push(SubsystemLaunch.subsystems[subsystemIndex].name);
+				selectedSubsystemIndices.push(subsystemIndex);
+			}
+
+		if(selectedSubsystemNames.length == 0) {
+			Debug.err("No subsystems are currently selected (included).");
+			return;
+		}
+
+		DesktopContent.popUpVerification(
+			"Are you sure you want to reboot all <b>" + selectedSubsystemNames.length +
+				"</b> SELECTED subsystem(s)?<br><br>" +
+				selectedSubsystemNames.join(", "),
+			function () {
+				DesktopContent.popUpVerification(
+					"Are you REALLY sure you want to reboot <b>" + selectedSubsystemNames.length +
+						"</b> subsystem(s)?<br><br>" +
+						selectedSubsystemNames.join(", "),
+					function () {
+						Debug.log("Rebooting selected subsystems:", selectedSubsystemNames);
+
+						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
+
+						issueMultiSubsystemReboot(selectedSubsystemIndices);
+
+					}, //end handler
+					0,"#efeaea",0,"#770000",0,
+					450); //end second verify
+			},
+			0,"#efeaea",0,"#770000",0,
+			450); //end first verify
+
+	}	//end bootSelectedSubsystems()
+
+	//=====================================================================================
+	this.bootAllSubsystems = function () {
+		Debug.log("bootAllSubsystems()");
+
+		if(SubsystemLaunch.subsystems.length == 0) {
+			Debug.err("No subsystems found.");
+			return;
+		}
+
+		var allSubsystemNames = [];
+		var allSubsystemIndices = [];
+		for(var subsystemIndex=0; subsystemIndex<SubsystemLaunch.subsystems.length; ++subsystemIndex) {
+			allSubsystemNames.push(SubsystemLaunch.subsystems[subsystemIndex].name);
+			allSubsystemIndices.push(subsystemIndex);
+		}
+
+		DesktopContent.popUpVerification(
+			"Are you sure you want to reboot <b>ALL " + allSubsystemNames.length +
+				"</b> subsystems?<br><br>" +
+				allSubsystemNames.join(", "),
+			function () {
+				DesktopContent.popUpVerification(
+					"Are you REALLY sure you want to reboot <b>ALL " + allSubsystemNames.length +
+						"</b> subsystems?<br><br>" +
+						allSubsystemNames.join(", "),
+					function () {
+						Debug.log("Rebooting all subsystems:", allSubsystemNames);
+
+						window.clearTimeout(_getStatusTimer);
+						invalidatePendingStatusResponses();
+
+						issueMultiSubsystemReboot(allSubsystemIndices);
+
+					}, //end handler
+					0,"#efeaea",0,"#770000",0,
+					450); //end second verify
+			},
+			0,"#efeaea",0,"#770000",0,
+			450); //end first verify
+
+	}	//end bootAllSubsystems()
 
 	//=====================================================================================
 	this.bootTopLevel = function () {
