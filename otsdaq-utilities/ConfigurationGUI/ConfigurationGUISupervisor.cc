@@ -8373,26 +8373,42 @@ void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&       
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(versionAliasesTableName).getChildren();
 
-<<<<<<< Updated upstream
-=======
 	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
 
->>>>>>> Stashed changes
 	for(auto& aliasNodePair : aliasNodePairs)
 	{
 		// note : these are column names in the versionAliasesTableName table
 		// VersionAlias, TableName, Version, CommentDescription
+		std::string aliasTableName =
+		    aliasNodePair.second.getNode("TableName").getValueAsString();
+		std::string aliasVersion =
+		    aliasNodePair.second.getNode("Version").getValueAsString();
+
 		xmlOut.addTextElementToData(
 		    "VersionAlias",
 		    aliasNodePair.second.getNode("VersionAlias").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "TableName", aliasNodePair.second.getNode("TableName").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "Version", aliasNodePair.second.getNode("Version").getValueAsString());
+		xmlOut.addTextElementToData("TableName", aliasTableName);
+		xmlOut.addTextElementToData("Version", aliasVersion);
 		xmlOut.addTextElementToData(
 		    "Comment",
 		    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
 		        .getValueAsString());
+
+		std::string versionComment = ConfigurationManager::UNKNOWN_INFO;
+		try
+		{
+			if(allTableInfo.find(aliasTableName) != allTableInfo.end())
+			{
+				TableBase* aliasedTable = cfgMgr->getVersionedTableByName(
+				    aliasTableName, TableVersion(aliasVersion));
+				if(aliasedTable)
+					versionComment = aliasedTable->getView().getComment();
+			}
+		}
+		catch(...)
+		{
+		}
+		xmlOut.addTextElementToData("VersionComment", versionComment);
 	}
 }  // end handleVersionAliasesXML()
 
