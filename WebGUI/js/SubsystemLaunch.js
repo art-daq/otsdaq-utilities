@@ -2275,44 +2275,65 @@ SubsystemLaunch.create = function() {
 										return;
 									}
 
+									//reboot phases: 0 = waiting for top-level to go down,
+									//	1 = waiting for top-level to come back up, 2 = settling (waiting for subsystem status)
+									var rebootPhase = 0;
 									var waitingSeconds = 0;
-									var serverWentDown = false;
-									Debug.log("Rebooting top-level system... waiting for shutdown.",
+									Debug.log("Rebooting top-level system... waiting for top-level to go down.",
 										Debug.INFO_PRIORITY);
 									probeServerUntilBack();
 									function probeServerUntilBack() {
 										window.setTimeout(function() {
 											++waitingSeconds;
-											if(!serverWentDown)
-												Debug.log("Waiting for shutdown... " +
+											if(rebootPhase == 0)
+												Debug.log("Waiting for top-level to go down... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											else if(rebootPhase == 1)
+												Debug.log("Waiting for top-level to come back up... " +
 													waitingSeconds + "s",
 													Debug.INFO_PRIORITY);
 											else
-												Debug.log("Waiting for startup... " +
+												Debug.log("Settling, waiting for subsystem status... " +
 													waitingSeconds + "s",
 													Debug.INFO_PRIORITY);
-											DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystemStatus",
+											DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystemStatus" +
+												"&fsmName=" + _fsmName,
 												"",
 												function(probeRequest, probeParam, probeErrStr) {
-													if(probeRequest) {
-														if(!serverWentDown) {
-															probeServerUntilBack();
-															return;
+													Debug.log("REBOOT-DIAG probe returned: phase=" + rebootPhase +
+														" t=" + waitingSeconds + "s" +
+														" req=" + (probeRequest ? ("status " + probeRequest.status) : "null") +
+														" err=" + (probeErrStr ? probeErrStr.substr(0, 120) : "none"));
+													if(!probeRequest) {
+														if(rebootPhase == 0) {
+															rebootPhase = 1;
+															waitingSeconds = 0;
+															Debug.log("Top-level is down, waiting for it to come back up...",
+																Debug.INFO_PRIORITY);
 														}
-														DesktopContent.systemBlackout(false);
-														Debug.log("And we are back!", Debug.INFO_PRIORITY);
-														_settlingAfterRestart = 10;
-														window.clearTimeout(_getStatusTimer);
-														_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
+														probeServerUntilBack();
 														return;
 													}
-													if(!serverWentDown) {
-														serverWentDown = true;
+													if(rebootPhase == 0) {
+														probeServerUntilBack();
+														return;
+													}
+													if(rebootPhase == 1) {
+														rebootPhase = 2;
 														waitingSeconds = 0;
-														Debug.log("Server is down, waiting for startup...",
+														Debug.log("Top-level is back up, settling subsystems...",
 															Debug.INFO_PRIORITY);
 													}
-													probeServerUntilBack();
+													if(!localAllSubsystemsReportingStatus(probeRequest)) {
+														probeServerUntilBack();
+														return;
+													}
+													DesktopContent.systemBlackout(false);
+													Debug.log("Settling complete. And we are back!", Debug.INFO_PRIORITY);
+													_settlingAfterRestart = 10;
+													window.clearTimeout(_getStatusTimer);
+													_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
 												},
 												0 /*reqParam*/, 0 /*progressHandler*/,
 												true /*callHandlerOnErr*/,
@@ -2320,6 +2341,34 @@ SubsystemLaunch.create = function() {
 												true /*targetGatewaySupervisor*/,
 												true /*ignoreSystemBlock*/);
 										}, 1000);
+									}
+									function localAllSubsystemsReportingStatus(statusRequest) {
+										var statusNodes = statusRequest.responseXML ?
+											statusRequest.responseXML.getElementsByTagName("subsystem_status") : [];
+										var nameNodes = statusRequest.responseXML ?
+											statusRequest.responseXML.getElementsByTagName("subsystem_name") : [];
+										var errorValue = DesktopContent.getXMLValue(statusRequest, "Error");
+										Debug.log("REBOOT-DIAG phase=" + rebootPhase + " t=" + waitingSeconds + "s" +
+											" httpStatus=" + statusRequest.status +
+											" hasXML=" + (statusRequest.responseXML ? 1 : 0) +
+											" Error=" + (errorValue ? errorValue : "none") +
+											" subsystemCount=" + statusNodes.length +
+											" expected=" + SubsystemLaunch.subsystems.length);
+										if(statusNodes.length == 0) {
+											Debug.log("REBOOT-DIAG no subsystem_status nodes yet; raw=" +
+												(statusRequest.responseText || "").substr(0, 300));
+											return false;
+										}
+										var allReporting = true;
+										for(var statusIndex = 0; statusIndex < statusNodes.length; ++statusIndex) {
+											var statusValue = statusNodes[statusIndex].getAttribute("value");
+											var nameValue = nameNodes[statusIndex] ? nameNodes[statusIndex].getAttribute("value") : "?";
+											Debug.log("REBOOT-DIAG   [" + statusIndex + "] " + nameValue + " status='" + statusValue + "'");
+											if(!statusValue || statusValue.trim() == "")
+												allReporting = false;
+										}
+										Debug.log("REBOOT-DIAG allReporting=" + allReporting);
+										return allReporting;
 									}
 								},
 								0 /*reqParam*/, 0 /*progressHandler*/,
