@@ -3611,8 +3611,8 @@ try
 					}
 					__SUP_COUT_WARN__ << "Found old FE Macro group that has not completed"
 					                  << " (groupID=" << group->groupID_ << ", targets=["
-					                  << targets << "], FE macro name=" << feMacroName << ")"
-					                  << __E__;
+					                  << targets << "], FE macro name=" << feMacroName
+					                  << ")" << __E__;
 				}
 				continue;
 			}
