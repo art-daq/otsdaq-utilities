@@ -605,10 +605,12 @@ SubsystemSquares.create = function() {
 					if(secs < 10)	tstr += "0"; //keep to 2 digits
 					tstr += secs;
 
-					localDisplayDetail(sdivs[i], els[0], SubsystemSquares.system.redrawMode,
+					localDisplayDetail(sdivs[i], els[0], SubsystemSquares.system.redrawMode, statusString,
 						"Time-in-state: " + tstr,
 						SubsystemSquares.system.inTransition?
-							SubsystemSquares.decodeDetail(SubsystemSquares.system.activeFsmStatus):"");
+							SubsystemSquares.decodeDetail(SubsystemSquares.system.activeFsmStatus):
+							(statusString == "Running" && SubsystemSquares.system.runNumber?
+								SubsystemSquares.system.runNumber:""));
 				}
 
 				//progress bar during transition
@@ -726,7 +728,7 @@ SubsystemSquares.create = function() {
 				}
 				else
 					detailLines[0] = detailStr;
-				localDisplayDetail(sdivs[i], els[0], SubsystemSquares.subsystems[s].redrawMode,
+				localDisplayDetail(sdivs[i], els[0], SubsystemSquares.subsystems[s].redrawMode, statusString,
 					detailLines[0], detailLines[1]);
 
 				//progress bar during transition
@@ -753,10 +755,24 @@ SubsystemSquares.create = function() {
 		//===========
 		//	two truncated detail lines at bottom of square; in verbose mode always
 		//	reserve both lines so the state text stays at a fixed spot
-		function localDisplayDetail(square, statusEl, redrawMode, line1, line2)
+		function localDisplayDetail(square, statusEl, redrawMode, stateStr, line1, line2)
 		{
 			var showDetail = redrawMode > 1;
 			var detailEl = square.getElementsByClassName("subsystem_detail")[0];
+
+			//detail color: dark shade of the state color with black shadow
+			var detailColor;
+			switch(stateStr)
+			{
+				case "Running":    detailColor = "rgb(3, 90, 26)"; break;   //dark green
+				case "Configured":
+				case "Paused":     detailColor = "rgb(3, 90, 74)"; break;   //dark teal
+				case "Halted":     detailColor = "rgb(140, 75, 0)"; break;  //dark orange
+				case "Initial":    detailColor = "rgb(4, 60, 120)"; break;  //dark blue
+				default:           detailColor = "black"; break;
+			}
+			detailEl.style.color = detailColor;
+			detailEl.style.textShadow = "1px 1px black";
 			detailEl.setAttribute("data-copytext",
 				line1 + ((line2 && line2 != "")?" - " + line2:"")); //full text for copy-to-clipboard
 			var lineEls = detailEl.getElementsByClassName("subsystem_detail_line");
