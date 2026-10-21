@@ -1213,7 +1213,7 @@ Debug.callOutDebugLocales = function (str) {
 							true /*doCloseTag*/);
 							returnStr += "<span style='cursor:pointer; margin:5px'" +
 								"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-								"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+								"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 								"</span>";
 
 					i = ff + fileFlagEnd[fi].length; //proceed after filename
@@ -1298,7 +1298,7 @@ Debug.callOutDebugLocales = function (str) {
 						true /*doCloseTag*/);
 						returnStr += "<span style='cursor:pointer; margin:5px'" +
 							"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-							"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+							"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 							"</span>";
 
 				//add end label
@@ -1351,7 +1351,7 @@ Debug.callOutDebugLocales = function (str) {
 					true /*doCloseTag*/);
 					returnStr += "<span style='cursor:pointer; margin:5px'" +
 						"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-						"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+						"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 						"</span>";
 
 			i = ff + ("</FILE>").length; //proceed after filename

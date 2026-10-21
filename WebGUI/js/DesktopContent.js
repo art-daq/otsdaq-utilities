@@ -1564,11 +1564,14 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 				errStr = "Request Failed (code: " + req.status +
 					") - Bad Address: " + origin + "?urn=" + urn +
 					"\n" + requestURL;
-				Debug.log(errStr, Debug.HIGH_PRIORITY);
+				Debug.log(errStr, ignoreSystemBlock ? Debug.LOW_PRIORITY : Debug.HIGH_PRIORITY);
 
 				//handle multiple failed handlers
+				//	(ignoreSystemBlock callers are polling through an outage and need every failure delivered)
 				var found = false;
-				if (DesktopContent._arrayOfFailedHandlers.length < 2) //only give pop up behavior for first 2 failures (then go quiet)
+				if (ignoreSystemBlock)
+					;
+				else if (DesktopContent._arrayOfFailedHandlers.length < 2) //only give pop up behavior for first 2 failures (then go quiet)
 				{
 					for (var rh in DesktopContent._arrayOfFailedHandlers)
 						if (DesktopContent._arrayOfFailedHandlers[rh] == returnHandler) {

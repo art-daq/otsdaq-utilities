@@ -1279,7 +1279,10 @@ SubsystemLaunch.create = function() {
 				} //end subsystem loop
 
 				if (foundSubsystemChange) {
-					Debug.warn("A change in Subsystem records was identified, reloading Subsystem Launch info!");
+					if(_settlingAfterRestart)
+						Debug.log("Subsystem records changed after restart, reloading Subsystem Launch info.");
+					else
+						Debug.warn("A change in Subsystem records was identified, reloading Subsystem Launch info!");
 					init();
 					return;
 				}
@@ -1537,8 +1540,7 @@ SubsystemLaunch.create = function() {
 
 						if (f == el.options.length) {
 							if (_settlingAfterRestart) {
-								Debug.log("Still settling after restart, refreshing page...",
-									Debug.INFO_PRIORITY);
+								Debug.log("Still settling after restart, refreshing page...");
 								_settlingAfterRestart = 10;
 								_getAutoInitCount = 2;
 								window.clearTimeout(_getStatusTimer);
@@ -1624,7 +1626,7 @@ SubsystemLaunch.create = function() {
 		_recomputeDetailScrollWidths();
 
 		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
-			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
+			Debug.log("Settling complete.");
 		return true;
 
 		//////////////////////////////
@@ -2020,7 +2022,7 @@ SubsystemLaunch.create = function() {
 									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 									return;
 								}
-								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
+								Debug.log("Reboot launched for '" + targetSubsystem + "'");
 
 								_settlingAfterRestart = 10;
 								window.clearTimeout(_getStatusTimer);
@@ -2098,7 +2100,7 @@ SubsystemLaunch.create = function() {
 					_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 					return;
 				}
-				Debug.info("Reboot launched for '" + targetSubsystemCsvList + "'...!");
+				Debug.log("Reboot launched for '" + targetSubsystemCsvList + "'");
 
 				_settlingAfterRestart = 10;
 				window.clearTimeout(_getStatusTimer);
@@ -2273,26 +2275,100 @@ SubsystemLaunch.create = function() {
 										return;
 									}
 
-									var countDown = 20;
-									Debug.log("Attempting to restart the top-level system in Normal Mode... " +
-										"\n\n Please wait " + countDown +
-										" seconds.", Debug.INFO_PRIORITY);
-									localCountDown();
-									function localCountDown() {
-										Debug.log("Waiting " + countDown + " seconds for startup...",
-											Debug.INFO_PRIORITY);
+									//reboot phases: 0 = waiting for top-level to go down,
+									//	1 = waiting for top-level to come back up, 2 = settling (waiting for subsystem status)
+									var rebootPhase = 0;
+									var waitingSeconds = 0;
+									Debug.log("Rebooting top-level system... waiting for top-level to go down.",
+										Debug.INFO_PRIORITY);
+									probeServerUntilBack();
+									function probeServerUntilBack() {
 										window.setTimeout(function() {
-											--countDown;
-											if(countDown == 0) {
-												DesktopContent.systemBlackout(false);
-												Debug.log("And we are back!", Debug.INFO_PRIORITY);
-												_settlingAfterRestart = 10;
-												window.clearTimeout(_getStatusTimer);
-												_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
-												return;
-											}
-											localCountDown();
+											++waitingSeconds;
+											if(rebootPhase == 0)
+												Debug.log("Waiting for top-level to go down... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											else if(rebootPhase == 1)
+												Debug.log("Waiting for top-level to come back up... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											else
+												Debug.log("Settling, waiting for subsystem status... " +
+													waitingSeconds + "s",
+													Debug.INFO_PRIORITY);
+											DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystemStatus" +
+												"&fsmName=" + _fsmName,
+												"",
+												function(probeRequest, probeParam, probeErrStr) {
+													Debug.log("REBOOT-DIAG probe returned: phase=" + rebootPhase +
+														" t=" + waitingSeconds + "s" +
+														" req=" + (probeRequest ? ("status " + probeRequest.status) : "null") +
+														" err=" + (probeErrStr ? probeErrStr.substr(0, 120) : "none"));
+													if(!probeRequest) {
+														if(rebootPhase == 0) {
+															rebootPhase = 1;
+															waitingSeconds = 0;
+															Debug.log("Top-level is down, waiting for it to come back up...",
+																Debug.INFO_PRIORITY);
+														}
+														probeServerUntilBack();
+														return;
+													}
+													if(rebootPhase == 0) {
+														probeServerUntilBack();
+														return;
+													}
+													if(rebootPhase == 1) {
+														rebootPhase = 2;
+														waitingSeconds = 0;
+														Debug.log("Top-level is back up, settling subsystems...",
+															Debug.INFO_PRIORITY);
+													}
+													if(!localAllSubsystemsReportingStatus(probeRequest)) {
+														probeServerUntilBack();
+														return;
+													}
+													DesktopContent.systemBlackout(false);
+													Debug.log("Settling complete. And we are back!", Debug.INFO_PRIORITY);
+													_settlingAfterRestart = 10;
+													window.clearTimeout(_getStatusTimer);
+													_getStatusTimer = window.setTimeout(getCurrentStatus, 1000);
+												},
+												0 /*reqParam*/, 0 /*progressHandler*/,
+												true /*callHandlerOnErr*/,
+												true /*doNotShowLoadingOverlay*/,
+												true /*targetGatewaySupervisor*/,
+												true /*ignoreSystemBlock*/);
 										}, 1000);
+									}
+									function localAllSubsystemsReportingStatus(statusRequest) {
+										var statusNodes = statusRequest.responseXML ?
+											statusRequest.responseXML.getElementsByTagName("subsystem_status") : [];
+										var nameNodes = statusRequest.responseXML ?
+											statusRequest.responseXML.getElementsByTagName("subsystem_name") : [];
+										var errorValue = DesktopContent.getXMLValue(statusRequest, "Error");
+										Debug.log("REBOOT-DIAG phase=" + rebootPhase + " t=" + waitingSeconds + "s" +
+											" httpStatus=" + statusRequest.status +
+											" hasXML=" + (statusRequest.responseXML ? 1 : 0) +
+											" Error=" + (errorValue ? errorValue : "none") +
+											" subsystemCount=" + statusNodes.length +
+											" expected=" + SubsystemLaunch.subsystems.length);
+										if(statusNodes.length == 0) {
+											Debug.log("REBOOT-DIAG no subsystem_status nodes yet; raw=" +
+												(statusRequest.responseText || "").substr(0, 300));
+											return false;
+										}
+										var allReporting = true;
+										for(var statusIndex = 0; statusIndex < statusNodes.length; ++statusIndex) {
+											var statusValue = statusNodes[statusIndex].getAttribute("value");
+											var nameValue = nameNodes[statusIndex] ? nameNodes[statusIndex].getAttribute("value") : "?";
+											Debug.log("REBOOT-DIAG   [" + statusIndex + "] " + nameValue + " status='" + statusValue + "'");
+											if(!statusValue || statusValue.trim() == "")
+												allReporting = false;
+										}
+										Debug.log("REBOOT-DIAG allReporting=" + allReporting);
+										return allReporting;
 									}
 								},
 								0 /*reqParam*/, 0 /*progressHandler*/,
