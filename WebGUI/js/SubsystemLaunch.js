@@ -674,7 +674,7 @@ SubsystemLaunch.create = function() {
 				el = document.createElement("div");
 				el.setAttribute("id","subsystemDiv");
 				str = "<div id='subsystemRebootDiv'>" +
-					"<span class='subsystemRebootLabel subsystemRebootHeading'>Subsystems Reboot:&nbsp;</span>" +
+					"<span class='subsystemRebootLabel subsystemRebootHeading'>Subsystem Reboot:&nbsp;</span>" +
 					"<div class='subsystemRebootButton' " +
 						"title='Click to reboot all SELECTED (included) subsystems' " +
 						"onclick='SubsystemLaunch.launcher.bootSelectedSubsystems();'>" +
