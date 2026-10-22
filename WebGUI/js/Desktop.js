@@ -583,6 +583,8 @@ Desktop.createDesktop = function (security) {
 			return;
 		}
 
+		Desktop.setSystemAlertActive(true);
+
 		++_sysMsgId; //increment to new ID
 		var sysMsgEl = document.createElement("div");
 		sysMsgEl.setAttribute("class", "Desktop-systemMessageBox" + (isUserMsg ? " Desktop-systemMessageBox-user" : ""));
@@ -1848,8 +1850,7 @@ Desktop.createDesktop = function (security) {
 		Debug.log("Applying folder focus... ", folderParam);
 
 		Desktop.desktop.icons.setFolderFocus(decodeURIComponent(folderParam));
-		window.parent.document.title = (Desktop.isWizardMode() ? "ots wiz" : "ots") +
-			(Desktop.desktop.icons.getFolderFocus() ? " - " + Desktop.desktop.icons.getFolderFocus() : "");
+		Desktop.updateTabTitleForAlerts();
 	}
 } //end Desktop constructor
 
@@ -3283,6 +3284,10 @@ Desktop.httpTurtleResponse = function (req) {
 Desktop.closeSystemMessage = function (id) {
 	var el = document.getElementById("Desktop-systemMessageBox-" + id);
 	el.parentNode.removeChild(el); //remove from page!
+
+	var remainingAlerts = document.getElementsByClassName("Desktop-systemMessageBox");
+	if (remainingAlerts.length == 0)
+		Desktop.setSystemAlertActive(false);
 } //end closeSystemMessage()
 
 //==============================================================================
@@ -3357,7 +3362,95 @@ Desktop.closeAllSystemMessages = function () {
 	var els = document.getElementsByClassName("Desktop-systemMessageBox");
 	while (els.length > 0)
 		els[0].parentNode.removeChild(els[0]);
+	Desktop.setSystemAlertActive(false);
 } //end closeAllSystemMessages()
+
+//==============================================================================
+//closeSystemMessage ~~
+//	after removing a single message, check if any remain
+Desktop._systemAlertActive = false;
+Desktop._originalFaviconHrefs = {}; //saved per-size original favicon hrefs
+
+//==============================================================================
+//setSystemAlertActive ~~
+//	updates the browser tab title with a ! preamble when system alerts are
+//	showing and badges the favicon with a red dot; clears both when no
+//	alerts remain
+Desktop.setSystemAlertActive = function (isActive) {
+	Desktop._systemAlertActive = isActive;
+	Desktop.updateTabTitleForAlerts();
+	Desktop.updateFaviconBadge(isActive);
+} //end setSystemAlertActive()
+
+//==============================================================================
+//updateTabTitleForAlerts ~~
+//	rebuilds the browser tab title based on current alert state
+Desktop.updateTabTitleForAlerts = function () {
+	var baseTitle = (Desktop.isWizardMode() ? "ots wiz" : "ots") +
+		(Desktop.desktop && Desktop.desktop.icons && Desktop.desktop.icons.getFolderFocus() ?
+			" - " + Desktop.desktop.icons.getFolderFocus() : "");
+	if (Desktop._systemAlertActive)
+		window.parent.document.title = "! " + baseTitle;
+	else
+		window.parent.document.title = baseTitle;
+} //end updateTabTitleForAlerts()
+
+//==============================================================================
+//updateFaviconBadge ~~
+//	when showBadge is true, draws a red circle on the top-right of each
+//	favicon link element (like Slack); when false, restores originals
+Desktop.updateFaviconBadge = function (showBadge) {
+	var parentDocument = window.parent.document;
+	var iconLinks = parentDocument.querySelectorAll("link[rel='icon']");
+	if (!iconLinks.length) return;
+
+	if (!showBadge) {
+		for (var iconIndex = 0; iconIndex < iconLinks.length; ++iconIndex) {
+			var linkElement = iconLinks[iconIndex];
+			var savedHref = Desktop._originalFaviconHrefs[linkElement.getAttribute("sizes") || "default"];
+			if (savedHref)
+				linkElement.href = savedHref;
+		}
+		return;
+	}
+
+	for (var iconIndex = 0; iconIndex < iconLinks.length; ++iconIndex) {
+		(function (linkElement) {
+			var sizeKey = linkElement.getAttribute("sizes") || "default";
+
+			if (!Desktop._originalFaviconHrefs[sizeKey])
+				Desktop._originalFaviconHrefs[sizeKey] = linkElement.href;
+
+			var faviconImage = new Image();
+			faviconImage.crossOrigin = "anonymous";
+			faviconImage.onload = function () {
+				var canvasSize = faviconImage.width || 32;
+				var canvasElement = document.createElement("canvas");
+				canvasElement.width = canvasSize;
+				canvasElement.height = canvasSize;
+				var drawContext = canvasElement.getContext("2d");
+
+				drawContext.drawImage(faviconImage, 0, 0, canvasSize, canvasSize);
+
+				var badgeRadius = canvasSize * 0.22;
+				var badgeCenterX = canvasSize - badgeRadius - 1;
+				var badgeCenterY = badgeRadius + 1;
+
+				drawContext.beginPath();
+				drawContext.arc(badgeCenterX, badgeCenterY, badgeRadius, 0, 2 * Math.PI);
+				drawContext.fillStyle = "#e00";
+				drawContext.fill();
+
+				drawContext.lineWidth = Math.max(1, canvasSize * 0.04);
+				drawContext.strokeStyle = "#fff";
+				drawContext.stroke();
+
+				linkElement.href = canvasElement.toDataURL("image/png");
+			};
+			faviconImage.src = Desktop._originalFaviconHrefs[sizeKey];
+		})(iconLinks[iconIndex]);
+	}
+} //end updateFaviconBadge()
 
 //==============================================================================
 //isWizardMode ~~
@@ -3448,6 +3541,16 @@ Desktop.openNewBrowserTab = function (name, subname, windowPath, unique) {
 
 	window.open(url, '_blank');
 } //end openNewBrowserTab()
+
+//==============================================================================
+//openStandalone ~~
+//	opens the window page directly in a new browser tab without the ots
+//	Desktop wrapper, so that read-only commands continue to work without login
+Desktop.openStandalone = function (windowPath) {
+	if (!windowPath || windowPath == "folder") return;
+	var separator = windowPath.indexOf('?') >= 0 ? '&' : '?';
+	window.open(windowPath + separator + "standAloneMode=1&gatewayLID=" + urnLid_, '_blank');
+} //end openStandalone()
 
 //==============================================================================
 //call to show desktop tooltip
