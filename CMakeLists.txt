@@ -88,7 +88,13 @@ add_definitions(-DOTSDAQ_MAJOR_VERSION=${OTSDAQ_MAJOR_VERSION})
 add_definitions(-DOTSDAQ_MINOR_VERSION=${OTSDAQ_MINOR_VERSION})
 add_definitions(-DOTSDAQ_PATCH_VERSION=${OTSDAQ_PATCH_VERSION})
 
-include(BuildPlugins)
+if(DEFINED ENV{OTS_LITE})
+	# art::plugin builder base without art; otsdaq installs it in <prefix>/Modules (see otsdaq/Modules/lite)
+	add_definitions(-DOTS_LITE)
+	include(BasicPlugin)
+else()
+	include(BuildPlugins)
+endif()
 
 # Extra parts for the XDAQ GUI
 add_subdirectory(otsdaq-utilities)

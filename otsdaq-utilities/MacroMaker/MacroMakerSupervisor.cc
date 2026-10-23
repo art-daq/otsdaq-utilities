@@ -3662,7 +3662,7 @@ try
 			//report per-UID progress
 			for(auto& task : targetGroup->tasks_)
 			{
-				DOMElement* progParent = xmldoc.addTextElementToData(
+				xercesc::DOMElement* progParent = xmldoc.addTextElementToData(
 				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
@@ -3810,7 +3810,7 @@ try
 			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 			for(auto& task : group->tasks_)
 			{
-				DOMElement* progParent = xmldoc.addTextElementToData(
+				xercesc::DOMElement* progParent = xmldoc.addTextElementToData(
 				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
@@ -4332,7 +4332,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			// build output arguments
 			//	parse args, colon-separated pairs, and then comma-separated
 			{
-				DOMElement* feMacroExecParent =
+				xercesc::DOMElement* feMacroExecParent =
 				    xmldoc.addTextElementToData("feMacroExec", macroName);
 
 				xmldoc.addTextElementToParent(
