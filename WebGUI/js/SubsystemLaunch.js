@@ -43,6 +43,19 @@ SubsystemLaunch.subsystems = [];
 SubsystemLaunch.system = {};
 SubsystemLaunch.iterator = {};
 
+// Status polls re-deliver the gateway's stored last error every second; show each distinct
+// error text once by remembering the last few shown. Returns true if already shown.
+SubsystemLaunch.recentErrors = [];
+SubsystemLaunch.RECENT_ERROR_COUNT = 10;
+SubsystemLaunch.errorAlreadyShown = function (err) {
+	if(SubsystemLaunch.recentErrors.indexOf(err) != -1)
+		return true;
+	SubsystemLaunch.recentErrors.push(err);
+	if(SubsystemLaunch.recentErrors.length > SubsystemLaunch.RECENT_ERROR_COUNT)
+		SubsystemLaunch.recentErrors.shift();
+	return false;
+} //end SubsystemLaunch.errorAlreadyShown()
+
 SubsystemLaunch.SUBSYSTEM_FSM_MODES = ["Follow FSM", "Do Not Halt", "Only Configure"];
 
 ////////////////////////////////////////////////////////////////////
@@ -3628,7 +3641,8 @@ SubsystemLaunch.extractSystemStatus = function (req) {
 		else
 			err = fsmErr;
 	}
-	if(err && err != "" && SubsystemLaunch.system.error != err)
+	if(err && err != "" && SubsystemLaunch.system.error != err &&
+		!SubsystemLaunch.errorAlreadyShown(err))
 	{
 		//do not show if err is old
 		let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(err);
@@ -3742,7 +3756,8 @@ SubsystemLaunch.extractIteratorStatus = function (req) {
 	SubsystemLaunch.iterator.genRunDuration = DesktopContent.getXMLValue(req,"generated_duration_of_runs")|0;
 
 	var err = DesktopContent.getXMLValue(req,"error_message");
-	if(err && err != "" && SubsystemLaunch.iterator.error != err)
+	if(err && err != "" && SubsystemLaunch.iterator.error != err &&
+		!SubsystemLaunch.errorAlreadyShown(err))
 	{
 		//do not show if err is old
 		let secondsAgo = SubsystemLaunch.extractErrorSecondsAgo(err);

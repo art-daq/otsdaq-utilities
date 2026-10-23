@@ -444,11 +444,7 @@ SubsystemSquares.create = function() {
 								SubsystemSquares.subsystems[j][fields[i]] = status + _dotDotDot;
 								continue;
 							}
-							else if(SubsystemSquares.subsystems[j][fields[i]] != status &&
-									(status.indexOf("Fail") == 0 || status.indexOf("Error") == 0 || status.indexOf("Soft") == 0))
-								Debug.err("From Subsystem '" +
-									SubsystemSquares.subsystems[j].name + "'... " +
-									status); //show error to user
+							//red box is enough; user clicks status to read error
 
 							SubsystemSquares.subsystems[j][fields[i]] = status;
 							continue;
