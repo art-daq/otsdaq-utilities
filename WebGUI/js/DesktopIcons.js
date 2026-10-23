@@ -527,6 +527,7 @@ else {
 						if (!isFolder) menuItems.push("Open and Maximize Window");
 						menuItems.push("Open in New Browser Tab");
 						if (!isFolder) menuItems.push("Open and Tile All Windows");
+						if (!isFolder) menuItems.push("Open Standalone");
 
 						var menuItemHandlers = [];
 						if (!isFolder) menuItemHandlers.push(
@@ -537,6 +538,8 @@ else {
 						if (!isFolder) menuItemHandlers.push(
 							"Desktop.desktop.addWindow(\"" + subtext + "\",\"" + ""
 							+ "\",\"" + linkurl + "\"," + uniqueWin + ",1);"); // 1 for tile
+						if (!isFolder) menuItemHandlers.push(
+							"Desktop.openStandalone(\"" + linkurl + "\");");
 
 						Debug.log("createEditTableMenu()");
 						SimpleContextMenu.createMenu(
@@ -902,6 +905,7 @@ else {
 				if (!isFolder) menuItems.push("Open and Maximize Window");
 				menuItems.push("Open in New Browser Tab");
 				if (!isFolder) menuItems.push("Open and Tile All Windows");
+				if (!isFolder) menuItems.push("Open Standalone");
 
 				var menuItemHandlers = [];
 				if (!isFolder) menuItemHandlers.push(
@@ -912,6 +916,8 @@ else {
 				if (!isFolder) menuItemHandlers.push(
 					"Desktop.desktop.addWindow(\"" + subtext + "\",\"" + ""
 					+ "\",\"" + linkurl + "\"," + uniqueWin + ",1);"); // 1 for tile
+				if (!isFolder) menuItemHandlers.push(
+					"Desktop.openStandalone(\"" + linkurl + "\");");
 
 				Debug.log("createEditTableMenu()");
 				SimpleContextMenu.createMenu(

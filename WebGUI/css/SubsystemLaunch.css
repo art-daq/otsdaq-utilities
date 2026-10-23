@@ -219,6 +219,75 @@
 		/* ===================== end System status div section  */
 
 
+		#subsystemDiv {
+			padding-top: 0 !important;
+		}
+		#subsystemRebootDiv {
+			display: flex;
+			align-items: center;
+			padding: 0;
+			margin: 0;
+		}
+		.subsystemRebootButton {
+			display: inline-block;
+			vertical-align: middle;
+			margin-left: 10px;
+			width: 22px;
+			height: 20px;
+			border-radius: 50%;
+			border: 1px solid rgba(255,255,255,0.5);
+			box-shadow: 0 0 5px 0px rgba(255,255,255,0.3);
+			position: relative;
+			cursor: pointer;
+		}
+		.subsystemRebootButton::before {
+			content: "";
+			width: 50%;
+			height: 50%;
+			border: 2px solid white;
+			border-radius: 50%;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.subsystemRebootButton_light {
+			height: 40%;
+			width: 4px;
+			background: white;
+			border-radius: 10px;
+			position: absolute;
+			top: 2px;
+			left: 50%;
+			transform: translateX(-50%);
+			box-shadow: 0 0 0 1px rgb(136, 102, 102);
+		}
+		.subsystemRebootButton:hover {
+			background-color: rgb(249, 178, 178);
+		}
+		.subsystemRebootButton:hover .subsystemRebootButton_light {
+			box-shadow: 0 0 0 1px rgb(249, 178, 178);
+		}
+		.subsystemRebootButton:active {
+			box-shadow: 0 0 10px 0px #888 inset;
+		}
+		.subsystemRebootButton:active .subsystemRebootButton_light {
+			background: lightgreen;
+		}
+		.subsystemRebootButton:active::before {
+			border-color: lightgreen;
+		}
+		.subsystemRebootLabel {
+			display: inline-block;
+			vertical-align: middle;
+			margin-left: 4px;
+			margin-right: 6px;
+			font-size: 11px;
+			font-weight: normal;
+			color: white;
+			font-family: 'Comfortaa';
+		}
+
 		/* ===================== Subsystem status div section ================= */
 
 		#subsystemDiv table {
