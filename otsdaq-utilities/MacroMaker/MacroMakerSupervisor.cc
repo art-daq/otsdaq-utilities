@@ -480,14 +480,12 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 
 	std::string ipAddressForRemoteControlOverUDP = __ENV__(
 	    "OTS_MACROMAKER_UDP_IP");  //configLinkNode.getNode("IPAddressForStateChangesOverUDP").getValue<std::string>();
-	int  portForRemoteControlOverUDP = atoi(__ENV__(
-        "OTS_MACROMAKER_UDP_PORT"));  //configLinkNode.getNode("PortForStateChangesOverUDP").getValue<int>();
-	bool acknowledgementEnabled =
-	    true;  //configLinkNode.getNode("EnableAckForStateChangesOverUDP").getValue<bool>();
-
-	__COUTV__(ipAddressForRemoteControlOverUDP);
-	__COUTV__(portForRemoteControlOverUDP);
-	__COUTV__(acknowledgementEnabled);
+	int portForRemoteControlOverUDP = atoi(__ENV__(
+	    "OTS_MACROMAKER_UDP_PORT"));  //configLinkNode.getNode("PortForStateChangesOverUDP").getValue<int>();
+	__COUT_INFO__ << "OTS_MACROMAKER_UDP_IP = " << ipAddressForRemoteControlOverUDP
+	              << ", OTS_MACROMAKER_UDP_PORT = " << portForRemoteControlOverUDP
+	              << " -- test with: ots_mm_udp_test " << ipAddressForRemoteControlOverUDP
+	              << " " << portForRemoteControlOverUDP << __E__;
 
 	TransceiverSocket sock(ipAddressForRemoteControlOverUDP,
 	                       portForRemoteControlOverUDP);  // Take Port from Table
@@ -726,6 +724,112 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					xmldoc.outputXmlDocument((std::ostringstream*)&out,
 					                         false /*dispStdOut*/,
 					                         true /*allowWhiteSpace*/);
+					__COUT__ << "out: " << out.str();
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
+				}
+				else if(buffer == "GetSequenceList")
+				{
+					std::string sequencePath =
+					    (std::string)MACROS_SEQUENCE_PATH + "NO-USER" + "/";
+					mkdir(sequencePath.c_str(), 0755);
+
+					HttpXmlDocument xmldoc;
+					theSupervisor->loadFEMacroSequences(xmldoc, "NO-USER");
+
+					std::stringstream out;
+					xmldoc.outputXmlDocument((std::ostringstream*)&out,
+					                         false /*dispStdOut*/,
+					                         false /*allowWhiteSpace*/);
+					__COUT__ << "out: " << out.str();
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
+				}
+				else if(buffer.find("GetSequenceInfo") == 0)
+				{
+					std::vector<std::string> bufferFields =
+					    StringMacros::getVectorFromString(buffer, {';'});
+					if(bufferFields.size() < 2)
+					{
+						__SS__ << "Missing sequence name argument for GetSequenceInfo."
+						       << __E__;
+						__SS_THROW__;
+					}
+
+					std::string sequenceName =
+					    StringMacros::decodeURIComponent(bufferFields[1]);
+
+					bool isPublic = (sequenceName.find("public/") == 0 ? true : false);
+
+					std::string fixedName = "";
+					for(size_t i = (isPublic ? std::string("public/").size() : 0);
+					    i < sequenceName.size();
+					    ++i)
+						if(!(sequenceName[i] == ' ' || sequenceName[i] == '-' ||
+						     sequenceName[i] == '_' ||
+						     (sequenceName[i] >= '0' && sequenceName[i] <= '9') ||
+						     (sequenceName[i] >= 'A' && sequenceName[i] <= 'Z') ||
+						     (sequenceName[i] >= 'a' && sequenceName[i] <= 'z')))
+						{
+							__COUT__ << "Illegal character in Sequence name (position "
+							         << i << ")" << __E__;
+						}
+						else
+							fixedName += sequenceName[i];
+
+					std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
+					                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" +
+					                             fixedName + ".dat";
+					std::string   fullPath;
+					std::ifstream readFile;
+
+					if(isPublic)
+					{
+						fullPath = publicFullPath;
+						__COUT__ << fullPath << __E__;
+						readFile.open(fullPath.c_str());
+					}
+					else
+					{
+						fullPath = (std::string)MACROS_SEQUENCE_PATH + "NO-USER" + "/" +
+						           fixedName + ".dat";
+						__COUT__ << fullPath << __E__;
+						readFile.open(fullPath.c_str());
+						if(!readFile.is_open())
+						{
+							__COUT__ << "Unable to open " << fullPath
+							         << "! Trying public area..." << __E__;
+							fullPath = publicFullPath;
+							__COUT__ << fullPath << __E__;
+							readFile.open(fullPath.c_str());
+						}
+					}
+
+					if(!readFile.is_open())
+					{
+						__SS__ << "Unable to open FE Macro Sequence '" << fixedName
+						       << "' at " << fullPath << __E__;
+						__SS_THROW__;
+					}
+
+					readFile.seekg(0, std::ios::end);
+					unsigned long long fileSize = readFile.tellg();
+					std::string        fileContent(fileSize, '\0');
+					readFile.seekg(0, std::ios::beg);
+					readFile.read(&fileContent[0], fileSize);
+					readFile.close();
+
+					HttpXmlDocument xmldoc;
+					xmldoc.addTextElementToData("FEsequence", fileContent);
+
+					std::stringstream out;
+					xmldoc.outputXmlDocument((std::ostringstream*)&out,
+					                         false /*dispStdOut*/,
+					                         false /*allowWhiteSpace*/);
 					__COUT__ << "out: " << out.str();
 					sock.acknowledge(out.str(),
 					                 true /* verbose */,

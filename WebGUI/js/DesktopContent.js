@@ -1222,10 +1222,14 @@ DesktopContent.scrollIntoViewX = function (targetID, doHighlight) {
 		return;
 	}
 
-	el.scrollIntoView({ block: 'nearest', inline: 'start' });
+	el.scrollIntoView({
+		block: 'nearest',
+		inline: 'nearest',
+		behavior: 'instant'
+	});
 
 	if (window.scrollY != 0)
-		window.scroll({ top: 0 });
+		window.scroll({ top: 0, behavior: 'instant' });
 
 	if (doHighlight) {
 		const bg = el.style.backgroundColor;

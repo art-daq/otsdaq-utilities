@@ -444,6 +444,36 @@ Debug.errorPopConditionString = function (str, truncLenIn) {
 } //end errorPopConditionString()
 
 //=====================================================================================
+Debug.styleSingleQuotes = function(str) {
+	var result = "";
+	var inTag = false;
+	var i = 0;
+	while(i < str.length)
+	{
+		if(str[i] == '<') { inTag = true; result += str[i++]; }
+		else if(str[i] == '>') { inTag = false; result += str[i++]; }
+		else if(!inTag && str[i] == "'")
+		{
+			var end = str.indexOf("'", i + 1);
+			if(end > 0 && end - i < 200)
+			{
+				var quoted = str.substring(i + 1, end);
+				if(quoted.indexOf('<') == -1 && quoted.indexOf('>') == -1 && quoted.length > 0)
+				{
+					result += "<span style=\"color:rgb(255,225,200);font-family:'Inconsolata',monospace;\">" +
+						"'" + quoted + "'" + "</span>";
+					i = end + 1;
+					continue;
+				}
+			}
+			result += str[i++];
+		}
+		else result += str[i++];
+	}
+	return result;
+}; //end styleSingleQuotes()
+
+//=====================================================================================
 //Show the error string err in the error popup on the window
 // create error div if not yet created
 Debug._errTruncLen = undefined; //temporarily change to -1 to avoid truncation
@@ -735,7 +765,7 @@ Debug.errorPop = function (err, severity) {
 			"<label style='color:white;font-size:16px;'>" +
 			d.toLocaleDateString() +
 			" " + tstr + " (Tip) :</label><br>" +
-			Debug.errorPopConditionString(err, -1 /* avoid truncation */);
+			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, -1 /* avoid truncation */));
 	else //normally put newest at top since likely highest priority
 		str = "<label style='color:white;font-size:16px;'>" +
 			d.toLocaleDateString() +
@@ -743,7 +773,7 @@ Debug.errorPop = function (err, severity) {
 			(severity == Debug.INFO_PRIORITY.DEBUG_PRIORITY ? '(Info)' : '') +
 			(severity == Debug.WARN_PRIORITY.DEBUG_PRIORITY ? '(Warning)' : '') +
 			":</label><br>" +
-			Debug.errorPopConditionString(err, Debug._errTruncLen) +
+			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, Debug._errTruncLen)) +
 			(wasAlreadyContent ? "<br>...<br>" : "") +
 			str;
 

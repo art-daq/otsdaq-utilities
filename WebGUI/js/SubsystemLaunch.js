@@ -164,9 +164,40 @@ SubsystemLaunch.create = function() {
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
 				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
+
+			var iterationTooltip = "\n\n<b>Iteration Types:</b>\n<INDENT>" +
+				"A state machine transition (e.g. Configure or Start) can run in several steps. " +
+				"There are 3 kinds of steps, from widest to narrowest:" +
+				"\n<INDENT>" +
+				"1. <b>Subsystem-iteration:</b>\n<INDENT>The only kind synchronized across subsystems. The top-level Gateway waits " +
+				"until every subsystem finishes the current subsystem-iteration, then sends the next one. Each adds roughly 2 seconds " +
+				"of round-trip time, so use it only when a step in one subsystem must wait for a step in another (e.g. CFO and DTC timing-chain setup).</INDENT>" +
+				"\n2. <b>Iteration:</b>\n<INDENT>Synchronized only among the applications inside one subsystem, by that " +
+				"subsystem's Gateway. No top-level round-trip, so many iterations can run in quick succession.</INDENT>" +
+				"\n3. <b>Sub-iteration:</b>\n<INDENT>Internal to one application/supervisor. Only that application is re-sent the " +
+				"transition; no other application waits on it.</INDENT>" +
+				"</INDENT>" +
+				"\nEach subsystem-iteration runs iterations until every application in the subsystem is done; each iteration runs " +
+				"sub-iterations until that application is done. " +
+				"Front-end code requests more steps with indicateSubsystemIterationWork(), indicateIterationWork(), or indicateSubIterationWork()." +
+				"\n\n<b>How iteration numbering works in practice:</b>\n<INDENT>" +
+				"The iteration index keeps counting up (0, 1, 2, 3, ...) for the whole transition, even across subsystem-iteration " +
+				"boundaries - it never resets to 0. This means front-end code that says 'on iteration 5 do X, on iteration 12 do Y' " +
+				"works the same whether the system is standalone or under a top-level Gateway." +
+				"\n\nA subsystem-iteration is a <b>barrier</b>: it marks the point where the top-level waits for all subsystems to " +
+				"catch up before any of them continue. When an application calls indicateSubsystemIterationWork(), it is saying " +
+				"'I need more iterations, AND the next one should be a cross-subsystem sync point.'" +
+				"\n\nFor example, suppose your front-end runs iterations 0-4 locally, then needs a subsystem sync, then runs " +
+				"iterations 5-8 locally:" +
+				"\n<INDENT>- Subsystem-iteration 0: iterations 0-4 run fast (local only). Then the top-level waits for all subsystems (~2 s)." +
+				"\n- Subsystem-iteration 1: iterations 5-8 run fast (local only). Transition complete.</INDENT>" +
+				"\ngetIterationIndex() always returns the cumulative iteration number (0-8 above). " +
+				"getSubsystemIterationIndex() returns which barrier you are in (0 or 1 above)." +
+				"</INDENT></INDENT>";
+
 			Debug.log("Subsystem Launch init ");
 			DesktopContent.tooltip("Subsystem Launch", windowTooltip);
-			DesktopContent.setWindowTooltip(windowTooltip);
+			DesktopContent.setWindowTooltip(windowTooltip + iterationTooltip);
 
 			_fsmName = DesktopContent.getParameter(0,"fsm_name");
 			if(_fsmName && _fsmName != "")
@@ -182,7 +213,6 @@ SubsystemLaunch.create = function() {
 
 
 			window.onclick = function () {
-				Debug.log("DIAG: window.onclick fired, resetting timer. nonce=",_statusRequestNonce);
 				window.clearTimeout(_getStatusTimer);
 				_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 			}; //end window onclick handler
@@ -1071,13 +1101,11 @@ SubsystemLaunch.create = function() {
 		++_statusRequestNonce;
 	}
 	function getCurrentStatus() {
-		Debug.log("DIAG: getCurrentStatus() called, prevNonce=",_statusRequestNonce);
 		window.clearTimeout(_getStatusTimer);
 
 		if(DesktopContent._isSystemBlackout) return;
 
 		const currentStatusNonce = ++_statusRequestNonce;
-		Debug.log("DIAG: getCurrentStatus() nonce now=",currentStatusNonce);
 
 		//getRemoteSubsystemStatus returns iterator status and does not request next run number (which is expensive)
 		//	.. so only get run number 1:10
@@ -1102,11 +1130,10 @@ SubsystemLaunch.create = function() {
 		//===========
 		function localGetStatusHandler(req, responseNonce) {
 			if(responseNonce != _statusRequestNonce) {
-				Debug.log("DIAG: Ignoring stale status response, responseNonce=",responseNonce,
+				Debug.log("Ignoring stale status response, responseNonce=",responseNonce,
 					"currentNonce=",_statusRequestNonce);
 				return;
 			}
-			Debug.log("DIAG: Processing status response, nonce=",responseNonce);
 
 			//subsystems --------------------
 			{
@@ -1148,10 +1175,9 @@ SubsystemLaunch.create = function() {
 						if (i == SubsystemLaunch.SUBSYSTEM_STATUS_FIELDS_STATUS) {
 							var status = subsystemArrs[fields[i]][j].getAttribute('value');
 							if(status != SubsystemLaunch.subsystems[j][fields[i]])
-								Debug.log("DIAG: status change for",SubsystemLaunch.subsystems[j].name,
+								Debug.log("Status change for",SubsystemLaunch.subsystems[j].name,
 									"old=",SubsystemLaunch.subsystems[j][fields[i]],
-									"new=",status,
-									"nonce=",responseNonce);
+									"new=",status);
 							if(SubsystemLaunch.subsystems[j].fsmIncluded && //give popup warning if subsystem included and new unknown status
 									status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN &&
 								status != SubsystemLaunch.subsystems[j][fields[i]]) {
@@ -1563,10 +1589,6 @@ SubsystemLaunch.create = function() {
 					}
 					else if(fieldIds[i] == "status")
 					{
-						Debug.log("DIAG: displayStatus rendering s=",s,
-							"name=",SubsystemLaunch.subsystems[s].name,
-							"status=",SubsystemLaunch.subsystems[s].status.substring(0,40),
-							"nonce=",_statusRequestNonce);
 						localDisplayState(el,
 							SubsystemLaunch.subsystems[s].status,
 							SubsystemLaunch.subsystems[s].progress);
@@ -1583,8 +1605,8 @@ SubsystemLaunch.create = function() {
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
 		_recomputeDetailScrollWidths();
 
-		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
-			Debug.log("Settling complete.", Debug.INFO_PRIORITY);
+		if (_settlingAfterRestart > 0)
+			--_settlingAfterRestart;
 		return true;
 
 		//////////////////////////////
@@ -1970,8 +1992,19 @@ SubsystemLaunch.create = function() {
 									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
 									return;
 								}
+								var err = DesktopContent.getXMLValue(req, "Error");
+								if(err) {
+									Debug.err("Reboot failed for '" + targetSubsystem + "': " + err);
+									SubsystemLaunch.subsystems[subsystemIndex].status = "";
+									SubsystemLaunch.subsystems[subsystemIndex]._rebootTime = undefined;
+									displayStatus();
+									window.clearTimeout(_getStatusTimer);
+									_getStatusTimer = window.setTimeout(getCurrentStatus,1000);
+									return;
+								}
 								Debug.info("Reboot launched for '" + targetSubsystem + "'...!");
 
+								_settlingAfterRestart = 10;
 								window.clearTimeout(_getStatusTimer);
 								_getStatusTimer = window.setTimeout(getCurrentStatus,1000); //in 1 sec
 
@@ -2220,7 +2253,7 @@ SubsystemLaunch.create = function() {
 					SubsystemLaunch.system.state == "Failed" ||
 					SubsystemLaunch.system.state == "Initial"))
 			{
-				Debug.log("DIAG: Entering batch Halt path. fsmName=",_fsmName,
+				Debug.log("Entering batch Halt path. fsmName=",_fsmName,
 					"system.state=",SubsystemLaunch.system.state,
 					"numSubsystems=",SubsystemLaunch.subsystems.length);
 
@@ -2246,14 +2279,6 @@ SubsystemLaunch.create = function() {
 
 				for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 				{
-					Debug.log("DIAG: batch Halt loop s=",s,
-						"name=",SubsystemLaunch.subsystems[s].name,
-						"fsmIncluded=",SubsystemLaunch.subsystems[s].fsmIncluded,
-						"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
-						"status=",SubsystemLaunch.subsystems[s].status,
-						"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode,
-						"fsmMode==DoNotHalt?",SubsystemLaunch.subsystems[s].fsmMode == "Do Not Halt",
-						"status.startsWith(Failed)?",SubsystemLaunch.subsystems[s].status.startsWith("Failed"));
 					if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 						!SubsystemLaunch.subsystems[s].inTransition)
 					{
@@ -2267,14 +2292,17 @@ SubsystemLaunch.create = function() {
 							if(SubsystemLaunch.subsystems[s].status == "Running" ||
 							   SubsystemLaunch.subsystems[s].status == "Paused")
 							{
-								Debug.log("DIAG: Sending Stop (DoNotHalt mode) to subsystem",s,SubsystemLaunch.subsystems[s]);
+								Debug.log("Sending Stop (DoNotHalt mode) to subsystem",s,
+									"name=",SubsystemLaunch.subsystems[s].name);
 								SubsystemLaunch.launcher.handleSubsystemActionSelect(stopEl,s);
 							}
 							else
-								Debug.log("DIAG: Skipping DoNotHalt subsystem for batch Halt",s,SubsystemLaunch.subsystems[s]);
+								Debug.log("Skipping DoNotHalt subsystem for batch Halt",s,
+									"name=",SubsystemLaunch.subsystems[s].name,
+									"status=",SubsystemLaunch.subsystems[s].status);
 							continue;
 						}
-						Debug.log("DIAG: Sending Halt to subsystem",s,
+						Debug.log("Sending Halt to subsystem",s,
 							"name=",SubsystemLaunch.subsystems[s].name,
 							"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode,
 							"status=",SubsystemLaunch.subsystems[s].status);
@@ -2282,7 +2310,7 @@ SubsystemLaunch.create = function() {
 					}
 					else
 					{
-						Debug.log("DIAG: Skipping subsystem (not included or in transition) s=",s,
+						Debug.log("Skipping subsystem (not included or in transition) s=",s,
 							"name=",SubsystemLaunch.subsystems[s].name);
 					}
 				}
@@ -2330,15 +2358,8 @@ SubsystemLaunch.create = function() {
 								displayStatus();
 
 								var allSubsystemsHalted = true;
-								Debug.log("DIAG: polling loop, checking subsystems for halted...");
 								for(let s = 0; s < SubsystemLaunch.subsystems.length; ++s)
 								{
-									Debug.log("DIAG: poll s=",s,
-										"name=",SubsystemLaunch.subsystems[s].name,
-										"fsmIncluded=",SubsystemLaunch.subsystems[s].fsmIncluded,
-										"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
-										"status=",SubsystemLaunch.subsystems[s].status,
-										"fsmMode=",SubsystemLaunch.subsystems[s].fsmMode);
 									if(SubsystemLaunch.subsystems[s].fsmIncluded &&
 										(SubsystemLaunch.subsystems[s].inTransition ||
 											SubsystemLaunch.subsystems[s].status != "Halted"))
@@ -2353,13 +2374,13 @@ SubsystemLaunch.create = function() {
 											SubsystemLaunch.subsystems[s].status != "Paused" &&
 											!SubsystemLaunch.subsystems[s].status.startsWith("Failed"))
 										{
-											Debug.log("DIAG: DoNotHalt subsystem treated as done s=",s,
+											Debug.log("DoNotHalt subsystem treated as done s=",s,
 												"name=",SubsystemLaunch.subsystems[s].name,
 												"status=",SubsystemLaunch.subsystems[s].status);
 											continue;
 										}
 
-										Debug.log("DIAG: Not yet halted at subsystem s=",s,
+										Debug.log("Not yet halted at subsystem s=",s,
 											"name=",SubsystemLaunch.subsystems[s].name,
 											"status=",SubsystemLaunch.subsystems[s].status,
 											"inTransition=",SubsystemLaunch.subsystems[s].inTransition,
@@ -2410,14 +2431,13 @@ SubsystemLaunch.create = function() {
 			}
 			else
 			{
-				Debug.log("DIAG: Taking standard (non-batch) path for command=",command,
+				Debug.log("Taking standard (non-batch) path for command=",command,
 					"system.state=",SubsystemLaunch.system.state,
 					"fsmName=",_fsmName);
 
 
 				window.clearTimeout(_getStatusTimer);
 				invalidatePendingStatusResponses();
-				Debug.log("DIAG: standard path invalidated, nonce now=",_statusRequestNonce);
 				SubsystemLaunch.system.error = ""; //clear error for next command response
 				//force state display for user feedback
 				SubsystemLaunch.system.inTransition = true;
@@ -2471,7 +2491,7 @@ SubsystemLaunch.create = function() {
 
 		//at this point, ready to send command!
 
-		Debug.log("DIAG: commandRemoteSubsystem dispatch, subsystemIndex=",subsystemIndex,
+		Debug.log("commandRemoteSubsystem dispatch, subsystemIndex=",subsystemIndex,
 			"name=",SubsystemLaunch.subsystems[subsystemIndex].name,
 			"command=",command,
 			"fsmName=",SubsystemLaunch.launcher.getFsmName(),
@@ -2816,10 +2836,6 @@ SubsystemLaunch.create = function() {
 
 						if(error_message && error_message != "")
 							Debug.log(error_message,Debug.HIGH_PRIORITY);
-						else {
-							Debug.log("Launched the run(s)!",
-									Debug.INFO_PRIORITY);
-						}
 
 							}, //end handler
 							0, //handler param
@@ -2854,10 +2870,9 @@ SubsystemLaunch.create = function() {
 						invalidatePendingStatusResponses();
 						_getStatusTimer = window.setTimeout(getCurrentStatus,5000); //in 5 sec
 
-						SubsystemLaunch.system.error = ""; //clear error for next command response
 						//force state display for user feedback
 						SubsystemLaunch.system.inTransition = true;
-						SubsystemLaunch.system.transition = "Launching " + "Stop";
+						SubsystemLaunch.system.transition = "Launching " + "Halt";
 						SubsystemLaunch.system.progress = 0;
 						displayStatus();
 

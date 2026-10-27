@@ -266,6 +266,67 @@
 			border-bottom: 3px solid #e67e22 !important;
 		}
 
+		/* Drag handle: sits in the left margin outside the table */
+		#SubSystemTable tr > td:first-child {
+			position: relative;
+		}
+		.rowDragHandle {
+			cursor: grab;
+			position: absolute;
+			left: -22px;
+			top: 50%;
+			transform: translateY(-50%);
+			font-size: 13px;
+			color: #837f7f;
+			line-height: 1;
+			padding: 3px 4px;
+			border-radius: 2px;
+			z-index: 1;
+		}
+		.rowDragHandle:hover {
+			color: #555;
+			background: rgba(0,0,0,0.10);
+		}
+		body.row-reorder-drag .rowDragHandle {
+			cursor: grabbing;
+		}
+
+		/* Column drag handle: sits above data columns in transposed view */
+		.colDragCell {
+			position: relative;
+			padding-top: 24px !important;
+		}
+		.colDragHandle {
+			cursor: grab;
+			position: absolute;
+			top: 3px;
+			left: 50%;
+			transform: translateX(-50%);
+			font-size: 13px;
+			color: #837f7f;
+			line-height: 1;
+			padding: 2px 4px;
+			border-radius: 2px;
+			z-index: 1;
+		}
+		.colDragHandle:hover {
+			color: #555;
+			background: rgba(0,0,0,0.10);
+		}
+		body.col-reorder-drag .colDragHandle {
+			cursor: grabbing;
+		}
+		body.col-reorder-drag {
+			cursor: grabbing !important;
+		}
+		/* Column drop indicators (vertical orange borders) */
+		.col-drop-left {
+			border-left: 3px solid #e67e22 !important;
+		}
+		.col-drop-right {
+			border-right: 3px solid #e67e22 !important;
+		}
+
 		.treeNode {
 			margin-left: 30px;
 			float: left;
@@ -749,6 +810,12 @@
 		var treeViewHideStatus_ = false;
 		var treeFilterApplied_ = false;
 		var treeViewHideInfo_ = true;
+
+		var _PREF_CONFIG_TREE_INLINE_KV = "ots_pref_configTreeInlineKV";
+		function _isInlineKVEnabled() {
+			var v = localStorage.getItem(_PREF_CONFIG_TREE_INLINE_KV);
+			return v === null || v === "1";
+		}
 		var treeDiffModeApplied_ = false;
 		var treeDiffModeGroupName_, treeDiffModeGroupKey_;
 		var treeDiffTablesWithDiff_; //map of tables with diff for quick lookup and display in tree diff
@@ -794,6 +861,9 @@
 		var suppressBodyMouseupOnce_ = false; // one-shot guard to prevent tooltip/edit popup after drag mouseup
 		var isReorderDragging_ = false;  // true while drag-to-reorder of selected rows is active
 		var reorderDropIndex_ = -1;      // row index that will receive the drop (insert before)
+		var isColReorderDragging_ = false;  // true while drag-to-reorder of columns (transposed view) is active
+		var colReorderSourceCol_ = -1;      // column being dragged
+		var colReorderDropIndex_ = -1;      // column index that will receive the drop (insert before)
 
 		//==============================================================================
 		//init called once body has loaded
@@ -4315,6 +4385,25 @@
 					const idx = indexOfRow(tr);
 					if (idx === -1 || idx == 0) return;
 
+					// DRAG HANDLE: mousedown on the grip icon starts reorder immediately
+					if (e.target.closest('.rowDragHandle')) {
+						Debug.log("Drag handle grabbed at row index", idx);
+						if (!tr.classList.contains('selected')) {
+							clearSelection();
+							tr.classList.add('selected');
+							lastSelectedIndex_ = idx;
+						}
+						isReorderDragging_ = true;
+						reorderDropIndex_ = idx;
+						document.addEventListener('mousemove', _reorderDragMouseMove);
+						_reorderDragMouseMove(e);
+						document.body.classList.add('no-select');
+						document.body.classList.add('row-reorder-drag');
+						e.stopPropagation();
+						e.preventDefault();
+						return;
+					}
+
 					// REORDER DRAG: mousedown on an already-selected row without modifier keys
 					if (!e.shiftKey && !e.ctrlKey && !e.metaKey && tr.classList.contains('selected')) {
 						Debug.log("Starting row reorder drag from index", idx);
@@ -4413,6 +4502,24 @@
 			// Attach mouseup listener to window to handle drag end anywhere (only once)
 			if (!windowMouseupRegistered_) {
 				window.addEventListener('mouseup', (e) => {
+					// --- Finalize column reorder drag (transposed view) ---
+					if (isColReorderDragging_) {
+						_colReorderDragMouseMove(e, true);
+						Debug.log("Column reorder drag ended, drop col:", colReorderDropIndex_);
+						suppressBodyMouseupOnce_ = true;
+						isColReorderDragging_ = false;
+						document.body.classList.remove('col-reorder-drag');
+						document.body.classList.remove('no-select');
+						document.removeEventListener('mousemove', _colReorderDragMouseMove);
+						_clearColReorderDropIndicators();
+						if (colReorderDropIndex_ >= _CONFIG_DATA_ROW_OFFSET) {
+							moveColumnToIndex(colReorderSourceCol_, colReorderDropIndex_);
+						}
+						colReorderDropIndex_ = -1;
+						colReorderSourceCol_ = -1;
+						return;
+					}
+
 					// --- Finalize row reorder drag ---
 					if (isReorderDragging_) {
 						_reorderDragMouseMove(e, true); //capture final cursor position at mouse release
@@ -4426,6 +4533,7 @@
 						if (reorderDropIndex_ >= _CONFIG_DATA_ROW_OFFSET) {
 							moveSelectedRowsToIndex(reorderDropIndex_);
 						}
+						clearSelection();
 						reorderDropIndex_ = -1;
 						return;
 					}
@@ -4452,6 +4560,7 @@
 				});
 				windowMouseupRegistered_ = true;
 			}
+			if (_tableViewIsTransposed) registerColDragHandlers();
 		} //end registerOnClickActions()
 		//==============================================================================
 		//toggleTableDetails ~~
@@ -5278,6 +5387,8 @@
 
 			el.innerHTML = treeViewHandlerStr_;
 
+			if (_isInlineKVEnabled()) collapseLinkedTableUIDs();
+
 			//addTableToConfigurationGroup("ARTDAQParamT"); //for Debuggin!!!
 			if (treeViewExpandedCapture_ && treeViewExpandedCapture_.length) {
 				Debug.log("Nodes to expand from treeViewExpandedCapture_", treeViewExpandedCapture_);
@@ -5613,8 +5724,24 @@
 			pathHTML = pathHTML.replace(/>/g, "&gt");
 
 			for (i = 0; i < nodes.length; ++i) {
-				uid = treeNodeUID_++;
 				isDiffNode = (nodes[i].tagName == "diffNodeMissing");
+
+				// Skip metadata elements that appear among children when depth=2
+				// loads linked-table records; they're consumed at the parent level only.
+				//	(UID-record metadata: comment/nodeStatus/nodeDiff;
+				//	 link metadata: UID/GroupID/LinkTableName/LinkIndex/fixedChoices/valueType)
+				if (!isDiffNode && (nodes[i].nodeName == "comment" ||
+					nodes[i].nodeName == "nodeStatus" ||
+					nodes[i].nodeName == "nodeDiff" ||
+					nodes[i].nodeName == "UID" ||
+					nodes[i].nodeName == "GroupID" ||
+					nodes[i].nodeName == "LinkTableName" ||
+					nodes[i].nodeName == "LinkIndex" ||
+					nodes[i].nodeName == "fixedChoices" ||
+					nodes[i].nodeName == "valueType"))
+					continue;
+
+				uid = treeNodeUID_++;
 
 				nodeName = nodes[i].getAttribute("value");
 
@@ -5698,7 +5825,8 @@
 					treeViewHandlerStr_ +=
 						"<div class='treeNode" + (isDiffNode ? " diffTreeNode" : "") +
 						"' id='treeNode-" +
-						(depth + "-" + uid) + "' >" +
+						(depth + "-" + uid) + "'" +
+						" >" +
 						"<div class='treeNode-Path' style='display:none' id='treeNode-path-" +
 						(depth + "-" + uid) + "'>" + // end path id
 						pathHTML + //save path for future use.. and a central place to edit when changes occur
@@ -5870,7 +5998,10 @@
 				tableLinkName = "";
 
 				//get value and table link name for this parent
-				if (childrenLength && (value = nodes[i].children[offset]).nodeName != "value") {
+				// Note: link nodes have children with nodeName "GroupID"/"UID"/"valueType".
+				//       UID record parents (from depth=2) have children with nodeName "node".
+				if (childrenLength && (value = nodes[i].children[offset]).nodeName != "value" &&
+					value.nodeName != "node") {
 					--childrenLength; //subtract the link ID node from children length
 
 					//this is a link node!
@@ -6320,10 +6451,18 @@
 				treeViewHandlerStr_ += "</td>";
 				treeViewHandlerStr_ += "</tr></table>"; //close pre/comment table row
 
+				//any node drawn here with pre-loaded children (depth=2 inline key/value
+				//	mode) starts collapsed, link or UID record alike, exactly as if the user
+				//	had not expanded it yet; only the clicked node's own children div is open
+				var startChildrenCollapsed = (childrenLength > 0);
+				if (startChildrenCollapsed)
+					Debug.log("recursiveDrawTree collapsing pre-loaded children of " +
+						nodeName + " (depth " + depth + ", " + childrenLength + " children)");
 				treeViewHandlerStr_ +=
 					"<div id='clearDiv'></div>" +
 					"<div class='treeNode-Children' id='treeNode-ChildrenOf-" +
-					(depth + "-" + uid) + "'>";
+					(depth + "-" + uid) + "'" +
+					(startChildrenCollapsed ? " style='display:none'" : "") + ">";
 
 				if (childrenLength) {
 					recursiveDrawTree(nodes[i], depth + 1, path + nodeName + "/",
@@ -6340,6 +6479,324 @@
 
 			} //end children loop
 		} //end recursiveDrawTree()
+
+		//==============================================================================
+		//collapseLinkedTableUIDs ~
+		//	Post-render pass: for UID records under linked tables,
+		//	find key/value leaf fields in children and display inline on the UID row.
+		function collapseLinkedTableUIDs() {
+			// Pass 1: re-hide children of already-processed inline KV nodes (link node re-expand)
+			var doneEls = document.querySelectorAll(".treeNode-Value-nodeEditType-uid.inlineKV-done");
+			for(var d = 0; d < doneEls.length; ++d) {
+				var doneIdString = doneEls[d].id.replace("treeNode-Value-", "");
+				var doneChildrenEl = document.getElementById("treeNode-ChildrenOf-" + doneIdString);
+				if(doneChildrenEl && doneChildrenEl.style.display != "none") {
+					doneChildrenEl.style.display = "none";
+					var doneToggleEl = document.getElementById("treeNode-toggle-" + doneIdString);
+					if(doneToggleEl) doneToggleEl.style.backgroundImage =
+						"url(/WebPath/images/windowContentImages/ConfigurationGUI-expandTree.png)";
+				}
+			}
+
+			// Pass 2: process new UID nodes under linked tables
+			var uidEls = document.querySelectorAll(".treeNode-Value-nodeEditType-uid:not(.inlineKV-done)");
+			for(var u = 0; u < uidEls.length; ++u) {
+				var uidValueEl = uidEls[u];
+				var idString = uidValueEl.id.replace("treeNode-Value-", "");
+				var parts = idString.split("-");
+				var uidDepth = parseInt(parts[0]);
+				if(uidDepth <= 1) continue;
+
+				var childrenEl = document.getElementById("treeNode-ChildrenOf-" + idString);
+				if(!childrenEl || !childrenEl.children.length) continue;
+
+				var keyVal = "", valueVal = "";
+				var keyIdString = "", valueIdString = "";
+				//only this record's own fields; a deep subtree search would match
+				//	descendant records' Key/Value columns and hide the expanded subtree
+				var fieldNodes = childrenEl.querySelectorAll(
+					":scope > .treeNode > .treeNode-Value > .treeNode-Value-leafNode-fieldValue");
+				for(var f = 0; f < fieldNodes.length; ++f) {
+					var colClass = "";
+					var classes = fieldNodes[f].className.split(" ");
+					for(var c = 0; c < classes.length; ++c) {
+						if(classes[c].indexOf("treeNode-Value-leafNode-ColumnName-") === 0) {
+							colClass = classes[c].replace("treeNode-Value-leafNode-ColumnName-", "");
+							break;
+						}
+					}
+					var leafId = fieldNodes[f].id.replace("treeNode-Value-leafNode-", "");
+					if(colClass.toLowerCase().indexOf("key") >= 0) {
+						keyVal = fieldNodes[f].textContent;
+						keyIdString = leafId;
+					}
+					else if(colClass.toLowerCase().indexOf("value") >= 0) {
+						valueVal = fieldNodes[f].textContent;
+						valueIdString = leafId;
+					}
+				}
+
+				// format only when a Value column exists (an empty value still qualifies)
+				if(!valueIdString) continue;
+
+				var uidName = uidValueEl.textContent;
+				uidValueEl.setAttribute("data-original-uid", uidName);
+
+				var statusDotEl = uidValueEl.querySelector(".treeNode-statusDotWrap");
+				var statusDotHtml = "";
+				if(statusDotEl) {
+					statusDotHtml = statusDotEl.outerHTML;
+					statusDotEl.remove();
+				}
+
+				var keyDepthUid = keyIdString.split("-");
+				var valueDepthUid = valueIdString.split("-");
+
+				var html = statusDotHtml;
+
+				// format: [status] keyVal [pencil] : valueVal [pencil]
+				html += "<span class='inlineKV-text'>" +
+					ConfigurationAPI.encodeHTML(keyVal || uidName) + "</span>";
+
+				if(keyIdString) {
+					html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editKeyIcon' " +
+						"id='treeNode-inlineKV-editKeyIcon-" + idString + "' " +
+						"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
+						"onclick='inlineKVEdit(" +
+						keyDepthUid[0] + "," + keyDepthUid[1] +
+						"); event.stopPropagation();' " +
+						"title='Edit the key field.' " +
+						"></div>";
+				}
+
+				html += "<span style='margin:0 4px'> : </span>";
+
+				html += "<span class='inlineKV-text'>" +
+					ConfigurationAPI.encodeHTML(valueVal) + "</span>";
+
+				html += "<div class='treeNode-Value-editIcon treeNode-inlineKV-editValueIcon' " +
+					"id='treeNode-inlineKV-editValueIcon-" + idString + "' " +
+					"style='display:none; float:none; vertical-align:middle; margin:0 0 0 2px;' " +
+					"onclick='inlineKVEdit(" +
+					valueDepthUid[0] + "," + valueDepthUid[1] +
+					"); event.stopPropagation();' " +
+					"title='Edit the value field.' " +
+					"></div>";
+
+				uidValueEl.innerHTML = html;
+				uidValueEl.classList.add("inlineKV-done");
+				uidValueEl.onclick = function(e) { e.stopPropagation(); };
+
+				// Keep expander visible so user can expand UID record to see all fields
+				childrenEl.style.display = "none";
+
+				var uidEditIcon = document.getElementById("treeNode-Value-editIcon-" + idString);
+				if(uidEditIcon) uidEditIcon.style.display = "none";
+				var uidCopyIcon = document.getElementById("treeNode-Value-copyIcon-" + idString);
+				if(uidCopyIcon) uidCopyIcon.style.display = "none";
+			}
+		} //end collapseLinkedTableUIDs()
+
+		//==============================================================================
+		//inlineKVEdit ~
+		//	Show an inline text input on the UID row for the given leaf field.
+		//	Editing happens in-place without expanding the tree children.
+		function inlineKVEdit(leafDepth, leafUid) {
+			var leafIdString = leafDepth + "-" + leafUid;
+
+			// Prevent double edit
+			if(document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString)) return;
+
+			// Navigate: leaf → UID record → link node
+			var uidParentEl = document.getElementById("treeNode-ParentId-" + leafIdString);
+			if(!uidParentEl) return;
+			var uidIdString = uidParentEl.textContent.trim();
+
+			var linkParentEl = document.getElementById("treeNode-ParentId-" + uidIdString);
+			if(!linkParentEl) return;
+			var linkIdString = linkParentEl.textContent.trim();
+
+			var linkTableNameEl = document.getElementById("treeNode-linkTableName-" + linkIdString);
+			var linkTableName = linkTableNameEl ? linkTableNameEl.textContent.trim() : "";
+
+			var uidValueEl = document.getElementById("treeNode-Value-" + uidIdString);
+			var uidName = uidValueEl ? (uidValueEl.getAttribute("data-original-uid") || "") : "";
+
+			// Get column name and current value from hidden leaf DOM
+			var leafFieldEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+			var colName = "";
+			var currentVal = "";
+			if(leafFieldEl) {
+				var classes = leafFieldEl.className.split(" ");
+				for(var c = 0; c < classes.length; ++c) {
+					if(classes[c].indexOf("treeNode-Value-leafNode-ColumnName-") === 0) {
+						colName = classes[c].replace("treeNode-Value-leafNode-ColumnName-", "");
+						break;
+					}
+				}
+				currentVal = leafFieldEl.textContent.trim();
+			}
+
+			// Get table version
+			var tableVersion = -1;
+			for(var j = 0; j < treeMemberNames_.length; ++j) {
+				if(linkTableName == treeMemberNames_[j] && (treeMemberVersions_[j] | 0) != -1) {
+					tableVersion = treeMemberVersions_[j];
+					break;
+				}
+			}
+
+			// Find which inlineKV-text span to replace (key=first, value=last)
+			var isKeyField = colName.toLowerCase().indexOf("key") >= 0;
+			var textSpans = uidValueEl ? uidValueEl.querySelectorAll("span.inlineKV-text") : [];
+			var targetSpan = isKeyField ? textSpans[0] : textSpans[textSpans.length - 1];
+			if(!targetSpan) return;
+
+			// Tag the span so we can find it on save/cancel
+			targetSpan.id = "treeNode-inlineKV-hiddenSpan-" + leafIdString;
+			targetSpan.style.display = "none";
+
+			var safeVal = ConfigurationAPI.encodeHTML(currentVal);
+			// JSON.stringify leaves ' and < untouched; encode so the string literal can
+			// sit inside a single-quoted inline handler attribute without breaking out
+			var leafRef = ConfigurationAPI.encodeHTML(JSON.stringify(leafIdString));
+			var tableRef = ConfigurationAPI.encodeHTML(JSON.stringify(linkTableName));
+			var uidRef = ConfigurationAPI.encodeHTML(JSON.stringify(uidName));
+			var colRef = ConfigurationAPI.encodeHTML(JSON.stringify(colName));
+
+			// Hide both pencil icons while editing
+			var _kvKeyIcon = document.getElementById("treeNode-inlineKV-editKeyIcon-" + uidIdString);
+			var _kvValIcon = document.getElementById("treeNode-inlineKV-editValueIcon-" + uidIdString);
+			if(_kvKeyIcon) _kvKeyIcon.style.display = "none";
+			if(_kvValIcon) _kvValIcon.style.display = "none";
+
+			var editWrap = document.createElement("span");
+			editWrap.id = "treeNode-inlineKV-editWrap-" + leafIdString;
+			editWrap.setAttribute("data-uid-idstring", uidIdString);
+			editWrap.style.cssText = "display:inline-block; white-space:nowrap;";
+			editWrap.innerHTML =
+				"<input type='text' value=\"" + safeVal + "\" " +
+				"style='width:120px;color:black;background:white;border:1px solid #888;padding:1px 3px;border-radius:2px;vertical-align:middle;' " +
+				"onkeydown='event.stopPropagation();if(event.keyCode==13){inlineKVSave(" + leafRef + "," + tableRef + "," + tableVersion + "," + uidRef + "," + colRef + ");}else if(event.keyCode==27){inlineKVEditCancel(" + leafRef + ");}' " +
+				"onkeyup='event.stopPropagation();' " +
+				"onkeypress='event.stopPropagation();' " +
+				"onclick='event.stopPropagation();' " +
+				"/>" +
+				"<span style='cursor:pointer;color:green;font-weight:bold;font-family:Comfortaa;padding:0 4px;margin-left:10px;vertical-align:middle;' " +
+				"title='Save' " +
+				"onclick='inlineKVSave(" + leafRef + "," + tableRef + "," + tableVersion + "," + uidRef + "," + colRef + ");event.stopPropagation();'>&#10003;</span>" +
+				"<span style='cursor:pointer;color:red;font-weight:bold;font-family:system-ui;padding:0 4px;margin-left:10px;vertical-align:middle;' " +
+				"title='Cancel' " +
+				"onclick='inlineKVEditCancel(" + leafRef + ");event.stopPropagation();'>&#10007;</span>";
+
+			targetSpan.parentNode.insertBefore(editWrap, targetSpan.nextSibling);
+			var inp = editWrap.querySelector("input");
+			inp.focus();
+			inp.select();
+		} //end inlineKVEdit()
+
+		//==============================================================================
+		//inlineKVSave ~
+		//	Save the value from an inline edit input to the server, update display.
+		function inlineKVSave(leafIdString, tableName, tableVersion, uid, colName) {
+			var editWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+			if(!editWrap) return;
+
+			var inputEl = editWrap.querySelector("input");
+			var newVal = inputEl ? inputEl.value.trim() : "";
+
+			var leafFieldEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+			var oldVal = leafFieldEl ? leafFieldEl.textContent.trim() : "";
+
+			if(newVal === oldVal) {
+				inlineKVEditCancel(leafIdString);
+				return;
+			}
+
+			// Find table version if stale (use latest treeMemberVersions_)
+			var currentVersion = tableVersion;
+			for(var j = 0; j < treeMemberNames_.length; ++j) {
+				if(tableName == treeMemberNames_[j] && (treeMemberVersions_[j] | 0) != -1) {
+					currentVersion = treeMemberVersions_[j];
+					break;
+				}
+			}
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=saveTreeNodeEdit" +
+				"&editNodeType=value" +
+				"&targetTable=" + encodeURIComponent(tableName) +
+				"&targetTableVersion=" + currentVersion +
+				"&targetUID=" + encodeURIComponent(uid) +
+				"&targetColumn=" + encodeURIComponent(colName),
+				"newValue=" + encodeURIComponent(newVal),
+				function(req, reqParam, errStr) {
+					var localEditWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+					var localHiddenSpan = document.getElementById("treeNode-inlineKV-hiddenSpan-" + leafIdString);
+					var localLeafEl = document.getElementById("treeNode-Value-leafNode-" + leafIdString);
+
+					if(errStr) { Debug.err(errStr); return; }
+					var err = DesktopContent.getXMLValue(req, "Error");
+					if(err) {
+						if(err.indexOf("is the same as the current value. No need to save node.") > 0)
+							Debug.log(err);
+						else { Debug.err(err); return; }
+					}
+
+					// Update cached table versions
+					var savedNames = req.responseXML.getElementsByTagName("savedName");
+					var savedVersions = req.responseXML.getElementsByTagName("savedVersion");
+					for(var i = 0; i < savedNames.length; ++i) {
+						var sName = DesktopContent.getXMLValue(savedNames[i]);
+						for(var j = 0; j < treeMemberNames_.length; ++j) {
+							if(sName == treeMemberNames_[j]) {
+								treeMemberVersions_[j] = DesktopContent.getXMLValue(savedVersions[i]);
+								break;
+							}
+						}
+					}
+
+					// Update hidden leaf DOM value
+					if(localLeafEl) localLeafEl.textContent = newVal;
+
+					// Restore inline span with new value
+					if(localHiddenSpan) {
+						localHiddenSpan.textContent = newVal;
+						localHiddenSpan.style.display = "";
+						localHiddenSpan.id = "";
+					}
+					if(localEditWrap) {
+						var _uidId = localEditWrap.getAttribute("data-uid-idstring");
+						localEditWrap.remove();
+						if(_uidId) {
+							var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+							var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+							if(_k) _k.style.display = "none";
+							if(_v) _v.style.display = "none";
+						}
+					}
+				}
+			);
+		} //end inlineKVSave()
+
+		//==============================================================================
+		//inlineKVEditCancel ~
+		//	Cancel an inline edit, restoring the original value span.
+		function inlineKVEditCancel(leafIdString) {
+			var editWrap = document.getElementById("treeNode-inlineKV-editWrap-" + leafIdString);
+			var hiddenSpan = document.getElementById("treeNode-inlineKV-hiddenSpan-" + leafIdString);
+			if(hiddenSpan) { hiddenSpan.style.display = ""; hiddenSpan.id = ""; }
+			if(editWrap) {
+				var _uidId = editWrap.getAttribute("data-uid-idstring");
+				editWrap.remove();
+				// Pencil icons are re-shown on next hover; reset to hidden default now
+				if(_uidId) {
+					var _k = document.getElementById("treeNode-inlineKV-editKeyIcon-" + _uidId);
+					var _v = document.getElementById("treeNode-inlineKV-editValueIcon-" + _uidId);
+					if(_k) _k.style.display = "none";
+					if(_v) _v.style.display = "none";
+				}
+			}
+		} //end inlineKVEditCancel()
 
 		//==============================================================================
 		//getTreeViewTableStrings ~
@@ -6751,7 +7208,7 @@
 						treeEditingTargetTable_ = pel.textContent;
 					}
 
-					treeEditingTargetUID_ = el.textContent;
+					treeEditingTargetUID_ = el.getAttribute("data-original-uid") || el.textContent;
 					treeEditingTargetColumn_ = "UID";
 					Debug.log("edit uid mode target=" + treeEditingTargetTable_ +
 						"/" + treeEditingTargetUID_ + "/" +
@@ -7543,6 +8000,8 @@
 					toggleEl.style.backgroundImage =
 						"url(/WebPath/images/windowContentImages/ConfigurationGUI-hideTree.png)";
 
+					if(document.getElementById("treeNode-linkTableName-" + idString) && _isInlineKVEnabled())
+						collapseLinkedTableUIDs();
 					return true;
 				}
 				else //else shown, so hide and "+"
@@ -7590,7 +8049,9 @@
 						) : ""
 					) +
 					"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
-					"&depth=1",
+					//inline key/value mode needs the records' fields too (depth 2), not deeper
+					"&depth=" + ((_isInlineKVEnabled() &&
+						document.getElementById("treeNode-linkTableName-" + idString)) ? 2 : 1),
 					"startPath=" + path + nodeName + "/" +
 					"&modifiedTables=" + modifiedTables,
 					function (req, parentId, err) {
@@ -9659,7 +10120,7 @@
 
 					//edit record uid
 					el = document.getElementById("treeNode-Value-" + idString);
-					_editingCellElOldValue = el.textContent;
+					_editingCellElOldValue = el.getAttribute("data-original-uid") || el.textContent;
 					treeEditingNodeInitValue_ = _editingCellElOldValue;
 
 					var str = "";
@@ -11600,6 +12061,13 @@
 				Debug.log("Ignoring key press and giving searchbar priority...");
 				return;
 			}
+			//ignore typing inside inline KV edit inputs (otherwise tree-view hotkeys
+			// fire during inline editing because the handler runs in capture phase)
+			var _activeEl = document.activeElement;
+			if (_activeEl && _activeEl.tagName == "INPUT" &&
+				_activeEl.parentNode && _activeEl.parentNode.id &&
+				_activeEl.parentNode.id.indexOf("treeNode-inlineKV-editWrap-") === 0)
+				return;
 			//ignore typing inside the verification popup's input field
 			// (otherwise tree-view hotkeys hijack characters as the user types
 			//  the new UID / value in the popup prompt)
@@ -13358,7 +13826,10 @@
 			return Array.from(tbody.querySelectorAll('tr'));
 		}
 		function indexOfRow(row) { return getRows().indexOf(row); }
-		function clearSelection() { getRows().forEach(r => r.classList.remove('selected')); }
+		function clearSelection() {
+			getRows().forEach(r => r.classList.remove('selected'));
+			lastSelectedIndex_ = null;
+		}
 
 		// Remove all reorder drop indicator classes
 		function _clearReorderDropIndicators() {
@@ -13465,6 +13936,7 @@
 			// Mark the table as modified
 			versionHasChanged();
 			_renumberVisibleTableRows();
+			_rebindDataCellCoordinates();
 			// Re-register click/drag listeners for any newly positioned rows
 			registerOnClickActions();
 			Debug.log("moveSelectedRowsToIndex: done");
@@ -13482,6 +13954,13 @@
 
 				const ro = r - _CONFIG_DATA_ROW_OFFSET;
 				firstCell.innerHTML = "";
+
+				const grip = document.createElement("span");
+				grip.className = "rowDragHandle";
+				grip.title = "Drag to reorder this row";
+				grip.innerHTML = "&#x2630;";
+				firstCell.appendChild(grip);
+
 				const center = document.createElement("center");
 				center.title = "Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.";
 
@@ -13520,6 +13999,205 @@
 			const start = Math.min(a, b);
 			const end = Math.max(a, b);
 			for (let i = start; i <= end; i++) setSelectedByIndex(i, state);
+		}
+
+		// --- Column reorder (transposed view) ---
+
+		function _clearColReorderDropIndicators() {
+			document.querySelectorAll('.col-drop-left, .col-drop-right').forEach(function(el) {
+				el.classList.remove('col-drop-left');
+				el.classList.remove('col-drop-right');
+			});
+		}
+
+		function _colReorderDragMouseMove(e, ignoreButtonState) {
+			if (!isColReorderDragging_) return;
+			if (!ignoreButtonState && e.buttons !== 1) {
+				_clearColReorderDropIndicators();
+				isColReorderDragging_ = false;
+				colReorderDropIndex_ = -1;
+				document.body.classList.remove('col-reorder-drag');
+				document.body.classList.remove('no-select');
+				document.removeEventListener('mousemove', _colReorderDragMouseMove);
+				return;
+			}
+
+			var tbody = document.getElementById("SubSystemTable");
+			var rows = Array.from(tbody.querySelectorAll('tr'));
+			_clearColReorderDropIndicators();
+
+			var refRow = rows[0];
+			if (!refRow) return;
+			var cells = Array.from(refRow.children);
+
+			var bestIdx = -1;
+			var insertAfter = false;
+
+			for (var c = _CONFIG_DATA_ROW_OFFSET; c < cells.length; c++) {
+				var rect = cells[c].getBoundingClientRect();
+				if (e.clientX < rect.right) {
+					bestIdx = c;
+					insertAfter = (e.clientX > rect.left + rect.width / 2);
+					break;
+				}
+				bestIdx = c;
+				insertAfter = true;
+			}
+
+			if (bestIdx === -1) return;
+
+			if (insertAfter) {
+				var nextIdx = bestIdx + 1;
+				if (nextIdx < cells.length) {
+					colReorderDropIndex_ = nextIdx;
+					rows.forEach(function(row) {
+						if (row.children[nextIdx])
+							row.children[nextIdx].classList.add('col-drop-left');
+					});
+				} else {
+					colReorderDropIndex_ = cells.length;
+					rows.forEach(function(row) {
+						if (row.children[bestIdx])
+							row.children[bestIdx].classList.add('col-drop-right');
+					});
+				}
+			} else {
+				colReorderDropIndex_ = bestIdx;
+				rows.forEach(function(row) {
+					if (row.children[bestIdx])
+						row.children[bestIdx].classList.add('col-drop-left');
+				});
+			}
+		}
+
+		function moveColumnToIndex(sourceCol, targetCol) {
+			var tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
+			if (sourceCol === targetCol || sourceCol + 1 === targetCol) return;
+
+			var allRows = Array.from(tbody.querySelectorAll('tr'));
+			Debug.log("moveColumnToIndex: moving col", sourceCol, "to", targetCol);
+
+			allRows.forEach(function(row) {
+				var cells = Array.from(row.children);
+				if (sourceCol >= cells.length) return;
+
+				var sourceCell = cells[sourceCol];
+				var refCell = (targetCol < cells.length) ? cells[targetCol] : null;
+				if (sourceCell === refCell) return;
+
+				row.removeChild(sourceCell);
+				if (refCell && refCell.parentNode === row)
+					row.insertBefore(sourceCell, refCell);
+				else
+					row.appendChild(sourceCell);
+			});
+
+			versionHasChanged();
+			_renumberVisibleTableColumns();
+			_rebindDataCellCoordinates();
+			registerColDragHandlers();
+		}
+
+		// Data cells capture [record,field] in inline handlers at render time; refresh them from the current DOM position after a manual move.
+		function _rebindDataCellCoordinates() {
+			var tableBody = document.getElementById("SubSystemTable");
+			if (!tableBody) return;
+			var displayRows = tableBody.querySelectorAll('tr');
+			for (var displayRowIndex = 0; displayRowIndex < displayRows.length; ++displayRowIndex) {
+				var displayCells = displayRows[displayRowIndex].cells;
+				for (var displayColumnIndex = 0; displayColumnIndex < displayCells.length; ++displayColumnIndex) {
+					var dataCell = displayCells[displayColumnIndex];
+					var mouseUpHandler = dataCell.getAttribute("onmouseup");
+					if (!mouseUpHandler || mouseUpHandler.indexOf("selectThisCell(") !== 0) continue;
+
+					var recordIndex = (_tableViewIsTransposed ? displayColumnIndex : displayRowIndex) - _CONFIG_DATA_ROW_OFFSET;
+					var fieldIndex = (_tableViewIsTransposed ? displayRowIndex : displayColumnIndex) - _CONFIG_DATA_COL_OFFSET;
+					var coordinates = recordIndex + "," + fieldIndex;
+
+					dataCell.setAttribute("onmouseup", "selectThisCell(" + coordinates + ",this,event);");
+					dataCell.setAttribute("onmouseover", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					dataCell.setAttribute("onmousemove", "selectThisCell(" + coordinates + ",this,event,true /*paintMode*/);");
+					if (dataCell.title)
+						dataCell.title = dataCell.title.replace(/^\[row,col\] = \[-?\d+,-?\d+\]/, "[row,col] = [" + coordinates + "]");
+				}
+			}
+		} //end _rebindDataCellCoordinates()
+
+		function _renumberVisibleTableColumns() {
+			var tbody = document.getElementById("SubSystemTable");
+			if (!tbody) return;
+			var firstRow = tbody.querySelector('tr');
+			if (!firstRow) return;
+			var cells = Array.from(firstRow.children);
+
+			for (var c = _CONFIG_DATA_ROW_OFFSET; c < cells.length; ++c) {
+				var cell = cells[c];
+				var co = c - _CONFIG_DATA_ROW_OFFSET;
+
+				cell.innerHTML = "";
+				cell.className = "colDragCell";
+
+				var grip = document.createElement("span");
+				grip.className = "colDragHandle";
+				grip.title = "Drag to reorder this row";
+				grip.innerHTML = "&#x2630;";
+				cell.appendChild(grip);
+
+				var center = document.createElement("center");
+				center.title = "Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.";
+				center.appendChild(document.createTextNode((_dataOffset + co) + ""));
+				center.appendChild(document.createElement("br"));
+
+				var addBtn = document.createElement("a");
+				addBtn.className = "tableAddRowButton";
+				addBtn.title = "Add a row before this row.";
+				addBtn.href = "#";
+				addBtn.onclick = (function(i) { return function() { addRow(i); return false; }; })(co);
+				addBtn.textContent = "+";
+				center.appendChild(addBtn);
+
+				center.appendChild(document.createTextNode("/"));
+
+				var delBtn = document.createElement("a");
+				delBtn.className = "tableDeleteRowButton";
+				delBtn.title = "Delete this row.";
+				delBtn.href = "#";
+				delBtn.onclick = (function(i) { return function() { deleteRow(i); registerOnClickActions(); return false; }; })(co);
+				delBtn.textContent = "-";
+				center.appendChild(delBtn);
+
+				cell.appendChild(center);
+			}
+		}
+
+		function registerColDragHandlers() {
+			var handles = document.querySelectorAll('#SubSystemTable .colDragHandle');
+			handles.forEach(function(handle) {
+				if (handle.dataset.colDragBound === "1") return;
+				handle.dataset.colDragBound = "1";
+
+				handle.addEventListener('mousedown', function(e) {
+					if (e.button !== 0) return;
+					var td = e.target.closest('td');
+					if (!td) return;
+					var tr = td.closest('tr');
+					if (!tr) return;
+					var colIdx = Array.from(tr.children).indexOf(td);
+					if (colIdx < _CONFIG_DATA_ROW_OFFSET) return;
+
+					Debug.log("Column drag handle grabbed at col", colIdx);
+					isColReorderDragging_ = true;
+					colReorderSourceCol_ = colIdx;
+					colReorderDropIndex_ = colIdx;
+					document.addEventListener('mousemove', _colReorderDragMouseMove);
+					_colReorderDragMouseMove(e);
+					document.body.classList.add('no-select');
+					document.body.classList.add('col-reorder-drag');
+					e.stopPropagation();
+					e.preventDefault();
+				});
+			});
 		}
 
 		//==============================================================================
@@ -15152,6 +15830,8 @@
 					return uidText.trim();
 				}
 				else {
+					var origUid = uidEl.getAttribute("data-original-uid");
+					if(origUid) return origUid.trim();
 					var txt = uidEl.textContent;
 					var parts = txt.split('=');
 					if (parts.length > 1)
@@ -15551,7 +16231,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -15660,7 +16340,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -15668,6 +16348,8 @@
 							//Debug.log("link-idString " + idString + " " + uid);
 							Debug.log("uid-idString CHANGE to " + newValue);
 
+							els[i].classList.remove("inlineKV-done");
+							els[i].removeAttribute("data-original-uid");
 							els[i].innerHTML = "";
 							els[i].appendChild(document.createTextNode(decodeURIComponent(newValue)));
 
@@ -15798,7 +16480,7 @@
 						}
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -16200,7 +16882,7 @@
 
 
 						//Debug.log("uid-table " + table);
-						uid = els[i].textContent;
+						uid = els[i].getAttribute("data-original-uid") || els[i].textContent;
 
 						if (table == treeEditingTargetTable_ &&
 							uid == treeEditingTargetUID_) {
@@ -16868,6 +17550,9 @@
 			_editingCell = false;
 			_editingCellEl = 0;
 			_handlingTreeNodeOK = false;
+
+			if(document.getElementById("treeView-ConfigGroupLink") && _isInlineKVEnabled())
+				collapseLinkedTableUIDs();
 		} //end editCellCancel()
 
 		//addRow ~~
@@ -21466,6 +22151,9 @@
 				treeViewHideInfo_ ?
 					"Show Info Fields" :
 					"Hide Info Fields",
+				_isInlineKVEnabled() ?
+					"Disable Inline Key:Value Formatting" :
+					"Enable Inline Key:Value Formatting",
 				"Record Creation Wizard",
 				"Record Deletion Wizard",
 				treeDiffModeApplied_ ?
@@ -21493,6 +22181,7 @@
 				"treeFilterApplied_?applyTreeFilter():popUpFilterTreeForm()",
 				"treeViewHideInfo_ = !treeViewHideInfo_; " +
 				"applyTreeFilter('',0,1)",
+				"toggleInlineKVFormatting()",
 				"launchRecordCreationWizard(\"tree\")",
 				"launchRecordDeletionWizard(\"tree\")",
 				"toggleTreeDiffMode()"
@@ -21508,6 +22197,13 @@
 				true /*useDefaultHighlightColors*/
 			);
 		} //end createTreeViewMenu()
+
+		//==============================================================================
+		function toggleInlineKVFormatting() {
+			localStorage.setItem(_PREF_CONFIG_TREE_INLINE_KV,
+				_isInlineKVEnabled() ? "0" : "1");
+			refreshTreeView();
+		}
 
 		//==============================================================================
 		//addTableToConfigurationGroup ~~
@@ -21740,12 +22436,18 @@
 						str += "' " +
 							">";
 					}
+					else if (transposeOutput && c == 0 && r >= _CONFIG_DATA_ROW_OFFSET)
+						str += "<td class='colDragCell'>";
 					else
 						str += "<td>";
 
 					//cell value
 					//first column is row numbers
 					if (c == 0 && r >= _CONFIG_DATA_ROW_OFFSET) {
+						if (transposeOutput)
+							str += "<span class='colDragHandle' title='Drag to reorder this row'>&#x2630;</span>";
+						else
+							str += "<span class='rowDragHandle' title='Drag to reorder this row'>&#x2630;</span>";
 						str += "<center title='Use Ctrl + click/drag to select a block of rows; then Ctrl + V to paste rows, and Ctrl + D/delete/backspace to delete rows.'>";
 						str += (_dataOffset + ro);	//insert row index column
 						str += "<br>";
@@ -22035,6 +22737,7 @@
 
 			_tableViewIsTransposed = !_tableViewIsTransposed;
 			Debug.log("transposeTableView() transposed now =" + _tableViewIsTransposed);
+			registerOnClickActions();
 		} //end transposeTableView()
 
 		//==============================================================================
@@ -22253,6 +22956,18 @@
 				}
 				catch (e) { }
 
+				//try hiding the inline KV edit icons, and ignore fails
+				try {
+					document.getElementById("treeNode-inlineKV-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+				try {
+					document.getElementById("treeNode-inlineKV-editValueIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "none";
+				}
+				catch (e) { }
+
 				var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
 				if (vel) {
 					if (vel.style.backgroundColor == "rgb(218, 194, 194)") //only replace if need to replace, otherwise assume another operation replaced background color
@@ -22280,22 +22995,39 @@
 			//Debug.log("handleTreeNodeMouseMove setting ");
 			treeEditingEditIconShownIdString_ = idString;
 			treeEditingEditIconShownEl_ = el;
-			treeEditingEditIconShownEl_.style.display = "block";
 			var vel = document.getElementById("treeNode-Value-" + treeEditingEditIconShownIdString_);
+			var isInlineKV = vel && vel.classList.contains("inlineKV-done");
+			if(!isInlineKV)
+				treeEditingEditIconShownEl_.style.display = "block";
 			treeEditingEditIconShownElBackground_ = vel.style.backgroundColor;
 			vel.style.backgroundColor = "rgb(218, 194, 194)";
 
-			//try bringing along the comment edit icon, and ignore fails
-			try {
-				document.getElementById("treeNode-Value-editCommentIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "block";
-			}
-			catch (e) { }
+			if(!isInlineKV) {
+				//try bringing along the comment edit icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-editCommentIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "block";
+				}
+				catch (e) { }
 
-			//try bringing along the copy-record icon, and ignore fails
+				//try bringing along the copy-record icon, and ignore fails
+				try {
+					document.getElementById("treeNode-Value-copyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "block";
+				}
+				catch (e) { }
+			}
+
+			//try bringing along the inline KV edit icons, but suppress if this node is being edited
 			try {
-				document.getElementById("treeNode-Value-copyIcon-" +
-					treeEditingEditIconShownIdString_).style.display = "block";
+				var _kvWrap = document.querySelector("[id^='treeNode-inlineKV-editWrap-']");
+				var _kvEditing = _kvWrap && _kvWrap.getAttribute("data-uid-idstring") == treeEditingEditIconShownIdString_;
+				if(!_kvEditing) {
+					document.getElementById("treeNode-inlineKV-editKeyIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+					document.getElementById("treeNode-inlineKV-editValueIcon-" +
+						treeEditingEditIconShownIdString_).style.display = "inline-block";
+				}
 			}
 			catch (e) { }
 

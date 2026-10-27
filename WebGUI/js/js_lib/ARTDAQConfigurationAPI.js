@@ -258,14 +258,18 @@ ARTDAQConfigurationAPI.getArtdaqNodes = function(responseHandler,
 						//add artdaq supervisor object
 						var artdaqSupervisorName = artdaqSupervisor.getAttribute('value');
 
-						retObj[types[i]][artdaqSupervisorName] = {
-								"status" : DesktopContent.getXMLValue(artdaqSupervisor,
-										types[i] + "-status") | 0, //integer 0 or 1
-								"contextAddress" : DesktopContent.getXMLValue(artdaqSupervisor,
-										types[i] + "-contextAddress"),
-								"contextPort" : DesktopContent.getXMLValue(artdaqSupervisor,
-										types[i] + "-contextPort"),
-						};
+						//with no artdaq supervisor configured the server sends an empty
+						//	placeholder so the monitors below can still be listed; it is
+						//	not a node and must not be drawn or saved as one
+						if(artdaqSupervisorName)
+							retObj[types[i]][artdaqSupervisorName] = {
+									"status" : DesktopContent.getXMLValue(artdaqSupervisor,
+											types[i] + "-status") | 0, //integer 0 or 1
+									"contextAddress" : DesktopContent.getXMLValue(artdaqSupervisor,
+											types[i] + "-contextAddress"),
+									"contextPort" : DesktopContent.getXMLValue(artdaqSupervisor,
+											types[i] + "-contextPort"),
+							};
 						continue;
 					}
 
