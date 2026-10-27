@@ -100,7 +100,6 @@
 		//popUpVersionAliasForm()
 		//popUpVersionAliasGroupEditorForm()
 		//popUpVersionAliasSpecificGroupForm(groupName,groupKey)
-		//popUpFilterTreeForm()
 		//popUpGroupViewAliasForm(groupName,groupKey)
 		//popUpGroupViewAliasFormSubmit(groupName,groupKey)
 		//popUpSaveTreeForm()
@@ -822,8 +821,8 @@
 		var treeDiff_COLOR_ = "rgb(207, 101, 0)";
 
 		var treeFilter_ = "";
-		var lastTreeFilter_ = "";
 		var lastTreeWarnStr_ = "";
+		var treeFullDepthLoaded_ = false;
 
 		var treeHasChanged_ = false;
 		var treeEditingNodeType_ = "";
@@ -5242,9 +5241,10 @@
 				treeViewHandlerStr_ += "<div id='searchbar'>" +
 					"<span></span>" +
 					"<input id='tree-view-searchbar' " +
-					"title='Type to highlight and seek any matching records. Hit the UP-arrow and DOWN-arrow to scroll the tree-view to the matching records.' " +
+					"title='Press Enter to search. Hit UP/DOWN arrows to scroll between matches.' " +
 					"placeholder='Search...' " +
-					"onkeydown='applySearchNode(event)'" +
+					"onkeydown='if(event.keyCode==13){applySearchNode(event);}" +
+					"else if(event.keyCode==38||event.keyCode==40){applySearchNode(event);}'" +
 					" autocomplete='off'></input>" +
 					"</div>";
 
@@ -7581,31 +7581,77 @@
 		function applySearchNode(event = null) {
 			Debug.log("applySearchNode()", event ? event.keyCode : "");
 
-			//38 is UP
-			//40 is DOWN
-
 			var text = document.getElementById("tree-view-searchbar").value;
 
 			if (event) {
-				// problem with keydown
-				if (event.keyCode >= 48 && event.keyCode <= 90) {
-					text = text + event.key;
-					applySearchNodeSelectedIndex = -1; //reset focus index
-				}
-
-				if (event.keyCode === 8) {
-					text = text.slice(0, -1);
-					applySearchNodeSelectedIndex = -1; //reset focus index
-				}
-
 				if (event.keyCode == 38 && //UP key
 					applySearchNodeSelectedIndex > 0)
 					--applySearchNodeSelectedIndex;
-				if (event.keyCode == 40) //DOWN key
+				else if (event.keyCode == 40) //DOWN key
 					++applySearchNodeSelectedIndex;
+				else if (event.keyCode == 13) //Enter key — apply filter
+					applySearchNodeSelectedIndex = -1;
 			}
 
-			// color the proper target (and focus on selected)
+			//on Enter (or direct call): apply filter and highlight
+			if (!event || event.keyCode == 13) {
+
+				//if unexpanded nodes exist and full tree not yet loaded,
+				//load the full tree first, then re-run so the filter
+				//and highlighting apply to the complete DOM
+				if (text !== "" && !treeFullDepthLoaded_) {
+					var hasUnexpanded = false;
+					var allExpanders = document.getElementsByClassName("treeNode-Expander");
+					for (var i = 0; i < allExpanders.length; ++i) {
+						var eid = allExpanders[i].id.replace("treeNode-toggle-", "");
+						var cEl = document.getElementById("treeNode-ChildrenOf-" + eid);
+						if (cEl && cEl.innerHTML.trim() == "") {
+							hasUnexpanded = true;
+							break;
+						}
+					}
+					if (hasUnexpanded) {
+						Debug.log("applySearchNode requesting full-depth tree before searching");
+						treeFilter_ = "*" + text + "*";
+						var tableGroupEls = document.getElementById("treeView-ConfigGroupLink").childNodes;
+						var modifiedTables = "";
+						for (var j = 0; j < treeMemberNames_.length; ++j)
+							if ((treeMemberVersions_[j] | 0) < -1) {
+								if (modifiedTables.length) modifiedTables += ",";
+								modifiedTables += treeMemberNames_[j] + "," + treeMemberVersions_[j];
+							}
+						treeViewHandlerStr_ = "";
+						DesktopContent.XMLHttpRequest("Request?RequestType=getTreeView" +
+							"&tableGroup=" + tableGroupEls[0].innerHTML +
+							"&tableGroupKey=" + tableGroupEls[1].innerHTML +
+							(treeDiffModeApplied_ ?
+								("&diffGroup=" + treeDiffModeGroupName_ +
+								 "&diffGroupKey=" + treeDiffModeGroupKey_) : "") +
+							"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
+							"&depth=-1",
+							"startPath=/" +
+							"&modifiedTables=" + modifiedTables,
+							function(req, parentId, err) {
+								treeFullDepthLoaded_ = true;
+								treeViewHandler(req, parentId, err);
+								var sb = document.getElementById("tree-view-searchbar");
+								if (sb) { sb.value = text; sb.focus(); }
+								applySearchNode();
+							},
+							0, 0, true);
+						if (event) event.stopPropagation();
+						return false;
+					}
+				}
+
+				//apply tree filter (synchronous — all nodes are in the DOM)
+				if (text !== "")
+					applyTreeFilter("*" + text + "*");
+				else
+					applyTreeFilter();
+			}
+
+			//highlight all visible matches and handle UP/DOWN scrolling
 			var fields = document.getElementsByClassName("treeNode-Value");
 			if (applySearchNodeSelectedIndex >= fields.length)
 				applySearchNodeSelectedIndex = fields.length - 1;
@@ -7622,7 +7668,6 @@
 						fields[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
 						searchFocusFound = true;
 						fields[i].style.backgroundColor = "lightyellow";
-
 					}
 
 					lastEl = fields[i];
@@ -7637,7 +7682,6 @@
 
 			if (applySearchNodeSelectedIndex >= 0 &&
 				!searchFocusFound && lastEl) {
-				//scroll to last searched el if none scrolled
 				applySearchNodeSelectedIndex = lastElIndex;
 				Debug.logv({ applySearchNodeSelectedIndex });
 				lastEl.style.backgroundColor = "lightyellow";
@@ -7677,7 +7721,6 @@
 
 				treeFilterApplied_ = false;
 
-				lastTreeFilter_ = treeFilter_;
 			}
 
 			// refresh the filter
@@ -7689,6 +7732,49 @@
 			// case no filter
 			if (!filter || filter == "" || filter == "*") return;
 
+			//if there are unexpanded nodes and full tree not yet loaded,
+			//request the full-depth tree from the server so all nodes
+			//are in the DOM before filtering.
+			//treeViewHandler will call applyTreeFilter("",1) after rebuilding,
+			//which re-enters here with the saved treeFilter_ and all nodes loaded.
+			if (!reapplyFilter && !treeFullDepthLoaded_) {
+				var hasUnexpanded = false;
+				var allExpanders = document.getElementsByClassName("treeNode-Expander");
+				for (var i = 0; i < allExpanders.length; ++i) {
+					var eid = allExpanders[i].id.replace("treeNode-toggle-", "");
+					var cEl = document.getElementById("treeNode-ChildrenOf-" + eid);
+					if (cEl && cEl.innerHTML.trim() == "") {
+						hasUnexpanded = true;
+						break;
+					}
+				}
+				if (hasUnexpanded) {
+					Debug.log("applyTreeFilter requesting full-depth tree before filtering");
+					var tableGroupEls = document.getElementById("treeView-ConfigGroupLink").childNodes;
+					var modifiedTables = "";
+					for (var j = 0; j < treeMemberNames_.length; ++j)
+						if ((treeMemberVersions_[j] | 0) < -1) {
+							if (modifiedTables.length) modifiedTables += ",";
+							modifiedTables += treeMemberNames_[j] + "," + treeMemberVersions_[j];
+						}
+					treeViewHandlerStr_ = "";
+					treeFullDepthLoaded_ = true;
+					DesktopContent.XMLHttpRequest("Request?RequestType=getTreeView" +
+						"&tableGroup=" + tableGroupEls[0].innerHTML +
+						"&tableGroupKey=" + tableGroupEls[1].innerHTML +
+						(treeDiffModeApplied_ ?
+							("&diffGroup=" + treeDiffModeGroupName_ +
+							 "&diffGroupKey=" + treeDiffModeGroupKey_) : "") +
+						"&hideStatusFalse=" + (treeViewHideStatus_ ? 1 : 0) +
+						"&depth=-1",
+						"startPath=/" +
+						"&modifiedTables=" + modifiedTables,
+						treeViewHandler,
+						0, 0, true);
+					return;
+				}
+			}
+
 			//apply new filter
 
 			//allow OR with |
@@ -7697,58 +7783,116 @@
 			for (var j = 0; j < filterArr.length; ++j)
 				filterArr2.push(filterArr[j].trim().split('*'));
 
-			//if only one element find exact
-			//else for each non-blank component, find it one after the other..
-
-			var filterMatch;
-			for (var i = 0; i < allValues.length; ++i) {
+			//helper: test if valName matches filter (wildcards and OR, case-insensitive)
+			function matchesFilter(valName) {
+				var valNameLower = valName.toLowerCase();
 				for (var j = 0; j < filterArr2.length; ++j) {
-					filterMatch = true;
-					valName = allValues[i].innerHTML;
+					var filterMatch = true;
 					if (filterArr2[j].length == 1) {
-						if (valName != filterArr2[j][0])
+						if (valNameLower != filterArr2[j][0].toLowerCase())
 							filterMatch = false;
 					}
 					else {
 						var nextIndex = -1;
-						// for (var j = 0; j < filterArr.length; ++j)
 						for (var k = 0; k < filterArr2[j].length; ++k) {
-							Debug.log("j=" + j + " k=" + k +
-								" filterArr2[j][k]=" + filterArr2[j][k] +
-								" nextIndex=" + nextIndex);
-							if (filterArr2[j][k] == "") continue; //skip empty filters
-
-							if (k == 0) //must start with this filter
-							{
-								if ((nextIndex = valName.indexOf(filterArr2[j][k])) != 0) {
-									filterMatch = false;
-									break; //done
-								}
-							}
-							else if (k == filterArr2[j].length - 1) //must end with this filter
-							{
-								if (valName.lastIndexOf(filterArr2[j][k]) !=
-									valName.length - filterArr2[j][k].length) {
+							var filterPart = filterArr2[j][k].toLowerCase();
+							if (filterPart == "") continue;
+							if (k == 0) {
+								if ((nextIndex = valNameLower.indexOf(filterPart)) != 0) {
 									filterMatch = false;
 									break;
 								}
 							}
-							else if ((nextIndex = valName.indexOf(filterArr2[j][k], nextIndex + 1)) < 0) {
-								filterMatch = false;
-								break; //done
+							else if (k == filterArr2[j].length - 1) {
+								if (valNameLower.lastIndexOf(filterPart) !=
+									valNameLower.length - filterPart.length) {
+									filterMatch = false;
+									break;
+								}
 							}
-						} //end Wildcard loop
+							else if ((nextIndex = valNameLower.indexOf(filterPart, nextIndex + 1)) < 0) {
+								filterMatch = false;
+								break;
+							}
+						}
 					}
+					if (filterMatch) return true;
+				}
+				return false;
+			} //end matchesFilter()
 
-					if (filterMatch)
-						break; //found an OR match, so exit
-				} //end OR loop
+			//helper: walk up the DOM and expand any collapsed treeNode-Children containers
+			var autoExpandedEls = [];
+			function expandAncestors(el) {
+				var parent = el.parentNode;
+				while (parent) {
+					if (parent.classList &&
+						parent.classList.contains("treeNode-Children") &&
+						parent.style.display == "none") {
+						parent.style.display = "block";
+						var toggleId = parent.id.replace("treeNode-ChildrenOf-", "treeNode-toggle-");
+						var toggleEl = document.getElementById(toggleId);
+						if (toggleEl)
+							toggleEl.style.backgroundImage =
+								"url(/WebPath/images/windowContentImages/ConfigurationGUI-hideTree.png)";
+						autoExpandedEls.push({container: parent, toggle: toggleEl});
+					}
+					parent = parent.parentNode;
+				}
+			} //end expandAncestors()
 
-				if (!filterMatch)	//get to treeNode element
+			//search leaf field names AND field values
+			var filterMatch;
+			var anyMatch = false;
+			for (var i = 0; i < allValues.length; ++i) {
+				filterMatch = matchesFilter(allValues[i].innerHTML);
+
+				//also check the sibling field value if name didn't match
+				if (!filterMatch) {
+					var idString = allValues[i].parentNode.id.replace("treeNode-Field-title-", "");
+					var fieldValueEl = document.getElementById("treeNode-Value-leafNode-" + idString);
+					if (fieldValueEl)
+						filterMatch = matchesFilter(fieldValueEl.textContent.trim());
+				}
+
+				if (filterMatch) {
+					anyMatch = true;
+					expandAncestors(allValues[i]);
+				}
+				else
 					allValues[i].parentNode.parentNode.parentNode.style.display = "none";
 			}
 
-			treeFilterApplied_ = true;
+			//search non-leaf node names (table names, record UIDs) and expand their ancestors
+			var allNonLeafValues = document.getElementsByClassName("treeNode-Value-nonLeafNode");
+			for (var i = 0; i < allNonLeafValues.length; ++i) {
+				if (matchesFilter(allNonLeafValues[i].textContent.trim())) {
+					anyMatch = true;
+					expandAncestors(allNonLeafValues[i]);
+				}
+			}
+
+			//if no matches found, recollapse auto-expanded nodes and restore leaf visibility
+			if (!anyMatch) {
+				for (var i = 0; i < autoExpandedEls.length; ++i) {
+					autoExpandedEls[i].container.style.display = "none";
+					if (autoExpandedEls[i].toggle)
+						autoExpandedEls[i].toggle.style.backgroundImage =
+							"url(/WebPath/images/windowContentImages/ConfigurationGUI-expandTree.png)";
+				}
+				for (var i = 0; i < allValues.length; ++i) {
+					allValues[i].parentNode.parentNode.parentNode.style.display = "block";
+					if (treeViewHideInfo_) {
+						valName = allValues[i].innerHTML;
+						if (valName == "CommentDescription" ||
+							valName == "Author" ||
+							valName == "RecordInsertionTime")
+							allValues[i].parentNode.parentNode.parentNode.style.display = "none";
+					}
+				}
+			}
+
+			treeFilterApplied_ = anyMatch;
 		} //end applyTreeFilter()
 
 		//==============================================================================
@@ -8107,6 +8251,7 @@
 				treeMemberNames_ = []; //reset
 				treeMemberVersions_ = []; //reset
 				treeMemberComments_ = []; //reset
+				treeFullDepthLoaded_ = false;
 			}
 
 
@@ -18719,62 +18864,6 @@
 		} //end popUpVersionAliasSpecificGroupForm()
 
 		//==============================================================================
-		//popUpFilterTreeForm
-		function popUpFilterTreeForm() {
-			Debug.log("CfgGUI popUpFilterTreeForm");
-
-			var str = "";
-
-			var el = document.getElementById("popUpDialog");
-			if (!el) {
-				el = document.createElement("div");
-				el.setAttribute("id", "popUpDialog");
-			}
-			el.style.display = "none";
-
-			//set position and size
-			var w = 300;
-			var h = 200;
-			ConfigurationAPI.setPopUpPosition(el, w /*w*/, h /*h*/);
-
-			Debug.log("Previous filter = " + lastTreeFilter_);
-			var defaultFilter = (!lastTreeFilter_ || lastTreeFilter_ == "") ? "*Port*" : lastTreeFilter_;
-
-			var str = "<a id='" +
-				"popUpDialog" +
-				"-header' onclick='var el = document.getElementById(" +
-				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); return false;'>Cancel</a><br><br>";
-
-			str += "<div id='popUpDialog-div'>";
-			str += "Please enter the filter (Note: * may be used as a wildcard, | may be used as an OR to include multiple wildcard needles) to select which values are " +
-				"shown in the tree:<br><br>";
-			str += "<input type='text' id='popUpDialog-filter' value='" +
-				encodeHTML(defaultFilter) + "'></input>";
-			str += "</div><br><br>";
-
-			var onmouseupJS = "";
-			onmouseupJS += "applyTreeFilter(" +
-				"document.getElementById(\"popUpDialog-filter\").value" +
-				"); ";
-			onmouseupJS += "var el = document.getElementById(" +
-				"\"popUpDialog\"); if(el) el.parentNode.removeChild(el); ";
-
-			str += "<input type='button' onmouseup='" + onmouseupJS + "' " +
-				"value='Filter Values' title='" +
-				"Select the Alias in the drop-down for all tables." +
-				"'/>";
-			el.innerHTML = str;
-
-
-			document.getElementById("display").appendChild(el); //add element to display div
-			el.style.display = "block";
-
-			//select comment text
-			ConfigurationAPI.setCaretPosition(document.getElementById("popUpDialog-filter"),
-				0, defaultFilter.length);
-		} //end popUpFilterTreeForm()
-
-		//==============================================================================
 		//popUpVersionAliasGroupEditorForm
 		function popUpVersionAliasGroupEditorForm() {
 			Debug.log("CfgGUI popUpVersionAliasGroupEditorForm");
@@ -22145,9 +22234,6 @@
 				treeViewHideStatus_ ?
 					"Show Nodes w/Status=False" :
 					"Hide Nodes w/Status=False",
-				treeFilterApplied_ ?
-					"Clear Tree View Filter" :
-					"Filter Tree View Values",
 				treeViewHideInfo_ ?
 					"Show Info Fields" :
 					"Hide Info Fields",
@@ -22178,7 +22264,6 @@
 				"toggleGroupDetails()",
 				"treeViewHideStatus_ = !treeViewHideStatus_;" +
 				refreshLinkStr,
-				"treeFilterApplied_?applyTreeFilter():popUpFilterTreeForm()",
 				"treeViewHideInfo_ = !treeViewHideInfo_; " +
 				"applyTreeFilter('',0,1)",
 				"toggleInlineKVFormatting()",
