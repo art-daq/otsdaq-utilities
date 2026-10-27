@@ -3,6 +3,8 @@
 #include "otsdaq/FiniteStateMachine/MakeRunInfo.h"        // for Run Info plugin macro
 #include "otsdaq/FiniteStateMachine/RunInfoVInterface.h"  // for Run Info plugins
 
+#include <chrono>
+
 using namespace ots;
 
 #define XML_ADMIN_STATUS "rundbviewer_admin_status"
@@ -27,6 +29,8 @@ using namespace ots;
 #define XML_RUNDBVIEWER_ENTRY_RUN_SHIFTER_NOTE "shifter_note"
 #define XML_RUNDBVIEWER_ENTRY_RUN_START_TIME "start_time"
 #define XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME "stop_time"
+#define XML_RUNDBVIEWER_ENTRY_RUN_STATUS "run_status"
+#define XML_RUNDBVIEWER_ENTRY_RUN_END_NOTE "end_note"
 #define XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD "subsystem_config_record"
 
 XDAQ_INSTANTIATOR_IMPL(RunDbViewerSupervisor)
@@ -91,7 +95,7 @@ void RunDbViewerSupervisor::forceSupervisorPropertyValues()
 	    "RefreshRunDbViewer | getRunConditionByID");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NonXMLRequestTypes,
-	    "LogImage | LogReport");
+	    "RunConditionReport");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.RequireUserLockRequestTypes,
 	    "CreateCategory | RemoveCategory | PreviewEntry | AdminRemoveRestoreEntry");
@@ -170,22 +174,196 @@ void RunDbViewerSupervisor::nonXmlRequest(const std::string& requestType,
                                           const WebUsers::RequestUserInfo& /*userInfo*/)
 {
 	// Commands
-	// LogImage
-	// LogReport
+	// RunConditionReport
 
-	if(requestType == "LogImage")
+	if(requestType == "RunConditionReport")
 	{
-		std::string src = CgiDataUtilities::getData(cgiIn, "src");
-		__COUT__ << " Get Log Image " << src << std::endl;
+		// Served as plain HTML: the per-subsystem condition blobs are ~1 MB of JSON,
+		// far too large to push through the XML response escaper.
+		uint64_t    runNumber  = CgiDataUtilities::getDataAsUint64_t(cgiIn, "run");
+		std::string pluginName = CgiDataUtilities::getData(cgiIn, "runInfoPluginName");
+		std::string runInfoUID = CgiDataUtilities::getData(cgiIn, "runInfoPluginUID");
 
-		out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
-		       "src='/WebPath/html/RunDbViewerImage.html?urn="
-		    << this->getApplicationDescriptor()->getLocalId() << "&src=" << src
-		    << "'></frameset></html>";
+		auto htmlEscape = [](const std::string& s) {
+			std::string o;
+			o.reserve(s.size() + s.size() / 16);
+			for(char c : s)
+				switch(c)
+				{
+				case '&':
+					o += "&amp;";
+					break;
+				case '<':
+					o += "&lt;";
+					break;
+				case '>':
+					o += "&gt;";
+					break;
+				default:
+					o += c;
+				}
+			return o;
+		};
+
+		// JSON goes into <script type=application/json> blocks; '<' is escaped as
+		// < (valid JSON) so a blob can never terminate the script element.
+		auto jsonForScript = [](const std::string& s) {
+			std::string o;
+			o.reserve(s.size() + 64);
+			for(char c : s)
+				if(c == '<')
+					o += "\\u003c";
+				else
+					o += c;
+			return o;
+		};
+
+		out << "<!DOCTYPE HTML><html lang='en'><head><meta charset='utf-8'><title>Run "
+		    << runNumber
+		    << " conditions</title><style>"
+		       "body{background:#5a4d3f;color:rgb(255,230,204);font-family:sans-serif;"
+		       "padding:12px}"
+		       "h1{margin:0 0 12px 0}h2{color:orange;margin:24px 0 4px 0}"
+		       "h2 span{font-size:14px;color:rgb(255,230,204)}"
+		       "nav a{color:rgb(180,207,237);margin-right:14px}"
+		       "a.top,a.tool{color:rgb(180,207,237);font-size:13px;font-weight:normal;"
+		       "margin-left:14px;text-decoration:none;cursor:pointer}"
+		       "a.tool:hover,a.top:hover{text-decoration:underline}"
+		       ".tree{background:rgba(0,0,0,0.3);padding:8px 12px;border-radius:6px;"
+		       "font-family:monospace;font-size:12px;line-height:1.5}"
+		       ".tree details{margin-left:0}"
+		       ".tree details>div{margin-left:1.6em;border-left:1px solid "
+		       "rgba(255,230,204,0.15);"
+		       "padding-left:6px}"
+		       ".tree summary{cursor:pointer;list-style:none}"
+		       ".tree summary::before{content:'\\25B8';display:inline-block;width:1.1em;"
+		       "color:rgb(180,207,237)}"
+		       ".tree details[open]>summary::before{content:'\\25BE'}"
+		       ".tree .k{color:rgb(255,183,74)}"
+		       ".tree .n{color:#9fd3ff}.tree .s{color:#d8e8a8}.tree .b{color:#f3a6ff}"
+		       ".tree .z{color:#999;font-style:italic}"
+		       ".tree .c{color:#aaa;font-size:11px;margin-left:6px}"
+		       ".tree .leaf{padding-left:1.1em;word-break:break-all;white-space:pre-wrap}"
+		       ".tree pre.raw{white-space:pre-wrap;word-break:break-all;margin:0}"
+		       "</style></head><body>";
+		out << "<h1 id='top'>Run " << runNumber << " conditions</h1>";
+
+		std::vector<std::vector<std::string>> conditionRecords;
+		try
+		{
+			std::unique_ptr<RunInfoVInterface> runInfoInterface(
+			    makeRunInfo(pluginName, runInfoUID));
+			if(runInfoInterface == nullptr)
+			{
+				__SS__ << "runInfo Db interface plugin construction failed of "
+				       << pluginName << __E__;
+				__SS_THROW__;
+			}
+			conditionRecords = runInfoInterface->getRunConditionByID(runNumber);
+		}
+		catch(const std::exception& e)
+		{
+			out << "<p style='color:#f66'>Error: " << htmlEscape(e.what())
+			    << "</p></body></html>";
+			return;
+		}
+
+		out << "<nav>";
+		for(const auto& rec : conditionRecords)
+			out << "<a href='#" << htmlEscape(rec[0]) << "'>" << htmlEscape(rec[0])
+			    << "</a>";
+		out << "</nav>";
+
+		for(const auto& rec : conditionRecords)
+		{
+			const std::string sub = htmlEscape(rec[0]);
+			out << "<h2 id='" << sub << "'>" << sub << " <span>" << htmlEscape(rec[1])
+			    << "</span>"
+			    << "<a class='top' href='#top' title='Back to top'>&#8679; top</a>"
+			    << "<a class='tool' onclick=\"expandAll('" << sub << "')\">expand all</a>"
+			    << "<a class='tool' onclick=\"collapseAll('" << sub
+			    << "')\">collapse all</a>"
+			    << "<a class='tool' onclick=\"toggleRaw('" << sub << "')\">raw</a></h2>"
+			    << "<script type='application/json' id='json-" << sub << "'>"
+			    << jsonForScript(rec[2]) << "</script>"
+			    << "<div class='tree' id='tree-" << sub << "'></div>";
+		}
+
+		// Collapsible JSON tree. Children are built lazily on first open so the
+		// ~1 MB trigger blob does not create 100k DOM nodes up front.
+		out << R"JS(<script>
+function fmtLeaf(v){
+  if(v===null) return "<span class='z'>null</span>";
+  switch(typeof v){
+    case 'number': return "<span class='n'>"+v+"</span>";
+    case 'boolean': return "<span class='b'>"+v+"</span>";
+    default: return "<span class='s'>"+JSON.stringify(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')+"</span>";
+  }
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function buildNode(key, val, depth){
+  var isObj = val!==null && typeof val==='object';
+  var keyHtml = key===null ? '' : "<span class='k'>"+esc(key)+"</span>: ";
+  if(!isObj){
+    var d=document.createElement('div'); d.className='leaf';
+    d.innerHTML = keyHtml + fmtLeaf(val); return d;
+  }
+  var isArr = Array.isArray(val), keys = isArr ? null : Object.keys(val);
+  var n = isArr ? val.length : keys.length;
+  var det=document.createElement('details');
+  var sum=document.createElement('summary');
+  sum.innerHTML = keyHtml + (isArr?'[':'{') + "<span class='c'>"+n+(isArr?' items':' keys')+"</span>" + (isArr?']':'}');
+  det.appendChild(sum);
+  var body=document.createElement('div'); det.appendChild(body);
+  det._built=false; det._val=val; det._isArr=isArr; det._depth=depth;
+  det.addEventListener('toggle', function(){ if(det.open) fillNode(det); });
+  if(depth<1){ det.open=true; fillNode(det); }
+  return det;
+}
+function fillNode(det){
+  if(det._built) return; det._built=true;
+  var val=det._val, body=det.lastChild, frag=document.createDocumentFragment();
+  if(det._isArr){ for(var i=0;i<val.length;++i) frag.appendChild(buildNode(i,val[i],det._depth+1)); }
+  else { Object.keys(val).sort().forEach(function(k){ frag.appendChild(buildNode(k,val[k],det._depth+1)); }); }
+  body.appendChild(frag);
+}
+function renderTree(sub){
+  var tree=document.getElementById('tree-'+sub);
+  var txt=document.getElementById('json-'+sub).textContent;
+  var obj; try{ obj=JSON.parse(txt); }catch(e){ tree.innerHTML="<pre class='raw'>"+esc(txt)+"</pre>"; return; }
+  tree._obj=obj; tree._raw=false; tree.innerHTML='';
+  tree.appendChild(buildNode(null,obj,0));
+}
+function setAll(sub, open){
+  var tree=document.getElementById('tree-'+sub);
+  if(tree._raw) return;
+  var pending=[tree], d;
+  while(pending.length){
+    d=pending.pop();
+    var dets=d.querySelectorAll(':scope > details, :scope > div > details');
+    for(var i=0;i<dets.length;++i){
+      if(open){ fillNode(dets[i]); dets[i].open=true; pending.push(dets[i].lastChild); }
+      else { dets[i].open=false; pending.push(dets[i].lastChild); }
+    }
+  }
+}
+function expandAll(sub){ setAll(sub,true); }
+function collapseAll(sub){ setAll(sub,false); var t=document.getElementById('tree-'+sub); var top=t.querySelector(':scope > details'); if(top) top.open=true; }
+function toggleRaw(sub){
+  var tree=document.getElementById('tree-'+sub);
+  if(tree._raw){ renderTree(sub); return; }
+  tree._raw=true; tree.innerHTML="<pre class='raw'>"+esc(JSON.stringify(tree._obj,null,2))+"</pre>";
+}
+document.querySelectorAll("script[type='application/json']").forEach(function(s){ renderTree(s.id.substr(5)); });
+</script>)JS";
+
+		out << "</body></html>";
+		__COUT__ << "RunConditionReport for run " << runNumber
+		         << " records = " << conditionRecords.size() << __E__;
 	}
 	else
 		__COUT__ << "requestType request not recognized." << std::endl;
-}  //end request()
+}  //end nonXmlRequest()
 
 //==============================================================================
 /// getRunTypeList
@@ -271,14 +449,18 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 		__SS_THROW__;
 	}
 
+	auto                                  dbStart = std::chrono::steady_clock::now();
 	std::vector<std::vector<std::string>> runRecords =
 	    runInfoInterface->getRunRecords(startTime, endTime, "", runType);
-	std::vector<std::vector<std::string>> subsystemConfigRecords;
+	__COUT__ << "getRunRecords: " << runRecords.size() << " runs in "
+	         << std::chrono::duration<double>(std::chrono::steady_clock::now() - dbStart)
+	                .count()
+	         << " s" << __E__;
 
 	if(xmlOut)
 	{
 		int i = 0;
-		for(auto runData : runRecords)
+		for(const auto& runData : runRecords)
 		{
 			auto entryEl =
 			    xmlOut->addTextElementToData(XML_RUNDBVIEWER_ENTRY, runData[0]);
@@ -310,56 +492,39 @@ void RunDbViewerSupervisor::refreshRunDbViewer(time_t              date,
 			    XML_RUNDBVIEWER_ENTRY_RUN_START_TIME, runData[7], entryEl);
 			xmlOut->addTextElementToParent(
 			    XML_RUNDBVIEWER_ENTRY_RUN_STOP_TIME, runData[8], entryEl);
-			__COUT__ << "xmlOut getMatchingValue "
-			         << xmlOut->getMatchingValue(XML_RUNDBVIEWER_ENTRY, i) << __E__;
+			xmlOut->addTextElementToParent(
+			    XML_RUNDBVIEWER_ENTRY_RUN_STATUS, runData[9], entryEl);
+			if(runData.size() > 11)
+				xmlOut->addTextElementToParent(
+				    XML_RUNDBVIEWER_ENTRY_RUN_END_NOTE, runData[11], entryEl);
 			i++;
 
-			__COUT__ << "Number of cycles: " << i << __E__;
-
-			try
+			// runData[10] (if the plugin supplies it): ';'-separated subsystems, each
+			// 'sub|alias|cfgName|cfgKey|ctxName|ctxKey|bbName|bbKey'. One compact node
+			// per subsystem keeps the XML node count (and output time) low.
+			if(runData.size() > 10 && !runData[10].empty())
 			{
-				subsystemConfigRecords =
-				    runInfoInterface->getRunConfigSubsystemInfo(std::stoul(runData[5]));
+				const std::string& all = runData[10];
+				size_t             b   = 0;
+				while(b < all.size())
+				{
+					size_t e = all.find(';', b);
+					if(e == std::string::npos)
+						e = all.size();
+					if(e > b)
+						xmlOut->addTextElementToParent(
+						    XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD,
+						    all.substr(b, e - b),
+						    entryEl);
+					b = e + 1;
+				}
 			}
-			catch(const std::exception& e)
-			{
-				__COUT__ << "Error getting subsystem configuration info" << __E__;
-				__COUT__ << e.what() << __E__;
-			}
-
-			std::string rows;
-			for(auto subsystemConfRecord : subsystemConfigRecords)
-			{
-				rows.append("<config_record config_record_id= " + subsystemConfRecord[0] +
-				            ">");
-				rows.append("<config_id>" + subsystemConfRecord[0] + "</config_id>");
-				rows.append("<subsystem_id>" + subsystemConfRecord[1] +
-				            "</subsystem_id>");
-				rows.append("<subsystem_config_data>" + subsystemConfRecord[2] +
-				            "</subsystem_config_data>");
-				rows.append("<config_alias>" + subsystemConfRecord[3] +
-				            "</config_alias>");
-				rows.append("<context_name>" + subsystemConfRecord[4] +
-				            "</context_name>");
-				rows.append("<context_key>" + subsystemConfRecord[5] + "</context_key>");
-				rows.append("<context_group_name>" + subsystemConfRecord[6] +
-				            "</context_group_name>");
-				rows.append("<config_group_key>" + subsystemConfRecord[7] +
-				            "</config_group_key>");
-				rows.append("<backbone_name>" + subsystemConfRecord[8] +
-				            "</backbone_name>");
-				rows.append("<backbone_name>" + subsystemConfRecord[9] +
-				            "</backbone_name>");
-				rows.append("<config_db_uri>" + subsystemConfRecord[10] +
-				            "</config_db_uri>");
-				rows.append("<subsystem_sw_version_id>" + subsystemConfRecord[11] +
-				            "</subsystem_sw_version_id>");
-				rows.append("<create_time>" + subsystemConfRecord[12] + "</create_time>");
-				rows.append("</config_record>");
-			}
-			xmlOut->addTextElementToParent(
-			    XML_RUNDBVIEWER_ENTRY_SUBSYSTEM_CONFIG_RECORD, rows, entryEl);
 		}
+		__COUT__ << "refreshRunDbViewer built xml for " << i << " runs; total "
+		         << std::chrono::duration<double>(std::chrono::steady_clock::now() -
+		                                          dbStart)
+		                .count()
+		         << " s" << __E__;
 	}
 }  //end refreshRunDbViewer()
 
@@ -392,13 +557,16 @@ void RunDbViewerSupervisor::getRunConditionByID(uint64_t           condition_ID,
 	{
 		xmlOut->addTextElementToData("condition_id", std::to_string(condition_ID));
 
+		// Mu2e: one record per subsystem [subsystem, create_time, settings JSON]
 		std::vector<std::vector<std::string>> conditionRecords =
 		    runInfoInterface->getRunConditionByID(condition_ID);
 		int i = 0;
-		for(auto conditionRecord : conditionRecords)
+		for(const auto& rec : conditionRecords)
 		{
-			xmlOut->addTextElementToData("blob", conditionRecord[0]);
-			xmlOut->addTextElementToData("commit_time", conditionRecord[1]);
+			auto recEl = xmlOut->addTextElementToData("condition_record", rec[0]);
+			xmlOut->addTextElementToParent("subsystem", rec[0], recEl);
+			xmlOut->addTextElementToParent("commit_time", rec[1], recEl);
+			xmlOut->addTextElementToParent("blob", rec[2], recEl);
 			i++;
 		}
 

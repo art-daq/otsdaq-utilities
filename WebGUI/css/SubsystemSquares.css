@@ -39,8 +39,45 @@
 			float: left;
 			border-radius: 5px;
 			cursor: pointer;
-			overflow-x: auto;
-			overflow-y: hidden;
+			position: relative; /* anchor for .subsystem_detail */
+			overflow: hidden; /* truncate, no scroll bars */
+		}
+		.subsystem_detail {
+			position: absolute;
+			bottom: 2px;
+			left: 5px;
+			right: 5px;
+			font-size: 14px;
+			/* follow the square's state-dependent text color and shadow (white+shadow
+			   on colored/dark squares, black on light ones) so the detail stays
+			   readable on every background, including darkred error squares */
+			color: inherit;
+			text-shadow: inherit;
+			cursor: pointer;
+		}
+		.subsystem_detail_line {
+			height: 17px; /* must match _DETAIL_HEIGHT in js */
+			line-height: 17px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		/* transition progress bar, behind text (like SubsystemLaunch.css) */
+		.progressBar {
+			background-color: rgb(0,205,30);
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			z-index: 1;
+			display: none;
+		}
+		/* text above progress bar */
+		.subsystem_name, .subsystem_console, .subsystem_status, .subsystem_detail {
+			z-index: 2;
+		}
+		.subsystem_name, .subsystem_console {
+			position: relative;
 		}
 
 		.subsystem_name, .subsystem_console {

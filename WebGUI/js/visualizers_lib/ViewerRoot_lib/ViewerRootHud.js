@@ -46,6 +46,13 @@ ViewerRoot.createHud = function() {
     //structure is embedded tuples [<file type>,<name>,<embedded directory contents> or <root file content> for file, <parent ptr>]
     var currDirPtr = dirStruct[0]; //pointer to the directory level that is currently displayed
 
+    //The live entry keeps its internal name (saved views and other pages depend on it)
+    //	but is shown under a friendlier label.
+    var LIVEDQM_ROOT = "LIVE_DQM.root";
+    var LIVEDQM_LABEL = "LIVE VIEW";
+    var displayName = function(name) { return name == LIVEDQM_ROOT ? LIVEDQM_LABEL : name; };
+    var displayPath = function(path) { return path.split(LIVEDQM_ROOT).join(LIVEDQM_LABEL); };
+
     this.handleWindowResize = function() {
 	//Debug.log("ViewerRoot Hud handleWindowResize");
 
@@ -154,7 +161,9 @@ ViewerRoot.createHud = function() {
 	DesktopContent.XMLHttpRequest("Request?RequestType=setUserPreferences&radioSelect="+i);
     } //end radioSelect()
 
-    this.handleDirContents = function(req) {
+    //	navigate: true when the user clicked into this directory (changeDirectory), false
+    //		when it was merely expanded in place.
+    this.handleDirContents = function(req, navigate) {
 	Debug.log("ViewerRoot Hud handleDirContents " + req.responseText);
 
 	var path = DesktopContent.getXMLValue(req,'path');
@@ -191,6 +200,21 @@ ViewerRoot.createHud = function() {
 	    baseDir[TUPLE_CONTENT][baseDir[TUPLE_CONTENT].length] = [TUPLE_TYPE_FILE,files[i].getAttribute("value").replace(/[\/]+/g, ''),0,baseDir];
 
 	//Debug.log("ViewerRoot Hud handleDirContents baseDir " + baseDir);
+
+	//Shortcut: the user clicked into a directory that holds exactly one plot and
+	//	nothing else (e.g. a live-DQM histogram group). Open the plot straight away
+	//	and stay in the parent listing, with the group expanded, instead of showing
+	//	a page with a single entry that needs a second click.
+	if(navigate && dirs.length == 0 && files.length == 1 && baseDir[TUPLE_PARENT] &&
+	   path.indexOf(".root/") >= 0)
+	{
+	    var filePath = path + baseDir[TUPLE_CONTENT][0][TUPLE_NAME];
+	    Debug.log("ViewerRoot Hud handleDirContents single-plot directory, opening " + filePath);
+	    currDirPtr = baseDir[TUPLE_PARENT];
+	    redrawDirectoryDisplay();
+	    ViewerRoot.rootReq(filePath);
+	    return;
+	}
 
 	redrawDirectoryDisplay();
     } //end handleDirContents()
@@ -302,9 +326,10 @@ ViewerRoot.createHud = function() {
 	    applyStr = true;
 	    //Debug.log("ViewerRoot Hud redrawDirectoryDisplay FIRST path " + path);
 
-	    locPath = path.length>DIR_BRW_HDR_MAX_SIZE?("..." + path.substr(path.length-DIR_BRW_HDR_MAX_SIZE+3)):path;
+	    var shownPath = displayPath(path);
+	    locPath = shownPath.length>DIR_BRW_HDR_MAX_SIZE?("..." + shownPath.substr(shownPath.length-DIR_BRW_HDR_MAX_SIZE+3)):shownPath;
 	    str += "<div id='ViewerRoot-hudDirBrowser-header'>";
-	    str += "<a title='Refresh\n" + path + "'  style='float:left'  href='Javascript:ViewerRoot.hud.changeDirectory(\"" +
+	    str += "<a title='Refresh\n" + shownPath + "'  style='float:left'  href='Javascript:ViewerRoot.hud.changeDirectory(\"" +
 		path + "\");'>" + locPath + "</a>";
 	    str += "<a title='Change to Parent Directory' style='float:right' href='Javascript:ViewerRoot.hud.changeDirectory(\"" +
 		getPath(currDirPtr[TUPLE_PARENT]) + "\");'> cd .. </a>";
@@ -322,15 +347,15 @@ ViewerRoot.createHud = function() {
 	    dirClr = currDir[TUPLE_CONTENT][i][TUPLE_NAME].indexOf(".root") >= 0?"#B9E6E6":"gray";
 	    if(currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR_EXPANDED)  //dir currently expanded, so action is to minimize it
 	    {
-		str += "<a title='Collapse Directory\n" + locPath + "' href='Javascript:ViewerRoot.hud.collapseDirectory(\"" + locPath + "\");'> + </a> ";
+		str += "<a title='Collapse Directory\n" + displayPath(locPath) + "' href='Javascript:ViewerRoot.hud.collapseDirectory(\"" + locPath + "\");'> + </a> ";
 
-		str += "<a title='Change Directory\n" + locPath + "' style='color:" + dirClr + "' href='Javascript:ViewerRoot.hud.changeDirectory(\"" + locPath + "\");'>" + currDir[TUPLE_CONTENT][i][TUPLE_NAME] + "</a>";
+		str += "<a title='Change Directory\n" + displayPath(locPath) + "' style='color:" + dirClr + "' href='Javascript:ViewerRoot.hud.changeDirectory(\"" + locPath + "\");'>" + displayName(currDir[TUPLE_CONTENT][i][TUPLE_NAME]) + "</a>";
 	    }
 	    else if(currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_DIR)  //dir currently minimized, so action is to expand it
 	    {
-		str += "<a title='Expand Directory\n" + locPath + "' style='color:gray' href='Javascript:ViewerRoot.getDirectoryContents(\"" + locPath + "\");'> - </a> ";
+		str += "<a title='Expand Directory\n" + displayPath(locPath) + "' style='color:gray' href='Javascript:ViewerRoot.getDirectoryContents(\"" + locPath + "\");'> - </a> ";
 
-		str += "<a title='Change Directory\n" + locPath + "' style='color:" + dirClr + "' href='Javascript:ViewerRoot.hud.changeDirectory(\"" + locPath + "\");'>" + currDir[TUPLE_CONTENT][i][TUPLE_NAME] + "</a>";
+		str += "<a title='Change Directory\n" + displayPath(locPath) + "' style='color:" + dirClr + "' href='Javascript:ViewerRoot.hud.changeDirectory(\"" + locPath + "\");'>" + displayName(currDir[TUPLE_CONTENT][i][TUPLE_NAME]) + "</a>";
 	    }
 	    else if(currDir[TUPLE_CONTENT][i][TUPLE_TYPE] & TUPLE_TYPE_FILE)	//file, so action is to launch it
 	    {
@@ -426,9 +451,23 @@ ViewerRoot.createHud = function() {
 	}
 	else {
 	    currDirPtr = findDir(dirPath);
-	    ViewerRoot.getDirectoryContents(dirPath);
+	    ViewerRoot.getDirectoryContents(dirPath, true /*navigate*/);
 	}
     } // end currStateRequestHandler()
+
+    // onLiveStateChange ~~
+    //	called from the status poll when the data manager starts or stops taking data.
+    //	The LIVE entry exists in the root listing only while running, so refresh it, and
+    //	leave the live tree if we are inside it when the run ends.
+    this.onLiveStateChange = function(ready) {
+	var shownPath = getPath(currDirPtr);
+	Debug.log("ViewerRoot Hud onLiveStateChange ready=" + ready + " at " + shownPath);
+	if(!ready && shownPath.indexOf("/" + LIVEDQM_ROOT + "/") == 0)
+	    this.changeDirectory("/");
+	else if(shownPath == "/")
+	    ViewerRoot.getDirectoryContents("/");
+	//else the user is elsewhere; the root listing is fetched again on the next cd
+    } // end onLiveStateChange()
 
     // changeDirectory ~~
     this.changeDirectory = function(dirPath) {
@@ -448,7 +487,7 @@ ViewerRoot.createHud = function() {
 	    );
 	} else {
 	    currDirPtr = findDir(dirPath);
-	    ViewerRoot.getDirectoryContents(dirPath);
+	    ViewerRoot.getDirectoryContents(dirPath, true /*navigate*/);
 	}
     } // end changeDirectory()
 

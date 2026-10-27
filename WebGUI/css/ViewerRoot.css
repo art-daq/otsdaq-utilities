@@ -81,6 +81,47 @@
 		left: 0;
 	}
 
+	/* data-path throughput strip, occupies the 20px band above the plot tiles */
+	#ViewerRoot-dataStatus {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 18px;
+		line-height: 18px;
+		padding: 0 4px;
+		overflow: hidden;
+		white-space: nowrap;
+		font-family: monospace;
+		font-size: 12px;
+		color: rgb(210,210,210);
+		background-color: rgba(50,50,50,0.9);
+		z-index: 50;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		user-select: none;
+	}
+	#ViewerRoot-dataStatus b { color: white; font-weight: bold; }
+	.ViewerRoot-statusBad  { color: rgb(255,120,120); font-weight: bold; }
+	.ViewerRoot-statusIdle { color: rgb(180,180,120); }
+
+	/* fixed-width columns; widths sized for the longest expected content in 12px mono */
+	.ViewerRoot-statusField {
+		display: inline-block;
+		overflow: hidden;
+		white-space: nowrap;
+		vertical-align: top;
+		border-right: 1px solid rgb(90,90,90);
+		margin-right: 6px;
+		padding-right: 6px;
+	}
+	.ViewerRoot-statusF-run     { width: 175px; }  /* "run 124639 22:12 +1.5h" */
+	.ViewerRoot-statusF-rate    { width: 205px; }  /* "drain 123.45 MB/s 1234 hist/s" */
+	.ViewerRoot-statusF-busy    { width: 120px; }  /* "unpack 100% busy" */
+	.ViewerRoot-statusF-backlog { width: 210px; }  /* "backlog 123.45 MB 100/100 buf" */
+	.ViewerRoot-statusF-senders { width:  75px; }
+	.ViewerRoot-statusF-stream  { width:  95px; }  /* "CaloDQM 12.3m" */
+	.ViewerRoot-statusF-flags   { width: 165px; border-right: none; }
+
 	#reportContainer * {
 		-webkit-user-select: 	none;
 		-moz-user-select: 		none;

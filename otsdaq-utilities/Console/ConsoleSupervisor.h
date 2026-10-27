@@ -349,6 +349,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	size_t 			errorCount_ = 0, warnCount_ = 0, infoCount_ = 0;
 	std::string 	lastErrorMessage_, lastWarnMessage_, lastInfoMessage_, firstErrorMessage_, firstWarnMessage_, firstInfoMessage_;
 	time_t			lastErrorMessageTime_ = 0, lastWarnMessageTime_ = 0, lastInfoMessageTime_ = 0, firstErrorMessageTime_ = 0, firstWarnMessageTime_ = 0, firstInfoMessageTime_ = 0;
+	time_t			lastTriggeredSystemMessageTime_ = 0;
 };
 
 // clang-format on
