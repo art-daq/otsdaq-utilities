@@ -7804,8 +7804,9 @@
 								}
 							}
 							else if (k == filterArr2[j].length - 1) {
-								if (valNameLower.lastIndexOf(filterPart) !=
-									valNameLower.length - filterPart.length) {
+								var suffixIndex = valNameLower.lastIndexOf(filterPart);
+								if (suffixIndex === -1 ||
+									suffixIndex != valNameLower.length - filterPart.length) {
 									filterMatch = false;
 									break;
 								}
