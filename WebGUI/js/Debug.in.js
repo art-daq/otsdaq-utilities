@@ -342,16 +342,24 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 
 
 					//modify string for popup
+
+					//truncate raw text BEFORE callout decoration so the
+					//character budget counts message text, not injected HTML
+					var rawPopupString = source + str;
+					var popupTruncationLength = Debug._errTruncLen !== undefined ?
+						Debug._errTruncLen : Debug._ERR_TRUNCATION_LENGTH;
+					if (popupTruncationLength != -1 &&
+						rawPopupString.length > popupTruncationLength) {
+						rawPopupString = rawPopupString.substr(0, popupTruncationLength) +
+							"\n...<<< MESSAGE TRUNCATED >>>";
+					}
+
 					let returnStr;
-					returnStr = Debug.callOutDebugLocales(
-						source + str);
+					returnStr = Debug.callOutDebugLocales(rawPopupString);
 					if (returnStr) //in case of failure, leave alone (avoid copy)
 						str = returnStr;
-						// str = returnStr.replace(/<INDENT>/g, //copied from DesktopContent.tooltipConditionString
-						//     "<div style='margin-left:60px;'>").replace(/<\/INDENT>/g,
-						//         "</div>").replace(/<TAB>/g,
-						//             "<div style='margin-left:60px;'>").replace(/<\/TAB>/g,
-						//                 "</div>");
+					else
+						str = rawPopupString;
 					Debug.errorPop(str, num);
 				}
 				Debug.lastLogger = ""; //clear for next
@@ -395,7 +403,7 @@ Debug._errBoxOffPosSv = [0,0,0,0];
 
 
 Debug._AVOID_TITLE_NEW_LINE_LENGTH = ("title='Open file in a new browser tab: \n").length;
-Debug._ERR_TRUNCATION_LENGTH = 15000;
+Debug._ERR_TRUNCATION_LENGTH = 30000;
 
 //=====================================================================================
 //Note: effectively doing this: str.replace(/\n/g , "<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -1213,7 +1221,7 @@ Debug.callOutDebugLocales = function (str) {
 							true /*doCloseTag*/);
 							returnStr += "<span style='cursor:pointer; margin:5px'" +
 								"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-								"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+								"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 								"</span>";
 
 					i = ff + fileFlagEnd[fi].length; //proceed after filename
@@ -1298,7 +1306,7 @@ Debug.callOutDebugLocales = function (str) {
 						true /*doCloseTag*/);
 						returnStr += "<span style='cursor:pointer; margin:5px'" +
 							"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-							"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+							"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 							"</span>";
 
 				//add end label
@@ -1351,7 +1359,7 @@ Debug.callOutDebugLocales = function (str) {
 					true /*doCloseTag*/);
 					returnStr += "<span style='cursor:pointer; margin:5px'" +
 						"title='Copy path' onclick=\"Debug.copyPathToClipboard('" + fileStr + "')\">" +
-						"<img style='width:10px; height:auto;' src='/WebPath/images/windowContentImages/Debug-copyPath.png'>" +
+						"<img style='width:10px; height:auto;' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURffKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdPfKdP///zmy/KkAAAAOdFJOUwAIeoFcAQaEmWdglvcC4KxC0gAAAAFiS0dEDxi6ANkAAAAHdElNRQfqAwkTNwdRoI+gAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI2LTAzLTA5VDE5OjQ1OjU0KzAwOjAw8IXNKgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNi0wMy0wOVQxOTo0NTo1NCswMDowMIHYdZYAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjYtMDMtMDlUMTk6NTU6MDcrMDA6MDBuS59wAAAASElEQVQI12NgYGDUewcCBgwMDCxg1rsHQCbDOxARB2QmIJhJRSDQAGSyQTRNAIm+oxdz3jskpgFcAdi1YLAAxNwHYr25wMAAAK6nf4SbQAfFAAAAAElFTkSuQmCC'>" +
 						"</span>";
 
 			i = ff + ("</FILE>").length; //proceed after filename

@@ -531,6 +531,7 @@
 		var delayBetweenMacros = 0;
 		var isSequenceRunning = false;
 		var pauseSequenceFlag = false;
+		var pausedByErrorFlag = false; // MoM halted because a step failed; Play asks before resuming
 		var stopSequenceFlag = false;
 		var sequenceVariables_ = {};
 		var iterationCount_ = 1;
@@ -1179,6 +1180,7 @@
 					var cb = _sequenceOnComplete;
 					_sequenceOnComplete = null;
 					pauseSequenceFlag = true;
+					pausedByErrorFlag = true;
 					cb();
 					statusActionButtons(false);
 				}
@@ -5407,7 +5409,16 @@ Here is the json string received:
 			}
 			else if (!isSequenceRunning && pauseSequenceFlag) {
 				// Logic for resuming from a paused state
+				if (pausedByErrorFlag) {
+					var totalSteps = Object.keys(selectedSequence_).length;
+					if (!confirm("The MoM halted because a step failed.\n\n" +
+							"Are you sure you want to continue where it left off (" +
+							(currentIndex + 1) + "/" + totalSteps + ")?\n\n" +
+							"If not, press Cancel, then hit the Stop button to start from the beginning."))
+						return;
+				}
 				pauseSequenceFlag = false;
+				pausedByErrorFlag = false;
 			}
 			else if (!isSequenceRunning) {
 				// Starting a new sequence
@@ -5665,6 +5676,7 @@ Here is the json string received:
 			Debug.log("onClickStopSequence()");
 			stopSequenceFlag = true;
 			pauseSequenceFlag = false;
+			pausedByErrorFlag = false;
 			isSequenceRunning = false;
 			isIteratedRun_ = false;
 			restoreIterationVariables();

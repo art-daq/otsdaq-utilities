@@ -4,6 +4,8 @@
 #include "otsdaq/ConfigurationInterface/ConfigurationManagerRW.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
+#include <mutex>
+
 namespace ots
 {
 // clang-format off
@@ -282,6 +284,9 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	ConfigurationManagerRW* refreshUserSession						(std::string username,
 																	bool        refresh);
 
+	// Guards userConfigurationManagers_/userLastUseTime_: the first-user pre-load
+	// runs on a detached thread at startup, concurrently with request handling.
+	std::mutex                                     userConfigurationManagersMutex_;
 	std::map<std::string, ConfigurationManagerRW*> userConfigurationManagers_;
 	std::map<std::string, time_t>                  userLastUseTime_;
 };
