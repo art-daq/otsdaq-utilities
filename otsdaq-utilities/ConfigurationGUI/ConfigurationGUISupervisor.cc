@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <thread>
 #include <utility>
 
 using namespace ots;
@@ -80,15 +81,49 @@ void ConfigurationGUISupervisor::init(void)
 	}
 
 	//initialize first config manager (pre-load for first user)
-	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
 	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
-
 	if(CorePropertySupervisorBase::allSupervisorInfo_.isWizardMode())
 	{
+		// Wizard mode: the ots launch script waits on the wiz alive-file, and that
+		// file must mean "the Config GUI is usable," so the pre-load stays synchronous.
+		refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
+
 		__SUP_COUT_INFO__
 		    << "After successful Config GUI init, marking alive for wiz mode!" << __E__;
 		CorePropertySupervisorBase::
 		    indicateOtsAlive();  // no parameters for wiz mode indication
+	}
+	else
+	{
+		// Normal mode: the pre-load is only a convenience for the first GUI user, but
+		// it activates the full Configuration group (every table plugin init, fcl
+		// parsing, trigger-menu generation) on the xdaq executive thread -- and xdaq
+		// does not open the http port until every application constructor returns.
+		// Run it on a detached thread so a slow or stalled pre-load cannot delay the
+		// Gateway coming up. refreshUserSession() is locked, so a user request that
+		// arrives first simply builds its own manager and the pre-load becomes a no-op.
+		__SUP_COUT__ << "Starting first-user Configuration Manager pre-load thread..."
+		             << __E__;
+		std::thread([this]() {
+			try
+			{
+				refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
+				__SUP_COUT__ << "First-user Configuration Manager pre-load complete."
+				             << __E__;
+			}
+			catch(const std::runtime_error& e)
+			{
+				__SUP_COUT_WARN__ << "First-user Configuration Manager pre-load failed "
+				                     "(a user request will build its own): "
+				                  << e.what() << __E__;
+			}
+			catch(...)
+			{
+				__SUP_COUT_WARN__ << "First-user Configuration Manager pre-load failed "
+				                     "(a user request will build its own)."
+				                  << __E__;
+			}
+		}).detach();
 	}
 }  // end init()
 
@@ -96,6 +131,8 @@ void ConfigurationGUISupervisor::init(void)
 void ConfigurationGUISupervisor::destroy(void)
 {
 	__SUP_COUT__ << "Destructing..." << __E__;
+
+	std::lock_guard<std::mutex> lock(userConfigurationManagersMutex_);
 
 	// called by destructor
 	for(std::map<std::string, ConfigurationManagerRW*>::iterator it =
@@ -7020,6 +7057,10 @@ catch(...)
 ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
     std::string username, bool refresh)
 {
+	// Held for the whole call: the pre-load thread and request handlers both create,
+	// reassign, and delete entries in the maps below.
+	std::lock_guard<std::mutex> lock(userConfigurationManagersMutex_);
+
 	uint64_t sessionIndex =
 	    0;  // make session by username for now! (may never want to change back)
 
@@ -8332,21 +8373,42 @@ void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&       
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(versionAliasesTableName).getChildren();
 
+	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
+
 	for(auto& aliasNodePair : aliasNodePairs)
 	{
 		// note : these are column names in the versionAliasesTableName table
 		// VersionAlias, TableName, Version, CommentDescription
+		std::string aliasTableName =
+		    aliasNodePair.second.getNode("TableName").getValueAsString();
+		std::string aliasVersion =
+		    aliasNodePair.second.getNode("Version").getValueAsString();
+
 		xmlOut.addTextElementToData(
 		    "VersionAlias",
 		    aliasNodePair.second.getNode("VersionAlias").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "TableName", aliasNodePair.second.getNode("TableName").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "Version", aliasNodePair.second.getNode("Version").getValueAsString());
+		xmlOut.addTextElementToData("TableName", aliasTableName);
+		xmlOut.addTextElementToData("Version", aliasVersion);
 		xmlOut.addTextElementToData(
 		    "Comment",
 		    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
 		        .getValueAsString());
+
+		std::string versionComment = ConfigurationManager::UNKNOWN_INFO;
+		try
+		{
+			if(allTableInfo.find(aliasTableName) != allTableInfo.end())
+			{
+				TableBase* aliasedTable = cfgMgr->getVersionedTableByName(
+				    aliasTableName, TableVersion(aliasVersion));
+				if(aliasedTable)
+					versionComment = aliasedTable->getView().getComment();
+			}
+		}
+		catch(...)
+		{
+		}
+		xmlOut.addTextElementToData("VersionComment", versionComment);
 	}
 }  // end handleVersionAliasesXML()
 

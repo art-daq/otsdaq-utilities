@@ -577,13 +577,15 @@
 			#systemViewActiveTable tr:nth-child(even),
 			#subsystemViewActiveTable tr:nth-child(even),
 			#systemAliasTable tr:nth-child(even),
+			#tableAliasTable tr:nth-child(even),
 			#tableViewTable tr:nth-child(even) {
 				background-color: rgb(218, 194, 194);
 			}
 
 			#systemViewActiveTable tr,
 			#subsystemViewActiveTable tr,
-			#systemAliasTable tr {
+			#systemAliasTable tr,
+			#tableAliasTable tr {
 				height: 18px;
 			}
 
@@ -597,8 +599,13 @@
 			padding-right: 20px;
 		}
 
+		#tableAliasTable {
+			padding-right: 20px;
+		}
+
 			#groupHistoryTable th,
-			#systemAliasTable th {
+			#systemAliasTable th,
+			#tableAliasTable th {
 				color: rgb(65, 86, 146);
 				border-left: 2px solid rgb(140, 86, 86);
 				padding-bottom: 5px;
@@ -2179,8 +2186,94 @@
 			}
 			str += "</table>"; //close system aliases table
 
+			str += "<br><br><br>";
+			str += "<div id='tableAliasTableContainer'>Loading Table Aliases...</div>";
+
 			var el = document.getElementById("display");
 			el.innerHTML = str;
+
+			DesktopContent.XMLHttpRequest("Request?RequestType=getVersionAliases",
+				"",
+				function(versionAliasReq) {
+					var versionAliasNames = versionAliasReq.responseXML.getElementsByTagName("VersionAlias");
+					var versionAliasTableNames = versionAliasReq.responseXML.getElementsByTagName("TableName");
+					var versionAliasVersions = versionAliasReq.responseXML.getElementsByTagName("Version");
+					var versionAliasComments = versionAliasReq.responseXML.getElementsByTagName("Comment");
+					var versionComments = versionAliasReq.responseXML.getElementsByTagName("VersionComment");
+
+					var tableAliasStr = "";
+					tableAliasStr += "<table id='tableAliasTable' style='white-space:nowrap' " +
+						"cellpadding='0' cellspacing='0' border='0' >";
+					tableAliasStr += "<tr>";
+					tableAliasStr += "<th style='border-left: 0'>";
+					tableAliasStr += "<u>Table Alias</u>";
+					tableAliasStr += "</th><th>";
+					tableAliasStr += "<u>Translation</u>";
+					tableAliasStr += "</th>";
+					tableAliasStr += "<th style='text-align:left;padding-left: 20px;'>";
+					tableAliasStr += "<u>Version Comment</u>";
+					tableAliasStr += "</th>";
+					tableAliasStr += "<th style='text-align:left;padding-left: 20px;'>";
+					tableAliasStr += "<u>Alias Comment</u>";
+					tableAliasStr += "</th>";
+					tableAliasStr += "</tr>";
+
+					if(!versionAliasNames.length)
+						tableAliasStr += "<tr><td colspan='4'>No Table Aliases found.</td></tr>";
+
+					var tableAliasBackLinkStr = "setupSystemViewMode();";
+					for(var i = 0; i < versionAliasNames.length; ++i)
+					{
+						var aliasName = versionAliasNames[i].getAttribute("value");
+						var tableName = versionAliasTableNames[i].getAttribute("value");
+						var version = versionAliasVersions[i].getAttribute("value");
+						var aliasComment = decodeURIComponent(versionAliasComments[i].getAttribute("value"));
+						var versionComment = versionComments[i] ?
+							decodeURIComponent(versionComments[i].getAttribute("value")) : "";
+
+						tableAliasStr += "<tr style='height:10px !important;'>" +
+							"<td style='text-align:left;padding: 0 10px 0 5px;'>";
+
+						tableAliasStr += "&quot;" + aliasName + "&quot;";
+
+						tableAliasStr += "</td><td style='border-left: 2px solid rgb(140, 86, 86); " +
+							"text-align:center; padding: 0 10px 0 10px;'>";
+
+						tableAliasStr += "<a href='#' onclick='setupSpecificTable(\"" +
+							tableName + "\",\"" + version + "\",\"" +
+							tableAliasBackLinkStr + "\"); return false;' " +
+							"title='Open table view for " + tableName +
+							" (version " + version + ")' " +
+							">";
+						tableAliasStr += tableName + " (v" + version + ")";
+						tableAliasStr += "</a>";
+
+						tableAliasStr += "</td>";
+
+						tableAliasStr += "<td style='border-left: 2px solid rgb(140, 86, 86); " +
+							"text-align:left; padding: 0 10px 0 10px;' " +
+							"title='For...    " + tableName + " (v" + version + ")' " +
+							">";
+						tableAliasStr += "<pre style='white-space:nowrap;'>//" + versionComment + "</pre>";
+						tableAliasStr += "</td>";
+
+						tableAliasStr += "<td style='border-left: 2px solid rgb(140, 86, 86); " +
+							"text-align:left; padding: 0 10px 0 10px;' " +
+							"title='For...    " + aliasName + " <" +
+							tableName + " (v" + version + ")>' " +
+							">";
+						tableAliasStr += "<pre style='white-space:nowrap;'>//" + aliasComment + "</pre>";
+						tableAliasStr += "</td>";
+
+						tableAliasStr += "</tr>";
+					}
+					tableAliasStr += "</table>";
+
+					var tableAliasContainer = document.getElementById("tableAliasTableContainer");
+					if(tableAliasContainer)
+						tableAliasContainer.innerHTML = tableAliasStr;
+				}); //end getVersionAliases handler
+
 		} //end groupAliasesRequestHandler()
 
 		//==============================================================================
@@ -6757,6 +6850,8 @@
 
 					// Update hidden leaf DOM value
 					if(localLeafEl) localLeafEl.textContent = newVal;
+
+					treeHasChanged();
 
 					// Restore inline span with new value
 					if(localHiddenSpan) {
