@@ -279,29 +279,20 @@ SubsystemLaunch.create = function() {
 			redrawWindow();
 
 
-			//get view mode preferences for user
+			//get the system-wide run type (shared by all users, not a per-user preference)
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=stateMachinePreferences" +
+				"Request?RequestType=subsystemLaunchRunType" +
 				"", "",
 				function (req) {
-					//Same code as StateMachine.html:556
-
-					//	altViewMode not used in SubsystemLaunch
-					// var altViewMode = DesktopContent.getXMLValue(req, "Default_FSM_View");
-					// Debug.log("Loaded altViewMode preference",altViewMode);
-					// if (altViewMode && altViewMode != "")
-					// 	toggleViewMode(altViewMode | 0);  //treat as integer
-					// else //default to js default
-					// 	toggleViewMode(_altStateDrawingMode);
 
 					//if fsm name not defined by get parameter, create select box
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						let lastFsmName = _fsmName;
-						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
-						Debug.log("Loaded FSM Name preference",_fsmName);
+						_fsmName = DesktopContent.getXMLValue(req, "subsystemLaunchRunType");
+						Debug.log("Loaded system-wide run type",_fsmName);
 						if(!_fsmName)
 						{
-							Debug.log("No FSM Name preference was found for the user! " +
+							Debug.log("No system-wide run type was found! " +
 								"Defaulting to first FSM in list.");
 							_fsmName = lastFsmName;
 						}
@@ -1327,6 +1318,21 @@ SubsystemLaunch.create = function() {
 				}
 			} //end subsystem common table lists ----------
 
+			//system-wide run type (follow a change made by any user) ----------
+			if(!DesktopContent.getParameter(0, "fsm_name")) {
+				var sharedRunType = DesktopContent.getXMLValue(req, "subsystemLaunchRunType");
+				//only follow a value that is a valid FSM name here, otherwise init() falls back
+				//	to the first FSM and this would reload every poll
+				if(sharedRunType && sharedRunType != _fsmName &&
+					_fsmNameArr && _fsmNameArr.indexOf(sharedRunType) >= 0) {
+					Debug.log("Run type was changed system-wide to '" + sharedRunType +
+						"' (was '" + _fsmName + "'), reloading Subsystem Launch info.", Debug.INFO_PRIORITY);
+					_fsmName = sharedRunType;
+					init();
+					return;
+				}
+			} //end system-wide run type ----------
+
 			//system state ------------------------
 			{
 				SubsystemLaunch.extractSystemStatus(req);
@@ -1894,10 +1900,10 @@ SubsystemLaunch.create = function() {
 			_fsmName = selectedValue;
 
 			//assume this toggle is caused by user
-			//save setting to server for user
-			DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
+			//save system-wide so all users' Subsystem Launch pages follow this selection
+			DesktopContent.XMLHttpRequest("Request?RequestType=subsystemLaunchRunType" +
 				"&set=1" +
-				"&Default_FSM_Name=" + _fsmName,
+				"&runType=" + _fsmName,
 				"",
 				0 /*returnHandler*/,
 				0 /*reqParam*/,
