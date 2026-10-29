@@ -409,7 +409,7 @@ SubsystemLaunch.create = function() {
 			cel.setAttribute("id","content");
 		}
 
-		//cache existin run control values
+		//cache existing run control values
 		var tmp_runCountInput, tmp_runDurationInput, tmp_runDurationSelect;
 		el = document.getElementById("runCountInput");
 		if(el) tmp_runCountInput = el.value;
@@ -418,6 +418,10 @@ SubsystemLaunch.create = function() {
 		el = document.getElementById("runDurationSelect");
 		if(el) tmp_runDurationSelect = el.value;
 		tmp_runDurationSelect = tmp_runDurationSelect?tmp_runDurationSelect:"Open-ended";
+
+		var tmp_globalFieldsText;
+		el = document.getElementById("systemConfigAliasGlobalFields");
+		if(el) tmp_globalFieldsText = el.innerText;
 
 		//clear all elements
 		cel.innerHTML = "";
@@ -956,6 +960,8 @@ SubsystemLaunch.create = function() {
 			{
 				var span = document.createElement('span');
 				span.id = 'systemConfigAliasGlobalFields';
+				if(tmp_globalFieldsText)
+					span.innerText = tmp_globalFieldsText;
 				parentTd.appendChild(span);
 			}
 			if(SubsystemLaunch.system.selectedSystemAlias)
