@@ -871,6 +871,34 @@
 				"- <b>Bottom Pane</b>\n" +
 				"<INDENT> The 'Bottom Pane' is for viewing and modifying the selected Iteration Plan. " +
 				"</INDENT>" +
+				"</INDENT>\n\n" +
+
+				"<b>Things to know</b>" +
+				"<INDENT> " +
+				"- <b>If a command fails</b>, the plan pauses (red status) rather than being lost. " +
+				"Fix the cause and press Play to retry the same command, or press Stop to give up.\n\n" +
+
+				"- <b>Remote subsystems.</b> Configure, Start/Stop/Pause/Resume/Halt and FE Macro commands can " +
+				"target a remote subsystem (the 'TargetSubsystem' box when editing the command). " +
+				"'Self' means this Gateway.\n\n" +
+
+				"- <b>Loops step FE Macro arguments.</b> Each macro input argument can be bound to an enclosing " +
+				"BEGIN_LABEL/REPEAT_LABEL loop, so its value steps once per pass (start + step x pass). " +
+				"Nest two loops to scan a grid of values.\n\n" +
+
+				"- <b>Output files.</b> When a macro saves its outputs to a file, the completion popup lists " +
+				"every file with a link that opens it in the Code Editor, labelled with the loop pass and the " +
+				"argument values used.\n\n" +
+
+				"- <b>SETUP_INCLUDED_SUBSYSTEMS</b> chooses which remote subsystems follow the top-level " +
+				"FSM commands, exactly like the 'Included' checkboxes in Subsystem Launch. " +
+				"Mode 'Set' uses only the checked subsystems; 'Add' includes the checked ones and leaves the rest alone; " +
+				"'Remove' excludes the checked ones and leaves the rest alone.\n\n" +
+
+				"- <b>Plan log.</b> Every run writes a timestamped record of what happened to " +
+				"$OTSDAQ_LOG_DIR/IteratorPlanLog.&lt;start time&gt;.txt: each command's start and end with its " +
+				"parameters (for macros, the argument values actually sent on that pass), how long it took, " +
+				"the loop position in plain words, the target subsystem, and any pause, stop, error or finish." +
 				"</INDENT>"	;
 			Debug.log("Iterate init ");
 			DesktopContent.tooltip("Iterate Introduction",
