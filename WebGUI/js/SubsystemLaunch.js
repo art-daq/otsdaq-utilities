@@ -176,7 +176,26 @@ SubsystemLaunch.create = function() {
 				"\n\n" +
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
-				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
+				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts." +
+				"\n\n<b>Run Type:</b>\n<INDENT>" +
+				"The Run Type dropdown selects which state machine (FSM) is used. The selection is <b>shared system-wide</b> - " +
+				"it is saved at the top-level Gateway, not per user, so everyone working together sees the same Run Type. " +
+				"If another user changes it, your page will follow automatically within a second or two and reload its Subsystem info." +
+				"</INDENT>" +
+				"\n\n<b>Subsystem Reboot:</b>\n<INDENT>" +
+				"Above the Subsystem Status table are three power buttons that reboot the ots instance of multiple subsystems in one request:" +
+				"\n<INDENT>- <b>Selected</b> reboots every subsystem that is currently included (checkbox checked)." +
+				"\n- <b>Active</b> reboots every subsystem that is currently on (status is not UNKNOWN)." +
+				"\n- <b>All</b> reboots every subsystem.</INDENT>" +
+				"\nEach subsystem row also has its own power button to reboot just that subsystem. " +
+				"Reboots are launched one host at a time by the top-level Gateway; the Status column shows '<b>Rebooting...</b>' and then the subsystem's progress as it comes back. " +
+				"Only errors are shown as popups - trust the Status column for success." +
+				"</INDENT>" +
+				"\n\n<b>Top-level Reboot:</b>\n<INDENT>" +
+				"The power button in the System Status table reboots the top-level Gateway itself. The page is blacked out and probes the server once a second, " +
+				"reporting when the top-level goes down, when it comes back up, and when all subsystems are again reporting status (settling complete) - " +
+				"only then is the page released." +
+				"</INDENT>";
 
 			var iterationTooltip = "\n\n<b>Iteration Types:</b>\n<INDENT>" +
 				"A state machine transition (e.g. Configure or Start) can run in several steps. " +

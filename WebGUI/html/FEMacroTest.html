@@ -705,26 +705,53 @@
 
 			var windowTooltip = "Welcome to the FE Macros web app!\n\n" +
 				"This app provides a user interface for configured devices. " +
-				"It allows for launching common functions, such as resets and reading and writing to memory, or interface-spcific functions, at one or many front-ends with a click of the mouse. " +
-				"\n\n" +
+				"It allows for launching common functions, such as resets and reading and writing to memory, or interface-specific functions, at one or many front-ends with a click of the mouse. " +
+				"The window has three panels (left: macro selection, middle: output, right: history) plus an optional fourth Macro-of-Macros (MoM) panel." +
+				"\n\n<b>Running a FE Macro (left panel)</b>\n<INDENT>" +
 				"The Macro Name dropdown will always show the list of functions that are defined for the selected front-end filters. " +
 				"To start filtering front-ends, choose a Front-End (FE) type (i.e. this should match your FE plugin class name) to access the set of functions that are defined for that particular front-end plugin class. " +
-				"You can filter further and handpick a subset of FE devices for more granular control by selecting <b>FE Target UID</b> or <b>Toggle Multi-select</b>. " +
-				"Once you've chosen your FE type and target(s), select the FE Macro name, and hit <b>Run</b> to execute. " +
+				"You can filter further and handpick a subset of FE devices for more granular control by selecting <b>FE Target UID</b> or <b>Toggle Multi-select</b> (to send one macro to several front-ends at once). " +
+				"Once you've chosen your FE type and target(s), select the FE Macro name, fill in any input arguments, and hit <b>Run</b> (or press Enter) to execute. " +
 				"The FE Macro will only run one time and on the devices specified. " +
-				"\n\n" +
-				"The output of the executed function is displayed in the middle panel. " +
-				"\n\n" +
-				"The panel on the right tracks your history. You can launch previously executed FE Macros, by clicking on them in the history pane. " +
-				"Optionally, the <b>Live View</b> button can repeatedly run the next FE Macro clicked with a specified wait between repeat executions. " +
-				"\n\n" +
-				"Clicking on <b>MoM Sequence Mode</b> on the top left corner will open a fourth panel. Here, users can create an alias for a custom sequence of FE Macros (a Macro-of-Macros). " +
-				"<b>MoM Sequences</b> are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
-				"Note that MoM sequences in the admin user's folder are considered public and will be accessible by all users." +
-				"\n\nMoM sequences run client-side (in this browser). " +
+				"Check <b>Save output to file</b> to also write the macro's output to a file on the server. " +
+				"Some FE Macros have a tooltip defined for additional information; click on the tooltip icon <span class='macroInfo' style='display:inline-block; width: 50px; height: 50px; margin: -7px 0 0 -10px;'></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next to the FE Macro name to view the tooltip info." +
+				"</INDENT>" +
+				"\n\n<b>Output (middle panel)</b>\n<INDENT>" +
+				"The output of the executed function is displayed here. " +
+				"Macros that return a plot are drawn inline (interactive Plotly plot), and file paths returned by a macro are shown as links. " +
+				"Use the copy icon to copy the text output to the clipboard." +
+				"</INDENT>" +
+				"\n\n<b>History (right panel)</b>\n<INDENT>" +
+				"Every macro you run is recorded. Click a history entry to run it again with the same arguments. " +
+				"Consecutive runs of the same group of commands are collapsed into one repeated group; click the group bar to re-run the whole group, or press its <b>+</b> button to append the group to the MoM sequence editor. " +
+				"The <b>Live View</b> button repeatedly runs the next FE Macro you click, with a chosen wait between repeats (or no delay), until you stop it. " +
+				"The <b>Flag</b> button watches macro output for a condition and alerts you when it is met: either a plain keyword search (flag if present or absent), or a numeric comparison (==, &gt;, &gt;=, &lt;, &lt;=) against the value following a label in the output, in decimal or hex. " +
+				"Optionally sound the loud Desktop alarm on trigger. A triggered flag also interrupts a running Live View or MoM sequence. " +
+				"The history can be cleared with the clear button." +
+				"</INDENT>" +
+				"\n\n<b>Macro-of-Macros (MoM) Sequences (fourth panel)</b>\n<INDENT>" +
+				"Clicking on <b>MoM Sequence Mode</b> on the top left corner (or enabling it in Settings) opens a fourth panel where you can build, save, and play back a named sequence of FE Macros. " +
+				"\n\n<b>Building:</b> with the editor open, clicking <b>Run</b> on a macro appends it to the sequence instead of executing it; you can also append a history group with its <b>+</b> button. " +
+				"Each step shows its FE target, macro name, and arguments; use the pencil icon to edit a step's arguments in place, the arrows or the drag grip to reorder steps, and the X to remove one. " +
+				"The <b>Delay</b> button sets a global delay between all steps, or inserts an explicit Delay step of N seconds. " +
+				"<b>Add MoM</b> inserts another saved sequence as a nested step, with its own iteration count, so sequences can be composed. " +
+				"\n\n<b>Input Variables:</b> write <b>$name</b> anywhere in a step's argument values to turn it into a variable. Each variable has a starting value, a step, and a max; " +
+				"when the sequence is played N times, the value is advanced by the step on each iteration (clamped at max), which lets you scan a parameter. Unit suffixes such as <b>3.4us</b> are preserved. " +
+				"\n\n<b>Playing:</b> the green <b>Play</b> button runs the sequence once; <b>Play N</b> asks for an iteration count and runs it that many times. " +
+				"<b>Pause</b> and <b>Stop</b> work during playback. If a step fails, the sequence pauses on that step; press Play to continue from the next step, or Stop to start over. " +
+				"The current step and iteration are shown above the sequence. " +
+				"\n\n<b>Saving:</b> <b>Save</b> stores the sequence under its current name, <b>Save as</b> under a new or existing name, <b>Reset</b> clears the editor, and <b>Close</b> hides the panel. " +
+				"MoM Sequences are saved in $USER_DATA/ServiceData/MacroSequence by username, and can manually be transferred from user to user by copying the sequence's dat file from one user to another at the linux terminal. " +
+				"Sequences in the admin user's folder are considered <b>public</b> and are accessible by all users; an admin (255) user can promote a saved sequence with the <b>Make Public</b> link next to the <b>Select MoM Sequence</b> dropdown. " +
+				"Saved sequences also appear in the history panel for one-click replay." +
+				"\n\n<b>Note:</b> MoM sequences run client-side (in this browser), so they stop if the browser window is closed. " +
 				"For server-side macro sequences, State Machine manipulations, or Configuration manipulations, " +
-				"use the <b>Iterator</b> instead (see <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for tutorials and documentation on the Iterator)." +
-				"\n\nAlso, some FE Macros have a tooltip defined for additional information; click on the tooltip icon <span class='macroInfo' style='display:inline-block; width: 50px; height: 50px; margin: -7px 0 0 -10px;'></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next to the FE Macro name to view the tooltip info. ";
+				"use the <b>Iterator</b> instead (see <a href='https://otsdaq.fnal.gov' target='_blank'>otsdaq.fnal.gov</a> for tutorials and documentation on the Iterator). " +
+				"MoM sequences can also be run from the command line with the <b>ots_mm_udp_test</b> tool when the MacroMaker UDP Remote Control interface is enabled." +
+				"</INDENT>" +
+				"\n\n<b>Settings</b>\n<INDENT>" +
+				"The gear icon at the top left opens per-user settings: a 2-column layout, showing the MoM panel by default, and a dynamic FE Macro dropdown that expands the macro list to fill the available screen height while you browse (with a type-to-filter box) and collapses to one line once a macro is selected." +
+				"</INDENT>";
 
 			DesktopContent.tooltip("FE Macros Introduction", windowTooltip);
 			DesktopContent.setWindowTooltip(windowTooltip);
