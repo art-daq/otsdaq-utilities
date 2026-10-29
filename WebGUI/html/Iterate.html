@@ -37,6 +37,7 @@
 		//popUpTargetSubsystemOnChange(targetSubsystem)
 		//popUpRenderMacroNameControl(paramIndex,targetSubsystem)
 		//popUpMacroNameOnChange(paramIndex)
+		//popUpIncludedSubsystemsOnChange(paramIndex) / popUpIncludedSubsystemsModeOnChange(paramIndex)
 		//macroArgsParse(str) / macroArgsSerialize(args) / macroArgsSummary(str)
 		//macroArgsFromLoopTree(linkNode)
 		//getPlanOutputFilesHtml(req)
@@ -761,6 +762,7 @@
 		_COMMAND_TYPES.PAUSE 					= "PAUSE";
 		_COMMAND_TYPES.RESUME 					= "RESUME";
 		_COMMAND_TYPES.HALT 					= "HALT";
+		_COMMAND_TYPES.SETUP_INCLUDED_SUBSYSTEMS = "SETUP_INCLUDED_SUBSYSTEMS";
 
 		var _COMMAND_PARAM_FIELDS = {}; //for now, keys are same as value, but value is (intended to be) display name
 		_COMMAND_PARAM_FIELDS.NameOfStateMachine 				= "NameOfStateMachine";
@@ -776,6 +778,8 @@
 		_COMMAND_PARAM_FIELDS.EnableSavingOutputsToFile			= "EnableSavingOutputsToFile";
 		_COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured			= "SkipIfAlreadyConfigured"; //Configure commands: leave an already-Configured FSM as-is
 		_COMMAND_PARAM_FIELDS.WriteToECL						= "WriteToECL"; //Run commands: post a run summary to the ECL
+		_COMMAND_PARAM_FIELDS.IncludedSubsystemsMode			= "Mode"; //SETUP_INCLUDED_SUBSYSTEMS: Set | Add | Remove
+		_COMMAND_PARAM_FIELDS.IncludedSubsystems				= "Subsystems"; //SETUP_INCLUDED_SUBSYSTEMS: comma-separated subsystem names (checkbox editor)
 
 		var _COMMAND_PARAMS = {}; //NOTE!!! Fields must be in same order as the tables (in the future could ask server for this order, or not)
 		_COMMAND_PARAMS[_COMMAND_TYPES.BEGIN_LABEL] 			= ["Label"];
@@ -796,6 +800,7 @@
 		_COMMAND_PARAMS[_COMMAND_TYPES.PAUSE] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.RESUME] 	= [];
 		_COMMAND_PARAMS[_COMMAND_TYPES.HALT] 	= [];
+		_COMMAND_PARAMS[_COMMAND_TYPES.SETUP_INCLUDED_SUBSYSTEMS] = [_COMMAND_PARAM_FIELDS.IncludedSubsystemsMode, _COMMAND_PARAM_FIELDS.IncludedSubsystems];
 
 		//command types the Iterator backend can dispatch to a remote subsystem
 		//	(ACTIVATE_*, MODIFY_ACTIVE_GROUP and RUN act on the local config manager
@@ -3201,6 +3206,77 @@
 
 							str += "</select>";
 						}
+						else if(_COMMAND_PARAMS[commandKey][i] == //Set | Add | Remove
+								_COMMAND_PARAM_FIELDS.IncludedSubsystemsMode)
+						{
+							var modeChoices = ["Set","Add","Remove"];
+							var modeHelp = {
+									"Set":"Only the checked subsystems follow top-level FSM commands; all others are excluded.",
+									"Add":"The checked subsystems are included; others are left as they are.",
+									"Remove":"The checked subsystems are excluded; others are left as they are."};
+							if(modeChoices.indexOf(initValue) < 0) initValue = "Set";
+							str += DesktopContent.htmlOpen("select",
+									{
+											"id":("popUp-param-" + i),
+											"class":"popUp-param",
+											"onchange":"_popUpParamsModified = true; popUpIncludedSubsystemsModeOnChange(" + i + ");"
+									});
+							for(var j=0;j<modeChoices.length;++j)
+								str += DesktopContent.htmlOpen("option" +
+										(modeChoices[j] == initValue ? " selected" : ""),
+										{"value":modeChoices[j]},
+										modeChoices[j] /*innerHTML*/, true /*closeTag*/);
+							str += "</select>";
+							str += DesktopContent.htmlOpen("div",
+									{
+											"id":"popUp-includedSubsystemsModeHint-" + i,
+											"style":"font-size:11px; color:#555; max-width:300px;"
+									}, modeHelp[initValue], true /*closeTag*/);
+							hDelta += 28;
+						}
+						else if(_COMMAND_PARAMS[commandKey][i] == //checkbox list of remote subsystems
+								_COMMAND_PARAM_FIELDS.IncludedSubsystems)
+						{
+							//hidden input holds the comma-separated value read by the submit/clone
+							//	handlers; checkboxes below rewrite it on every click (like the
+							//	Included column of the Subsystem Launch page)
+							str += DesktopContent.htmlOpen("input",
+									{
+											"id":("popUp-param-" + i),
+											"type":"hidden",
+											"value":initValue
+									}, 0 /*innerHTML*/, true /*closeTag*/);
+							var checkedNames = {};
+							var initNames = (initValue || "").split(',');
+							for(var j=0;j<initNames.length;++j)
+								if(initNames[j] != "") checkedNames[initNames[j]] = true;
+							if(_remoteSubsystems.length == 0)
+								str += "<span style='font-size:11px; color:#555;'>No remote subsystems reported by this Gateway.</span>";
+							for(var j=0;j<_remoteSubsystems.length;++j)
+							{
+								var subsystemName = _remoteSubsystems[j].name;
+								str += "<label style='display:block; white-space:nowrap;'>" +
+										DesktopContent.htmlOpen("input",
+										{
+												"type":"checkbox",
+												"checked":(checkedNames[subsystemName] ? 1 : 0),
+												"class":"popUp-includedSubsystemCheckbox-" + i,
+												"value":subsystemName,
+												"onchange":"_popUpParamsModified = true; popUpIncludedSubsystemsOnChange(" + i + ");"
+										}, 0 /*innerHTML*/, true /*closeTag*/) +
+										" " + subsystemName + "</label>";
+								delete checkedNames[subsystemName];
+							}
+							//a saved name that this Gateway no longer reports stays in the value
+							//	(it is rejected at run time with a clear message), shown here so the
+							//	user can see why
+							for(var staleName in checkedNames)
+								str += "<label style='display:block; white-space:nowrap; color:#a00;'>" +
+										"<input type='checkbox' checked class='popUp-includedSubsystemCheckbox-" + i +
+										"' value='" + staleName + "' onchange='_popUpParamsModified = true; popUpIncludedSubsystemsOnChange(" + i + ");'> " +
+										staleName + " (unknown subsystem)</label>";
+							hDelta += 20 * Math.max(1, _remoteSubsystems.length + Object.keys(checkedNames).length);
+						}
 						else if(_COMMAND_PARAMS[commandKey][i] == // macro input arguments
 								_COMMAND_PARAM_FIELDS.MacroArgs)
 						{
@@ -5461,6 +5537,31 @@
 		//	push to _commands object
 		//defaultCommandParamValue ~~
 		//	value assumed for a parameter absent from an older plan/table version
+		//=====================================================================================
+		//popUpIncludedSubsystemsOnChange ~~
+		//	rewrite the hidden comma-separated value from the checked boxes
+		function popUpIncludedSubsystemsOnChange(paramIndex)
+		{
+			var boxes = document.getElementsByClassName("popUp-includedSubsystemCheckbox-" + paramIndex);
+			var names = [];
+			for(var i=0;i<boxes.length;++i)
+				if(boxes[i].checked) names.push(boxes[i].value);
+			document.getElementById("popUp-param-" + paramIndex).value = names.join(',');
+		} //end popUpIncludedSubsystemsOnChange()
+
+		//=====================================================================================
+		//popUpIncludedSubsystemsModeOnChange ~~
+		function popUpIncludedSubsystemsModeOnChange(paramIndex)
+		{
+			var mode = document.getElementById("popUp-param-" + paramIndex).value;
+			var hint = document.getElementById("popUp-includedSubsystemsModeHint-" + paramIndex);
+			if(!hint) return;
+			hint.innerHTML =
+					mode == "Add" ? "The checked subsystems are included; others are left as they are." :
+					mode == "Remove" ? "The checked subsystems are excluded; others are left as they are." :
+					"Only the checked subsystems follow top-level FSM commands; all others are excluded.";
+		} //end popUpIncludedSubsystemsModeOnChange()
+
 		function defaultCommandParamValue(paramName)
 		{
 			if(paramName == _COMMAND_PARAM_FIELDS.SkipIfAlreadyConfigured ||
@@ -5469,6 +5570,8 @@
 					paramName == _COMMAND_PARAM_FIELDS.WaitForAllFrontEndsRunningThread ||
 					paramName == _COMMAND_PARAM_FIELDS.WriteToECL)
 				return 0; //booleans default to No
+			if(paramName == _COMMAND_PARAM_FIELDS.IncludedSubsystemsMode)
+				return "Set";
 			return ""; //free text / links default to empty
 		} //end defaultCommandParamValue()
 
