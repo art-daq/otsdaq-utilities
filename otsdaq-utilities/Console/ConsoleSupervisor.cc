@@ -1,10 +1,11 @@
 #include "otsdaq-utilities/Console/ConsoleSupervisor.h"
-#include <xdaq/NamespaceURI.h>
 #include "otsdaq/CgiDataUtilities/CgiDataUtilities.h"
 #include "otsdaq/Macros/CoutMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
 #include "otsdaq/NetworkUtilities/ReceiverSocket.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
+
+#include <xdaq/NamespaceURI.h>
 
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for mkdir

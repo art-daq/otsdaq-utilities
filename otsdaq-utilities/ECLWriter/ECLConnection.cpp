@@ -1,5 +1,10 @@
-#include <openssl/md5.h>
+#include "otsdaq/Macros/CoutMacros.h"
+#include "otsdaq/Macros/StringMacros.h"
+#include "otsdaq/MessageFacility/MessageFacility.h"
+
 #include <otsdaq-utilities/ECLWriter/ECLConnection.h>
+
+#include <openssl/md5.h>
 #include <boost/algorithm/string.hpp>
 #include <cstring>
 #include <fstream>
@@ -7,9 +12,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "otsdaq/Macros/CoutMacros.h"
-#include "otsdaq/Macros/StringMacros.h"
-#include "otsdaq/MessageFacility/MessageFacility.h"
 
 //==============================================================================
 ECLConnection::ECLConnection(std::string user, std::string pwd, std::string url)
