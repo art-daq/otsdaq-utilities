@@ -302,12 +302,17 @@ SubsystemLaunch.create = function() {
 			DesktopContent.XMLHttpRequest(
 				"Request?RequestType=subsystemLaunchRunType" +
 				"", "",
-				function (req) {
+				function (req, reqParam, errStr) {
 
 					//if fsm name not defined by get parameter, create select box
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						let lastFsmName = _fsmName;
-						_fsmName = DesktopContent.getXMLValue(req, "subsystemLaunchRunType");
+						//if the Gateway does not support the system-wide run type request
+						//	(e.g. older Gateway still running), still show the Run Type dropdown
+						_fsmName = req ? DesktopContent.getXMLValue(req, "subsystemLaunchRunType") : "";
+						let runTypeErr = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+						if(runTypeErr)
+							Debug.log("Could not get system-wide run type from Gateway: " + runTypeErr);
 						Debug.log("Loaded system-wide run type",_fsmName);
 						if(!_fsmName)
 						{
@@ -381,7 +386,7 @@ SubsystemLaunch.create = function() {
 				},/*returnHandler*/
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
+				true /*callHandlerOnErr*/, //so Run Type dropdown is still created if Gateway rejects request
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
 
@@ -1924,10 +1929,14 @@ SubsystemLaunch.create = function() {
 				"&set=1" +
 				"&runType=" + _fsmName,
 				"",
-				0 /*returnHandler*/,
+				function (req, reqParam, errStr) {
+					let err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+					if(err) //e.g. older Gateway without system-wide run type support
+						Debug.log("Could not save system-wide run type at Gateway: " + err);
+				} /*returnHandler*/,
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
+				true /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
 
