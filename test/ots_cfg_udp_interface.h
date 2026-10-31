@@ -49,7 +49,7 @@
 
 //==============================================================================
 /// Client for the ConfigurationGUISupervisor UDP remote-control interface
-/// (enabled on the server with OTS_CONFIGGUI_UDP_IP / OTS_CONFIGGUI_UDP_PORT).
+/// (enabled on the server with OTS_CONFIG_UDP_IP / OTS_CONFIG_UDP_PORT).
 ///
 /// A request is any of the ConfigurationGUISupervisor::request() types and its
 /// name=value parameters, exactly as the browser sends them. The reply is the same

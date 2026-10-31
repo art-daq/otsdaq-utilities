@@ -201,7 +201,7 @@ std::string ots_cfg_udp_interface::sendRequest(const std::string& requestType,
 	{
 		__SS__ << "No response to '" << requestType
 		       << "'! Check that a ConfigurationGUISupervisor is running with UDP "
-		          "Remote Control enabled (OTS_CONFIGGUI_UDP_IP/PORT) and accessible at "
+		          "Remote Control enabled (OTS_CONFIG_UDP_IP/PORT) and accessible at "
 		       << selfIPandPort_ << "." << __E__;
 		__SS_THROW__;
 	}

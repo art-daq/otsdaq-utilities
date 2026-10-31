@@ -2,8 +2,8 @@
 
 ///==============================================================================
 /// To access the Configuration GUI with this tool, before launching ots export...
-///   export OTS_CONFIGGUI_UDP_PORT=<YOUR_PORT>
-///   export OTS_CONFIGGUI_UDP_IP=127.0.0.1 #or the IP of the machine running ots
+///   export OTS_CONFIG_UDP_PORT=<YOUR_PORT>
+///   export OTS_CONFIG_UDP_IP=127.0.0.1 #or the IP of the machine running ots
 ///
 /// Any ConfigurationGUISupervisor request type can be sent, with its parameters
 /// given as name=value, exactly as the browser would send them.

@@ -59,8 +59,8 @@ ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* st
 		bool enableRemoteControl = false;
 		try
 		{
-			__ENV__("OTS_CONFIGGUI_UDP_PORT");
-			__ENV__("OTS_CONFIGGUI_UDP_IP");
+			__ENV__("OTS_CONFIG_UDP_PORT");
+			__ENV__("OTS_CONFIG_UDP_IP");
 			enableRemoteControl = true;
 		}
 		catch(const std::runtime_error& e)
@@ -70,8 +70,8 @@ ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* st
 		}
 		catch(...)
 		{
-			__SUP_COUT__ << "Ignoring unknown error reading OTS_CONFIGGUI_UDP_PORT/"
-			                "OTS_CONFIGGUI_UDP_IP env vars."
+			__SUP_COUT__ << "Ignoring unknown error reading OTS_CONFIG_UDP_PORT/"
+			                "OTS_CONFIG_UDP_IP env vars."
 			             << __E__;
 		}  // ignore errors
 
@@ -10792,10 +10792,10 @@ class StringCgiInput : public cgicc::CgiInput
 void ConfigurationGUISupervisor::RemoteControlWorkLoop(
     ConfigurationGUISupervisor* theSupervisor)
 {
-	std::string ipAddressForRemoteControlOverUDP = __ENV__("OTS_CONFIGGUI_UDP_IP");
-	int         portForRemoteControlOverUDP = atoi(__ENV__("OTS_CONFIGGUI_UDP_PORT"));
-	__COUT_INFO__ << "OTS_CONFIGGUI_UDP_IP = " << ipAddressForRemoteControlOverUDP
-	              << ", OTS_CONFIGGUI_UDP_PORT = " << portForRemoteControlOverUDP
+	std::string ipAddressForRemoteControlOverUDP = __ENV__("OTS_CONFIG_UDP_IP");
+	int         portForRemoteControlOverUDP = atoi(__ENV__("OTS_CONFIG_UDP_PORT"));
+	__COUT_INFO__ << "OTS_CONFIG_UDP_IP = " << ipAddressForRemoteControlOverUDP
+	              << ", OTS_CONFIG_UDP_PORT = " << portForRemoteControlOverUDP
 	              << " -- test with: ots_cfg_udp_test " << ipAddressForRemoteControlOverUDP
 	              << " " << portForRemoteControlOverUDP << __E__;
 
@@ -10810,8 +10810,8 @@ void ConfigurationGUISupervisor::RemoteControlWorkLoop(
 		       << ipAddressForRemoteControlOverUDP << "' and port "
 		       << portForRemoteControlOverUDP
 		       << ". Perhaps it is already in use? Exiting Remote Control loop." << __E__;
-		ss << "TIP: this IP/port comes from the env vars OTS_CONFIGGUI_UDP_IP and "
-		      "OTS_CONFIGGUI_UDP_PORT. Check with: ss -ulpn | grep "
+		ss << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
+		      "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
 		   << portForRemoteControlOverUDP << __E__;
 		__SS_THROW__;
 		return;
