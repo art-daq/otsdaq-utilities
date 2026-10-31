@@ -1260,15 +1260,25 @@ try
 
 		rxParameters.addParameter("groupName");
 		rxParameters.addParameter("groupKey");
-		rxParameters.addParameter("SubsystemCommonList");
-		rxParameters.addParameter("SubsystemCommonOverrideList");
 		SOAPUtilities::receive(message, rxParameters);
 
 		std::string groupName           = rxParameters.getValue("groupName");
 		std::string groupKey            = rxParameters.getValue("groupKey");
-		std::string subsystemCommonList = rxParameters.getValue("SubsystemCommonList");
-		std::string subsystemCommonOverrideList =
-		    rxParameters.getValue("SubsystemCommonOverrideList");
+
+		std::string subsystemCommonList, subsystemCommonOverrideList;
+		try
+		{
+			SOAPParameters optionalParams;
+			optionalParams.addParameter("SubsystemCommonList");
+			optionalParams.addParameter("SubsystemCommonOverrideList");
+			SOAPUtilities::receive(message, optionalParams);
+			subsystemCommonList         = optionalParams.getValue("SubsystemCommonList");
+			subsystemCommonOverrideList = optionalParams.getValue("SubsystemCommonOverrideList");
+		}
+		catch(...)
+		{
+			__COUT__ << "Ignoring missing SubsystemCommon parameters." << __E__;
+		}
 
 		__SUP_COUTV__(groupName);
 		__SUP_COUTV__(groupKey);
