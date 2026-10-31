@@ -44,7 +44,9 @@
 #include <memory>
 #include <mutex>
 
+#ifndef OTS_LITE
 #include "otsdaq/DataProcessorPlugins/RawDataVisualizerConsumer.h"
+#endif
 
 #ifndef OTS_LITE
 #include "otsdaq/DataManager/DataConsumer.h"
@@ -1757,6 +1759,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 		bool haveLiveData = false;
 
+#ifndef OTS_LITE
 		if(theDataManager_ != nullptr)
 		{
 			for(auto const& bufferPair : theDataManager_->getBuffers())
@@ -1817,6 +1820,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 					break;
 			}
 		}
+#endif // !OTS_LITE
 
 		if(!haveLiveData)
 		{
