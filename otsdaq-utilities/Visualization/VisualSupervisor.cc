@@ -27,6 +27,8 @@
 #include <TTree.h>
 #include "TBufferFile.h"
 #include "TObject.h"
+#else
+#include "otsdaq/DataManager/DataManagerSingleton.h"
 #endif
 
 #include <dirent.h>   /*DIR and dirent*/
@@ -35,11 +37,14 @@
 #include <xdaq/NamespaceURI.h>
 
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
+
+#include "otsdaq/DataProcessorPlugins/RawDataVisualizerConsumer.h"
 
 #ifndef OTS_LITE
 #include "otsdaq/DataManager/DataConsumer.h"
@@ -111,6 +116,11 @@ void VisualSupervisor::destroy(void)
 		theStateMachineImplementation_.pop_back();
 	else
 		__COUT_WARN__ << "No visual data manager was pushed." << __E__;
+#else
+	DataManagerSingleton::deleteInstance(CorePropertySupervisorBase::getSupervisorUID());
+	if(theStateMachineImplementation_.size())
+		theStateMachineImplementation_.pop_back();
+	theDataManager_ = nullptr;
 #endif
 }  // end destroy()
 
@@ -165,6 +175,35 @@ try
 		__SUP_COUT__ << "No Visual Supervisor configuration link, so skipping Visual "
 		                "data manager instantiation."
 		             << __E__;
+#else
+	try
+	{
+		ConfigurationTree appLink = theConfigurationManager_->getNode(
+		    "/" + theConfigurationManager_->__GET_CONFIG__(XDAQContextTable)->getTableName() +
+		    CorePropertySupervisorBase::getSupervisorConfigurationPath());
+
+		if(!appLink.isDisconnected())
+		{
+			theDataManager_ = DataManagerSingleton::getInstance<DataManager>(
+			    theConfigurationManager_->getNode(
+			        theConfigurationManager_->__GET_CONFIG__(XDAQContextTable)
+			            ->getTableName()),
+			    CorePropertySupervisorBase::getSupervisorConfigurationPath(),
+			    CorePropertySupervisorBase::getSupervisorUID());
+
+			CoreSupervisorBase::theStateMachineImplementation_.push_back(theDataManager_);
+
+			__SUP_COUT__ << "Done instantiating lite data manager for waveform viewer." << __E__;
+		}
+		else
+			__SUP_COUT__ << "No Visual Supervisor configuration link, so skipping "
+			                "data manager instantiation."
+			             << __E__;
+	}
+	catch(const std::runtime_error& e)
+	{
+		__SUP_COUT_WARN__ << "Could not instantiate lite data manager (no config link?): " << e.what() << __E__;
+	}
 #endif
 
 	// just handle FSMs
@@ -210,7 +249,7 @@ void VisualSupervisor::setSupervisorPropertyDefaults()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AllowNoLoginRequestTypes,
 	    "setUserPreferences |  getUserPreferences | getDirectoryContents | getRoot | "
-	    "getEvents | getDataStatus");
+	    "getEvents | getDataStatus | getWaveformData");
 
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.UserPermissionsThreshold,
@@ -224,10 +263,10 @@ void VisualSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "getRoot | getEvents | getDataStatus");
+	    "getRoot | getEvents | getDataStatus | getWaveformData");
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.NoXmlWhiteSpaceRequestTypes,
-	    "getRoot | getEvents | getDataStatus");
+	    "getRoot | getEvents | getDataStatus | getWaveformData");
 	//Note: json data in ROOTJS library expects no funny characters
 }  //end forceSupervisorPropertyValues()
 
@@ -385,7 +424,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 			}
 		}
 #else
-		xmlOut.addTextElementToData("ready", "0");
+		xmlOut.addTextElementToData(
+		    "ready",
+		    theDataManager_ != nullptr ? "1" : "0");
 #endif
 	}
 	else if(
@@ -1702,6 +1743,114 @@ void VisualSupervisor::request(const std::string&               requestType,
 		xmlOut.addTextElementToData("JSONPayLoad", JSONPayLoad);
 		//         std::ostringstream* out ;
 		//	 xmlOut.outputXmlDocument((std::ostringstream*) out, true);
+	}
+	else if(
+	    requestType ==
+	    "getWaveformData")  // ################################################################################################################
+	{
+		auto now = std::chrono::system_clock::now();
+		xmlOut.addTextElementToData(
+		    "timestamp",
+		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+		                       now.time_since_epoch())
+		                       .count()));
+
+		bool haveLiveData = false;
+
+		if(theDataManager_ != nullptr)
+		{
+			for(auto const& bufferPair : theDataManager_->getBuffers())
+			{
+				for(auto const* consumer : bufferPair.second.consumers_)
+				{
+					auto* rawConsumer =
+					    dynamic_cast<const RawDataVisualizerConsumer*>(consumer);
+					if(!rawConsumer)
+						continue;
+
+					const std::string& rawBuf =
+					    const_cast<RawDataVisualizerConsumer*>(rawConsumer)
+					        ->getLastRawDataBuffer();
+					if(rawBuf.size() < 4)
+						continue;
+
+					const unsigned int TX_DATA_OFFSET = 2;
+					const uint8_t*     raw =
+					    reinterpret_cast<const uint8_t*>(rawBuf.data());
+					unsigned int payloadSize = rawBuf.size() - TX_DATA_OFFSET;
+					unsigned int bps         = 2;
+					unsigned int numChannels = 4;
+
+					if(payloadSize < bps * numChannels)
+						continue;
+
+					unsigned int numSamples = payloadSize / (bps * numChannels);
+
+					xmlOut.addTextElementToData("source", "live");
+					xmlOut.addTextElementToData("numChannels",
+					                            std::to_string(numChannels));
+					xmlOut.addTextElementToData("bitWidth", "16");
+
+					for(unsigned int ch = 0; ch < numChannels; ++ch)
+					{
+						std::string csv;
+						csv.reserve(numSamples * 6);
+						for(unsigned int s = 0; s < numSamples; ++s)
+						{
+							unsigned int idx =
+							    TX_DATA_OFFSET + (s * numChannels + ch) * bps;
+							uint16_t val = 0;
+							if(idx + 1 < rawBuf.size())
+								val = raw[idx] | (raw[idx + 1] << 8);
+							if(s)
+								csv += ',';
+							csv += std::to_string(val);
+						}
+						xmlOut.addTextElementToData("channel_" + std::to_string(ch),
+						                            csv);
+					}
+
+					haveLiveData = true;
+					break;
+				}
+				if(haveLiveData)
+					break;
+			}
+		}
+
+		if(!haveLiveData)
+		{
+			unsigned int numChannels = 4;
+			unsigned int numSamples  = 200;
+			double       epoch =
+			    std::chrono::duration<double>(now.time_since_epoch()).count();
+
+			xmlOut.addTextElementToData("source", "demo");
+			xmlOut.addTextElementToData("numChannels",
+			                            std::to_string(numChannels));
+			xmlOut.addTextElementToData("bitWidth", "12");
+
+			double freqs[]  = {3.0, 7.0, 13.0, 23.0};
+			double phases[] = {0.0, 0.7, 1.4, 2.1};
+			double amps[]   = {0.8, 0.6, 0.5, 0.4};
+
+			for(unsigned int ch = 0; ch < numChannels; ++ch)
+			{
+				std::string csv;
+				csv.reserve(numSamples * 6);
+				for(unsigned int s = 0; s < numSamples; ++s)
+				{
+					double t =
+					    epoch * freqs[ch] + (double)s / numSamples * 2.0 * M_PI;
+					double v = 2048.0 + 2048.0 * amps[ch] *
+					                        sin(t + phases[ch]);
+					if(s)
+						csv += ',';
+					csv += std::to_string((int)v);
+				}
+				xmlOut.addTextElementToData("channel_" + std::to_string(ch), csv);
+			}
+		}
 	}
 	else if(
 	    requestType ==

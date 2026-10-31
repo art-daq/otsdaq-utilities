@@ -1,0 +1,43 @@
+.ViewerWaveform-status {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 28px;
+	line-height: 28px;
+	padding: 0 12px;
+	background: rgba(0,0,0,0.6);
+	color: #ccccdd;
+	font: 13px monospace;
+	z-index: 10;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.ViewerWaveform-controls {
+	position: absolute;
+	top: 4px;
+	right: 12px;
+	z-index: 11;
+}
+
+.ViewerWaveform-btn {
+	background: rgba(80,80,120,0.7);
+	color: #ccccdd;
+	border: 1px solid #555577;
+	border-radius: 3px;
+	padding: 3px 10px;
+	margin-left: 6px;
+	font: 12px monospace;
+	cursor: pointer;
+}
+
+.ViewerWaveform-btn:hover {
+	background: rgba(100,100,150,0.9);
+}
+
+#ViewerWaveform-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
