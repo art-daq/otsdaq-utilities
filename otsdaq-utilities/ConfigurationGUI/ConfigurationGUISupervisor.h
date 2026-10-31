@@ -275,6 +275,8 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	void  					testXDAQContext							(void);
 
+	static void 			RemoteControlWorkLoop					(ConfigurationGUISupervisor* theSupervisor);
+
 	enum
 	{
 		CONFIGURATION_MANAGER_EXPIRATION_TIME   = 60 * 60 * 24 * 2, ///< 2 days, in seconds
