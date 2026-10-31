@@ -1,17 +1,14 @@
 #include "otsdaq-utilities/Visualization/VisualSupervisor.h"
-#include "otsdaq/DataManager/DataManagerSingleton.h"
 #include "otsdaq/Macros/BinaryStringMacros.h"
-#include "otsdaq/RootUtilities/VisualDataManager.h"
 #include "otsdaq/XmlUtilities/XmlDocument.h"
-// #include "otsdaq/otsdaq/Macros/MessageTools.h"
+#include "otsdaq/Macros/MessageTools.h"
+
+#ifndef OTS_LITE
+#include "otsdaq/DataManager/DataManagerSingleton.h"
+#include "otsdaq/RootUtilities/VisualDataManager.h"
 #include <boost/regex.hpp>
 #include "otsdaq/DataManager/DQMHistosConsumerBase.h"
-#include "otsdaq/Macros/MessageTools.h"
 #include "otsdaq/RootUtilities/RootFileExplorer.h"
-
-/// ROOT documentation
-/// http://root.cern.ch/root/html/index.html
-///
 #include <TBranchElement.h>
 #include <TBuffer.h>
 #include <TBufferJSON.h>
@@ -30,6 +27,7 @@
 #include <TTree.h>
 #include "TBufferFile.h"
 #include "TObject.h"
+#endif
 
 #include <dirent.h>   /*DIR and dirent*/
 #include <sys/stat.h> /*mkdir*/
@@ -43,28 +41,27 @@
 #include <memory>
 #include <mutex>
 
+#ifndef OTS_LITE
 #include "otsdaq/DataManager/DataConsumer.h"
 #include "otsdaq/DataManager/DataProducerBase.h"
+#endif
 
 // #include <thread>
 
+#ifndef OTS_LITE
 #define ROOT_BROWSER_PATH __ENV__("ROOT_BROWSER_PATH")
 #define ROOT_DISPLAY_CONFIG_PATH __ENV__("ROOT_DISPLAY_CONFIG_PATH")
 
 #define LIVEDQM_DIR std::string("LIVE_DQM")
-// Top-level directory the DQM consumer books everything under (see
-// DQMMu2eHistoConsumer::startProcessingData). Hidden from the browser: a live path
-// without it is mapped onto it, a path that already names it passes through.
 #define LIVE_TOP_DIR std::string("Mu2eHistos")
 #define PRE_MADE_ROOT_CFG_DIR std::string("Pre-made Views")
 #define HISTORY_DIR std::string("History")
 
 #define PRE_MADE_ROOT_CFG_FILE_EXT std::string(".rcfg")
+#endif
 
 #define PREFERENCES_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/VisualizerData/"
 #define PREFERENCES_FILE_EXT ".pref"
-
-#define ROOT_VIEWER_PERMISSIONS_THRESHOLD 100
 
 using namespace ots;
 
@@ -84,7 +81,9 @@ VisualSupervisor::VisualSupervisor(xdaq::ApplicationStub* stub)
 	INIT_MF("VisualSupervisor");
 
 	mkdir(((std::string)PREFERENCES_PATH).c_str(), 0755);
+#ifndef OTS_LITE
 	ROOT::EnableThreadSafety();
+#endif
 
 	__SUP_COUT__ << "Constructed." << __E__;
 }  // end constructor
@@ -101,7 +100,7 @@ VisualSupervisor::~VisualSupervisor(void)
 void VisualSupervisor::destroy(void)
 {
 	__SUP_COUT__ << "Destroying..." << __E__;
-
+#ifndef OTS_LITE
 	DataManagerSingleton::deleteInstance(CorePropertySupervisorBase::getSupervisorUID());
 	if(theStateMachineImplementation_.size() > 1)
 	{
@@ -112,6 +111,7 @@ void VisualSupervisor::destroy(void)
 		theStateMachineImplementation_.pop_back();
 	else
 		__COUT_WARN__ << "No visual data manager was pushed." << __E__;
+#endif
 }  // end destroy()
 
 //==============================================================================
@@ -122,6 +122,7 @@ try
 
 	CoreSupervisorBase::configureInit();
 
+#ifndef OTS_LITE
 	try
 	{
 		ConfigurationTree testAppLink = theConfigurationManager_->getNode(
@@ -164,6 +165,7 @@ try
 		__SUP_COUT__ << "No Visual Supervisor configuration link, so skipping Visual "
 		                "data manager instantiation."
 		             << __E__;
+#endif
 
 	// just handle FSMs
 	CoreSupervisorBase::transitionConfiguringFSMs();
@@ -326,6 +328,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       std::chrono::system_clock::now().time_since_epoch())
 		                       .count()));
+#ifndef OTS_LITE
 		xmlOut.addTextElementToData(
 		    "ready",
 		    theDataManager_ != nullptr && theDataManager_->isReady() ? "1" : "0");
@@ -381,6 +384,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 					addProcessor("consumer", bufferPair.first, consumer, 0, 0);
 			}
 		}
+#else
+		xmlOut.addTextElementToData("ready", "0");
+#endif
 	}
 	else if(
 	    requestType == "setUserPreferences" &&
@@ -506,6 +512,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    requestType ==
 	    "getDirectoryContents")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "Directory browsing with ROOT file support is not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		// return directory structure for requested path, types are "dir" and "file"
 		std::string rootpath =
 		    std::string(ROOT_BROWSER_PATH) +
@@ -515,9 +525,6 @@ void VisualSupervisor::request(const std::string&               requestType,
 		path = boost::regex_replace(path, re, "/");  // Dario: should be transparent for
 		    // Ryan's purposes but required by Extjs
 
-		////STDLINE(std::string("rootpath                 : ")+rootpath,"") ;
-		////STDLINE(std::string("path                     : ")+    path,"") ;
-
 		// return 1 if user has access to admin controls, else 0
 		char permStr[10];
 		sprintf(permStr,
@@ -526,8 +533,6 @@ void VisualSupervisor::request(const std::string&               requestType,
 		            CoreSupervisorBase::getSupervisorPropertyUserPermissionsThreshold(
 		                "rootAdminControls"));
 		xmlOut.addTextElementToData("permissions", permStr);  // add permissions
-		////STDLINE(std::string("permStr                  : ")+permStr,"") ;
-		////STDLINE(std::string("PRE_MADE_ROOT_CFG_DIR    : ")+PRE_MADE_ROOT_CFG_DIR,"") ;
 
 		std::string dirpath = rootpath + path;
 		// If I am not looking for a file but just for the dir with the premade views
@@ -546,7 +551,6 @@ void VisualSupervisor::request(const std::string&               requestType,
 			dirpath = std::string(ROOT_BROWSER_PATH) + "/" +
 			          path.substr(HISTORY_DIR.length() + 2);
 
-		////STDLINE(std::string("dirpath                  : ")+ dirpath,"") ;
 		__SUP_COUT__ << "rootpath:-" << rootpath << "-path:-" << path << "-dirpath:-"
 		             << dirpath << "-" << __E__;
 
@@ -591,8 +595,6 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 				if(!recheck || (pRtDIR = opendir(ROOT_DISPLAY_CONFIG_PATH)))
 				{
-					////STDLINE(std::string("--> PRE_MADE_ROOT_CFG_DIR: ")+LIVEDQM_DIR,"")
-					///;
 					xmlOut.addTextElementToData("dir",
 					                            PRE_MADE_ROOT_CFG_DIR);  // add to xml
 					if(recheck)
@@ -601,36 +603,27 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 				xmlOut.addTextElementToData("dir", HISTORY_DIR);  // add to xml
 			}
-			////STDLINE(std::string("Opening ")+ dirpath,"") ;
 			if(path != "/")
 				while((entry = readdir(pDIR)))
 				{
-					//__SUP_COUT__ << int(entry->d_type) << " " << entry->d_name << "\n" <<
-					// __E__;
 					if(entry->d_name[0] != '.' &&
 					   (entry->d_type ==
 					        0 ||  // 0 == UNKNOWN (which can happen - seen in SL7 VM)
 					    entry->d_type == 4 ||
 					    entry->d_type == 8))
 					{
-						//__SUP_COUT__ << int(entry->d_type) << " " << entry->d_name << "\n"
-						//<< __E__;
 						isNotRtCfg =
 						    std::string(entry->d_name).find(".rcfg") == std::string::npos;
 						isDir = false;
 
 						if(entry->d_type == 0)
 						{
-							// unknown type .. determine if directory
-							////STDLINE(std::string("Opening ")+dirpath+entry->d_name,"") ;
 							DIR* pTmpDIR = opendir((dirpath + entry->d_name).c_str());
 							if(pTmpDIR)
 							{
-								////STDLINE("is a directory","") ;
 								isDir = true;
 								closedir(pTmpDIR);
 							}
-							// else //assume file
 						}
 
 						if((entry->d_type == 8 ||
@@ -650,13 +643,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		}
 		else
 			__SUP_COUT__ << "Failed to access directory contents!" << __E__;
-		// std::ostringstream* out ;
-		// xmlOut.outputXmlDocument((std::ostringstream*) out, true);
+#endif
 	}
 	else if(
 	    requestType ==
 	    "getRoot")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "ROOT features are not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		// return directory structure for requested ROOT path, types are "dir" and "file"
 		std::string path = CgiDataUtilities::postData(cgiIn, "RootPath");
 		__SUP_COUTV__(path);
@@ -896,6 +892,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 			}
 		}
 
+#endif
 	}  // END LORENZO GET ROOT
 	// else if(
 	//     requestType ==
@@ -1299,6 +1296,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    requestType ==
 	    "getEvents")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "Event display requires ROOT, which is not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		if(theDataManager_ == nullptr)
 		{
 			__SS__ << "No Data Manager instantiated." << __E__;
@@ -1359,11 +1360,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		//
 		//		}
 		__SUP_COUT__ << "Done hits xml" << __E__;
+#endif
 	}
 	else if(
 	    requestType ==
 	    "getGeometry")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "Geometry display requires ROOT, which is not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		__SUP_COUT__ << "getGeometry" << __E__;
 
 		if(theDataManager_ == nullptr)
@@ -1407,11 +1413,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		//				xmlOut.addTextElementToParent("xyz_point", str, objectParent);
 		//			}
 		//		}
+#endif
 	}
 	else if(
 	    requestType ==
 	    "getRootConfig")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "ROOT config features are not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		std::string path = CgiDataUtilities::postData(cgiIn, "RootConfigPath");
 		__SUP_COUT__ << "path " << path << __E__;
 
@@ -1433,11 +1444,16 @@ void VisualSupervisor::request(const std::string&               requestType,
 		else
 			xmlOut.addTextElementToData("status",
 			                            "Failed. File to properly load config file.");
+#endif
 	}
 	else if(
 	    requestType ==
 	    "rootAdminControls")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "ROOT admin controls are not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		//		if(userPermissions < ROOT_VIEWER_PERMISSIONS_THRESHOLD)
 		//		{
 		//			__SUP_COUT__ << "Insufficient permissions for Root Viewer Admin
@@ -1542,32 +1558,40 @@ void VisualSupervisor::request(const std::string&               requestType,
 			xmlOut.addTextElementToData("status", "Failed. Invalid path.");
 
 		//}
+#endif
 	}
 	else if(
 	    requestType ==
 	    "getMeDirs")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "ROOT directory browsing is not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		xmlOut.setDarioStyle(true);  // workaround for XML formatting....
 		std::string  fSystemPath = std::string(ROOT_BROWSER_PATH) + "/";
 		std::string  fRootPath   = CgiDataUtilities::postData(cgiIn, "Path");
 		boost::regex re("%2F");
 		fRootPath            = boost::regex_replace(fRootPath, re, "/");
 		std::string fullPath = fSystemPath + fRootPath;
-		//  fFoldersPath_ = "pippo" ;
 		STDLINE(std::string("Begin: fSystemPath  = ") + fSystemPath, ACWhite);
 		STDLINE(std::string("Begin: fRootPath    = ") + fRootPath, ACWhite);
 		STDLINE(std::string("Begin: fullPath     = ") + fullPath, ACWhite);
-		//  STDLINE(std::string("Begin: fFoldersPath = ")+fFoldersPath_,ACCyan ) ;
 
 		xmlOut.setRootPath(fRootPath);
 		xmlOut.makeDirectoryBinaryTree(fSystemPath, fRootPath, 0, NULL);
 		std::ostringstream* out = new std::ostringstream();
 		xmlOut.outputXmlDocument((std::ostringstream*)out, true);
+#endif
 	}
 	else if(
 	    requestType ==
 	    "getMeRootFile")  // ################################################################################################################
 	{
+#ifdef OTS_LITE
+		__SUP_SS__ << "ROOT file browsing is not available in the otsdaq lite build." << __E__;
+		__SUP_SS_THROW__;
+#else
 		xmlOut.setDarioStyle(true);  // workaround for XML formatting....
 		std::string  fSystemPath   = std::string(ROOT_BROWSER_PATH) + "/";
 		std::string  fRootPath     = CgiDataUtilities::postData(cgiIn, "fRootPath");
@@ -1578,17 +1602,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 		boost::regex re("%2F");
 		fRootPath    = boost::regex_replace(fRootPath, re, "/");
 		fFoldersPath = boost::regex_replace(fFoldersPath, re, "/");
-		// 	 STDLINE(std::string("fSystemPath  : ")+fSystemPath  ,ACCyan);
-		// 	 STDLINE(std::string("fRootPath    : ")+fRootPath    ,ACCyan);
-		// 	 STDLINE(std::string("fFoldersPath : ")+fFoldersPath ,ACCyan);
-		// 	 STDLINE(std::string("fHistName    : ")+fHistName    ,ACCyan);
-		// 	 STDLINE(std::string("fRFoldersPath: ")+fRFoldersPath,ACCyan);
-		//  	 STDLINE(std::string("fFileName    : ")+fFileName    ,ACCyan);
 		RootFileExplorer* theExplorer = new RootFileExplorer(
 		    fSystemPath, fRootPath, fFoldersPath, fHistName, fRFoldersPath, fFileName);
 		xmlOut.setDocument(theExplorer->initialize(false));
-		//         std::ostringstream* out ;
-		// xmlOut.outputXmlDocument((std::ostringstream*) out, true);
+#endif
 	}
 	// else if(
 	//     requestType ==
@@ -1658,9 +1675,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 		STDLINE("configPayload: ", ACRed);
 		STDLINE(configPayload, ACYellow);
 
-		fstream outFile;
-		outFile.open("/tmp/configPayload.json", ios::out | ios::app);
-		outFile << configPayload << endl;
+		std::fstream outFile;
+		outFile.open("/tmp/configPayload.json", std::ios::out | std::ios::app);
+		outFile << configPayload << std::endl;
 		outFile.close();
 	}
 	else if(
@@ -1671,7 +1688,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		std::string JSONPayLoad   = "";
 		std::string line          = "";
 
-		ifstream JSONFile("/tmp/configPayload.json");
+		std::ifstream JSONFile("/tmp/configPayload.json");
 
 		if(JSONFile.is_open())
 		{
@@ -1705,7 +1722,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 		__SUP_SS_THROW__;
 	}
 
+#ifndef OTS_LITE
 	if(theDataManager_ != nullptr)
 		theDataManager_->setDoNotStop(false);
+#endif
 
 }  //end request()
