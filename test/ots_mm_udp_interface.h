@@ -107,6 +107,11 @@ class ots_mm_udp_interface
 	                               const std::string& variablesJSON,
 	                               unsigned int       iterationCount);
 	std::string        describeSequence(const std::string& sequenceJSON);
+	std::string        universalRead(const std::string& targetFE,
+	                                  const std::string& address);
+	void               universalWrite(const std::string& targetFE,
+	                                   const std::string& address,
+	                                   const std::string& data);
 
 	// static const int        MAXBUFLEN = 5000;
 

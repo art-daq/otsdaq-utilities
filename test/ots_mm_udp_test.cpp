@@ -18,6 +18,11 @@ try
 		        "usage: ots_mm_udp_test <mm IP> <mm Port> <Front-end UID> <FEMacro "
 		        "Name> <Macro Input args...> \n");
 		fprintf(stderr,
+		        "       ots_mm_udp_test <mm IP> <mm Port> <Front-end UID> r <address>\n");
+		fprintf(stderr,
+		        "       ots_mm_udp_test <mm IP> <mm Port> <Front-end UID> w <address> "
+		        "<data>\n");
+		fprintf(stderr,
 		        "       ots_mm_udp_test <mm IP> <mm Port> <Sequence Name> <iterations> "
 		        "[[varName,value,step,max] ...]\n\n");
 		fprintf(stderr,
@@ -26,6 +31,9 @@ try
 		fprintf(stderr,
 		        "\t If <FEMacro Name> not specified, then the list of existing FE Macro "
 		        "Names will be output associated with the specified FE UID\n");
+		fprintf(stderr,
+		        "\t 'r' and 'w' are universal register read/write (address in hex, e.g. "
+		        "0x1004)\n");
 		fprintf(stderr,
 		        "\t If only a <Sequence Name> is given (no iterations), lists the "
 		        "sequence's commands and Input Variables with their saved defaults.\n");
@@ -418,6 +426,35 @@ try
 	}
 
 	__COUTV__(fes[fe]);
+
+	if(argc >= 5 && std::string(argv[4]) == "r")
+	{
+		if(argc < 6)
+		{
+			__COUT_ERR__ << "usage: ots_mm_udp_test <mm IP> <mm Port> <FE UID> r <address>"
+			             << __E__;
+			return 1;
+		}
+		std::string address = argv[5];
+		std::string result  = mm.universalRead(fes[fe], address);
+		__COUT_INFO__ << "Read " << address << " = " << result << __E__;
+		return 0;
+	}
+	if(argc >= 5 && std::string(argv[4]) == "w")
+	{
+		if(argc < 7)
+		{
+			__COUT_ERR__ << "usage: ots_mm_udp_test <mm IP> <mm Port> <FE UID> w <address> <data>"
+			             << __E__;
+			return 1;
+		}
+		std::string address = argv[5];
+		std::string data    = argv[6];
+		mm.universalWrite(fes[fe], address, data);
+		__COUT_INFO__ << "Wrote " << address << " = " << data << __E__;
+		return 0;
+	}
+
 	std::string commandStr = mm.getCommandList(fes[fe]);
 	__COUTV__(commandStr);
 
