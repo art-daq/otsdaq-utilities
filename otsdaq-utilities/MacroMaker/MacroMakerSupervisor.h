@@ -7,6 +7,7 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <set>
 
 namespace ots
 {
@@ -262,6 +263,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 	std::vector<std::shared_ptr<runFEMacroGroupStruct>> feMacroRunThreadStruct_;
 	std::atomic<uint64_t>                               feMacroRunGroupIDCounter_{0};
+	std::set<uint64_t>                                  staleGroupIdsWarned_;
 
 	std::mutex feMacroRunThreadStructMutex_;
 
