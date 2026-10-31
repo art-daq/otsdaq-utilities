@@ -42,7 +42,16 @@ var _windowTooltip = "To verify Status Monitoring is enabled, check the Gateway 
 	"controls it. To check app status, set this field to YES in your Context Group Configuration Tree: \n\n" +
 	"<b>XDAQApplicationTable --> \nGatewaySupervisor (record in XDAQApplicationTable) --> \nLinkToSuperivorTable --> \nEnableApplicationStatusMonitoring</b>" +
 	"\n\n" +
-	"Remember, to restart ots after a Context group configuration change.";
+	"Remember, to restart ots after a Context group configuration change." +
+	"\n\n" +
+	"<b>Available Space</b> shows free disk space on each host, reported by the first app in each " +
+	"Context. Three filesystems are watched: the one holding the logs ($OTSDAQ_LOG_DIR), the one " +
+	"holding the data ($OTSDAQ_DATA), and the host's /var. Filesystems that report the same free " +
+	"space are the same disk and are shown once; a host with everything on one disk shows a single " +
+	"figure, otherwise each is labelled Log, Data or Var. 'Usage' is the recent fill rate. " +
+	"The Gateway raises a system message when any of them drops below its minimum " +
+	"(OTSDAQ_LOG_DISK_MINIMUM, OTSDAQ_DATA_DISK_MINIMUM, OTSDAQ_VAR_DISK_MINIMUM; default 1 GB, 0 disables) " +
+	"or is filling fast enough to reach it soon.";
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -203,7 +212,8 @@ function getAppsArray() {
 				}
 				var appNames, appUrls, appIds, appStatus, appTime,
 					appStale, appClasses, appProgress, appDetail, appContexts,
-					appSubapps, availableLogSpaceGB, availableDataSpaceGB, logUsageRateKBps, dataUsageRateKBps;
+					appSubapps, availableLogSpaceGB, availableDataSpaceGB, availableVarSpaceGB,
+					logUsageRateKBps, dataUsageRateKBps, varUsageRateKBps;
 
 				appNames = req.responseXML.getElementsByTagName("name");
 				appIds = req.responseXML.getElementsByTagName("id");
@@ -214,8 +224,10 @@ function getAppsArray() {
 				appDetail = req.responseXML.getElementsByTagName("detail");
 				availableLogSpaceGB = req.responseXML.getElementsByTagName("availableLogSpaceGB");
 				availableDataSpaceGB = req.responseXML.getElementsByTagName("availableDataSpaceGB");
+				availableVarSpaceGB = req.responseXML.getElementsByTagName("availableVarSpaceGB"); //absent from older Gateways
 				logUsageRateKBps = req.responseXML.getElementsByTagName("logUsageRateKBps");
 				dataUsageRateKBps = req.responseXML.getElementsByTagName("dataUsageRateKBps");
+				varUsageRateKBps = req.responseXML.getElementsByTagName("varUsageRateKBps");
 				appClasses = req.responseXML.getElementsByTagName("class");
 				appUrls = req.responseXML.getElementsByTagName("url");
 				appContexts = req.responseXML.getElementsByTagName("context");
@@ -269,8 +281,10 @@ function getAppsArray() {
 						"detail": appDetail[i].getAttribute("value"),
 						"availableLogSpaceGB": availableLogSpaceGB[i].getAttribute("value"),
 						"availableDataSpaceGB": availableDataSpaceGB[i].getAttribute("value"),
+						"availableVarSpaceGB": availableVarSpaceGB[i] ? availableVarSpaceGB[i].getAttribute("value") : "0",
 						"logUsageRateKBps": logUsageRateKBps[i].getAttribute("value"),
 						"dataUsageRateKBps": dataUsageRateKBps[i].getAttribute("value"),
+						"varUsageRateKBps": varUsageRateKBps[i] ? varUsageRateKBps[i].getAttribute("value") : "0",
 						"class": appClasses[i].getAttribute("value"),
 						"url": appUrls[i].getAttribute("value"),
 						"context": appContexts[i].getAttribute("value")
@@ -285,8 +299,10 @@ function getAppsArray() {
 						var subappDetail = appSubapps[i].getElementsByTagName("subapp_detail");
 						var subappAvailableLogSpaceGB = appSubapps[i].getElementsByTagName("subapp_availableLogSpaceGB");
 						var subappAvailableDataSpaceGB = appSubapps[i].getElementsByTagName("subapp_availableDataSpaceGB");
+						var subappAvailableVarSpaceGB = appSubapps[i].getElementsByTagName("subapp_availableVarSpaceGB");
 						var subappLogUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_logUsageRateKBps");
 						var subappDataUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_dataUsageRateKBps");
+						var subappVarUsageRateKBps = appSubapps[i].getElementsByTagName("subapp_varUsageRateKBps");
 						var subappUrl = appSubapps[i].getElementsByTagName("subapp_url");
 						var subappID = appSubapps[i].getElementsByTagName("subapp_id");
 						var subappClass = appSubapps[i].getElementsByTagName("subapp_class");
@@ -302,8 +318,10 @@ function getAppsArray() {
 								"detail": subappDetail[j].getAttribute("value"),
 								"availableLogSpaceGB": subappAvailableLogSpaceGB[j].getAttribute("value"),
 								"availableDataSpaceGB": subappAvailableDataSpaceGB[j].getAttribute("value"),
+								"availableVarSpaceGB": subappAvailableVarSpaceGB[j] ? subappAvailableVarSpaceGB[j].getAttribute("value") : "0",
 								"logUsageRateKBps": subappLogUsageRateKBps[j].getAttribute("value"),
 								"dataUsageRateKBps": subappDataUsageRateKBps[j].getAttribute("value"),
+								"varUsageRateKBps": subappVarUsageRateKBps[j] ? subappVarUsageRateKBps[j].getAttribute("value") : "0",
 								"class": subappClass[j].getAttribute("value"),
 								"id": subappID[j].getAttribute("value"),
 								"url": subappUrl[j].getAttribute("value")
@@ -743,20 +761,7 @@ function displayTable(appsArray) {
 					cell.onclick = function() { copyText(this); };
 				}
 				else if (columnKeys[j] == "availableSpace") {
-					var logSpace = parseFloat(appsArray[i]["availableLogSpaceGB"]) || 0;
-					var dataSpace = parseFloat(appsArray[i]["availableDataSpaceGB"]) || 0;
-					var logUsage = parseFloat(appsArray[i]["logUsageRateKBps"]) || 0;
-					var dataUsage = parseFloat(appsArray[i]["dataUsageRateKBps"]) || 0;
-
-					if (!logSpace)
-						cell.innerHTML = ""; //leave blank if no value
-					else if (logSpace == dataSpace)
-						cell.innerHTML = (logSpace).toFixed(2) + " GB, Usage: " + logUsage.toFixed(1) + " KB/s";
-					else
-						cell.innerHTML = "Log: " + (logSpace).toFixed(2) + " GB, Log Usage: " +
-							logUsage.toFixed(1) + " KB/s; Data: " +
-							(dataSpace).toFixed(2) + " GB, Data Usage: " +
-							dataUsage.toFixed(1) + " KB/s";
+					cell.innerHTML = availableSpaceText(appsArray[i]);
 				}
 				else if (columnKeys[j] == "context") {
 					// Skip to make things look better
@@ -890,20 +895,7 @@ function displayTable(appsArray) {
 						cell.onclick = function() { copyText(this); };
 					}
 					else if (columnKeys[j] == "availableSpace") {
-						var logSpace = parseFloat(subappInfo["availableLogSpaceGB"]) || 0;
-						var dataSpace = parseFloat(subappInfo["availableDataSpaceGB"]) || 0;
-						var logUsage = parseFloat(subappInfo["logUsageRateKBps"]) || 0;
-						var dataUsage = parseFloat(subappInfo["dataUsageRateKBps"]) || 0;
-
-						if (!logSpace)
-							cell.innerHTML = ""; //leave blank if no value
-						else if (logSpace == dataSpace)
-							cell.innerHTML = (logSpace).toFixed(2) + " GB, Usage: " + logUsage.toFixed(1) + " KB/s";
-						else
-							cell.innerHTML = "Log: " + (logSpace).toFixed(2) + " GB, Log Usage:" +
-								logUsage.toFixed(1) + " KB/s; Data: " +
-								(dataSpace).toFixed(2) + " GB, Data Usage:" +
-								dataUsage.toFixed(1) + " KB/s";
+						cell.innerHTML = availableSpaceText(subappInfo);
 					}
 					else if (columnKeys[j] == "context" || columnKeys[j] == "action") {
 						// Subapps don't have these
@@ -1232,6 +1224,41 @@ function saveCheckedUserPreferences(className, elementName, checked) {
 	//     "&checked=" + (checked?1:0));
 	Debug.log(className, elementName, checked);
 } // end of saveCheckedUserPreferences()
+
+//=====================================================================================
+//availableSpaceText ~~
+//	"Available Space" cell for an app or subapp: one figure per distinct disk.
+//	The Gateway reports free space for the disk holding the logs, the disk holding
+//	the data, and the host's /var. When two report the same free space they are the
+//	same physical disk, so only the first is shown. A single disk prints unlabelled
+//	("12.34 GB, Usage: 1.2 KB/s"); several print "Log: ...; Data: ...; Var: ...".
+function availableSpaceText(info) {
+	var disks = [
+		{ label: "Log", gb: parseFloat(info["availableLogSpaceGB"]) || 0, kbps: parseFloat(info["logUsageRateKBps"]) || 0 },
+		{ label: "Data", gb: parseFloat(info["availableDataSpaceGB"]) || 0, kbps: parseFloat(info["dataUsageRateKBps"]) || 0 },
+		{ label: "Var", gb: parseFloat(info["availableVarSpaceGB"]) || 0, kbps: parseFloat(info["varUsageRateKBps"]) || 0 }
+	];
+	if (!disks[0].gb)
+		return ""; //leave blank if no value (app is not the one reporting disks for its host)
+
+	var distinct = [];
+	for (var i = 0; i < disks.length; ++i) {
+		if (!disks[i].gb) continue;
+		var duplicate = false;
+		for (var k = 0; k < distinct.length; ++k)
+			if (distinct[k].gb == disks[i].gb) { duplicate = true; break; }
+		if (!duplicate) distinct.push(disks[i]);
+	}
+
+	if (distinct.length == 1)
+		return distinct[0].gb.toFixed(2) + " GB, Usage: " + distinct[0].kbps.toFixed(1) + " KB/s";
+
+	var parts = [];
+	for (var i = 0; i < distinct.length; ++i)
+		parts.push(distinct[i].label + ": " + distinct[i].gb.toFixed(2) + " GB, " +
+			distinct[i].label + " Usage: " + distinct[i].kbps.toFixed(1) + " KB/s");
+	return parts.join("; ");
+} // end availableSpaceText()
 
 //=====================================================================================
 function copyText(el) {
