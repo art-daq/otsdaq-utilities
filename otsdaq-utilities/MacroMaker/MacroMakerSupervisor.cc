@@ -876,7 +876,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					rxParameters.addParameter("dataResult");
 					rxParameters.addParameter("Error");
 
-					xoap::MessageReference retMsg = SOAPMessenger::sendWithSOAPReply(
+					xoap::MessageReference retMsg = theSupervisor->sendWithSOAPReply(
 					    it->second.getDescriptor(), "MacroMakerSupervisorRequest", txParameters);
 
 					SOAPUtilities::receive(retMsg, rxParameters);
@@ -941,7 +941,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					txParameters.addParameter("Data", data);
 					txParameters.addParameter("InterfaceID", feUID);
 
-					xoap::MessageReference retMsg = SOAPMessenger::sendWithSOAPReply(
+					xoap::MessageReference retMsg = theSupervisor->sendWithSOAPReply(
 					    it->second.getDescriptor(), "MacroMakerSupervisorRequest", txParameters);
 
 					SOAPParameters rxParameters;
