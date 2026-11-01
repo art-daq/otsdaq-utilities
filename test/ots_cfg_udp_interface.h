@@ -54,15 +54,22 @@
 /// A request is any of the ConfigurationGUISupervisor::request() types and its
 /// name=value parameters, exactly as the browser sends them. The reply is the same
 /// XML document the browser receives, or a string starting with "Error: ".
+///
+/// Values are sent raw, as the browser does; the server only URL-decodes specific
+/// fields (record UIDs, column names, new values, list items), so callers of
+/// sendRequest() must encodeURIComponent() exactly those, as the wrappers below do.
+///
+/// If a username is given it is sent with every request and becomes the author of
+/// any table edits; otherwise edits are attributed to the anonymous UDP user.
 class ots_cfg_udp_interface
 {
   public:
 	typedef std::vector<std::pair<std::string, std::string>> Params;
 
-	ots_cfg_udp_interface(const char* cfg_ip, int cfg_port);
+	ots_cfg_udp_interface(const char* cfg_ip, int cfg_port, const std::string& username = "");
 	~ots_cfg_udp_interface(void);
 
-	/// generic entry point: any request type with any parameters
+	/// generic entry point: any request type with any parameters (values sent as given)
 	std::string sendRequest(const std::string& requestType,
 	                        const Params&      params                   = Params(),
 	                        int                inactivityTimeoutSeconds = 5);
@@ -131,6 +138,13 @@ class ots_cfg_udp_interface
 	static std::vector<std::string> extractXmlFields(const std::string& xml,
 	                                                 const std::string& field);
 	static std::string              encodeURIComponent(const std::string& data);
+	/// e.g. for ColCSV cells of getSpecificTable, which the server URL-encodes
+	static std::string decodeURIComponent(const std::string& data);
+	/// encodes each comma-separated item, leaving the commas (recordList, fieldList, ...)
+	static std::string encodeListItems(const std::string& csv);
+
+	/// user name from the Kerberos ticket cache (klist), or "" if none
+	static std::string getKerberosUsername(void);
 
   private:
 	void receiveXmlResponse(std::string&       response,
@@ -141,6 +155,7 @@ class ots_cfg_udp_interface
 	struct sockaddr_in addr_;
 	std::string        buffer_;
 	std::string        selfIPandPort_;
+	std::string        username_;
 };  // end ots_cfg_udp_interface class declaration
 
 #endif

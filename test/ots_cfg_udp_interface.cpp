@@ -1,5 +1,7 @@
 #include "test/ots_cfg_udp_interface.h"
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 
 #define MAXBUFLEN 5000
@@ -99,12 +101,41 @@ static int receive(int          sockfd,
 }  // end receive()
 
 //==============================================================================
-ots_cfg_udp_interface::ots_cfg_udp_interface(const char* cfg_ip, int cfg_port)
-    : sock_(-1)
+ots_cfg_udp_interface::ots_cfg_udp_interface(const char*        cfg_ip,
+                                             int                cfg_port,
+                                             const std::string& username)
+    : sock_(-1), username_(username)
 {
 	sock_          = makeSocket(cfg_ip, cfg_port, addr_);
 	selfIPandPort_ = std::string(cfg_ip) + ":" + std::to_string(cfg_port);
 }  // end constructor()
+
+//==============================================================================
+std::string ots_cfg_udp_interface::getKerberosUsername(void)
+{
+	// same extraction as kinit_setup.sh: the "Principal:" line of klist, before the '@'
+	FILE* pipe = popen("klist 2>/dev/null", "r");
+	if(!pipe)
+		return "";
+	std::string username;
+	char        line[512];
+	while(fgets(line, sizeof(line), pipe))
+	{
+		std::string l(line);
+		size_t      pos = l.find("Principal:");
+		if(pos == std::string::npos)
+			continue;
+		username = l.substr(pos + strlen("Principal:"));
+		username.erase(std::remove_if(username.begin(),
+		                              username.end(),
+		                              [](unsigned char c) { return std::isspace(c); }),
+		               username.end());
+		username = username.substr(0, username.find('@'));
+		break;
+	}
+	pclose(pipe);
+	return username;
+}  // end getKerberosUsername()
 
 //==============================================================================
 ots_cfg_udp_interface::~ots_cfg_udp_interface()
@@ -129,6 +160,42 @@ std::string ots_cfg_udp_interface::encodeURIComponent(const std::string& sourceS
 		}
 	return retStr;
 }  // end encodeURIComponent()
+
+//==============================================================================
+std::string ots_cfg_udp_interface::decodeURIComponent(const std::string& data)
+{
+	std::string  decodeURIString(data.size(), 0);  // init to same size
+	unsigned int j = 0;
+	for(unsigned int i = 0; i < data.size(); ++i, ++j)
+	{
+		if(data[i] == '%' && i + 2 < data.size())
+		{
+			decodeURIString[j] = (char)std::stoi(data.substr(i + 1, 2), nullptr, 16);
+			i += 2;  // skip to next char
+		}
+		else
+			decodeURIString[j] = data[i];
+	}
+	decodeURIString.resize(j);
+	return decodeURIString;
+}  // end decodeURIComponent()
+
+//==============================================================================
+std::string ots_cfg_udp_interface::encodeListItems(const std::string& csv)
+{
+	std::string retStr;
+	size_t      start = 0, comma;
+	while(true)
+	{
+		comma = csv.find(',', start);
+		retStr += encodeURIComponent(csv.substr(start, comma - start));
+		if(comma == std::string::npos)
+			break;
+		retStr += ",";
+		start = comma + 1;
+	}
+	return retStr;
+}  // end encodeListItems()
 
 //==============================================================================
 void ots_cfg_udp_interface::receiveXmlResponse(std::string&       response,
@@ -177,9 +244,11 @@ std::string ots_cfg_udp_interface::sendRequest(const std::string& requestType,
                                                const Params&      params,
                                                int inactivityTimeoutSeconds)
 {
-	std::string sendMessage = "RequestType=" + encodeURIComponent(requestType);
+	std::string sendMessage = "RequestType=" + requestType;
+	if(!username_.empty())
+		sendMessage += "&username=" + encodeURIComponent(username_);
 	for(const auto& p : params)
-		sendMessage += "&" + encodeURIComponent(p.first) + "=" + encodeURIComponent(p.second);
+		sendMessage += "&" + p.first + "=" + p.second;
 
 	__COUT__ << "sendRequest: " << sendMessage << __E__;
 
@@ -293,9 +362,9 @@ std::string ots_cfg_udp_interface::saveTreeNodeEdit(const std::string& targetTab
 	                   {{"editNodeType", editNodeType},
 	                    {"targetTable", targetTable},
 	                    {"targetTableVersion", targetTableVersion},
-	                    {"targetUID", targetUID},
-	                    {"targetColumn", targetColumn},
-	                    {"newValue", newValue}});
+	                    {"targetUID", encodeURIComponent(targetUID)},
+	                    {"targetColumn", encodeURIComponent(targetColumn)},
+	                    {"newValue", encodeURIComponent(newValue)}});
 }
 std::string ots_cfg_udp_interface::setTreeNodeFieldValues(const std::string& tableGroup,
                                                           const std::string& tableGroupKey,
@@ -310,9 +379,9 @@ std::string ots_cfg_udp_interface::setTreeNodeFieldValues(const std::string& tab
 	                    {"tableGroupKey", tableGroupKey},
 	                    {"startPath", startPath},
 	                    {"modifiedTables", modifiedTables},
-	                    {"recordList", recordList},
-	                    {"fieldList", fieldList},
-	                    {"valueList", valueList}});
+	                    {"recordList", encodeListItems(recordList)},
+	                    {"fieldList", encodeListItems(fieldList)},
+	                    {"valueList", encodeListItems(valueList)}});
 }
 std::string ots_cfg_udp_interface::addTreeNodeRecords(const std::string& tableGroup,
                                                       const std::string& tableGroupKey,
@@ -325,7 +394,7 @@ std::string ots_cfg_udp_interface::addTreeNodeRecords(const std::string& tableGr
 	                    {"tableGroupKey", tableGroupKey},
 	                    {"startPath", startPath},
 	                    {"modifiedTables", modifiedTables},
-	                    {"recordList", recordList}});
+	                    {"recordList", encodeListItems(recordList)}});
 }
 std::string ots_cfg_udp_interface::deleteTreeNodeRecords(const std::string& tableGroup,
                                                          const std::string& tableGroupKey,
@@ -338,7 +407,7 @@ std::string ots_cfg_udp_interface::deleteTreeNodeRecords(const std::string& tabl
 	                    {"tableGroupKey", tableGroupKey},
 	                    {"startPath", startPath},
 	                    {"modifiedTables", modifiedTables},
-	                    {"recordList", recordList}});
+	                    {"recordList", encodeListItems(recordList)}});
 }
 std::string ots_cfg_udp_interface::saveSpecificTable(const std::string& tableName,
                                                      const std::string& version,
@@ -350,7 +419,7 @@ std::string ots_cfg_udp_interface::saveSpecificTable(const std::string& tableNam
 	                   {{"tableName", tableName},
 	                    {"version", version},
 	                    {"temporary", temporary ? "1" : "0"},
-	                    {"tableComment", tableComment},
+	                    {"tableComment", encodeURIComponent(tableComment)},
 	                    {"data", data}});
 }
 
@@ -364,7 +433,7 @@ std::string ots_cfg_udp_interface::saveNewTableGroup(const std::string& groupNam
 	return sendRequest("saveNewTableGroup",
 	                   {{"groupName", groupName},
 	                    {"tableList", tableList},
-	                    {"groupComment", groupComment}});
+	                    {"groupComment", encodeURIComponent(groupComment)}});
 }
 std::string ots_cfg_udp_interface::checkAffectedActiveGroups(
     const std::string& modifiedTables)
@@ -376,8 +445,8 @@ std::string ots_cfg_udp_interface::activateTableGroup(const std::string& tableGr
                                                       bool               ignoreWarnings)
 {
 	return sendRequest("activateTableGroup",
-	                   {{"tableGroup", tableGroup},
-	                    {"tableGroupKey", tableGroupKey},
+	                   {{"groupName", tableGroup},
+	                    {"groupKey", tableGroupKey},
 	                    {"ignoreWarnings", ignoreWarnings ? "1" : "0"}},
 	                   60 /*activation can be slow*/);
 }

@@ -10858,9 +10858,15 @@ void ConfigurationGUISupervisor::RemoteControlWorkLoop(
 				__SS_THROW__;
 			}
 
+			// author of edits: the client's Kerberos user, if it sent one
+			std::string username = StringMacros::decodeURIComponent(
+			    CgiDataUtilities::getOrPostData(cgiIn, "username"));
+			if(username.empty())
+				username = UDP_USERNAME;
+
 			WebUsers::RequestUserInfo userInfo(requestType, "" /*cookieCode*/);
-			userInfo.username_        = UDP_USERNAME;
-			userInfo.displayName_     = UDP_USERNAME;
+			userInfo.username_        = username;
+			userInfo.displayName_     = username;
 			userInfo.ip_              = "udp";
 			userInfo.permissionLevel_ = WebUsers::PERMISSION_LEVEL_ADMIN;
 			userInfo.NoXmlWhiteSpace_ = true;
