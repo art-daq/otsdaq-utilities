@@ -113,7 +113,8 @@ ots_cfg_udp_interface::ots_cfg_udp_interface(const char*        cfg_ip,
 //==============================================================================
 std::string ots_cfg_udp_interface::getKerberosUsername(void)
 {
-	// same extraction as kinit_setup.sh: the "Principal:" line of klist, before the '@'
+	// the principal line of klist, before the '@'. MIT prints "Default principal:",
+	// Heimdal prints "Principal:", so match case-insensitively.
 	FILE* pipe = popen("klist 2>/dev/null", "r");
 	if(!pipe)
 		return "";
@@ -121,11 +122,14 @@ std::string ots_cfg_udp_interface::getKerberosUsername(void)
 	char        line[512];
 	while(fgets(line, sizeof(line), pipe))
 	{
-		std::string l(line);
-		size_t      pos = l.find("Principal:");
+		std::string l(line), lower(line);
+		std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
+			return std::tolower(c);
+		});
+		size_t pos = lower.find("principal:");
 		if(pos == std::string::npos)
 			continue;
-		username = l.substr(pos + strlen("Principal:"));
+		username = l.substr(pos + strlen("principal:"));
 		username.erase(std::remove_if(username.begin(),
 		                              username.end(),
 		                              [](unsigned char c) { return std::isspace(c); }),
