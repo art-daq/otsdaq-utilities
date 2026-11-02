@@ -436,6 +436,8 @@ try
 			return 1;
 		}
 		std::string address = argv[5];
+		if(address.size() >= 2 && address[0] == '0' && (address[1] == 'x' || address[1] == 'X'))
+			address = address.substr(2);
 		std::string result  = mm.universalRead(fes[fe], address);
 		__COUT_INFO__ << "Read " << address << " = " << result << __E__;
 		return 0;
@@ -450,6 +452,10 @@ try
 		}
 		std::string address = argv[5];
 		std::string data    = argv[6];
+		if(address.size() >= 2 && address[0] == '0' && (address[1] == 'x' || address[1] == 'X'))
+			address = address.substr(2);
+		if(data.size() >= 2 && data[0] == '0' && (data[1] == 'x' || data[1] == 'X'))
+			data = data.substr(2);
 		mm.universalWrite(fes[fe], address, data);
 		__COUT_INFO__ << "Wrote " << address << " = " << data << __E__;
 		return 0;
