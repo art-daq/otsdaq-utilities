@@ -1641,16 +1641,13 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 		//if(!DesktopContent._cookieCodeMailbox) //attempt to fix (e.g. for Desktop)
 		//	DesktopContent._cookieCodeMailbox = document.getElementById("DesktopContent-cookieCodeMailbox");
 		if (!DesktopContent._standAloneMode && !DesktopContent._cookieCodeMailbox) {
-			var errStr = "Undefined permissions. Is system down?";
-			Debug.log(errStr, window.location.href);
-			window.clearTimeout(timeoutTimer);
-			DesktopContent._updateTimeMailbox = 0; //reset cookie code timer, so it is requested from parent
-
-			if (returnHandler && callHandlerOnErr)
-				returnHandler(0, reqParam, errStr);
-			else
-				Debug.err(errStr);
-			return;
+			// No cookie code yet.  Send the request anyway — the server
+			// grants admin for NoSecurity regardless of cookie code, or
+			// returns a proper rejection the response handler already
+			// processes (REQ_NO_LOGIN_RESPONSE / REQ_NO_PERMISSION_RESPONSE).
+			Debug.log("Cookie code not yet available, sending request with CookieCode=0.",
+				window.location.href);
+			DesktopContent._updateTimeMailbox = 0;
 		}
 
 		var cc = DesktopContent._cookieCodeMailbox;//DesktopContent._cookieCodeMailbox?DesktopContent._cookieCodeMailbox.innerHTML:""; //get cookie code from mailbox if available
