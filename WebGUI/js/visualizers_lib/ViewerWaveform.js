@@ -15,6 +15,8 @@
 var ViewerWaveform = ViewerWaveform || {};
 
 ViewerWaveform.POLL_PERIOD     = 200;  //ms
+ViewerWaveform.numChannels     = 1;    //emulator default (register 0x1007)
+ViewerWaveform.bitWidth        = 16;   //emulator default (register 0x1005)
 ViewerWaveform.CHANNEL_COLORS  = [
 	"#00ff41", "#ffb300", "#448aff", "#ff1744",
 	"#aa00ff", "#ff6d00", "#00e5ff", "#ff4081"
@@ -75,6 +77,30 @@ ViewerWaveform.launch = function() {
 	ViewerWaveform.stacked = true;
 	stackBtn.textContent   = "Stacked";
 
+	var chSel = document.createElement("select");
+	chSel.className = "ViewerWaveform-btn";
+	chSel.title = "Channels interleaved in each packet";
+	[1, 2, 4, 8].forEach(function(n) {
+		var opt = document.createElement("option");
+		opt.value = n; opt.textContent = n + " ch";
+		chSel.appendChild(opt);
+	});
+	chSel.value = ViewerWaveform.numChannels;
+	chSel.onchange = function() { ViewerWaveform.numChannels = parseInt(chSel.value); };
+	ctrlEl.appendChild(chSel);
+
+	var bwSel = document.createElement("select");
+	bwSel.className = "ViewerWaveform-btn";
+	bwSel.title = "Bits per sample";
+	[8, 12, 16, 32].forEach(function(n) {
+		var opt = document.createElement("option");
+		opt.value = n; opt.textContent = n + "-bit";
+		bwSel.appendChild(opt);
+	});
+	bwSel.value = ViewerWaveform.bitWidth;
+	bwSel.onchange = function() { ViewerWaveform.bitWidth = parseInt(bwSel.value); };
+	ctrlEl.appendChild(bwSel);
+
 	omni.appendChild(ctrlEl);
 
 	// canvas
@@ -117,7 +143,9 @@ ViewerWaveform.poll = function() {
 	ViewerWaveform.pollInFlight = true;
 
 	DesktopContent.XMLHttpRequest(
-		"Request?RequestType=getWaveformData", "",
+		"Request?RequestType=getWaveformData" +
+			"&numChannels=" + ViewerWaveform.numChannels +
+			"&bitWidth=" + ViewerWaveform.bitWidth, "",
 		ViewerWaveform.handleData,
 		0, 0, true, true);
 };
@@ -154,7 +182,7 @@ ViewerWaveform.handleData = function(req, reqParam, errStr) {
 		source:      source,
 		numChannels: numChannels,
 		bitWidth:    bitWidth,
-		maxVal:      (1 << bitWidth) - 1,
+		maxVal:      Math.pow(2, bitWidth) - 1,
 		timestamp:   timestamp
 	};
 

@@ -33,6 +33,7 @@
 
 #include <dirent.h>   /*DIR and dirent*/
 #include <sys/stat.h> /*mkdir*/
+#include <algorithm>  /*std::max*/
 
 #include <xdaq/NamespaceURI.h>
 
@@ -1754,6 +1755,12 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 		bool haveLiveData = false;
 
+		std::string reqChannelsStr = CgiDataUtilities::getData(cgiIn, "numChannels");
+		std::string reqBitWidthStr = CgiDataUtilities::getData(cgiIn, "bitWidth");
+		unsigned int reqChannels   = reqChannelsStr.empty() ? 1 : std::max(1, atoi(reqChannelsStr.c_str()));
+		unsigned int reqBitWidth   = reqBitWidthStr.empty() ? 16 : std::max(8, atoi(reqBitWidthStr.c_str()));
+		unsigned int bps           = (reqBitWidth + 7) / 8;
+
 		if(theDataManager_ != nullptr)
 		{
 			for(auto const& bufferPair : theDataManager_->getBuffers())
@@ -1765,40 +1772,42 @@ void VisualSupervisor::request(const std::string&               requestType,
 					if(!rawConsumer)
 						continue;
 
-					const std::string& rawBuf =
+					const std::string rawBuf =
 					    const_cast<RawDataVisualizerConsumer*>(rawConsumer)
 					        ->getLastRawDataBuffer();
-					if(rawBuf.size() < 4)
+					if(rawBuf.size() < 3)
 						continue;
 
 					const unsigned int TX_DATA_OFFSET = 2;
-					const uint8_t*     raw =
-					    reinterpret_cast<const uint8_t*>(rawBuf.data());
 					unsigned int payloadSize = rawBuf.size() - TX_DATA_OFFSET;
-					unsigned int bps         = 2;
-					unsigned int numChannels = 4;
 
-					if(payloadSize < bps * numChannels)
+					if(payloadSize < bps)
 						continue;
 
-					unsigned int numSamples = payloadSize / (bps * numChannels);
+					unsigned int numSamples = payloadSize / (bps * reqChannels);
+					if(numSamples == 0)
+						continue;
+
+					const uint8_t* raw =
+					    reinterpret_cast<const uint8_t*>(rawBuf.data());
 
 					xmlOut.addTextElementToData("source", "live");
 					xmlOut.addTextElementToData("numChannels",
-					                            std::to_string(numChannels));
-					xmlOut.addTextElementToData("bitWidth", "16");
+					                            std::to_string(reqChannels));
+					xmlOut.addTextElementToData("bitWidth",
+					                            std::to_string(reqBitWidth));
 
-					for(unsigned int ch = 0; ch < numChannels; ++ch)
+					for(unsigned int ch = 0; ch < reqChannels; ++ch)
 					{
 						std::string csv;
 						csv.reserve(numSamples * 6);
 						for(unsigned int s = 0; s < numSamples; ++s)
 						{
 							unsigned int idx =
-							    TX_DATA_OFFSET + (s * numChannels + ch) * bps;
-							uint16_t val = 0;
-							if(idx + 1 < rawBuf.size())
-								val = raw[idx] | (raw[idx + 1] << 8);
+							    TX_DATA_OFFSET + (s * reqChannels + ch) * bps;
+							uint32_t val = 0;
+							for(unsigned int b = 0; b < bps && idx + b < rawBuf.size(); ++b)
+								val |= static_cast<uint32_t>(raw[idx + b]) << (8 * b);
 							if(s)
 								csv += ',';
 							csv += std::to_string(val);
