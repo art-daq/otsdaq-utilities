@@ -4,8 +4,8 @@
 
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for stat() quickly checking if file exists
-#include <thread>      //for std::thread
 #include <boost/regex.hpp>
+#include <thread>  //for std::thread
 
 using namespace ots;
 
