@@ -15,6 +15,7 @@ SOURCE version.cc VisualSupervisor.cc
 		 ROOT::RIO
 		 ROOT::Gui
 		 otsdaq::RootUtilities
+		 otsdaq::RawDataVisualizerConsumer
 		 Boost::regex
 )
 endif()

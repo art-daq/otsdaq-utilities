@@ -38,7 +38,7 @@ class VisualDataManagerV2 : public DataManager
 	// const Visual3DEvents&   getVisual3DEvents   (void);
 	// const Visual3DGeometry& getVisual3DGeometry (void);
 
-	const std::string& getRawData(void);
+	std::string getRawData(void);
 
   private:
 	DQMHistosBase* theLiveDQMHistos_;

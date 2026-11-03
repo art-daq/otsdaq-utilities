@@ -172,7 +172,7 @@ DQMHistosBase* VisualDataManagerV2::getLiveDQMHistos(void) { return theLiveDQMHi
 //==============================================================================
 DQMHistosBase& VisualDataManagerV2::getFileDQMHistos(void) { return theFileDQMHistos_; }
 //==============================================================================
-const std::string& VisualDataManagerV2::getRawData(void)
+std::string VisualDataManagerV2::getRawData(void)
 {
 	//__CFG_COUT__ << __E__;
 
