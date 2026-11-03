@@ -1,7 +1,10 @@
-#ifndef _ots_LogbookSupervisor_h
-#define _ots_LogbookSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_LOGBOOK_LOGBOOKSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_LOGBOOK_LOGBOOKSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+
+#include <string>
+#include <vector>
 
 // clang-format off
 namespace ots
@@ -81,4 +84,4 @@ class LogbookSupervisor : public CoreSupervisorBase
 }  // namespace ots
 // clang-format on
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_LOGBOOK_LOGBOOKSUPERVISOR_H_

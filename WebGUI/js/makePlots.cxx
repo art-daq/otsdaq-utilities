@@ -1,3 +1,4 @@
+#include <vector>
 {
 	vector<TH1F*> histos;
 

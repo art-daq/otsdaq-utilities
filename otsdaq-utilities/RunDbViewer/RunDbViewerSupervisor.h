@@ -1,7 +1,9 @@
-#ifndef _ots_RunDbViewerSupervisor_h
-#define _ots_RunDbViewerSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_RUNDBVIEWER_RUNDBVIEWERSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_RUNDBVIEWER_RUNDBVIEWERSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+
+#include <string>
 
 // clang-format off
 namespace ots
@@ -59,4 +61,4 @@ class RunDbViewerSupervisor : public CoreSupervisorBase
 }  // namespace ots
 // clang-format on
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_RUNDBVIEWER_RUNDBVIEWERSUPERVISOR_H_

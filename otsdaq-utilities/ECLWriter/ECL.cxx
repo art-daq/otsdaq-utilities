@@ -1202,6 +1202,9 @@ void operator<<(::xercesc::DOMElement& e, const ECLEntry_t& i)
 }
 
 #include <xsd/cxx/post.hxx>
+#include <memory>
+#include <string>
+#include <utility>
 
 // Begin epilogue.
 //

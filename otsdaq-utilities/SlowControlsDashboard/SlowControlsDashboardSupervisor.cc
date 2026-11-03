@@ -1,12 +1,11 @@
 #include "otsdaq-utilities/SlowControlsDashboard/SlowControlsDashboardSupervisor.h"
-#include <dirent.h>    //for DIR
-#include <sys/stat.h>  //for stat() quickly checking if file exists
-#include <thread>      //for std::thread
-
 #include "otsdaq/SlowControlsCore/MakeSlowControls.h"
 #include "otsdaq/SlowControlsCore/SlowControlsVInterface.h"
 
+#include <dirent.h>    //for DIR
+#include <sys/stat.h>  //for stat() quickly checking if file exists
 #include <boost/regex.hpp>
+#include <thread>  //for std::thread
 
 using namespace ots;
 

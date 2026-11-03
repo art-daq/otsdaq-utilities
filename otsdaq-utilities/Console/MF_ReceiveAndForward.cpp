@@ -38,7 +38,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <map>
+#include <string>
 
+// NOLINTBEGIN(build/define_used)
 #define MAXBUFLEN 5000
 
 #define __MF_SUBJECT__ "mfReceiveAndForward"
@@ -68,6 +70,7 @@
 #define Q(X) #X
 #define QUOTE(X) Q(X)
 #define __COUTV__(X) __COUT__ << QUOTE(X) << " = " << X << __E__
+// NOLINTEND(build/define_used)
 
 /// get sockaddr, IPv4 or IPv6:
 void* get_in_addr(struct sockaddr* sa)

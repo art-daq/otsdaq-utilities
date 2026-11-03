@@ -1,5 +1,5 @@
-#ifndef __ECLCONNECTION_HPP_
-#define __ECLCONNECTION_HPP_
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLCONNECTION_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLCONNECTION_H_
 
 #include <curl/curl.h>
 #include <iostream>
@@ -46,4 +46,4 @@ class ECLConnection
 	time_t      _lastOperationTime = 0;
 };
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_ECLWRITER_ECLCONNECTION_H_

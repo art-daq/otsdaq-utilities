@@ -1,17 +1,17 @@
 #include "otsdaq/MessageFacility/MessageFacility.h"
 
+#include "otsdaq/ConfigurationInterface/ConfigurationInterface.h"
+#include "otsdaq/ConfigurationInterface/ConfigurationManagerRW.h"
+
+// Shared test utilities
+#include "otsdaq/Macros/TestUtilities.h"
+
 #include <dirent.h>
 #include <cassert>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
-
-#include "otsdaq/ConfigurationInterface/ConfigurationInterface.h"
-#include "otsdaq/ConfigurationInterface/ConfigurationManagerRW.h"
-
-// Shared test utilities
-#include "otsdaq/Macros/TestUtilities.h"
 
 /// Updates specific cells in a table by UID and column name, then creates a new version.
 /// Optionally assigns a version alias to the newly created version.

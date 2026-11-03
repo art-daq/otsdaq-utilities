@@ -1,7 +1,10 @@
-#ifndef _ots_ChatSupervisor_h
-#define _ots_ChatSupervisor_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CHAT_CHATSUPERVISOR_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CHAT_CHATSUPERVISOR_H_
 
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+
+#include <string>
+#include <vector>
 
 namespace ots
 {
@@ -79,4 +82,4 @@ class ChatSupervisor : public CoreSupervisorBase
 };
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_CHAT_CHATSUPERVISOR_H_

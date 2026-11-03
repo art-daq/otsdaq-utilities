@@ -1,5 +1,5 @@
-#ifndef _ots_VisualSupervisorV2_h
-#define _ots_VisualSupervisorV2_h
+#ifndef OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VISUALSUPERVISORV2_H_
+#define OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VISUALSUPERVISORV2_H_
 
 #include "otsdaq-utilities/VisualizationV2/VisualDataManagerV2.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
@@ -23,6 +23,7 @@
 #include <iostream>
 #else
 #include <iostream.h>
+#include <string>
 #endif
 
 #define X(str) XStr(str).unicodeForm()
@@ -87,4 +88,4 @@ class VisualSupervisorV2 : public CoreSupervisorBase
 };
 }  // namespace ots
 
-#endif
+#endif  // OTSDAQ_UTILITIES_OTSDAQ_UTILITIES_VISUALIZATIONV2_VISUALSUPERVISORV2_H_
