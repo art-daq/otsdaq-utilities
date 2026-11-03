@@ -209,11 +209,11 @@ void UpdateTableCells(int argc, char* argv[])
 		std::string                             accumulatedWarnings;
 		const std::map<std::string, TableInfo>& allTableInfo =
 		    cfgMgr->getAllTableInfo(true /* refresh */,
-		                            &accumulatedWarnings,
-		                            "" /* errorFilterName */,
-		                            false /* getGroupKeys */,
-		                            false /* getGroupInfo */,
-		                            true /* initializeActiveGroups */);
+			                        &accumulatedWarnings,
+			                        "" /* errorFilterName */,
+			                        false /* getGroupKeys */,
+			                        false /* getGroupInfo */,
+			                        true /* initializeActiveGroups */);
 		__COUTV__(allTableInfo.size());
 	}
 

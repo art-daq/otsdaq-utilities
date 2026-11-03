@@ -382,7 +382,7 @@ void getVectorFromString(const std::string&        inputString,
 			listToReturn.push_back(decodeURIComponents
 			                           ? ots_mm_udp_interface::decodeURIComponent(
 			                                 inputString.substr(i, j - i))
-			                           : inputString.substr(i, j - i));
+									   : inputString.substr(i, j - i));
 
 			// setup i and j for next find
 			i = c + 1;
@@ -412,7 +412,7 @@ void getVectorFromString(const std::string&        inputString,
 		listToReturn.push_back(
 		    decodeURIComponents
 		        ? ots_mm_udp_interface::decodeURIComponent(inputString.substr(i, j - i))
-		        : inputString.substr(i, j - i));
+				: inputString.substr(i, j - i));
 	}
 
 	// assert that there is one less delimiter than values
@@ -678,7 +678,7 @@ std::string ots_mm_udp_interface::getFrontendList()
 			retStr += ';';
 		retStr += fields[3];  //append FE UID
 		                      // __COUTV__(retStr);
-	}                         //end primary loop
+	}  //end primary loop
 
 	return retStr;
 }  //end getFrontendList()
@@ -1349,7 +1349,7 @@ std::string ots_mm_udp_interface::universalRead(const std::string& targetFE,
 		__SS_THROW__;
 	}
 
-	after = 0;
+	after                  = 0;
 	std::string dataResult = extractXmlField(responseXML, "readData", 0, after, &after);
 	return dataResult;
 }  //end universalRead()
@@ -1359,8 +1359,8 @@ void ots_mm_udp_interface::universalWrite(const std::string& targetFE,
                                           const std::string& address,
                                           const std::string& data)
 {
-	__COUT__ << "universalWrite on '" << targetFE << "' address " << address
-	         << " data " << data << __E__;
+	__COUT__ << "universalWrite on '" << targetFE << "' address " << address << " data "
+	         << data << __E__;
 
 	std::string sendMessage = "UniversalWrite;" + targetFE + ";" + address + ";" + data;
 	__COUTV__(sendMessage);
@@ -1933,9 +1933,7 @@ struct ActiveSequenceChainGuard
 	ActiveSequenceChainGuard(std::vector<std::string>& chain,
 	                         const std::string&        sequenceName)
 	    : chain_(chain)
-	{
-		chain_.push_back(sequenceName);
-	}
+	{ chain_.push_back(sequenceName); }
 	~ActiveSequenceChainGuard() { chain_.pop_back(); }
 };
 

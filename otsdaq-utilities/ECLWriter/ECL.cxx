@@ -63,18 +63,14 @@ void Attachment_t::type(const type_type& x) { this->type_.set(x); }
 void Attachment_t::type(::std::unique_ptr<type_type> x) { this->type_.set(std::move(x)); }
 
 const Attachment_t::filename_type& Attachment_t::filename() const
-{
-	return this->filename_.get();
-}
+{ return this->filename_.get(); }
 
 Attachment_t::filename_type& Attachment_t::filename() { return this->filename_.get(); }
 
 void Attachment_t::filename(const filename_type& x) { this->filename_.set(x); }
 
 void Attachment_t::filename(::std::unique_ptr<filename_type> x)
-{
-	this->filename_.set(std::move(x));
-}
+{ this->filename_.set(std::move(x)); }
 
 // Field_t
 //
@@ -114,9 +110,7 @@ ECLEntry_t::tag_sequence& ECLEntry_t::tag() { return this->tag_; }
 void ECLEntry_t::tag(const tag_sequence& s) { this->tag_ = s; }
 
 const ECLEntry_t::attachment_sequence& ECLEntry_t::attachment() const
-{
-	return this->attachment_;
-}
+{ return this->attachment_; }
 
 ECLEntry_t::attachment_sequence& ECLEntry_t::attachment() { return this->attachment_; }
 
@@ -139,23 +133,17 @@ ECLEntry_t::author_type& ECLEntry_t::author() { return this->author_.get(); }
 void ECLEntry_t::author(const author_type& x) { this->author_.set(x); }
 
 void ECLEntry_t::author(::std::unique_ptr<author_type> x)
-{
-	this->author_.set(std::move(x));
-}
+{ this->author_.set(std::move(x)); }
 
 const ECLEntry_t::category_type& ECLEntry_t::category() const
-{
-	return this->category_.get();
-}
+{ return this->category_.get(); }
 
 ECLEntry_t::category_type& ECLEntry_t::category() { return this->category_.get(); }
 
 void ECLEntry_t::category(const category_type& x) { this->category_.set(x); }
 
 void ECLEntry_t::category(::std::unique_ptr<category_type> x)
-{
-	this->category_.set(std::move(x));
-}
+{ this->category_.set(std::move(x)); }
 
 const ECLEntry_t::subject_optional& ECLEntry_t::subject() const { return this->subject_; }
 
@@ -166,9 +154,7 @@ void ECLEntry_t::subject(const subject_type& x) { this->subject_.set(x); }
 void ECLEntry_t::subject(const subject_optional& x) { this->subject_ = x; }
 
 void ECLEntry_t::subject(::std::unique_ptr<subject_type> x)
-{
-	this->subject_.set(std::move(x));
-}
+{ this->subject_.set(std::move(x)); }
 
 #include <xsd/cxx/xml/dom/parsing-source.hxx>
 
@@ -218,9 +204,7 @@ void Tag_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 }
 
 Tag_t* Tag_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
-{
-	return new class Tag_t(*this, f, c);
-}
+{ return new class Tag_t(*this, f, c); }
 
 Tag_t& Tag_t::operator=(const Tag_t& x)
 {
@@ -313,9 +297,7 @@ void Attachment_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::fl
 
 Attachment_t* Attachment_t::_clone(::xml_schema::flags      f,
                                    ::xml_schema::container* c) const
-{
-	return new class Attachment_t(*this, f, c);
-}
+{ return new class Attachment_t(*this, f, c); }
 
 Attachment_t& Attachment_t::operator=(const Attachment_t& x)
 {
@@ -392,9 +374,7 @@ void Field_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f
 }
 
 Field_t* Field_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
-{
-	return new class Field_t(*this, f, c);
-}
+{ return new class Field_t(*this, f, c); }
 
 Field_t& Field_t::operator=(const Field_t& x)
 {
@@ -477,9 +457,7 @@ void Form_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flags f)
 }
 
 Form_t* Form_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
-{
-	return new class Form_t(*this, f, c);
-}
+{ return new class Form_t(*this, f, c); }
 
 Form_t& Form_t::operator=(const Form_t& x)
 {
@@ -632,9 +610,7 @@ void ECLEntry_t::parse(::xsd::cxx::xml::dom::parser<char>& p, ::xml_schema::flag
 }
 
 ECLEntry_t* ECLEntry_t::_clone(::xml_schema::flags f, ::xml_schema::container* c) const
-{
-	return new class ECLEntry_t(*this, f, c);
-}
+{ return new class ECLEntry_t(*this, f, c); }
 
 ECLEntry_t& ECLEntry_t::operator=(const ECLEntry_t& x)
 {
@@ -923,7 +899,7 @@ ECLEntry_t::~ECLEntry_t() {}
 	::xml_schema::dom::unique_ptr< ::xercesc::DOMDocument> c(
 	    ((f & ::xml_schema::flags::keep_dom) && !(f & ::xml_schema::flags::own_dom))
 	        ? static_cast< ::xercesc::DOMDocument*>(d->cloneNode(true))
-	        : 0);
+			: 0);
 
 	::xercesc::DOMDocument&      doc(c.get() ? *c : *d);
 	const ::xercesc::DOMElement& e(*doc.getDocumentElement());

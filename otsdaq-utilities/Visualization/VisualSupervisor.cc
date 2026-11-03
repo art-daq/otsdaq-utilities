@@ -1,14 +1,9 @@
 #include "otsdaq-utilities/Visualization/VisualSupervisor.h"
 #include "otsdaq/Macros/BinaryStringMacros.h"
-#include "otsdaq/XmlUtilities/XmlDocument.h"
 #include "otsdaq/Macros/MessageTools.h"
+#include "otsdaq/XmlUtilities/XmlDocument.h"
 
 #ifndef OTS_LITE
-#include "otsdaq/DataManager/DataManagerSingleton.h"
-#include "otsdaq/RootUtilities/VisualDataManager.h"
-#include <boost/regex.hpp>
-#include "otsdaq/DataManager/DQMHistosConsumerBase.h"
-#include "otsdaq/RootUtilities/RootFileExplorer.h"
 #include <TBranchElement.h>
 #include <TBuffer.h>
 #include <TBufferJSON.h>
@@ -25,8 +20,13 @@
 #include <TRegexp.h>
 #include <TString.h>
 #include <TTree.h>
+#include <boost/regex.hpp>
 #include "TBufferFile.h"
 #include "TObject.h"
+#include "otsdaq/DataManager/DQMHistosConsumerBase.h"
+#include "otsdaq/DataManager/DataManagerSingleton.h"
+#include "otsdaq/RootUtilities/RootFileExplorer.h"
+#include "otsdaq/RootUtilities/VisualDataManager.h"
 #else
 #include "otsdaq/DataManager/DataManagerSingleton.h"
 #endif
@@ -45,9 +45,9 @@
 #include <memory>
 #include <mutex>
 
-#include "otsdaq/DataProcessorPlugins/RawDataVisualizerConsumer.h"
 #include "otsdaq/DataManager/DataConsumer.h"
 #include "otsdaq/DataManager/DataProducerBase.h"
+#include "otsdaq/DataProcessorPlugins/RawDataVisualizerConsumer.h"
 
 // #include <thread>
 
@@ -177,7 +177,8 @@ try
 	try
 	{
 		ConfigurationTree appLink = theConfigurationManager_->getNode(
-		    "/" + theConfigurationManager_->__GET_CONFIG__(XDAQContextTable)->getTableName() +
+		    "/" +
+		    theConfigurationManager_->__GET_CONFIG__(XDAQContextTable)->getTableName() +
 		    CorePropertySupervisorBase::getSupervisorConfigurationPath());
 
 		if(!appLink.isDisconnected())
@@ -191,7 +192,8 @@ try
 
 			CoreSupervisorBase::theStateMachineImplementation_.push_back(theDataManager_);
 
-			__SUP_COUT__ << "Done instantiating lite data manager for waveform viewer." << __E__;
+			__SUP_COUT__ << "Done instantiating lite data manager for waveform viewer."
+			             << __E__;
 		}
 		else
 			__SUP_COUT__ << "No Visual Supervisor configuration link, so skipping "
@@ -200,7 +202,8 @@ try
 	}
 	catch(const std::runtime_error& e)
 	{
-		__SUP_COUT_WARN__ << "Could not instantiate lite data manager (no config link?): " << e.what() << __E__;
+		__SUP_COUT_WARN__ << "Could not instantiate lite data manager (no config link?): "
+		                  << e.what() << __E__;
 	}
 #endif
 
@@ -364,7 +367,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    "serverTime",
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       std::chrono::system_clock::now().time_since_epoch())
-		                       .count()));
+			                   .count()));
 #ifndef OTS_LITE
 		xmlOut.addTextElementToData(
 		    "ready",
@@ -422,9 +425,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 			}
 		}
 #else
-		xmlOut.addTextElementToData(
-		    "ready",
-		    theDataManager_ != nullptr ? "1" : "0");
+		xmlOut.addTextElementToData("ready", theDataManager_ != nullptr ? "1" : "0");
 #endif
 	}
 	else if(
@@ -552,7 +553,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getDirectoryContents")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "Directory browsing with ROOT file support is not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "Directory browsing with ROOT file support is not available in the "
+		              "otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		// return directory structure for requested path, types are "dir" and "file"
@@ -562,7 +565,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		std::string  path = CgiDataUtilities::postData(cgiIn, "Path");
 		boost::regex re("%2F");
 		path = boost::regex_replace(path, re, "/");  // Dario: should be transparent for
-		    // Ryan's purposes but required by Extjs
+		// Ryan's purposes but required by Extjs
 
 		// return 1 if user has access to admin controls, else 0
 		char permStr[10];
@@ -689,7 +692,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getRoot")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "ROOT features are not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "ROOT features are not available in the otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		// return directory structure for requested ROOT path, types are "dir" and "file"
@@ -790,12 +794,12 @@ void VisualSupervisor::request(const std::string&               requestType,
 					__SUP_COUT__ << "Class Name: " << key->GetClassName() << __E__;
 					xmlOut.addTextElementToData(
 					    (std::string(key->GetClassName()).find("Directory") !=
-					         std::string::npos ||
-					     std::string(key->GetClassName()) == "TTree" ||
-					     std::string(key->GetClassName()).find("TBranch") !=
-					         std::string::npos)  // == "TBranchElement")
+						     std::string::npos ||
+						 std::string(key->GetClassName()) == "TTree" ||
+						 std::string(key->GetClassName()).find("TBranch") !=
+						     std::string::npos)  // == "TBranchElement")
 					        ? "dir"
-					        : "file",
+							: "file",
 					    key->GetName());
 
 					if(TTEST(
@@ -809,7 +813,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 						tObject->Streamer(tBuffer);
 						std::string hexString =
 						    BinaryStringMacros::binaryStringToHexString(tBuffer.Buffer(),
-						                                                tBuffer.Length());
+							                                            tBuffer.Length());
 
 						__SUP_COUT__ << "Returning directory object from file '"
 						             << tObject->GetName() << "' of class '"
@@ -914,10 +918,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 						__SUP_COUT__ << "Class Name: " << obj->IsA()->GetName() << __E__;
 						dirList[obj->GetName()] =
 						    (std::string(obj->IsA()->GetName()).find("Directory") !=
-						         std::string::npos ||
-						     std::string(obj->IsA()->GetName()) == "TTree" ||
-						     std::string(obj->IsA()->GetName()).find("TBranch") !=
-						         std::string::npos)  // == "TBranchElement")
+							     std::string::npos ||
+							 std::string(obj->IsA()->GetName()) == "TTree" ||
+							 std::string(obj->IsA()->GetName()).find("TBranch") !=
+							     std::string::npos)  // == "TBranchElement")
 						        ? "dir"
 						        : "file";
 					}
@@ -1336,7 +1340,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getEvents")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "Event display requires ROOT, which is not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "Event display requires ROOT, which is not available in the otsdaq "
+		              "lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		if(theDataManager_ == nullptr)
@@ -1406,7 +1412,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getGeometry")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "Geometry display requires ROOT, which is not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "Geometry display requires ROOT, which is not available in the "
+		              "otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		__SUP_COUT__ << "getGeometry" << __E__;
@@ -1459,7 +1467,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getRootConfig")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "ROOT config features are not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "ROOT config features are not available in the otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		std::string path = CgiDataUtilities::postData(cgiIn, "RootConfigPath");
@@ -1490,7 +1499,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "rootAdminControls")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "ROOT admin controls are not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "ROOT admin controls are not available in the otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		//		if(userPermissions < ROOT_VIEWER_PERMISSIONS_THRESHOLD)
@@ -1537,7 +1547,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 				bool useRunWildCard =
 				    atoi(CgiDataUtilities::postData(cgiIn, "useRunWildCard")
-				             .c_str());  // 0 or 1
+					         .c_str());  // 0 or 1
 				std::string config = CgiDataUtilities::postData(cgiIn, "config");
 				__SUP_COUT__ << "config " << config << __E__;
 				__SUP_COUT__ << "useRunWildCard " << useRunWildCard << __E__;
@@ -1604,7 +1614,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getMeDirs")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "ROOT directory browsing is not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "ROOT directory browsing is not available in the otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		xmlOut.setDarioStyle(true);  // workaround for XML formatting....
@@ -1628,7 +1639,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 	    "getMeRootFile")  // ################################################################################################################
 	{
 #ifdef OTS_LITE
-		__SUP_SS__ << "ROOT file browsing is not available in the otsdaq lite build." << __E__;
+		__SUP_SS__ << "ROOT file browsing is not available in the otsdaq lite build."
+		           << __E__;
 		__SUP_SS_THROW__;
 #else
 		xmlOut.setDarioStyle(true);  // workaround for XML formatting....
@@ -1639,8 +1651,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 		std::string  fRFoldersPath = CgiDataUtilities::postData(cgiIn, "fRFoldersPath");
 		std::string  fFileName     = CgiDataUtilities::postData(cgiIn, "fFileName");
 		boost::regex re("%2F");
-		fRootPath    = boost::regex_replace(fRootPath, re, "/");
-		fFoldersPath = boost::regex_replace(fFoldersPath, re, "/");
+		fRootPath                     = boost::regex_replace(fRootPath, re, "/");
+		fFoldersPath                  = boost::regex_replace(fFoldersPath, re, "/");
 		RootFileExplorer* theExplorer = new RootFileExplorer(
 		    fSystemPath, fRootPath, fFoldersPath, fHistName, fRFoldersPath, fFileName);
 		xmlOut.setDocument(theExplorer->initialize(false));
@@ -1751,15 +1763,17 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    "timestamp",
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       now.time_since_epoch())
-		                       .count()));
+			                   .count()));
 
 		bool haveLiveData = false;
 
-		std::string reqChannelsStr = CgiDataUtilities::getData(cgiIn, "numChannels");
-		std::string reqBitWidthStr = CgiDataUtilities::getData(cgiIn, "bitWidth");
-		unsigned int reqChannels   = reqChannelsStr.empty() ? 1 : std::max(1, atoi(reqChannelsStr.c_str()));
-		unsigned int reqBitWidth   = reqBitWidthStr.empty() ? 16 : std::max(8, atoi(reqBitWidthStr.c_str()));
-		unsigned int bps           = (reqBitWidth + 7) / 8;
+		std::string  reqChannelsStr = CgiDataUtilities::getData(cgiIn, "numChannels");
+		std::string  reqBitWidthStr = CgiDataUtilities::getData(cgiIn, "bitWidth");
+		unsigned int reqChannels =
+		    reqChannelsStr.empty() ? 1 : std::max(1, atoi(reqChannelsStr.c_str()));
+		unsigned int reqBitWidth =
+		    reqBitWidthStr.empty() ? 16 : std::max(8, atoi(reqBitWidthStr.c_str()));
+		unsigned int bps = (reqBitWidth + 7) / 8;
 
 		if(theDataManager_ != nullptr)
 		{
@@ -1779,7 +1793,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 						continue;
 
 					const unsigned int TX_DATA_OFFSET = 2;
-					unsigned int payloadSize = rawBuf.size() - TX_DATA_OFFSET;
+					unsigned int       payloadSize    = rawBuf.size() - TX_DATA_OFFSET;
 
 					if(payloadSize < bps)
 						continue;
@@ -1788,8 +1802,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 					if(numSamples == 0)
 						continue;
 
-					const uint8_t* raw =
-					    reinterpret_cast<const uint8_t*>(rawBuf.data());
+					const uint8_t* raw = reinterpret_cast<const uint8_t*>(rawBuf.data());
 
 					uint64_t packetTimeMs = 0, packetCount = 0;
 					const_cast<RawDataVisualizerConsumer*>(rawConsumer)
@@ -1798,8 +1811,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 					xmlOut.addTextElementToData("source", "live");
 					xmlOut.addTextElementToData("numChannels",
 					                            std::to_string(reqChannels));
-					xmlOut.addTextElementToData("bitWidth",
-					                            std::to_string(reqBitWidth));
+					xmlOut.addTextElementToData("bitWidth", std::to_string(reqBitWidth));
 					// emulator packet: byte 0 = burst type, byte 1 = sequence
 					xmlOut.addTextElementToData("packetSeq", std::to_string(raw[1]));
 					xmlOut.addTextElementToData("packetCount",
@@ -1816,14 +1828,14 @@ void VisualSupervisor::request(const std::string&               requestType,
 							unsigned int idx =
 							    TX_DATA_OFFSET + (s * reqChannels + ch) * bps;
 							uint32_t val = 0;
-							for(unsigned int b = 0; b < bps && idx + b < rawBuf.size(); ++b)
+							for(unsigned int b = 0; b < bps && idx + b < rawBuf.size();
+							    ++b)
 								val |= static_cast<uint32_t>(raw[idx + b]) << (8 * b);
 							if(s)
 								csv += ',';
 							csv += std::to_string(val);
 						}
-						xmlOut.addTextElementToData("channel_" + std::to_string(ch),
-						                            csv);
+						xmlOut.addTextElementToData("channel_" + std::to_string(ch), csv);
 					}
 
 					haveLiveData = true;
@@ -1838,12 +1850,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 		{
 			unsigned int numChannels = 4;
 			unsigned int numSamples  = 200;
-			double       epoch =
-			    std::chrono::duration<double>(now.time_since_epoch()).count();
+			double epoch = std::chrono::duration<double>(now.time_since_epoch()).count();
 
 			xmlOut.addTextElementToData("source", "demo");
-			xmlOut.addTextElementToData("numChannels",
-			                            std::to_string(numChannels));
+			xmlOut.addTextElementToData("numChannels", std::to_string(numChannels));
 			xmlOut.addTextElementToData("bitWidth", "12");
 
 			double freqs[]  = {3.0, 7.0, 13.0, 23.0};
@@ -1856,10 +1866,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 				csv.reserve(numSamples * 6);
 				for(unsigned int s = 0; s < numSamples; ++s)
 				{
-					double t =
-					    epoch * freqs[ch] + (double)s / numSamples * 2.0 * M_PI;
-					double v = 2048.0 + 2048.0 * amps[ch] *
-					                        sin(t + phases[ch]);
+					double t = epoch * freqs[ch] + (double)s / numSamples * 2.0 * M_PI;
+					double v = 2048.0 + 2048.0 * amps[ch] * sin(t + phases[ch]);
 					if(s)
 						csv += ',';
 					csv += std::to_string((int)v);

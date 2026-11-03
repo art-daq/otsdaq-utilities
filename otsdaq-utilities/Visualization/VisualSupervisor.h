@@ -84,13 +84,13 @@ class VisualSupervisor : public CoreSupervisorBase
   private:
 	/// void						binaryBufferToHexString		(char *buff, unsigned int len,
 	/// std::string& dest);
-	std::stringstream  ss;
+	std::stringstream ss;
 #ifndef OTS_LITE
 	VisualDataManager* theDataManager_;
 #else
-	DataManager*       theDataManager_;
+	DataManager* theDataManager_;
 #endif
-	unsigned int       loadedRunNumber_;
+	unsigned int loadedRunNumber_;
 };
 }  // namespace ots
 

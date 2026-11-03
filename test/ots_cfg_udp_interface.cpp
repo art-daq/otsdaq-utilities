@@ -204,7 +204,7 @@ std::string ots_cfg_udp_interface::encodeListItems(const std::string& csv)
 //==============================================================================
 void ots_cfg_udp_interface::receiveXmlResponse(std::string&       response,
                                                const std::string& waitDescription,
-                                               int                inactivityTimeoutSeconds)
+                                               int inactivityTimeoutSeconds)
 {
 	response.clear();
 	auto    startTime           = std::chrono::steady_clock::now();
@@ -213,8 +213,7 @@ void ots_cfg_udp_interface::receiveXmlResponse(std::string&       response,
 
 	while(true)
 	{
-		if(receive(sock_, buffer_, 0 /*timeoutSeconds*/, 200000 /*timeoutUSeconds*/) ==
-		   0)
+		if(receive(sock_, buffer_, 0 /*timeoutSeconds*/, 200000 /*timeoutUSeconds*/) == 0)
 		{
 			lastUpdateTime = std::chrono::steady_clock::now();
 			response += buffer_;
@@ -313,21 +312,13 @@ std::vector<std::string> ots_cfg_udp_interface::extractXmlFields(const std::stri
 //==============================================================================
 std::string ots_cfg_udp_interface::getTables() { return sendRequest("getTables"); }
 std::string ots_cfg_udp_interface::getTableGroups()
-{
-	return sendRequest("getTableGroups");
-}
+{ return sendRequest("getTableGroups"); }
 std::string ots_cfg_udp_interface::getActiveTableGroups()
-{
-	return sendRequest("getActiveTableGroups");
-}
+{ return sendRequest("getActiveTableGroups"); }
 std::string ots_cfg_udp_interface::getGroupAliases()
-{
-	return sendRequest("getGroupAliases");
-}
+{ return sendRequest("getGroupAliases"); }
 std::string ots_cfg_udp_interface::getVersionAliases()
-{
-	return sendRequest("getVersionAliases");
-}
+{ return sendRequest("getVersionAliases"); }
 std::string ots_cfg_udp_interface::getSpecificTable(const std::string& tableName,
                                                     const std::string& version)
 {
@@ -370,13 +361,14 @@ std::string ots_cfg_udp_interface::saveTreeNodeEdit(const std::string& targetTab
 	                    {"targetColumn", encodeURIComponent(targetColumn)},
 	                    {"newValue", encodeURIComponent(newValue)}});
 }
-std::string ots_cfg_udp_interface::setTreeNodeFieldValues(const std::string& tableGroup,
-                                                          const std::string& tableGroupKey,
-                                                          const std::string& startPath,
-                                                          const std::string& recordList,
-                                                          const std::string& fieldList,
-                                                          const std::string& valueList,
-                                                          const std::string& modifiedTables)
+std::string ots_cfg_udp_interface::setTreeNodeFieldValues(
+    const std::string& tableGroup,
+    const std::string& tableGroupKey,
+    const std::string& startPath,
+    const std::string& recordList,
+    const std::string& fieldList,
+    const std::string& valueList,
+    const std::string& modifiedTables)
 {
 	return sendRequest("setTreeNodeFieldValues",
 	                   {{"tableGroup", tableGroup},
@@ -400,11 +392,12 @@ std::string ots_cfg_udp_interface::addTreeNodeRecords(const std::string& tableGr
 	                    {"modifiedTables", modifiedTables},
 	                    {"recordList", encodeListItems(recordList)}});
 }
-std::string ots_cfg_udp_interface::deleteTreeNodeRecords(const std::string& tableGroup,
-                                                         const std::string& tableGroupKey,
-                                                         const std::string& startPath,
-                                                         const std::string& recordList,
-                                                         const std::string& modifiedTables)
+std::string ots_cfg_udp_interface::deleteTreeNodeRecords(
+    const std::string& tableGroup,
+    const std::string& tableGroupKey,
+    const std::string& startPath,
+    const std::string& recordList,
+    const std::string& modifiedTables)
 {
 	return sendRequest("deleteTreeNodeRecords",
 	                   {{"tableGroup", tableGroup},
@@ -441,9 +434,7 @@ std::string ots_cfg_udp_interface::saveNewTableGroup(const std::string& groupNam
 }
 std::string ots_cfg_udp_interface::checkAffectedActiveGroups(
     const std::string& modifiedTables)
-{
-	return sendRequest("checkAffectedActiveGroups", {{"modifiedTables", modifiedTables}});
-}
+{ return sendRequest("checkAffectedActiveGroups", {{"modifiedTables", modifiedTables}}); }
 std::string ots_cfg_udp_interface::activateTableGroup(const std::string& tableGroup,
                                                       const std::string& tableGroupKey,
                                                       bool               ignoreWarnings)
@@ -455,18 +446,20 @@ std::string ots_cfg_udp_interface::activateTableGroup(const std::string& tableGr
 	                   60 /*activation can be slow*/);
 }
 std::string ots_cfg_udp_interface::setGroupAliasInActiveBackbone(
-    const std::string& groupAlias, const std::string& groupName, const std::string& groupKey)
+    const std::string& groupAlias,
+    const std::string& groupName,
+    const std::string& groupKey)
 {
-	return sendRequest("setGroupAliasInActiveBackbone",
-	                   {{"groupAlias", groupAlias},
-	                    {"groupName", groupName},
-	                    {"groupKey", groupKey}});
+	return sendRequest(
+	    "setGroupAliasInActiveBackbone",
+	    {{"groupAlias", groupAlias}, {"groupName", groupName}, {"groupKey", groupKey}});
 }
 std::string ots_cfg_udp_interface::setTableAliasInActiveBackbone(
-    const std::string& tableAlias, const std::string& tableName, const std::string& version)
+    const std::string& tableAlias,
+    const std::string& tableName,
+    const std::string& version)
 {
-	return sendRequest("setTableAliasInActiveBackbone",
-	                   {{"tableAlias", tableAlias},
-	                    {"tableName", tableName},
-	                    {"version", version}});
+	return sendRequest(
+	    "setTableAliasInActiveBackbone",
+	    {{"tableAlias", tableAlias}, {"tableName", tableName}, {"version", version}});
 }

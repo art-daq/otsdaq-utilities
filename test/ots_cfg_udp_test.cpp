@@ -109,7 +109,8 @@ try
 		        "for this to work).\n");
 		if(!proceedWithoutAsk)
 		{
-			fprintf(stderr, "Otherwise, are you sure you want to proceed anonymously? [y/N] ");
+			fprintf(stderr,
+			        "Otherwise, are you sure you want to proceed anonymously? [y/N] ");
 			std::string answer;
 			std::getline(std::cin, answer);
 			if(answer != "y" && answer != "Y" && answer != "yes")
