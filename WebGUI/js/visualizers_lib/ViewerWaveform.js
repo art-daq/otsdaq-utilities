@@ -52,9 +52,21 @@ ViewerWaveform.launch = function() {
 	var statusEl = document.createElement("div");
 	statusEl.id  = "ViewerWaveform-status";
 	statusEl.className = "ViewerWaveform-status";
-	statusEl.innerHTML = "Waveform Viewer &mdash; waiting for data...";
 	omni.appendChild(statusEl);
 	ViewerWaveform.statusEl = statusEl;
+
+	var titleEl = document.createElement("span");
+	titleEl.className = "ViewerWaveform-title";
+	titleEl.innerHTML = "Waveform Viewer &mdash; waiting for data...";
+	statusEl.appendChild(titleEl);
+	ViewerWaveform.titleEl = titleEl;
+
+	// second line: render time and packet freshness
+	var infoEl = document.createElement("div");
+	infoEl.className = "ViewerWaveform-info";
+	infoEl.innerHTML = "&nbsp;";
+	omni.appendChild(infoEl);
+	ViewerWaveform.infoEl = infoEl;
 
 	// controls
 	var ctrlEl = document.createElement("div");
@@ -111,7 +123,7 @@ ViewerWaveform.launch = function() {
 	};
 	ctrlEl.appendChild(bwSel);
 
-	omni.appendChild(ctrlEl);
+	statusEl.appendChild(ctrlEl);
 
 	// canvas
 	var canvas = document.createElement("canvas");
@@ -170,8 +182,10 @@ ViewerWaveform.handleData = function(req, reqParam, errStr) {
 			" no response: errStr='" + errStr + "' status=" +
 			(req ? req.status : "none") + " responseXML=" +
 			(req && req.responseXML ? "yes" : "no"), Debug.HIGH_PRIORITY);
-		ViewerWaveform.statusEl.innerHTML =
+		ViewerWaveform.titleEl.innerHTML =
 			"Waveform Viewer &mdash; <span style='color:#ff4444'>no response</span>";
+		ViewerWaveform.infoEl.innerHTML = "last attempt " +
+			ViewerWaveform.fmtTime(Date.now()) + " &bull; poll #" + ViewerWaveform.pollCount;
 		return;
 	}
 
@@ -180,6 +194,9 @@ ViewerWaveform.handleData = function(req, reqParam, errStr) {
 	var numChannels  = parseInt(ViewerWaveform.getXmlVal(xml, "numChannels")) || 0;
 	var bitWidth     = parseInt(ViewerWaveform.getXmlVal(xml, "bitWidth"))    || 12;
 	var timestamp    = ViewerWaveform.getXmlVal(xml, "timestamp")   || "";
+	var packetSeq    = ViewerWaveform.getXmlVal(xml, "packetSeq")   || "-";
+	var packetCount  = ViewerWaveform.getXmlVal(xml, "packetCount") || "-";
+	var packetTime   = parseInt(ViewerWaveform.getXmlVal(xml, "packetTime")) || 0;
 
 	var channels = [];
 	for(var ch = 0; ch < numChannels; ch++) {
@@ -215,16 +232,42 @@ ViewerWaveform.handleData = function(req, reqParam, errStr) {
 		Debug.log("ViewerWaveform poll #" + ViewerWaveform.pollCount +
 			(summary != ViewerWaveform.lastSummary ? " CHANGED" : " heartbeat") +
 			": " + summary + " ts=" + timestamp +
+			" pkt#" + packetCount + " seq=" + packetSeq + " pktTime=" + packetTime +
 			" ch0[min,max]=[" + mn + "," + mx + "]" +
 			" ch0[0..7]=" + ch0.slice(0, 8).join(","));
 		ViewerWaveform.lastSummary = summary;
 	}
-	ViewerWaveform.statusEl.innerHTML =
+	ViewerWaveform.titleEl.innerHTML =
 		"Waveform Viewer &mdash; <span style='color:" + color + "'>" + label +
 		"</span> &bull; " + numChannels + " ch &bull; " +
 		bitWidth + "-bit &bull; " + nSamp + " samples";
 
+	var now  = Date.now();
+	var info = "rendered " + ViewerWaveform.fmtTime(now) + " &bull; poll #" +
+		ViewerWaveform.pollCount;
+	if(source == "live") {
+		var age = packetTime ? (now - packetTime) : -1;
+		var ageColor = age < 0 ? "#8888aa" : age < 2000 ? "#00ff41" :
+			age < 10000 ? "#ffb300" : "#ff4444";
+		info += " &bull; packet #" + packetCount + " seq " + packetSeq +
+			" received " + (packetTime ? ViewerWaveform.fmtTime(packetTime) : "?") +
+			" <span style='color:" + ageColor + "'>(age " +
+			(age < 0 ? "?" : age + " ms") + ")</span>";
+	}
+	else
+		info += " &bull; demo (no packet in consumer)";
+	ViewerWaveform.infoEl.innerHTML = info;
+
 	ViewerWaveform.render();
+};
+
+//=====================================================================================
+// ms since epoch -> local HH:MM:SS.mmm
+ViewerWaveform.fmtTime = function(ms) {
+	var d = new Date(ms);
+	function p(n, w) { n = "" + n; while(n.length < w) n = "0" + n; return n; }
+	return p(d.getHours(), 2) + ":" + p(d.getMinutes(), 2) + ":" +
+		p(d.getSeconds(), 2) + "." + p(d.getMilliseconds(), 3);
 };
 
 //=====================================================================================
@@ -251,7 +294,7 @@ ViewerWaveform.render = function() {
 
 	var marginL   = 60;
 	var marginR   = 20;
-	var marginT   = 40;
+	var marginT   = 56; //status strip 28px + info line 18px + gap
 	var marginB   = 30;
 	var plotW     = w - marginL - marginR;
 	var plotH     = h - marginT - marginB;

@@ -1791,11 +1791,21 @@ void VisualSupervisor::request(const std::string&               requestType,
 					const uint8_t* raw =
 					    reinterpret_cast<const uint8_t*>(rawBuf.data());
 
+					uint64_t packetTimeMs = 0, packetCount = 0;
+					const_cast<RawDataVisualizerConsumer*>(rawConsumer)
+					    ->getLastRawDataInfo(packetTimeMs, packetCount);
+
 					xmlOut.addTextElementToData("source", "live");
 					xmlOut.addTextElementToData("numChannels",
 					                            std::to_string(reqChannels));
 					xmlOut.addTextElementToData("bitWidth",
 					                            std::to_string(reqBitWidth));
+					// emulator packet: byte 0 = burst type, byte 1 = sequence
+					xmlOut.addTextElementToData("packetSeq", std::to_string(raw[1]));
+					xmlOut.addTextElementToData("packetCount",
+					                            std::to_string(packetCount));
+					xmlOut.addTextElementToData("packetTime",
+					                            std::to_string(packetTimeMs));
 
 					for(unsigned int ch = 0; ch < reqChannels; ++ch)
 					{

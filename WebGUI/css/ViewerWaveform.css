@@ -12,13 +12,36 @@
 	z-index: 10;
 	white-space: nowrap;
 	overflow: hidden;
+	display: flex;
+	align-items: center;
+}
+
+.ViewerWaveform-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .ViewerWaveform-controls {
+	flex: 0 0 auto;
+	margin-left: 12px;
+}
+
+.ViewerWaveform-info {
 	position: absolute;
-	top: 4px;
-	right: 12px;
-	z-index: 11;
+	top: 28px;
+	left: 0;
+	right: 0;
+	height: 18px;
+	line-height: 18px;
+	padding: 0 12px;
+	background: rgba(0,0,0,0.45);
+	color: #8888aa;
+	font: 11px monospace;
+	z-index: 10;
+	white-space: nowrap;
+	overflow: hidden;
 }
 
 .ViewerWaveform-btn {
