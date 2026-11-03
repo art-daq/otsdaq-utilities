@@ -28,7 +28,11 @@ ViewerWaveform.TEXT_COLOR       = "#8888aa";
 ////////////////////////////////////////////////////////////
 ViewerWaveform.launch = function() {
 
-	Debug.log("ViewerWaveform.launch");
+	Debug.log("ViewerWaveform.launch: numChannels=" + ViewerWaveform.numChannels +
+		" bitWidth=" + ViewerWaveform.bitWidth +
+		" pollPeriod=" + ViewerWaveform.POLL_PERIOD + "ms");
+	ViewerWaveform.pollCount = 0;
+	ViewerWaveform.lastSummary = "";
 
 	var omni = document.getElementById("omni");
 	omni.innerHTML = "";
@@ -86,7 +90,10 @@ ViewerWaveform.launch = function() {
 		chSel.appendChild(opt);
 	});
 	chSel.value = ViewerWaveform.numChannels;
-	chSel.onchange = function() { ViewerWaveform.numChannels = parseInt(chSel.value); };
+	chSel.onchange = function() {
+		ViewerWaveform.numChannels = parseInt(chSel.value);
+		Debug.log("ViewerWaveform: numChannels set to " + ViewerWaveform.numChannels);
+	};
 	ctrlEl.appendChild(chSel);
 
 	var bwSel = document.createElement("select");
@@ -98,7 +105,10 @@ ViewerWaveform.launch = function() {
 		bwSel.appendChild(opt);
 	});
 	bwSel.value = ViewerWaveform.bitWidth;
-	bwSel.onchange = function() { ViewerWaveform.bitWidth = parseInt(bwSel.value); };
+	bwSel.onchange = function() {
+		ViewerWaveform.bitWidth = parseInt(bwSel.value);
+		Debug.log("ViewerWaveform: bitWidth set to " + ViewerWaveform.bitWidth);
+	};
 	ctrlEl.appendChild(bwSel);
 
 	omni.appendChild(ctrlEl);
@@ -153,8 +163,13 @@ ViewerWaveform.poll = function() {
 //=====================================================================================
 ViewerWaveform.handleData = function(req, reqParam, errStr) {
 	ViewerWaveform.pollInFlight = false;
+	ViewerWaveform.pollCount++;
 
 	if(errStr || !req || !req.responseXML) {
+		Debug.log("ViewerWaveform poll #" + ViewerWaveform.pollCount +
+			" no response: errStr='" + errStr + "' status=" +
+			(req ? req.status : "none") + " responseXML=" +
+			(req && req.responseXML ? "yes" : "no"), Debug.HIGH_PRIORITY);
 		ViewerWaveform.statusEl.innerHTML =
 			"Waveform Viewer &mdash; <span style='color:#ff4444'>no response</span>";
 		return;
@@ -189,6 +204,21 @@ ViewerWaveform.handleData = function(req, reqParam, errStr) {
 	var label = source == "live" ? "LIVE" : "DEMO";
 	var color = source == "live" ? "#00ff41" : "#ffb300";
 	var nSamp = channels.length > 0 ? channels[0].length : 0;
+
+	// log when the shape of the data changes, plus a heartbeat every ~5s
+	var summary = source + " " + numChannels + "ch " + bitWidth + "bit " + nSamp + "samp";
+	var heartbeat = (ViewerWaveform.pollCount % 25) == 0;
+	if(summary != ViewerWaveform.lastSummary || heartbeat) {
+		var ch0 = channels.length > 0 ? channels[0] : [];
+		var mn = ch0.length ? Math.min.apply(null, ch0) : "-";
+		var mx = ch0.length ? Math.max.apply(null, ch0) : "-";
+		Debug.log("ViewerWaveform poll #" + ViewerWaveform.pollCount +
+			(summary != ViewerWaveform.lastSummary ? " CHANGED" : " heartbeat") +
+			": " + summary + " ts=" + timestamp +
+			" ch0[min,max]=[" + mn + "," + mx + "]" +
+			" ch0[0..7]=" + ch0.slice(0, 8).join(","));
+		ViewerWaveform.lastSummary = summary;
+	}
 	ViewerWaveform.statusEl.innerHTML =
 		"Waveform Viewer &mdash; <span style='color:" + color + "'>" + label +
 		"</span> &bull; " + numChannels + " ch &bull; " +
