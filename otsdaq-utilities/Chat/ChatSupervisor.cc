@@ -278,12 +278,16 @@ void ChatSupervisor::newChat(const std::string& chat,
 /// ChatSupervisor::isChatNew()
 ///	return true if chatIndex is older than lastUpdateIndex
 bool ChatSupervisor::isChatOld(uint64_t chatIndex, uint64_t last)
-{ return (last - chatIndex < (uint64_t(1) << 62)); }
+{
+	return (last - chatIndex < (uint64_t(1) << 62));
+}
 
 //==============================================================================
 /// ChatSupervisor::isLastUpdateIndexStale()
 bool ChatSupervisor::isLastUpdateIndexStale(uint64_t last)
-{ return ChatLastUpdateIndex != last; }
+{
+	return ChatLastUpdateIndex != last;
+}
 
 //==============================================================================
 /// ChatSupervisor::incrementAndGetLastUpdate()
@@ -308,7 +312,7 @@ void ChatSupervisor::cleanupExpiredChats()
 		}
 		else
 			break;  // chronological order, so first encountered that is still valid exit
-	                // loop
+			        // loop
 
 	for(uint64_t i = 0; i < ChatUsers_.size(); ++i)
 		if(ChatUsersTime_[i] + CHAT_HISTORY_EXPIRATION_TIME < time(0))  // expired
@@ -318,7 +322,7 @@ void ChatSupervisor::cleanupExpiredChats()
 		}
 		else
 			break;  // chronological order, so first encountered that is still valid exit
-	                // loop
+			        // loop
 }  // end cleanupExpiredChats()
 
 //==============================================================================

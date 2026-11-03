@@ -8,7 +8,7 @@
 #define __SHORTFILE__                                   \
 	(__builtin_strstr(&__FILE__[0], "/srcs/")           \
 	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
-		 : __FILE__)
+	     : __FILE__)
 #define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
 #define __COUT_HDR__ __SHORTFILE__ << "" << __COUT_HDR_L__
 
@@ -79,7 +79,7 @@ try
 	    "cat,c", bpo::value<std::string>(), "ECL Category")(
 	    "title,t", bpo::value<std::string>(), "Message title")(
 	    "msg,m", bpo::value<std::string>(), "Log Message")("help,h",
-		                                                   "produce help message");
+	                                                       "produce help message");
 	bpo::positional_options_description p;
 	p.add("msg", -1);
 	bpo::variables_map vm;

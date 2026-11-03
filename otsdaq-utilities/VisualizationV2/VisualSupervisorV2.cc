@@ -725,23 +725,23 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 							xmlOut.addTextElementToData(
 							    (((TBranchElement*)obj)->GetListOfBranches()->IsEmpty())
 							        ? "file"
-									: "dir",
+							        : "dir",
 							    name);
 						}
 						else  // handle normal way
 						{
 							xmlOut.addTextElementToData(
 							    (std::string(obj->IsA()->GetName()).find("Directory") !=
-								     std::string::npos ||
-								 std::string(obj->IsA()->GetName()) == "TTree")
+							         std::string::npos ||
+							     std::string(obj->IsA()->GetName()) == "TTree")
 							        ? "dir"
-									: "file",
+							        : "file",
 							    name);
 						}
 					}
 					return;
 				}  // done handling TTree branches
-			}  // end TTree and branch handling
+			}      // end TTree and branch handling
 			else if(spliti < splitTTreePath.size())
 			{
 				__COUTV__(rootDirectoryName);
@@ -862,12 +862,12 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 
 					xmlOut.addTextElementToData(
 					    (std::string(obj->IsA()->GetName()).find("Directory") !=
-						     std::string::npos ||
-						 std::string(obj->IsA()->GetName()) == "TTree" ||
-						 std::string(obj->IsA()->GetName()).find("TBranch") !=
-						     std::string::npos)  // == "TBranchElement")
+					         std::string::npos ||
+					     std::string(obj->IsA()->GetName()) == "TTree" ||
+					     std::string(obj->IsA()->GetName()).find("TBranch") !=
+					         std::string::npos)  // == "TBranchElement")
 					        ? "dir"
-							: "file",
+					        : "file",
 					    obj->GetName());
 					// ss.str("") ; ss << "obj->GetName(): " << obj->GetName() ;
 					// //STDLINE(ss.str(),"") ;
@@ -885,12 +885,12 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 					__SUP_COUT__ << "Class Name: " << key->GetClassName() << __E__;
 					xmlOut.addTextElementToData(
 					    (std::string(key->GetClassName()).find("Directory") !=
-						     std::string::npos ||
-						 std::string(key->GetClassName()) == "TTree" ||
-						 std::string(key->GetClassName()).find("TBranch") !=
-						     std::string::npos)  // == "TBranchElement")
+					         std::string::npos ||
+					     std::string(key->GetClassName()) == "TTree" ||
+					     std::string(key->GetClassName()).find("TBranch") !=
+					         std::string::npos)  // == "TBranchElement")
 					        ? "dir"
-							: "file",
+					        : "file",
 					    key->GetName());
 					// ss.str("") ; ss << "key->GetName(): " << key->GetName() ;
 					////STDLINE(ss.str(),"") ;
@@ -1088,7 +1088,7 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 
 				bool useRunWildCard =
 				    atoi(CgiDataUtilities::postData(cgiIn, "useRunWildCard")
-					         .c_str());  // 0 or 1
+				             .c_str());  // 0 or 1
 				std::string config = CgiDataUtilities::postData(cgiIn, "config");
 				__SUP_COUT__ << "config " << config << __E__;
 				__SUP_COUT__ << "useRunWildCard " << useRunWildCard << __E__;
