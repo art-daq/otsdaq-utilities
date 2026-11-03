@@ -367,7 +367,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    "serverTime",
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       std::chrono::system_clock::now().time_since_epoch())
-			                   .count()));
+		                       .count()));
 #ifndef OTS_LITE
 		xmlOut.addTextElementToData(
 		    "ready",
@@ -794,12 +794,12 @@ void VisualSupervisor::request(const std::string&               requestType,
 					__SUP_COUT__ << "Class Name: " << key->GetClassName() << __E__;
 					xmlOut.addTextElementToData(
 					    (std::string(key->GetClassName()).find("Directory") !=
-						     std::string::npos ||
-						 std::string(key->GetClassName()) == "TTree" ||
-						 std::string(key->GetClassName()).find("TBranch") !=
-						     std::string::npos)  // == "TBranchElement")
+					         std::string::npos ||
+					     std::string(key->GetClassName()) == "TTree" ||
+					     std::string(key->GetClassName()).find("TBranch") !=
+					         std::string::npos)  // == "TBranchElement")
 					        ? "dir"
-							: "file",
+					        : "file",
 					    key->GetName());
 
 					if(TTEST(
@@ -813,7 +813,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 						tObject->Streamer(tBuffer);
 						std::string hexString =
 						    BinaryStringMacros::binaryStringToHexString(tBuffer.Buffer(),
-							                                            tBuffer.Length());
+						                                                tBuffer.Length());
 
 						__SUP_COUT__ << "Returning directory object from file '"
 						             << tObject->GetName() << "' of class '"
@@ -918,10 +918,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 						__SUP_COUT__ << "Class Name: " << obj->IsA()->GetName() << __E__;
 						dirList[obj->GetName()] =
 						    (std::string(obj->IsA()->GetName()).find("Directory") !=
-							     std::string::npos ||
-							 std::string(obj->IsA()->GetName()) == "TTree" ||
-							 std::string(obj->IsA()->GetName()).find("TBranch") !=
-							     std::string::npos)  // == "TBranchElement")
+						         std::string::npos ||
+						     std::string(obj->IsA()->GetName()) == "TTree" ||
+						     std::string(obj->IsA()->GetName()).find("TBranch") !=
+						         std::string::npos)  // == "TBranchElement")
 						        ? "dir"
 						        : "file";
 					}
@@ -1547,7 +1547,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 
 				bool useRunWildCard =
 				    atoi(CgiDataUtilities::postData(cgiIn, "useRunWildCard")
-					         .c_str());  // 0 or 1
+				             .c_str());  // 0 or 1
 				std::string config = CgiDataUtilities::postData(cgiIn, "config");
 				__SUP_COUT__ << "config " << config << __E__;
 				__SUP_COUT__ << "useRunWildCard " << useRunWildCard << __E__;
@@ -1606,7 +1606,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		else
 			xmlOut.addTextElementToData("status", "Failed. Invalid path.");
 
-		//}
+			//}
 #endif
 	}
 	else if(
@@ -1763,7 +1763,7 @@ void VisualSupervisor::request(const std::string&               requestType,
 		    "timestamp",
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
 		                       now.time_since_epoch())
-			                   .count()));
+		                       .count()));
 
 		bool haveLiveData = false;
 

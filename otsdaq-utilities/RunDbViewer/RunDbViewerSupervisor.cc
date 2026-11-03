@@ -139,7 +139,7 @@ void RunDbViewerSupervisor::request(const std::string&               requestType
 
 		std::stringstream str;
 		std::string       runType = StringMacros::decodeURIComponent(
-		    CgiDataUtilities::postData(cgiIn, "runTypeFilter"));
+            CgiDataUtilities::postData(cgiIn, "runTypeFilter"));
 		std::string pluginName = CgiDataUtilities::postData(cgiIn, "runInfoPluginName");
 		std::string runInfoUID = CgiDataUtilities::postData(cgiIn, "runInfoPluginUID");
 		refreshRunDbViewer(date,

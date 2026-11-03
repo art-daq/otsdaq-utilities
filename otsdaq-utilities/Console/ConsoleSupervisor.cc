@@ -362,13 +362,13 @@ try
 
 				if(  // newSequenceId%1000 == 0 || //for debugging missed!
 				    (newSourceId != -1 &&
-					 sourceLastSequenceID.find(newSourceId) !=
-					     sourceLastSequenceID
-					         .end() &&  // ensure not first packet received
-					 ((newSequenceId == 0 && sourceLastSequenceID[newSourceId] !=
-					                             (uint32_t)-1) ||  // wrap around case
-					  newSequenceId !=
-					      sourceLastSequenceID[newSourceId] + 1))  // normal sequence case
+				     sourceLastSequenceID.find(newSourceId) !=
+				         sourceLastSequenceID
+				             .end() &&  // ensure not first packet received
+				     ((newSequenceId == 0 && sourceLastSequenceID[newSourceId] !=
+				                                 (uint32_t)-1) ||  // wrap around case
+				      newSequenceId !=
+				          sourceLastSequenceID[newSourceId] + 1))  // normal sequence case
 				)
 				{
 					// missed some messages!
@@ -437,11 +437,11 @@ try
 
 				c += strlen(&(buffer.c_str()[c])) + 1;
 			}  // end handle message stacking in packet
-		}  // end received packet handling
-		else  // idle network handling
+		}      // end received packet handling
+		else   // idle network handling
 		{
 			if(i < 120)  // if nothing received for 120 seconds, then something is wrong
-				         // with Console configuration
+			             // with Console configuration
 				++i;
 
 			sleep(1);  // sleep one second, if timeout
@@ -1256,8 +1256,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			{
 				xoap::MessageReference retMsg =
 				    SOAPMessenger::sendWithSOAPReply(appInfo.second.getDescriptor(),
-					                                 "TRACESupervisorRequest",
-					                                 txParameters);
+				                                     "TRACESupervisorRequest",
+				                                     txParameters);
 				SOAPUtilities::receive(retMsg, rxParameters);
 				__SUP_COUT__ << "Received TRACE response: "
 				             << SOAPUtilities::translate(retMsg).getCommand() << " ==> "
@@ -1455,8 +1455,8 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			{
 				xoap::MessageReference retMsg =
 				    SOAPMessenger::sendWithSOAPReply(appInfo.second.getDescriptor(),
-					                                 "TRACESupervisorRequest",
-					                                 txParameters);
+				                                     "TRACESupervisorRequest",
+				                                     txParameters);
 				SOAPUtilities::receive(retMsg, rxParameters);
 				__SUP_COUT__ << "Received TRACE response: "
 				             << SOAPUtilities::translate(retMsg).getCommand() << " ==> "
@@ -1946,7 +1946,7 @@ void ConsoleSupervisor::request(const std::string&               requestType,
 			    CgiDataUtilities::postData(cgiIn, "needle"));
 			uint32_t    priority = CgiDataUtilities::postDataAsInt(cgiIn, "priority");
 			std::string action   = StringMacros::decodeURIComponent(
-			    CgiDataUtilities::postData(cgiIn, "action"));
+                CgiDataUtilities::postData(cgiIn, "action"));
 			uint32_t triggerOnCount =
 			    CgiDataUtilities::postDataAsInt(cgiIn, "triggerOnCount");
 			bool doLoop =
@@ -2097,7 +2097,7 @@ std::string ConsoleSupervisor::getStatusProgressDetail(void)
 	ss << ", First Error ("
 	   << (firstErrorMessageTime_
 	           ? StringMacros::getTimestampString(firstErrorMessageTime_)
-			   : "0")
+	           : "0")
 	   << "): "
 	   << (firstErrorMessageTime_ ? StringMacros::encodeURIComponent(firstErrorMessage_)
 	                              : "");

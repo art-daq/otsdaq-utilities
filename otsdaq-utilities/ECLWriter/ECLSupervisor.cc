@@ -329,7 +329,7 @@ void ECLSupervisor::request(const std::string&               requestType,
 			   << __E__;
 			field =
 			    Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
-				        "text");
+			            "text");
 			fields.push_back(field);
 		}
 

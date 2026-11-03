@@ -34,7 +34,9 @@ using namespace ots;
 /*! the XDAQ_INSTANTIATOR_IMPL(ns1::ns2::...) macro needs to be put into the
  * implementation file (.cc) of the XDAQ application */
 xdaq::Application* ConfigurationGUISupervisor::instantiate(xdaq::ApplicationStub* stub)
-{ return new ConfigurationGUISupervisor(stub); }
+{
+	return new ConfigurationGUISupervisor(stub);
+}
 
 //==============================================================================
 /// new user gets a table mgr assigned
@@ -729,8 +731,8 @@ try
 		std::string versionStr = CgiDataUtilities::getData(cgiIn, "version");  // from GET
 		int dataOffset = CgiDataUtilities::getDataAsInt(cgiIn, "dataOffset");  // from GET
 		int chunkSize  = CgiDataUtilities::getDataAsInt(
-		    cgiIn,
-		    "chunkSize");  // from GET (chunkSize is currently ignored, could use to get a few rows at a time)
+            cgiIn,
+            "chunkSize");  // from GET (chunkSize is currently ignored, could use to get a few rows at a time)
 		bool descriptionOnly = CgiDataUtilities::getDataAsInt(
 		    cgiIn, "descriptionOnly");  // from GET (used to get tooltip info)
 		bool allowIllegalColumns =
@@ -1359,7 +1361,7 @@ try
 		    CgiDataUtilities::getData(cgiIn, "linkToTableVersion");
 		std::string linkIdType = CgiDataUtilities::getData(cgiIn, "linkIdType");
 		std::string linkIndex  = StringMacros::decodeURIComponent(
-		    CgiDataUtilities::getData(cgiIn, "linkIndex"));
+            CgiDataUtilities::getData(cgiIn, "linkIndex"));
 		std::string linkInitId = CgiDataUtilities::getData(cgiIn, "linkInitId");
 
 		__SUP_COUT__ << "linkToTableName: " << linkToTableName << __E__;
@@ -2005,10 +2007,10 @@ try
 					bool classMatches =
 					    appClass == className ||
 					    (appClass.size() > className.size() &&
-						 appClass.compare(appClass.size() - className.size(),
-						                  className.size(),
-						                  className) == 0 &&
-						 appClass[appClass.size() - className.size() - 1] == ':');
+					     appClass.compare(appClass.size() - className.size(),
+					                      className.size(),
+					                      className) == 0 &&
+					     appClass[appClass.size() - className.size() - 1] == ':');
 					if(!classMatches)
 						continue;
 
@@ -2258,9 +2260,9 @@ try
 	std::string              groupComment;
 	std::vector<std::string> orderedGroupTypes(
 	    {ConfigurationManager::GROUP_TYPE_NAME_CONTEXT,
-		 ConfigurationManager::GROUP_TYPE_NAME_BACKBONE,
-		 ConfigurationManager::GROUP_TYPE_NAME_ITERATE,
-		 ConfigurationManager::GROUP_TYPE_NAME_CONFIGURATION});
+	     ConfigurationManager::GROUP_TYPE_NAME_BACKBONE,
+	     ConfigurationManager::GROUP_TYPE_NAME_ITERATE,
+	     ConfigurationManager::GROUP_TYPE_NAME_CONFIGURATION});
 	for(auto groupType : orderedGroupTypes)
 	{
 		if(consideredGroups.find(groupType) == consideredGroups.end())
@@ -3310,7 +3312,7 @@ void ConfigurationGUISupervisor::handleFillSetTreeNodeFieldValuesXML(
 					// other fields
 					ConfigurationTree targetNode =
 					    cfgMgr->getNode(startPath + "/" + recordUID + "/" + fieldPaths[i],
-						                true /*doNotThrowOnBrokenUIDLinks*/);
+					                    true /*doNotThrowOnBrokenUIDLinks*/);
 
 					// need table, uid, columnName to set a value
 
@@ -4930,7 +4932,7 @@ try
 	    uidConversionMap;
 	std::map<
 	    std::pair<std::string /*original table*/,
-		          std::pair<std::string /*group linkid*/, std::string /*original gidB*/>>,
+	              std::pair<std::string /*group linkid*/, std::string /*original gidB*/>>,
 	    std::string /*converted gidB*/>
 	    groupidConversionMap;
 
@@ -5004,7 +5006,7 @@ try
 					TableVersion newVersion = table->mergeViews(
 					    cfgMgr
 					        ->getVersionedTableByName(bkey.first,
-							                          memberMapAref[bkey.first])
+					                                  memberMapAref[bkey.first])
 					        ->getView(),
 					    cfgMgr->getVersionedTableByName(bkey.first, bkey.second)
 					        ->getView(),
@@ -5061,9 +5063,9 @@ try
 						memberMapAref[bkey.first] = newVersion;
 					}
 				}  // end member version conflict handling
-			}  // end B member map loop
-		}  // end context and table loop
-	}  // end top level conversion map or not loop
+			}      // end B member map loop
+		}          // end context and table loop
+	}              // end top level conversion map or not loop
 
 	// Now save groups
 
@@ -5476,7 +5478,7 @@ try
 						else
 							commands.back().params_.emplace(
 							    std::pair<std::string /*param name*/,
-								          std::string /*param value*/>(
+							              std::string /*param value*/>(
 							        paramSubString,
 							        StringMacros::decodeURIComponent(paramValue)));
 					}
@@ -5657,7 +5659,7 @@ try
 						{
 							std::vector<std::string> entries =
 							    StringMacros::getVectorFromString(macroArgsIt->second,
-								                                  {','});
+							                                      {','});
 							for(const auto& entry : entries)
 							{
 								if(entry == "")
@@ -6160,9 +6162,9 @@ try
 			__COUTV__(row);
 			unsigned int numberOfInstances = atoi(paramArray[0].c_str());
 			unsigned int depth             = atoi(paramArray[1].c_str());
-			std::string  customUID = paramArray.size() == 3
-			                             ? StringMacros::decodeURIComponent(paramArray[2])
-			                             : std::string("");
+			std::string  customUID         = paramArray.size() == 3
+			                                     ? StringMacros::decodeURIComponent(paramArray[2])
+			                                     : std::string("");
 			__COUTV__(depth);
 			__COUTV__(numberOfInstances);
 			__COUTV__(customUID);
@@ -6278,7 +6280,7 @@ try
 				if(!changed)
 					needSecondaryChange =
 					    true;  // if table was unchanged, then need secondary change for
-				               // UID (groupID is already assumed needed)
+					           // UID (groupID is already assumed needed)
 				changed = true;
 			}
 
@@ -6340,7 +6342,7 @@ try
 				csvIndexStart = csvIndex + 1;
 				csvIndex      = newValue.find(',', csvIndexStart);
 				version       = TableVersion(newValue.substr(
-				    csvIndexStart, csvIndex - csvIndexStart));  // if no more commas will
+                    csvIndexStart, csvIndex - csvIndexStart));  // if no more commas will
 				// take the rest of string
 
 				if(newTable == TableViewColumnInfo::DATATYPE_LINK_DEFAULT)
@@ -6826,7 +6828,7 @@ try
 				for(const auto& alias : aliases)
 					xmlOut.addTextElementToParent("VersionAlias", alias, subparentEl);
 				hi = lo = TableVersion::INVALID;  //invalidate for fresh start
-			}  //end version alias handling
+			}                                     //end version alias handling
 
 		}  //end version loop
 
@@ -6858,10 +6860,10 @@ try
 			tableViewPtr =
 			    cfgMgr
 			        ->getVersionedTableByName(tableName,
-					                          version,
-					                          allowIllegalColumns /*looseColumnMatching*/,
-					                          &localAccumulatedErrors,
-					                          getRawData)
+			                                  version,
+			                                  allowIllegalColumns /*looseColumnMatching*/,
+			                                  &localAccumulatedErrors,
+			                                  getRawData)
 			        ->getViewP();
 
 			if(getRawData)
@@ -7242,7 +7244,7 @@ void ConfigurationGUISupervisor::handleDeleteTableInfoXML(HttpXmlDocument&      
 		xmlOut.addTextElementToData(
 		    "Error",
 		    ("Error renaming Table Info File to " +
-			 (TABLE_INFO_PATH + tableName + TABLE_INFO_EXT + ".unused")));
+		     (TABLE_INFO_PATH + tableName + TABLE_INFO_EXT + ".unused")));
 		return;
 	}
 
@@ -8296,15 +8298,15 @@ void ConfigurationGUISupervisor::handleGroupAliasesXML(HttpXmlDocument&        x
 
 			std::thread(
 			    [](ConfigurationManagerRW*            theCfgMgr,
-				   std::string                        theGroupName,
-				   ots::TableGroupKey                 theGroupKey,
-				   std::shared_ptr<ots::GroupInfo>    theGroupInfo,
-				   std::shared_ptr<std::atomic<bool>> theThreadDone) {
+			       std::string                        theGroupName,
+			       ots::TableGroupKey                 theGroupKey,
+			       std::shared_ptr<ots::GroupInfo>    theGroupInfo,
+			       std::shared_ptr<std::atomic<bool>> theThreadDone) {
 				    ConfigurationManagerRW::loadTableGroupThread(theCfgMgr,
-					                                             theGroupName,
-					                                             theGroupKey,
-					                                             theGroupInfo,
-					                                             theThreadDone);
+				                                                 theGroupName,
+				                                                 theGroupKey,
+				                                                 theGroupInfo,
+				                                                 theThreadDone);
 			    },
 			    cfgMgr,
 			    groupName,
@@ -8556,14 +8558,14 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 	           ConfigurationManager::GroupType::CONTEXT_TYPE)) !=
 	           cfgMgr->getAllGroupInfo().end() &&
 	       (cfgMgr->getAllGroupInfo()
-		            .at(cfgMgr->getActiveGroupName(
+	                .at(cfgMgr->getActiveGroupName(
 	                    ConfigurationManager::GroupType::CONTEXT_TYPE))
-		            .getLatestKeyGroupTypeString() == "" ||
-		    cfgMgr->getAllGroupInfo()
-		            .at(cfgMgr->getActiveGroupName(
+	                .getLatestKeyGroupTypeString() == "" ||
+	        cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
 	                    ConfigurationManager::GroupType::CONTEXT_TYPE))
-		            .getLatestKeyGroupTypeString() ==
-		        ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)) ||
+	                .getLatestKeyGroupTypeString() ==
+	            ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)) ||
 	   (  //if active Config group type is not defined, then refresh
 	       cfgMgr->getActiveGroupKey(
 	           ConfigurationManager::GroupType::CONFIGURATION_TYPE) !=
@@ -8572,14 +8574,14 @@ void ConfigurationGUISupervisor::handleTableGroupsXML(HttpXmlDocument&        xm
 	           ConfigurationManager::GroupType::CONFIGURATION_TYPE)) !=
 	           cfgMgr->getAllGroupInfo().end() &&
 	       (cfgMgr->getAllGroupInfo()
-		            .at(cfgMgr->getActiveGroupName(
+	                .at(cfgMgr->getActiveGroupName(
 	                    ConfigurationManager::GroupType::CONFIGURATION_TYPE))
-		            .getLatestKeyGroupTypeString() == "" ||
-		    cfgMgr->getAllGroupInfo()
-		            .at(cfgMgr->getActiveGroupName(
+	                .getLatestKeyGroupTypeString() == "" ||
+	        cfgMgr->getAllGroupInfo()
+	                .at(cfgMgr->getActiveGroupName(
 	                    ConfigurationManager::GroupType::CONFIGURATION_TYPE))
-		            .getLatestKeyGroupTypeString() ==
-		        ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)))
+	                .getLatestKeyGroupTypeString() ==
+	            ConfigurationManager::GROUP_TYPE_NAME_UNKNOWN)))
 	{
 		__SUP_COUT__
 		    << "Group Info cache appears empty or stale. Attempting to regenerate..."
@@ -8808,8 +8810,8 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 	// diagnostics: track where the time is going
 	const auto diagStartTime  = std::chrono::steady_clock::now();
 	auto       diagElapsedSec = [](const std::chrono::steady_clock::time_point& start) {
-		return std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
-		    .count();
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
+            .count();
 	};
 
 	if(cfgMgr->getAllGroupInfo().size() == 0 || cfgMgr->getActiveVersions().size() == 0)
@@ -9138,10 +9140,10 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	std::string                        artdaqSupervisorName;
 	const ARTDAQTableBase::ARTDAQInfo& info =
 	    ARTDAQTableBase::getARTDAQSystem(cfgMgr,
-		                                 nodeTypeToObjectMap,
-		                                 subsystemObjectMap,
-		                                 artdaqSupervisorInfo,
-		                                 suppressMultiNode);
+	                                     nodeTypeToObjectMap,
+	                                     subsystemObjectMap,
+	                                     artdaqSupervisorInfo,
+	                                     suppressMultiNode);
 
 	bool hasArtdaqSupervisor =
 	    (artdaqSupervisorInfo.size() == 4 /*expecting 4 artdaq Supervisor parameters*/);
@@ -9157,7 +9159,7 @@ void ConfigurationGUISupervisor::handleGetArtdaqNodeRecordsXML(
 	{
 		paramIndex = 0;
 		parentEl   = xmlOut.addTextElementToData("artdaqSupervisor",
-		                                         artdaqSupervisorInfo[paramIndex++]);
+                                               artdaqSupervisorInfo[paramIndex++]);
 		typeString = "artdaqSupervisor";
 		xmlOut.addTextElementToParent(
 		    typeString + "-status", artdaqSupervisorInfo[paramIndex++], parentEl);
@@ -9391,8 +9393,8 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 
 			nodeTypeToObjectMap.emplace(
 			    std::make_pair(StringMacros::decodeURIComponent(typePair.first),
-				               std::map<std::string /*record*/,
-				                        std::vector<std::string /*property*/>>()));
+			                   std::map<std::string /*record*/,
+			                            std::vector<std::string /*property*/>>()));
 
 			std::map<std::string /*node*/, std::string /*nodeRecordSetString*/>
 			    nodeRecordToStringMap;
@@ -9428,7 +9430,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 
 				nodeTypeToObjectMap[typePair.first].emplace(
 				    std::make_pair(StringMacros::decodeURIComponent(nodePair.first),
-					               nodePropertyVector));
+				                   nodePropertyVector));
 			}
 		}
 	}  // end node object extraction from nodeString
@@ -9456,7 +9458,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeRecordsXML(
 
 			subsystemObjectMap.emplace(
 			    std::make_pair(StringMacros::decodeURIComponent(subsystemPair.first),
-				               StringMacros::decodeURIComponent(subsystemPair.second)));
+			                   StringMacros::decodeURIComponent(subsystemPair.second)));
 		}
 	}  // end subsystem object extraction from subsystemString
 
@@ -9755,14 +9757,14 @@ try
 				if(username.size())  //has username
 					cmdResult = StringMacros::exec(
 					    ("rm " + tmpSubsystemFilename + " 2>/dev/null; scp " + username +
-						 "@" + hostname + ":" + filename + " " + tmpSubsystemFilename +
-						 " 2>&1; cat " + tmpSubsystemFilename + " 2>&1")
+					     "@" + hostname + ":" + filename + " " + tmpSubsystemFilename +
+					     " 2>&1; cat " + tmpSubsystemFilename + " 2>&1")
 					        .c_str());
 				else
 					cmdResult = StringMacros::exec(
 					    ("rm " + tmpSubsystemFilename + " 2>/dev/null; scp " + hostname +
-						 ":" + filename + " " + tmpSubsystemFilename + " 2>&1; cat " +
-						 tmpSubsystemFilename + " 2>&1")
+					     ":" + filename + " " + tmpSubsystemFilename + " 2>&1; cat " +
+					     tmpSubsystemFilename + " 2>&1")
 					        .c_str());
 			}
 			else if(splitPath.size() == 1)  //then can just directly access the file
@@ -10021,8 +10023,8 @@ void ConfigurationGUISupervisor::handleSearchFieldInGroupXML(
 									    groupTableEl);
 								}
 							}  // end columns
-						}  // end rows
-					}  // end try load versioned table
+						}      // end rows
+					}          // end try load versioned table
 					catch(const std::runtime_error& e)
 					{
 						__COUT_WARN__ << "Failed to search table " << tablePair.first
@@ -10329,7 +10331,7 @@ void ConfigurationGUISupervisor::handleGroupDiff(
 		    false /*doNotLoadMember*/,
 		    (diffKey.isInvalid()
 		         ? &groupType
-				 : 0));  //for specified diff group (not active), do not need groupType
+		         : 0));  //for specified diff group (not active), do not need groupType
 
 		__SUP_COUTV__(StringMacros::mapToString(memberMap));
 

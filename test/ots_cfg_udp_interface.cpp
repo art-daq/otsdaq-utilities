@@ -312,13 +312,21 @@ std::vector<std::string> ots_cfg_udp_interface::extractXmlFields(const std::stri
 //==============================================================================
 std::string ots_cfg_udp_interface::getTables() { return sendRequest("getTables"); }
 std::string ots_cfg_udp_interface::getTableGroups()
-{ return sendRequest("getTableGroups"); }
+{
+	return sendRequest("getTableGroups");
+}
 std::string ots_cfg_udp_interface::getActiveTableGroups()
-{ return sendRequest("getActiveTableGroups"); }
+{
+	return sendRequest("getActiveTableGroups");
+}
 std::string ots_cfg_udp_interface::getGroupAliases()
-{ return sendRequest("getGroupAliases"); }
+{
+	return sendRequest("getGroupAliases");
+}
 std::string ots_cfg_udp_interface::getVersionAliases()
-{ return sendRequest("getVersionAliases"); }
+{
+	return sendRequest("getVersionAliases");
+}
 std::string ots_cfg_udp_interface::getSpecificTable(const std::string& tableName,
                                                     const std::string& version)
 {
@@ -434,7 +442,9 @@ std::string ots_cfg_udp_interface::saveNewTableGroup(const std::string& groupNam
 }
 std::string ots_cfg_udp_interface::checkAffectedActiveGroups(
     const std::string& modifiedTables)
-{ return sendRequest("checkAffectedActiveGroups", {{"modifiedTables", modifiedTables}}); }
+{
+	return sendRequest("checkAffectedActiveGroups", {{"modifiedTables", modifiedTables}});
+}
 std::string ots_cfg_udp_interface::activateTableGroup(const std::string& tableGroup,
                                                       const std::string& tableGroupKey,
                                                       bool               ignoreWarnings)

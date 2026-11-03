@@ -617,15 +617,15 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					for(const std::string& uid : feUIDs)
 						group->tasks_.push_back(
 						    std::make_shared<runFEMacroStruct>(xmldoc,
-							                                   feClassSelected,
-							                                   uid,
-							                                   macroType,
-							                                   macroName,
-							                                   inputArgs,
-							                                   outputArgs,
-							                                   saveOutputs,
-							                                   username,
-							                                   userGroupPermission));
+						                                       feClassSelected,
+						                                       uid,
+						                                       macroType,
+						                                       macroName,
+						                                       inputArgs,
+						                                       outputArgs,
+						                                       saveOutputs,
+						                                       username,
+						                                       userGroupPermission));
 
 					{
 						std::lock_guard<std::mutex> lock(
@@ -784,7 +784,7 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					std::string publicFullPath = (std::string)MACROS_SEQUENCE_PATH +
 					                             WebUsers::DEFAULT_ADMIN_USERNAME + "/" +
 					                             fixedName + ".dat";
-					std::string fullPath;
+					std::string   fullPath;
 					std::ifstream readFile;
 
 					if(isPublic)
@@ -878,8 +878,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 
 					xoap::MessageReference retMsg =
 					    theSupervisor->sendWithSOAPReply(it->second.getDescriptor(),
-						                                 "MacroMakerSupervisorRequest",
-						                                 txParameters);
+					                                     "MacroMakerSupervisorRequest",
+					                                     txParameters);
 
 					SOAPUtilities::receive(retMsg, rxParameters);
 
@@ -946,8 +946,8 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 
 					xoap::MessageReference retMsg =
 					    theSupervisor->sendWithSOAPReply(it->second.getDescriptor(),
-						                                 "MacroMakerSupervisorRequest",
-						                                 txParameters);
+					                                     "MacroMakerSupervisorRequest",
+					                                     txParameters);
 
 					SOAPParameters rxParameters;
 					rxParameters.addParameter("Error");
@@ -1289,13 +1289,13 @@ void MacroMakerSupervisor::handleRequest(const std::string                Comman
 		getFEMacroList(xmldoc, userInfo.username_);
 	}
 	else if(Command == "runFEMacro")  // called by FE Macro Test returns FE Macros and
-		                              // Macro Maker Macros
+	                                  // Macro Maker Macros
 		runFEMacro(xmldoc, cgi, userInfo);
 	else if(Command == "loadFEHistory")  // called by FE Macro Test and returns FE Macros
-		                                 // and Macro Maker Macros
+	                                     // and Macro Maker Macros
 		loadFEHistory(xmldoc, userInfo.username_);
 	else if(Command == "clearFEHistory")  // called by FE Macro Test returns FE Macros and
-		                                  // Macro Maker Macros
+	                                      // Macro Maker Macros
 		clearFEHistory(userInfo.username_);
 	else if(Command == "loadFEMacroSequences")
 		loadFEMacroSequences(xmldoc, userInfo.username_);
@@ -1452,7 +1452,7 @@ try
 					__COUTV__(StringMacros::mapToString(overrideTables));
 				}
 			}  //end handle common override list
-		}  // end Assemble Subsystem Common Table List ----------------
+		}      // end Assemble Subsystem Common Table List ----------------
 
 		ConfigurationManager cfgMgr;
 		cfgMgr.loadTableGroup(groupName,
@@ -1769,8 +1769,8 @@ void MacroMakerSupervisor::getFElist(HttpXmlDocument& xmldoc)
 		{
 			xoap::MessageReference retMsg =
 			    SOAPMessenger::sendWithSOAPReply(appInfo.second.getDescriptor(),
-				                                 "MacroMakerSupervisorRequest",
-				                                 txParameters);
+			                                     "MacroMakerSupervisorRequest",
+			                                     txParameters);
 			SOAPUtilities::receive(retMsg, rxParameters);
 
 			__SUP_COUT__ << "Received MacroMaker response: "
@@ -2137,7 +2137,7 @@ void MacroMakerSupervisor::loadMacro(const std::string& macroName,
 
 		if(macroString != "")
 			break;  // macro has been found!
-	}  // end load from path loop
+	}               // end load from path loop
 
 	if(macroString == "")
 	{
@@ -2155,7 +2155,7 @@ void MacroMakerSupervisor::loadMacro(const std::string& macroName,
 void MacroMakerSupervisor::loadMacroNames(
     const std::string&                                      username,
     std::pair<std::vector<std::string> /*public macros*/,
-	          std::vector<std::string> /*private macros*/>& returnMacroNames)
+              std::vector<std::string> /*private macros*/>& returnMacroNames)
 {
 	DIR*           dir;
 	struct dirent* ent;
@@ -2362,11 +2362,11 @@ void MacroMakerSupervisor::appendCommandToHistory(std::string        feClass,
 	auto feHistoryIt = lastFeCommandToHistory_.find(username);
 	bool isRepeat =
 	    (feHistoryIt != lastFeCommandToHistory_.end() &&
-		 feHistoryIt->second.size() == 7 && feHistoryIt->second[0] == feClass &&
-		 feHistoryIt->second[1] == feUID && feHistoryIt->second[2] == macroType &&
-		 feHistoryIt->second[3] == macroName && feHistoryIt->second[4] == inputArgs &&
-		 feHistoryIt->second[5] == outputArgs &&
-		 feHistoryIt->second[6] == (saveOutputs ? "1" : "0"));
+	     feHistoryIt->second.size() == 7 && feHistoryIt->second[0] == feClass &&
+	     feHistoryIt->second[1] == feUID && feHistoryIt->second[2] == macroType &&
+	     feHistoryIt->second[3] == macroName && feHistoryIt->second[4] == inputArgs &&
+	     feHistoryIt->second[5] == outputArgs &&
+	     feHistoryIt->second[6] == (saveOutputs ? "1" : "0"));
 
 	unsigned int repeatCount;
 	time_t       origLaunchTime;
@@ -2997,7 +2997,7 @@ void MacroMakerSupervisor::editMacro(HttpXmlDocument&   xmldoc,
 		int result;
 		result =
 		    rename((MACROS_DB_PATH + username + "/" + oldMacroName + ".dat").c_str(),
-			       (MACROS_DB_PATH + username + "/" + newMacroName + ".dat").c_str());
+		           (MACROS_DB_PATH + username + "/" + newMacroName + ".dat").c_str());
 		if(result == 0)
 			xmldoc.addTextElementToData("newMacroName", newMacroName);
 		else
@@ -3470,7 +3470,7 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 			out << " /*address*/,";
 
 			if(dataIsVariable)  // read or write can have variable data, sink or source
-				                // respectively
+			                    // respectively
 				out << oneCommand[3] << " /*data*/";
 			else if(oneCommand[1][0] == 'w')  // literal hex data
 				out << "0x" << oneCommand[3] << " /*data*/";
@@ -3954,7 +3954,7 @@ try
 			sleepTime *= 5;  //50ms, 250ms
 			usleep(sleepTime);
 		}
-	}  //end wait loop
+	}                      //end wait loop
 	if(!group->allDone())  //not all done - go async
 	{
 		xmldoc.addNumberElementToData("NotDoneID", group->groupID_);
@@ -4079,7 +4079,7 @@ try
 	auto launchTask = [&](std::shared_ptr<runFEMacroStruct> task) {
 		active.emplace_back(task, std::async(std::launch::async, [task, mmSupervisor]() {
 			                    MacroMakerSupervisor::runFEMacroThread(task,
-								                                       mmSupervisor);
+			                                                           mmSupervisor);
 		                    }));
 	};
 
@@ -4236,20 +4236,20 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 
 	time_t launchTime             = time(0);
 	auto   saveHistoryIfRequested = [&]() {
-		if(!saveToHistory)
-			return;
+        if(!saveToHistory)
+            return;
 
-		appendCommandToHistory(feClassSelected,
-		                       feUIDSelected,
-		                       macroType,
-		                       macroName,
-		                       inputArgs,
-		                       outputArgs,
-		                       saveOutputs,
-		                       username,
-		                       launchTime,
-		                       time(0));
-		saveToHistory = false;
+        appendCommandToHistory(feClassSelected,
+                               feUIDSelected,
+                               macroType,
+                               macroName,
+                               inputArgs,
+                               outputArgs,
+                               saveOutputs,
+                               username,
+                               launchTime,
+                               time(0));
+        saveToHistory = false;
 	};
 
 	std::set<std::string /*feUID*/> feUIDs;
@@ -4434,8 +4434,8 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 
 					xoap::MessageReference pollRetMsg =
 					    SOAPMessenger::sendWithSOAPReply(it->second.getDescriptor(),
-						                                 "MacroMakerSupervisorRequest",
-						                                 pollTxParams);
+					                                     "MacroMakerSupervisorRequest",
+					                                     pollTxParams);
 
 					rxParameters = SOAPParameters();
 					rxParameters.addParameter("outputArgs");

@@ -18,7 +18,7 @@ class ECLConnection
 {
   public:
 	ECLConnection(std::string user, std::string password, std::string url);
-	~ECLConnection() {};
+	~ECLConnection(){};
 
 	const std::string& getSafeURL(void) const { return _safe_url; }
 	bool               safeURLisHTTPS(void) const

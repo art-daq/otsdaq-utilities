@@ -46,7 +46,7 @@
 #define __SHORTFILE__                                   \
 	(__builtin_strstr(&__FILE__[0], "/srcs/")           \
 	     ? __builtin_strstr(&__FILE__[0], "/srcs/") + 6 \
-		 : __FILE__)
+	     : __FILE__)
 #define __COUT_HDR_L__ ":" << std::dec << __LINE__ << " |\t"
 #define __COUT_HDR_FL__ __SHORTFILE__ << "" << __COUT_HDR_L__
 
@@ -502,7 +502,7 @@ int main(int argc, char** argv)
 					buffi      = 0;
 					packCount  = 1;
 				}
-			}  // end handle full packet
+			}     // end handle full packet
 			else  // we do not have a full packet, so setup buff for next packet
 			{
 				buffi += recvBytes + 1;  // go past null character
@@ -572,7 +572,7 @@ int main(int argc, char** argv)
 				packCount  = 1;
 			}
 		}  // end no packet case
-	}  // end main loop
+	}      // end main loop
 
 	close(sockfd);
 	close(sendSockfd);
