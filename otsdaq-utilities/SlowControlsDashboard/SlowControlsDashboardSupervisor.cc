@@ -152,9 +152,7 @@ void SlowControlsDashboardSupervisor::init(void)
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::handleNewAlarms()
-{
-	__COUT__ << "DEBUG handleNewAlarms" << __E__;
-}  //end handleNewAlarms()
+{ __COUT__ << "DEBUG handleNewAlarms" << __E__; }  //end handleNewAlarms()
 
 //==============================================================================
 /// Manage channel subscriptions to Interface
@@ -737,7 +735,7 @@ void SlowControlsDashboardSupervisor::GetLastAlarmsData(cgicc::Cgicc&    cgiIn,
 	// create lambda function to fill JSONMessage
 	std::function<void(HttpXmlDocument&, std::vector<std::vector<std::string>>&)>
 	    jsonFiller = [](HttpXmlDocument&                       xmlOut,
-	                    std::vector<std::vector<std::string>>& alarms) {
+		                std::vector<std::vector<std::string>>& alarms) {
 		    if(alarms.size())
 			    for(auto& alarmRow : alarms)
 			    {
@@ -837,7 +835,7 @@ void SlowControlsDashboardSupervisor::GetAlarmsLogData(cgicc::Cgicc&    cgiIn,
 	// create lambda function to fill JSONMessage
 	std::function<void(HttpXmlDocument&, std::vector<std::vector<std::string>>&)>
 	    jsonFiller = [](HttpXmlDocument&                       xmlOut,
-	                    std::vector<std::vector<std::string>>& alarmsLog) {
+		                std::vector<std::vector<std::string>>& alarmsLog) {
 		    if(alarmsLog.size())
 			    for(auto& alarmRow : alarmsLog)
 			    {
@@ -884,9 +882,7 @@ void SlowControlsDashboardSupervisor::GetUserPermissions(
     cgicc::Cgicc& /*cgiIn*/,
     HttpXmlDocument& /*xmlOut*/,
     const WebUsers::RequestUserInfo& /*userInfo*/)
-{
-	return;
-}
+{ return; }
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GenerateUID(cgicc::Cgicc& /*cgiIn*/,

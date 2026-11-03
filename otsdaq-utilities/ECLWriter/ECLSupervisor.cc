@@ -329,7 +329,7 @@ void ECLSupervisor::request(const std::string&               requestType,
 			   << __E__;
 			field =
 			    Field_t(StringMacros::escapeString(ss.str(), true /* keep white space */),
-			            "text");
+				        "text");
 			fields.push_back(field);
 		}
 
@@ -599,8 +599,8 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 	{
 		__COUTTV__(categoryFilter);
 		std::string response, url = "/E/xml_search?";  //l=100"; //limit to 100
-		    // "&a=" + std::to_string(duration) + "days" + //after
-		    // "&b=" + baseTimeTmBuffer; //before
+		// "&a=" + std::to_string(duration) + "days" + //after
+		// "&b=" + baseTimeTmBuffer; //before
 
 		bool                     applyCategoryFilter         = false;
 		bool                     applyInvertedCategoryFilter = false;

@@ -106,7 +106,7 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 	static void 			recursiveTreeToXML						(const ConfigurationTree& t,
 																	unsigned int            depth,
 																	HttpXmlDocument&        xmldoc,
-																	DOMElement*             parentEl,
+																	xercesc::DOMElement*    parentEl,
 																	bool                    hideStatusFalse,
 																	std::optional<std::reference_wrapper<const ConfigurationTree>> diffTree = std::nullopt);
 	void        			handleFillTreeNodeCommonFieldsXML		(HttpXmlDocument&       xmldoc,
@@ -274,6 +274,8 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 																	bool activeTablesOnly);
 
 	void  					testXDAQContext							(void);
+
+	static void 			RemoteControlWorkLoop					(ConfigurationGUISupervisor* theSupervisor);
 
 	enum
 	{

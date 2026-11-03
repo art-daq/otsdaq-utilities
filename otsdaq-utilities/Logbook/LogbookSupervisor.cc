@@ -85,12 +85,12 @@ int sendmail(const char* to, const char* from, const char* subject, const char* 
 LogbookSupervisor::LogbookSupervisor(xdaq::ApplicationStub* stub)
     : CoreSupervisorBase(stub)
     , allowedFileUploadTypes_({"image/png",
-                               "image/jpeg",
-                               "image/gif",
-                               "image/bmp",
-                               "application/pdf",
-                               "application/zip",
-                               "text/plain"})  // init allowed file upload types
+	                           "image/jpeg",
+	                           "image/gif",
+	                           "image/bmp",
+	                           "application/pdf",
+	                           "application/zip",
+	                           "text/plain"})  // init allowed file upload types
     , matchingFileUploadTypes_(
           {"png", "jpeg", "gif", "bmp", "pdf", "zip", "txt"})  // init allowed file upload
                                                                // types
@@ -447,7 +447,7 @@ xoap::MessageReference LogbookSupervisor::MakeSystemLogEntry(xoap::MessageRefere
 
 	std::string logPath,
 	    logDirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-	                 (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
+		             (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
 
 	char                 dayIndexStr[20];
 	HttpXmlDocument      logXml;
@@ -1235,7 +1235,7 @@ void LogbookSupervisor::movePreviewEntry(std::string previewNumber,
 
 		std::string logPath,
 		    logDirPath = (std::string)LOGBOOK_PATH + (std::string)LOGBOOK_LOGBOOKS_PATH +
-		                 (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
+			             (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
 
 		// check that directory exists
 		DIR* dir = opendir(logDirPath.c_str());
@@ -1359,8 +1359,8 @@ void LogbookSupervisor::hideLogbookEntry(const std::string& entryId,
 	std::string logDirPath = (std::string)LOGBOOK_PATH +
 	                         (std::string)LOGBOOK_LOGBOOKS_PATH +
 	                         (std::string)LOGBOOK_CATEGORY_DIR_PREFACE + activeCategory_;
-	std::string logPath = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ +
-	                      "_" + (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
+	std::string logPath    = logDirPath + "/" + LOGBOOK_FILE_PREFACE + activeCategory_ +
+	                         "_" + (std::string)dayIndexStr + LOGBOOK_FILE_EXTENSION;
 
 	__COUT__ << "logPath=" << logPath << std::endl;
 

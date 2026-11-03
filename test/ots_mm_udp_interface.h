@@ -107,6 +107,11 @@ class ots_mm_udp_interface
 	                               const std::string& variablesJSON,
 	                               unsigned int       iterationCount);
 	std::string        describeSequence(const std::string& sequenceJSON);
+	std::string        universalRead(const std::string& targetFE,
+	                                 const std::string& address);
+	void               universalWrite(const std::string& targetFE,
+	                                  const std::string& address,
+	                                  const std::string& data);
 
 	// static const int        MAXBUFLEN = 5000;
 
@@ -140,6 +145,6 @@ class ots_mm_udp_interface
 	                                    ///Note: if std::map does not complicate interface too much for ROOT/python, could make member functions return const std::string& and leverage cache solution
 	                                    /// std::map<std::string /*fe+cmd*/,std::map<std::string /*field*/, std::string /*value*/>> feCache_;
 	                                    ///
-};                                      //end ots_mm_udp_interface class declaration
+};  //end ots_mm_udp_interface class declaration
 
 #endif

@@ -382,7 +382,7 @@ void getVectorFromString(const std::string&        inputString,
 			listToReturn.push_back(decodeURIComponents
 			                           ? ots_mm_udp_interface::decodeURIComponent(
 			                                 inputString.substr(i, j - i))
-			                           : inputString.substr(i, j - i));
+									   : inputString.substr(i, j - i));
 
 			// setup i and j for next find
 			i = c + 1;
@@ -412,7 +412,7 @@ void getVectorFromString(const std::string&        inputString,
 		listToReturn.push_back(
 		    decodeURIComponents
 		        ? ots_mm_udp_interface::decodeURIComponent(inputString.substr(i, j - i))
-		        : inputString.substr(i, j - i));
+				: inputString.substr(i, j - i));
 	}
 
 	// assert that there is one less delimiter than values
@@ -678,7 +678,7 @@ std::string ots_mm_udp_interface::getFrontendList()
 			retStr += ';';
 		retStr += fields[3];  //append FE UID
 		                      // __COUTV__(retStr);
-	}                         //end primary loop
+	}  //end primary loop
 
 	return retStr;
 }  //end getFrontendList()
@@ -1308,6 +1308,98 @@ std::string ots_mm_udp_interface::runCommand(const std::string& targetFE,
 }  //end runCommand()
 
 //==============================================================================
+std::string ots_mm_udp_interface::universalRead(const std::string& targetFE,
+                                                const std::string& address)
+{
+	__COUT__ << "universalRead on '" << targetFE << "' address " << address << __E__;
+
+	std::string sendMessage = "UniversalRead;" + targetFE + ";" + address;
+	__COUTV__(sendMessage);
+
+	int numbytes;
+	if((numbytes = sendto(mm_sock_,
+	                      &(sendMessage.c_str()[0]),
+	                      sendMessage.size(),
+	                      0,
+	                      (struct sockaddr*)&mm_ai_addr,
+	                      sizeof(mm_ai_addr))) == -1)
+	{
+		__SS__ << "Error on universalRead() sendto!" << __E__;
+		close(mm_sock_);
+		mm_sock_ = -1;
+		__SS_THROW__;
+	}
+
+	std::string responseXML;
+	receiveXmlResponse(responseXML, "UniversalRead response", 5);
+
+	if(responseXML.size() == 0 || responseXML.find("Error") == 0)
+	{
+		__SS__ << "Error in universalRead response: "
+		       << (responseXML.size() == 0 ? "<empty>" : responseXML) << __E__;
+		__SS_THROW__;
+	}
+
+	size_t      after = 0;
+	std::string error = extractXmlField(responseXML, "Error", 0, after, &after);
+	if(error != "")
+	{
+		error = decodeHTMLEntities(error);
+		__SS__ << "Error from universalRead: " << error << __E__;
+		__SS_THROW__;
+	}
+
+	after                  = 0;
+	std::string dataResult = extractXmlField(responseXML, "readData", 0, after, &after);
+	return dataResult;
+}  //end universalRead()
+
+//==============================================================================
+void ots_mm_udp_interface::universalWrite(const std::string& targetFE,
+                                          const std::string& address,
+                                          const std::string& data)
+{
+	__COUT__ << "universalWrite on '" << targetFE << "' address " << address << " data "
+	         << data << __E__;
+
+	std::string sendMessage = "UniversalWrite;" + targetFE + ";" + address + ";" + data;
+	__COUTV__(sendMessage);
+
+	int numbytes;
+	if((numbytes = sendto(mm_sock_,
+	                      &(sendMessage.c_str()[0]),
+	                      sendMessage.size(),
+	                      0,
+	                      (struct sockaddr*)&mm_ai_addr,
+	                      sizeof(mm_ai_addr))) == -1)
+	{
+		__SS__ << "Error on universalWrite() sendto!" << __E__;
+		close(mm_sock_);
+		mm_sock_ = -1;
+		__SS_THROW__;
+	}
+
+	std::string responseXML;
+	receiveXmlResponse(responseXML, "UniversalWrite response", 5);
+
+	if(responseXML.size() == 0 || responseXML.find("Error") == 0)
+	{
+		__SS__ << "Error in universalWrite response: "
+		       << (responseXML.size() == 0 ? "<empty>" : responseXML) << __E__;
+		__SS_THROW__;
+	}
+
+	size_t      after = 0;
+	std::string error = extractXmlField(responseXML, "Error", 0, after, &after);
+	if(error != "")
+	{
+		error = decodeHTMLEntities(error);
+		__SS__ << "Error from universalWrite: " << error << __E__;
+		__SS_THROW__;
+	}
+}  //end universalWrite()
+
+//==============================================================================
 std::string ots_mm_udp_interface::getSequenceList()
 {
 	__COUT__ << "getSequenceList()" << __E__;
@@ -1841,9 +1933,7 @@ struct ActiveSequenceChainGuard
 	ActiveSequenceChainGuard(std::vector<std::string>& chain,
 	                         const std::string&        sequenceName)
 	    : chain_(chain)
-	{
-		chain_.push_back(sequenceName);
-	}
+	{ chain_.push_back(sequenceName); }
 	~ActiveSequenceChainGuard() { chain_.pop_back(); }
 };
 

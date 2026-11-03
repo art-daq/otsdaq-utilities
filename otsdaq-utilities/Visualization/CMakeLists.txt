@@ -1,4 +1,13 @@
 
+if(DEFINED ENV{OTS_LITE})
+cet_make_library(LIBRARY_NAME Visualization
+SOURCE version.cc VisualSupervisor.cc
+		 LIBRARIES PRIVATE
+		 otsdaq::CoreSupervisors
+		 otsdaq::RawDataVisualizerConsumer
+		 otsdaq::DataManager
+)
+else()
 cet_make_library(LIBRARY_NAME Visualization
 SOURCE version.cc VisualSupervisor.cc
 		 LIBRARIES PRIVATE
@@ -8,6 +17,7 @@ SOURCE version.cc VisualSupervisor.cc
 		 otsdaq::RootUtilities
 		 Boost::regex
 )
+endif()
 
 
 install_headers()
