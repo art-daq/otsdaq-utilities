@@ -7154,13 +7154,24 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		// update table info for each new configuration manager
 		//	IMPORTANTLY this also fills all configuration manager pointers with instances,
 		//	so we are not dealing with changing pointers later on
-		userConfigurationManagers_[mapKey]->getAllTableInfo(
-		    true /* refresh */,  // load empty instance of everything important
-		    0 /* accumulatedWarnings */,
-		    "" /* errorFilterName */,
-		    true /* getGroupKeys */,
-		    false /* getGroupInfo */,
-		    true /* initializeActiveGroups */);
+		try
+		{
+			userConfigurationManagers_[mapKey]->getAllTableInfo(
+			    true /* refresh */,  // load empty instance of everything important
+			    0 /* accumulatedWarnings */,
+			    "" /* errorFilterName */,
+			    true /* getGroupKeys */,
+			    false /* getGroupInfo */,
+			    true /* initializeActiveGroups */);
+		}
+		catch(...)
+		{
+			// Clean up the incomplete entry so the next caller does not find a manager
+			// without a last-use timestamp (which would throw std::out_of_range).
+			delete userConfigurationManagers_[mapKey];
+			userConfigurationManagers_.erase(mapKey);
+			throw;  // let the outer handler (preload thread or request) deal with it
+		}
 	}
 	else if(userLastUseTime_.find(mapKey) == userLastUseTime_.end())
 	{
@@ -10803,14 +10814,13 @@ void ConfigurationGUISupervisor::RemoteControlWorkLoop(
 	}
 	catch(...)
 	{
-		__SS__ << "FATAL Configuration GUI error. Could not initialize socket at ip '"
-		       << ipAddressForRemoteControlOverUDP << "' and port "
-		       << portForRemoteControlOverUDP
-		       << ". Perhaps it is already in use? Exiting Remote Control loop." << __E__;
-		ss << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
-		      "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
-		   << portForRemoteControlOverUDP << __E__;
-		__SS_THROW__;
+		__COUT_ERR__ << "Could not initialize UDP Remote Control socket at ip '"
+		             << ipAddressForRemoteControlOverUDP << "' and port "
+		             << portForRemoteControlOverUDP
+		             << ". Perhaps it is already in use? Exiting Remote Control loop." << __E__;
+		__COUT_ERR__ << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
+		                "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
+		             << portForRemoteControlOverUDP << __E__;
 		return;
 	}
 

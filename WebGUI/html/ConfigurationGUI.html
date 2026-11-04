@@ -2227,9 +2227,11 @@
 						var aliasName = versionAliasNames[i].getAttribute("value");
 						var tableName = versionAliasTableNames[i].getAttribute("value");
 						var version = versionAliasVersions[i].getAttribute("value");
-						var aliasComment = decodeURIComponent(versionAliasComments[i].getAttribute("value"));
+						var aliasComment = decodeURIComponent(versionAliasComments[i].getAttribute("value"))
+							.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 						var versionComment = versionComments[i] ?
-							decodeURIComponent(versionComments[i].getAttribute("value")) : "";
+							decodeURIComponent(versionComments[i].getAttribute("value"))
+								.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : "";
 
 						tableAliasStr += "<tr style='height:10px !important;'>" +
 							"<td style='text-align:left;padding: 0 10px 0 5px;'>";

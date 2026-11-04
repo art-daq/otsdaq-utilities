@@ -21,7 +21,7 @@ static int makeSocket(const char* ip, int port, struct sockaddr_in& addr)
 	int             rv;
 
 	memset(&hints, 0, sizeof hints);
-	hints.ai_family   = AF_UNSPEC;
+	hints.ai_family   = AF_INET;  // IPv4 only — addr is stored in sockaddr_in
 	hints.ai_socktype = SOCK_DGRAM;
 
 	if((rv = getaddrinfo(ip, std::to_string(port).c_str(), &hints, &servinfo)) != 0)

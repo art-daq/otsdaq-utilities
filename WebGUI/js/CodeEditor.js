@@ -498,7 +498,7 @@ CodeEditor.create = function (standAlone) {
 					else if (errStr && errStr.indexOf("requires the user to lockout") >= 0)
 						_readOnlyReason = "you must take the ots lock (see Settings)";
 					else
-						_readOnlyReason = "the write access request was rejected by the Code Editor Supervisor" + (errStr ? (": " + errStr.replace(/<[^>]*>/g, "")) : "");
+						_readOnlyReason = "the write access request was rejected by the Code Editor Supervisor" + (errStr ? (": " + (function(s){ while(s !== (s = s.replace(/<[^>]*>/g, ""))); return s.replace(/</g, "&lt;"); })(errStr)) : "");
 
 					_READ_ONLY = true;
 					CodeEditor.showTooltipPrepend = "Code Editor is in <b>read-only</b> mode because " + _readOnlyReason + ".\n\nReverting to read-only mode.\n\n";

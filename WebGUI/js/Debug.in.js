@@ -781,7 +781,7 @@ Debug.errorPop = function (err, severity) {
 			(severity == Debug.INFO_PRIORITY.DEBUG_PRIORITY ? '(Info)' : '') +
 			(severity == Debug.WARN_PRIORITY.DEBUG_PRIORITY ? '(Warning)' : '') +
 			":</label><br>" +
-			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, Debug._errTruncLen)) +
+			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, -1 /*already text-budgeted by caller*/)) +
 			(wasAlreadyContent ? "<br>...<br>" : "") +
 			str;
 

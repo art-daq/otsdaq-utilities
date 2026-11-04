@@ -1234,16 +1234,16 @@ function saveCheckedUserPreferences(className, elementName, checked) {
 //	("12.34 GB, Usage: 1.2 KB/s"); several print "Log: ...; Data: ...; Var: ...".
 function availableSpaceText(info) {
 	var disks = [
-		{ label: "Log", gb: parseFloat(info["availableLogSpaceGB"]) || 0, kbps: parseFloat(info["logUsageRateKBps"]) || 0 },
-		{ label: "Data", gb: parseFloat(info["availableDataSpaceGB"]) || 0, kbps: parseFloat(info["dataUsageRateKBps"]) || 0 },
-		{ label: "Var", gb: parseFloat(info["availableVarSpaceGB"]) || 0, kbps: parseFloat(info["varUsageRateKBps"]) || 0 }
+		{ label: "Log", gb: parseFloat(info["availableLogSpaceGB"]), kbps: parseFloat(info["logUsageRateKBps"]) || 0 },
+		{ label: "Data", gb: parseFloat(info["availableDataSpaceGB"]), kbps: parseFloat(info["dataUsageRateKBps"]) || 0 },
+		{ label: "Var", gb: parseFloat(info["availableVarSpaceGB"]), kbps: parseFloat(info["varUsageRateKBps"]) || 0 }
 	];
-	if (!disks[0].gb)
+	if (isNaN(disks[0].gb))
 		return ""; //leave blank if no value (app is not the one reporting disks for its host)
 
 	var distinct = [];
 	for (var i = 0; i < disks.length; ++i) {
-		if (!disks[i].gb) continue;
+		if (isNaN(disks[i].gb)) continue; //no measurement for this disk
 		var duplicate = false;
 		for (var k = 0; k < distinct.length; ++k)
 			if (distinct[k].gb == disks[i].gb) { duplicate = true; break; }

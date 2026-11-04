@@ -1770,9 +1770,9 @@ void VisualSupervisor::request(const std::string&               requestType,
 		std::string  reqChannelsStr = CgiDataUtilities::getData(cgiIn, "numChannels");
 		std::string  reqBitWidthStr = CgiDataUtilities::getData(cgiIn, "bitWidth");
 		unsigned int reqChannels =
-		    reqChannelsStr.empty() ? 1 : std::max(1, atoi(reqChannelsStr.c_str()));
+		    reqChannelsStr.empty() ? 1 : std::min(256, std::max(1, atoi(reqChannelsStr.c_str())));
 		unsigned int reqBitWidth =
-		    reqBitWidthStr.empty() ? 16 : std::max(8, atoi(reqBitWidthStr.c_str()));
+		    reqBitWidthStr.empty() ? 16 : std::min(32, std::max(8, atoi(reqBitWidthStr.c_str())));
 		unsigned int bps = (reqBitWidth + 7) / 8;
 
 		if(theDataManager_ != nullptr)

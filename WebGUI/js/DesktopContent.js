@@ -1570,7 +1570,7 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 				//	(ignoreSystemBlock callers are polling through an outage and need every failure delivered)
 				var found = false;
 				if (ignoreSystemBlock)
-					;
+					found = true; //do not register outage-probe failures in the global list
 				else if (DesktopContent._arrayOfFailedHandlers.length < 2) //only give pop up behavior for first 2 failures (then go quiet)
 				{
 					for (var rh in DesktopContent._arrayOfFailedHandlers)
@@ -1586,7 +1586,7 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 					found = true;
 				}
 				if (!found) DesktopContent._arrayOfFailedHandlers.push(returnHandler);
-				if (found) return; //do not call handler for failed server for user code multiple times..
+				if (found && !callHandlerOnErr) return; //do not call handler for failed server for user code multiple times..
 			}
 
 			//if not calling handler on error, then get and display errors for user
