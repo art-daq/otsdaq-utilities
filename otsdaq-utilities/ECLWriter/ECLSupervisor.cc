@@ -125,8 +125,8 @@ void ECLSupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 	     << "<frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
-	     << "&active_category=" << ECLCategory_
-	     << getStandAloneDefaultPageParameters(in) << "'></frameset></html>";
+	     << "&active_category=" << ECLCategory_ << getStandAloneDefaultPageParameters(in)
+	     << "'></frameset></html>";
 }  //end defaultPage()
 
 //==============================================================================
