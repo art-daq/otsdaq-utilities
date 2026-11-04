@@ -288,6 +288,9 @@ class ConfigurationGUISupervisor : public CoreSupervisorBase
 
 	// Guards userConfigurationManagers_/userLastUseTime_: the first-user pre-load
 	// runs on a detached thread at startup, concurrently with request handling.
+	// Held for the whole of request(): serializes HTTP request threads and the
+	// UDP remote-control thread, which may share a ConfigurationManagerRW.
+	std::mutex                                     requestMutex_;
 	std::mutex                                     userConfigurationManagersMutex_;
 	std::map<std::string, ConfigurationManagerRW*> userConfigurationManagers_;
 	std::map<std::string, time_t>                  userLastUseTime_;

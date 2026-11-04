@@ -360,7 +360,7 @@ if (Debug.mode) //IF DEBUG MODE IS ON!
 						str = returnStr;
 					else
 						str = rawPopupString;
-					Debug.errorPop(str, num);
+					Debug.errorPop(str, num, true /*alreadyTruncated*/);
 				}
 				Debug.lastLogger = ""; //clear for next
 
@@ -485,7 +485,7 @@ Debug.styleSingleQuotes = function(str) {
 //Show the error string err in the error popup on the window
 // create error div if not yet created
 Debug._errTruncLen = undefined; //temporarily change to -1 to avoid truncation
-Debug.errorPop = function (err, severity) {
+Debug.errorPop = function (err, severity, alreadyTruncated) {
 
 	var errBoxAlpha = "1.0";
 
@@ -499,7 +499,7 @@ Debug.errorPop = function (err, severity) {
 			if (!body) //maybe page not loaded yet.. so wait to report
 			{
 				//try again in 1 second
-				window.setTimeout(function () { Debug.errorPop(err, { "DEBUG_PRIORITY": severity }) }, 1000);
+				window.setTimeout(function () { Debug.errorPop(err, { "DEBUG_PRIORITY": severity }, alreadyTruncated) }, 1000);
 				return;
 			}
 
@@ -781,7 +781,7 @@ Debug.errorPop = function (err, severity) {
 			(severity == Debug.INFO_PRIORITY.DEBUG_PRIORITY ? '(Info)' : '') +
 			(severity == Debug.WARN_PRIORITY.DEBUG_PRIORITY ? '(Warning)' : '') +
 			":</label><br>" +
-			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, -1 /*already text-budgeted by caller*/)) +
+			Debug.styleSingleQuotes(Debug.errorPopConditionString(err, alreadyTruncated ? -1 /*Debug.log already applied the text budget*/ : Debug._errTruncLen)) +
 			(wasAlreadyContent ? "<br>...<br>" : "") +
 			str;
 

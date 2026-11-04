@@ -23,6 +23,8 @@
 #include <thread>
 #include <utility>
 
+#include <memory>
+
 using namespace ots;
 
 #undef __MF_SUBJECT__
@@ -250,6 +252,11 @@ void ConfigurationGUISupervisor::request(const std::string&               reques
                                          const WebUsers::RequestUserInfo& userInfo)
 try
 {
+	// Serialize requests: the lite HTTP server runs one thread per connection and
+	// the UDP remote-control loop is another caller, so two requests for the same
+	// username would otherwise use one ConfigurationManagerRW concurrently.
+	std::lock_guard<std::mutex> requestLock(requestMutex_);
+
 	// Commands
 
 	__COUTTV__(requestType);
@@ -10799,31 +10806,47 @@ class StringCgiInput : public cgicc::CgiInput
 void ConfigurationGUISupervisor::RemoteControlWorkLoop(
     ConfigurationGUISupervisor* theSupervisor)
 {
-	std::string ipAddressForRemoteControlOverUDP = __ENV__("OTS_CONFIG_UDP_IP");
-	int         portForRemoteControlOverUDP      = atoi(__ENV__("OTS_CONFIG_UDP_PORT"));
-	__COUT_INFO__ << "OTS_CONFIG_UDP_IP = " << ipAddressForRemoteControlOverUDP
-	              << ", OTS_CONFIG_UDP_PORT = " << portForRemoteControlOverUDP
-	              << " -- test with: ots_cfg_udp_test "
-	              << ipAddressForRemoteControlOverUDP << " "
-	              << portForRemoteControlOverUDP << __E__;
-
-	TransceiverSocket sock(ipAddressForRemoteControlOverUDP, portForRemoteControlOverUDP);
+	// Everything that can fail during setup (env vars, Socket constructor which
+	// throws on a bad IP:Port, bind) is inside this try: an exception escaping a
+	// detached thread would call std::terminate and take down the whole process.
+	std::string                        ipAddressForRemoteControlOverUDP;
+	int                                portForRemoteControlOverUDP = 0;
+	std::unique_ptr<TransceiverSocket> sockPtr;
 	try
 	{
-		sock.initialize();
+		ipAddressForRemoteControlOverUDP = __ENV__("OTS_CONFIG_UDP_IP");
+		portForRemoteControlOverUDP      = atoi(__ENV__("OTS_CONFIG_UDP_PORT"));
+		__COUT_INFO__ << "OTS_CONFIG_UDP_IP = " << ipAddressForRemoteControlOverUDP
+		              << ", OTS_CONFIG_UDP_PORT = " << portForRemoteControlOverUDP
+		              << " -- test with: ots_cfg_udp_test "
+		              << ipAddressForRemoteControlOverUDP << " "
+		              << portForRemoteControlOverUDP << __E__;
+
+		sockPtr = std::make_unique<TransceiverSocket>(ipAddressForRemoteControlOverUDP,
+		                                              portForRemoteControlOverUDP);
+		sockPtr->initialize();
 	}
-	catch(...)
+	catch(const std::exception& e)
 	{
-		__COUT_ERR__ << "Could not initialize UDP Remote Control socket at ip '"
+		__COUT_ERR__ << "Could not set up UDP Remote Control socket at ip '"
 		             << ipAddressForRemoteControlOverUDP << "' and port "
 		             << portForRemoteControlOverUDP
-		             << ". Perhaps it is already in use? Exiting Remote Control loop."
-		             << __E__;
+		             << ". Perhaps it is already in use? Exiting Remote Control loop. "
+		             << e.what() << __E__;
 		__COUT_ERR__ << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
 		                "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
 		             << portForRemoteControlOverUDP << __E__;
 		return;
 	}
+	catch(...)
+	{
+		__COUT_ERR__ << "Unknown error setting up UDP Remote Control socket at ip '"
+		             << ipAddressForRemoteControlOverUDP << "' and port "
+		             << portForRemoteControlOverUDP << ". Exiting Remote Control loop."
+		             << __E__;
+		return;
+	}
+	TransceiverSocket& sock = *sockPtr;
 
 	const std::string UDP_USERNAME = "UDP-REMOTE-CONTROL";
 

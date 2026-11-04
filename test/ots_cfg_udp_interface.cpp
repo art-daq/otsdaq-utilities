@@ -21,7 +21,7 @@ static int makeSocket(const char* ip, int port, struct sockaddr_in& addr)
 	int             rv;
 
 	memset(&hints, 0, sizeof hints);
-	hints.ai_family   = AF_INET;  // IPv4 only — addr is stored in sockaddr_in
+	hints.ai_family   = AF_INET;  // IPv4 only: addr is stored in sockaddr_in
 	hints.ai_socktype = SOCK_DGRAM;
 
 	if((rv = getaddrinfo(ip, std::to_string(port).c_str(), &hints, &servinfo)) != 0)
@@ -275,6 +275,16 @@ std::string ots_cfg_udp_interface::sendRequest(const std::string& requestType,
 		       << "'! Check that a ConfigurationGUISupervisor is running with UDP "
 		          "Remote Control enabled (OTS_CONFIG_UDP_IP/PORT) and accessible at "
 		       << selfIPandPort_ << "." << __E__;
+		__SS_THROW__;
+	}
+	// receiveXmlResponse() also returns on inactivity with a partial document (e.g. a
+	// lost UDP chunk of a large reply); do not hand that back as a successful reply.
+	if(responseXML.find("Error: ") != 0 && !hasCompleteXmlRoot(responseXML))
+	{
+		__SS__ << "Incomplete response to '" << requestType << "' (" << responseXML.size()
+		       << " bytes received, no closing ROOT element). A UDP chunk was likely "
+		          "lost; retry the request."
+		       << __E__;
 		__SS_THROW__;
 	}
 	return responseXML;
