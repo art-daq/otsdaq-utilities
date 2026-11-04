@@ -10817,7 +10817,8 @@ void ConfigurationGUISupervisor::RemoteControlWorkLoop(
 		__COUT_ERR__ << "Could not initialize UDP Remote Control socket at ip '"
 		             << ipAddressForRemoteControlOverUDP << "' and port "
 		             << portForRemoteControlOverUDP
-		             << ". Perhaps it is already in use? Exiting Remote Control loop." << __E__;
+		             << ". Perhaps it is already in use? Exiting Remote Control loop."
+		             << __E__;
 		__COUT_ERR__ << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
 		                "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
 		             << portForRemoteControlOverUDP << __E__;
