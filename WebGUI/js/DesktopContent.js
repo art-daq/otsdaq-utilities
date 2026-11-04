@@ -358,8 +358,14 @@ DesktopContent.init = function (onloadFunction) {
 		if (gatewayLidParameter)
 		{
 			DesktopContent._serverUrnLid = gatewayLidParameter;
-			DesktopContent._serverOrigin = DesktopContent._localOrigin;
-			Debug.log("Stand-alone Gateway URN-LID #" + DesktopContent._serverUrnLid);
+			//the Gateway may be on a different host:port than this application
+			//	(Desktop.openStandalone passes its origin; request handlers answer
+			//	with Access-Control-Allow-Origin: *), else assume same origin
+			var gatewayOriginParameter = DesktopContent.getParameter(0, "gatewayOrigin");
+			DesktopContent._serverOrigin = gatewayOriginParameter ?
+				gatewayOriginParameter : DesktopContent._localOrigin;
+			Debug.log("Stand-alone Gateway URN-LID #" + DesktopContent._serverUrnLid +
+				" at origin " + DesktopContent._serverOrigin);
 		}
 	}
 

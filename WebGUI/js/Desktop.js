@@ -3556,7 +3556,10 @@ Desktop.openStandalone = function (windowPath) {
 	if (lidIndex >= 0 && /^[0-9]+$/.test(windowPath.substr(lidIndex + lidKey.length)))
 		windowPath += "/";
 	var separator = windowPath.indexOf('?') >= 0 ? '&' : '?';
-	window.open(windowPath + separator + "standAloneMode=1&gatewayLID=" + urnLid_, '_blank');
+	//gatewayOrigin: the application may be served from another host:port than the
+	//	Gateway, so the page cannot assume its own origin reaches the Gateway
+	window.open(windowPath + separator + "standAloneMode=1&gatewayLID=" + urnLid_ +
+		"&gatewayOrigin=" + encodeURIComponent(serverOrigin_), '_blank');
 } //end openStandalone()
 
 //==============================================================================
