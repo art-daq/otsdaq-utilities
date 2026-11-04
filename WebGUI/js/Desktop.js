@@ -3548,6 +3548,13 @@ Desktop.openNewBrowserTab = function (name, subname, windowPath, unique) {
 //	Desktop wrapper, so that read-only commands continue to work without login
 Desktop.openStandalone = function (windowPath) {
 	if (!windowPath || windowPath == "folder") return;
+	//an application default-page link (/urn:xdaq-application:lid=NNN) must be
+	//	terminated with '/' before parameters are added (mirrors Desktop.addWindow);
+	//	the application's defaultPage() then forwards the parameters to the content page
+	var lidKey = "urn:xdaq-application:lid=";
+	var lidIndex = windowPath.indexOf(lidKey);
+	if (lidIndex >= 0 && /^[0-9]+$/.test(windowPath.substr(lidIndex + lidKey.length)))
+		windowPath += "/";
 	var separator = windowPath.indexOf('?') >= 0 ? '&' : '?';
 	window.open(windowPath + separator + "standAloneMode=1&gatewayLID=" + urnLid_, '_blank');
 } //end openStandalone()

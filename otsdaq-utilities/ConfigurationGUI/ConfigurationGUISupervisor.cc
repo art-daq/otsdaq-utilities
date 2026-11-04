@@ -197,18 +197,22 @@ void ConfigurationGUISupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 	cgicc::Cgicc cgiIn(in);
 	std::string  configWindowName =
 	    CgiDataUtilities::getData(cgiIn, "configWindowName");  // from GET
+	std::string standAloneParams = getStandAloneDefaultPageParameters(in);
 	if(configWindowName == "tableEditor")
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/ConfigurationTableEditor.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 	if(configWindowName == "iterate")
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/Iterate.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 	else
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/ConfigurationGUI.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 }  // end defaultPage()
 
 //==============================================================================
