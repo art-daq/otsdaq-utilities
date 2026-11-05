@@ -83,11 +83,11 @@
 			}
 
 			#selectionArea /*.areaContentDiv*/ {
-					margin-bottom: 50px; /*to provide margin at bottom of page for scrolling nicely*/
+					margin-bottom: 70px; /*to provide margin at bottom of page for scrolling nicely*/
 			}
 
 			#rundbviewerArea /*.areaContentDiv*/ {
-					margin-top: 80px; /*to provide margin at bottom of page for scrolling nicely*/
+					margin-top: 115px; /*clear the filter bar above*/
 					margin-bottom: 50px; /*to provide margin at bottom of page for scrolling nicely*/
 			}
 
@@ -341,7 +341,11 @@
 			}
 
 			#filterArea {
-				padding: 0 10px 8px 10px;
+				padding: 8px 10px;
+				margin-bottom: 40px;
+				border: 2px solid rgba(0,0,0,0.6);
+				border-radius: 5px;
+				background-color: rgba(0,0,0,0.5);
 			}
 			#filterArea select, #filterArea input {
 				color: #333;
@@ -355,11 +359,13 @@
 				line-height: normal;
 				vertical-align: middle;
 				margin-right: 25px;
+				margin-bottom: 0;
 			}
 			#filterArea label {
 				color: rgb(255,183,74);
 				font-weight: 800;
 				margin-right: 5px;
+				vertical-align: middle;
 			}
 
 		</style>
@@ -444,6 +450,8 @@
 
 			var _allEntries = []; //raw XML entry elements from last response
 			var _activeStatusFilter = ""; //empty = show all
+			var _runRangeStart = ""; //empty = no lower bound
+			var _runRangeEnd   = ""; //empty = no upper bound
 
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
@@ -763,6 +771,7 @@
 						if(statusNode) statusSet[statusNode.getAttribute("value")] = true;
 					}
 					buildStatusFilterDropdown(Object.keys(statusSet).sort());
+					buildRunRangeFilter();
 
 					applyFilters();
 				}
@@ -819,8 +828,57 @@
 			} //end buildStatusFilterDropdown()
 
 			//=====================================================================================
+			//buildRunRangeFilter ~~
+			//	creates or updates the run range filter inputs in the Run Filters section
+			function buildRunRangeFilter()
+			{
+				var container = document.getElementById("runRangeFilterArea");
+				if(!container || container.children.length) return; //already built
+
+				var label = document.createElement("label");
+				label.textContent = "Run range:";
+				label.style.verticalAlign = "middle";
+				container.appendChild(label);
+
+				var startInput = document.createElement("input");
+				startInput.type = "number";
+				startInput.id = "runRangeStart";
+				startInput.placeholder = "start";
+				startInput.title = "Single run number, or the start of a range";
+				startInput.style.width = "90px";
+				startInput.style.marginRight = "4px";
+				startInput.style.verticalAlign = "middle";
+				container.appendChild(startInput);
+
+				var dash = document.createElement("span");
+				dash.textContent = "–";
+				dash.style.marginRight = "4px";
+				dash.style.verticalAlign = "middle";
+				container.appendChild(dash);
+
+				var endInput = document.createElement("input");
+				endInput.type = "number";
+				endInput.id = "runRangeEnd";
+				endInput.placeholder = "end";
+				endInput.title = "End of range (inclusive). Leave empty to match just the start number";
+				endInput.style.width = "90px";
+				endInput.style.verticalAlign = "middle";
+				container.appendChild(endInput);
+
+				var onchange = function() {
+					_runRangeStart = startInput.value.trim();
+					_runRangeEnd   = endInput.value.trim();
+					applyFilters();
+				};
+				startInput.addEventListener("change", onchange);
+				endInput.addEventListener("change", onchange);
+				startInput.addEventListener("keydown", function(e){ if(e.key === "Enter") onchange(); });
+				endInput.addEventListener("keydown",   function(e){ if(e.key === "Enter") onchange(); });
+			} //end buildRunRangeFilter()
+
+			//=====================================================================================
 			//applyFilters ~~
-			//	filters _allEntries by _activeStatusFilter, then renders
+			//	filters _allEntries by _activeStatusFilter and run range, then renders
 			function applyFilters()
 			{
 				var rundbviewerEl = document.getElementById("rundbviewerDiv");
@@ -837,6 +895,15 @@
 						var statusNode = entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_STATUS)[0];
 						if(!statusNode || statusNode.getAttribute("value") != _activeStatusFilter) continue;
 					}
+
+					if(_runRangeStart)
+					{
+						var runNum = parseInt(entry.getElementsByTagName(_XML_RUNDBVIEWER_ENTRY_RUN_NUMBER)[0].getAttribute("value"));
+						var lo = parseInt(_runRangeStart);
+						var hi = _runRangeEnd ? parseInt(_runRangeEnd) : lo;
+						if(runNum < lo || runNum > hi) continue;
+					}
+
 					displayRunDbViewerEntry(rundbviewerEl, entry);
 					shown++;
 				}
@@ -1309,6 +1376,7 @@
 		<div id='filterArea'>
 			<span id='runTypeFilterArea'></span>
 			<span id='statusFilterArea'></span>
+			<span id='runRangeFilterArea'></span>
 		</div>
 	</div>
 
