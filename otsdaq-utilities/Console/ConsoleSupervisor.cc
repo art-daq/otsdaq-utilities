@@ -387,10 +387,10 @@ try
 					// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
 					// after startup grace period, generate special message to indicate missed packets
 					if(cs->getSupervisorUptime() > 20 /* seconds */ &&
-					   sourceLastSequenceID[newSourceId] !=
-					       1 &&  //veto missed error if sequenceID was 1 (this likely means a trace source was restarted)
-					   newSequenceId !=
-					       1)  //veto missed error if sequenceID is 1 (this likely means a trace source was restarted)
+					   sourceLastSequenceID[newSourceId] >
+					       1 &&  //veto missed error if prior sequenceID was 0 or 1 (source just started)
+					   newSequenceId >
+					       1)  //veto missed error if sequenceID is 0 or 1 (source was restarted)
 					{
 						cs->messages_.emplace_back(
 						    CONSOLE_SPECIAL_WARNING + missedSs.str(),
@@ -1040,13 +1040,14 @@ void ConsoleSupervisor::saveCustomCountList()
 }  // end saveCustomCountList()
 
 //==============================================================================
-void ConsoleSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
+void ConsoleSupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 {
 	// __SUP_COUT__ << "ApplicationDescriptor LID="
 	//              << getApplicationDescriptor()->getLocalId() << __E__;
 	*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Console.html?urn="
-	     << getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+	     << getApplicationDescriptor()->getLocalId()
+	     << getStandAloneDefaultPageParameters(in) << "'></frameset></html>";
 }  // end defaultPage()
 
 //==============================================================================

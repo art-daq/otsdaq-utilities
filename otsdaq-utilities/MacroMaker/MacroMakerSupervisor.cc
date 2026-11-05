@@ -836,6 +836,145 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					                 1500 /* max chunk size*/,
 					                 1000 /* inter-chunk delay us */);
 				}
+				else if(buffer.find("UniversalRead") == 0)
+				{
+					std::vector<std::string> bufferFields =
+					    StringMacros::getVectorFromString(buffer, {';'});
+					if(bufferFields.size() < 3)
+					{
+						__SS__ << "Missing arguments for UniversalRead. "
+						       << "Expected: UniversalRead;<FE UID>;<Address>" << __E__;
+						__SS_THROW__;
+					}
+
+					std::string feUID   = bufferFields[1];
+					std::string address = bufferFields[2];
+
+					auto feIt = theSupervisor->FEtoSupervisorMap_.find(feUID);
+					if(feIt == theSupervisor->FEtoSupervisorMap_.end())
+					{
+						__SS__ << "Front-end UID '" << feUID
+						       << "' not found in the FE map." << __E__;
+						__SS_THROW__;
+					}
+
+					unsigned int FESupervisorIndex = feIt->second;
+					auto it = theSupervisor->allFESupervisorInfo_.find(FESupervisorIndex);
+					if(it == theSupervisor->allFESupervisorInfo_.end())
+					{
+						__SS__ << "FE Supervisor index " << FESupervisorIndex
+						       << " not found." << __E__;
+						__SS_THROW__;
+					}
+
+					SOAPParameters txParameters;
+					txParameters.addParameter("Request", "UniversalRead");
+					txParameters.addParameter("Address", address);
+					txParameters.addParameter("InterfaceID", feUID);
+
+					SOAPParameters rxParameters;
+					rxParameters.addParameter("dataResult");
+					rxParameters.addParameter("Error");
+
+					xoap::MessageReference retMsg =
+					    theSupervisor->sendWithSOAPReply(it->second.getDescriptor(),
+					                                     "MacroMakerSupervisorRequest",
+					                                     txParameters);
+
+					SOAPUtilities::receive(retMsg, rxParameters);
+
+					std::string error = rxParameters.getValue("Error");
+					if(error != "")
+					{
+						__SS__ << error;
+						__SS_THROW__;
+					}
+
+					std::string dataResult = rxParameters.getValue("dataResult");
+					__COUT__ << "UniversalRead result: " << dataResult << __E__;
+
+					HttpXmlDocument xmldoc;
+					xmldoc.addTextElementToData("readData", dataResult);
+
+					std::stringstream out;
+					xmldoc.outputXmlDocument((std::ostringstream*)&out,
+					                         false /*dispStdOut*/,
+					                         false /*allowWhiteSpace*/);
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
+				}
+				else if(buffer.find("UniversalWrite") == 0)
+				{
+					std::vector<std::string> bufferFields =
+					    StringMacros::getVectorFromString(buffer, {';'});
+					if(bufferFields.size() < 4)
+					{
+						__SS__ << "Missing arguments for UniversalWrite. "
+						       << "Expected: UniversalWrite;<FE UID>;<Address>;<Data>"
+						       << __E__;
+						__SS_THROW__;
+					}
+
+					std::string feUID   = bufferFields[1];
+					std::string address = bufferFields[2];
+					std::string data    = bufferFields[3];
+
+					auto feIt = theSupervisor->FEtoSupervisorMap_.find(feUID);
+					if(feIt == theSupervisor->FEtoSupervisorMap_.end())
+					{
+						__SS__ << "Front-end UID '" << feUID
+						       << "' not found in the FE map." << __E__;
+						__SS_THROW__;
+					}
+
+					unsigned int FESupervisorIndex = feIt->second;
+					auto it = theSupervisor->allFESupervisorInfo_.find(FESupervisorIndex);
+					if(it == theSupervisor->allFESupervisorInfo_.end())
+					{
+						__SS__ << "FE Supervisor index " << FESupervisorIndex
+						       << " not found." << __E__;
+						__SS_THROW__;
+					}
+
+					SOAPParameters txParameters;
+					txParameters.addParameter("Request", "UniversalWrite");
+					txParameters.addParameter("Address", address);
+					txParameters.addParameter("Data", data);
+					txParameters.addParameter("InterfaceID", feUID);
+
+					xoap::MessageReference retMsg =
+					    theSupervisor->sendWithSOAPReply(it->second.getDescriptor(),
+					                                     "MacroMakerSupervisorRequest",
+					                                     txParameters);
+
+					SOAPParameters rxParameters;
+					rxParameters.addParameter("Error");
+					SOAPUtilities::receive(retMsg, rxParameters);
+
+					std::string error = rxParameters.getValue("Error");
+					if(error != "")
+					{
+						__SS__ << error;
+						__SS_THROW__;
+					}
+
+					__COUT__ << "UniversalWrite to " << address << " = " << data << " on "
+					         << feUID << " succeeded." << __E__;
+
+					HttpXmlDocument xmldoc;
+					xmldoc.addTextElementToData("writeAck", "1");
+
+					std::stringstream out;
+					xmldoc.outputXmlDocument((std::ostringstream*)&out,
+					                         false /*dispStdOut*/,
+					                         false /*allowWhiteSpace*/);
+					sock.acknowledge(out.str(),
+					                 true /* verbose */,
+					                 1500 /* max chunk size*/,
+					                 1000 /* inter-chunk delay us */);
+				}
 				else
 				{
 					__SS__ << "Unrecognized UDP command received: " << buffer << __E__;
@@ -1260,15 +1399,26 @@ try
 
 		rxParameters.addParameter("groupName");
 		rxParameters.addParameter("groupKey");
-		rxParameters.addParameter("SubsystemCommonList");
-		rxParameters.addParameter("SubsystemCommonOverrideList");
 		SOAPUtilities::receive(message, rxParameters);
 
-		std::string groupName           = rxParameters.getValue("groupName");
-		std::string groupKey            = rxParameters.getValue("groupKey");
-		std::string subsystemCommonList = rxParameters.getValue("SubsystemCommonList");
-		std::string subsystemCommonOverrideList =
-		    rxParameters.getValue("SubsystemCommonOverrideList");
+		std::string groupName = rxParameters.getValue("groupName");
+		std::string groupKey  = rxParameters.getValue("groupKey");
+
+		std::string subsystemCommonList, subsystemCommonOverrideList;
+		try
+		{
+			SOAPParameters optionalParams;
+			optionalParams.addParameter("SubsystemCommonList");
+			optionalParams.addParameter("SubsystemCommonOverrideList");
+			SOAPUtilities::receive(message, optionalParams);
+			subsystemCommonList = optionalParams.getValue("SubsystemCommonList");
+			subsystemCommonOverrideList =
+			    optionalParams.getValue("SubsystemCommonOverrideList");
+		}
+		catch(...)
+		{
+			__COUT__ << "Ignoring missing SubsystemCommon parameters." << __E__;
+		}
 
 		__SUP_COUTV__(groupName);
 		__SUP_COUTV__(groupKey);
@@ -3590,26 +3740,30 @@ try
 				{
 					__SUP_COUTT__ << "Cleaning up completed group " << group->groupID_
 					              << __E__;
+					staleGroupIdsWarned_.erase(group->groupID_);
 					feMacroRunThreadStruct_.erase(feMacroRunThreadStruct_.begin() + i);
 					--i;  //rewind
 				}
 			}
 			else if(now - group->startTime_ > 5 * 60 /* 5 minutes */)
 			{
-				std::string targets;
-				std::string feMacroName;
-				for(const auto& t : group->tasks_)
+				if(staleGroupIdsWarned_.insert(group->groupID_).second)
 				{
-					if(!targets.empty())
-						targets += ", ";
-					targets += t->parameters_.feUIDSelected_;
-					if(feMacroName.empty())
-						feMacroName = t->parameters_.macroName_;
+					std::string targets;
+					std::string feMacroName;
+					for(const auto& t : group->tasks_)
+					{
+						if(!targets.empty())
+							targets += ", ";
+						targets += t->parameters_.feUIDSelected_;
+						if(feMacroName.empty())
+							feMacroName = t->parameters_.macroName_;
+					}
+					__SUP_COUT_WARN__ << "Found old FE Macro group that has not completed"
+					                  << " (groupID=" << group->groupID_ << ", targets=["
+					                  << targets << "], FE macro name=" << feMacroName
+					                  << ")" << __E__;
 				}
-				__SUP_COUT_WARN__ << "Found old FE Macro group that has not completed"
-				                  << " (groupID=" << group->groupID_ << ", targets=["
-				                  << targets << "], FE macro name=" << feMacroName << ")"
-				                  << __E__;
 				continue;
 			}
 		}
@@ -3662,7 +3816,7 @@ try
 			//report per-UID progress
 			for(auto& task : targetGroup->tasks_)
 			{
-				DOMElement* progParent = xmldoc.addTextElementToData(
+				xercesc::DOMElement* progParent = xmldoc.addTextElementToData(
 				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
@@ -3810,7 +3964,7 @@ try
 			std::lock_guard<std::mutex> lock(feMacroRunThreadStructMutex_);
 			for(auto& task : group->tasks_)
 			{
-				DOMElement* progParent = xmldoc.addTextElementToData(
+				xercesc::DOMElement* progParent = xmldoc.addTextElementToData(
 				    "feMacroProgress", task->parameters_.feUIDSelected_);
 				if(task->feMacroRunDone_)
 				{
@@ -4332,7 +4486,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			// build output arguments
 			//	parse args, colon-separated pairs, and then comma-separated
 			{
-				DOMElement* feMacroExecParent =
+				xercesc::DOMElement* feMacroExecParent =
 				    xmldoc.addTextElementToData("feMacroExec", macroName);
 
 				xmldoc.addTextElementToParent(
