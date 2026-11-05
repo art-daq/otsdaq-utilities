@@ -1,0 +1,66 @@
+.ViewerWaveform-status {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 28px;
+	line-height: 28px;
+	padding: 0 12px;
+	background: rgba(0,0,0,0.6);
+	color: #ccccdd;
+	font: 13px monospace;
+	z-index: 10;
+	white-space: nowrap;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+}
+
+.ViewerWaveform-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ViewerWaveform-controls {
+	flex: 0 0 auto;
+	margin-left: 12px;
+}
+
+.ViewerWaveform-info {
+	position: absolute;
+	top: 28px;
+	left: 0;
+	right: 0;
+	height: 18px;
+	line-height: 18px;
+	padding: 0 12px;
+	background: rgba(0,0,0,0.45);
+	color: #8888aa;
+	font: 11px monospace;
+	z-index: 10;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.ViewerWaveform-btn {
+	background: rgba(80,80,120,0.7);
+	color: #ccccdd;
+	border: 1px solid #555577;
+	border-radius: 3px;
+	padding: 3px 10px;
+	margin-left: 6px;
+	font: 12px monospace;
+	cursor: pointer;
+}
+
+.ViewerWaveform-btn:hover {
+	background: rgba(100,100,150,0.9);
+}
+
+#ViewerWaveform-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+}

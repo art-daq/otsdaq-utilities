@@ -352,6 +352,23 @@ DesktopContent.init = function (onloadFunction) {
 	DesktopContent._standAloneMode = 1 == (DesktopContent.getParameter(0, "standAloneMode") | 0);
 	Debug.log("Stand-alone mode = " + DesktopContent._standAloneMode);
 
+	if (DesktopContent._standAloneMode)
+	{
+		var gatewayLidParameter = DesktopContent.getParameter(0, "gatewayLID");
+		if (gatewayLidParameter)
+		{
+			DesktopContent._serverUrnLid = gatewayLidParameter;
+			//the Gateway may be on a different host:port than this application
+			//	(Desktop.openStandalone passes its origin; request handlers answer
+			//	with Access-Control-Allow-Origin: *), else assume same origin
+			var gatewayOriginParameter = DesktopContent.getParameter(0, "gatewayOrigin");
+			DesktopContent._serverOrigin = gatewayOriginParameter ?
+				gatewayOriginParameter : DesktopContent._localOrigin;
+			Debug.log("Stand-alone Gateway URN-LID #" + DesktopContent._serverUrnLid +
+				" at origin " + DesktopContent._serverOrigin);
+		}
+	}
+
 	//get Wizard sequence (if in Wizard mode)
 	try {
 		DesktopContent._sequence = DesktopContent.getDesktopParameter(0, "code");
@@ -1451,19 +1468,27 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 					Debug.err(errStr);
 				}
 				else if (req.responseText == Globals.REQ_NO_LOGIN_RESPONSE) {
-					errStr = "Login has expired.";
-					Debug.err(errStr);
 
-					if (ignoreSystemBlock || !DesktopContent._isSystemBlackout) //make sure system is alive
-					{
-						DesktopContent._needToLoginMailbox = true; //force to login screen on server failure
-						if (DesktopContent._theDesktopWindow)
-							DesktopContent._theDesktopWindow.postMessage(
-								{
-									"windowId": DesktopContent._theWindowId,
-									"request": "needToLogin"
-								}, "*");
+					if (DesktopContent._standAloneMode) {
+						errStr = "No login in stand-alone mode.";
+						Debug.log(errStr);
+						req = 0;
+					}
+					else {
+						errStr = "Login has expired.";
+						Debug.err(errStr);
 
+						if (ignoreSystemBlock || !DesktopContent._isSystemBlackout) //make sure system is alive
+						{
+							DesktopContent._needToLoginMailbox = true; //force to login screen on server failure
+							if (DesktopContent._theDesktopWindow)
+								DesktopContent._theDesktopWindow.postMessage(
+									{
+										"windowId": DesktopContent._theWindowId,
+										"request": "needToLogin"
+									}, "*");
+
+						}
 					}
 				}
 				else if (req.responseText == Globals.REQ_LOCK_REQUIRED_RESPONSE) {
@@ -1545,11 +1570,14 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 				errStr = "Request Failed (code: " + req.status +
 					") - Bad Address: " + origin + "?urn=" + urn +
 					"\n" + requestURL;
-				Debug.log(errStr, Debug.HIGH_PRIORITY);
+				Debug.log(errStr, ignoreSystemBlock ? Debug.LOW_PRIORITY : Debug.HIGH_PRIORITY);
 
 				//handle multiple failed handlers
+				//	(ignoreSystemBlock callers are polling through an outage and need every failure delivered)
 				var found = false;
-				if (DesktopContent._arrayOfFailedHandlers.length < 2) //only give pop up behavior for first 2 failures (then go quiet)
+				if (ignoreSystemBlock)
+					found = true; //do not register outage-probe failures in the global list
+				else if (DesktopContent._arrayOfFailedHandlers.length < 2) //only give pop up behavior for first 2 failures (then go quiet)
 				{
 					for (var rh in DesktopContent._arrayOfFailedHandlers)
 						if (DesktopContent._arrayOfFailedHandlers[rh] == returnHandler) {
@@ -1564,7 +1592,7 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 					found = true;
 				}
 				if (!found) DesktopContent._arrayOfFailedHandlers.push(returnHandler);
-				if (found) return; //do not call handler for failed server for user code multiple times..
+				if (found && !callHandlerOnErr) return; //do not call handler for failed server for user code multiple times..
 			}
 
 			//if not calling handler on error, then get and display errors for user
@@ -1619,16 +1647,13 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 		//if(!DesktopContent._cookieCodeMailbox) //attempt to fix (e.g. for Desktop)
 		//	DesktopContent._cookieCodeMailbox = document.getElementById("DesktopContent-cookieCodeMailbox");
 		if (!DesktopContent._standAloneMode && !DesktopContent._cookieCodeMailbox) {
-			var errStr = "Undefined permissions. Is system down?";
-			Debug.log(errStr, window.location.href);
-			window.clearTimeout(timeoutTimer);
-			DesktopContent._updateTimeMailbox = 0; //reset cookie code timer, so it is requested from parent
-
-			if (returnHandler && callHandlerOnErr)
-				returnHandler(0, reqParam, errStr);
-			else
-				Debug.err(errStr);
-			return;
+			// No cookie code yet.  Send the request anyway — the server
+			// grants admin for NoSecurity regardless of cookie code, or
+			// returns a proper rejection the response handler already
+			// processes (REQ_NO_LOGIN_RESPONSE / REQ_NO_PERMISSION_RESPONSE).
+			Debug.log("Cookie code not yet available, sending request with CookieCode=0.",
+				window.location.href);
+			DesktopContent._updateTimeMailbox = 0;
 		}
 
 		var cc = DesktopContent._cookieCodeMailbox;//DesktopContent._cookieCodeMailbox?DesktopContent._cookieCodeMailbox.innerHTML:""; //get cookie code from mailbox if available
@@ -1653,6 +1678,11 @@ DesktopContent.XMLHttpRequest = function (requestURL, data, returnHandler,
 	{
 		urn = DesktopContent._serverUrnLid;
 		origin = DesktopContent._serverOrigin;
+	}
+
+	if (!urn && DesktopContent._standAloneMode) {
+		urn = DesktopContent._localUrnLid;
+		origin = DesktopContent._localOrigin;
 	}
 
 	if (targetUrnOverride) //explicit override to reach a specific third-party
@@ -1850,6 +1880,8 @@ DesktopContent.tooltip = function (id, tip, alwaysShow) {
 
 	if (alwaysShow || id == "ALWAYS") //no need to check
 		localFinishTooltip();
+	else if (DesktopContent._standAloneMode)
+		localFinishTooltip(); //skip tooltip gateway request in standalone mode
 	else
 		DesktopContent.XMLHttpRequest(
 			"TooltipRequest?RequestType=check" +
@@ -2858,10 +2890,16 @@ DesktopContent.systemBlackout = function (doBlackout) {
 //	returns the text in header of the current desktop window
 DesktopContent.getDesktopWindowTitle = function () {
 	if (!DesktopContent._theWindowTitle ||
-		DesktopContent._theWindowTitle == -1)
-		return DesktopContent._theWindow.parent.document.getElementById(
-			"DesktopWindowHeader-" +
-			DesktopContent._theWindow.name.split('-')[1]).innerHTML;
+		DesktopContent._theWindowTitle == -1) {
+		try {
+			var headerElement = DesktopContent._theWindow.parent.document.getElementById(
+				"DesktopWindowHeader-" +
+				DesktopContent._theWindow.name.split('-')[1]);
+			if (headerElement) return headerElement.innerHTML;
+		}
+		catch (ignoreError) {}
+		return document.title || "";
+	}
 	else
 		return DesktopContent._theWindowTitle;
 } //end getDesktopWindowTitle()

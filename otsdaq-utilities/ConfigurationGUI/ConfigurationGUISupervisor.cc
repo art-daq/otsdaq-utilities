@@ -4,6 +4,7 @@
 #include "otsdaq/Macros/CoutMacros.h"
 #include "otsdaq/Macros/StringMacros.h"
 #include "otsdaq/MessageFacility/MessageFacility.h"
+#include "otsdaq/NetworkUtilities/TransceiverSocket.h"
 #include "otsdaq/TablePlugins/IterateTable.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
@@ -19,7 +20,10 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <thread>
 #include <utility>
+
+#include <memory>
 
 using namespace ots;
 
@@ -51,6 +55,44 @@ ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* st
 	mkdir(((std::string)ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH).c_str(), 0755);
 
 	init();
+
+	//setup UDP interface thread if env variable set for port
+	{
+		bool enableRemoteControl = false;
+		try
+		{
+			__ENV__("OTS_CONFIG_UDP_PORT");
+			__ENV__("OTS_CONFIG_UDP_IP");
+			enableRemoteControl = true;
+		}
+		catch(const std::runtime_error& e)
+		{
+			__SUP_COUT__ << "Ignoring Configuration GUI server env var error: "
+			             << e.what() << __E__;
+		}
+		catch(...)
+		{
+			__SUP_COUT__ << "Ignoring unknown error reading OTS_CONFIG_UDP_PORT/"
+			                "OTS_CONFIG_UDP_IP env vars."
+			             << __E__;
+		}  // ignore errors
+
+		if(enableRemoteControl)
+		{
+			__SUP_COUT_INFO__ << "Enabling Configuration GUI remote control over UDP..."
+			                  << __E__;
+			std::thread(
+			    [](ConfigurationGUISupervisor* s) {
+				    ConfigurationGUISupervisor::RemoteControlWorkLoop(s);
+			    },
+			    this)
+			    .detach();
+		}
+		else
+			__SUP_COUT_INFO__ << "Configuration GUI remote control over UDP is disabled."
+			                  << __E__;
+	}  // end setting up thread for UDP remote control
+
 	__SUP_COUT__ << "Constructor complete." << __E__;
 }  // end constructor()
 
@@ -80,15 +122,49 @@ void ConfigurationGUISupervisor::init(void)
 	}
 
 	//initialize first config manager (pre-load for first user)
-	refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
 	//after this call, empty username : index=0 is in map userConfigurationManagers_[:0]
-
 	if(CorePropertySupervisorBase::allSupervisorInfo_.isWizardMode())
 	{
+		// Wizard mode: the ots launch script waits on the wiz alive-file, and that
+		// file must mean "the Config GUI is usable," so the pre-load stays synchronous.
+		refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
+
 		__SUP_COUT_INFO__
 		    << "After successful Config GUI init, marking alive for wiz mode!" << __E__;
 		CorePropertySupervisorBase::
 		    indicateOtsAlive();  // no parameters for wiz mode indication
+	}
+	else
+	{
+		// Normal mode: the pre-load is only a convenience for the first GUI user, but
+		// it activates the full Configuration group (every table plugin init, fcl
+		// parsing, trigger-menu generation) on the xdaq executive thread -- and xdaq
+		// does not open the http port until every application constructor returns.
+		// Run it on a detached thread so a slow or stalled pre-load cannot delay the
+		// Gateway coming up. refreshUserSession() is locked, so a user request that
+		// arrives first simply builds its own manager and the pre-load becomes a no-op.
+		__SUP_COUT__ << "Starting first-user Configuration Manager pre-load thread..."
+		             << __E__;
+		std::thread([this]() {
+			try
+			{
+				refreshUserSession("" /* userInfo.username_ */, 1);  // (refresh == "1"));
+				__SUP_COUT__ << "First-user Configuration Manager pre-load complete."
+				             << __E__;
+			}
+			catch(const std::runtime_error& e)
+			{
+				__SUP_COUT_WARN__ << "First-user Configuration Manager pre-load failed "
+				                     "(a user request will build its own): "
+				                  << e.what() << __E__;
+			}
+			catch(...)
+			{
+				__SUP_COUT_WARN__ << "First-user Configuration Manager pre-load failed "
+				                     "(a user request will build its own)."
+				                  << __E__;
+			}
+		}).detach();
 	}
 }  // end init()
 
@@ -96,6 +172,8 @@ void ConfigurationGUISupervisor::init(void)
 void ConfigurationGUISupervisor::destroy(void)
 {
 	__SUP_COUT__ << "Destructing..." << __E__;
+
+	std::lock_guard<std::mutex> lock(userConfigurationManagersMutex_);
 
 	// called by destructor
 	for(std::map<std::string, ConfigurationManagerRW*>::iterator it =
@@ -119,18 +197,22 @@ void ConfigurationGUISupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 	cgicc::Cgicc cgiIn(in);
 	std::string  configWindowName =
 	    CgiDataUtilities::getData(cgiIn, "configWindowName");  // from GET
+	std::string standAloneParams = getStandAloneDefaultPageParameters(in);
 	if(configWindowName == "tableEditor")
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/ConfigurationTableEditor.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 	if(configWindowName == "iterate")
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/Iterate.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 	else
 		*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 		        "src='/WebPath/html/ConfigurationGUI.html?urn="
-		     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+		     << this->getApplicationDescriptor()->getLocalId() << standAloneParams
+		     << "'></frameset></html>";
 }  // end defaultPage()
 
 //==============================================================================
@@ -174,6 +256,11 @@ void ConfigurationGUISupervisor::request(const std::string&               reques
                                          const WebUsers::RequestUserInfo& userInfo)
 try
 {
+	// Serialize requests: the lite HTTP server runs one thread per connection and
+	// the UDP remote-control loop is another caller, so two requests for the same
+	// username would otherwise use one ConfigurationManagerRW concurrently.
+	std::lock_guard<std::mutex> requestLock(requestMutex_);
+
 	// Commands
 
 	__COUTTV__(requestType);
@@ -7020,6 +7107,10 @@ catch(...)
 ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
     std::string username, bool refresh)
 {
+	// Held for the whole call: the pre-load thread and request handlers both create,
+	// reassign, and delete entries in the maps below.
+	std::lock_guard<std::mutex> lock(userConfigurationManagersMutex_);
+
 	uint64_t sessionIndex =
 	    0;  // make session by username for now! (may never want to change back)
 
@@ -7074,13 +7165,24 @@ ConfigurationManagerRW* ConfigurationGUISupervisor::refreshUserSession(
 		// update table info for each new configuration manager
 		//	IMPORTANTLY this also fills all configuration manager pointers with instances,
 		//	so we are not dealing with changing pointers later on
-		userConfigurationManagers_[mapKey]->getAllTableInfo(
-		    true /* refresh */,  // load empty instance of everything important
-		    0 /* accumulatedWarnings */,
-		    "" /* errorFilterName */,
-		    true /* getGroupKeys */,
-		    false /* getGroupInfo */,
-		    true /* initializeActiveGroups */);
+		try
+		{
+			userConfigurationManagers_[mapKey]->getAllTableInfo(
+			    true /* refresh */,  // load empty instance of everything important
+			    0 /* accumulatedWarnings */,
+			    "" /* errorFilterName */,
+			    true /* getGroupKeys */,
+			    false /* getGroupInfo */,
+			    true /* initializeActiveGroups */);
+		}
+		catch(...)
+		{
+			// Clean up the incomplete entry so the next caller does not find a manager
+			// without a last-use timestamp (which would throw std::out_of_range).
+			delete userConfigurationManagers_[mapKey];
+			userConfigurationManagers_.erase(mapKey);
+			throw;  // let the outer handler (preload thread or request) deal with it
+		}
 	}
 	else if(userLastUseTime_.find(mapKey) == userLastUseTime_.end())
 	{
@@ -8332,21 +8434,42 @@ void ConfigurationGUISupervisor::handleVersionAliasesXML(HttpXmlDocument&       
 	std::vector<std::pair<std::string, ConfigurationTree>> aliasNodePairs =
 	    cfgMgr->getNode(versionAliasesTableName).getChildren();
 
+	const std::map<std::string, TableInfo>& allTableInfo = cfgMgr->getAllTableInfo();
+
 	for(auto& aliasNodePair : aliasNodePairs)
 	{
 		// note : these are column names in the versionAliasesTableName table
 		// VersionAlias, TableName, Version, CommentDescription
+		std::string aliasTableName =
+		    aliasNodePair.second.getNode("TableName").getValueAsString();
+		std::string aliasVersion =
+		    aliasNodePair.second.getNode("Version").getValueAsString();
+
 		xmlOut.addTextElementToData(
 		    "VersionAlias",
 		    aliasNodePair.second.getNode("VersionAlias").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "TableName", aliasNodePair.second.getNode("TableName").getValueAsString());
-		xmlOut.addTextElementToData(
-		    "Version", aliasNodePair.second.getNode("Version").getValueAsString());
+		xmlOut.addTextElementToData("TableName", aliasTableName);
+		xmlOut.addTextElementToData("Version", aliasVersion);
 		xmlOut.addTextElementToData(
 		    "Comment",
 		    aliasNodePair.second.getNode(TableViewColumnInfo::COL_NAME_COMMENT)
 		        .getValueAsString());
+
+		std::string versionComment = ConfigurationManager::UNKNOWN_INFO;
+		try
+		{
+			if(allTableInfo.find(aliasTableName) != allTableInfo.end())
+			{
+				TableBase* aliasedTable = cfgMgr->getVersionedTableByName(
+				    aliasTableName, TableVersion(aliasVersion));
+				if(aliasedTable)
+					versionComment = aliasedTable->getView().getComment();
+			}
+		}
+		catch(...)
+		{
+		}
+		xmlOut.addTextElementToData("VersionComment", versionComment);
 	}
 }  // end handleVersionAliasesXML()
 
@@ -10634,3 +10757,178 @@ void ConfigurationGUISupervisor::testXDAQContext()
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 }  // end testXDAQContext()
+
+#ifndef OTS_LITE
+namespace
+{
+/// Presents a URL-encoded form string to GNU cgicc as if it were a POST request, so
+/// the UDP workloop can reuse request() unchanged. The form is exposed as both the
+/// query string and the body because request() reads some fields with GET semantics.
+class StringCgiInput : public cgicc::CgiInput
+{
+  public:
+	explicit StringCgiInput(const std::string& form) : form_(form), readPos_(0) {}
+
+	size_t read(char* data, size_t length) override
+	{
+		size_t n = std::min(length, form_.size() - readPos_);
+		memcpy(data, form_.data() + readPos_, n);
+		readPos_ += n;
+		return n;
+	}
+
+	std::string getenv(const char* varName) override
+	{
+		std::string name = varName;
+		if(name == "REQUEST_METHOD")
+			return "POST";
+		if(name == "CONTENT_TYPE")
+			return "application/x-www-form-urlencoded";
+		if(name == "CONTENT_LENGTH")
+			return std::to_string(form_.size());
+		if(name == "QUERY_STRING")
+			return form_;
+		if(name == "REMOTE_ADDR")
+			return "udp";
+		return "";
+	}
+
+  private:
+	std::string form_;
+	size_t      readPos_;
+};
+}  // namespace
+#endif
+
+//==============================================================================
+/// RemoteControlWorkLoop
+///	UDP entry point to the same request() handler the browser uses. Each datagram is
+///	the URL-encoded form a browser would POST, e.g.
+///		RequestType=getTables
+///		RequestType=saveTreeNodeEdit&targetTable=X&targetTableVersion=-1&...
+///	Reply is the same XML the browser gets, chunked; or "Error: <message>".
+void ConfigurationGUISupervisor::RemoteControlWorkLoop(
+    ConfigurationGUISupervisor* theSupervisor)
+{
+	// Everything that can fail during setup (env vars, Socket constructor which
+	// throws on a bad IP:Port, bind) is inside this try: an exception escaping a
+	// detached thread would call std::terminate and take down the whole process.
+	std::string                        ipAddressForRemoteControlOverUDP;
+	int                                portForRemoteControlOverUDP = 0;
+	std::unique_ptr<TransceiverSocket> sockPtr;
+	try
+	{
+		ipAddressForRemoteControlOverUDP = __ENV__("OTS_CONFIG_UDP_IP");
+		portForRemoteControlOverUDP      = atoi(__ENV__("OTS_CONFIG_UDP_PORT"));
+		__COUT_INFO__ << "OTS_CONFIG_UDP_IP = " << ipAddressForRemoteControlOverUDP
+		              << ", OTS_CONFIG_UDP_PORT = " << portForRemoteControlOverUDP
+		              << " -- test with: ots_cfg_udp_test "
+		              << ipAddressForRemoteControlOverUDP << " "
+		              << portForRemoteControlOverUDP << __E__;
+
+		sockPtr = std::make_unique<TransceiverSocket>(ipAddressForRemoteControlOverUDP,
+		                                              portForRemoteControlOverUDP);
+		sockPtr->initialize();
+	}
+	catch(const std::exception& e)
+	{
+		__COUT_ERR__ << "Could not set up UDP Remote Control socket at ip '"
+		             << ipAddressForRemoteControlOverUDP << "' and port "
+		             << portForRemoteControlOverUDP
+		             << ". Perhaps it is already in use? Exiting Remote Control loop. "
+		             << e.what() << __E__;
+		__COUT_ERR__ << "TIP: this IP/port comes from the env vars OTS_CONFIG_UDP_IP and "
+		                "OTS_CONFIG_UDP_PORT. Check with: ss -ulpn | grep "
+		             << portForRemoteControlOverUDP << __E__;
+		return;
+	}
+	catch(...)
+	{
+		__COUT_ERR__ << "Unknown error setting up UDP Remote Control socket at ip '"
+		             << ipAddressForRemoteControlOverUDP << "' and port "
+		             << portForRemoteControlOverUDP << ". Exiting Remote Control loop."
+		             << __E__;
+		return;
+	}
+	TransceiverSocket& sock = *sockPtr;
+
+	const std::string UDP_USERNAME = "UDP-REMOTE-CONTROL";
+
+	std::string buffer;
+	__COUT__ << "UDP Remote Control workloop starting..." << __E__;
+	while(1)
+	{
+		if(sock.receive(
+		       buffer, 0 /*timeoutSeconds*/, 1 /*timeoutUSeconds*/, false /*verbose*/) ==
+		   -1)
+		{
+			usleep(1000);
+			continue;
+		}
+
+		__COUT__ << "UDP Remote Control packet received of size = " << buffer.size()
+		         << __E__;
+		__COUTV__(buffer);
+
+		try
+		{
+#ifdef OTS_LITE
+			cgicc::CgiEnvironment env;
+			env.requestMethod_ = "POST";
+			env.contentType_   = "application/x-www-form-urlencoded";
+			env.queryString_   = buffer;
+			env.postData_      = buffer;
+			env.remoteAddr_    = "udp";
+			cgicc::Cgicc cgiIn(env, buffer, buffer);
+#else
+			StringCgiInput input(buffer);
+			cgicc::Cgicc   cgiIn(&input);
+#endif
+			std::string requestType =
+			    CgiDataUtilities::getOrPostData(cgiIn, "RequestType");
+			if(requestType.empty())
+			{
+				__SS__ << "Missing RequestType. Expected a URL-encoded form, e.g. "
+				          "'RequestType=getTables'"
+				       << __E__;
+				__SS_THROW__;
+			}
+
+			// author of edits: the client's Kerberos user, if it sent one
+			std::string username = StringMacros::decodeURIComponent(
+			    CgiDataUtilities::getOrPostData(cgiIn, "username"));
+			if(username.empty())
+				username = UDP_USERNAME;
+
+			WebUsers::RequestUserInfo userInfo(requestType, "" /*cookieCode*/);
+			userInfo.username_        = username;
+			userInfo.displayName_     = username;
+			userInfo.ip_              = "udp";
+			userInfo.permissionLevel_ = WebUsers::PERMISSION_LEVEL_ADMIN;
+			userInfo.NoXmlWhiteSpace_ = true;
+
+			HttpXmlDocument xmlOut;
+			theSupervisor->request(requestType, cgiIn, xmlOut, userInfo);
+
+			std::stringstream out;
+			xmlOut.outputXmlDocument((std::ostringstream*)&out,
+			                         false /*print to cout*/,
+			                         false /*allow whitespace*/);
+			sock.acknowledge(out.str(),
+			                 true /* verbose */,
+			                 1500 /* max chunk size*/,
+			                 1000 /* inter-chunk delay us */);
+		}
+		catch(const std::runtime_error& e)
+		{
+			__COUT_ERR__ << "Error handling UDP request: " << e.what() << __E__;
+			sock.acknowledge(std::string("Error: ") + e.what(), true /* verbose */);
+		}
+		catch(...)
+		{
+			__COUT_ERR__ << "Unknown error handling UDP request." << __E__;
+			sock.acknowledge("Error: unknown error handling UDP request",
+			                 true /* verbose */);
+		}
+	}  // end infinite workloop
+}  // end RemoteControlWorkLoop()

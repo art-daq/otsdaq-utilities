@@ -29,7 +29,11 @@
 
 namespace ots
 {
+#ifndef OTS_LITE
 class VisualDataManager;
+#else
+class DataManager;
+#endif
 /// VisualSupervisor
 ///	This class handles the web user interface to a VisualDataManager with reqgard to the
 /// web desktop Visualizer. 	The Visualizer can display ROOT object in real-time, as well
@@ -80,9 +84,13 @@ class VisualSupervisor : public CoreSupervisorBase
   private:
 	/// void						binaryBufferToHexString		(char *buff, unsigned int len,
 	/// std::string& dest);
-	std::stringstream  ss;
+	std::stringstream ss;
+#ifndef OTS_LITE
 	VisualDataManager* theDataManager_;
-	unsigned int       loadedRunNumber_;
+#else
+	DataManager* theDataManager_;
+#endif
+	unsigned int loadedRunNumber_;
 };
 }  // namespace ots
 

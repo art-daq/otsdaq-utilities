@@ -115,7 +115,7 @@ void ECLSupervisor::destroy(void)
 }  // end destroy()
 
 //==============================================================================
-void ECLSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
+void ECLSupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 {
 	__COUT__ << " active category " << ECLCategory_ << std::endl;
 	*out << "<!DOCTYPE HTML><html lang='en'><head><title>ots</title>"
@@ -125,7 +125,8 @@ void ECLSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
 	     << "<frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
-	     << "&active_category=" << ECLCategory_ << "'></frameset></html>";
+	     << "&active_category=" << ECLCategory_ << getStandAloneDefaultPageParameters(in)
+	     << "'></frameset></html>";
 }  //end defaultPage()
 
 //==============================================================================
@@ -599,8 +600,8 @@ void ECLSupervisor::refreshLogbook(time_t              date,
 	{
 		__COUTTV__(categoryFilter);
 		std::string response, url = "/E/xml_search?";  //l=100"; //limit to 100
-		    // "&a=" + std::to_string(duration) + "days" + //after
-		    // "&b=" + baseTimeTmBuffer; //before
+		// "&a=" + std::to_string(duration) + "days" + //after
+		// "&b=" + baseTimeTmBuffer; //before
 
 		bool                     applyCategoryFilter         = false;
 		bool                     applyInvertedCategoryFilter = false;

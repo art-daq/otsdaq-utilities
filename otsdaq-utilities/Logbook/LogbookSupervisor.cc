@@ -170,13 +170,14 @@ void LogbookSupervisor::destroy(void)
 }  //end destroy()
 
 //==============================================================================
-void LogbookSupervisor::defaultPage(xgi::Input* /*in*/, xgi::Output* out)
+void LogbookSupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 {
 	__COUT__ << " active category " << activeCategory_ << std::endl;
 	*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Logbook.html?urn="
 	     << this->getApplicationDescriptor()->getLocalId()
-	     << "&active_category=" << activeCategory_ << "'></frameset></html>";
+	     << "&active_category=" << activeCategory_
+	     << getStandAloneDefaultPageParameters(in) << "'></frameset></html>";
 }  //end defaultPage()
 
 //==============================================================================
