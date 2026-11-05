@@ -2407,10 +2407,14 @@ SubsystemLaunch.create = function() {
 											" Error=" + (errorValue ? errorValue : "none") +
 											" subsystemCount=" + statusNodes.length +
 											" expected=" + SubsystemLaunch.subsystems.length);
-										if(statusNodes.length == 0) {
+										if(statusNodes.length == 0 && SubsystemLaunch.subsystems.length > 0) {
 											Debug.log("REBOOT-DIAG no subsystem_status nodes yet; raw=" +
 												(statusRequest.responseText || "").substr(0, 300));
 											return false;
+										}
+										if(statusNodes.length == 0 && SubsystemLaunch.subsystems.length == 0) {
+											Debug.log("REBOOT-DIAG no subsystems configured; accepting.");
+											return !errorValue; //accept if no error
 										}
 										var allReporting = true;
 										for(var statusIndex = 0; statusIndex < statusNodes.length; ++statusIndex) {

@@ -391,7 +391,7 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		std::string  path     = CgiDataUtilities::postData(cgiIn, "Path");
 		boost::regex re("%2F");
 		path = boost::regex_replace(path, re, "/");  // Dario: should be transparent for
-		    // Ryan's purposes but required by Extjs
+		// Ryan's purposes but required by Extjs
 
 		////STDLINE(std::string("rootpath                 : ")+rootpath,"") ;
 		////STDLINE(std::string("path                     : ")+    path,"") ;
@@ -533,7 +533,7 @@ void VisualSupervisorV2::request(const std::string&               requestType,
 		                      // required by Extjs
 		boost::regex re3("%3A");
 		path = boost::regex_replace(path, re3, "");  // Dario: should be transparent for
-		    // Ryan's purposes but required by Extjs
+		// Ryan's purposes but required by Extjs
 		ss.str("");
 		ss << "path    : " << path;
 		STDLINE(ss.str(), ACCyan);

@@ -63,6 +63,8 @@
 		<script type="text/JavaScript"            src="/WebPath/js/visualizers_lib/Viewer2d.js"></script>
 		<link   rel="stylesheet" type="text/css" href="/WebPath/css/Viewer3d.css">
 		<script type="text/JavaScript"            src="/WebPath/js/visualizers_lib/Viewer3d.js"></script>
+		<link   rel="stylesheet" type="text/css" href="/WebPath/css/ViewerWaveform.css">
+		<script type="text/JavaScript"            src="/WebPath/js/visualizers_lib/ViewerWaveform.js"></script>
 
 		<script>
 
@@ -96,9 +98,11 @@
 				if(1 //hide from everyone until 2D and 3D are revived
 						|| !DesktopContent._theDesktopWindow) dropDownDiv.style.display = 'none'; //hide from public users
 
-
-				//Viewer2d.launch();//
-				ViewerRoot.launch();
+				var mode = DesktopContent.getParameter(0, "mode");
+				if(mode == "waveform")
+					ViewerWaveform.launch();
+				else
+					ViewerRoot.launch();
 			} //end init()
 
 			//=====================================================================================

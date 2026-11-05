@@ -72,6 +72,26 @@ if (1 || !Element.prototype.scrollIntoViewIfNeeded) {
 
 //=====================================================================================
 //showTooltip ~~
+var windowWriteAccessConfigTooltip = "<b>Configuring Code Editor write access (admins):</b>\n<INDENT>" +
+	"Write access is decided by the Code Editor Supervisor. Holding the ots lock is always required to write. " +
+	"To change who may write, add rows to the Code Editor application's <b>Supervisor Properties</b> " +
+	"(Configure &gt; XDAQ Application &gt; LinkToPropertyTable; columns PropertyName / PropertyValue), " +
+	"activate the configuration, and restart ots. " +
+	"To make a desktop icon open a viewer only, add the Desktop Icon window parameter <b>readOnlyMode</b> = 1 (Configure &gt; Desktop Icon &gt; LinkToParameterTable).\n\n" +
+	"<table border=0 cellspacing=0 cellpadding=0 style='border: 1px solid grey;'>" +
+	"<tr style='background-color: rgb(106, 102, 119);'><td style='padding:5px;'><b>Who has write access</b></td><td style='padding:5px'><b>Setting</b></td></tr>" +
+	"<tr><td style='padding:5px'> Named user with allUsers:255 + lock (default; the anonymous admin user is rejected) </td><td style='padding:5px'> no rows needed </td></tr>" +
+	"<tr style='background-color: rgb(106, 102, 119);'><td style='padding:5px'> Any user with allUsers:255 + lock, including the anonymous admin user </td><td style='white-space: nowrap; padding:5px'> RequireSecurityRequestTypes = none </td></tr>" +
+	"<tr><td style='padding:5px'> Named user with allUsers:100 (expert) + lock </td><td style='white-space: nowrap; padding:5px'> UserPermissionsThreshold = *=1 | codeEditor=100 </td></tr>" +
+	"<tr style='background-color: rgb(106, 102, 119);'><td style='padding:5px'> Members of a group, e.g. user permissions 'allUsers:10, CodeEditors:255' + lock </td><td style='white-space: nowrap; padding:5px'> UserGroupsAllowed = codeEditor=CodeEditors </td></tr>" +
+	"<tr><td style='padding:5px'> Everyone except a group (only used when UserGroupsAllowed is empty) </td><td style='white-space: nowrap; padding:5px'> UserGroupsDisallowed = codeEditor=Shifters </td></tr>" +
+	"<tr style='background-color: rgb(106, 102, 119);'><td style='padding:5px'> No users have write access </td><td style='white-space: nowrap; padding:5px'> UserPermissionsThreshold = *=1 | codeEditor=0 </td></tr>" +
+	"<tr><td style='padding:5px'> Viewer-only desktop icon (server rules still apply) </td><td style='white-space: nowrap; padding:5px'> Desktop Icon parameter readOnlyMode = 1 </td></tr>" +
+	"</table>\n" +
+	"Settings combine: e.g. a group plus RequireSecurityRequestTypes = none lets the anonymous admin user write too. " +
+	"User permission strings are edited in Settings (User Settings) by an admin." +
+	"</INDENT>\n";
+
 var windowTooltip = "Welcome to the <b>Code Editor</b> user interface. " +
 	"Edit your code, save it, and compile!\n\n" +
 	"Hover your mouse over the icons and buttons to see what they do. " +
@@ -136,14 +156,16 @@ var windowTooltip = "Welcome to the <b>Code Editor</b> user interface. " +
 	"<tr><td style='white-space: nowrap; padding:5px;'> Shift + Ctrl + / </td><td style='padding:5px'> ==> </td><td style='padding:5px'> Remove leading comment character(s) to all highlighted lines.</td></tr>" +
 	"<tr style='background-color: rgb(106, 102, 119);'><td style='white-space: nowrap; padding:5px;'> Ctrl + I </td><td style='padding:5px'> ==> </td><td style='padding:5px'> Auto-indent all highlighted lines.</td></tr>" +
 	"</table></INDENT>\n" +
-	"If you are an admin and want to set Code Editor in viewer mode for other users i,e. 'Code Viewer,' go to 'Desktop Icon Table' in Configure to set the parameter 'readOnlyMode.'" +
+	windowWriteAccessConfigTooltip +
 	"</INDENT>"
 	;
 
 var windowViewModeTooltip = "Welcome to the <b>Code Viewer</b> user interface. " +
 	"You will only be able to view codes without modifying. Your text inputs won't be saved. " +
-	"Contact your administrator if you think you should have modification access." +
+	"Contact your administrator if you think you should have modification access. " +
+	"Hover over the READ ONLY button in the top-right to see why this window is read-only." +
 	"<INDENT>\n" +
+	windowWriteAccessConfigTooltip +
 	"<b>Open a file:</b>\n<INDENT>Use the folder icon in the top-left to navigate to a code file to edit.</INDENT>\n" +
 	"<b>Toggle view:</b>\n<INDENT>Use the split-pane icon in the top-right to toggle another code editor in the same window.</INDENT>\n" +
 
@@ -303,6 +325,7 @@ CodeEditor.create = function (standAlone) {
 	var _TAB_SIZE = 4; //to match eclipse!
 
 	var _READ_ONLY = false;
+	var _readOnlyReason = ""; // shown to the user when in read-only mode
 	var _requestPreamble = ""; // to choose readonly request or fullaccess
 
 	//////////////////////////////////////////////////
@@ -377,8 +400,11 @@ CodeEditor.create = function (standAlone) {
 			_viewMode = parameterViewMode | 0;
 		}
 
-		if(!_READ_ONLY) //do not oscillate back and forth if already in read-only mode
-			_READ_ONLY = DesktopContent._readOnlyMode;
+		if(!_READ_ONLY && DesktopContent._readOnlyMode) //do not oscillate back and forth if already in read-only mode
+		{
+			_READ_ONLY = true;
+			_readOnlyReason = "the Desktop Icon window parameter readOnlyMode is set to 1";
+		}
 
 		console.log("parameterStartFile", parameterStartFile);
 		console.log("parameterGotoLine", parameterGotoLine);
@@ -460,23 +486,33 @@ CodeEditor.create = function (standAlone) {
 			function (req, reqParam, errStr) {
 				console.log("getAllowedExtensions", req, errStr);
 
-				CodeEditor.showTooltipPrepend = "";
 				if (!_READ_ONLY && !req) {
-					if (DesktopContent._sequence)
-						CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember the wiz mode sequence access code must be at least 8 characters to allow write access)!\n\nReverting to read-only mode.\n\n";
+					if (errStr && errStr.indexOf("insufficient account permissions") >= 0) {
+						if (DesktopContent._sequence)
+							_readOnlyReason = "the wiz mode access code must be at least 8 characters to allow write access";
+						else
+							_readOnlyReason = "the login has insufficient permission level or is the anonymous admin user (by default write access needs a named user login with allUsers:255)";
+					}
+					else if (errStr && errStr.indexOf("another user has locked") >= 0)
+						_readOnlyReason = "another user holds the ots lock";
+					else if (errStr && errStr.indexOf("requires the user to lockout") >= 0)
+						_readOnlyReason = "you must take the ots lock (see Settings)";
 					else
-						CodeEditor.showTooltipPrepend = "Assuming <b>read-only</b> access (remember only named users can have write access, not the anonymous admin user)!\n\nReverting to read-only mode.\n\n";
-					Debug.log(CodeEditor.showTooltipPrepend);
+						_readOnlyReason = "the write access request was rejected by the Code Editor Supervisor" + (errStr ? (": " + (function(s){ while(s !== (s = s.replace(/<[^>]*>/g, ""))); return s.replace(/</g, "&lt;"); })(errStr)) : "");
 
 					_READ_ONLY = true;
+					CodeEditor.showTooltipPrepend = "Code Editor is in <b>read-only</b> mode because " + _readOnlyReason + ".\n\nReverting to read-only mode.\n\n";
+					Debug.log(CodeEditor.showTooltipPrepend);
 					if(!_STAND_ALONE)
-						Debug.warn("Reverting to read-only mode for Code Editor.");
+						Debug.warn("Reverting to read-only mode for Code Editor because " + _readOnlyReason + ".");
 
 					CodeEditor.showTooltip(_STAND_ALONE);
 					init();
 					return;
 				}
 
+				CodeEditor.showTooltipPrepend = _READ_ONLY ?
+					("Code Editor is in <b>read-only</b> mode because " + _readOnlyReason + ".\n\n") : "";
 				CodeEditor.showTooltip(_STAND_ALONE);
 
 				if (errStr && errStr != "")
@@ -724,6 +760,17 @@ CodeEditor.create = function (standAlone) {
 					} //end save content
 					str += "</div>"; //close saveFile
 
+					//read-only indicator, in place of save button
+					if (!_STAND_ALONE && _READ_ONLY)
+						str += DesktopContent.htmlOpen("div",
+							{
+								"id": "readOnlyIndicator" + forPrimary,
+								"class": "controlsButton",
+								"style": "float:left; width:auto; padding:0 10px; line-height:36px; text-align:center; font-weight:normal; color:rgb(160,0,0); white-space:nowrap;",
+								"onclick": "CodeEditor.showTooltip(true);",
+								"title": "Read-only mode because " + _readOnlyReason + ".\nClick for how to configure write access.",
+							}, "<span style='position:relative; top:3px;'>Read-only</span>" /*innerHTML*/, 1 /*doCloseTag*/);
+
 				} //end locals controlsPane
 				str += "</div>"; //close controlsPane
 				return str;
@@ -811,7 +858,6 @@ CodeEditor.create = function (standAlone) {
 						}, "z" /*innerHTML*/, 1 /*doCloseTag*/);
 				}
 				str += "</div>"; //close cleanBuild
-
 
 				el.innerHTML = str;
 			}
