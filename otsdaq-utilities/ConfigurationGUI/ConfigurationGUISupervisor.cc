@@ -11,7 +11,9 @@
 #include <boost/stacktrace.hpp>
 
 #include "otsdaq/GatewaySupervisor/GatewaySupervisor.h"  //for saveModifiedVersionXML()
+#ifndef OTS_LITE
 #include "otsdaq/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.h"  //for artdaq extraction
+#endif
 #include "otsdaq/TablePlugins/XDAQContextTable/XDAQContextTable.h"  //for context relaunch
 
 #include <xdaq/NamespaceURI.h>
@@ -52,7 +54,9 @@ ConfigurationGUISupervisor::ConfigurationGUISupervisor(xdaq::ApplicationStub* st
 	INIT_MF("." /*directory used is USER_DATA/LOG/.*/);
 
 	// make macro directories in case they don't exist
+#ifndef OTS_LITE
 	mkdir(((std::string)ARTDAQTableBase::ARTDAQ_CONFIG_LAYOUTS_PATH).c_str(), 0755);
+#endif
 
 	init();
 
@@ -1207,6 +1211,7 @@ try
 			__SUP_SS_THROW__;
 		}
 	}
+#ifndef OTS_LITE
 	else if(requestType == "getArtdaqNodes")
 	{
 		std::string modifiedTables  = CgiDataUtilities::postData(cgiIn, "modifiedTables");
@@ -1273,6 +1278,16 @@ try
 		handleSaveArtdaqNodeLayoutXML(
 		    xmlOut, cfgMgr, layout, contextGroupName, TableGroupKey(contextGroupKey));
 	}
+#else
+	else if(requestType == "getArtdaqNodes" || requestType == "saveArtdaqNodes" ||
+	        requestType == "getArtdaqNodeLayout" || requestType == "saveArtdaqNodeLayout")
+	{
+		__SUP_SS__ << "Request '" << requestType
+		           << "' needs artdaq, which is not part of the OTS_LITE build." << __E__;
+		__SUP_COUT_ERR__ << ss.str();
+		xmlOut.addTextElementToData("Error", ss.str());
+	}
+#endif
 	else if(requestType == "checkAffectedActiveGroups")
 	{
 		std::string groupName      = CgiDataUtilities::getData(cgiIn, "groupName");
@@ -9103,6 +9118,7 @@ void ConfigurationGUISupervisor::handleTablesXML(HttpXmlDocument&        xmlOut,
 
 }  // end handleTablesXML()
 
+#ifndef OTS_LITE  // artdaq node handlers need ARTDAQTableBase
 //==============================================================================
 /// handleGetArtdaqNodeRecordsXML
 ///	get artdaq nodes for specified or active groups
@@ -9674,6 +9690,7 @@ void ConfigurationGUISupervisor::handleSaveArtdaqNodeLayoutXML(
 	fclose(fp);
 
 }  // end handleSaveArtdaqNodeLayoutXML()
+#endif  // OTS_LITE
 
 //==============================================================================
 /// handleOtherSubsystemActiveGroups
