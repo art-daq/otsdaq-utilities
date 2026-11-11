@@ -201,6 +201,10 @@ std::string ots_drive_udp_interface::expectedState(const std::string& command)
 		return "Configured";
 	if(command == "Halt" || command == "Abort")
 		return "Halted";
+	if(command == "Shutdown")
+		return "Shutdown";
+	if(command == "Startup")
+		return "Initial";
 	return "";
 }  // end expectedState()
 
