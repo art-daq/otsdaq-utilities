@@ -4,6 +4,8 @@ SOURCE ConfigurationGUISupervisor.cc version.cc
 		 otsdaq::CoreSupervisors
 		 otsdaq::CgiDataUtilities
 		 otsdaq::IterateTable
+		 PRIVATE
+		 otsdaq::NetworkUtilities
 )
 
 install_headers()

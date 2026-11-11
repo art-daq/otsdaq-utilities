@@ -76,14 +76,15 @@ ChatSupervisor::~ChatSupervisor(void) { destroy(); }
 void ChatSupervisor::destroy(void) { stopSlackDaemon(); }
 
 //==============================================================================
-void ChatSupervisor::defaultPage(xgi::Input* /* cgiIn */, xgi::Output* out)
+void ChatSupervisor::defaultPage(xgi::Input* in, xgi::Output* out)
 {
 	out->getHTTPResponseHeader().addHeader("Access-Control-Allow-Origin", "*");
 	out->getHTTPResponseHeader().addHeader("Pragma", "no-cache");
 
 	*out << "<!DOCTYPE HTML><html lang='en'><frameset col='100%' row='100%'><frame "
 	        "src='/WebPath/html/Chat.html?urn="
-	     << this->getApplicationDescriptor()->getLocalId() << "'></frameset></html>";
+	     << this->getApplicationDescriptor()->getLocalId()
+	     << getStandAloneDefaultPageParameters(in) << "'></frameset></html>";
 }  //end defaultPage()
 
 //==============================================================================

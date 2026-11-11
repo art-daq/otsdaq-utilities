@@ -176,7 +176,26 @@ SubsystemLaunch.create = function() {
 				"\n\n" +
 				"Subsystems can be set to '<b>Follow FSM</b>,' '<b>Do not Halt</b>,' or '<b>Only Configure</b>.'" +
 				"\n\n" +
-				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts.";
+				"For example, for Slow Controls or Data Quality Monitoring subsystems, you may want to only configure and stay configured - in this case, choose '<b>Only Configure</b>.' Or if you have a subsystem (e.g. artdaq based) that takes a long time to configure, set to '<b>Do Not Halt</b>' and it will be left configured, until a user manually Halts." +
+				"\n\n<b>Run Type:</b>\n<INDENT>" +
+				"The Run Type dropdown selects which state machine (FSM) is used. The selection is <b>shared system-wide</b> - " +
+				"it is saved at the top-level Gateway, not per user, so everyone working together sees the same Run Type. " +
+				"If another user changes it, your page will follow automatically within a second or two and reload its Subsystem info." +
+				"</INDENT>" +
+				"\n\n<b>Subsystem Reboot:</b>\n<INDENT>" +
+				"Above the Subsystem Status table are three power buttons that reboot the ots instance of multiple subsystems in one request:" +
+				"\n<INDENT>- <b>Selected</b> reboots every subsystem that is currently included (checkbox checked)." +
+				"\n- <b>Active</b> reboots every subsystem that is currently on (status is not UNKNOWN)." +
+				"\n- <b>All</b> reboots every subsystem.</INDENT>" +
+				"\nEach subsystem row also has its own power button to reboot just that subsystem. " +
+				"Reboots are launched one host at a time by the top-level Gateway; the Status column shows '<b>Rebooting...</b>' and then the subsystem's progress as it comes back. " +
+				"Only errors are shown as popups - trust the Status column for success." +
+				"</INDENT>" +
+				"\n\n<b>Top-level Reboot:</b>\n<INDENT>" +
+				"The power button in the System Status table reboots the top-level Gateway itself. The page is blacked out and probes the server once a second, " +
+				"reporting when the top-level goes down, when it comes back up, and when all subsystems are again reporting status (settling complete) - " +
+				"only then is the page released." +
+				"</INDENT>";
 
 			var iterationTooltip = "\n\n<b>Iteration Types:</b>\n<INDENT>" +
 				"A state machine transition (e.g. Configure or Start) can run in several steps. " +
@@ -279,29 +298,25 @@ SubsystemLaunch.create = function() {
 			redrawWindow();
 
 
-			//get view mode preferences for user
+			//get the system-wide run type (shared by all users, not a per-user preference)
 			DesktopContent.XMLHttpRequest(
-				"Request?RequestType=stateMachinePreferences" +
+				"Request?RequestType=subsystemLaunchRunType" +
 				"", "",
-				function (req) {
-					//Same code as StateMachine.html:556
-
-					//	altViewMode not used in SubsystemLaunch
-					// var altViewMode = DesktopContent.getXMLValue(req, "Default_FSM_View");
-					// Debug.log("Loaded altViewMode preference",altViewMode);
-					// if (altViewMode && altViewMode != "")
-					// 	toggleViewMode(altViewMode | 0);  //treat as integer
-					// else //default to js default
-					// 	toggleViewMode(_altStateDrawingMode);
+				function (req, reqParam, errStr) {
 
 					//if fsm name not defined by get parameter, create select box
 					if(!DesktopContent.getParameter(0, "fsm_name")) {
 						let lastFsmName = _fsmName;
-						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
-						Debug.log("Loaded FSM Name preference",_fsmName);
+						//if the Gateway does not support the system-wide run type request
+						//	(e.g. older Gateway still running), still show the Run Type dropdown
+						_fsmName = req ? DesktopContent.getXMLValue(req, "subsystemLaunchRunType") : "";
+						let runTypeErr = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+						if(runTypeErr)
+							Debug.log("Could not get system-wide run type from Gateway: " + runTypeErr);
+						Debug.log("Loaded system-wide run type",_fsmName);
 						if(!_fsmName)
 						{
-							Debug.log("No FSM Name preference was found for the user! " +
+							Debug.log("No system-wide run type was found! " +
 								"Defaulting to first FSM in list.");
 							_fsmName = lastFsmName;
 						}
@@ -371,7 +386,7 @@ SubsystemLaunch.create = function() {
 				},/*returnHandler*/
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
+				true /*callHandlerOnErr*/, //so Run Type dropdown is still created if Gateway rejects request
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
 
@@ -409,7 +424,7 @@ SubsystemLaunch.create = function() {
 			cel.setAttribute("id","content");
 		}
 
-		//cache existin run control values
+		//cache existing run control values
 		var tmp_runCountInput, tmp_runDurationInput, tmp_runDurationSelect;
 		el = document.getElementById("runCountInput");
 		if(el) tmp_runCountInput = el.value;
@@ -418,6 +433,10 @@ SubsystemLaunch.create = function() {
 		el = document.getElementById("runDurationSelect");
 		if(el) tmp_runDurationSelect = el.value;
 		tmp_runDurationSelect = tmp_runDurationSelect?tmp_runDurationSelect:"Open-ended";
+
+		var tmp_globalFieldsText;
+		el = document.getElementById("systemConfigAliasGlobalFields");
+		if(el) tmp_globalFieldsText = el.innerText;
 
 		//clear all elements
 		cel.innerHTML = "";
@@ -956,6 +975,8 @@ SubsystemLaunch.create = function() {
 			{
 				var span = document.createElement('span');
 				span.id = 'systemConfigAliasGlobalFields';
+				if(tmp_globalFieldsText)
+					span.innerText = tmp_globalFieldsText;
 				parentTd.appendChild(span);
 			}
 			if(SubsystemLaunch.system.selectedSystemAlias)
@@ -1320,6 +1341,21 @@ SubsystemLaunch.create = function() {
 					}
 				}
 			} //end subsystem common table lists ----------
+
+			//system-wide run type (follow a change made by any user) ----------
+			if(!DesktopContent.getParameter(0, "fsm_name")) {
+				var sharedRunType = DesktopContent.getXMLValue(req, "subsystemLaunchRunType");
+				//only follow a value that is a valid FSM name here, otherwise init() falls back
+				//	to the first FSM and this would reload every poll
+				if(sharedRunType && sharedRunType != _fsmName &&
+					_fsmNameArr && _fsmNameArr.indexOf(sharedRunType) >= 0) {
+					Debug.log("Run type was changed system-wide to '" + sharedRunType +
+						"' (was '" + _fsmName + "'), reloading Subsystem Launch info.", Debug.INFO_PRIORITY);
+					_fsmName = sharedRunType;
+					init();
+					return;
+				}
+			} //end system-wide run type ----------
 
 			//system state ------------------------
 			{
@@ -1888,15 +1924,19 @@ SubsystemLaunch.create = function() {
 			_fsmName = selectedValue;
 
 			//assume this toggle is caused by user
-			//save setting to server for user
-			DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
+			//save system-wide so all users' Subsystem Launch pages follow this selection
+			DesktopContent.XMLHttpRequest("Request?RequestType=subsystemLaunchRunType" +
 				"&set=1" +
-				"&Default_FSM_Name=" + _fsmName,
+				"&runType=" + _fsmName,
 				"",
-				0 /*returnHandler*/,
+				function (req, reqParam, errStr) {
+					let err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+					if(err) //e.g. older Gateway without system-wide run type support
+						Debug.log("Could not save system-wide run type at Gateway: " + err);
+				} /*returnHandler*/,
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
-				0 /*callHandlerOnErr*/,
+				true /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
 
@@ -2367,10 +2407,14 @@ SubsystemLaunch.create = function() {
 											" Error=" + (errorValue ? errorValue : "none") +
 											" subsystemCount=" + statusNodes.length +
 											" expected=" + SubsystemLaunch.subsystems.length);
-										if(statusNodes.length == 0) {
+										if(statusNodes.length == 0 && SubsystemLaunch.subsystems.length > 0) {
 											Debug.log("REBOOT-DIAG no subsystem_status nodes yet; raw=" +
 												(statusRequest.responseText || "").substr(0, 300));
 											return false;
+										}
+										if(statusNodes.length == 0 && SubsystemLaunch.subsystems.length == 0) {
+											Debug.log("REBOOT-DIAG no subsystems configured; accepting.");
+											return !errorValue; //accept if no error
 										}
 										var allReporting = true;
 										for(var statusIndex = 0; statusIndex < statusNodes.length; ++statusIndex) {

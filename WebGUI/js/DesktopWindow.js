@@ -119,6 +119,27 @@ else {
         //==============================================================================
         var _handleWindowContentLoading = function (e) {
 
+            // If the async login XHR has not completed yet, the cookie code
+            // is still 0.  Defer the first message so the child iframe
+            // receives a valid cookie code.  In wizard mode the child uses
+            // the sequence instead, so no wait is needed.
+            if (!Desktop.desktop.login.getCookieCode(true) &&
+                !Desktop.isWizardMode())
+            {
+                if (!_handleWindowContentLoading._retries)
+                    _handleWindowContentLoading._retries = 0;
+                if (++_handleWindowContentLoading._retries < 50)
+                {
+                    window.setTimeout(function() {
+                        _handleWindowContentLoading(e);
+                    }, 100);
+                    return;
+                }
+                Debug.log("Cookie code still unavailable after 5 s — " +
+                    "sending first message without it.", _id);
+            }
+            _handleWindowContentLoading._retries = 0;
+
             Debug.log("Server desktop sending first message to window: ", _id, e);
 
             //remove the "Loading" once iframe loads
