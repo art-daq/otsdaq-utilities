@@ -90,16 +90,17 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	/// severity name as the Console page shows it (DEBUG, INFO, WARNING, ERROR, ...)
 	static std::string severityName(const std::string& severity)
 	{
-#ifdef OTS_MAXLITE  // no messagefacility: same names, normalized here
+#ifdef OTS_MAXLITE  // no messagefacility: the names mf::ELseverityLevel::getName() gives
 		std::string name;
 		for(char c : severity)
 			if(c != ' ' && c != '\t')
 				name += (c >= 'a' && c <= 'z') ? char(c - 'a' + 'A') : c;
-		if(name == "WARN")	return "WARNING";
-		if(name == "ERR")	return "ERROR";
-		if(name == "INF")	return "INFO";
-		if(name == "DBG")	return "DEBUG";
-		return name;
+		if(name == "ERROR" || name == "ERR")		return "Error";
+		if(name == "WARNING" || name == "WARN")	return "Warning";
+		if(name == "INFO" || name == "INF")		return "Info";
+		if(name == "DEBUG" || name == "DBG")		return "Debug";
+		if(name == "SEVERE" || name == "FATAL")	return "Severe";
+		return severity;
 #else
 		return mf::ELseverityLevel(severity).getName();
 #endif
