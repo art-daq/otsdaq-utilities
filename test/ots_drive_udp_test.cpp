@@ -1,3 +1,6 @@
+#include <fstream>
+#include <memory>
+#include <sstream>
 #include "test/ots_drive_udp_interface.h"
 
 #include <chrono>
@@ -59,6 +62,21 @@ static void printStatusTable(ots_drive_udp_interface& gw)
 }  // end printStatusTable()
 
 //==============================================================================
+/// "<ip> <port>" of the Gateway UDP remote control from the file the Gateway writes when
+/// its UDP listener is bound ($USER_DATA/ServiceData/GatewayUDPRemoteControl.dat:
+/// "<ip> <port> <0|1>" or "disabled"); "" if unknown
+static std::string gatewayAddressFromFile(void)
+{
+	const char* userData = getenv("USER_DATA");
+	if(!userData)
+		return "";
+	std::ifstream in(std::string(userData) + "/ServiceData/GatewayUDPRemoteControl.dat");
+	std::string   ip, port;
+	if(!(in >> ip >> port) || ip == "disabled")
+		return "";
+	return ip + " " + port;
+}
+
 int main(int argc, char* argv[])
 try
 {
@@ -154,12 +172,46 @@ try
 
 	// A failure reported before this command stays in the status until the next
 	// transition, so only a Failed::: status that changed (time or text) is ours.
+	// Startup and Shutdown keep the old status while the Gateway restarts its UDP/status
+	// work loops and relaunches the other contexts (14 s seen), so they get a longer
+	// "unchanged means rejected" grace than the 10 s of the other transitions.
+	const int unchangedGraceSeconds =
+	    (command == "Startup" || command == "Shutdown") ? 60 : 10;
+	// Startup can move the Gateway UDP listener (a changed port in the active Context):
+	// follow it through GatewayUDPRemoteControl.dat when the old address stops answering
+	ots_drive_udp_interface*                 statusGw = &gw;
+	std::unique_ptr<ots_drive_udp_interface> movedGw;
+	std::string currentAddress = std::string(argv[1]) + " " + argv[2];
 	std::string lastShown;
 	auto        start = std::chrono::steady_clock::now();
 	while(std::chrono::steady_clock::now() - start < std::chrono::seconds(timeoutSeconds))
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		ots_drive_udp_interface::AppStatus now = gw.getGatewayStatus();
+		ots_drive_udp_interface::AppStatus now;
+		try
+		{
+			now = statusGw->getGatewayStatus();
+		}
+		catch(const std::runtime_error&)
+		{
+			// no reply: during Startup the Gateway rebinds its UDP listener; keep waiting
+			__COUT_INFO__ << "No status reply from the Gateway yet; still waiting..." << __E__;
+			std::string fileAddress = gatewayAddressFromFile();
+			if(command == "Startup" && !fileAddress.empty() && fileAddress != currentAddress)
+			{
+				std::istringstream addr(fileAddress);
+				std::string        newIp;
+				int                newPort = 0;
+				addr >> newIp >> newPort;
+				__COUT_INFO__ << "The Gateway UDP remote control moved from " << currentAddress
+				              << " to " << fileAddress
+				              << " (GatewayUDPRemoteControl.dat); following it." << __E__;
+				movedGw.reset(new ots_drive_udp_interface(newIp.c_str(), newPort));
+				statusGw       = movedGw.get();
+				currentAddress = fileAddress;
+			}
+			continue;
+		}
 
 		bool fresh = now.statusChangeTime != before.statusChangeTime ||
 		             now.status != before.status;
@@ -175,9 +227,11 @@ try
 			return 0;
 		}
 
-		if(!fresh && std::chrono::steady_clock::now() - start > std::chrono::seconds(10))
+		if(!fresh && std::chrono::steady_clock::now() - start >
+		                 std::chrono::seconds(unchangedGraceSeconds))
 		{
-			__COUT_ERR__ << "The Gateway status has not changed 10 s after '" << command
+			__COUT_ERR__ << "The Gateway status has not changed " << unchangedGraceSeconds
+			             << " s after '" << command
 			             << "' (still '" << now.status
 			             << "'): the command was probably rejected (wrong state, unknown "
 			                "FSM or alias). See the Gateway log." << __E__;
