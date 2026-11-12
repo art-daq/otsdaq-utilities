@@ -5,6 +5,7 @@
 
 #include "otsdaq/SlowControlsCore/MakeSlowControls.h"
 #include "otsdaq/SlowControlsCore/SlowControlsVInterface.h"
+#include <functional>
 
 
 using namespace ots;

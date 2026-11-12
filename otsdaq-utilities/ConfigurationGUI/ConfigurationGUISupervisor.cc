@@ -25,6 +25,8 @@
 #include <utility>
 
 #include <memory>
+#include <optional>
+#include <algorithm>
 
 using namespace ots;
 

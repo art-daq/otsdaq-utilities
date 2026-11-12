@@ -18,6 +18,7 @@
 #include <future>  //to track active worker completions
 #include <thread>  //for std::thread
 #include "otsdaq/TableCore/TableGroupKey.h"
+#include <algorithm>
 
 #define MACROS_DB_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/MacroData/"
 #define MACROS_HIST_PATH std::string(__ENV__("SERVICE_DATA_PATH")) + "/MacroHistory/"
@@ -4325,7 +4326,7 @@ void MacroMakerSupervisor::runFEMacro(HttpXmlDocument&   xmldoc,
 			        macroName.c_str(),
 			        StringMacros::getTimestampString().c_str());
 			fprintf(fp,
-			        "### \t Target front-ends (count=%lu): %s\n",
+			        "### \t Target front-ends (count=%zu): %s\n",
 			        feUIDs.size(),
 			        StringMacros::setToString(feUIDs).c_str());
 			fprintf(fp, "### \t\t Inputs: %s\n", inputArgs.c_str());
