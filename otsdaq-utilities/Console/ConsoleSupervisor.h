@@ -1,9 +1,11 @@
 #ifndef _ots_ConsoleSupervisor_h_
 #define _ots_ConsoleSupervisor_h_
 
-#include <boost/regex.hpp>
-#include <boost/tokenizer.hpp>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+
+#include <regex>
+#include <string>
+#include <vector>
 
 #include <mutex>  //for std::mutex
 #include <queue>  //for std::queue
@@ -85,6 +87,24 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	void						saveCustomCountList					(void);
 
   public:
+	/// severity name as the Console page shows it (DEBUG, INFO, WARNING, ERROR, ...)
+	static std::string severityName(const std::string& severity)
+	{
+#ifdef OTS_MAXLITE  // no messagefacility: same names, normalized here
+		std::string name;
+		for(char c : severity)
+			if(c != ' ' && c != '\t')
+				name += (c >= 'a' && c <= 'z') ? char(c - 'a' + 'A') : c;
+		if(name == "WARN")	return "WARNING";
+		if(name == "ERR")	return "ERROR";
+		if(name == "INF")	return "INFO";
+		if(name == "DBG")	return "DEBUG";
+		return name;
+#else
+		return mf::ELseverityLevel(severity).getName();
+#endif
+	}
+
 	/// UDP Message Format:
 	/// UDPMFMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
 	/// FILE and LINE are only printed for s67+
@@ -94,17 +114,24 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			std::vector<CustomTriggeredAction_t>& priorityCustomTriggerList)
 			: countStamp(count)
 		{
-			boost::regex timestamp_regex_("(\\d{2}-[^-]*-\\d{4}\\s\\d{2}:\\d{2}:\\d{2})");
-			boost::regex file_line_regex_("^\\s*([^:]*\\.[^:]{1,3}):(\\d+)(.*)");
+			static const std::regex timestamp_regex_("(\\d{2}-[^-]*-\\d{4}\\s\\d{2}:\\d{2}:\\d{2})");
 
-			boost::char_separator<char> sep("|", "", boost::keep_empty_tokens);
-			typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
-			tokenizer                                             tokens(msg, sep);
-			tokenizer::iterator                                   it = tokens.begin();
+			// split on '|', keeping empty fields
+			std::vector<std::string> tokens;
+			{
+				size_t start = 0, bar;
+				while((bar = msg.find('|', start)) != std::string::npos)
+				{
+					tokens.push_back(msg.substr(start, bar - start));
+					start = bar + 1;
+				}
+				tokens.push_back(msg.substr(start));
+			}
+			auto it = tokens.begin();
 
 			// There may be syslog garbage in the first token before the timestamp...
-			boost::smatch res;
-			while(it != tokens.end() && !boost::regex_search(*it, res, timestamp_regex_))
+			std::smatch res;
+			while(it != tokens.end() && !std::regex_search(*it, res, timestamp_regex_))
 			{
 				++it;
 			}
@@ -140,7 +167,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			if(it != tokens.end() && ++it != tokens.end() /* Advances it */)
 			{
 				// sev = mf::ELseverityLevel(*it);
-				fields[FieldType::LEVEL] = mf::ELseverityLevel(*it).getName();
+				fields[FieldType::LEVEL] = severityName(*it);
 			}
 			if(it != tokens.end() && ++it != tokens.end() /* Advances it */)
 			{

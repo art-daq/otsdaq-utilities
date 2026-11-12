@@ -7,7 +7,6 @@ SOURCE ConsoleSupervisor.cc version.cc
 		 LIBRARIES PUBLIC
 		 otsdaq::CoreSupervisors
 		 otsdaq::NetworkUtilities
-		 Boost::regex
 )
 
 install_headers()
