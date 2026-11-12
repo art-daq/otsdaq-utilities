@@ -117,6 +117,14 @@ class ConsoleSupervisor : public CoreSupervisorBase
 		{
 			static const std::regex timestamp_regex_("(\\d{2}-[^-]*-\\d{4}\\s\\d{2}:\\d{2}:\\d{2})");
 
+			// every field exists (empty unless parsed), so the accessors' fields.at() can not
+			// throw on a short or malformed line (e.g. the part after a NUL byte in a packet)
+			for(FieldType f : {FieldType::TIMESTAMP, FieldType::SEQID, FieldType::LEVEL,
+			                   FieldType::LABEL, FieldType::SOURCEID, FieldType::HOSTNAME,
+			                   FieldType::SOURCE, FieldType::FILE, FieldType::LINE,
+			                   FieldType::MSG})
+				fields[f] = "";
+
 			// split on '|', keeping empty fields
 			std::vector<std::string> tokens;
 			{
@@ -137,7 +145,15 @@ class ConsoleSupervisor : public CoreSupervisorBase
 				++it;
 			}
 
-			struct tm   tm;
+			if(it == tokens.end())  // no timestamp: not a message line, keep the text as is
+			{
+				fields[FieldType::TIMESTAMP] = std::to_string(time(0));
+				fields[FieldType::LEVEL]     = "Info";
+				fields[FieldType::MSG]       = msg;
+				return;
+			}
+
+			struct tm   tm = {};
 			std::string value(res[1].first, res[1].second);
 			strptime(value.c_str(), "%d-%b-%Y %H:%M:%S", &tm);
 			tm.tm_isdst = -1;
@@ -310,7 +326,13 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			auto val = fields.at(FieldType::SOURCEID);
 			if(val != "")
 			{
-				return std::stoul(val);
+				try
+				{
+					return std::stoul(val);
+				}
+				catch(const std::exception&)  // not a number (malformed line)
+				{
+				}
 			}
 			return 0;
 		}
@@ -321,7 +343,13 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			auto val = fields.at(FieldType::SEQID);
 			if(val != "")
 			{
-				return std::stoul(val);
+				try
+				{
+					return std::stoul(val);
+				}
+				catch(const std::exception&)  // not a number (malformed line)
+				{
+				}
 			}
 			return 0;
 		}
