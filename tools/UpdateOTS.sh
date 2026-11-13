@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# macOS ships bash 3.2, which cannot parse this script (e.g. '&>>'). Rerun under Homebrew's bash
+# (the lite installer requires it on macOS). Linux is unaffected.
+if [ "$(uname -s)" = Darwin ] && [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+	for b in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+		[ -x $b ] && exec $b "$0" "$@"
+	done
+	echo "UpdateOTS.sh needs bash 4 or newer; macOS has ${BASH_VERSION}. Run: brew install bash"
+	exit 1
+fi
 # Allowed branches for specific repositories
 declare -A ALLOWED_BRANCHES
 # Example: ALLOWED_BRANCHES["artdaq-spack"]="artdaq/Spack0.28"
@@ -58,6 +68,8 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--warnfast" && "$1" != "-
 	#copy tutorial launching scripts
 	echo
 	echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t updating tutorial launch scripts..."
+	# macOS has neither timeout(1) nor wget: run the command without a time limit, and download with curl
+	command -v timeout >/dev/null 2>&1 || timeout() { shift; "$@"; }
 	chmod 755 $OTS_SOURCE/../get_tutorial_data.sh &>/dev/null 2>&1 #make sure permissions allow deleting
 	chmod 755 $OTS_SOURCE/../get_tutorial_database.sh &>/dev/null 2>&1 #make sure permissions allow deleting
 	chmod 755 $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #make sure permissions allow deleting
@@ -66,7 +78,11 @@ if [ "x$1" == "x" ] || [[ "$1" != "--warn" && "$1" != "--warnfast" && "$1" != "-
 	timeout 1 rm $OTS_SOURCE/../reset_ots_tutorial.sh &>/dev/null 2>&1 #hide output (could hang if weird permission, so use timeout)
 	# echo -e "$(date +%d%b%y.%T) UpdateOTS.sh:${LINENO}  \t cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh"
 	#cp $LOC_OTS_DIR/../otsdaq_demo/tools/reset_ots_tutorial.sh $LOC_OTS_DIR/../../reset_ots_tutorial.sh
-	wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
+	if command -v wget >/dev/null 2>&1; then
+		wget -T 5 -O $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh -P $OTS_SOURCE/../ --no-check-certificate	 &>/dev/null 2>&1
+	else
+		curl -fsSL --insecure -m 5 -o $OTS_SOURCE/../reset_ots_tutorial.sh https://github.com/art-daq/otsdaq_demo/raw/develop/tools/reset_ots_tutorial.sh &>/dev/null 2>&1
+	fi
 	chmod 644 $OTS_SOURCE/../reset_ots_tutorial.sh #for safety, prevent accidental execution by users
 
 	rm $OTS_SOURCE/../reset_ots_artdaq_tutorial.sh &>/dev/null 2>&1 #hide output
@@ -246,10 +262,12 @@ function updateUserData
 
 
 		#replace TheSupervisorConfiguration with GatewaySupervisorConfiguration for updating
-		sed -i s/TheSupervisorConfiguration/GatewaySupervisorConfiguration/g $USER_DATA/ServiceData/CoreTableInfoNames.dat
+		# -i.otsbak works with GNU and BSD (macOS) sed; plain -i is GNU-only
+		sed -i.otsbak s/TheSupervisorConfiguration/GatewaySupervisorConfiguration/g $USER_DATA/ServiceData/CoreTableInfoNames.dat
 
 		#remove empty whitespace lines
-		sed -i '/^$/d' $USER_DATA/ServiceData/CoreTableInfoNames.dat
+		sed -i.otsbak '/^$/d' $USER_DATA/ServiceData/CoreTableInfoNames.dat
+		rm -f $USER_DATA/ServiceData/CoreTableInfoNames.dat.otsbak
 
 		cat $USER_DATA/ServiceData/CoreTableInfoNames.dat
 		echo
