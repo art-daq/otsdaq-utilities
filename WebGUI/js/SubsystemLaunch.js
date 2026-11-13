@@ -128,6 +128,7 @@ SubsystemLaunch.create = function() {
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
 	var _settlingAfterRestart = 0;
+	var _nameColumnMinWidth = 0;
 
 	// Track the iframe document's scrollTop continuously so it can be restored after
 	// the Desktop framework resizes the iframe (which collapses scrollHeight to
@@ -259,6 +260,7 @@ SubsystemLaunch.create = function() {
 
 		window.clearTimeout(_getStatusTimer);
 		_updatesubsystemNamesCounter = 0; //reset counter for updating subsystem names
+		_nameColumnMinWidth = 0;
 
 
 		//get all needed info sequentially
@@ -872,7 +874,8 @@ SubsystemLaunch.create = function() {
 									SubsystemLaunch.subsystems[s].name + "&apos;' >";
 							}
 							str += "<div id='subsystem_" + s + "_name_container'>";
-							str += SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							str += SubsystemLaunch.subsystems[s].name + " at " +
+								(SubsystemLaunch.subsystems[s]._resolvedHostname || SubsystemLaunch.subsystems[s].url);
 							str += "</div>";
 							if(addLandingPage)
 								str += "</a>";
@@ -1035,6 +1038,7 @@ SubsystemLaunch.create = function() {
 		sdiv.style.display = "block";
 
 		//size the Detail column's scroll wrap so the table width matches the status box width (both modes)
+		_ratchetNameColumnWidth();
 		_recomputeDetailScrollWidths();
 
 		//check if need extra new line at top to avoid FSM select
@@ -1080,6 +1084,39 @@ SubsystemLaunch.create = function() {
 		for (const id in _detailScrollPositions) {
 			const el = document.getElementById(id);
 			if (el) el.scrollLeft = _detailScrollPositions[id];
+		}
+	}
+
+	//=====================================================================================
+	//_ratchetNameColumnWidth ~~
+	//	Measure the natural width of each name cell; if any exceeds the tracked
+	//	minimum, bump to new max + 30 px padding and apply.  Width only grows,
+	//	never shrinks, so the column stays stable during reboots and startup.
+	function _ratchetNameColumnWidth() {
+		var widest = 0;
+		for(var subsystemIndex = 0; subsystemIndex < SubsystemLaunch.subsystems.length; ++subsystemIndex) {
+			var nameContainer = document.getElementById("subsystem_" + subsystemIndex + "_name_container");
+			if(nameContainer) {
+				nameContainer.style.width = "min-content";
+				nameContainer.style.whiteSpace = "nowrap";
+				var naturalWidth = nameContainer.offsetWidth;
+				nameContainer.style.width = "";
+				nameContainer.style.whiteSpace = "";
+				if(naturalWidth > widest)
+					widest = naturalWidth;
+			}
+		}
+		if(widest > 0) {
+			var paddedWidth = widest + 30;
+			if(paddedWidth > _nameColumnMinWidth)
+				_nameColumnMinWidth = paddedWidth;
+		}
+		if(_nameColumnMinWidth > 0) {
+			for(var subsystemIndex = 0; subsystemIndex < SubsystemLaunch.subsystems.length; ++subsystemIndex) {
+				var nameCell = document.getElementById("subsystem_" + subsystemIndex + "_name");
+				if(nameCell)
+					nameCell.style.minWidth = _nameColumnMinWidth + "px";
+			}
 		}
 	}
 
@@ -1672,6 +1709,7 @@ SubsystemLaunch.create = function() {
 		} //end subsystem update loop
 
 		//keep detail scroll widths in sync with any column-width changes (console counts, subsystem names)
+		_ratchetNameColumnWidth();
 		_recomputeDetailScrollWidths();
 
 		if (_settlingAfterRestart > 0 && --_settlingAfterRestart == 0)
@@ -1783,8 +1821,11 @@ SubsystemLaunch.create = function() {
 
 				for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s) {
 					let ipFound = false;
-					if (SubsystemLaunch.subsystems[s].status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) //inactive subsystem/between states
-						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+					if (SubsystemLaunch.subsystems[s].status == SubsystemLaunch.SUBSYSTEM_STATUS_UNKOWN) { //inactive subsystem/between states
+						document.getElementById("subsystem_" + s + "_name_container").textContent =
+							SubsystemLaunch.subsystems[s].name + " at " +
+							(SubsystemLaunch.subsystems[s]._resolvedHostname || SubsystemLaunch.subsystems[s].url);
+					}
 					else {
 						for (let i = 0; i < ips.length; i++) {
 							const currentIp = ips[i].getAttribute("value");
@@ -1799,12 +1840,16 @@ SubsystemLaunch.create = function() {
 						if (!ipFound) {
 							if (!_settlingAfterRestart)
 								Debug.warn("Hostname for subsystem at " + SubsystemLaunch.subsystems[s].url + " was not found!");
-							document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url;
+							document.getElementById("subsystem_" + s + "_name_container").textContent =
+								SubsystemLaunch.subsystems[s].name + " at " +
+								(SubsystemLaunch.subsystems[s]._resolvedHostname || SubsystemLaunch.subsystems[s].url);
 							return;
 						}
+						SubsystemLaunch.subsystems[s]._resolvedHostname = hostname;
 						document.getElementById("subsystem_" + s + "_name_container").textContent = SubsystemLaunch.subsystems[s].name + " at " + hostname;
 					}
 				}
+				_ratchetNameColumnWidth();
 			},
 			0 /*reqParam*/,
 			0 /*progressHandler*/,
