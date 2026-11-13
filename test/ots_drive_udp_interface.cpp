@@ -123,14 +123,16 @@ std::vector<std::string> ots_drive_udp_interface::getStateMachineNames(void)
 //==============================================================================
 /// GetRemoteAppStatus lists, per application and in this order: name, id, status, ...,
 /// statusChangeTime, ..., progress, detail, ..., class, url, ...
-std::vector<ots_drive_udp_interface::AppStatus> ots_drive_udp_interface::getAppStatus(void)
+std::vector<ots_drive_udp_interface::AppStatus> ots_drive_udp_interface::getAppStatus(
+    void)
 {
 	std::string xml = send("GetRemoteAppStatus");
 	if(xml.find("</ROOT>") == std::string::npos)
 	{
 		__SS__ << "No complete reply to GetRemoteAppStatus from the Gateway at "
 		       << selfIPandPort_
-		       << ". Is ots running with the Gateway UDP remote control enabled?" << __E__;
+		       << ". Is ots running with the Gateway UDP remote control enabled?"
+		       << __E__;
 		__SS_THROW__;
 	}
 
@@ -139,12 +141,12 @@ std::vector<ots_drive_udp_interface::AppStatus> ots_drive_udp_interface::getAppS
 	const std::string      tag = "<name value='";
 	while((pos = xml.find(tag, pos)) != std::string::npos)
 	{
-		size_t next  = xml.find(tag, pos + tag.size());
-		auto   block = xml.substr(pos, next == std::string::npos ? std::string::npos
-		                                                         : next - pos);
-		auto   field = [&block](const std::string& f) {
-            std::vector<std::string> v = extractXmlFields(block, f);
-            return v.size() ? v[0] : std::string("");
+		size_t next = xml.find(tag, pos + tag.size());
+		auto   block =
+		    xml.substr(pos, next == std::string::npos ? std::string::npos : next - pos);
+		auto field = [&block](const std::string& f) {
+			std::vector<std::string> v = extractXmlFields(block, f);
+			return v.size() ? v[0] : std::string("");
 		};
 		AppStatus a;
 		a.name             = field("name");
@@ -209,8 +211,8 @@ std::string ots_drive_udp_interface::expectedState(const std::string& command)
 }  // end expectedState()
 
 //==============================================================================
-std::vector<std::string> ots_drive_udp_interface::extractXmlFields(const std::string& xml,
-                                                                   const std::string& field)
+std::vector<std::string> ots_drive_udp_interface::extractXmlFields(
+    const std::string& xml, const std::string& field)
 {
 	std::vector<std::string> values;
 	const std::string        tag = "<" + field + " value='";
