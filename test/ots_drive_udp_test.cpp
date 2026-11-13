@@ -19,27 +19,32 @@
 
 static void usage(void)
 {
-	fprintf(stderr,
-	        "usage: ots_drive_udp_test <gateway IP> <gateway Port> [mode ...]\n\n"
-	        "Modes:\n"
-	        "  (none)                         list the state machines and the app status\n"
-	        "  status                         app status table (name, status, progress, url)\n"
-	        "  fsms                           state machine names\n"
-	        "  <FSM> <Command> [param ...]    FSM transition, then wait for its target state\n"
-	        "      Commands: Initialize, Configure <ConfigAlias>, Start [runNumber], Pause,\n"
-	        "                Resume, Stop, Halt, Abort, Shutdown (from Halted or Failed),\n"
-	        "                Startup (from Shutdown, ends in Initial; re-reads the Context)\n"
-	        "      options (after the command): --no-wait, --timeout <seconds> (default 300)\n"
-	        "  raw \"<message>\"                 send any Gateway UDP message and print the reply\n"
-	        "                                 (e.g. Help, GetRemoteDesktopIcons,\n"
-	        "                                 GetRemoteGatewayStatusXML)\n\n"
-	        "Examples:\n"
-	        "  ots_drive_udp_test 127.0.0.1 2014\n"
-	        "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Configure defaultSystemAlias\n"
-	        "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Start\n"
-	        "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Halt\n"
-	        "  ots_drive_udp_test 127.0.0.1 2014 raw Help\n\n"
-	        "Exit status: 0 success, 1 transition failed or error, 2 timed out.\n");
+	fprintf(
+	    stderr,
+	    "usage: ots_drive_udp_test <gateway IP> <gateway Port> [mode ...]\n\n"
+	    "Modes:\n"
+	    "  (none)                         list the state machines and the app status\n"
+	    "  status                         app status table (name, status, progress, "
+	    "url)\n"
+	    "  fsms                           state machine names\n"
+	    "  <FSM> <Command> [param ...]    FSM transition, then wait for its target "
+	    "state\n"
+	    "      Commands: Initialize, Configure <ConfigAlias>, Start [runNumber], Pause,\n"
+	    "                Resume, Stop, Halt, Abort, Shutdown (from Halted or Failed),\n"
+	    "                Startup (from Shutdown, ends in Initial; re-reads the Context)\n"
+	    "      options (after the command): --no-wait, --timeout <seconds> (default "
+	    "300)\n"
+	    "  raw \"<message>\"                 send any Gateway UDP message and print the "
+	    "reply\n"
+	    "                                 (e.g. Help, GetRemoteDesktopIcons,\n"
+	    "                                 GetRemoteGatewayStatusXML)\n\n"
+	    "Examples:\n"
+	    "  ots_drive_udp_test 127.0.0.1 2014\n"
+	    "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Configure defaultSystemAlias\n"
+	    "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Start\n"
+	    "  ots_drive_udp_test 127.0.0.1 2014 PhysicsRuns0 Halt\n"
+	    "  ots_drive_udp_test 127.0.0.1 2014 raw Help\n\n"
+	    "Exit status: 0 success, 1 transition failed or error, 2 timed out.\n");
 }  // end usage()
 
 //==============================================================================
@@ -95,7 +100,7 @@ try
 	{
 		if(args.empty() || args[0] == "fsms")
 		{
-			auto fsms = gw.getStateMachineNames();
+			auto        fsms = gw.getStateMachineNames();
 			std::string list;
 			for(const auto& f : fsms)
 				list += (list.size() ? ", " : "") + f;
@@ -234,16 +239,17 @@ try
 			             << " s after '" << command
 			             << "' (still '" << now.status
 			             << "'): the command was probably rejected (wrong state, unknown "
-			                "FSM or alias). See the Gateway log." << __E__;
+			                "FSM or alias). See the Gateway log."
+			             << __E__;
 			return 1;
 		}
 
 		std::string shown = now.status + " " + now.progress + "%";
 		if(shown != lastShown)
 		{
-			__COUT_INFO__ << "Gateway status: " << (now.status.size() > 100
-			                                            ? now.status.substr(0, 100) + "..."
-			                                            : now.status)
+			__COUT_INFO__ << "Gateway status: "
+			              << (now.status.size() > 100 ? now.status.substr(0, 100) + "..."
+			                                          : now.status)
 			              << " (" << now.progress << "%)" << __E__;
 			lastShown = shown;
 		}

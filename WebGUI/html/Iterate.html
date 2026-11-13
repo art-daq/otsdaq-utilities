@@ -1,5 +1,7 @@
 <!DOCTYPE HTML>
 <html lang="en">
+<script src="/WebPath/UserWebPath/WebGUI_tracker/js/TrackerRateMask.js?v=20261110-pulser-auto"></script>
+<script src="/WebPath/html/TrackerPulserScan.js?v=20261110-stale-error3"></script>
 <script type="text/javaScript">
 /////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
@@ -738,6 +740,8 @@
 		var _tableGroups = []; //array of objects:{name,key,groupComment}, only configuration groups
 		var _commands = [];
 		var _remoteSubsystems = [];
+		var _trackerPulserPlayPending = false;
+		var _trackerPulserPlayGeneration = 0;
 		//cache of live FE/macro info per remote subsystem, from getRemoteSubsystemFEMacroInfo:
 		//	{ fes: {uid: {type, supervisor, macros: {name: {inputs:[], outputs:[]}}}}, publicMacros: {name: {inputs:[], outputs:[]}} }
 		var _remoteFEMacroInfo = {};
@@ -1037,6 +1041,7 @@
 			str += "+";
 			str += "</a>";
 			str += "</div>";
+
 
 			str += "<div id='recordDeleteDiv' class='treeNode-deleteIcon' ";
 			if(_planUIDs.length == 0) str += "style='display:none' ";
@@ -1669,6 +1674,7 @@
 				//::::::::::::::::::::::::::::::::::::
 				function localCreateSaveButton()
 				{
+                    if(TrackerPulserScan.isScan(_targetPlan,_commands)) return '<p>Play uses the current tracker configuration automatically. No save is needed.</p>';
 					str = "";
 					str += "<input type='button'" +
 							" onmouseup='" +
@@ -2699,20 +2705,41 @@
 					/////////////////////
 					function(savedTables, savedGroups, savedAliases)
 					{
-				if(!savedTables.length)
+				if(!savedTables.length || !savedGroups || !savedGroups.length)
 				{
-					Debug.log(failureMsg,
-							Debug.HIGH_PRIORITY);
+					_planIsModified = true;
+					Debug.log(failureMsg + (savedTables.length ?
+						" Tables were saved, but the Iterator group was not saved. The draft is retained." : ""),
+						Debug.HIGH_PRIORITY);
 					return;
 				}
 
-				Debug.log(successMsg, Debug.INFO_PRIORITY);
-
-				_modifiedTables = undefined; //clear after save
-
-				_planIsModified = false;
-
-				getIterationPlans(updateIterationPlanContent); //updates plans display
+				// Group activation is asynchronous in ConfigurationAPI. Do not
+				// clear the draft or read an older IterateTable until it finishes.
+				var attempts = 0;
+				function verifySavedIterationGroup() {
+					ConfigurationAPI.getActiveGroups(function(groups) {
+						var active = groups && groups.Iterate;
+						var ready = active && savedGroups.some(function(group) {
+							return group.groupName == active.groupName &&
+								String(group.groupKey) == String(active.groupKey);
+						});
+						if(!ready) {
+							if(++attempts < 20) {
+								window.setTimeout(verifySavedIterationGroup, 100);
+								return;
+							}
+							_planIsModified = true;
+							Debug.log(failureMsg + " The group was saved but is not active. The draft is retained.", Debug.HIGH_PRIORITY);
+							return;
+						}
+						Debug.log(successMsg, Debug.INFO_PRIORITY);
+						_modifiedTables = undefined;
+						_planIsModified = false;
+						getIterationPlans(updateIterationPlanContent);
+					});
+				}
+				verifySavedIterationGroup();
 
 					}); //end saveModifiedTables handler
 
@@ -5722,6 +5749,15 @@
 				pkeys = Object.keys(commands[i].param);
 				for(var j=0;j<pkeys.length;++j)
 				{
+					// Older Run table schemas have no WriteToECL column. False is
+					// also the table/runtime default, so do not require that optional
+					// column merely to save a plan with ECL posting disabled.
+					if(commands[i].type == _COMMAND_TYPES.RUN &&
+						pkeys[j] == _COMMAND_PARAM_FIELDS.WriteToECL) {
+						var eclValue = String(commands[i].param[pkeys[j]]).trim().toLowerCase();
+						if(eclValue == "0" || eclValue == "false" || eclValue == "no" || eclValue == "off")
+							continue;
+					}
 					if(pkeys[j] ==_COMMAND_PARAM_FIELDS.Targets) //targets
 					{
 						//handle target field differently
@@ -5776,19 +5812,21 @@
 					"&planName=" + plan, //end get data
 					"commands=" + cmdStr +
 					"&modifiedTables=" + modifiedTablesListStr, //end post data
-					function(req)
+					function(req, ignoreParam, errStr)
 					{
 
 				Debug.log("savePlanCommandSequence handler");
 
-				_modifiedTables = [];
-				var err = DesktopContent.getXMLValue(req,"Error");
+				var err = errStr || (!req ? "No response while saving Iteration Plan." :
+					DesktopContent.getXMLValue(req,"Error"));
 				if(err)
 				{
 					Debug.log(err,Debug.HIGH_PRIORITY);
-					responseHandler();
+					// Retain the draft's temporary table references and do not run
+					// the success continuation (which persists the new plan/group).
 					return;
 				}
+				_modifiedTables = [];
 
 				//console.log(req);
 
@@ -5857,8 +5895,47 @@
 
 		//=====================================================================================
 		//enterPlanEditMode ~~
+		async function showTrackerPulserTemplate() {
+			if(_planIsModified && !TrackerPulserScan.isScan(_targetPlan,_commands)) { Debug.err("Save or discard the other plan’s edits before opening the pulser scan."); return; }
+			var box = document.getElementById('trackerPulserTemplate');
+			if(box) { box.remove(); return; }
+			box = document.createElement('div'); box.id = 'trackerPulserTemplate';
+			box.style.cssText = 'position:fixed;top:70px;left:20px;z-index:1000;background:#efeaea;color:#222;padding:18px;border:2px solid #806060;max-width:650px;max-height:calc(100vh - 120px);overflow:auto';
+			box.innerHTML = "<b>External pulser scan: eight separate runs</b>" +
+				"<p>All DTCs in the configured tracker context and all enabled ROCs participate. " +
+				"The FSM, pulse timing and run duration come from the tracker configuration.</p>" +
+				"<pre id='pulserResolved' style='white-space:pre-wrap'>Reading configured tracker settings...</pre>" +
+				"<p>Play reads the current tracker configuration and takes eight runs. No draft or manual save is needed.</p>" +
+				"<button id='pulserPlay' type='button' disabled onclick='startTargetIterationPlan(true)'>Play</button> " +
+				"<button type='button' onclick=\"document.getElementById('trackerPulserTemplate').remove()\">Close</button>" +
+                "<details><summary>Configured DTCs and ROC links</summary><pre id='pulserTargetDetails' style='white-space:pre-wrap'></pre></details>";
+			document.body.appendChild(box);
+			try {
+				var previewDeps = await TrackerPulserScan.browserDependencies();
+                var resolved = await TrackerPulserScan.resolve(previewDeps);
+                var preview = await TrackerPulserScan.inspectExecution(previewDeps,TrackerPulserScan.build(resolved));
+				if(document.getElementById('trackerPulserTemplate') !== box) return;
+				var rocCount = resolved.targets.reduce(function(n,t) { return n + t.rocs.length; },0);
+				document.getElementById('pulserResolved').textContent =
+					'Configuration: ' + resolved.configuration.name + '(' + resolved.configuration.key + ')' +
+					'\nContext: ' + resolved.context.name + '(' + resolved.context.key + ')' +
+					'\nFSM: ' + resolved.fsm + '\nDTCs: ' + resolved.targets.length + '; enabled ROCs: ' + rocCount +
+					'\nSeconds per run: ' + resolved.durationSeconds + '\nDelay: ' + resolved.delay + '; width: ' + resolved.width +
+					'\nGlobal parameter table: v' + resolved.globalVersion +
+                    '\nIterator plan: '+(preview.reused ? 'reuse existing versions ('+preview.group.name+'('+preview.group.key+'))' : 'update needed at Play: '+preview.reason);
+                document.getElementById('pulserTargetDetails').textContent =
+					'\n\n' + resolved.targets.map(function(t) { return t.uid + ': ROCs ' + t.rocs.map(function(r) { return r.link; }).join(', '); }).join('\n') +
+					(resolved.excluded.length ? '\n\nExcluded:\n' + resolved.excluded.map(function(t) { return t.uid + ': ' + t.reason; }).join('\n') : '');
+				document.getElementById('pulserPlay').disabled = false;
+			} catch(e) {
+				if(document.getElementById('trackerPulserTemplate') === box)
+					document.getElementById('pulserResolved').textContent = e.message || String(e);
+			}
+		}
+
 		function enterPlanEditMode()
 		{
+            if(TrackerPulserScan.isScan(_targetPlan,_commands)) { showTrackerPulserTemplate(); return; }
 			if(!_targetPlan) return;
 			_planIsModified = true;
 			drawIterationPlan();
@@ -5867,8 +5944,57 @@
 
 		//=====================================================================================
 		//startTargetIterationPlan ~~
-		function startTargetIterationPlan()
+		async function startTargetIterationPlan(trackerPulser)
 		{
+            if(_trackerPulserPlayPending) return;
+            if(trackerPulser === true || TrackerPulserScan.isScan(_targetPlan,_commands)) {
+                if(_planIsModified && !TrackerPulserScan.isScan(_targetPlan,_commands)) {
+                    Debug.err("Save or discard the other plan’s edits before playing the pulser scan."); return;
+                }
+                _trackerPulserPlayPending = true;
+                var generation = ++_trackerPulserPlayGeneration;
+                var previousPlan = _targetPlan, previousCommands = JSON.stringify(_commands);
+                var previousModified = _planIsModified;
+                var menu = document.getElementById('trackerPulserTemplate');
+                var button = document.getElementById('pulserPlay');
+                if(button) button.disabled = true;
+                try {
+                    var deps = await TrackerPulserScan.browserDependencies();
+                    var playback = await deps.playback();
+                    if(playback.status === 'Paused' && playback.plan === _targetPlan && trackerPulser !== true) {
+                        // Resume retains the current pass and original execution snapshot.
+                    } else {
+                        if(playback.status !== 'Inactive') throw Error('Halt the existing Iterator plan before starting a new pulser scan.');
+                        var resolved = await TrackerPulserScan.resolve(deps);
+                        if(_targetPlan !== previousPlan || _planIsModified !== previousModified || JSON.stringify(_commands) !== previousCommands)
+                            throw Error('Plan changed while reading tracker configuration; retry Play.');
+                        if(generation !== _trackerPulserPlayGeneration) throw Error('Pulser Play cancelled.');
+                        if(menu && document.getElementById('trackerPulserTemplate') !== menu) { _trackerPulserPlayPending = false; return; }
+                        var execution = TrackerPulserScan.build(resolved);
+                        var preparation = await TrackerPulserScan.persistExecution(deps,execution);
+                        // Configuration changes while storing the snapshot must never start stale targets.
+                        var current = await TrackerPulserScan.resolve(deps);
+                        if(JSON.stringify(current) !== JSON.stringify(resolved)) throw Error('Tracker configuration changed while preparing the scan; retry Play.');
+                        if(_targetPlan !== previousPlan || _planIsModified !== previousModified || JSON.stringify(_commands) !== previousCommands)
+                            throw Error('Plan changed while preparing the scan; retry Play.');
+                        if(generation !== _trackerPulserPlayGeneration) throw Error('Pulser Play cancelled.');
+                        if(menu && document.getElementById('trackerPulserTemplate') !== menu) { _trackerPulserPlayPending = false; return; }
+                        _targetPlan = 'TrackerExternalPulserScan';
+                        _commands = execution.commands; _modifiedTables = undefined; _planIsModified = false;
+                        if(_planUIDs.indexOf(_targetPlan) < 0) _planUIDs.push(_targetPlan);
+                        if(menu) menu.remove();
+                        drawIterationPlan();
+                        Debug.log((preparation.reused ? 'Reusing stored Iterator plan (no table saves). ' : 'Updated Iterator execution plan. ')+ 'Pulser scan: '+resolved.configuration.name+'('+resolved.configuration.key+'); FSM '+resolved.fsm+
+                            '; '+resolved.targets.length+' DTCs; '+resolved.targets.reduce(function(n,t){return n+t.rocs.length;},0)+
+                            ' enabled ROCs; '+resolved.durationSeconds+' s per run; global parameters v'+resolved.globalVersion+'.',Debug.INFO_PRIORITY);
+                    }
+                } catch(e) {
+                    _trackerPulserPlayPending = false;
+                    if(button) button.disabled = false;
+                    Debug.err(String(e.message || e)); return;
+                }
+            } else if(_planIsModified) { Debug.err("Save the draft before Play."); return; }
+
 			Debug.log("startTargetIterationPlan " + _targetPlan);
 
 			//for user experience, turn green immediately
@@ -5881,14 +6007,15 @@
 					"&StateMachine=iteratePlay" +
 					"&fsmWindowName=" + encodeURIComponent(_targetPlan), //end get data
 					"", //end post data
-					function(req) //start handler
+					function(req, unused, transportError) //start handler
 					{
+				_trackerPulserPlayPending = false;
 				Debug.log("startTargetIterationPlan handler ");
 
 				//resume updating
 				_updateTimer = window.setTimeout(updateIterateStatus,_UPDATE_TIMER_PERIOD);
 
-				var error_message		= DesktopContent.getXMLValue(req,"error_message");
+				var error_message		= transportError || (!req ? "No response to Play; inspect Iterator status before retrying." : DesktopContent.getXMLValue(req,"error_message"));
 				if(!error_message || error_message == "")
 					error_message		= DesktopContent.getXMLValue(req,"state_transition_attempted_err");
 
@@ -5904,7 +6031,7 @@
 
 					}, //end handler
 					0, //handler param
-					0,0,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
+					0,true,false, //progressHandler, callHandlerOnErr, doNotShowLoadingOverlay
 					true /*targetGatewaySupervisor*/);
 		} //end startTargetIterationPlan
 
@@ -5957,6 +6084,7 @@
 		//haltTargetIterationPlan ~~
 		function haltTargetIterationPlan()
 		{
+            ++_trackerPulserPlayGeneration;
 			Debug.log("haltTargetIterationPlan " + _targetPlan);
 
 			_need_plan_complete = false; //prevent "complete" message, which might be confusing (depend on the error message
