@@ -3080,28 +3080,34 @@ void MacroMakerSupervisor::exportFEMacro(HttpXmlDocument&   xmldoc,
 	}
 
 	// find first .h and .cc with the plugin name
+	//	The constructor and the methods of an FE plugin are in <Plugin>Impl.cc when the plugin is split
+	//	into an implementation library (<Plugin>_interface.cc then holds only DEFINE_OTS_INTERFACE), or all in
+	//	<Plugin>_interface.cc in older single-file plugins: prefer Impl.cc, fall back to _interface.cc.
 	std::string headerFile      = pluginName + ".h";
-	std::string sourceFile      = pluginName + "_interface.cc";
+	std::string sourceFile      = pluginName + "Impl.cc";
 	bool        foundHeaderFile = false;
 	bool        foundSourceFile = false;
 	for(const auto& filePath : specialsCodeMapIt->second)
-	{
-		if(!foundHeaderFile && filePath.find(headerFile) != std::string::npos)
+		if(filePath.find(headerFile) != std::string::npos)
 		{
 			foundHeaderFile = true;
 			headerFile      = filePath;
 			__SUP_COUT__ << "found headerFile=" << filePath << __E__;
-		}
-		if(!foundSourceFile && filePath.find(sourceFile) != std::string::npos)
-		{
-			foundSourceFile = true;
-			sourceFile      = filePath;
-			__SUP_COUT__ << "found sourceFile=" << filePath << __E__;
-		}
-
-		if(foundSourceFile && foundHeaderFile)
 			break;
-	}  // end file search loop
+		}
+	for(int attempt = 0; attempt < 2 && !foundSourceFile; ++attempt)
+	{
+		if(attempt == 1)  // not a split plugin: the older single-file layout
+			sourceFile = pluginName + "_interface.cc";
+		for(const auto& filePath : specialsCodeMapIt->second)
+			if(filePath.find(sourceFile) != std::string::npos)
+			{
+				foundSourceFile = true;
+				sourceFile      = filePath;
+				__SUP_COUT__ << "found sourceFile=" << filePath << __E__;
+				break;
+			}
+	}  // end file search
 
 	if(!foundHeaderFile)
 	{
@@ -3183,7 +3189,7 @@ void MacroMakerSupervisor::exportFEMacro(HttpXmlDocument&   xmldoc,
 		{
 			__SS__ << "Could not find the code insert position in the source file '"
 			       << sourceFile << ".' The FE plugin class constructor must be '"
-			       << pluginName << ":" << pluginName << "' - is this the case?" << __E__;
+			       << pluginName << "::" << pluginName << "' - is this the case?" << __E__;
 			__SS_THROW__;
 		}
 		__SUP_COUTV__(insertPos);
@@ -3240,14 +3246,21 @@ void MacroMakerSupervisor::exportFEMacro(HttpXmlDocument&   xmldoc,
 
 	// find end of source to append FE Macro function
 	{
+		// single-file plugins end with DEFINE_OTS_INTERFACE(<Plugin>): insert the function before it;
+		// a <Plugin>Impl.cc has none (it is in <Plugin>_interface.cc): append at the end of the file
+		// (an Impl.cc has 'using namespace ots;' at file scope, no enclosing namespace block)
 		auto insertPos = contents.rfind("DEFINE_OTS_INTERFACE");
 		if(insertPos == std::string::npos)
 		{
-			__SS__ << "Could not find the code insert position in the source file '"
-			       << sourceFile
-			       << ".' The FE plugin class must end with a 'DEFINE_OTS_INTERFACE("
-			       << pluginName << ")' - is this the case?" << __E__;
-			__SS_THROW__;
+			if(sourceFile.find("Impl.cc") == std::string::npos)
+			{
+				__SS__ << "Could not find the code insert position in the source file '"
+				       << sourceFile
+				       << ".' The FE plugin class must end with a 'DEFINE_OTS_INTERFACE("
+				       << pluginName << ")' - is this the case?" << __E__;
+				__SS_THROW__;
+			}
+			insertPos = contents.size();
 		}
 		__SUP_COUTV__(insertPos);
 
