@@ -5,8 +5,8 @@
 
 #include "otsdaq/SlowControlsCore/MakeSlowControls.h"
 #include "otsdaq/SlowControlsCore/SlowControlsVInterface.h"
+#include <functional>
 
-#include <boost/regex.hpp>
 
 using namespace ots;
 

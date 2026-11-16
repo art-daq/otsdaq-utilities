@@ -1,9 +1,11 @@
 #ifndef _ots_ConsoleSupervisor_h_
 #define _ots_ConsoleSupervisor_h_
 
-#include <boost/regex.hpp>
-#include <boost/tokenizer.hpp>
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
+
+#include <regex>
+#include <string>
+#include <vector>
 
 #include <mutex>  //for std::mutex
 #include <queue>  //for std::queue
@@ -85,6 +87,25 @@ class ConsoleSupervisor : public CoreSupervisorBase
 	void						saveCustomCountList					(void);
 
   public:
+	/// severity name as the Console page shows it (DEBUG, INFO, WARNING, ERROR, ...)
+	static std::string severityName(const std::string& severity)
+	{
+#ifdef OTS_MAXLITE  // no messagefacility: the names mf::ELseverityLevel::getName() gives
+		std::string name;
+		for(char c : severity)
+			if(c != ' ' && c != '\t')
+				name += (c >= 'a' && c <= 'z') ? char(c - 'a' + 'A') : c;
+		if(name == "ERROR" || name == "ERR")		return "Error";
+		if(name == "WARNING" || name == "WARN")	return "Warning";
+		if(name == "INFO" || name == "INF")		return "Info";
+		if(name == "DEBUG" || name == "DBG")		return "Debug";
+		if(name == "SEVERE" || name == "FATAL")	return "Severe";
+		return severity;
+#else
+		return mf::ELseverityLevel(severity).getName();
+#endif
+	}
+
 	/// UDP Message Format:
 	/// UDPMFMESSAGE|TIMESTAMP|SEQNUM|HOSTNAME|HOSTADDR|SEVERITY|CATEGORY|APPLICATION|PID|ITERATION|MODULE|(FILE|LINE)|MESSAGE
 	/// FILE and LINE are only printed for s67+
@@ -94,22 +115,45 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			std::vector<CustomTriggeredAction_t>& priorityCustomTriggerList)
 			: countStamp(count)
 		{
-			boost::regex timestamp_regex_("(\\d{2}-[^-]*-\\d{4}\\s\\d{2}:\\d{2}:\\d{2})");
-			boost::regex file_line_regex_("^\\s*([^:]*\\.[^:]{1,3}):(\\d+)(.*)");
+			static const std::regex timestamp_regex_("(\\d{2}-[^-]*-\\d{4}\\s\\d{2}:\\d{2}:\\d{2})");
 
-			boost::char_separator<char> sep("|", "", boost::keep_empty_tokens);
-			typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
-			tokenizer                                             tokens(msg, sep);
-			tokenizer::iterator                                   it = tokens.begin();
+			// every field exists (empty unless parsed), so the accessors' fields.at() can not
+			// throw on a short or malformed line (e.g. the part after a NUL byte in a packet)
+			for(FieldType f : {FieldType::TIMESTAMP, FieldType::SEQID, FieldType::LEVEL,
+			                   FieldType::LABEL, FieldType::SOURCEID, FieldType::HOSTNAME,
+			                   FieldType::SOURCE, FieldType::FILE, FieldType::LINE,
+			                   FieldType::MSG})
+				fields[f] = "";
+
+			// split on '|', keeping empty fields
+			std::vector<std::string> tokens;
+			{
+				size_t start = 0, bar;
+				while((bar = msg.find('|', start)) != std::string::npos)
+				{
+					tokens.push_back(msg.substr(start, bar - start));
+					start = bar + 1;
+				}
+				tokens.push_back(msg.substr(start));
+			}
+			auto it = tokens.begin();
 
 			// There may be syslog garbage in the first token before the timestamp...
-			boost::smatch res;
-			while(it != tokens.end() && !boost::regex_search(*it, res, timestamp_regex_))
+			std::smatch res;
+			while(it != tokens.end() && !std::regex_search(*it, res, timestamp_regex_))
 			{
 				++it;
 			}
 
-			struct tm   tm;
+			if(it == tokens.end())  // no timestamp: not a message line, keep the text as is
+			{
+				fields[FieldType::TIMESTAMP] = std::to_string(time(0));
+				fields[FieldType::LEVEL]     = "Info";
+				fields[FieldType::MSG]       = msg;
+				return;
+			}
+
+			struct tm   tm = {};
 			std::string value(res[1].first, res[1].second);
 			strptime(value.c_str(), "%d-%b-%Y %H:%M:%S", &tm);
 			tm.tm_isdst = -1;
@@ -140,7 +184,7 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			if(it != tokens.end() && ++it != tokens.end() /* Advances it */)
 			{
 				// sev = mf::ELseverityLevel(*it);
-				fields[FieldType::LEVEL] = mf::ELseverityLevel(*it).getName();
+				fields[FieldType::LEVEL] = severityName(*it);
 			}
 			if(it != tokens.end() && ++it != tokens.end() /* Advances it */)
 			{
@@ -282,7 +326,13 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			auto val = fields.at(FieldType::SOURCEID);
 			if(val != "")
 			{
-				return std::stoul(val);
+				try
+				{
+					return std::stoul(val);
+				}
+				catch(const std::exception&)  // not a number (malformed line)
+				{
+				}
 			}
 			return 0;
 		}
@@ -293,7 +343,13 @@ class ConsoleSupervisor : public CoreSupervisorBase
 			auto val = fields.at(FieldType::SEQID);
 			if(val != "")
 			{
-				return std::stoul(val);
+				try
+				{
+					return std::stoul(val);
+				}
+				catch(const std::exception&)  // not a number (malformed line)
+				{
+				}
 			}
 			return 0;
 		}

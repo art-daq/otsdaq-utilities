@@ -129,6 +129,13 @@ try
 	if(!err.empty() || response.find("Error: ") == 0)
 	{
 		__COUT_ERR__ << "Request '" << requestType << "' returned an error." << __E__;
+		// harmless "nothing to do" replies get their own exit code (2), so scripts can tell them
+		// from real failures (1): value already equal to the current one, or a group that
+		// duplicates an existing key
+		if(err.find("same as the current") != std::string::npos ||
+		   err.find("duplicate of an existing") != std::string::npos ||
+		   err.find("No rows were modified") != std::string::npos)
+			return 2;
 		return 1;
 	}
 	return 0;

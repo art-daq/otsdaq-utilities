@@ -116,7 +116,11 @@ int makeSocket(const char* ip, int port, struct addrinfo*& p)
 		return 2;
 	}
 
-	freeaddrinfo(servinfo);
+	// Do NOT freeaddrinfo(servinfo) here: p (returned through the reference argument) points into
+	// that list, and the caller keeps using p->ai_addr / p->ai_addrlen in every sendto() for the
+	// life of the process. Freeing it left p dangling: glibc usually leaves freed memory intact, so
+	// it appeared to work on Linux, but on macOS the memory is reused and every sendto() failed
+	// with "Destination address required". The one small list kept is released when the process exits.
 
 	return sockfd;
 }

@@ -8,7 +8,6 @@
 #include "otsdaq/TablePlugins/IterateTable.h"
 #include "otsdaq/XmlUtilities/HttpXmlDocument.h"
 
-#include <boost/stacktrace.hpp>
 
 #include "otsdaq/GatewaySupervisor/GatewaySupervisor.h"  //for saveModifiedVersionXML()
 #ifndef OTS_LITE
@@ -26,6 +25,8 @@
 #include <utility>
 
 #include <memory>
+#include <optional>
+#include <algorithm>
 
 using namespace ots;
 
@@ -1466,6 +1467,7 @@ try
 			{
 			}
 		}
+#ifndef OTS_MAXLITE  // cet::exception exists only with cetlib
 		catch(cet::exception& e)
 		{
 			// NOTE it is critical for flimsy error parsing in JS GUI to leave
@@ -1487,6 +1489,7 @@ try
 			{
 			}
 		}
+#endif
 		catch(...)
 		{
 			__SUP_COUT__ << "Unknown error detected!" << __E__;

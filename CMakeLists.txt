@@ -41,6 +41,9 @@ cet_set_compiler_flags(
  NO_UNDEFINED
  EXTRA_FLAGS -Werror -pedantic -D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES=1 ${DT_FLAG}
  )
+if(APPLE) # Apple clang warns where gcc does not (deprecated sprintf, ...): keep -Werror on Linux, warn on macOS
+	add_compile_options(-Wno-error)
+endif()
 
 # Debug streamer.
 string(TOUPPER "x${CMAKE_BUILD_TYPE}" BTYPE_UC )
@@ -91,6 +94,9 @@ add_definitions(-DOTSDAQ_PATCH_VERSION=${OTSDAQ_PATCH_VERSION})
 if(DEFINED ENV{OTS_LITE})
 	# art::plugin builder base without art; otsdaq installs it in <prefix>/Modules (see otsdaq/Modules/lite)
 	add_definitions(-DOTS_LITE)
+	if(DEFINED ENV{OTS_MAXLITE})
+		add_definitions(-DOTS_MAXLITE) # no TRACE/messagefacility/cetlib/fhiclcpp/Boost
+	endif()
 	include(BasicPlugin)
 else()
 	include(BuildPlugins)

@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <cinttypes>  // PRIu64/SCNu64: uint64_t is not long on 32-bit ARM
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -123,7 +124,7 @@ void ChatSupervisor::request(const std::string& requestType,
 		    CgiDataUtilities::postData(cgiIn, "lastUpdateIndex");
 		std::string user = CgiDataUtilities::postData(cgiIn, "user");
 		uint64_t    lastUpdateIndex;
-		sscanf(lastUpdateIndexString.c_str(), "%lu", &lastUpdateIndex);
+		sscanf(lastUpdateIndexString.c_str(), "%" SCNu64, &lastUpdateIndex);
 
 		insertChatRefresh(&xmlOut, lastUpdateIndex, user);
 	}
@@ -209,7 +210,7 @@ void ChatSupervisor::insertChatRefresh(HttpXmlDocument*   xmlOut,
 	// return new update index, full chat user list, and new chats!
 
 	char tempStr[50];
-	sprintf(tempStr, "%lu", ChatLastUpdateIndex);
+	sprintf(tempStr, "%" PRIu64, ChatLastUpdateIndex);
 	xmlOut->addTextElementToData("last_update_index", tempStr);
 
 	// get all users

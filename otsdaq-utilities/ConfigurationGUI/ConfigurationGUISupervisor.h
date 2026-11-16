@@ -5,6 +5,7 @@
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 #include <mutex>
+#include <optional>
 
 namespace ots
 {

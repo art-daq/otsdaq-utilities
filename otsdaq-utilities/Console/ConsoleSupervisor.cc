@@ -307,135 +307,147 @@ try
 			c = 0;
 			while(c < buffer.size())
 			{
-				// std::cout << "CONSOLE " << c << " sz=" << buffer.size() << " len=" <<
-				// 	strlen(&(buffer.c_str()[c])) << __E__;
-				cs->messages_.emplace_back(&(buffer.c_str()[c]),
-				                           cs->messageCount_++,
-				                           cs->priorityCustomTriggerList_);
-				if(cs->messages_.back().hasCustomTriggerMatchAction())
-					cs->customTriggerActionQueue_.push(
-					    cs->messages_.back().getCustomTriggerMatch());
-
-				//update system status
-				if(cs->messages_.back().getLevel() == "Error")
+				// one bad message must not end the receive loop: parse each in its own try,
+				// then always step to the next NUL-separated message of the packet
+				const size_t nextMessage = c + strlen(&(buffer.c_str()[c])) + 1;
+				try
 				{
-					if(cs->errorCount_ == 0)
+					// std::cout << "CONSOLE " << c << " sz=" << buffer.size() << " len=" <<
+					// 	strlen(&(buffer.c_str()[c])) << __E__;
+					cs->messages_.emplace_back(&(buffer.c_str()[c]),
+					                           cs->messageCount_++,
+					                           cs->priorityCustomTriggerList_);
+					if(cs->messages_.back().hasCustomTriggerMatchAction())
+						cs->customTriggerActionQueue_.push(
+						    cs->messages_.back().getCustomTriggerMatch());
+
+					//update system status
+					if(cs->messages_.back().getLevel() == "Error")
 					{
-						cs->firstErrorMessageTime_ = time(0);
-						cs->firstErrorMessage_     = cs->messages_.back().getMsg();
-					}
-
-					cs->lastErrorMessageTime_ = time(0);
-					++cs->errorCount_;
-					cs->lastErrorMessage_ = cs->messages_.back().getMsg();
-				}
-				else if(cs->messages_.back().getLevel() == "Warning")
-				{
-					if(cs->warnCount_ == 0)
-					{
-						cs->firstWarnMessageTime_ = time(0);
-						cs->firstWarnMessage_     = cs->messages_.back().getMsg();
-					}
-					cs->lastWarnMessageTime_ = time(0);
-					++cs->warnCount_;
-					cs->lastWarnMessage_ = cs->messages_.back().getMsg();
-				}
-				else if(cs->messages_.back().getLevel() == "Info")
-				{
-					if(cs->infoCount_ == 0)
-					{
-						cs->firstInfoMessageTime_ = time(0);
-						cs->firstInfoMessage_     = cs->messages_.back().getMsg();
-					}
-					cs->lastInfoMessageTime_ = time(0);
-					++cs->infoCount_;
-					cs->lastInfoMessage_ = cs->messages_.back().getMsg();
-				}
-
-				// check if sequence ID is out of order
-				newSourceId   = cs->messages_.back().getSourceIDAsNumber();
-				newSequenceId = cs->messages_.back().getSequenceIDAsNumber();
-
-				// std::cout << rsock.getLastIncomingIPAddress() << ":" <<
-				// 	rsock.getLastIncomingPort() << ":newSourceId: " << newSourceId <<
-				// 	":" << newSequenceId << __E__;
-
-				if(  // newSequenceId%1000 == 0 || //for debugging missed!
-				    (newSourceId != -1 &&
-				     sourceLastSequenceID.find(newSourceId) !=
-				         sourceLastSequenceID
-				             .end() &&  // ensure not first packet received
-				     ((newSequenceId == 0 && sourceLastSequenceID[newSourceId] !=
-				                                 (uint32_t)-1) ||  // wrap around case
-				      newSequenceId !=
-				          sourceLastSequenceID[newSourceId] + 1))  // normal sequence case
-				)
-				{
-					// missed some messages!
-					std::stringstream missedSs;
-					missedSs << "Console missed "
-					         << (newSequenceId - 1) -
-					                (sourceLastSequenceID[newSourceId] + 1) + 1
-					         << " packet(s) [" << sourceLastSequenceID[newSourceId]
-					         << " -> " << newSequenceId << "] from "
-					         << cs->messages_.back().getSource() << ":" << newSourceId
-					         << "! (uptime: " << cs->getSupervisorUptime() << " s)"
-					         << __E__;
-					__SS__ << missedSs.str();
-					std::cout << ss.str();
-
-					// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
-					// after startup grace period, generate special message to indicate missed packets
-					if(cs->getSupervisorUptime() > 20 /* seconds */ &&
-					   sourceLastSequenceID[newSourceId] >
-					       1 &&  //veto missed error if prior sequenceID was 0 or 1 (source just started)
-					   newSequenceId >
-					       1)  //veto missed error if sequenceID is 0 or 1 (source was restarted)
-					{
-						cs->messages_.emplace_back(
-						    CONSOLE_SPECIAL_WARNING + missedSs.str(),
-						    cs->messageCount_++,
-						    cs->priorityCustomTriggerList_);
-						//force time to now for auto-generated message
-						cs->messages_.back().setTime(time(0));
-						//Force a custom count because Console Label are ignored! if(cs->messages_.back().hasCustomTriggerMatchAction())
-						if(cs->priorityCustomTriggerList_.size())
+						if(cs->errorCount_ == 0)
 						{
-							cs->customTriggerActionQueue_.push(
-							    cs->priorityCustomTriggerList_
-							        [0]);  //push newest action to back
-							cs->priorityCustomTriggerList_[0]
-							    .occurrences++;  //increment occurrences
-							cs->customTriggerActionQueue_.back()
-							    .triggeredMessageCountIndex =
-							    cs->messages_.back().getCount();
-							cs->messages_.back().setCustomTriggerMatch(
-							    cs->customTriggerActionQueue_.back());
+							cs->firstErrorMessageTime_ = time(0);
+							cs->firstErrorMessage_     = cs->messages_.back().getMsg();
+						}
+
+						cs->lastErrorMessageTime_ = time(0);
+						++cs->errorCount_;
+						cs->lastErrorMessage_ = cs->messages_.back().getMsg();
+					}
+					else if(cs->messages_.back().getLevel() == "Warning")
+					{
+						if(cs->warnCount_ == 0)
+						{
+							cs->firstWarnMessageTime_ = time(0);
+							cs->firstWarnMessage_     = cs->messages_.back().getMsg();
+						}
+						cs->lastWarnMessageTime_ = time(0);
+						++cs->warnCount_;
+						cs->lastWarnMessage_ = cs->messages_.back().getMsg();
+					}
+					else if(cs->messages_.back().getLevel() == "Info")
+					{
+						if(cs->infoCount_ == 0)
+						{
+							cs->firstInfoMessageTime_ = time(0);
+							cs->firstInfoMessage_     = cs->messages_.back().getMsg();
+						}
+						cs->lastInfoMessageTime_ = time(0);
+						++cs->infoCount_;
+						cs->lastInfoMessage_ = cs->messages_.back().getMsg();
+					}
+
+					// check if sequence ID is out of order
+					newSourceId   = cs->messages_.back().getSourceIDAsNumber();
+					newSequenceId = cs->messages_.back().getSequenceIDAsNumber();
+
+					// std::cout << rsock.getLastIncomingIPAddress() << ":" <<
+					// 	rsock.getLastIncomingPort() << ":newSourceId: " << newSourceId <<
+					// 	":" << newSequenceId << __E__;
+
+					if(  // newSequenceId%1000 == 0 || //for debugging missed!
+					    (newSourceId != -1 &&
+					     sourceLastSequenceID.find(newSourceId) !=
+					         sourceLastSequenceID
+					             .end() &&  // ensure not first packet received
+					     ((newSequenceId == 0 && sourceLastSequenceID[newSourceId] !=
+					                                 (uint32_t)-1) ||  // wrap around case
+					      newSequenceId != sourceLastSequenceID[newSourceId] +
+					                           1))  // normal sequence case
+					)
+					{
+						// missed some messages!
+						std::stringstream missedSs;
+						missedSs << "Console missed "
+						         << (newSequenceId - 1) -
+						                (sourceLastSequenceID[newSourceId] + 1) + 1
+						         << " packet(s) [" << sourceLastSequenceID[newSourceId]
+						         << " -> " << newSequenceId << "] from "
+						         << cs->messages_.back().getSource() << ":" << newSourceId
+						         << "! (uptime: " << cs->getSupervisorUptime() << " s)"
+						         << __E__;
+						__SS__ << missedSs.str();
+						std::cout << ss.str();
+
+						// seems like some messages at startup ALWAYs come out of order (i.e. 3, 4, 1)
+						// after startup grace period, generate special message to indicate missed packets
+						if(cs->getSupervisorUptime() > 20 /* seconds */ &&
+						   sourceLastSequenceID[newSourceId] >
+						       1 &&  //veto missed error if prior sequenceID was 0 or 1 (source just started)
+						   newSequenceId >
+						       1)  //veto missed error if sequenceID is 0 or 1 (source was restarted)
+						{
+							cs->messages_.emplace_back(
+							    CONSOLE_SPECIAL_WARNING + missedSs.str(),
+							    cs->messageCount_++,
+							    cs->priorityCustomTriggerList_);
+							//force time to now for auto-generated message
+							cs->messages_.back().setTime(time(0));
+							//Force a custom count because Console Label are ignored! if(cs->messages_.back().hasCustomTriggerMatchAction())
+							if(cs->priorityCustomTriggerList_.size())
+							{
+								cs->customTriggerActionQueue_.push(
+								    cs->priorityCustomTriggerList_
+								        [0]);  //push newest action to back
+								cs->priorityCustomTriggerList_[0]
+								    .occurrences++;  //increment occurrences
+								cs->customTriggerActionQueue_.back()
+								    .triggeredMessageCountIndex =
+								    cs->messages_.back().getCount();
+								cs->messages_.back().setCustomTriggerMatch(
+								    cs->customTriggerActionQueue_.back());
+							}
 						}
 					}
-				}
 
-				// save the new last sequence ID
-				sourceLastSequenceID[newSourceId] = newSequenceId;
+					// save the new last sequence ID
+					sourceLastSequenceID[newSourceId] = newSequenceId;
 
-				size_t i = 0;  //to skip over important messages
-				while(cs->messages_.size() > 0 &&
-				      cs->messages_.size() > cs->maxMessageCount_)
-				{
-					if(i < cs->maxMessageCount_ /
-					           2 &&  //in first half, keep important messages
-					   (cs->messages_[i].getLevel() == "Error" ||
-					    cs->messages_[i].getLevel() == "Warning" ||
-					    cs->messages_[i].getLevel() == "Info"))
+					size_t i = 0;  //to skip over important messages
+					while(cs->messages_.size() > 0 &&
+					      cs->messages_.size() > cs->maxMessageCount_)
 					{
-						++i;
-						continue;
-					}
-					//else erase expendable message
-					cs->messages_.erase(cs->messages_.begin() + i);
-				}  //end loop to maintain max message count
-
-				c += strlen(&(buffer.c_str()[c])) + 1;
+						if(i < cs->maxMessageCount_ /
+						           2 &&  //in first half, keep important messages
+						   (cs->messages_[i].getLevel() == "Error" ||
+						    cs->messages_[i].getLevel() == "Warning" ||
+						    cs->messages_[i].getLevel() == "Info"))
+						{
+							++i;
+							continue;
+						}
+						//else erase expendable message
+						cs->messages_.erase(cs->messages_.begin() + i);
+					}  //end loop to maintain max message count
+				}
+				catch(const std::exception& e)
+				{
+					__COUT_WARN__ << "Console skipped a message it could not handle ("
+					              << e.what() << "): '"
+					              << std::string(&(buffer.c_str()[c])).substr(0, 200)
+					              << "'" << __E__;
+				}
+				c = nextMessage;
 			}  // end handle message stacking in packet
 		}      // end received packet handling
 		else   // idle network handling
@@ -497,7 +509,7 @@ try
 	}  // end infinite loop
 
 }  // end messageFacilityReceiverWorkLoop()
-catch(const std::runtime_error& e)
+catch(const std::exception& e)
 {
 	__COUT_ERR__ << "Error caught at Console Supervisor thread: " << e.what() << __E__;
 }
