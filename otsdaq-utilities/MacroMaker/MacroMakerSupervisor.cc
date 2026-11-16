@@ -3405,23 +3405,23 @@ void MacroMakerSupervisor::createCode(std::ostream&                   out,
 
 	out << "\n"
 	    << tabOffset << "\t"
-	    << "char *address \t= new char[universalAddressSize_]{0};	//create address "
+	    << "[[maybe_unused]] char *address \t= new char[universalAddressSize_]{0};	//create address "
 	       "buffer of interface size and init to all 0";
 	out << "\n"
 	    << tabOffset << "\t"
-	    << "char *data \t\t= new char[universalDataSize_]{0};		//create data buffer "
+	    << "[[maybe_unused]] char *data \t\t= new char[universalDataSize_]{0};		//create data buffer "
 	       "of interface size and init to all 0";
 
 	out << "\n"
 	    << tabOffset << "\t"
-	    << "uint64_t macroAddress;		//create macro address buffer (size 8 bytes)";
+	    << "[[maybe_unused]] uint64_t macroAddress;		//create macro address buffer (size 8 bytes)";
 	out << "\n"
 	    << tabOffset << "\t"
-	    << "uint64_t macroData;			//create macro address buffer (size 8 bytes)";
+	    << "[[maybe_unused]] uint64_t macroData;			//create macro address buffer (size 8 bytes)";
 
 	out << "\n"
 	    << tabOffset << "\t"
-	    << "std::map<std::string /*arg name*/,uint64_t /*arg val*/> macroArgs; //create "
+	    << "[[maybe_unused]] std::map<std::string /*arg name*/,uint64_t /*arg val*/> macroArgs; //create "
 	       "map from arg name to 64-bit number";
 
 	// loop through each macro command
