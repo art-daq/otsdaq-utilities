@@ -638,7 +638,7 @@
 					var traces = widget.getElementsByTagName("traces")[0];
 					if (traces !== undefined)
 					{
-						var trace = xml.getElementsByTagName("trace");
+						var trace = traces.getElementsByTagName("trace");
 						for(j=0; j<trace.length; ++j)
 						{
 							var y_pv = trace[j].getElementsByTagName("y_pv")[0];
@@ -686,6 +686,26 @@
 				if (link_to_page !== undefined) widgetObject.attributes["link_to_page"] = link_to_page.innerHTML;
 				if (trace_type !== undefined) widgetObject.attributes["trace_type"] = trace_type.innerHTML;
 				if (trace_mode !== undefined) widgetObject.attributes["trace_mode"] = trace_mode.innerHTML;
+
+				//keep every other attribute the page saved (the save writes all of widgetObject.attributes as tags)
+				var structuralTagNames = ["name", "x", "y", "width", "height", "pv_name", "y_pv", "traces", "trace",
+					"tabs", "tabledata", "table_xSize", "table_ySize", "tabBodyID"];
+				var attributeSourceElements = [widget];
+				if (type == WIDGET_TYPE_CHART && widget.getElementsByTagName("trace")[0] !== undefined)
+					attributeSourceElements.push(widget.getElementsByTagName("trace")[0]); //charts save attributes inside each trace
+				for (var sourceIndex = 0; sourceIndex < attributeSourceElements.length; ++sourceIndex)
+				{
+					var childElements = attributeSourceElements[sourceIndex].children;
+					for (var childIndex = 0; childIndex < childElements.length; ++childIndex)
+					{
+						var attributeName = childElements[childIndex].tagName;
+						if (structuralTagNames.indexOf(attributeName) !== -1 ||
+							childElements[childIndex].childElementCount > 0 ||
+							widgetObject.attributes[attributeName] !== undefined)
+							continue;
+						widgetObject.attributes[attributeName] = childElements[childIndex].innerHTML;
+					}
+				}
 
 				console.log("Drawing and creating widget",i,widgetObject);
 

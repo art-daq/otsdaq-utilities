@@ -17,7 +17,7 @@
 
 		<link href="libraries/tabulator-master/dist/css/tabulator.min.css" rel="stylesheet">
 		<script type="text/javascript" src="libraries/tabulator-master/dist/js/tabulator.min.js"></script>
-		<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/luxon@2.0.2/build/global/luxon.min.js"></script>
+		<script type="text/javascript" src="libraries/luxon-2.0.2/luxon.min.js"></script>
 		<script>
 			//functions:
 			//init()
@@ -211,7 +211,7 @@
 							, formatterParams:
 							{
 //								  inputFormat:"YYYY-MM-DD hh:mm:ss"
-								  outputFormat:"MM/DD/YY hh:mm:ss"
+								  outputFormat:"MM/dd/yy HH:mm:ss"
 								, invalidPlaceholder:"(invalid date)"
 							}
 							, sorter:"date"
@@ -245,13 +245,13 @@
 
 			function drawPVTable(pvName, pvValue, pvStatus, pvSeverity, pvTime)
 			{
-				var date = new Date(pvTime*1000);
+				var lastUpdateTime = luxon.DateTime.fromSeconds(Number(pvTime));
 
 				var index = tabledata.findIndex(function (name){return name.pvName == pvName});
 				tabledata[index].pvValue = pvValue;
 				tabledata[index].pvStatus = pvStatus;
 				tabledata[index].pvSeverity = pvSeverity;
-				tabledata[index].pvTime = date;
+				tabledata[index].pvTime = lastUpdateTime;
 				console.log(tabledata);
 				table.setData(tabledata);
 
