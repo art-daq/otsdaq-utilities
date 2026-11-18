@@ -120,7 +120,7 @@ function init() {
         "\n\n-The <b>Command History</b> area on the right can be used to draw from recent commands while constructing your sequence; click a command from the history area and it will be added to the <b>Macro Sequence</b>" +
         "</INDENT></INDENT>" +
         "\n\n" +
-        "For more info and an introductory tutorial on Macro Maker, see the <a href='https://otsdaq.fnal.gov/tutorials_v2/tutorialPages/state_machine_and_macro_maker_demo.php' target='_blank'>State Machine and Macro Maker demo</a> tutorial. " +
+        "For more info and an introductory tutorial on Macro Maker, see the <a href='https://otsdaq.fnal.gov/tutorials/talking-to-a-device.html' target='_blank'>State Machine and Macro Maker demo</a> tutorial. " +
 
         ""
     );
