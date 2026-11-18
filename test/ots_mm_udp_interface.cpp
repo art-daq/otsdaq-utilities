@@ -2031,6 +2031,19 @@ void ots_mm_udp_interface::resolveMacroSignature(const std::string&        feCla
 				std::vector<std::string> candidateOutputs(
 				    xmlFields.begin() + outputCountIndex + 1,
 				    xmlFields.begin() + outputCountIndex + 1 + outputCount);
+
+				// the FE Macro info carries the argument names URI-encoded (see
+				// FEVInterfacesManager::getFEMacrosString); return them decoded, like
+				// getCommandInputName/getCommandOutputName do, so callers that
+				// encode them for sending (and compare them with saved names)
+				// do not encode twice. A name with a space or symbol, e.g.
+				// "Pause Slow Controls (Default = false)", otherwise failed on the FE
+				// with "mismatch in a name of an input argument".
+				for(auto& name : candidateInputs)
+					name = decodeURIComponent(name);
+				for(auto& name : candidateOutputs)
+					name = decodeURIComponent(name);
+
 				std::string targetDescription =
 				    candidateUID + " (" + candidateClass + ")";
 
