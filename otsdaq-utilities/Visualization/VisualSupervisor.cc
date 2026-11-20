@@ -56,7 +56,6 @@
 #define ROOT_DISPLAY_CONFIG_PATH __ENV__("ROOT_DISPLAY_CONFIG_PATH")
 
 #define LIVEDQM_DIR std::string("LIVE_DQM")
-#define LIVE_TOP_DIR std::string("Mu2eHistos")
 #define PRE_MADE_ROOT_CFG_DIR std::string("Pre-made Views")
 #define HISTORY_DIR std::string("History")
 
@@ -615,8 +614,10 @@ void VisualSupervisor::request(const std::string&               requestType,
 			{
 				// Add live histos, but only while the data manager is taking data.
 				// The browser polls getDataStatus and refreshes this listing when the
-				// running state changes.
-				if(theDataManager_ != nullptr && theDataManager_->isReady())
+				// running state changes. Only when there is a DQM histogram consumer:
+				// a waveform-only Visualizer has nothing to show there.
+				if(theDataManager_ != nullptr && theDataManager_->isReady() &&
+				   !theDataManager_->getLiveDQMs().empty())
 					xmlOut.addTextElementToData("dir",
 					                            LIVEDQM_DIR + ".root");  // add to xml
 
@@ -721,18 +722,25 @@ void VisualSupervisor::request(const std::string&               requestType,
 		bool isLiveDQM = (path.find("/" + LIVEDQM_DIR + ".root/") == 0) ? true : false;
 		__SUP_COUTV__(isLiveDQM);
 
-		if(isLiveDQM)
-		{
-			// Skip the LIVE_TOP_DIR level: "/" lists the streams directly. Older saved
-			// views that spell out the level keep working.
-			const std::string top = "/" + LIVE_TOP_DIR;
-			if(rootDirectoryName.empty() || rootDirectoryName == "/")
-				rootDirectoryName = top;
-			else if(rootDirectoryName != top &&
-			        rootDirectoryName.rfind(top + "/", 0) != 0)
-				rootDirectoryName = top + rootDirectoryName;
-			__SUP_COUTV__(rootDirectoryName);
-		}
+		// When a live DQM file has exactly one folder at its top, that level is skipped:
+		// "/" lists the content of that folder directly. Saved views that spell out
+		// the level keep working. A file with any other top-level content is shown as is.
+		auto getLiveDirectoryName = [](TFile*             liveFile,
+		                               const std::string& requestedDirectoryName) {
+			TList* topLevelObjects = liveFile->GetList();
+			if(topLevelObjects == nullptr || topLevelObjects->GetSize() != 1 ||
+			   !topLevelObjects->First()->InheritsFrom(TDirectory::Class()))
+				return requestedDirectoryName;
+
+			const std::string topDirectoryName =
+			    "/" + std::string(topLevelObjects->First()->GetName());
+			if(requestedDirectoryName.empty() || requestedDirectoryName == "/")
+				return topDirectoryName;
+			if(requestedDirectoryName != topDirectoryName &&
+			   requestedDirectoryName.rfind(topDirectoryName + "/", 0) != 0)
+				return topDirectoryName + requestedDirectoryName;
+			return requestedDirectoryName;
+		};
 
 		TFile*      rootFile   = nullptr;
 		TObject*    tObject    = nullptr;
@@ -850,8 +858,11 @@ void VisualSupervisor::request(const std::string&               requestType,
 					theDataManager_->setDoNotStop(false);
 					return;
 				}
+				const std::string liveDirectoryName =
+				    getLiveDirectoryName(rootFile, rootDirectoryName);
+				__SUP_COUTV__(liveDirectoryName);
 				// If I find an object then I stream it and return
-				if((tObject = rootFile->Get(rootDirectoryName.c_str())) != nullptr)
+				if((tObject = rootFile->Get(liveDirectoryName.c_str())) != nullptr)
 				{
 					__SUP_COUT__ << "Object class name: " << tObject->ClassName()
 					             << __E__;
@@ -902,7 +913,8 @@ void VisualSupervisor::request(const std::string&               requestType,
 					theDataManager_->setDoNotStop(false);
 					return;
 				}
-				if((tDirectory = rootFile->GetDirectory(rootDirectoryName.c_str())) !=
+				if((tDirectory = rootFile->GetDirectory(
+				        getLiveDirectoryName(rootFile, rootDirectoryName).c_str())) !=
 				   nullptr)
 				{
 					xmlOut.addTextElementToData("path", path);

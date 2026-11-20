@@ -26,8 +26,8 @@
 
 		<script>
 
-			//functions:
-				//init()
+			//functions the dashboard page calls on every widget:
+				//init(), setupPVs(), drawWidget(), getAttributes(), setAttributes(), drawNewValue()
 
 			/////////////////////////////////////////////////////////////////////////////////////////
 			/////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@
 			{
 				console.log("init()");
 				console.log(window.frameElement.id)
-				window.parent.setupWidget(window.frameElement.id, getParameters());
+				window.parent.setupWidget(window.frameElement.id, getAttributes());
 			}
 
 			function setupPVs(settings)
@@ -45,15 +45,17 @@
 				console.log("setupPVs() : " , settings);
 			}
 
-			function newWidget(widget, parameters)
+			function drawWidget(widget, parameters)
 			{
+				if(parameters) parameters_ = parameters;
+
 				var table = document.createElement('table');
 				table.id = "display-table";
 				table.style.height = "100%";
 				table.style.width = "100%";
 
 				var counter = 0;
-				for(var pv in widget.PVList)
+				for(var pv in widget.pvList)
 				{
 					counter++;
 				}
@@ -79,10 +81,10 @@
 				document.getElementById("display").innerHTML = "";
 				document.getElementById("display").appendChild(table);
 
-				//console.log("newWidget() called *************************************");
+				//console.log("drawWidget() called *************************************");
 				if(counter > 1){counter = 2;}
 				console.log("counter" + counter);
-				for(var pv in widget.PVList)
+				for(var pv in widget.pvList)
 				{
 					var a = document.createElement('a');
 					a.id = pv;
@@ -102,9 +104,7 @@
 				}
 			}
 
-			function getParameters()
-			{
-				paramters = {
+			var parameters_ = {
 							"param1": "",
 							"param2": "",
 							"param3": "",
@@ -112,10 +112,18 @@
 							"param5": "",
 							"param6": "",
 							"param7": ""};
-				return paramters;
+
+			function getAttributes()
+			{
+				return parameters_;
 			}
 
-			function newValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
+			function setAttributes(attributes)
+			{
+				parameters_ = attributes;
+			}
+
+			function drawNewValue(pvName, pvValue, pvTime, pvStatus, pvSeverity)
 			{
 
 				/*if(document.getElementById(pvName) == null)
@@ -126,7 +134,7 @@
 					div.appendChild(a);
 					document.getElementById("display").appendChild(div);
 				}*/
-				console.log("newValue() reached", pvName, pvValue);
+				console.log("drawNewValue() reached", pvName, pvValue);
 
 				document.getElementById(pvName).innerHTML = (pvValue);// + " @ " + pvTime);
 				document.getElementById(pvName).title = pvName + ":" + pvTime;
@@ -181,7 +189,7 @@
 
 	</head>
 
-	<body onload='//init() called by DesktopContent.js'>
+	<body onload="Javascript:init()">
 
 	<div id="display" width="100%" height="100%">
 

@@ -533,6 +533,13 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 
 			try
 			{
+				// same rule as the web requests: no front-end requests during a transition
+				if(buffer == "GetFrontendMacroInfo" ||
+				   buffer.find("RunFrontendMacro") == 0 ||
+				   buffer.find("UniversalRead") == 0 ||
+				   buffer.find("UniversalWrite") == 0)
+					theSupervisor->throwIfSystemTransitionInProgress();
+
 				if(buffer == "GetFrontendMacroInfo")
 				{
 					std::string macroPath = (std::string)MACROS_DB_PATH + "NO-USER" + "/";
@@ -689,15 +696,35 @@ void MacroMakerSupervisor::RemoteControlWorkLoop(MacroMakerSupervisor* theSuperv
 					}
 
 					// Collect any task error before cleanup so group is always removed
+					// and collect the errors from all targets into one report
 					std::string taskError;
-					for(auto& task : group->tasks_)
 					{
-						if(task->parameters_.feMacroRunError_ != "")
+						size_t            failedTargetCount = 0;
+						std::stringstream allTargetErrors;
+						for(auto& task : group->tasks_)
 						{
-							taskError = task->parameters_.feMacroRunError_;
-							break;
+							if(task->parameters_.feMacroRunError_ == "")
+							{
+								xmldoc.copyDataChildren(task->parameters_.xmldoc_);
+								continue;
+							}
+							++failedTargetCount;
+							allTargetErrors
+							    << "\n\n===== Error " << failedTargetCount
+							    << ", target UID=" << task->parameters_.feUIDSelected_
+							    << " =====\n"
+							    << task->parameters_.feMacroRunError_;
 						}
-						xmldoc.copyDataChildren(task->parameters_.xmldoc_);
+						if(failedTargetCount)
+						{
+							std::stringstream taskErrorStream;
+							taskErrorStream
+							    << "FE Macro failed on " << failedTargetCount << " of "
+							    << group->tasks_.size()
+							    << " target(s). The other targets completed without error."
+							    << allTargetErrors.str();
+							taskError = taskErrorStream.str();
+						}
 					}
 
 					{
@@ -1242,12 +1269,35 @@ catch(...)
 }  // end request() error handling
 
 //==============================================================================
+/// throwIfSystemTransitionInProgress
+///	Throws while the Gateway reports a transition in progress
+///	(see CoreSupervisorBase::systemTransitionNotice).
+void MacroMakerSupervisor::throwIfSystemTransitionInProgress(void)
+{
+	if(!CoreSupervisorBase::isSystemTransitionInProgress())
+		return;
+
+	__SUP_SS__ << "Front-end requests through Macro Maker are not available until the '"
+	           << CoreSupervisorBase::getSystemTransitionName()
+	           << "' transition finishes. Try again when it is done." << __E__;
+	__SUP_SS_THROW__;
+}  // end throwIfSystemTransitionInProgress()
+
+//==============================================================================
 
 void MacroMakerSupervisor::handleRequest(const std::string                Command,
                                          HttpXmlDocument&                 xmldoc,
                                          cgicc::Cgicc&                    cgi,
                                          const WebUsers::RequestUserInfo& userInfo)
 {
+	// User requests that reach the front-ends are not allowed during a transition
+	//	(a front-end doing its transition may be waiting on Macro Maker, and the list of
+	//	FE Macros is only fully registered once the Configure transition finishes).
+	//	Note: front-end to front-end forwarding (frontEndCommunicationRequest) stays open.
+	if(Command == "FElist" || Command == "getFEMacroList" || Command == "runFEMacro" ||
+	   Command == "readData" || Command == "writeData")
+		throwIfSystemTransitionInProgress();
+
 	if(Command == "FElist")  // called by MacroMaker GUI
 	{
 		//make user directories if needed
@@ -2728,6 +2778,9 @@ void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
 	    StringMacros::decodeURIComponent(CgiDataUtilities::getData(cgi, "name"));
 	__SUP_COUTV__(name);
 
+	bool overwrite = CgiDataUtilities::getDataAsInt(cgi, "overwrite");
+	__SUP_COUTV__(overwrite);
+
 	bool isPublic = (name.find("public/") == 0 ? true : false);
 	__SUP_COUTV__(isPublic);
 	if(isPublic)
@@ -2760,7 +2813,7 @@ void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
 	                          WebUsers::DEFAULT_ADMIN_USERNAME + "/" + fixedName + ".dat";
 	__SUP_COUT__ << destination << __E__;
 
-	if(std::filesystem::exists(destination))
+	if(!overwrite && std::filesystem::exists(destination))
 	{
 		__SUP_SS__ << "The sequence name '" << fixedName
 		           << "' already exists in the admin/public location: " << destination
@@ -2768,9 +2821,8 @@ void MacroMakerSupervisor::makeSequencePublic(cgicc::Cgicc&      cgi,
 		__SUP_SS_THROW__;
 	}
 
-	//copy if file does not already exist
 	std::filesystem::copy_file(
-	    source, destination, std::filesystem::copy_options::skip_existing);
+	    source, destination, std::filesystem::copy_options::overwrite_existing);
 	__SUP_COUT__ << "Successfully made " << fixedName
 	             << " public at path: " << destination << __E__;
 }  //end deleteFEMacroSequence()
@@ -3799,12 +3851,31 @@ try
 				if(task->bar_)
 					task->bar_->complete();
 
-			// check for any errors
-			for(auto& task : targetGroup->tasks_)
+			// check for any errors, and collect the errors from all targets into one report
 			{
-				if(task->parameters_.feMacroRunError_ != "")
+				size_t            failedTargetCount = 0;
+				std::stringstream allTargetErrors;
+				std::string       failedTargetUIDs;  // comma-separated list
+				for(auto& task : targetGroup->tasks_)
 				{
-					__SUP_SS__ << task->parameters_.feMacroRunError_;
+					if(task->parameters_.feMacroRunError_ == "")
+						continue;
+					++failedTargetCount;
+					if(failedTargetUIDs != "")
+						failedTargetUIDs += ", ";
+					failedTargetUIDs += task->parameters_.feUIDSelected_;
+					allTargetErrors << "\n\n===== Error " << failedTargetCount
+					                << ", target UID=" << task->parameters_.feUIDSelected_
+					                << " =====\n"
+					                << task->parameters_.feMacroRunError_;
+				}
+				if(failedTargetCount)
+				{
+					__SUP_SS__ << "FE Macro failed on " << failedTargetCount << " of "
+					           << targetGroup->tasks_.size()
+					           << " target(s). The other targets completed without error."
+					           << "\nTargets with errors: " << failedTargetUIDs
+					           << allTargetErrors.str() << __E__;
 					__SUP_SS_THROW__;
 				}
 			}
@@ -4003,11 +4074,26 @@ try
 	}
 	else  //all done synchronously
 	{
-		for(auto& task : group->tasks_)
+		// check for any errors, and collect the errors from all targets into one report
 		{
-			if(task->parameters_.feMacroRunError_ != "")
+			size_t            failedTargetCount = 0;
+			std::stringstream allTargetErrors;
+			for(auto& task : group->tasks_)
 			{
-				__SUP_SS__ << task->parameters_.feMacroRunError_;
+				if(task->parameters_.feMacroRunError_ == "")
+					continue;
+				++failedTargetCount;
+				allTargetErrors << "\n\n===== Error " << failedTargetCount
+				                << ", target UID=" << task->parameters_.feUIDSelected_
+				                << " =====\n"
+				                << task->parameters_.feMacroRunError_;
+			}
+			if(failedTargetCount)
+			{
+				__SUP_SS__ << "FE Macro failed on " << failedTargetCount << " of "
+				           << group->tasks_.size()
+				           << " target(s). The other targets completed without error."
+				           << allTargetErrors.str() << __E__;
 				__SUP_SS_THROW__;
 			}
 		}
@@ -4189,6 +4275,24 @@ try
 	                         feMacroRunThreadStruct->parameters_.userGroupPermissions_,
 	                         false /* saveToHistory */,
 	                         &feMacroRunThreadStruct->realProgress_);
+
+	// runFEMacro() does not throw when the front-end reports a failure; it records the
+	//	failure as "Error" in this target's xmldoc. Copy any such errors to feMacroRunError_
+	//	(before marking done) so the group report includes this target with all the others.
+	{
+		unsigned int errorOccurrence = 0;
+		std::string  targetError =
+		    feMacroRunThreadStruct->parameters_.xmldoc_.getMatchingValue(
+		        "Error", errorOccurrence++);
+		while(targetError != "")
+		{
+			if(feMacroRunThreadStruct->parameters_.feMacroRunError_ != "")
+				feMacroRunThreadStruct->parameters_.feMacroRunError_ += "\n\n";
+			feMacroRunThreadStruct->parameters_.feMacroRunError_ += targetError;
+			targetError = feMacroRunThreadStruct->parameters_.xmldoc_.getMatchingValue(
+			    "Error", errorOccurrence++);
+		}
+	}
 
 	feMacroRunThreadStruct->parameters_.doneTime_ = time(0);
 	feMacroRunThreadStruct->feMacroRunDone_       = true;

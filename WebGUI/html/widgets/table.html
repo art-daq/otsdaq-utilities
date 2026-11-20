@@ -245,7 +245,10 @@
 
 			function drawPVTable(pvName, pvValue, pvStatus, pvSeverity, pvTime)
 			{
-				var lastUpdateTime = luxon.DateTime.fromSeconds(Number(pvTime));
+				// a PV with no data yet reports a time such as "N/A": show an empty cell, not "(invalid date)"
+				var lastUpdateTime = "";
+				if(pvTime !== "" && pvTime !== undefined && pvTime !== null && isFinite(Number(pvTime)))
+					lastUpdateTime = luxon.DateTime.fromSeconds(Number(pvTime));
 
 				var index = tabledata.findIndex(function (name){return name.pvName == pvName});
 				tabledata[index].pvValue = pvValue;

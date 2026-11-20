@@ -1501,7 +1501,7 @@ Here is the json string received:
 							;
 
 						let calloutStr = Debug.callOutDebugLocales(value);
-						str += name + " = " + (calloutStr?calloutStr:value) + "<br>";
+						str += name + " = " + linkFilePathsInOutput(calloutStr?calloutStr:value) + "<br>";
 					}
 				}
 				str += "<br>";
@@ -3168,6 +3168,44 @@ Here is the json string received:
 		}
 
 		//=====================================================================================
+		//=====================================================================================
+		//linkFilePathsInOutput ~~
+		//	turns file paths ending in .txt or .bin found in macro output text into links that
+		//	open the file in the Code Editor. Text inside html tags and existing links is left alone.
+		function linkFilePathsInOutput(outputHtml) {
+			var filePathRegex = /(?<![\w.\-\/$])((?:\$[A-Z_]+)?\/[\w.\-+\/]+\.(?:txt|bin))(?![\w\/\-])/g;
+			var pieces = outputHtml.split(/(<[^>]*>)/);
+			var openLinkCount = 0;
+			for (var i = 0; i < pieces.length; ++i) {
+				if (pieces[i][0] == '<') {
+					if (/^<a[\s>]/i.test(pieces[i])) ++openLinkCount;
+					else if (/^<\/a>/i.test(pieces[i]) && openLinkCount) --openLinkCount;
+					continue;
+				}
+				if (openLinkCount) continue;
+				pieces[i] = pieces[i].replace(filePathRegex, function (matchedText, filePath) {
+					// the Code Editor takes source files relative to the srcs folder
+					var codeEditorPath = filePath;
+					var sourceFolderIndex = filePath.indexOf("/srcs/");
+					if (sourceFolderIndex >= 0)
+						codeEditorPath = filePath.substr(sourceFolderIndex + ("/srcs").length);
+					return DesktopContent.htmlOpen("a",
+						{
+							"style": "cursor:pointer; text-decoration:underline;",
+							"title": "Open file in the Code Editor in a new browser tab: \n" + filePath,
+							"onclick": "DesktopContent.openNewBrowserTab(" +
+								"\"Code Editor\",undefined /*subname undefined for LID lookup*/," +
+								"\"?" +
+								"startFilePrimary=" +
+								codeEditorPath + "\",undefined /*unique undefined for LID lookup*/);", //end onclick
+						},
+						filePath /*innerHTML*/,
+						true /*doCloseTag*/);
+				});
+			}
+			return pieces.join("");
+		} //end linkFilePathsInOutput()
+
 		function escapeHistoryHtml(text) {
 			return text
 				.replace(/&/g, "&amp;")
@@ -4990,8 +5028,8 @@ Here is the json string received:
 
 		//=====================================================================================
 		//makeSequencePublic ~~
-		function makeSequencePublic() {
-			Debug.log("makeSequencePublic()");
+		function makeSequencePublic(overwrite) {
+			Debug.log("makeSequencePublic()", overwrite);
 
 			var sequenceName = document.getElementById("select-sequence").value;
 			Debug.logv({ sequenceName });
@@ -5001,11 +5039,37 @@ Here is the json string received:
 			}
 
 			DesktopContent.XMLHttpRequest("Request?RequestType=makeSequencePublic" +
-				"&name=" + sequenceName,
+				"&name=" + encodeURIComponent(sequenceName) +
+				(overwrite ? "&overwrite=1" : ""),
 				"",
-				function () {
-					Debug.info("The MoM sequence '" + sequenceName + "' was made publicly accessible for all users.");
-				} //end makeSequencePublic handler
+				function (req, reqParam, errStr) {
+					if (!errStr)
+						errStr = "";
+					var err = req ? DesktopContent.getXMLValue(req, "Error") : "";
+					if (err && err != "")
+						errStr += "\n" + err;
+
+					//if the public sequence already exists, offer to overwrite it
+					if (!overwrite && errStr.indexOf("already exists in the admin/public location") >= 0) {
+						DesktopContent.popUpVerification(
+							"A public MoM sequence named '" + sequenceName +
+							"' already exists. Do you want to overwrite it with your version?",
+							function () { makeSequencePublic(true /*overwrite*/); },
+							undefined /*replaceVal*/, undefined /*bgColor*/,
+							undefined /*textColor*/, undefined /*borderColor*/,
+							undefined /*getUserInput*/, undefined /*dialogWidth*/,
+							undefined /*cancelFunc*/, "Overwrite" /*yesButtonText*/);
+						return;
+					}
+
+					if (errStr != "") {
+						Debug.err("Error while making the MoM sequence public: " + errStr);
+						return;
+					}
+					Debug.info("The MoM sequence '" + sequenceName + "' was made publicly accessible for all users" +
+						(overwrite ? " (the previous public version was overwritten)." : "."));
+				}, //end makeSequencePublic handler
+				0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/
 			);
 		} //end makeSequencePublic()
 
@@ -6035,6 +6099,13 @@ Here is the json string received:
 			if (!valueEl || !stepEl) return;
 			// A number, optionally with a unit suffix ("3.4us"), can be stepped; "auto"/hex cannot.
 			var isNumeric = splitNumericValue(valueEl.value) !== null;
+			// A number keeps the small box; other text (e.g. a list of UIDs) stretches the box to fit
+			//	the text, up to the width of the window.
+			if (isNumeric)
+				valueEl.style.width = "60px";
+			else
+				valueEl.style.width = "calc(min(" + (valueEl.value.length + 2) + "ch, 90vw))";
+			valueEl.style.minWidth = "60px";
 			var stepSpan = document.getElementById("var-step-span");
 			if (stepSpan) stepSpan.hidden = !isNumeric;
 			var maxSpan = document.getElementById("var-max-span");

@@ -225,11 +225,17 @@
 
 		#blackout-cancel-progress-btn {
 			color: white;
-			font-size: 16px;
-			font-family: 'Donegal One', arial;
-			width: 16px;
-			height: 16px;
-			padding: 8px 10px 10px 10px;
+			font-size: 20px;
+			font-weight: bold;
+			font-family: Arial, Helvetica, sans-serif;
+			line-height: 1;
+			width: 36px;
+			height: 36px;
+			padding: 0;
+			margin: 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 			border: 3px solid white;
 			border-radius: 20px;
 			text-align: center;
@@ -1608,9 +1614,26 @@
 
 
 
-			//check if this transition requires user logbook input
 			var localSelectedTransition = _selectedTransition; //mouse may move around while getting user log entry, so capture locally
 			var transitionActionName = _transitionActions[_currStateTransArr[localSelectedTransition]];
+
+			//Shutdown kills the non-gateway apps, so make sure it was not an accidental click
+			if (transitionActionName.toLowerCase() == "shutdown") {
+				DesktopContent.popUpVerification("Are you sure you want to Shutdown?" +
+					"<br><br>This stops all contexts except the Gateway's.",
+					function () { localCheckLogbookThenTransition(); },
+					0, "#efeaea", 0, "#770000", //prompt, func, val, bgColor, textColor, borderColor,
+					undefined, undefined, undefined, //getUserInput, dialogWidth, cancelFunc,
+					"Shutdown", undefined, undefined, //yesButtonText, noAutoComplete, defaultUserInputValue,
+					"No"); //cancelButtonText
+				return;
+			}
+
+			localCheckLogbookThenTransition();
+
+			//================
+			//check if this transition requires user logbook input
+			function localCheckLogbookThenTransition() {
 			for (var i = 0; i < _LOGBOOK_TRANSITIONS.length; ++i)
 				if (transitionActionName.toLowerCase() == _LOGBOOK_TRANSITIONS[i].trim().toLowerCase()) {
 					Debug.log("Found logbook entry required " + transitionActionName);
@@ -1670,6 +1693,7 @@
 				} //end handle log entry required
 
 			localCompleteTransition();
+			} //end localCheckLogbookThenTransition()
 
 			//================
 			function localCompleteTransition(logEntry) {
@@ -3108,7 +3132,7 @@
 						</div>
 					</div>
 
-					<div id='blackout-cancel-progress-btn'>X</div>
+					<div id='blackout-cancel-progress-btn'>&#10005;</div>
 					<div id='blackout-cancel-progress-btn-text'>Cancel Transition</div>
 				</td>
 			</table>

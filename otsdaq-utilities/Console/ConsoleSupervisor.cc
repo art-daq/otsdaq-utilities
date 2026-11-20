@@ -273,7 +273,7 @@ try
 				          // are configured to be sent here)
 
 				__COUT_INFO__ << "INFO messages look like this and mean 'something "
-				                 "occurred of which you should be aware.'"
+				                 "occurred you should know about.'"
 				              << __E__;
 				__COUT_WARN__ << "WARNING messages look like this and mean 'something "
 				                 "suboptimal occurred and could be fixed.'"

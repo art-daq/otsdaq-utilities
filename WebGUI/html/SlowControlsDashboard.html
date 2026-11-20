@@ -4178,7 +4178,16 @@
 			//=====================================================================================
 			function handleKeys(e,isKeyDown)
 			{
-				if (targetElement_==undefined) return;
+				if (targetElement_==undefined)
+				{
+					//paste works with no widget selected (after a cut nothing is selected)
+					if(e.shiftKey && !isKeyDown && e.keyCode == 86)
+					{
+						console.log("paste widget");
+						pasteWidget();
+					}
+					return;
+				}
 				var id;
 
 				if(e.shiftKey)
@@ -4421,22 +4430,71 @@
 
 
 			//=====================================================================================
-			function cutWidget(widgetCover)
+			function cutWidget(widgetElement)
 			{
-				var id = widgetCover.id.substring(0, widgetCover.id.indexOf("-cover"));
-				console.log(id);
-				delete page_.widgets[id].el
-				cutWidget_ = page_.widgets[id];
-				console.log("here");
-				console.log(widgetCover);
-				console.log(page_.widgets[widgetCover.parentNode.getElementsByTagName("iframe")[0].id].el);
-				console.log(widgetCover.id);
+				//widgetElement is the widget iframe (targetElement_), id "widget-<id>"
+				if(!widgetElement)
+				{
+					Debug.log("Ignoring cutWidget() with no target element");
+					return;
+				}
+
+				var id = widgetElement.id.split('-')[1]|0;
+				if(!page_.widgets[id])
+				{
+					Debug.log("Ignoring cutWidget() with unknown widget id " + id);
+					return;
+				}
+
+				//keep a copy of the widget settings (not the iframe) for pasteWidget()
+				var cutSource = page_.widgets[id];
+				cutWidget_ = {
+					type: cutSource.type,
+					x: cutSource.x,
+					y: cutSource.y,
+					w: cutSource.w,
+					h: cutSource.h,
+					attributes: JSON.parse(JSON.stringify(cutSource.attributes || {})),
+					pvList: JSON.parse(JSON.stringify(cutSource.pvList || {}))
+				};
 				cutWidgetId_ = id;
-				delete page_.widgets[id];
-				mainBlock_.el.removeChild(widgetCover.parentNode);
+
+				targetElement_ = widgetElement;
+				deleteWidget();  //uses targetElement_
+			} //end cutWidget()
+
+
+			//=====================================================================================
+			function pasteWidget()
+			{
+				if(!cutWidget_)
+				{
+					Debug.log("Ignoring pasteWidget() with nothing cut");
+					return;
+				}
+
+				//find an unused widget id
+				var id = Object.keys(page_.widgets).length;
+				while(page_.widgets[id] !== undefined)
+					++id;
+
+				drawWidget(
+						id,
+						cutWidget_.type,
+						toPageXCoordinate(cutWidget_.x),
+						toPageYCoordinate(cutWidget_.y),
+						toPageXCoordinate(cutWidget_.w),
+						toPageYCoordinate(cutWidget_.h)
+						);
+
+				if(page_.widgets[id])
+				{
+					page_.widgets[id].attributes = JSON.parse(JSON.stringify(cutWidget_.attributes));
+					page_.widgets[id].pvList = JSON.parse(JSON.stringify(cutWidget_.pvList));
+				}
 
 				toggleContextMenuOff();
-			} //end cutWidget()
+			} //end pasteWidget()
 
 
 			//=====================================================================================

@@ -260,7 +260,6 @@ SubsystemLaunch.create = function() {
 
 		window.clearTimeout(_getStatusTimer);
 		_updatesubsystemNamesCounter = 0; //reset counter for updating subsystem names
-		_nameColumnMinWidth = 0;
 
 
 		//get all needed info sequentially
@@ -3577,6 +3576,13 @@ SubsystemLaunch.create = function() {
 SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 	Debug.log("SubsystemLaunch.initSubsystemRecords()");
 
+	//keep resolved hostnames across reloads so the name column text does not revert to the raw url
+	var previousResolvedHostnames = {};
+	for (var s = 0; s < SubsystemLaunch.subsystems.length; ++s)
+		if (SubsystemLaunch.subsystems[s]._resolvedHostname)
+			previousResolvedHostnames[SubsystemLaunch.subsystems[s].name + " at " + SubsystemLaunch.subsystems[s].url] =
+				SubsystemLaunch.subsystems[s]._resolvedHostname;
+
 	SubsystemLaunch.subsystems = []; //clear
 	DesktopContent.XMLHttpRequest("Request?RequestType=getRemoteSubsystems" +
 		"&fsmName=" + SubsystemLaunch.launcher.getFsmName()
@@ -3605,6 +3611,11 @@ SubsystemLaunch.initSubsystemRecords = function (returnHandler) {
 
 					//force fsmInclude to bool
 					SubsystemLaunch.subsystems[j].fsmIncluded |= 0;
+
+					var previousResolvedHostname = previousResolvedHostnames[
+						SubsystemLaunch.subsystems[j].name + " at " + SubsystemLaunch.subsystems[j].url];
+					if (previousResolvedHostname)
+						SubsystemLaunch.subsystems[j]._resolvedHostname = previousResolvedHostname;
 
 				} //end subsystem loop
 

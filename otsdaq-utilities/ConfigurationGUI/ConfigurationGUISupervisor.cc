@@ -11,7 +11,7 @@
 
 #include "otsdaq/GatewaySupervisor/GatewaySupervisor.h"  //for saveModifiedVersionXML()
 #ifndef OTS_LITE
-#include "otsdaq/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.h"  //for artdaq extraction
+#include "otsdaq-artdaqinterface/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.h"  //for artdaq extraction
 #endif
 #include "otsdaq/TablePlugins/XDAQContextTable/XDAQContextTable.h"  //for context relaunch
 
@@ -9525,7 +9525,7 @@ void ConfigurationGUISupervisor::handleLoadArtdaqNodeLayoutXML(
 {
 	bool usingActiveGroups = (contextGroupName == "" || contextGroupKey.isInvalid());
 
-	//NOTE: must be same/similar code as otsdaq/otsdaq/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.cc:2332
+	//NOTE: must be same/similar code as otsdaq-artdaqinterface/otsdaq-artdaqinterface/TablePlugins/ARTDAQTableBase/ARTDAQTableBase.cc
 	const std::string& finalContextGroupName =
 	    usingActiveGroups
 	        ? cfgMgr->getActiveGroupName(ConfigurationManager::GroupType::CONTEXT_TYPE)

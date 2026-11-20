@@ -79,6 +79,9 @@ endif()
 #cet_report_compiler_flags()
 
 find_package(otsdaq 2.06.06 REQUIRED EXPORT)
+if(NOT DEFINED ENV{OTS_LITE})
+	find_package(otsdaq-artdaqinterface 3.12.00 REQUIRED EXPORT) # ARTDAQTableBase for the Configuration GUI
+endif()
 find_package(XercesC 3.2 REQUIRED)
 
 # For version.h
@@ -114,35 +117,7 @@ if( $ENV{OTS_DOXY} MATCHES "DOIT" )
 	add_subdirectory(onlineDoc)
 endif()
 
-if( NOT OTS_DEBUG_MODE )
-	message("otsdaq_utilities checking WebGUI Debug Mode OTS_DEBUG_MODE=$ENV{OTS_DEBUG_MODE}")
-	if(DEFINED ENV{OTS_DEBUG_MODE})
-		message("otsdaq_utilities found WebGUI Debug Mode = $ENV{OTS_DEBUG_MODE}")
-		set(OTS_DEBUG_MODE $ENV{OTS_DEBUG_MODE})
-	else()
-		set(OTS_DEBUG_MODE 0)
-	endif()
-endif()
-
-message("otsdaq_utilities WebGUI Debug Mode = ${OTS_DEBUG_MODE}")
-
-# WebGUI
-#FILE(REMOVE [ ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js ])
-#FILE(REMOVE [ ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js ])
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.in.js ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js @ONLY)
-if( $ENV{OTS_DEBUG_MODE} MATCHES "2" )
-	message("otsdaq_utilities WebGUI skipping Debug.js handling in shared srcs/")
-else()
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.in.js ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js @ONLY)
-endif()
-
-FILE(COPY WebGUI DESTINATION . PATTERN "*.in.js" EXCLUDE)
-INSTALL(DIRECTORY WebGUI DESTINATION . FILE_PERMISSIONS USE_SOURCE_PERMISSIONS PATTERN "*.in.js" EXCLUDE)
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js DESTINATION WebGUI/js)
-
-
-message("otsdaq_utilities WebGUI installed Debug.js at ${CMAKE_CURRENT_BINARY_DIR}/WebGUI/js/Debug.js")
-message("otsdaq_utilities WebGUI installed Debug.js at ${CMAKE_CURRENT_SOURCE_DIR}/WebGUI/js/Debug.js")
+# Note: the WebGUI directory (html, css, JavaScript and supporting libraries) lives in the otsdaq-utilities-web repository
 
 # tools
 FILE(COPY tools DESTINATION .)

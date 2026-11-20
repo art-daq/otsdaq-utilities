@@ -605,22 +605,125 @@ Desktop.createDesktop = function (security) {
 			"<path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'></path>" +
 			"</svg></a>";
 
-		var plainTextLines = [];
+		//convert html entities for display
+		var localEscapeHtml = function (text) {
+			return text.replace(/[\u00A0-\u9999<>\&]/gim,
+				function (character) {
+					return '&#' + character.charCodeAt(0) + ';';
+				});
+		}; //end localEscapeHtml()
+
+		//Group messages that repeat except for a few keywords (e.g., the same failure
+		//	reported for many apps), so that the message is shown once with a CSV list
+		//	of the keywords that differ.
+		//	Each message is split into words and separators (even indexes are words, odd
+		//	are separators). A message joins a group when it has the same separators and
+		//	number of words as the first message of the group, and the words that differ
+		//	across the whole group stay within a quarter of the words.
+		var messageGroups = [];
 		for (var i = 0; i + 1 < msgArr.length; i += 2) {
-			str += "<div style='font-size:12px'>System Message Received at " + Desktop.formatTime(msgArr[i]) + "</div>";
 			var decoded = decodeURIComponent(msgArr[i + 1]);
 			if(isUserMsg) decoded = decoded.replace(/^\[USER\]\s*/, '');
-			str += "<div>" +
-				//first decode URI, then convert html entities
-				decoded.replace(/[\u00A0-\u9999<>\&]/gim,
-					function (i) {
-						return '&#' + i.charCodeAt(0) + ';';
-					}) + "</div><br>";
-			plainTextLines.push("System Message Received at " + Desktop.formatTime(msgArr[i]));
-			plainTextLines.push(decoded);
-			plainTextLines.push("");
 			_lastSystemMessage = msgArr[i] + "|" + msgArr[i + 1];
-		}
+
+			var messageParts = decoded.split(/([\s'"\[\]=(),]+)/);
+			var messageTime = Desktop.formatTime(msgArr[i]);
+			var maxDifferingWords = Math.max(1, Math.floor((messageParts.length + 1) / 2 / 4));
+
+			var foundGroup = false;
+			for (var groupIndex = 0; groupIndex < messageGroups.length && !foundGroup; ++groupIndex) {
+				var messageGroup = messageGroups[groupIndex];
+				var firstParts = messageGroup.partsOfMessages[0];
+				if (firstParts.length != messageParts.length) continue;
+
+				var differingIndexes = messageGroup.differingIndexes.slice(); //copy, only kept if message joins
+				var sameSeparators = true;
+				for (var partIndex = 0; partIndex < messageParts.length && sameSeparators; ++partIndex) {
+					if (messageParts[partIndex] == firstParts[partIndex]) continue;
+					if (partIndex % 2) //separators must match
+						sameSeparators = false;
+					else if (differingIndexes.indexOf(partIndex) < 0)
+						differingIndexes.push(partIndex);
+				}
+				if (!sameSeparators || differingIndexes.length > maxDifferingWords) continue;
+
+				differingIndexes.sort(function (a, b) { return a - b; });
+				messageGroup.differingIndexes = differingIndexes;
+				messageGroup.partsOfMessages.push(messageParts);
+				messageGroup.originalMessages.push(decoded);
+				messageGroup.messageTimes.push(messageTime);
+				messageGroup.lastTime = messageTime;
+				foundGroup = true;
+			}
+			if (!foundGroup)
+				messageGroups.push({
+					"partsOfMessages": [messageParts],
+					"differingIndexes": [],
+					"originalMessage": decoded,
+					"originalMessages": [decoded],
+					"messageTimes": [messageTime],
+					"firstTime": messageTime,
+					"lastTime": messageTime
+				});
+		} //end grouping of messages
+
+		var plainTextLines = [];
+		for (var groupIndex = 0; groupIndex < messageGroups.length; ++groupIndex) {
+			var messageGroup = messageGroups[groupIndex];
+			var messageCount = messageGroup.partsOfMessages.length;
+
+			if (messageCount == 1) //not a repeat, show as is
+			{
+				str += "<div style='font-size:12px'>System Message Received at " + messageGroup.firstTime + "</div>";
+				str += "<div>" + localEscapeHtml(messageGroup.originalMessage) + "</div><br>";
+				plainTextLines.push("System Message Received at " + messageGroup.firstTime);
+				plainTextLines.push(messageGroup.originalMessage);
+				plainTextLines.push("");
+				continue;
+			}
+
+			//here, the message repeated: show it once, with {1}, {2}.. in place of the words that differ
+			var receivedHeader = messageCount + " System Messages Received, " +
+				(messageGroup.firstTime == messageGroup.lastTime ?
+					("at " + messageGroup.firstTime) :
+					("from " + messageGroup.firstTime + " to " + messageGroup.lastTime));
+			var templateParts = messageGroup.partsOfMessages[0].slice();
+			var keywordLabels = [];
+			for (var i = 0; i < messageGroup.differingIndexes.length; ++i) {
+				keywordLabels.push("{" + (i + 1) + "}");
+				templateParts[messageGroup.differingIndexes[i]] = keywordLabels[i];
+			}
+			var templateMessage = templateParts.join("");
+
+			var groupHtml = "<div style='font-size:12px'>" + receivedHeader + "</div>";
+			groupHtml += "<div>" + localEscapeHtml(templateMessage) + "</div>";
+
+			//the copy button and the mouseover get the unmodified text of every message
+			var groupPlainTextLines = [];
+			for (var i = 0; i < messageCount; ++i) {
+				groupPlainTextLines.push("System Message Received at " + messageGroup.messageTimes[i]);
+				groupPlainTextLines.push(messageGroup.originalMessages[i]);
+				groupPlainTextLines.push("");
+			}
+
+			if (keywordLabels.length) //else the messages were identical
+			{
+				//display only the first keyword of each message
+				var firstKeywords = [];
+				for (var i = 0; i < messageCount; ++i)
+					firstKeywords.push(messageGroup.partsOfMessages[i][messageGroup.differingIndexes[0]]);
+				groupHtml += "<div style='margin-top:6px'>" + keywordLabels[0] + ": " +
+					localEscapeHtml(firstKeywords.join(", ")) + "</div>";
+			}
+			groupHtml += "<div style='font-size:12px'>&lt;Unmodified text of the " + messageCount +
+				" messages is available on mouseover and with the copy button&gt;</div>";
+
+			//mouseover of the grouped message shows the unmodified text
+			str += "<div title='" +
+				localEscapeHtml(groupPlainTextLines.join("\n")).replace(/'/g, "&#39;").replace(/"/g, "&#34;") +
+				"'>" + groupHtml + "</div><br>";
+			plainTextLines = plainTextLines.concat(groupPlainTextLines);
+		} //end display of message groups
 		sysMsgEl.setAttribute("data-msg-text", plainTextLines.join("\n"));
 
 		str += "<div style='float:left; font-size:12px; margin-top:6px;'>Repeats are suppressed for 30 seconds.</div>";

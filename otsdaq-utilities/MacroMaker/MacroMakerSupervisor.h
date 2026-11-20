@@ -148,6 +148,7 @@ class MacroMakerSupervisor : public CoreSupervisorBase
 
 	static void RemoteControlWorkLoop(MacroMakerSupervisor* supervisorPtr);
 
+	void throwIfSystemTransitionInProgress(void);
 	void handleRequest(const std::string                Command,
 	                   HttpXmlDocument&                 xmldoc,
 	                   cgicc::Cgicc&                    cgi,
