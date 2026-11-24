@@ -3014,7 +3014,10 @@ SubsystemLaunch.create = function() {
 				function localPopUpVerify(req) {
 					lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
 					if(lastLogEntry && lastLogEntry != "")
-						lastLogEntry = decodeURIComponent(lastLogEntry);
+					{
+						try { lastLogEntry = decodeURIComponent(lastLogEntry); }
+						catch(e) { Debug.log("Could not decode the last log entry, showing it as is: " + e); }
+					}
 
 					DesktopContent.popUpVerification(
 						/* prompt */
@@ -3345,7 +3348,10 @@ SubsystemLaunch.create = function() {
 			function localPopUpVerify(req) {
 				var lastLogEntry = DesktopContent.getXMLValue(req,"lastLogEntry");
 				if(lastLogEntry && lastLogEntry != "")
-					lastLogEntry = decodeURIComponent(lastLogEntry);
+				{
+					try { lastLogEntry = decodeURIComponent(lastLogEntry); }
+					catch(e) { Debug.log("Could not decode the last log entry, showing it as is: " + e); }
+				}
 
 				SubsystemLaunch._pendingWriteToEcl = false; // reset each time popup opens
 				SubsystemLaunch._pendingDiscardRun = false;
