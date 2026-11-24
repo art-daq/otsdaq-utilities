@@ -1,0 +1,1047 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<title>Alarms</title>
+
+	<link href='/WebPath/css/fonts.css?family=Inconsolata:400' rel='stylesheet' type='text/css'>
+	<link href='/WebPath/css/fonts.css?family=Comfortaa:400' rel='stylesheet' type='text/css'>
+
+	<style>
+		body 				{ margin: 0; font-family: 'Inconsolata', monospace; font-size: 14px; background-color: rgb(40, 44, 52); color: rgb(225, 225, 225); }
+		#header 			{ padding: 8px 12px; background-color: rgb(28, 31, 37); }
+		#title 				{ font-family: 'Comfortaa', sans-serif; font-size: 18px; margin-right: 20px; }
+		.tab 				{ display: inline-block; padding: 5px 14px; margin-right: 4px; cursor: pointer; border-radius: 4px 4px 0 0; background-color: rgb(55, 60, 70); }
+		.tab.selected 		{ background-color: rgb(90, 100, 120); color: white; }
+		#status 			{ float: right; font-size: 12px; color: rgb(170, 170, 170); padding-top: 6px; }
+		#status.problem		{ color: rgb(255, 120, 120); }
+		#topics 			{ padding: 8px 12px 0 12px; }
+		.topic 				{ display: inline-block; padding: 5px 10px; margin: 0 6px 6px 0; border-radius: 4px; cursor: pointer; border: 2px solid transparent; color: black; }
+		.topic.selected 	{ border-color: white; }
+		.topic .counts 		{ font-size: 12px; }
+		#controls 			{ padding: 4px 12px 8px 12px; }
+		#controls label 	{ margin-right: 12px; cursor: pointer; }
+		#controls input[type=text] { width: 260px; background-color: rgb(28, 31, 37); color: white; border: 1px solid rgb(100, 100, 100); padding: 3px; }
+		#ackControls 		{ display: none; padding: 0 12px 8px 12px; }
+		body.canAck.alarmsTab #ackControls { display: block; }
+		#ackControls button { font: inherit; padding: 2px 8px; margin-right: 6px; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; background: rgb(55, 60, 70); color: rgb(225, 225, 225); cursor: pointer; }
+		#ackControls button:hover:enabled { background: rgb(90, 100, 120); }
+		#ackControls button:disabled { opacity: 0.45; cursor: default; }
+		#ackResult 			{ font-size: 12px; margin-left: 6px; }
+		#ackResult.problem 	{ color: rgb(255, 120, 120); }
+		.ackCol 			{ display: none; width: 1px; }
+		body.canAck .ackCol { display: table-cell; }
+		#summary 			{ padding: 0 12px 6px 12px; font-size: 12px; color: rgb(170, 170, 170); }
+		table 				{ border-collapse: collapse; width: 100%; }
+		#top 				{ position: sticky; top: 0; z-index: 2; background-color: rgb(40, 44, 52); } /* stays visible when scrolling the table */
+		th 					{ position: sticky; top: var(--top-height, 0px); z-index: 1; background-color: rgb(28, 31, 37); text-align: left; padding: 5px 8px; white-space: nowrap; }
+		td 					{ padding: 3px 8px; border-bottom: 1px solid rgb(60, 65, 75); vertical-align: top; }
+		td.nowrap 			{ white-space: nowrap; }
+		td.msg 				{ white-space: pre-wrap; word-break: break-word; }
+		td.path 			{ font-size: 11px; color: rgb(150, 150, 150); word-break: break-all; }
+		.sev 				{ display: inline-block; padding: 1px 6px; border-radius: 3px; color: black; white-space: nowrap; }
+
+		/* Phoebus alarm severity colors */
+		.sev-OK 			{ background-color: rgb(0, 200, 0); }
+		.sev-MINOR 			{ background-color: rgb(255, 225, 0); }
+		.sev-MAJOR 			{ background-color: rgb(255, 40, 40); color: white; }
+		.sev-INVALID 		{ background-color: rgb(255, 0, 255); }
+		.sev-UNDEFINED 		{ background-color: rgb(200, 0, 200); color: white; }
+		.sev-MINOR_ACK 		{ background-color: rgb(155, 140, 40); }
+		.sev-MAJOR_ACK 		{ background-color: rgb(150, 60, 60); color: white; }
+		.sev-INVALID_ACK 	{ background-color: rgb(150, 60, 150); color: white; }
+		.sev-UNDEFINED_ACK 	{ background-color: rgb(120, 40, 120); color: white; }
+		.sev-NONE 			{ background-color: rgb(130, 130, 130); }
+		.sev-fsm 			{ background-color: rgb(255, 40, 40); color: white; }
+		.sev-error 			{ background-color: rgb(255, 140, 60); }
+
+		/* pv history chart */
+		:root 				{ color-scheme: dark; --surface: rgb(28, 31, 37); --text-primary: rgb(225, 225, 225); --text-secondary: rgb(190, 190, 190);
+							  --text-muted: rgb(140, 140, 140); --gridline: rgb(52, 56, 66); --axis-line: rgb(90, 95, 105); --border: rgba(255,255,255,0.18);
+							  --series-line: #3987e5; --series-band: #104281; --selection-wash: rgba(57,135,229,0.22);
+							  --row-hover: rgb(50, 56, 68); --row-selected: rgb(45, 65, 100); }
+		tr.pvRow 			{ cursor: pointer; }
+		tr.pvRow:hover td 	{ background-color: var(--row-hover); }
+		tr.pvRow.selected td { background-color: var(--row-selected); }
+		#chartPanel 		{ position: fixed; left: 0; right: 0; bottom: 0; height: 48vh; min-height: 300px; background: var(--surface);
+							  border-top: 1px solid var(--axis-line); box-shadow: 0 -6px 18px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 3; }
+		#chartPanel.open 	{ display: flex; }
+		body.chartOpen 		{ padding-bottom: 48vh; }
+		#chartToolbar 		{ display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 12px 2px 12px; }
+		#chartTitle 		{ font-weight: bold; margin-right: 6px; }
+		#chartUnits 		{ color: var(--text-secondary); margin-right: 12px; }
+		#chartToolbar button { font: inherit; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text-primary); cursor: pointer; }
+		#chartToolbar button:hover { background: var(--row-hover); }
+		#chartToolbar button.active { background: var(--row-selected); font-weight: bold; }
+		#chartToolbar .spacer { flex: 1; }
+		#chartNote 			{ font-size: 12px; color: var(--text-secondary); padding: 0 12px 2px 12px; min-height: 16px; }
+		#chartArea 			{ position: relative; flex: 1; min-height: 0; }
+		#chartCanvas 		{ position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+		#chartCanvas.loading { opacity: 0.55; }
+		#chartTooltip 		{ position: absolute; pointer-events: none; display: none; background: var(--surface); border: 1px solid var(--border);
+							  border-radius: 6px; padding: 5px 9px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); white-space: nowrap; }
+		#chartTooltip strong { font-size: 14px; display: block; }
+		#chartTooltip span 	{ color: var(--text-secondary); display: block; }
+		#chartHelp 			{ font-size: 11px; color: var(--text-muted); padding: 0 12px 4px 12px; }
+	</style>
+
+	<script type="text/JavaScript" src="/WebPath/js/Globals.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/Debug.js"></script>
+	<script type="text/JavaScript" src="/WebPath/js/DesktopContent.js"></script>
+
+	<script>
+
+	//	Alarms page:
+	//
+	//		Shows the alarm state published to Kafka by the Phoebus alarm servers, i.e.
+	//		the same content as the Phoebus alarm table, and the errors published to Kafka
+	//		by the Console Supervisors of all ots instances.
+	//
+	//		Users with expert permission level can acknowledge (or unacknowledge) alarms:
+	//		the command is sent through Kafka to the Phoebus alarm server, as Phoebus does,
+	//		either for the selected rows or for all the alarms that match the filters.
+	//		Nothing else is ever written (e.g., the alarm state is only changed by the alarm server).
+	//
+	//		Click on an alarm to see the time chart of its pv, from the archiver database
+	//		(drag to zoom on a time interval, wheel to zoom, double click to go back).
+	//
+	//		The requests are handled by a Slow Controls Dashboard Supervisor, so this page
+	//		must be opened with its urn parameter, e.g. /WebPath/html/KafkaAlarms.html?urn=282
+	//
+	//	Functions:
+	//		init()
+	//		selectTab(tab)
+	//		selectTopic(topic)
+	//		poll()
+	//		alarmsHandler(req, reqParam, errStr)
+	//		errorsHandler(req, reqParam, errStr)
+	//		updateAckControls()
+	//		sendAcknowledge(command, mode)
+
+	var REFRESH_PERIOD_MS 	= 3000;
+	var SEVERITIES 			= ["MAJOR", "MINOR", "INVALID", "UNDEFINED"];
+
+	var _tab 				= "alarms"; //or "errors"
+	var _topic 				= ""; //selected alarm configuration, or "" for all
+	var _pollTimer 			= 0;
+	var _requestPending 	= false;
+
+	var _selectedPaths 		= {}; //map of alarm path to true, for the selected rows
+	var _shownAlarms 		= {}; //map of alarm path to alarm, for the rows shown
+	var _alarmQuery 		= ""; //filter parameters of the last alarms request sent
+	var _matched 			= undefined; //{query, count, acknowledgedCount} of the last alarms response
+
+	//=====================================================================================
+	//init ~~
+	//	init called once body has loaded
+	function init()
+	{
+		Debug.log("Alarms init");
+
+		var str = "";
+		for(var i = 0; i < SEVERITIES.length; ++i)
+			str += "<label><input type='checkbox' id='sev-" + SEVERITIES[i] + "' checked " +
+				"onchange='poll()'> <span class='sev sev-" + SEVERITIES[i] + "'>" + SEVERITIES[i] +
+				"</span></label>";
+		document.getElementById("severityChecks").innerHTML = str;
+
+		//keep the column headers right below the top part, which changes height (e.g., when the topics wrap)
+		var topEl = document.getElementById("top");
+		function setTopHeight() { document.documentElement.style.setProperty("--top-height", topEl.offsetHeight + "px"); }
+		if(window.ResizeObserver) (new ResizeObserver(setTopHeight)).observe(topEl);
+		window.addEventListener("resize", setTopHeight);
+		setTopHeight();
+
+		selectTab("alarms");
+	} //end init()
+
+	//=====================================================================================
+	function selectTab(tab)
+	{
+		_tab = tab;
+		if(window.closeChart) closeChart();
+		document.getElementById("tab-alarms").className = "tab" + (tab == "alarms" ? " selected" : "");
+		document.getElementById("tab-errors").className = "tab" + (tab == "errors" ? " selected" : "");
+		document.getElementById("topics").style.display = tab == "alarms" ? "block" : "none";
+		document.getElementById("alarmControls").style.display = tab == "alarms" ? "inline" : "none";
+		document.getElementById("tableBody").textContent = "";
+		document.getElementById("summary").textContent = "Loading...";
+		document.body.classList.toggle("alarmsTab", tab == "alarms");
+		_selectedPaths = {}; _shownAlarms = {}; _matched = undefined;
+		updateAckControls();
+
+		var headers = tab == "alarms" ?
+			["Severity", "PV", "Description", "Alarm Time", "Alarm Value", "Alarm Status", "Current Value", "Current Severity", "Current Status", "Configuration"] :
+			["Time", "Type", "Subsystem", "Gateway", "Source", "Message", "Repeats", "Location"];
+		var row = document.getElementById("tableHead");
+		row.textContent = "";
+		if(tab == "alarms")
+		{
+			var th = row.appendChild(document.createElement("th"));
+			th.className = "ackCol";
+			var check = th.appendChild(document.createElement("input"));
+			check.type = "checkbox";
+			check.id = "selectAll";
+			check.title = "Select all the alarms shown";
+			check.onchange = function()
+			{
+				_selectedPaths = {};
+				if(this.checked)
+					for(var path in _shownAlarms) _selectedPaths[path] = true;
+				var checks = document.querySelectorAll("#tableBody input[type=checkbox]");
+				for(var i = 0; i < checks.length; ++i) checks[i].checked = this.checked;
+				updateAckControls();
+			};
+		}
+		for(var i = 0; i < headers.length; ++i)
+			row.appendChild(document.createElement("th")).textContent = headers[i];
+
+		poll();
+	} //end selectTab()
+
+	//=====================================================================================
+	function selectTopic(topic)
+	{
+		_topic = (_topic == topic) ? "" : topic; //click again to deselect
+		poll();
+	} //end selectTopic()
+
+	//=====================================================================================
+	//poll ~~
+	//	Requests the data for the selected tab, and schedules the next poll
+	function poll()
+	{
+		window.clearTimeout(_pollTimer);
+		_pollTimer = window.setTimeout(poll, REFRESH_PERIOD_MS);
+
+		if(_requestPending) return;
+		_requestPending = true;
+
+		var filter = encodeURIComponent(document.getElementById("filter").value);
+
+		if(_tab == "alarms")
+		{
+			var severities = [];
+			for(var i = 0; i < SEVERITIES.length; ++i)
+				if(document.getElementById("sev-" + SEVERITIES[i]).checked)
+					severities.push(SEVERITIES[i]);
+			if(!severities.length)
+				severities.push("NONE"); //i.e. match nothing
+
+			_alarmQuery = "topic=" + encodeURIComponent(_topic) +
+				"&severities=" + severities.join(",") +
+				"&showAck=" + (document.getElementById("showAck").checked ? "1" : "0") +
+				"&filter=" + filter;
+			DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaAlarms",
+				_alarmQuery + "&maxRows=500",
+				alarmsHandler, {tab: _tab, query: _alarmQuery} /*reqParam*/, 0 /*progressHandler*/,
+				true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
+		}
+		else
+			DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaOtsErrors",
+				"filter=" + filter + "&maxRows=500",
+				errorsHandler, _tab /*reqParam*/, 0 /*progressHandler*/,
+				true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
+	} //end poll()
+
+	//=====================================================================================
+	//getResponse ~~
+	//	returns the JSON object of the response, or undefined on error (after showing status)
+	function getResponse(req, errStr)
+	{
+		_requestPending = false;
+
+		var err = DesktopContent.getXMLValue(req, "Error");
+		if(err && err != "")
+			errStr = (errStr ? errStr + "\n" : "") + err;
+		var json;
+		if(!errStr)
+		{
+			try { json = JSON.parse(decodeURIComponent(DesktopContent.getXMLValue(req, "JSON"))); }
+			catch(e) { errStr = "Illegal response from server: " + e; }
+		}
+
+		var statusEl = document.getElementById("status");
+		if(errStr)
+		{
+			statusEl.className = "problem";
+			statusEl.textContent = "Request failed at " + (new Date()).toLocaleTimeString() + ": " + errStr;
+			return undefined;
+		}
+		if(!json.enabled)
+		{
+			statusEl.className = "problem";
+			statusEl.textContent = "Reading from Kafka is disabled: " + json.disabledReason;
+			return json;
+		}
+
+		//only report a Kafka error if recent
+		var kafkaProblem = json.lastKafkaError && json.serverTime - json.lastKafkaErrorTime < 60;
+		statusEl.className = kafkaProblem ? "problem" : "";
+		statusEl.textContent = "Kafka " + json.brokers + " - updated " +
+			(new Date(json.serverTime * 1000)).toLocaleTimeString() +
+			(kafkaProblem ? " - " + json.lastKafkaError : "");
+		return json;
+	} //end getResponse()
+
+	//=====================================================================================
+	function getTimeString(seconds)
+	{
+		if(!seconds) return "";
+		var d = new Date(seconds * 1000);
+		function pad(n) { return (n < 10 ? "0" : "") + n; }
+		return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " +
+			pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+	} //end getTimeString()
+
+	//=====================================================================================
+	//addCell ~~
+	//	Note: always use textContent, since the text comes from outside of ots
+	function addCell(row, text, className)
+	{
+		var cell = row.insertCell(-1);
+		cell.textContent = (text === undefined || text === null) ? "" : text;
+		if(className) cell.className = className;
+		return cell;
+	} //end addCell()
+
+	//=====================================================================================
+	//the live value read by ots with Channel Access (not from the alarm server, nor the archiver)
+	function addLiveValueCell(row, alarm)
+	{
+		var cell = row.insertCell(-1);
+		cell.className = "nowrap";
+		if(alarm.liveState === undefined) return cell;
+
+		var hasValue = alarm.liveTime > 0 || alarm.liveValue !== "";
+		if(alarm.liveState == "connected" && hasValue)
+		{
+			cell.textContent = alarm.liveValue;
+			cell.title = "Live value read now by ots with Channel Access" +
+				(alarm.liveTime > 0 ? ", pv timestamp " + getTimeString(alarm.liveTime) : "") +
+				(alarm.liveSeverity ? ", pv severity " + alarm.liveSeverity : "");
+		}
+		else if(alarm.liveState == "connected" || alarm.liveState == "connecting")
+		{
+			cell.textContent = "...";
+			cell.style.opacity = 0.6;
+			cell.title = "Connecting to the pv with Channel Access: no value received so far";
+		}
+		else if(alarm.liveState == "disconnected")
+		{
+			cell.textContent = "disconnected";
+			cell.style.opacity = 0.6;
+			cell.title = "The pv is not reachable now with Channel Access" +
+				(hasValue ? "; last value received was " + alarm.liveValue +
+				(alarm.liveTime > 0 ? " with pv timestamp " + getTimeString(alarm.liveTime) : "") : "");
+		}
+		else
+		{
+			cell.textContent = "n/a";
+			cell.style.opacity = 0.6;
+			cell.title = alarm.liveState;
+		}
+		return cell;
+	} //end addLiveValueCell()
+
+	//=====================================================================================
+	function addSeverityCell(row, severity)
+	{
+		var cell = row.insertCell(-1);
+		cell.className = "nowrap";
+		if(!severity) return cell;
+		var el = cell.appendChild(document.createElement("span"));
+		el.className = "sev sev-" + String(severity).replace(/[^A-Za-z_]/g, "");
+		el.textContent = severity;
+		return cell;
+	} //end addSeverityCell()
+
+	//=====================================================================================
+	function alarmsHandler(req, reqParam, errStr)
+	{
+		var json = getResponse(req, errStr);
+		if(!json || reqParam.tab != _tab) return;
+
+		document.body.classList.toggle("canAck", DesktopContent.getXMLValue(req, "canAcknowledge") == "1");
+
+		//topic summaries
+		var topicsEl = document.getElementById("topics");
+		topicsEl.textContent = "";
+		for(var i = 0; i < json.topics.length; ++i)
+		{
+			var topic = json.topics[i];
+			var el = topicsEl.appendChild(document.createElement("div"));
+			el.className = "topic sev-" + (topic.loaded ? (topic.severity || "NONE") : "NONE") +
+				(topic.name == _topic ? " selected" : "");
+			el.onclick = (function(name) { return function() { selectTopic(name); }; })(topic.name);
+
+			var str = "";
+			if(!topic.loaded)
+				str = "loading...";
+			else
+			{
+				var active = 0;
+				for(var severity in topic.counts)
+					if(severity != "OK")
+					{
+						active += topic.counts[severity];
+						str += (str ? ", " : "") + topic.counts[severity] + " " + severity;
+					}
+				str = active ? str : "no alarms";
+				str += " (" + topic.pvCount + " PVs)";
+			}
+			el.appendChild(document.createElement("b")).textContent = topic.name;
+			el.appendChild(document.createElement("br"));
+			var countsEl = el.appendChild(document.createElement("span"));
+			countsEl.className = "counts";
+			countsEl.textContent = str;
+		}
+		if(json.enabled && !json.topics.length)
+			topicsEl.textContent = "No alarm configurations to read: set environment variable OTS_KAFKA_ALARM_TOPICS.";
+
+		//alarm table
+		var body = document.createElement("tbody");
+		body.id = "tableBody";
+		var selectedPaths = {};
+		_shownAlarms = {};
+		for(var i = 0; i < json.alarms.length; ++i)
+		{
+			var alarm = json.alarms[i];
+			var row = body.insertRow(-1);
+			row.className = "pvRow";
+
+			//selection, kept at each refresh for the alarms still shown
+			_shownAlarms[alarm.path] = alarm;
+			if(_selectedPaths[alarm.path]) selectedPaths[alarm.path] = true;
+			var checkCell = row.insertCell(-1);
+			checkCell.className = "ackCol";
+			checkCell.onclick = function(e) { e.stopPropagation(); }; //i.e. do not open the chart
+			var check = checkCell.appendChild(document.createElement("input"));
+			check.type = "checkbox";
+			check.checked = !!selectedPaths[alarm.path];
+			check.onchange = (function(path) { return function() {
+				if(this.checked) _selectedPaths[path] = true; else delete _selectedPaths[path];
+				updateAckControls(); }; })(alarm.path);
+
+			row.dataset.pv = alarm.pv;
+			row.onclick = (function(alarm) { return function() {
+				openChart({name: alarm.pv, description: alarm.description}); }; })(alarm);
+			addSeverityCell(row, alarm.severity);
+			addCell(row, alarm.pv, "nowrap").title = alarm.path;
+			addCell(row, alarm.description);
+			addCell(row, getTimeString(alarm.time), "nowrap");
+			addCell(row, alarm.value);
+			addCell(row, alarm.message, "nowrap");
+			addLiveValueCell(row, alarm);
+			addSeverityCell(row, alarm.currentSeverity);
+			addCell(row, alarm.currentMessage, "nowrap");
+			addCell(row, alarm.topic);
+		}
+		var oldBody = document.getElementById("tableBody");
+		oldBody.parentNode.replaceChild(body, oldBody);
+		markSelectedRow();
+
+		_selectedPaths = selectedPaths;
+		_matched = {query: reqParam.query, count: json.matchedCount | 0,
+			acknowledgedCount: json.matchedAcknowledgedCount | 0};
+		updateAckControls();
+
+		document.getElementById("summary").textContent = !json.enabled ? "" :
+			("Showing " + json.alarms.length + " of " + json.matchedCount + " alarms" +
+			(_topic ? " in " + _topic : "") +
+			(json.alarms.length < json.matchedCount ? " (most severe and most recent first; use the filters to narrow down)" : "") + "." +
+			(json.alarms.length ? " Click an alarm for the time chart of its pv." : ""));
+	} //end alarmsHandler()
+
+	//=====================================================================================
+	//markSelectedRow ~~
+	//	highlights the alarms of the pv shown in the chart
+	function markSelectedRow()
+	{
+		var rows = document.getElementById("tableBody").rows;
+		for(var i = 0; i < rows.length; ++i)
+			if(rows[i].dataset.pv !== undefined)
+				rows[i].className = "pvRow" + (window.chart && chart.name === rows[i].dataset.pv ? " selected" : "");
+	} //end markSelectedRow()
+
+	//=====================================================================================
+	//updateAckControls ~~
+	//	updates the counts in the acknowledge buttons
+	function updateAckControls()
+	{
+		var toAck = 0, toUnack = 0, selected = 0;
+		for(var path in _selectedPaths)
+		{
+			++selected;
+			if(!_shownAlarms[path]) continue;
+			if(/_ACK$/.test(_shownAlarms[path].severity)) ++toUnack; else ++toAck;
+		}
+		function set(id, text, count)
+		{
+			var el = document.getElementById(id);
+			el.textContent = text + " (" + count + ")";
+			el.disabled = !count;
+			el.dataset.count = count;
+		}
+		set("ackSelected", "Acknowledge selected", toAck);
+		set("unackSelected", "Unacknowledge selected", toUnack);
+		set("ackFilter", "Acknowledge all matching", _matched ? _matched.count - _matched.acknowledgedCount : 0);
+		set("unackFilter", "Unacknowledge all matching", _matched ? _matched.acknowledgedCount : 0);
+
+		var selectAll = document.getElementById("selectAll");
+		if(selectAll)
+		{
+			var shown = Object.keys(_shownAlarms).length;
+			selectAll.checked = shown > 0 && selected >= shown;
+			selectAll.indeterminate = selected > 0 && selected < shown;
+		}
+	} //end updateAckControls()
+
+	//=====================================================================================
+	//sendAcknowledge ~~
+	//	command is acknowledge or unacknowledge
+	//	mode is selected (the selected rows) or filter (all alarms that match the filters,
+	//		i.e. also the ones beyond the rows shown)
+	//	The user is always asked to confirm the count.
+	function sendAcknowledge(command, mode)
+	{
+		var acknowledge = command == "acknowledge";
+		var data = "command=" + command + "&mode=" + mode;
+		var count = 0, prompt;
+
+		if(mode == "selected")
+		{
+			var paths = [];
+			for(var path in _selectedPaths)
+				if(_shownAlarms[path] && /_ACK$/.test(_shownAlarms[path].severity) != acknowledge)
+					paths.push(path);
+			count = paths.length;
+			data += "&paths=" + encodeURIComponent(paths.join("\n"));
+			prompt = "Do you want to " + command + " the " + count + " selected alarm" + (count == 1 ? "" : "s") + "?";
+			if(count == 1) prompt += "<br><br>" + _shownAlarms[paths[0]].pv.replace(/[<>&]/g, "");
+		}
+		else
+		{
+			if(!_matched) return;
+			count = acknowledge ? _matched.count - _matched.acknowledgedCount : _matched.acknowledgedCount;
+			data += "&" + _matched.query + "&expectedCount=" + count; //the filters of the counts shown
+			var filterText = document.getElementById("filter").value;
+			prompt = "Do you want to " + command + " ALL the " + count + " alarm" + (count == 1 ? "" : "s") +
+				" that match the filters, including the ones not shown in the table?<br><br>" +
+				"Configuration: " + (_topic ? _topic.replace(/[<>&]/g, "") : "all") +
+				(filterText ? "<br>Filter text: " + filterText.replace(/[<>&]/g, "") : "");
+		}
+		if(!count) return;
+
+		DesktopContent.popUpVerification(prompt + "<br><br>The command is sent to the Phoebus alarm server.",
+			function()
+			{
+				var resultEl = document.getElementById("ackResult");
+				resultEl.className = "";
+				resultEl.textContent = "Sending...";
+				DesktopContent.XMLHttpRequest("Request?RequestType=acknowledgeKafkaAlarms", data,
+					function(req, reqParam, errStr)
+					{
+						var err = DesktopContent.getXMLValue(req, "Error");
+						if(err && err != "") errStr = (errStr ? errStr + "\n" : "") + err;
+						var json;
+						if(!errStr)
+						{
+							try { json = JSON.parse(decodeURIComponent(DesktopContent.getXMLValue(req, "JSON"))); }
+							catch(e) { errStr = "Illegal response from server: " + e; }
+						}
+						if(!errStr && json.error) errStr = json.error;
+						resultEl.className = errStr ? "problem" : "";
+						resultEl.textContent = (new Date()).toLocaleTimeString() + ": " + (json ?
+							json.sentCount + " " + command + " command" + (json.sentCount == 1 ? "" : "s") + " sent" +
+							(json.skippedCount ? ", " + json.skippedCount + " skipped (no longer in that state)" : "") + ". " : "") +
+							(errStr ? errStr : "");
+						if(mode == "selected") _selectedPaths = {};
+						poll();
+					}, 0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/);
+			});
+	} //end sendAcknowledge()
+
+	//=====================================================================================
+	function errorsHandler(req, reqParam, errStr)
+	{
+		var json = getResponse(req, errStr);
+		if(!json || reqParam != _tab) return;
+
+		var body = document.createElement("tbody");
+		body.id = "tableBody";
+		for(var i = 0; i < json.errors.length; ++i)
+		{
+			var record = json.errors[i].record;
+			var row = body.insertRow(-1);
+			addCell(row, getTimeString(record.time || json.errors[i].kafkaTime), "nowrap");
+			addSeverityCell(row, record.type);
+			addCell(row, record.subsystem, "nowrap");
+			addCell(row, record.gateway, "nowrap");
+			addCell(row, record.source, "nowrap").title = "host " + record.host + ", pid " + record.pid;
+			addCell(row, record.message, "msg");
+			addCell(row, record.repeats ? record.repeats : "").title = "Number of identical errors suppressed before this one";
+			addCell(row, (record.file || "") + (record.line ? ":" + record.line : ""), "path");
+		}
+		var oldBody = document.getElementById("tableBody");
+		oldBody.parentNode.replaceChild(body, oldBody);
+
+		document.getElementById("summary").textContent = !json.enabled ? "" :
+			(!json.loaded ? "Loading topic " + json.errorTopic + "..." :
+			("Showing " + json.errors.length + " of the last " + json.cachedCount +
+			" ots errors in topic " + json.errorTopic + ", newest first."));
+	} //end errorsHandler()
+
+	</script>
+</head>
+
+<body onload='//init() called by DesktopContent.js'>
+	<div id="top">
+	<div id="header">
+		<span id="title">Alarms</span>
+		<span id="tab-alarms" class="tab" onclick="selectTab('alarms')">Phoebus Alarms</span>
+		<span id="tab-errors" class="tab" onclick="selectTab('errors')">ots Errors</span>
+		<span id="status"></span>
+	</div>
+	<div id="topics"></div>
+	<div id="controls">
+		<span id="alarmControls">
+			<span id="severityChecks"></span>
+			<label><input type="checkbox" id="showAck" checked onchange="poll()"> acknowledged</label>
+		</span>
+		<input type="text" id="filter" placeholder="filter text..." oninput="poll()">
+	</div>
+	<div id="ackControls">
+		<button id="ackSelected" onclick="sendAcknowledge('acknowledge', 'selected')"></button>
+		<button id="unackSelected" onclick="sendAcknowledge('unacknowledge', 'selected')"></button>
+		<button id="ackFilter" onclick="sendAcknowledge('acknowledge', 'filter')"
+			title="All the alarms that match the configuration, severity and text filters, including the ones not shown in the table"></button>
+		<button id="unackFilter" onclick="sendAcknowledge('unacknowledge', 'filter')"
+			title="All the acknowledged alarms that match the configuration, severity and text filters, including the ones not shown in the table"></button>
+		<span id="ackResult"></span>
+	</div>
+	<div id="summary"></div>
+	</div>
+	<table>
+		<thead><tr id="tableHead"></tr></thead>
+		<tbody id="tableBody"></tbody>
+	</table>
+
+	<div id="chartPanel">
+		<div id="chartToolbar">
+			<span id="chartTitle"></span><span id="chartUnits"></span>
+			<span id="rangeButtons"></span>
+			<button id="zoomBackButton" title="undo the last zoom">&#8592; back</button>
+			<button id="automaticVerticalButton" title="vertical scale follows the data">auto Y</button>
+			<span class="spacer"></span>
+			<button id="downloadButton" title="download the plotted points">CSV</button>
+			<button id="closeChartButton">close</button>
+		</div>
+		<div id="chartNote"></div>
+		<div id="chartArea"><canvas id="chartCanvas"></canvas><div id="chartTooltip"><strong></strong><span></span></div></div>
+		<div id="chartHelp">drag: zoom on a time interval &#183; drag on the left axis: zoom vertically &#183;
+			wheel: zoom in/out &#183; shift+drag: move &#183; double click: undo all zooms</div>
+	</div>
+
+	<script>
+	//=====================================================================================
+	//	pv history chart, read from the archiver database
+	//		(after the chart elements, since they are looked up while loading)
+	//
+	//	Functions:
+	//		openChart(row)
+	//		closeChart()
+	//		fetchHistory()
+	//		historyHandler(req, reqParam, errStr)
+	//		drawChart()
+
+	const FOLLOW_PERIOD_MS = 10000;   // how often the chart is refreshed when its time window ends "now"
+	const RANGE_PRESETS = [['15 min', 900], ['1 h', 3600], ['6 h', 21600], ['24 h', 86400], ['7 d', 604800], ['30 d', 2592000]];
+	const PLOT_MARGIN = {left: 78, right: 18, top: 12, bottom: 30};
+	const chartPanel = document.getElementById('chartPanel');
+	const chartCanvas = document.getElementById('chartCanvas');
+	const chartTooltip = document.getElementById('chartTooltip');
+	const chartNote = document.getElementById('chartNote');
+	const drawingContext = chartCanvas.getContext('2d');
+
+	const chart = {
+	  name: null, units: '', description: '', lowLimit: NaN, highLimit: NaN,
+	  viewFrom: 0, viewTo: 0,            // visible time interval, milliseconds
+	  followNowSeconds: 3600,            // > 0: the window ends "now" and has this length; 0: fixed window
+	  verticalRange: null,               // [minimum, maximum] chosen by hand, or null for automatic
+	  zoomHistory: [],
+	  points: [],                        // [timeMilliseconds, value|null, minimum|null, maximum|null]
+	  reducedToBuckets: false,
+	  pointerPosition: null, dragStart: null, dragMode: null,
+	  fetchSerial: 0, fetchTimer: null, followTimer: null,
+	};
+
+	const rangeButtons = document.getElementById('rangeButtons');
+	for (const [presetLabel, presetSeconds] of RANGE_PRESETS) {
+	  const presetButton = document.createElement('button');
+	  presetButton.textContent = presetLabel;
+	  presetButton.dataset.seconds = presetSeconds;
+	  presetButton.onclick = () => { chart.zoomHistory = []; chart.verticalRange = null; followNow(presetSeconds); };
+	  rangeButtons.appendChild(presetButton);
+	  rangeButtons.appendChild(document.createTextNode(' '));
+	}
+
+	function markActivePreset() {
+	  for (const presetButton of rangeButtons.querySelectorAll('button'))
+	    presetButton.classList.toggle('active', Number(presetButton.dataset.seconds) === chart.followNowSeconds);
+	}
+
+	function openChart(row) {
+	  chart.name = row.name; chart.units = ''; chart.description = row.description || '';
+	  chart.lowLimit = NaN; chart.highLimit = NaN;
+	  chart.points = []; chart.zoomHistory = []; chart.verticalRange = null;
+	  document.getElementById('chartTitle').textContent = row.name;
+	  document.getElementById('chartUnits').textContent = chart.description;
+	  chartPanel.classList.add('open'); document.body.classList.add('chartOpen');
+	  markSelectedRow();
+	  followNow(chart.followNowSeconds || 3600);
+	}
+
+	function closeChart() {
+	  chart.name = null; clearTimeout(chart.followTimer); clearTimeout(chart.fetchTimer);
+	  chartPanel.classList.remove('open'); document.body.classList.remove('chartOpen');
+	  markSelectedRow();
+	}
+	document.getElementById('closeChartButton').onclick = closeChart;
+
+	function followNow(windowSeconds) {
+	  chart.followNowSeconds = windowSeconds;
+	  chart.viewTo = Date.now(); chart.viewFrom = chart.viewTo - windowSeconds * 1000;
+	  markActivePreset(); fetchHistory();
+	}
+
+	function setFixedView(viewFrom, viewTo, rememberCurrentView) {
+	  if (viewTo - viewFrom < 2000) return;                       // do not zoom below 2 s
+	  if (rememberCurrentView)
+	    chart.zoomHistory.push({viewFrom: chart.viewFrom, viewTo: chart.viewTo,
+	                            followNowSeconds: chart.followNowSeconds, verticalRange: chart.verticalRange});
+	  chart.followNowSeconds = 0; chart.viewFrom = viewFrom; chart.viewTo = viewTo;
+	  markActivePreset(); drawChart();
+	  clearTimeout(chart.fetchTimer); chart.fetchTimer = setTimeout(fetchHistory, 200);
+	}
+
+	function zoomBack(allTheWay) {
+	  if (!chart.zoomHistory.length) { chart.verticalRange = null; drawChart(); return; }
+	  const previousView = allTheWay ? chart.zoomHistory[0] : chart.zoomHistory.pop();
+	  if (allTheWay) chart.zoomHistory = [];
+	  chart.verticalRange = allTheWay ? null : previousView.verticalRange;
+	  if (previousView.followNowSeconds) followNow(previousView.followNowSeconds);
+	  else { chart.followNowSeconds = 0; chart.viewFrom = previousView.viewFrom; chart.viewTo = previousView.viewTo;
+	         markActivePreset(); fetchHistory(); }
+	}
+	document.getElementById('zoomBackButton').onclick = () => zoomBack(false);
+	document.getElementById('automaticVerticalButton').onclick = () => { chart.verticalRange = null; drawChart(); };
+
+	function fetchHistory() {
+	  clearTimeout(chart.followTimer); clearTimeout(chart.fetchTimer);
+	  if (!chart.name) return;
+	  if (chart.followNowSeconds) { chart.viewTo = Date.now(); chart.viewFrom = chart.viewTo - chart.followNowSeconds * 1000; }
+	  if (!chart.points.length) chartCanvas.classList.add('loading');
+	  DesktopContent.XMLHttpRequest("Request?RequestType=getArchiveHistory",
+	    "pv=" + encodeURIComponent(chart.name) + "&from=" + (chart.viewFrom / 1000) + "&to=" + (chart.viewTo / 1000),
+	    historyHandler, {serial: ++chart.fetchSerial, name: chart.name} /*reqParam*/, 0 /*progressHandler*/,
+	    true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
+	}
+
+	function historyHandler(req, reqParam, errStr) {
+	  if (reqParam.serial !== chart.fetchSerial || reqParam.name !== chart.name) return;   // a newer request is on its way
+	  const err = DesktopContent.getXMLValue(req, "Error");
+	  if (err && err != "") errStr = (errStr ? errStr + "\n" : "") + err;
+	  let reply;
+	  if (!errStr) {
+	    try { reply = JSON.parse(decodeURIComponent(DesktopContent.getXMLValue(req, "JSON"))); }
+	    catch (e) { errStr = "Illegal response from server: " + e; }
+	  }
+	  if (errStr) chartNote.textContent = 'history request failed: ' + errStr;
+	  else {
+	    chart.points = reply.points.map(point => [point[0] * 1000, point[1], point[2], point[3]]);
+	    chart.reducedToBuckets = reply.reducedToBuckets;
+	    chart.units = reply.units || '';
+	    chart.lowLimit = reply.lowLimit === null || reply.lowLimit === undefined ? NaN : reply.lowLimit;
+	    chart.highLimit = reply.highLimit === null || reply.highLimit === undefined ? NaN : reply.highLimit;
+	    document.getElementById('chartUnits').textContent = (chart.units ? '[' + chart.units + ']  ' : '') + chart.description;
+	    const noteParts = [];
+	    if (reply.archiveProblem) noteParts.push('Archiver history: ' + reply.archiveProblem + '.');
+	    else if (!chart.points.some(point => point[1] !== null && point[0] >= chart.viewFrom)) {
+	      const lastPoint = chart.points[chart.points.length - 1];
+	      noteParts.push('No archived values in this time interval' + (!lastPoint ? '.' :
+	        ': the last archived sample is of ' + new Date(lastPoint[0]).toLocaleString() +
+	        (lastPoint[1] === null ? ' (pv disconnected, or not archived since then).' : ', and its value holds.')));
+	    }
+	    if (reply.reducedToBuckets) noteParts.push('Many points: line = mean, band = minimum to maximum. Zoom in for single samples.');
+	    chartNote.textContent = noteParts.join(' ');
+	  }
+	  chartCanvas.classList.remove('loading');
+	  drawChart();
+	  if (chart.followNowSeconds && chart.name) chart.followTimer = setTimeout(fetchHistory, FOLLOW_PERIOD_MS);
+	}
+
+	// ----- scales and ticks
+	function plotRectangle() {
+	  const width = chartCanvas.clientWidth, height = chartCanvas.clientHeight;
+	  return {left: PLOT_MARGIN.left, top: PLOT_MARGIN.top, right: width - PLOT_MARGIN.right,
+	          bottom: height - PLOT_MARGIN.bottom, width: width - PLOT_MARGIN.left - PLOT_MARGIN.right,
+	          height: height - PLOT_MARGIN.top - PLOT_MARGIN.bottom};
+	}
+	function niceStep(roughStep) {
+	  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+	  const fraction = roughStep / magnitude;
+	  return (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * magnitude;
+	}
+	function visibleVerticalRange() {
+	  if (chart.verticalRange) return chart.verticalRange;
+	  let minimum = Infinity, maximum = -Infinity;
+	  for (let index = 0; index < chart.points.length; index++) {
+	    const point = chart.points[index];
+	    if (point[1] === null) continue;
+	    const nextTime = index + 1 < chart.points.length ? chart.points[index + 1][0] : Infinity;
+	    if (nextTime < chart.viewFrom || point[0] > chart.viewTo) continue;   // not visible
+	    minimum = Math.min(minimum, point[2] !== null ? point[2] : point[1]);
+	    maximum = Math.max(maximum, point[3] !== null ? point[3] : point[1]);
+	  }
+	  if (minimum === Infinity) return [0, 1];
+	  if (minimum === maximum) { const pad = Math.abs(minimum) * 0.05 || 1; return [minimum - pad, maximum + pad]; }
+	  const pad = (maximum - minimum) * 0.08;
+	  return [minimum - pad, maximum + pad];
+	}
+	const TIME_STEPS_SECONDS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200,
+	                            86400, 172800, 604800, 1209600, 2592000];
+	function twoDigits(number) { return String(number).padStart(2, '0'); }
+	function formatValue(value) {
+	  if (value === null || value === undefined) return 'no value';
+	  const magnitude = Math.abs(value);
+	  if (magnitude !== 0 && (magnitude >= 1e7 || magnitude < 1e-4)) return value.toExponential(4);
+	  return String(Number(value.toPrecision(7)));
+	}
+
+	function drawChart() {
+	  if (!chart.name) return;
+	  const style = getComputedStyle(document.documentElement);
+	  const color = name => style.getPropertyValue(name).trim();
+	  const pixelRatio = window.devicePixelRatio || 1;
+	  const width = chartCanvas.clientWidth, height = chartCanvas.clientHeight;
+	  if (chartCanvas.width !== Math.round(width * pixelRatio) || chartCanvas.height !== Math.round(height * pixelRatio)) {
+	    chartCanvas.width = Math.round(width * pixelRatio); chartCanvas.height = Math.round(height * pixelRatio);
+	  }
+	  drawingContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+	  drawingContext.clearRect(0, 0, width, height);
+	  const plot = plotRectangle();
+	  const [verticalMinimum, verticalMaximum] = visibleVerticalRange();
+	  const timeToX = time => plot.left + (time - chart.viewFrom) / (chart.viewTo - chart.viewFrom) * plot.width;
+	  const valueToY = value => plot.bottom - (value - verticalMinimum) / (verticalMaximum - verticalMinimum) * plot.height;
+	  chart.timeToX = timeToX; chart.valueToY = valueToY;
+	  drawingContext.font = '12px system-ui, sans-serif';
+
+	  // vertical grid and labels
+	  drawingContext.lineWidth = 1; drawingContext.textBaseline = 'middle'; drawingContext.textAlign = 'right';
+	  const verticalStep = niceStep((verticalMaximum - verticalMinimum) / Math.max(2, Math.floor(plot.height / 46)));
+	  for (let tick = Math.ceil(verticalMinimum / verticalStep) * verticalStep; tick <= verticalMaximum + verticalStep * 1e-9; tick += verticalStep) {
+	    const y = Math.round(valueToY(tick)) + 0.5;
+	    drawingContext.strokeStyle = color('--gridline');
+	    drawingContext.beginPath(); drawingContext.moveTo(plot.left, y); drawingContext.lineTo(plot.right, y); drawingContext.stroke();
+	    drawingContext.fillStyle = color('--text-muted');
+	    drawingContext.fillText(formatValue(Math.abs(tick) < verticalStep * 1e-9 ? 0 : tick), plot.left - 8, y);
+	  }
+	  // time ticks and labels (local time)
+	  const spanSeconds = (chart.viewTo - chart.viewFrom) / 1000;
+	  const timeStepSeconds = TIME_STEPS_SECONDS.find(step => spanSeconds / step <= Math.max(2, plot.width / 120)) || 2592000;
+	  const timeZoneOffset = new Date(chart.viewFrom).getTimezoneOffset() * 60000;
+	  drawingContext.textAlign = 'center'; drawingContext.textBaseline = 'top';
+	  let previousDay = null;
+	  for (let tick = Math.ceil((chart.viewFrom - timeZoneOffset) / (timeStepSeconds * 1000)) * timeStepSeconds * 1000 + timeZoneOffset;
+	       tick <= chart.viewTo; tick += timeStepSeconds * 1000) {
+	    const x = Math.round(timeToX(tick)) + 0.5, date = new Date(tick);
+	    drawingContext.strokeStyle = color('--gridline');
+	    drawingContext.beginPath(); drawingContext.moveTo(x, plot.top); drawingContext.lineTo(x, plot.bottom + 4); drawingContext.stroke();
+	    const dayText = twoDigits(date.getMonth() + 1) + '-' + twoDigits(date.getDate());
+	    let label = timeStepSeconds >= 86400 ? dayText
+	      : twoDigits(date.getHours()) + ':' + twoDigits(date.getMinutes()) + (timeStepSeconds < 60 ? ':' + twoDigits(date.getSeconds()) : '');
+	    if (timeStepSeconds < 86400 && dayText !== previousDay) label = dayText + ' ' + label;
+	    previousDay = dayText;
+	    drawingContext.fillStyle = color('--text-muted');
+	    drawingContext.fillText(label, x, plot.bottom + 8);
+	  }
+	  // axes
+	  drawingContext.strokeStyle = color('--axis-line');
+	  drawingContext.beginPath(); drawingContext.moveTo(plot.left + 0.5, plot.top); drawingContext.lineTo(plot.left + 0.5, plot.bottom + 0.5);
+	  drawingContext.lineTo(plot.right, plot.bottom + 0.5); drawingContext.stroke();
+
+	  drawingContext.save();
+	  drawingContext.beginPath(); drawingContext.rect(plot.left, plot.top, plot.width, plot.height); drawingContext.clip();
+
+	  // alarm limits of the record, when they fall in the visible range
+	  drawingContext.setLineDash([5, 4]); drawingContext.strokeStyle = color('--text-muted');
+	  drawingContext.fillStyle = color('--text-muted'); drawingContext.textAlign = 'right'; drawingContext.textBaseline = 'bottom';
+	  for (const [limitLabel, limitValue] of [['LOW', chart.lowLimit], ['HIGH', chart.highLimit]]) {
+	    if (!isFinite(limitValue) || limitValue <= verticalMinimum || limitValue >= verticalMaximum) continue;
+	    const y = Math.round(valueToY(limitValue)) + 0.5;
+	    drawingContext.beginPath(); drawingContext.moveTo(plot.left, y); drawingContext.lineTo(plot.right, y); drawingContext.stroke();
+	    drawingContext.fillText(limitLabel + ' ' + formatValue(limitValue), plot.right - 4, y - 2);
+	  }
+	  drawingContext.setLineDash([]);
+
+	  // data: a value holds until the next sample, so the line is drawn in steps
+	  const endOfData = Math.min(Date.now(), chart.viewTo);
+	  const segmentEnd = index => index + 1 < chart.points.length ? chart.points[index + 1][0] : endOfData;
+	  if (chart.reducedToBuckets) {
+	    drawingContext.fillStyle = color('--series-band');
+	    for (let index = 0; index < chart.points.length; index++) {
+	      const point = chart.points[index];
+	      if (point[2] === null || point[3] === null) continue;
+	      const x0 = timeToX(point[0]), x1 = timeToX(segmentEnd(index));
+	      const yTop = valueToY(point[3]), yBottom = valueToY(point[2]);
+	      drawingContext.fillRect(x0, yTop - 1, Math.max(x1 - x0, 1), Math.max(yBottom - yTop, 0) + 2);
+	    }
+	  }
+	  drawingContext.strokeStyle = color('--series-line'); drawingContext.lineWidth = 2; drawingContext.lineJoin = 'round';
+	  drawingContext.beginPath();
+	  let penDown = false;
+	  for (let index = 0; index < chart.points.length; index++) {
+	    const point = chart.points[index];
+	    if (point[1] === null) { penDown = false; continue; }
+	    const x0 = timeToX(point[0]), x1 = timeToX(segmentEnd(index)), y = valueToY(point[1]);
+	    if (penDown) drawingContext.lineTo(x0, y); else drawingContext.moveTo(x0, y);
+	    drawingContext.lineTo(x1, y); penDown = true;
+	  }
+	  drawingContext.stroke();
+	  // single samples get a dot only when they are far enough apart to be told from each other
+	  const visiblePoints = chart.points.filter(point => point[0] >= chart.viewFrom && point[0] <= chart.viewTo);
+	  const visiblePixelSpan = visiblePoints.length > 1
+	    ? timeToX(visiblePoints[visiblePoints.length - 1][0]) - timeToX(visiblePoints[0][0]) : Infinity;
+	  if (visiblePoints.length && visiblePixelSpan / visiblePoints.length >= 14 && !chart.reducedToBuckets) {
+	    for (const point of chart.points) {
+	      if (point[1] === null) continue;
+	      drawingContext.fillStyle = color('--surface');
+	      drawingContext.beginPath(); drawingContext.arc(timeToX(point[0]), valueToY(point[1]), 6, 0, 2 * Math.PI); drawingContext.fill();
+	      drawingContext.fillStyle = color('--series-line');
+	      drawingContext.beginPath(); drawingContext.arc(timeToX(point[0]), valueToY(point[1]), 4, 0, 2 * Math.PI); drawingContext.fill();
+	    }
+	  }
+	  // interval being selected with the mouse
+	  if (chart.dragStart && chart.pointerPosition && chart.dragMode !== 'move') {
+	    drawingContext.fillStyle = color('--selection-wash');
+	    if (chart.dragMode === 'time')
+	      drawingContext.fillRect(Math.min(chart.dragStart.x, chart.pointerPosition.x), plot.top,
+	                              Math.abs(chart.pointerPosition.x - chart.dragStart.x), plot.height);
+	    else
+	      drawingContext.fillRect(plot.left, Math.min(chart.dragStart.y, chart.pointerPosition.y),
+	                              plot.width, Math.abs(chart.pointerPosition.y - chart.dragStart.y));
+	  }
+	  drawingContext.restore();
+
+	  // crosshair and readout
+	  const pointer = chart.pointerPosition;
+	  let hoveredPoint = null;
+	  if (pointer && !chart.dragStart && pointer.x >= plot.left && pointer.x <= plot.right) {
+	    const pointerTime = chart.viewFrom + (pointer.x - plot.left) / plot.width * (chart.viewTo - chart.viewFrom);
+	    let low = 0, high = chart.points.length - 1, found = -1;
+	    while (low <= high) { const middle = (low + high) >> 1;
+	      if (chart.points[middle][0] <= pointerTime) { found = middle; low = middle + 1; } else high = middle - 1; }
+	    if (found >= 0 && pointerTime <= endOfData) hoveredPoint = chart.points[found];
+	    const x = Math.round(pointer.x) + 0.5;
+	    drawingContext.strokeStyle = color('--text-muted'); drawingContext.lineWidth = 1;
+	    drawingContext.beginPath(); drawingContext.moveTo(x, plot.top); drawingContext.lineTo(x, plot.bottom); drawingContext.stroke();
+	    if (hoveredPoint && hoveredPoint[1] !== null) {
+	      const y = valueToY(hoveredPoint[1]);
+	      if (y >= plot.top && y <= plot.bottom) {
+	        drawingContext.fillStyle = color('--surface');
+	        drawingContext.beginPath(); drawingContext.arc(pointer.x, y, 7, 0, 2 * Math.PI); drawingContext.fill();
+	        drawingContext.fillStyle = color('--series-line');
+	        drawingContext.beginPath(); drawingContext.arc(pointer.x, y, 5, 0, 2 * Math.PI); drawingContext.fill();
+	      }
+	    }
+	    chartTooltip.firstChild.textContent = hoveredPoint
+	      ? formatValue(hoveredPoint[1]) + (hoveredPoint[1] !== null && chart.units ? ' ' + chart.units : '') : 'no data';
+	    let detail = new Date(pointerTime).toLocaleString();
+	    if (hoveredPoint) {
+	      detail = (chart.reducedToBuckets ? 'mean from ' : 'since ') + new Date(hoveredPoint[0]).toLocaleString();
+	      if (hoveredPoint[2] !== null) detail += '  (min ' + formatValue(hoveredPoint[2]) + ', max ' + formatValue(hoveredPoint[3]) + ')';
+	    }
+	    chartTooltip.lastChild.textContent = detail;
+	    chartTooltip.style.display = 'block';
+	    const tooltipWidth = chartTooltip.offsetWidth;
+	    chartTooltip.style.left = (pointer.x + 14 + tooltipWidth > width ? pointer.x - 14 - tooltipWidth : pointer.x + 14) + 'px';
+	    chartTooltip.style.top = Math.max(plot.top, Math.min(pointer.y - 20, plot.bottom - 50)) + 'px';
+	  } else chartTooltip.style.display = 'none';
+	}
+
+	// ----- mouse
+	function pointerOnCanvas(event) {
+	  const bounds = chartCanvas.getBoundingClientRect();
+	  return {x: event.clientX - bounds.left, y: event.clientY - bounds.top};
+	}
+	chartCanvas.addEventListener('mousedown', event => {
+	  if (event.button !== 0) return;
+	  const position = pointerOnCanvas(event), plot = plotRectangle();
+	  chart.dragStart = position;
+	  chart.dragMode = position.x < plot.left ? 'vertical' : (event.shiftKey ? 'move' : 'time');
+	  chart.moveOrigin = {viewFrom: chart.viewFrom, viewTo: chart.viewTo, remembered: false};
+	  event.preventDefault();
+	});
+	window.addEventListener('mousemove', event => {
+	  if (!chart.name) return;
+	  const position = pointerOnCanvas(event);
+	  const inside = event.target === chartCanvas || chart.dragStart;
+	  chart.pointerPosition = inside ? position : null;
+	  if (chart.dragStart && chart.dragMode === 'move') {
+	    const plot = plotRectangle();
+	    const shift = (chart.dragStart.x - position.x) / plot.width * (chart.moveOrigin.viewTo - chart.moveOrigin.viewFrom);
+	    const remember = !chart.moveOrigin.remembered; chart.moveOrigin.remembered = true;
+	    setFixedView(chart.moveOrigin.viewFrom + shift, chart.moveOrigin.viewTo + shift, remember);
+	    return;
+	  }
+	  drawChart();
+	});
+	window.addEventListener('mouseup', event => {
+	  if (!chart.dragStart) return;
+	  const start = chart.dragStart, end = pointerOnCanvas(event), mode = chart.dragMode, plot = plotRectangle();
+	  chart.dragStart = null; chart.dragMode = null;
+	  const xToTime = x => chart.viewFrom + (Math.min(Math.max(x, plot.left), plot.right) - plot.left) / plot.width * (chart.viewTo - chart.viewFrom);
+	  if (mode === 'time' && Math.abs(end.x - start.x) > 5) {
+	    setFixedView(xToTime(Math.min(start.x, end.x)), xToTime(Math.max(start.x, end.x)), true);
+	  } else if (mode === 'vertical' && Math.abs(end.y - start.y) > 5) {
+	    const [verticalMinimum, verticalMaximum] = visibleVerticalRange();
+	    const yToValue = y => verticalMinimum + (plot.bottom - Math.min(Math.max(y, plot.top), plot.bottom)) / plot.height * (verticalMaximum - verticalMinimum);
+	    chart.zoomHistory.push({viewFrom: chart.viewFrom, viewTo: chart.viewTo,
+	                            followNowSeconds: chart.followNowSeconds, verticalRange: chart.verticalRange});
+	    chart.verticalRange = [yToValue(Math.max(start.y, end.y)), yToValue(Math.min(start.y, end.y))];
+	    drawChart();
+	  } else drawChart();
+	});
+	chartCanvas.addEventListener('mouseleave', () => { if (!chart.dragStart) { chart.pointerPosition = null; drawChart(); } });
+	chartCanvas.addEventListener('dblclick', () => zoomBack(true));
+	chartCanvas.addEventListener('wheel', event => {
+	  event.preventDefault();
+	  const position = pointerOnCanvas(event), plot = plotRectangle();
+	  const factor = event.deltaY < 0 ? 0.75 : 1 / 0.75;
+	  if (position.x < plot.left) {                         // on the left axis: vertical zoom
+	    const [verticalMinimum, verticalMaximum] = visibleVerticalRange();
+	    const anchor = verticalMinimum + (plot.bottom - position.y) / plot.height * (verticalMaximum - verticalMinimum);
+	    chart.verticalRange = [anchor - (anchor - verticalMinimum) * factor, anchor + (verticalMaximum - anchor) * factor];
+	    drawChart(); return;
+	  }
+	  const anchorTime = chart.viewFrom + (position.x - plot.left) / plot.width * (chart.viewTo - chart.viewFrom);
+	  const remember = chart.followNowSeconds > 0 || !chart.zoomHistory.length;
+	  setFixedView(anchorTime - (anchorTime - chart.viewFrom) * factor, anchorTime + (chart.viewTo - anchorTime) * factor, remember);
+	}, {passive: false});
+	window.addEventListener('resize', drawChart);
+
+	document.getElementById('downloadButton').onclick = () => {
+	  const lines = ['time,epoch_seconds,value,minimum,maximum'];
+	  for (const point of chart.points)
+	    lines.push([new Date(point[0]).toISOString(), (point[0] / 1000).toFixed(3),
+	                point[1] === null ? '' : point[1], point[2] === null ? '' : point[2], point[3] === null ? '' : point[3]].join(','));
+	  const link = document.createElement('a');
+	  link.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], {type: 'text/csv'}));
+	  link.download = chart.name.replace(/[^A-Za-z0-9_.-]/g, '_') + '.csv';
+	  link.click(); URL.revokeObjectURL(link.href);
+	};
+	window.chart = chart; //'const' is not a window property, and the alarm table checks for the chart
+	</script>
+</body>
+
+</html>

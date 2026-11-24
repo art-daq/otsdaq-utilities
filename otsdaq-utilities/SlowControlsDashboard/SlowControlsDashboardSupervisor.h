@@ -2,6 +2,9 @@
 #define _ots_SlowControlsDashboardSupervisor_h_
 
 #include <chrono>
+#include "otsdaq-utilities/SlowControlsDashboard/ArchiveHistoryReader.h"
+#include "otsdaq-utilities/SlowControlsDashboard/KafkaAlarmReader.h"
+#include "otsdaq-utilities/SlowControlsDashboard/LiveValueReader.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 // #include "otsdaq-utilities/SlowControlsInterfacePlugins/EpicsInterface.h"
@@ -51,6 +54,12 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void GetLastAlarmsData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetAlarmsLogData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetAlarmsCheck(HttpXmlDocument& xmlOut);
+	void GetKafkaAlarms(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void GetKafkaOtsErrors(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void AcknowledgeKafkaAlarms(cgicc::Cgicc&                    cgiIn,
+	                            HttpXmlDocument&                 xmlOut,
+	                            const WebUsers::RequestUserInfo& userInfo);
+	void GetArchiveHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetUserPermissions(cgicc::Cgicc&                    cgiIn,
 	                        HttpXmlDocument&                 xmlOut,
 	                        const WebUsers::RequestUserInfo& userInfo);
@@ -89,6 +98,12 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	int                                  alarmNotifyRefreshRate_;
 	std::mutex                           alarmCheckThreadErrorMutex_;
 	std::string                          alarmCheckThreadError_;
+
+	/// Phoebus alarm state (and ots errors) read from Kafka, independent of the plugin
+	KafkaAlarmReader                     kafkaAlarmReader_;
+	/// pv history read from the archiver database, independent of the plugin
+	ArchiveHistoryReader                 archiveHistoryReader_;
+	LiveValueReader                      liveValueReader_;
 
 	/// cached data to expose to the web user
 	std::vector<std::vector<std::string>>              alarms_;

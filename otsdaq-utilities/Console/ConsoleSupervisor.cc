@@ -93,6 +93,9 @@ ConsoleSupervisor::ConsoleSupervisor(xdaq::ApplicationStub* stub)
 	xoap::bind(
 	    this, &ConsoleSupervisor::resetConsoleCounts, "ResetConsoleCounts", XDAQ_NS_URI);
 
+	//must be created before the mf msg listener thread is started by init()
+	kafkaErrorPublisher_ = std::make_unique<KafkaErrorPublisher>();
+
 	init();
 
 	//test custom count list and always force the first one to be the "Console missed" !
@@ -328,6 +331,27 @@ try
 					cs->lastErrorMessageTime_ = time(0);
 					++cs->errorCount_;
 					cs->lastErrorMessage_ = cs->messages_.back().getMsg();
+
+					//Note: to avoid recursive publishing, Label=Console is not published
+					if(cs->kafkaErrorPublisher_->isEnabled() &&
+					   cs->messages_.back().getLabel() != "Console")
+					{
+						const auto& fields = cs->messages_.back().fields;
+						auto        field  = [&fields](
+						                         ConsoleMessageStruct::FieldType type) {
+							auto it = fields.find(type);
+							return it == fields.end() ? std::string() : it->second;
+						};
+						cs->kafkaErrorPublisher_->publishError(
+						    field(ConsoleMessageStruct::FieldType::TIMESTAMP),
+						    field(ConsoleMessageStruct::FieldType::HOSTNAME),
+						    field(ConsoleMessageStruct::FieldType::SOURCE),
+						    field(ConsoleMessageStruct::FieldType::SOURCEID),
+						    field(ConsoleMessageStruct::FieldType::LABEL),
+						    field(ConsoleMessageStruct::FieldType::FILE),
+						    field(ConsoleMessageStruct::FieldType::LINE),
+						    field(ConsoleMessageStruct::FieldType::MSG));
+					}
 				}
 				else if(cs->messages_.back().getLevel() == "Warning")
 				{
@@ -467,6 +491,8 @@ try
 
 			++heartbeatCount;
 		}  // end idle network handling
+
+		cs->kafkaErrorPublisher_->poll();  //serve Kafka delivery reports
 
 		// if nothing received for 2 minutes (120 seconds), then something is wrong with Console
 		// configuration 	after 5 seconds there is a self-send. Which will at least

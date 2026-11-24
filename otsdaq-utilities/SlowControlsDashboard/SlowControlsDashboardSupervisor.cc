@@ -1,4 +1,5 @@
 #include "otsdaq-utilities/SlowControlsDashboard/SlowControlsDashboardSupervisor.h"
+#include <sstream>
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for stat() quickly checking if file exists
 #include <thread>      //for std::thread
@@ -329,7 +330,8 @@ void SlowControlsDashboardSupervisor::setSupervisorPropertyDefaults()
 void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
-	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes, "poll");
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
+	    "poll | getKafkaAlarms | getKafkaOtsErrors | getArchiveHistory");
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
@@ -338,7 +340,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
@@ -358,6 +360,41 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 {
 	__SUP_COUT__ << "requestType: " << requestType << ", "
 	             << "userInfo.username_: " << userInfo.username_ << __E__;
+
+	// Kafka and archive history requests do not use the plugin, so handle without the plugin lock
+	if(requestType == "getKafkaAlarms" || requestType == "getKafkaOtsErrors" ||
+	   requestType == "getArchiveHistory" || requestType == "acknowledgeKafkaAlarms")
+	{
+		try
+		{
+			if(requestType == "getKafkaAlarms")
+			{
+				GetKafkaAlarms(cgiIn, xmlOut);
+				// so that the page only offers acknowledge to who is allowed
+				xmlOut.addTextElementToData(
+				    "canAcknowledge",
+				    (!CorePropertySupervisorBase::isReadOnly() &&
+				     userInfo.permissionLevel_ >= WebUsers::PERMISSION_LEVEL_EXPERT)
+				        ? "1"
+				        : "0");
+			}
+			else if(requestType == "acknowledgeKafkaAlarms")
+				AcknowledgeKafkaAlarms(cgiIn, xmlOut, userInfo);
+			else if(requestType == "getKafkaOtsErrors")
+				GetKafkaOtsErrors(cgiIn, xmlOut);
+			else
+				GetArchiveHistory(cgiIn, xmlOut);
+		}
+		catch(const std::exception& e)
+		{
+			__SUP_SS__ << "Error occurred handling request '" << requestType
+			           << "': " << e.what() << __E__;
+			__SUP_COUT__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+		return;
+	}
+
 	try
 	{
 		if(requestType != "getPages" && !pluginBusyMutex_.try_lock())
@@ -819,6 +856,181 @@ void SlowControlsDashboardSupervisor::GetAlarmsCheck(HttpXmlDocument& xmlOut)
 	JSONMessage += "}";
 	xmlOut.addTextElementToData("JSON", JSONMessage);  // add to response
 }  // end GetAlarmsCheck()
+
+//==============================================================================
+/// GetKafkaAlarms
+///	Returns the Phoebus alarm state read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		topic		:= Phoebus alarm configuration name (empty for all)
+///		severities	:= comma-separated severities to include (empty for all except OK)
+///		showAck		:= 1 to include acknowledged alarms
+///		filter		:= text to search for in pv path, description and message
+///		maxRows		:= maximum number of alarms to return
+///
+///	The live value of each returned pv is added (read with EPICS Channel Access).
+void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
+                                                     HttpXmlDocument& xmlOut)
+{
+	std::set<std::string> severities;
+	StringMacros::getSetFromString(CgiDataUtilities::getOrPostData(cgiIn, "severities"),
+	                               severities);
+	severities.erase("");
+
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 500;
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmsJSON(
+	        CgiDataUtilities::getOrPostData(cgiIn, "topic"),
+	        severities,
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        maxRows,
+	        [this](const std::string& pv) {
+		        return liveValueReader_.getLiveJSONFields(pv);
+	        })));
+}  // end GetKafkaAlarms()
+
+//==============================================================================
+/// AcknowledgeKafkaAlarms
+///	Sends the acknowledge (or unacknowledge) command to the Phoebus alarm servers,
+/// 	through Kafka. Only for users with expert permission level, and never from a
+/// 	read-only supervisor. Returns (URI encoded) JSON with sentCount, skippedCount and error.
+///
+///	Parameters:
+///		command		:= acknowledge or unacknowledge
+///		mode		:= selected (the alarms in paths), or filter (all alarms that match the filter)
+///		paths		:= for mode selected, newline-separated alarm paths, e.g. /Calo/path/to/pv
+///		topic, severities, showAck, filter := for mode filter, as for GetKafkaAlarms
+///		expectedCount := for mode filter, the count of alarms that the user confirmed
+void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	if(CorePropertySupervisorBase::isReadOnly() ||
+	   userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	   userInfo.username_ == "")
+	{
+		__SUP_SS__ << "Alarms can only be acknowledged by a logged-in user with expert "
+		              "permission level (" << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
+		           << "), and not from a read-only supervisor. The permission level of user '"
+		           << userInfo.username_ << "' is "
+		           << unsigned(userInfo.permissionLevel_) << "." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	const std::string command = CgiDataUtilities::getOrPostData(cgiIn, "command");
+	const std::string mode    = CgiDataUtilities::getOrPostData(cgiIn, "mode");
+	if((command != "acknowledge" && command != "unacknowledge") ||
+	   (mode != "selected" && mode != "filter"))
+	{
+		__SUP_SS__ << "Illegal alarm command '" << command << "' or mode '" << mode
+		           << "'." << __E__;
+		__SUP_SS_THROW__;
+	}
+	const bool acknowledge = command == "acknowledge";
+
+	std::string json;
+	if(mode == "selected")
+	{
+		std::vector<std::string> paths;
+		std::istringstream       pathStream(StringMacros::decodeURIComponent(
+            CgiDataUtilities::getOrPostData(cgiIn, "paths")));
+		std::string path;
+		while(std::getline(pathStream, path))
+			if(path != "")
+				paths.push_back(path);
+
+		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
+		                  << command << " " << paths.size() << " selected alarms."
+		                  << __E__;
+		json = kafkaAlarmReader_.sendAcknowledgeJSON(
+		    acknowledge, userInfo.username_, paths);
+	}
+	else
+	{
+		std::set<std::string> severities;
+		StringMacros::getSetFromString(
+		    CgiDataUtilities::getOrPostData(cgiIn, "severities"), severities);
+		severities.erase("");
+		const std::string topic  = CgiDataUtilities::getOrPostData(cgiIn, "topic");
+		const std::string filter = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getOrPostData(cgiIn, "filter"));
+
+		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
+		                  << command << " all alarms that match configuration '" << topic
+		                  << "', severities {" << StringMacros::setToString(severities)
+		                  << "}, text '" << filter << "'." << __E__;
+		json = kafkaAlarmReader_.sendAcknowledgeByFilterJSON(
+		    acknowledge,
+		    userInfo.username_,
+		    topic,
+		    severities,
+		    CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+		    filter,
+		    CgiDataUtilities::getOrPostDataAsInt(cgiIn, "expectedCount"));
+	}
+	xmlOut.addTextElementToData("JSON", StringMacros::encodeURIComponent(json));
+}  // end AcknowledgeKafkaAlarms()
+
+//==============================================================================
+/// GetKafkaOtsErrors
+///	Returns the most recent ots errors read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		filter		:= text to search for in the error record
+///		maxRows		:= maximum number of errors to return
+void SlowControlsDashboardSupervisor::GetKafkaOtsErrors(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 200;
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getOtsErrorsJSON(
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        maxRows)));
+}  // end GetKafkaOtsErrors()
+
+//==============================================================================
+/// GetArchiveHistory
+///	Returns the history of one pv read from the archiver database, as (URI encoded) JSON.
+///
+///	Parameters:
+///		pv			:= pv name
+///		from, to	:= time window [s since epoch]
+void SlowControlsDashboardSupervisor::GetArchiveHistory(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	const std::string pv =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::getOrPostData(cgiIn, "pv"));
+	const double now  = time(0);
+	double       to   = atof(CgiDataUtilities::getOrPostData(cgiIn, "to").c_str());
+	double       from = atof(CgiDataUtilities::getOrPostData(cgiIn, "from").c_str());
+	if(!(to > 0) || to > now + 60)
+		to = now + 60;
+	if(!(from > 0) || !(from < to))
+		from = to - 3600;
+
+	if(pv == "" || pv.size() > 200)
+	{
+		__SUP_SS__ << "Illegal pv name for archive history request." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(
+	        archiveHistoryReader_.getHistoryJSON(pv, from, to)));
+}  // end GetArchiveHistory()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GetAlarmsLogData(cgicc::Cgicc&    cgiIn,
