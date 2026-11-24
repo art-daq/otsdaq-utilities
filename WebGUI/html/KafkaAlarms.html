@@ -28,6 +28,9 @@
 		#ackControls button:disabled { opacity: 0.45; cursor: default; }
 		#ackResult 			{ font-size: 12px; margin-left: 6px; }
 		#ackResult.problem 	{ color: rgb(255, 120, 120); }
+		.toggle 			{ display: inline-block; width: 16px; text-align: center; color: rgb(170, 170, 170); }
+		tr.nodeRow td.name 	{ font-weight: bold; }
+		#viewControls 		{ margin-right: 12px; }
 		.ackCol 			{ display: none; width: 1px; }
 		body.canAck .ackCol { display: table-cell; }
 		#summary 			{ padding: 0 12px 6px 12px; font-size: 12px; color: rgb(170, 170, 170); }
@@ -101,6 +104,10 @@
 	//		either for the selected rows or for all the alarms that match the filters.
 	//		Nothing else is ever written (e.g., the alarm state is only changed by the alarm server).
 	//
+	//		The alarms are shown as a table, or as the alarm tree defined in Phoebus (view tree):
+	//		click on a node to open or close it, only the open nodes are read from the server.
+	//		Each node shows the count of alarms below it, and can be acknowledged as a whole.
+	//
 	//		Click on an alarm to see the time chart of its pv, from the archiver database
 	//		(drag to zoom on a time interval, wheel to zoom, double click to go back).
 	//
@@ -114,6 +121,9 @@
 	//		poll()
 	//		alarmsHandler(req, reqParam, errStr)
 	//		errorsHandler(req, reqParam, errStr)
+	//		selectView(view)
+	//		treeHandler(req, reqParam, errStr)
+	//		getSelection()
 	//		updateAckControls()
 	//		sendAcknowledge(command, mode)
 
@@ -125,6 +135,9 @@
 	var _pollTimer 			= 0;
 	var _requestPending 	= false;
 
+	var _view 				= "table"; //or "tree"
+	var _openPaths 			= {}; //map of path to true, for the open nodes of the tree
+	var _treeInit 			= true; //true until the first tree is shown, to open the root of each alarm configuration
 	var _selectedPaths 		= {}; //map of alarm path to true, for the selected rows
 	var _shownAlarms 		= {}; //map of alarm path to alarm, for the rows shown
 	var _alarmQuery 		= ""; //filter parameters of the last alarms request sent
@@ -161,7 +174,7 @@
 		if(window.closeChart) closeChart();
 		document.getElementById("tab-alarms").className = "tab" + (tab == "alarms" ? " selected" : "");
 		document.getElementById("tab-errors").className = "tab" + (tab == "errors" ? " selected" : "");
-		document.getElementById("topics").style.display = tab == "alarms" ? "block" : "none";
+		document.getElementById("topics").style.display = (tab == "alarms" && _view == "table") ? "block" : "none";
 		document.getElementById("alarmControls").style.display = tab == "alarms" ? "inline" : "none";
 		document.getElementById("tableBody").textContent = "";
 		document.getElementById("summary").textContent = "Loading...";
@@ -199,6 +212,23 @@
 	} //end selectTab()
 
 	//=====================================================================================
+	//selectView ~~
+	//	view is table or tree
+	function selectView(view)
+	{
+		_view = view;
+		if(view == "tree") _topic = ""; //the roots of the tree are the alarm configurations
+		document.getElementById("topics").style.display = view == "table" ? "block" : "none";
+		document.getElementById("showAllLabel").style.display = view == "tree" ? "" : "none";
+		document.getElementById("tableBody").textContent = "";
+		document.getElementById("summary").textContent = "Loading...";
+		_selectedPaths = {}; _shownAlarms = {}; _matched = undefined;
+		_requestPending = false; //the response of the other view is dropped
+		updateAckControls();
+		poll();
+	} //end selectView()
+
+	//=====================================================================================
 	function selectTopic(topic)
 	{
 		_topic = (_topic == topic) ? "" : topic; //click again to deselect
@@ -231,9 +261,17 @@
 				"&severities=" + severities.join(",") +
 				"&showAck=" + (document.getElementById("showAck").checked ? "1" : "0") +
 				"&filter=" + filter;
+			if(_view == "tree")
+				DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaAlarmTree",
+					_alarmQuery + "&showAll=" + (document.getElementById("showAll").checked ? "1" : "0") +
+					"&openRoots=" + (_treeInit ? "1" : "0") +
+					"&open=" + encodeURIComponent(Object.keys(_openPaths).join("\n")),
+					treeHandler, {tab: _tab, query: _alarmQuery, view: _view} /*reqParam*/, 0 /*progressHandler*/,
+					true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
+			else
 			DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaAlarms",
 				_alarmQuery + "&maxRows=500",
-				alarmsHandler, {tab: _tab, query: _alarmQuery} /*reqParam*/, 0 /*progressHandler*/,
+				alarmsHandler, {tab: _tab, query: _alarmQuery, view: _view} /*reqParam*/, 0 /*progressHandler*/,
 				true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
 		}
 		else
@@ -267,6 +305,7 @@
 			statusEl.textContent = "Request failed at " + (new Date()).toLocaleTimeString() + ": " + errStr;
 			return undefined;
 		}
+		document.body.classList.toggle("canAck", DesktopContent.getXMLValue(req, "canAcknowledge") == "1");
 		if(!json.enabled)
 		{
 			statusEl.className = "problem";
@@ -344,6 +383,23 @@
 	} //end addLiveValueCell()
 
 	//=====================================================================================
+	//addCheckCell ~~
+	//	the checkbox to select the alarm (or node) for acknowledge
+	function addCheckCell(row, path, selectedPaths)
+	{
+		var cell = row.insertCell(-1);
+		cell.className = "ackCol";
+		cell.onclick = function(e) { e.stopPropagation(); }; //i.e. do not open the chart
+		var check = cell.appendChild(document.createElement("input"));
+		check.type = "checkbox";
+		check.checked = !!selectedPaths[path];
+		check.onchange = function() {
+			if(this.checked) _selectedPaths[path] = true; else delete _selectedPaths[path];
+			updateAckControls(); };
+		return cell;
+	} //end addCheckCell()
+
+	//=====================================================================================
 	function addSeverityCell(row, severity)
 	{
 		var cell = row.insertCell(-1);
@@ -359,9 +415,7 @@
 	function alarmsHandler(req, reqParam, errStr)
 	{
 		var json = getResponse(req, errStr);
-		if(!json || reqParam.tab != _tab) return;
-
-		document.body.classList.toggle("canAck", DesktopContent.getXMLValue(req, "canAcknowledge") == "1");
+		if(!json || reqParam.tab != _tab || reqParam.view != _view) return;
 
 		//topic summaries
 		var topicsEl = document.getElementById("topics");
@@ -412,15 +466,7 @@
 			//selection, kept at each refresh for the alarms still shown
 			_shownAlarms[alarm.path] = alarm;
 			if(_selectedPaths[alarm.path]) selectedPaths[alarm.path] = true;
-			var checkCell = row.insertCell(-1);
-			checkCell.className = "ackCol";
-			checkCell.onclick = function(e) { e.stopPropagation(); }; //i.e. do not open the chart
-			var check = checkCell.appendChild(document.createElement("input"));
-			check.type = "checkbox";
-			check.checked = !!selectedPaths[alarm.path];
-			check.onchange = (function(path) { return function() {
-				if(this.checked) _selectedPaths[path] = true; else delete _selectedPaths[path];
-				updateAckControls(); }; })(alarm.path);
+			addCheckCell(row, alarm.path, selectedPaths);
 
 			row.dataset.pv = alarm.pv;
 			row.onclick = (function(alarm) { return function() {
@@ -464,17 +510,125 @@
 	} //end markSelectedRow()
 
 	//=====================================================================================
+	//treeHandler ~~
+	//	shows the rows of the alarm tree (the open nodes, and their children)
+	function treeHandler(req, reqParam, errStr)
+	{
+		var json = getResponse(req, errStr);
+		if(!json || reqParam.tab != _tab || reqParam.view != _view || !json.rows) return;
+
+		var body = document.createElement("tbody");
+		body.id = "tableBody";
+		var selectedPaths = {};
+		_shownAlarms = {};
+		var active = 0, acknowledged = 0, loaded = false;
+		for(var i = 0; i < json.rows.length; ++i)
+		{
+			var node = json.rows[i];
+			_shownAlarms[node.path] = node;
+			if(_selectedPaths[node.path]) selectedPaths[node.path] = true;
+			if(node.depth == 0)
+			{
+				if(_treeInit) _openPaths[node.path] = true; //open the root of each alarm configuration
+				if(node.expandable) loaded = true;
+				active += node.activeCount; acknowledged += node.acknowledgedCount;
+			}
+
+			var row = body.insertRow(-1);
+			row.dataset.path = node.path;
+			addCheckCell(row, node.path, selectedPaths);
+			addSeverityCell(row, node.severity);
+
+			var nameCell = addCell(row, "", "nowrap name");
+			nameCell.title = node.path;
+			nameCell.style.paddingLeft = (8 + node.depth * 18) + "px";
+			var toggle = nameCell.appendChild(document.createElement("span"));
+			toggle.className = "toggle";
+			nameCell.appendChild(document.createElement("span")).textContent = node.isNode ? node.name : node.pv;
+
+			addCell(row, node.description);
+			if(node.isNode)
+			{
+				row.className = "pvRow nodeRow";
+				toggle.textContent = node.expandable ? (node.expanded ? "\u25BC" : "\u25B6") : "";
+				if(node.expandable)
+					row.onclick = (function(path, open) { return function() {
+						if(open) delete _openPaths[path]; else _openPaths[path] = true;
+						poll(); }; })(node.path, node.expanded);
+				addCell(row, ""); //time
+				addCell(row, ""); //value
+				addCell(row, (node.activeCount ? node.activeCount + " active" : "") +
+					(node.activeCount && node.acknowledgedCount ? ", " : "") +
+					(node.acknowledgedCount ? node.acknowledgedCount + " acknowledged" : ""), "nowrap");
+				addCell(row, ""); //live value
+				addSeverityCell(row, "");
+				addCell(row, "");
+			}
+			else
+			{
+				row.className = "pvRow";
+				row.dataset.pv = node.pv;
+				row.onclick = (function(node) { return function() {
+					openChart({name: node.pv, description: node.description}); }; })(node);
+				addCell(row, getTimeString(node.time), "nowrap");
+				addCell(row, node.value);
+				addCell(row, node.message, "nowrap");
+				addLiveValueCell(row, node);
+				addSeverityCell(row, node.currentSeverity);
+				addCell(row, node.currentMessage, "nowrap");
+			}
+			addCell(row, node.topic);
+		}
+		var oldBody = document.getElementById("tableBody");
+		oldBody.parentNode.replaceChild(body, oldBody);
+		markSelectedRow();
+		if(loaded) _treeInit = false; //else the alarm configurations are still loading
+
+		_selectedPaths = selectedPaths;
+		_matched = {query: reqParam.query, count: active + acknowledged, acknowledgedCount: acknowledged};
+		updateAckControls();
+
+		document.getElementById("summary").textContent = !json.enabled ? "" :
+			("Showing " + json.rowCount + " rows of the alarm tree" + (json.truncated ? " (too many, some are not shown: open fewer nodes or use the filters)" : "") +
+			": " + active + " active alarms" + (acknowledged ? " and " + acknowledged + " acknowledged" : "") + " match the filters. " +
+			"Click a node to open or close it, a pv for its time chart.");
+	} //end treeHandler()
+
+	//=====================================================================================
+	//getSelection ~~
+	//	returns the paths (and the count of alarms) that the acknowledge and unacknowledge
+	//	commands would act on. A selected node acts on all the alarms below it, so the
+	//	selected rows below a selected node are not counted again.
+	function getSelection()
+	{
+		var selection = {ackPaths: [], unackPaths: [], ackCount: 0, unackCount: 0, nodeCount: 0};
+		for(var path in _selectedPaths)
+		{
+			var alarm = _shownAlarms[path];
+			if(!alarm) continue;
+
+			var covered = false;
+			for(var pos = path.lastIndexOf("/"); pos > 0 && !covered; pos = path.lastIndexOf("/", pos - 1))
+				covered = !!_selectedPaths[path.substring(0, pos)];
+			if(covered) continue;
+
+			var ack, unack;
+			if(alarm.isNode) { ack = alarm.activeCount | 0; unack = alarm.acknowledgedCount | 0; ++selection.nodeCount; }
+			else { unack = /_ACK$/.test(alarm.severity) ? 1 : 0; ack = 1 - unack; }
+			if(ack) { selection.ackPaths.push(path); selection.ackCount += ack; }
+			if(unack) { selection.unackPaths.push(path); selection.unackCount += unack; }
+		}
+		return selection;
+	} //end getSelection()
+
+	//=====================================================================================
 	//updateAckControls ~~
 	//	updates the counts in the acknowledge buttons
 	function updateAckControls()
 	{
-		var toAck = 0, toUnack = 0, selected = 0;
-		for(var path in _selectedPaths)
-		{
-			++selected;
-			if(!_shownAlarms[path]) continue;
-			if(/_ACK$/.test(_shownAlarms[path].severity)) ++toUnack; else ++toAck;
-		}
+		var selection = getSelection();
+		var toAck = selection.ackCount, toUnack = selection.unackCount;
+		var selected = Object.keys(_selectedPaths).length;
 		function set(id, text, count)
 		{
 			var el = document.getElementById(id);
@@ -510,14 +664,19 @@
 
 		if(mode == "selected")
 		{
-			var paths = [];
-			for(var path in _selectedPaths)
-				if(_shownAlarms[path] && /_ACK$/.test(_shownAlarms[path].severity) != acknowledge)
-					paths.push(path);
-			count = paths.length;
+			var selection = getSelection();
+			var paths = acknowledge ? selection.ackPaths : selection.unackPaths;
+			count = acknowledge ? selection.ackCount : selection.unackCount;
 			data += "&paths=" + encodeURIComponent(paths.join("\n"));
-			prompt = "Do you want to " + command + " the " + count + " selected alarm" + (count == 1 ? "" : "s") + "?";
-			if(count == 1) prompt += "<br><br>" + _shownAlarms[paths[0]].pv.replace(/[<>&]/g, "");
+			prompt = "Do you want to " + command + " " + count + " alarm" + (count == 1 ? "" : "s") + "?";
+			if(paths.length == 1)
+			{
+				var one = _shownAlarms[paths[0]];
+				prompt += "<br><br>" + String(one.isNode ? one.name : one.pv).replace(/[<>&]/g, "");
+			}
+			if(selection.nodeCount)
+				prompt += "<br><br>The selection includes " + selection.nodeCount + " node" + (selection.nodeCount == 1 ? "" : "s") +
+					" of the alarm tree: the command acts on all the alarms below " + (selection.nodeCount == 1 ? "it" : "them") + ".";
 		}
 		else
 		{
@@ -605,6 +764,11 @@
 	<div id="topics"></div>
 	<div id="controls">
 		<span id="alarmControls">
+			<span id="viewControls">
+				<label><input type="radio" name="view" id="viewTable" checked onchange="selectView('table')"> table</label>
+				<label><input type="radio" name="view" id="viewTree" onchange="selectView('tree')"> tree</label>
+				<label id="showAllLabel" style="display: none"><input type="checkbox" id="showAll" onchange="poll()"> all nodes</label>
+			</span>
 			<span id="severityChecks"></span>
 			<label><input type="checkbox" id="showAck" checked onchange="poll()"> acknowledged</label>
 		</span>

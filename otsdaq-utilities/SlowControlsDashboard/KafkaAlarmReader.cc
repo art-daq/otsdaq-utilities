@@ -97,6 +97,21 @@ std::string getPathLeafName(const std::string& path)
 	return name;
 }  // end getPathLeafName()
 
+//==============================================================================
+/// returns the path of the parent node, or "" for the root of an alarm configuration
+///	Note: a '/' inside of a pv name is escaped as "\/" in the path
+std::string getParentPath(const std::string& path)
+{
+	size_t pos = path.size();
+	while(pos > 0)
+	{
+		--pos;
+		if(path[pos] == '/' && (pos == 0 || path[pos - 1] != '\\'))
+			return path.substr(0, pos);
+	}
+	return "";
+}  // end getParentPath()
+
 #ifdef OTS_HAVE_RDKAFKA
 //==============================================================================
 /// log callback, to keep librdkafka from printing to stderr at every reconnect attempt
@@ -477,10 +492,223 @@ bool KafkaAlarmReader::isAlarmMatch(const std::string&           path,
 }  // end isAlarmMatch()
 
 //==============================================================================
+/// countBelow
+///	Counts the alarms (enabled pvs with severity not OK) below a node of the alarm tree.
+///	Note: must be called with mutex_ locked
+void KafkaAlarmReader::countBelow(const Topic_t&     topic,
+                                  const std::string& nodePath,
+                                  size_t&            activeCount,
+                                  size_t&            acknowledgedCount)
+{
+	const std::string prefix = nodePath + "/";
+	activeCount              = 0;
+	acknowledgedCount        = 0;
+	for(const auto& statePair : topic.states)
+	{
+		if(!statePair.second.isLeaf || statePair.first.compare(0, prefix.size(), prefix))
+			continue;
+		auto configIt = topic.configs.find(statePair.first);
+		if(configIt == topic.configs.end() || !configIt->second.enabled ||
+		   statePair.second.severity == "OK" || statePair.second.severity == "")
+			continue;
+		if(isAcknowledged(statePair.second.severity))
+			++acknowledgedCount;
+		else
+			++activeCount;
+	}
+}  // end countBelow()
+
+//==============================================================================
+/// getAlarmTreeJSON
+///	Returns the rows of the alarm tree in display order (depth first), starting with
+/// 	the root of each alarm configuration: only the children of the open nodes are listed,
+/// 	so the tree is read one level at a time.
+///
+///	Nodes have the alarm count below them that match the filter (same filter as getAlarmsJSON).
+/// 	Unless showAll is true, only the nodes with such alarms (and the alarms) are listed.
+std::string KafkaAlarmReader::getAlarmTreeJSON(
+    const std::string&           topicFilter,
+    const std::set<std::string>& severities,
+    bool                         includeAcknowledged,
+    const std::string&           textFilter,
+    bool                         showAll,
+    const std::set<std::string>& openPaths,
+    bool                         openRoots,
+    size_t                       maxRows,
+    const std::function<std::string(const std::string&)>& getExtraJSONFields)
+{
+	start();
+
+	struct Counts_t
+	{
+		size_t active = 0, acknowledged = 0;
+	};  //end Counts_t struct
+
+	const std::string filter = toLower(textFilter);
+
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	std::string json      = "{" + getStatusJSONFields() + ",\"rows\":[";
+	size_t      rowCount  = 0;
+	bool        truncated = false;
+
+	for(const auto& topicPair : topics_)
+	{
+		if(topicFilter != "" && topicFilter != topicPair.first)
+			continue;
+		const Topic_t& topic = topicPair.second;
+
+		// alarm counts for every node
+		std::unordered_map<std::string, Counts_t> counts;
+		for(const auto& statePair : topic.states)
+		{
+			const AlarmState_t& state = statePair.second;
+			if(!state.isLeaf)
+				continue;
+			auto configIt = topic.configs.find(statePair.first);
+			if(configIt == topic.configs.end() || !configIt->second.enabled ||
+			   !isAlarmMatch(statePair.first,
+			                 state,
+			                 configIt->second,
+			                 severities,
+			                 includeAcknowledged,
+			                 filter))
+				continue;
+			const bool acknowledged = isAcknowledged(state.severity);
+			for(std::string node = getParentPath(statePair.first); node != "";
+			    node             = getParentPath(node))
+				++(acknowledged ? counts[node].acknowledged : counts[node].active);
+		}
+
+		// children of every node
+		std::unordered_map<std::string, std::vector<const std::string*>> children;
+		for(const auto& configPair : topic.configs)
+		{
+			const std::string parent = getParentPath(configPair.first);
+			if(parent != "")
+				children[parent].push_back(&configPair.first);
+		}
+
+		auto isVisible = [&](const std::string& path) {
+			auto configIt = topic.configs.find(path);
+			if(configIt != topic.configs.end() && !configIt->second.enabled)
+				return false;
+			if(showAll || counts.find(path) != counts.end())
+				return true;
+			auto stateIt = topic.states.find(path);
+			return stateIt != topic.states.end() && stateIt->second.isLeaf &&
+			       configIt != topic.configs.end() &&
+			       isAlarmMatch(path,
+			                    stateIt->second,
+			                    configIt->second,
+			                    severities,
+			                    includeAcknowledged,
+			                    filter);
+		};  // end isVisible()
+
+		std::function<void(const std::string&, int)> emit =
+		    [&](const std::string& path, int depth) {
+			    if(truncated)
+				    return;
+			    if(rowCount >= maxRows)
+			    {
+				    truncated = true;
+				    return;
+			    }
+
+			    auto stateIt    = topic.states.find(path);
+			    auto configIt   = topic.configs.find(path);
+			    auto childrenIt = children.find(path);
+			    const AlarmState_t* state =
+			        stateIt == topic.states.end() ? nullptr : &stateIt->second;
+			    const bool isNode =
+			        childrenIt != children.end() || (state && !state->isLeaf) || depth == 0;
+
+			    json += std::string(rowCount ? "," : "") + "{";
+			    json += "\"topic\":\"" + escapeJSON(topicPair.first) + "\",";
+			    json += "\"path\":\"" + escapeJSON(path) + "\",";
+			    json += "\"depth\":" + std::to_string(depth) + ",";
+			    json += "\"name\":\"" + escapeJSON(depth == 0 ? topicPair.first
+			                                                    : getPathLeafName(path)) +
+			            "\",";
+			    json += "\"description\":\"" +
+			            escapeJSON(configIt == topic.configs.end()
+			                           ? ""
+			                           : configIt->second.description) +
+			            "\",";
+			    json += "\"severity\":\"" + escapeJSON(state ? state->severity : "") + "\",";
+			    ++rowCount;
+
+			    if(!isNode)
+			    {
+				    json += "\"isNode\":false,";
+				    json += "\"pv\":\"" + escapeJSON(getPathLeafName(path)) + "\",";
+				    json += "\"message\":\"" + escapeJSON(state ? state->message : "") + "\",";
+				    json += "\"value\":\"" + escapeJSON(state ? state->value : "") + "\",";
+				    json += "\"time\":" + std::to_string(state ? state->time : 0) + ",";
+				    if(getExtraJSONFields)
+					    json += getExtraJSONFields(getPathLeafName(path)) + ",";
+				    json += "\"currentSeverity\":\"" +
+				            escapeJSON(state ? state->currentSeverity : "") + "\",";
+				    json += "\"currentMessage\":\"" +
+				            escapeJSON(state ? state->currentMessage : "") + "\"}";
+				    return;
+			    }
+
+			    const bool expandable = childrenIt != children.end();
+			    const bool expanded =
+			        expandable && (openPaths.count(path) || (openRoots && depth == 0));
+			    auto countIt = counts.find(path);
+			    json += "\"isNode\":true,";
+			    json += "\"activeCount\":" +
+			            std::to_string(countIt == counts.end() ? 0 : countIt->second.active) +
+			            ",";
+			    json += "\"acknowledgedCount\":" +
+			            std::to_string(countIt == counts.end()
+			                               ? 0
+			                               : countIt->second.acknowledged) +
+			            ",";
+			    json += "\"expandable\":" + std::string(expandable ? "true" : "false") + ",";
+			    json += "\"expanded\":" + std::string(expanded ? "true" : "false") + "}";
+
+			    if(!expanded)
+				    return;
+
+			    // most severe first, then by name
+			    std::vector<const std::string*> visibleChildren;
+			    for(const std::string* child : childrenIt->second)
+				    if(isVisible(*child))
+					    visibleChildren.push_back(child);
+			    std::sort(visibleChildren.begin(),
+			              visibleChildren.end(),
+			              [&](const std::string* a, const std::string* b) {
+				              auto aIt = topic.states.find(*a), bIt = topic.states.find(*b);
+				              const unsigned int aRank =
+				                  aIt == topic.states.end() ? 0 : severityRank(aIt->second.severity);
+				              const unsigned int bRank =
+				                  bIt == topic.states.end() ? 0 : severityRank(bIt->second.severity);
+				              if(aRank != bRank)
+					              return aRank > bRank;
+				              return getPathLeafName(*a) < getPathLeafName(*b);
+			              });
+			    for(const std::string* child : visibleChildren)
+				    emit(*child, depth + 1);
+		    };  // end emit()
+
+		emit("/" + topicPair.first, 0);
+	}  //end topic loop
+
+	json += "],\"rowCount\":" + std::to_string(rowCount) +
+	        ",\"truncated\":" + (truncated ? "true" : "false") + "}";
+	return json;
+}  // end getAlarmTreeJSON()
+
+//==============================================================================
 /// sendAcknowledgeJSON
-///	Sends the acknowledge (or unacknowledge) command for the pv paths given. Paths that
-/// 	are not a known pv in alarm of the alarm configurations are skipped, as are the
-/// 	alarms already acknowledged (or, for unacknowledge, not acknowledged).
+///	Sends the acknowledge (or unacknowledge) command for the paths given, which are pvs
+/// 	or nodes of the alarm tree (i.e. all the alarms below). Paths that are not known, or
+/// 	not in alarm, are skipped, as are the alarms already acknowledged (or, for
+/// 	unacknowledge, not acknowledged).
 std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                            acknowledge,
                                                   const std::string&              user,
                                                   const std::vector<std::string>& paths)
@@ -507,10 +735,25 @@ std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                          
 			}
 			auto stateIt  = topicIt->second.states.find(path);
 			auto configIt = topicIt->second.configs.find(path);
-			if(stateIt == topicIt->second.states.end() ||
-			   configIt == topicIt->second.configs.end() || !stateIt->second.isLeaf ||
-			   !isAlarmMatch(path, stateIt->second, configIt->second, {}, true, "") ||
-			   isAcknowledged(stateIt->second.severity) == acknowledge)
+			if(stateIt == topicIt->second.states.end())
+			{
+				++skippedCount;
+				continue;
+			}
+			if(!stateIt->second.isLeaf)
+			{
+				// a node of the alarm tree: acts on all the alarms below it
+				size_t activeCount, acknowledgedCount;
+				countBelow(topicIt->second, path, activeCount, acknowledgedCount);
+				if((acknowledge ? activeCount : acknowledgedCount) == 0)
+				{
+					++skippedCount;
+					continue;
+				}
+			}
+			else if(configIt == topicIt->second.configs.end() ||
+			        !isAlarmMatch(path, stateIt->second, configIt->second, {}, true, "") ||
+			        isAcknowledged(stateIt->second.severity) == acknowledge)
 			{
 				++skippedCount;
 				continue;

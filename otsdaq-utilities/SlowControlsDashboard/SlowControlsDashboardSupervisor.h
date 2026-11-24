@@ -55,6 +55,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	void GetAlarmsLogData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetAlarmsCheck(HttpXmlDocument& xmlOut);
 	void GetKafkaAlarms(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void GetKafkaAlarmTree(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void GetKafkaOtsErrors(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	void AcknowledgeKafkaAlarms(cgicc::Cgicc&                    cgiIn,
 	                            HttpXmlDocument&                 xmlOut,

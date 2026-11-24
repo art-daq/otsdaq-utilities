@@ -331,7 +331,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "poll | getKafkaAlarms | getKafkaOtsErrors | getArchiveHistory");
+	    "poll | getKafkaAlarms | getKafkaAlarmTree | getKafkaOtsErrors | getArchiveHistory");
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
@@ -340,7 +340,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
@@ -362,14 +362,18 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 	             << "userInfo.username_: " << userInfo.username_ << __E__;
 
 	// Kafka and archive history requests do not use the plugin, so handle without the plugin lock
-	if(requestType == "getKafkaAlarms" || requestType == "getKafkaOtsErrors" ||
+	if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree" ||
+	   requestType == "getKafkaOtsErrors" ||
 	   requestType == "getArchiveHistory" || requestType == "acknowledgeKafkaAlarms")
 	{
 		try
 		{
-			if(requestType == "getKafkaAlarms")
+			if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree")
 			{
-				GetKafkaAlarms(cgiIn, xmlOut);
+				if(requestType == "getKafkaAlarms")
+					GetKafkaAlarms(cgiIn, xmlOut);
+				else
+					GetKafkaAlarmTree(cgiIn, xmlOut);
 				// so that the page only offers acknowledge to who is allowed
 				xmlOut.addTextElementToData(
 				    "canAcknowledge",
@@ -977,6 +981,55 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 	}
 	xmlOut.addTextElementToData("JSON", StringMacros::encodeURIComponent(json));
 }  // end AcknowledgeKafkaAlarms()
+
+//==============================================================================
+/// GetKafkaAlarmTree
+///	Returns the rows of the Phoebus alarm tree read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		topic, severities, showAck, filter := as for GetKafkaAlarms
+///		showAll		:= 1 to list also the nodes and pvs that are not in alarm
+///		open		:= newline-separated paths of the open nodes (their children are listed)
+///		openRoots	:= 1 to open the root of each alarm configuration
+///		maxRows		:= maximum number of rows to return
+void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	std::set<std::string> severities;
+	StringMacros::getSetFromString(CgiDataUtilities::getOrPostData(cgiIn, "severities"),
+	                               severities);
+	severities.erase("");
+
+	std::set<std::string> openPaths;
+	{
+		std::istringstream pathStream(StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getOrPostData(cgiIn, "open")));
+		std::string        path;
+		while(std::getline(pathStream, path) && openPaths.size() < 2000)
+			if(path != "")
+				openPaths.insert(path);
+	}
+
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 3000;
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmTreeJSON(
+	        CgiDataUtilities::getOrPostData(cgiIn, "topic"),
+	        severities,
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAll") == "1",
+	        openPaths,
+	        CgiDataUtilities::getOrPostData(cgiIn, "openRoots") == "1",
+	        maxRows,
+	        [this](const std::string& pv) {
+		        return liveValueReader_.getLiveJSONFields(pv);
+	        })));
+}  // end GetKafkaAlarmTree()
 
 //==============================================================================
 /// GetKafkaOtsErrors

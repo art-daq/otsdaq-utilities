@@ -28,6 +28,7 @@ namespace ots
 ///	The only writing is the acknowledge (or unacknowledge) command, on explicit user
 /// 	request, sent as the Phoebus clients do: to topic 'XCommand' of configuration 'X'
 ///		command:/X/path/to/pv	:= {"user":"...","host":"...","command":"acknowledge"}
+/// 	The path can also be a node of the alarm tree, i.e. all alarms below it.
 /// 	The alarm server handles the command and publishes the new state.
 ///
 ///	Each Phoebus alarm configuration 'X' is one compacted Kafka topic 'X' with keys:
@@ -54,6 +55,11 @@ class KafkaAlarmReader
 	std::string						getAlarmsJSON						(const std::string& topicFilter, const std::set<std::string>& severities,
 																		 bool includeAcknowledged, const std::string& textFilter, size_t maxRows,
 																		 const std::function<std::string(const std::string& /*pv*/)>& getExtraJSONFields = nullptr); ///< extra fields are added to each alarm
+	/// returns JSON object with the rows (in display order) of the alarm tree, as in the Phoebus alarm tree: only the children of the open nodes are listed
+	std::string						getAlarmTreeJSON					(const std::string& topicFilter, const std::set<std::string>& severities,
+																		 bool includeAcknowledged, const std::string& textFilter, bool showAll,
+																		 const std::set<std::string>& openPaths, bool openRoots, size_t maxRows,
+																		 const std::function<std::string(const std::string& /*pv*/)>& getExtraJSONFields = nullptr); ///< extra fields are added to each pv row
 	/// sends the command for the alarms (pv paths) given, returns JSON object with sentCount, skippedCount and error
 	std::string						sendAcknowledgeJSON					(bool acknowledge, const std::string& user, const std::vector<std::string>& paths);
 	/// sends the command for all alarms that match the filter (as getAlarmsJSON), if not many more than expectedCount
@@ -104,6 +110,7 @@ class KafkaAlarmReader
 																		 const char* payload, size_t payloadSize, time_t kafkaTime);
 	std::string 					getStatusJSONFields					(void) const; ///< must be called with mutex_ locked
 	static bool 					isAcknowledged						(const std::string& severity);
+	static void 					countBelow							(const Topic_t& topic, const std::string& nodePath, size_t& activeCount, size_t& acknowledgedCount);
 	static bool 					isAlarmMatch						(const std::string& path, const AlarmState_t& state, const AlarmConfig_t& config,
 																		 const std::set<std::string>& severities, bool includeAcknowledged, const std::string& lowerCaseTextFilter);
 	std::string 					sendCommands						(bool acknowledge, const std::string& user,
