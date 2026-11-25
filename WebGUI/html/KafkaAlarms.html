@@ -356,7 +356,7 @@
 		{
 			cell.textContent = alarm.liveValue;
 			cell.title = "Live value now in the ots controls plugin" +
-				(alarm.liveTime > 0 ? ", received at " + getTimeString(alarm.liveTime) : "") +
+				(alarm.liveTime > 0 ? ", pv timestamp " + getTimeString(alarm.liveTime) : "") +
 				(alarm.liveSeverity ? ", pv severity " + alarm.liveSeverity : "");
 		}
 		else if(alarm.liveState == "connected" || alarm.liveState == "connecting")
