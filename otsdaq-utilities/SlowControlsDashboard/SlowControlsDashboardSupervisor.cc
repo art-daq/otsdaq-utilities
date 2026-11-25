@@ -361,7 +361,8 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 	__SUP_COUT__ << "requestType: " << requestType << ", "
 	             << "userInfo.username_: " << userInfo.username_ << __E__;
 
-	// Kafka and archive history requests do not use the plugin, so handle without the plugin lock
+	// Kafka and archive history requests are handled without failing when the plugin is busy
+	//	(the live values need the plugin lock, see GetKafkaAlarms)
 	if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree" ||
 	   requestType == "getKafkaOtsErrors" ||
 	   requestType == "getArchiveHistory" || requestType == "acknowledgeKafkaAlarms")
@@ -872,7 +873,7 @@ void SlowControlsDashboardSupervisor::GetAlarmsCheck(HttpXmlDocument& xmlOut)
 ///		filter		:= text to search for in pv path, description and message
 ///		maxRows		:= maximum number of alarms to return
 ///
-///	The live value of each returned pv is added (read with EPICS Channel Access).
+///	The live value of each returned pv is added (from the controls plugin).
 void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
                                                      HttpXmlDocument& xmlOut)
 {
@@ -885,6 +886,20 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
 	if(maxRows < 1 || maxRows > 10000)
 		maxRows = 500;
 
+	// the live values come from the plugin, so not available while the plugin is busy (e.g., initializing)
+	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
+	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
+		usleep(10 * 1000);
+	const bool                                      pluginBusy = !pluginLock.owns_lock();
+	std::function<std::string(const std::string&)> liveFields =
+	    [this, pluginBusy](const std::string& pv) {
+		    if(pluginBusy)
+			    return std::string(
+			        "\"liveValue\":\"\",\"liveTime\":0,\"liveSeverity\":\"\","
+			        "\"liveState\":\"the controls plugin is busy (e.g., initializing)\"");
+		    return getLiveJSONFields(pv);
+	    };
+
 	xmlOut.addTextElementToData(
 	    "JSON",
 	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmsJSON(
@@ -894,9 +909,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
 	        StringMacros::decodeURIComponent(
 	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
 	        maxRows,
-	        [this](const std::string& pv) {
-		        return liveValueReader_.getLiveJSONFields(pv);
-	        })));
+	        liveFields)));
 }  // end GetKafkaAlarms()
 
 //==============================================================================
@@ -1014,6 +1027,20 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
 	if(maxRows < 1 || maxRows > 10000)
 		maxRows = 3000;
 
+	// the live values come from the plugin, so not available while the plugin is busy (e.g., initializing)
+	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
+	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
+		usleep(10 * 1000);
+	const bool                                      pluginBusy = !pluginLock.owns_lock();
+	std::function<std::string(const std::string&)> liveFields =
+	    [this, pluginBusy](const std::string& pv) {
+		    if(pluginBusy)
+			    return std::string(
+			        "\"liveValue\":\"\",\"liveTime\":0,\"liveSeverity\":\"\","
+			        "\"liveState\":\"the controls plugin is busy (e.g., initializing)\"");
+		    return getLiveJSONFields(pv);
+	    };
+
 	xmlOut.addTextElementToData(
 	    "JSON",
 	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmTreeJSON(
@@ -1026,9 +1053,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
 	        openPaths,
 	        CgiDataUtilities::getOrPostData(cgiIn, "openRoots") == "1",
 	        maxRows,
-	        [this](const std::string& pv) {
-		        return liveValueReader_.getLiveJSONFields(pv);
-	        })));
+	        liveFields)));
 }  // end GetKafkaAlarmTree()
 
 //==============================================================================
@@ -1079,11 +1104,57 @@ void SlowControlsDashboardSupervisor::GetArchiveHistory(cgicc::Cgicc&    cgiIn,
 		__SUP_SS_THROW__;
 	}
 
+	// Note: no plugin lock, since the plugin call is independent of the plugin state
 	xmlOut.addTextElementToData(
 	    "JSON",
 	    StringMacros::encodeURIComponent(
-	        archiveHistoryReader_.getHistoryJSON(pv, from, to)));
+	        interface_->getChannelHistoryJSON(pv, from, to)));
 }  // end GetArchiveHistory()
+
+//==============================================================================
+/// getLiveJSONFields
+///	Returns JSON fields (no braces) liveValue, liveTime [s since epoch], liveSeverity,
+/// 	liveState with the current value of the channel in the controls plugin.
+///	liveState is one of: connected, connecting (no value received so far), or the
+/// 	reason why there is no value.
+///
+///	Note: must be called with the plugin lock.
+std::string SlowControlsDashboardSupervisor::getLiveJSONFields(const std::string& channel)
+{
+	// the alarm server pv names may have a protocol prefix
+	std::string name = channel;
+	if(name.find("://") != std::string::npos)
+		name = name.substr(name.find("://") + 3);
+
+	std::string value, severity, state, valueTime = "0";
+	try
+	{
+		// Time, Value, Status, Severity
+		const std::array<std::string, 4> current = interface_->getCurrentValue(name);
+		if(current[0] == "PV Not Found" || current[1] == "NF")
+			state = "not known to the controls plugin";
+		else if(current[2] == "DC" || current[0] == "N/a")
+			state = "connecting";
+		else
+		{
+			state    = "connected";
+			value    = current[1];
+			severity = current[3] == "NO_ALARM" ? "" : current[3];
+			if(current[0].find_first_not_of("0123456789") == std::string::npos &&
+			   current[0].size() && current[0].size() < 12)
+				valueTime = current[0];
+		}
+	}
+	catch(...)
+	{
+		state = "the controls plugin failed to give the value";
+	}
+
+	return "\"liveValue\":\"" + StringMacros::escapeJSONStringEntities(value) +
+	       "\",\"liveTime\":" + valueTime + ",\"liveSeverity\":\"" +
+	       StringMacros::escapeJSONStringEntities(severity) + "\",\"liveState\":\"" +
+	       StringMacros::escapeJSONStringEntities(state) + "\"";
+}  // end getLiveJSONFields()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GetAlarmsLogData(cgicc::Cgicc&    cgiIn,

@@ -39,7 +39,7 @@ namespace ots
 /// 	otsdaq-utilities/Console/KafkaErrorPublisher.h).
 ///
 ///	Reading is enabled by environment variable:
-///		OTS_KAFKA_BROKERS		:= Kafka bootstrap servers, e.g. "mu2e-dcs-02.fnal.gov:9092" (disabled if not set)
+///		OTS_KAFKA_BROKERS		:= Kafka bootstrap servers, e.g. "kafkahost:9092" (disabled if not set)
 ///		OTS_KAFKA_ALARM_TOPICS	:= comma-separated Phoebus alarm configurations, e.g. "Calo,CrvAll"
 ///		OTS_KAFKA_ERROR_TOPIC	:= ots error topic name (optional, default is "OtsErrors")
 class KafkaAlarmReader

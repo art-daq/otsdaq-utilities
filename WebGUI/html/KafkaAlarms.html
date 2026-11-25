@@ -344,7 +344,7 @@
 	} //end addCell()
 
 	//=====================================================================================
-	//the live value read by ots with Channel Access (not from the alarm server, nor the archiver)
+	//the live value from the ots controls plugin (not from the alarm server, nor the archiver)
 	function addLiveValueCell(row, alarm)
 	{
 		var cell = row.insertCell(-1);
@@ -355,21 +355,21 @@
 		if(alarm.liveState == "connected" && hasValue)
 		{
 			cell.textContent = alarm.liveValue;
-			cell.title = "Live value read now by ots with Channel Access" +
-				(alarm.liveTime > 0 ? ", pv timestamp " + getTimeString(alarm.liveTime) : "") +
+			cell.title = "Live value now in the ots controls plugin" +
+				(alarm.liveTime > 0 ? ", received at " + getTimeString(alarm.liveTime) : "") +
 				(alarm.liveSeverity ? ", pv severity " + alarm.liveSeverity : "");
 		}
 		else if(alarm.liveState == "connected" || alarm.liveState == "connecting")
 		{
 			cell.textContent = "...";
 			cell.style.opacity = 0.6;
-			cell.title = "Connecting to the pv with Channel Access: no value received so far";
+			cell.title = "The ots controls plugin received no value so far (e.g., pv disconnected)";
 		}
 		else if(alarm.liveState == "disconnected")
 		{
 			cell.textContent = "disconnected";
 			cell.style.opacity = 0.6;
-			cell.title = "The pv is not reachable now with Channel Access" +
+			cell.title = "The pv is not reachable now from the ots controls plugin" +
 				(hasValue ? "; last value received was " + alarm.liveValue +
 				(alarm.liveTime > 0 ? " with pv timestamp " + getTimeString(alarm.liveTime) : "") : "");
 		}

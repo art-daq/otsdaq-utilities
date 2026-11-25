@@ -2,9 +2,7 @@
 #define _ots_SlowControlsDashboardSupervisor_h_
 
 #include <chrono>
-#include "otsdaq-utilities/SlowControlsDashboard/ArchiveHistoryReader.h"
 #include "otsdaq-utilities/SlowControlsDashboard/KafkaAlarmReader.h"
-#include "otsdaq-utilities/SlowControlsDashboard/LiveValueReader.h"
 #include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
 // #include "otsdaq-utilities/SlowControlsInterfacePlugins/EpicsInterface.h"
@@ -61,6 +59,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	                            HttpXmlDocument&                 xmlOut,
 	                            const WebUsers::RequestUserInfo& userInfo);
 	void GetArchiveHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	std::string getLiveJSONFields(const std::string& channel);
 	void GetUserPermissions(cgicc::Cgicc&                    cgiIn,
 	                        HttpXmlDocument&                 xmlOut,
 	                        const WebUsers::RequestUserInfo& userInfo);
@@ -102,9 +101,6 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 
 	/// Phoebus alarm state (and ots errors) read from Kafka, independent of the plugin
 	KafkaAlarmReader                     kafkaAlarmReader_;
-	/// pv history read from the archiver database, independent of the plugin
-	ArchiveHistoryReader                 archiveHistoryReader_;
-	LiveValueReader                      liveValueReader_;
 
 	/// cached data to expose to the web user
 	std::vector<std::vector<std::string>>              alarms_;

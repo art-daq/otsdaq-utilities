@@ -21,7 +21,7 @@ namespace ots
 /// 	record shared by all ots instances.
 ///
 ///	Publishing is enabled by environment variable:
-///		OTS_KAFKA_BROKERS		:= Kafka bootstrap servers, e.g. "mu2e-dcs-02.fnal.gov:9092" (publishing is disabled if not set)
+///		OTS_KAFKA_BROKERS		:= Kafka bootstrap servers, e.g. "kafkahost:9092" (publishing is disabled if not set)
 ///		OTS_KAFKA_ERROR_TOPIC	:= Kafka topic name (optional, default is "OtsErrors")
 ///
 ///	Note: publish is non-blocking. If the broker is unreachable, records are queued
