@@ -45,46 +45,46 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	///< values (and ignore user
 	///< settings)
 
-	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string UID);
-	void Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetChannelSettings(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetChannelArchiverData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetLastAlarmsData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetAlarmsLogData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetAlarmsCheck(HttpXmlDocument& xmlOut);
-	void GetKafkaAlarms(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetKafkaAlarmTree(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetKafkaOtsErrors(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void AcknowledgeKafkaAlarms(cgicc::Cgicc&                    cgiIn,
-	                            HttpXmlDocument&                 xmlOut,
-	                            const WebUsers::RequestUserInfo& userInfo);
-	void GetArchiveHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string UID);
+	void        Poll(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetChannelSettings(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetChannelArchiverData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetLastAlarmsData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetAlarmsLogData(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetAlarmsCheck(HttpXmlDocument& xmlOut);
+	void        GetKafkaAlarms(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetKafkaAlarmTree(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetKafkaOtsErrors(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        AcknowledgeKafkaAlarms(cgicc::Cgicc&                    cgiIn,
+	                                   HttpXmlDocument&                 xmlOut,
+	                                   const WebUsers::RequestUserInfo& userInfo);
+	void        GetArchiveHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	std::string getLiveJSONFields(const std::string& channel);
-	void GetUserPermissions(cgicc::Cgicc&                    cgiIn,
-	                        HttpXmlDocument&                 xmlOut,
-	                        const WebUsers::RequestUserInfo& userInfo);
-	void GenerateUID(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string pvlist);
-	void GetList(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void GetPages(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void loadPage(cgicc::Cgicc&                    cgiIn,
-	              HttpXmlDocument&                 xmlOut,
-	              std::string                      page,
-	              const WebUsers::RequestUserInfo& userInfo);
-	void loadPhoebusPage(cgicc::Cgicc&                    cgiIn,
+	void        GetUserPermissions(cgicc::Cgicc&                    cgiIn,
+	                               HttpXmlDocument&                 xmlOut,
+	                               const WebUsers::RequestUserInfo& userInfo);
+	void        GenerateUID(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut, std::string pvlist);
+	void        GetList(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetPages(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        loadPage(cgicc::Cgicc&                    cgiIn,
 	                     HttpXmlDocument&                 xmlOut,
 	                     std::string                      page,
 	                     const WebUsers::RequestUserInfo& userInfo);
-	void SaveControlsPage(cgicc::Cgicc&                    cgiIn,
-	                      HttpXmlDocument&                 xmlOut,
-	                      const WebUsers::RequestUserInfo& userInfo);
-	void SavePhoebusControlsPage(cgicc::Cgicc&                    cgiIn,
+	void        loadPhoebusPage(cgicc::Cgicc&                    cgiIn,
+	                            HttpXmlDocument&                 xmlOut,
+	                            std::string                      page,
+	                            const WebUsers::RequestUserInfo& userInfo);
+	void        SaveControlsPage(cgicc::Cgicc&                    cgiIn,
 	                             HttpXmlDocument&                 xmlOut,
 	                             const WebUsers::RequestUserInfo& userInfo);
-	void saveImageFile(cgicc::Cgicc&                    cgiIn,
-	                   HttpXmlDocument&                 xmlOut,
-	                   const WebUsers::RequestUserInfo& userInfo);
-	void Subscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
-	void Unsubscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        SavePhoebusControlsPage(cgicc::Cgicc&                    cgiIn,
+	                                    HttpXmlDocument&                 xmlOut,
+	                                    const WebUsers::RequestUserInfo& userInfo);
+	void        saveImageFile(cgicc::Cgicc&                    cgiIn,
+	                          HttpXmlDocument&                 xmlOut,
+	                          const WebUsers::RequestUserInfo& userInfo);
+	void        Subscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        Unsubscribe(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 
 	/// Utilities, eventually to be moved
 	bool isDir(std::string dir);
@@ -100,7 +100,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	std::string                          alarmCheckThreadError_;
 
 	/// Phoebus alarm state (and ots errors) read from Kafka, independent of the plugin
-	KafkaAlarmReader                     kafkaAlarmReader_;
+	KafkaAlarmReader kafkaAlarmReader_;
 
 	/// cached data to expose to the web user
 	std::vector<std::vector<std::string>>              alarms_;

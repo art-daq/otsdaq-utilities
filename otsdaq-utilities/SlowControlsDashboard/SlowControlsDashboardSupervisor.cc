@@ -1,8 +1,8 @@
 #include "otsdaq-utilities/SlowControlsDashboard/SlowControlsDashboardSupervisor.h"
-#include <sstream>
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for stat() quickly checking if file exists
-#include <thread>      //for std::thread
+#include <sstream>
+#include <thread>  //for std::thread
 
 #include "otsdaq/SlowControlsCore/MakeSlowControls.h"
 #include "otsdaq/SlowControlsCore/SlowControlsVInterface.h"
@@ -331,7 +331,8 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
-	    "poll | getKafkaAlarms | getKafkaAlarmTree | getKafkaOtsErrors | getArchiveHistory");
+	    "poll | getKafkaAlarms | getKafkaAlarmTree | getKafkaOtsErrors | "
+	    "getArchiveHistory");
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
@@ -364,8 +365,8 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 	// Kafka and archive history requests are handled without failing when the plugin is busy
 	//	(the live values need the plugin lock, see GetKafkaAlarms)
 	if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree" ||
-	   requestType == "getKafkaOtsErrors" ||
-	   requestType == "getArchiveHistory" || requestType == "acknowledgeKafkaAlarms")
+	   requestType == "getKafkaOtsErrors" || requestType == "getArchiveHistory" ||
+	   requestType == "acknowledgeKafkaAlarms")
 	{
 		try
 		{
@@ -891,7 +892,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
 	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
 	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
 		usleep(10 * 1000);
-	const bool                                      pluginBusy = !pluginLock.owns_lock();
+	const bool                                     pluginBusy = !pluginLock.owns_lock();
 	std::function<std::string(const std::string&)> liveFields =
 	    [this, pluginBusy](const std::string& pv) {
 		    if(pluginBusy)
@@ -937,11 +938,13 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 	   userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
 	   userInfo.username_ == "")
 	{
-		__SUP_SS__ << "Alarms can only be acknowledged by a logged-in user with expert "
-		              "permission level (" << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
-		           << "), and not from a read-only supervisor. The permission level of user '"
-		           << userInfo.username_ << "' is "
-		           << unsigned(userInfo.permissionLevel_) << "." << __E__;
+		__SUP_SS__
+		    << "Alarms can only be acknowledged by a logged-in user with expert "
+		       "permission level ("
+		    << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
+		    << "), and not from a read-only supervisor. The permission level of user '"
+		    << userInfo.username_ << "' is " << unsigned(userInfo.permissionLevel_) << "."
+		    << __E__;
 		__SUP_SS_THROW__;
 	}
 
@@ -963,7 +966,7 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 		std::vector<std::string> paths;
 		std::istringstream       pathStream(StringMacros::decodeURIComponent(
             CgiDataUtilities::getOrPostData(cgiIn, "paths")));
-		std::string path;
+		std::string              path;
 		while(std::getline(pathStream, path))
 			if(path != "")
 				paths.push_back(path);
@@ -1040,7 +1043,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
 	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
 	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
 		usleep(10 * 1000);
-	const bool                                      pluginBusy = !pluginLock.owns_lock();
+	const bool                                     pluginBusy = !pluginLock.owns_lock();
 	std::function<std::string(const std::string&)> liveFields =
 	    [this, pluginBusy](const std::string& pv) {
 		    if(pluginBusy)
@@ -1115,10 +1118,9 @@ void SlowControlsDashboardSupervisor::GetArchiveHistory(cgicc::Cgicc&    cgiIn,
 	}
 
 	// Note: no plugin lock, since the plugin call is independent of the plugin state
-	xmlOut.addTextElementToData(
-	    "JSON",
-	    StringMacros::encodeURIComponent(
-	        interface_->getChannelHistoryJSON(pv, from, to)));
+	xmlOut.addTextElementToData("JSON",
+	                            StringMacros::encodeURIComponent(
+	                                interface_->getChannelHistoryJSON(pv, from, to)));
 }  // end GetArchiveHistory()
 
 //==============================================================================

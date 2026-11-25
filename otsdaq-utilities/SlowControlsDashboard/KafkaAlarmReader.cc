@@ -204,8 +204,9 @@ void KafkaAlarmReader::start(void)
 		return;
 
 	__COUT_INFO__ << "Starting to read Phoebus alarm topics {"
-	              << StringMacros::vectorToString(alarmTopics_) << "} and ots error topic '"
-	              << errorTopic_ << "' from Kafka at " << brokers_ << __E__;
+	              << StringMacros::vectorToString(alarmTopics_)
+	              << "} and ots error topic '" << errorTopic_ << "' from Kafka at "
+	              << brokers_ << __E__;
 	thread_ = std::thread([this]() { readLoop(); });
 }  // end start()
 
@@ -224,7 +225,7 @@ unsigned int KafkaAlarmReader::severityRank(const std::string& severity)
 	                                                        {"MAJOR", 6},
 	                                                        {"INVALID", 7},
 	                                                        {"UNDEFINED", 8}});
-	auto it = ranks.find(severity);
+	auto                                             it = ranks.find(severity);
 	return it == ranks.end() ? 0 : it->second;
 }  // end severityRank()
 
@@ -305,7 +306,8 @@ void KafkaAlarmReader::readLoop(void)
 
 	while(!err && !exitThread_)
 	{
-		rd_kafka_message_t* message = rd_kafka_consumer_poll(consumer, 500 /*timeout_ms*/);
+		rd_kafka_message_t* message =
+		    rd_kafka_consumer_poll(consumer, 500 /*timeout_ms*/);
 		if(!message)
 			continue;
 
@@ -533,15 +535,15 @@ void KafkaAlarmReader::countBelow(const Topic_t&     topic,
 ///	Nodes have the alarm count below them that match the filter (same filter as getAlarmsJSON).
 /// 	Unless showAll is true, only the nodes with such alarms (and the alarms) are listed.
 std::string KafkaAlarmReader::getAlarmTreeJSON(
-    const std::string&           topicFilter,
-    const std::set<std::string>& severities,
-    bool                         includeAcknowledged,
-    const std::string&           textFilter,
-    bool                         onlyCurrentOk,
-    bool                         showAll,
-    const std::set<std::string>& openPaths,
-    bool                         openRoots,
-    size_t                       maxRows,
+    const std::string&                                    topicFilter,
+    const std::set<std::string>&                          severities,
+    bool                                                  includeAcknowledged,
+    const std::string&                                    textFilter,
+    bool                                                  onlyCurrentOk,
+    bool                                                  showAll,
+    const std::set<std::string>&                          openPaths,
+    bool                                                  openRoots,
+    size_t                                                maxRows,
     const std::function<std::string(const std::string&)>& getExtraJSONFields)
 {
 	start();
@@ -585,7 +587,7 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 			const bool acknowledged = isAcknowledged(state.severity);
 			for(std::string node = getParentPath(statePair.first); node != "";
 			    node             = getParentPath(node))
-				++(acknowledged ? counts[node].acknowledged : counts[node].active);
+                ++(acknowledged ? counts[node].acknowledged : counts[node].active);
 		}
 
 		// children of every node
@@ -615,94 +617,97 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 			                    onlyCurrentOk);
 		};  // end isVisible()
 
-		std::function<void(const std::string&, int)> emit =
-		    [&](const std::string& path, int depth) {
-			    if(truncated)
-				    return;
-			    if(rowCount >= maxRows)
-			    {
-				    truncated = true;
-				    return;
-			    }
+		std::function<void(const std::string&, int)> emit = [&](const std::string& path,
+		                                                        int depth) {
+			if(truncated)
+				return;
+			if(rowCount >= maxRows)
+			{
+				truncated = true;
+				return;
+			}
 
-			    auto stateIt    = topic.states.find(path);
-			    auto configIt   = topic.configs.find(path);
-			    auto childrenIt = children.find(path);
-			    const AlarmState_t* state =
-			        stateIt == topic.states.end() ? nullptr : &stateIt->second;
-			    const bool isNode =
-			        childrenIt != children.end() || (state && !state->isLeaf) || depth == 0;
+			auto                stateIt    = topic.states.find(path);
+			auto                configIt   = topic.configs.find(path);
+			auto                childrenIt = children.find(path);
+			const AlarmState_t* state =
+			    stateIt == topic.states.end() ? nullptr : &stateIt->second;
+			const bool isNode =
+			    childrenIt != children.end() || (state && !state->isLeaf) || depth == 0;
 
-			    json += std::string(rowCount ? "," : "") + "{";
-			    json += "\"topic\":\"" + escapeJSON(topicPair.first) + "\",";
-			    json += "\"path\":\"" + escapeJSON(path) + "\",";
-			    json += "\"depth\":" + std::to_string(depth) + ",";
-			    json += "\"name\":\"" + escapeJSON(depth == 0 ? topicPair.first
-			                                                    : getPathLeafName(path)) +
-			            "\",";
-			    json += "\"description\":\"" +
-			            escapeJSON(configIt == topic.configs.end()
-			                           ? ""
-			                           : configIt->second.description) +
-			            "\",";
-			    json += "\"severity\":\"" + escapeJSON(state ? state->severity : "") + "\",";
-			    ++rowCount;
+			json += std::string(rowCount ? "," : "") + "{";
+			json += "\"topic\":\"" + escapeJSON(topicPair.first) + "\",";
+			json += "\"path\":\"" + escapeJSON(path) + "\",";
+			json += "\"depth\":" + std::to_string(depth) + ",";
+			json += "\"name\":\"" +
+			        escapeJSON(depth == 0 ? topicPair.first : getPathLeafName(path)) +
+			        "\",";
+			json += "\"description\":\"" +
+			        escapeJSON(configIt == topic.configs.end()
+			                       ? ""
+			                       : configIt->second.description) +
+			        "\",";
+			json += "\"severity\":\"" + escapeJSON(state ? state->severity : "") + "\",";
+			++rowCount;
 
-			    if(!isNode)
-			    {
-				    json += "\"isNode\":false,";
-				    json += "\"pv\":\"" + escapeJSON(getPathLeafName(path)) + "\",";
-				    json += "\"message\":\"" + escapeJSON(state ? state->message : "") + "\",";
-				    json += "\"value\":\"" + escapeJSON(state ? state->value : "") + "\",";
-				    json += "\"time\":" + std::to_string(state ? state->time : 0) + ",";
-				    if(getExtraJSONFields)
-					    json += getExtraJSONFields(getPathLeafName(path)) + ",";
-				    json += "\"currentSeverity\":\"" +
-				            escapeJSON(state ? state->currentSeverity : "") + "\",";
-				    json += "\"currentMessage\":\"" +
-				            escapeJSON(state ? state->currentMessage : "") + "\"}";
-				    return;
-			    }
+			if(!isNode)
+			{
+				json += "\"isNode\":false,";
+				json += "\"pv\":\"" + escapeJSON(getPathLeafName(path)) + "\",";
+				json +=
+				    "\"message\":\"" + escapeJSON(state ? state->message : "") + "\",";
+				json += "\"value\":\"" + escapeJSON(state ? state->value : "") + "\",";
+				json += "\"time\":" + std::to_string(state ? state->time : 0) + ",";
+				if(getExtraJSONFields)
+					json += getExtraJSONFields(getPathLeafName(path)) + ",";
+				json += "\"currentSeverity\":\"" +
+				        escapeJSON(state ? state->currentSeverity : "") + "\",";
+				json += "\"currentMessage\":\"" +
+				        escapeJSON(state ? state->currentMessage : "") + "\"}";
+				return;
+			}
 
-			    const bool expandable = childrenIt != children.end();
-			    const bool expanded =
-			        expandable && (openPaths.count(path) || (openRoots && depth == 0));
-			    auto countIt = counts.find(path);
-			    json += "\"isNode\":true,";
-			    json += "\"activeCount\":" +
-			            std::to_string(countIt == counts.end() ? 0 : countIt->second.active) +
-			            ",";
-			    json += "\"acknowledgedCount\":" +
-			            std::to_string(countIt == counts.end()
-			                               ? 0
-			                               : countIt->second.acknowledged) +
-			            ",";
-			    json += "\"expandable\":" + std::string(expandable ? "true" : "false") + ",";
-			    json += "\"expanded\":" + std::string(expanded ? "true" : "false") + "}";
+			const bool expandable = childrenIt != children.end();
+			const bool expanded =
+			    expandable && (openPaths.count(path) || (openRoots && depth == 0));
+			auto countIt = counts.find(path);
+			json += "\"isNode\":true,";
+			json += "\"activeCount\":" +
+			        std::to_string(countIt == counts.end() ? 0 : countIt->second.active) +
+			        ",";
+			json += "\"acknowledgedCount\":" +
+			        std::to_string(
+			            countIt == counts.end() ? 0 : countIt->second.acknowledged) +
+			        ",";
+			json += "\"expandable\":" + std::string(expandable ? "true" : "false") + ",";
+			json += "\"expanded\":" + std::string(expanded ? "true" : "false") + "}";
 
-			    if(!expanded)
-				    return;
+			if(!expanded)
+				return;
 
-			    // most severe first, then by name
-			    std::vector<const std::string*> visibleChildren;
-			    for(const std::string* child : childrenIt->second)
-				    if(isVisible(*child))
-					    visibleChildren.push_back(child);
-			    std::sort(visibleChildren.begin(),
-			              visibleChildren.end(),
-			              [&](const std::string* a, const std::string* b) {
-				              auto aIt = topic.states.find(*a), bIt = topic.states.find(*b);
-				              const unsigned int aRank =
-				                  aIt == topic.states.end() ? 0 : severityRank(aIt->second.severity);
-				              const unsigned int bRank =
-				                  bIt == topic.states.end() ? 0 : severityRank(bIt->second.severity);
-				              if(aRank != bRank)
-					              return aRank > bRank;
-				              return getPathLeafName(*a) < getPathLeafName(*b);
-			              });
-			    for(const std::string* child : visibleChildren)
-				    emit(*child, depth + 1);
-		    };  // end emit()
+			// most severe first, then by name
+			std::vector<const std::string*> visibleChildren;
+			for(const std::string* child : childrenIt->second)
+				if(isVisible(*child))
+					visibleChildren.push_back(child);
+			std::sort(
+			    visibleChildren.begin(),
+			    visibleChildren.end(),
+			    [&](const std::string* a, const std::string* b) {
+				    auto aIt = topic.states.find(*a), bIt = topic.states.find(*b);
+				    const unsigned int aRank = aIt == topic.states.end()
+				                                   ? 0
+				                                   : severityRank(aIt->second.severity);
+				    const unsigned int bRank = bIt == topic.states.end()
+				                                   ? 0
+				                                   : severityRank(bIt->second.severity);
+				    if(aRank != bRank)
+					    return aRank > bRank;
+				    return getPathLeafName(*a) < getPathLeafName(*b);
+			    });
+			for(const std::string* child : visibleChildren)
+				emit(*child, depth + 1);
+		};  // end emit()
 
 		emit("/" + topicPair.first, 0);
 	}  //end topic loop
@@ -721,10 +726,10 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 ///
 ///	With onlyCurrentOk, the command is only for the alarms of pvs that are OK now: so
 /// 	it is sent for each of such alarms below a node, and not for the node as a whole.
-std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                            acknowledge,
-                                                  const std::string&              user,
+std::string KafkaAlarmReader::sendAcknowledgeJSON(bool               acknowledge,
+                                                  const std::string& user,
                                                   const std::vector<std::string>& paths,
-                                                  bool                            onlyCurrentOk)
+                                                  bool onlyCurrentOk)
 {
 	start();
 
@@ -736,11 +741,11 @@ std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                          
 		for(const auto& path : paths)
 		{
 			// path is /Configuration/path/to/pv
-			const size_t      pos   = path.find('/', 1);
-			const std::string topic = (path.size() > 1 && path[0] == '/' &&
-			                           pos != std::string::npos)
-			                              ? path.substr(1, pos - 1)
-			                              : "";
+			const size_t      pos = path.find('/', 1);
+			const std::string topic =
+			    (path.size() > 1 && path[0] == '/' && pos != std::string::npos)
+			        ? path.substr(1, pos - 1)
+			        : "";
 			auto topicIt = topics_.find(topic);
 			if(topicIt == topics_.end())
 			{
@@ -896,8 +901,8 @@ std::string KafkaAlarmReader::sendCommands(
 		error = disabledReason_;
 	else if(targets.size() && !producer_)
 	{
-		char             errstr[512];
-		rd_kafka_conf_t* conf = rd_kafka_conf_new();
+		char                                             errstr[512];
+		rd_kafka_conf_t*                                 conf = rd_kafka_conf_new();
 		std::vector<std::pair<std::string, std::string>> settings(
 		    {{"bootstrap.servers", brokers_},
 		     {"client.id", "ots-alarm-command"},
@@ -938,19 +943,19 @@ std::string KafkaAlarmReader::sendCommands(
 		size_t                                                  queuedCount = 0;
 		for(const auto& target : targets)
 		{
-			const std::string topic = target.first + COMMAND_TOPIC_SUFFIX;
-			const std::string key   = COMMAND_KEY_PREFIX + target.second;
+			const std::string   topic = target.first + COMMAND_TOPIC_SUFFIX;
+			const std::string   key   = COMMAND_KEY_PREFIX + target.second;
 			rd_kafka_resp_err_t err;
 			int                 tries = 0;
-			while((err = rd_kafka_producev(producer,
-			                               RD_KAFKA_V_TOPIC(topic.c_str()),
-			                               RD_KAFKA_V_PARTITION(0),
-			                               RD_KAFKA_V_KEY(key.data(), key.size()),
-			                               RD_KAFKA_V_VALUE((void*)value.data(), value.size()),
-			                               RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
-			                               RD_KAFKA_V_OPAQUE(&failures),
-			                               RD_KAFKA_V_END)) ==
-			          RD_KAFKA_RESP_ERR__QUEUE_FULL &&
+			while((err = rd_kafka_producev(
+			           producer,
+			           RD_KAFKA_V_TOPIC(topic.c_str()),
+			           RD_KAFKA_V_PARTITION(0),
+			           RD_KAFKA_V_KEY(key.data(), key.size()),
+			           RD_KAFKA_V_VALUE((void*)value.data(), value.size()),
+			           RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+			           RD_KAFKA_V_OPAQUE(&failures),
+			           RD_KAFKA_V_END)) == RD_KAFKA_RESP_ERR__QUEUE_FULL &&
 			      ++tries < 20)
 				rd_kafka_poll(producer, 100 /*timeout_ms*/);
 			if(err)
@@ -1002,14 +1007,14 @@ std::string KafkaAlarmReader::sendCommands(
 ///	severities is the set of severities to include, without the _ACK suffix (empty set
 /// 	for all severities except OK).
 ///	onlyCurrentOk is to include only the alarms of pvs that are OK now (latched alarms).
-std::string KafkaAlarmReader::getAlarmsJSON(const std::string&           topicFilter,
-                                            const std::set<std::string>& severities,
-                                            bool                         includeAcknowledged,
-                                            const std::string&           textFilter,
-                                            bool                         onlyCurrentOk,
-                                            size_t                       maxRows,
-                                            const std::function<std::string(const std::string&)>&
-                                                getExtraJSONFields)
+std::string KafkaAlarmReader::getAlarmsJSON(
+    const std::string&                                    topicFilter,
+    const std::set<std::string>&                          severities,
+    bool                                                  includeAcknowledged,
+    const std::string&                                    textFilter,
+    bool                                                  onlyCurrentOk,
+    size_t                                                maxRows,
+    const std::function<std::string(const std::string&)>& getExtraJSONFields)
 {
 	start();
 
@@ -1025,7 +1030,7 @@ std::string KafkaAlarmReader::getAlarmsJSON(const std::string&           topicFi
 
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	std::string json = "{" + getStatusJSONFields() + ",\"topics\":[";
+	std::string json       = "{" + getStatusJSONFields() + ",\"topics\":[";
 	bool        firstTopic = true;
 	for(const auto& topicPair : topics_)
 	{
@@ -1106,9 +1111,9 @@ std::string KafkaAlarmReader::getAlarmsJSON(const std::string&           topicFi
 	json += "\"alarms\":[";
 	for(size_t i = 0; i < rows.size() && i < maxRows; ++i)
 	{
-		const Row_t&        row   = rows[i];
-		const AlarmState_t& state = *row.state;
-		auto configIt             = topics_.at(*row.topic).configs.find(*row.path);
+		const Row_t&        row      = rows[i];
+		const AlarmState_t& state    = *row.state;
+		auto                configIt = topics_.at(*row.topic).configs.find(*row.path);
 
 		json += std::string(i ? "," : "") + "{";
 		json += "\"topic\":\"" + escapeJSON(*row.topic) + "\",";
@@ -1151,9 +1156,9 @@ std::string KafkaAlarmReader::getOtsErrorsJSON(const std::string& textFilter,
 	{
 		if(filter != "" && toLower(it->record).find(filter) == std::string::npos)
 			continue;
-		json += std::string(count ? "," : "") + "{\"kafkaTime\":" +
-		        std::to_string(it->kafkaTime) + ",\"key\":\"" + escapeJSON(it->key) +
-		        "\",\"record\":" + it->record + "}";
+		json += std::string(count ? "," : "") +
+		        "{\"kafkaTime\":" + std::to_string(it->kafkaTime) + ",\"key\":\"" +
+		        escapeJSON(it->key) + "\",\"record\":" + it->record + "}";
 		++count;
 	}
 	json += "]}";

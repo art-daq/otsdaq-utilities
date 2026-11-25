@@ -7,8 +7,8 @@
 #endif
 
 #include <unistd.h>  //for gethostname
-#include <cstdlib>   //for getenv
 #include <cstdio>    //for snprintf
+#include <cstdlib>   //for getenv
 #include <functional>
 #include <sstream>
 #include <vector>
@@ -90,7 +90,8 @@ KafkaErrorPublisher::KafkaErrorPublisher(void)
 		gethostname(hostname, sizeof(hostname) - 1);
 		const char* host = getenv("OTS_GATEWAY_HOST");
 		const char* port = getenv("OTS_MAIN_PORT");
-		gateway_ = std::string(host ? host : hostname) + ":" + std::string(port ? port : "");
+		gateway_ =
+		    std::string(host ? host : hostname) + ":" + std::string(port ? port : "");
 	}
 
 	char             errstr[512];
@@ -112,8 +113,8 @@ KafkaErrorPublisher::KafkaErrorPublisher(void)
 		                     sizeof(errstr)) != RD_KAFKA_CONF_OK)
 		{
 			__COUT_WARN__ << "Kafka publishing of Console errors is disabled, illegal "
-			              << setting.first << " = '" << setting.second
-			              << "': " << errstr << __E__;
+			              << setting.first << " = '" << setting.second << "': " << errstr
+			              << __E__;
 			rd_kafka_conf_destroy(conf);
 			return;
 		}
@@ -284,8 +285,8 @@ void KafkaErrorPublisher::publishError(const std::string& time,
 	       << ",\"label\":\"" << escapeJSON(label) << "\""
 	       << ",\"file\":\"" << escapeJSON(file) << "\""
 	       << ",\"line\":\"" << escapeJSON(line) << "\""
-	       << ",\"repeats\":" << dedup.suppressedCount
-	       << ",\"dropped\":" << rateDropped << ",\"message\":\""
+	       << ",\"repeats\":" << dedup.suppressedCount << ",\"dropped\":" << rateDropped
+	       << ",\"message\":\""
 	       << escapeJSON(msg.size() > MAX_MESSAGE_SIZE
 	                         ? msg.substr(0, MAX_MESSAGE_SIZE) + "..."
 	                         : msg)

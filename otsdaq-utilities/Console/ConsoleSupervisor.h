@@ -3,12 +3,12 @@
 
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
-#include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 #include "otsdaq-utilities/Console/KafkaErrorPublisher.h"
+#include "otsdaq/CoreSupervisors/CoreSupervisorBase.h"
 
-#include <memory> //for std::unique_ptr
-#include <mutex>  //for std::mutex
-#include <queue>  //for std::queue
+#include <memory>  //for std::unique_ptr
+#include <mutex>   //for std::mutex
+#include <queue>   //for std::queue
 
 namespace ots
 {

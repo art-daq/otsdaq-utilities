@@ -337,8 +337,7 @@ try
 					   cs->messages_.back().getLabel() != "Console")
 					{
 						const auto& fields = cs->messages_.back().fields;
-						auto        field  = [&fields](
-						                         ConsoleMessageStruct::FieldType type) {
+						auto field = [&fields](ConsoleMessageStruct::FieldType type) {
 							auto it = fields.find(type);
 							return it == fields.end() ? std::string() : it->second;
 						};
