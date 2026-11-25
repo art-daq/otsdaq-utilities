@@ -17,12 +17,11 @@ namespace ots
 ///	When there are too many samples in the requested time window, the samples are
 /// 	reduced by the database to buckets of mean, minimum and maximum.
 ///
-///	The connection is defined by environment variable:
-///		OTS_ARCHIVE_READER_CONNINFO	:= libpq connection string of a READ-ONLY account (optional)
-///	If not set, the connection is made to the archiver database of the controls plugin
-///		DCS_ARCHIVE_DATABASE_HOST, DCS_ARCHIVE_DATABASE_PORT, DCS_ARCHIVE_DATABASE
-///	as user OTS_ARCHIVE_READER_USER (default is "dcs_reader").
-///	The password is never taken from here: keep it in ~/.pgpass
+///	The connection is made to the archiver database of the controls plugin, with a
+///	READ-ONLY account, defined by the environment variables (e.g., in db_setup_ots.sh)
+///		DCS_ARCHIVE_DATABASE_HOST, DCS_ARCHIVE_DATABASE_PORT, DCS_ARCHIVE_DATABASE,
+///		DCS_ARCHIVE_DATABASE_READER_USER, DCS_ARCHIVE_DATABASE_READER_PWD
+///	The transactions are also forced to be read-only.
 class ArchiveHistoryReader
 {
   public:
@@ -38,7 +37,7 @@ class ArchiveHistoryReader
 
   private:
 	bool							enabled_ = false;
-	std::string 					connectionInfo_, disabledReason_;
+	std::string 					host_, port_, dbname_, user_, password_, disabledReason_;
 };
 
 // clang-format on

@@ -90,32 +90,29 @@ void appendPoints(std::string& json, bool& first, PGresult* res)
 ArchiveHistoryReader::ArchiveHistoryReader(void)
 {
 #ifdef OTS_HAVE_LIBPQ
-	const char* env = getenv("OTS_ARCHIVE_READER_CONNINFO");
-	if(env && env[0])
-		connectionInfo_ = env;
-	else
+	// same database as the controls plugin, with the read-only account (from db_setup_ots.sh)
+	const char* env = getenv("DCS_ARCHIVE_DATABASE_HOST");
+	if(!env || !env[0])
 	{
-		env = getenv("DCS_ARCHIVE_DATABASE_HOST");
-		if(!env || !env[0])
-		{
-			disabledReason_ =
-			    "not configured (environment variable OTS_ARCHIVE_READER_CONNINFO or "
-			    "DCS_ARCHIVE_DATABASE_HOST is not set)";
-			return;
-		}
-		connectionInfo_ = "host=" + std::string(env);
-		env             = getenv("DCS_ARCHIVE_DATABASE_PORT");
-		if(env && env[0])
-			connectionInfo_ += " port=" + std::string(env);
-		env = getenv("DCS_ARCHIVE_DATABASE");
-		connectionInfo_ += " dbname=" + std::string((env && env[0]) ? env : "dcs_archive");
-		env = getenv("OTS_ARCHIVE_READER_USER");
-		connectionInfo_ += " user=" + std::string((env && env[0]) ? env : "dcs_reader");
+		disabledReason_ =
+		    "not configured (environment variable DCS_ARCHIVE_DATABASE_HOST is not set)";
+		return;
 	}
-	// protect the database: short timeouts and read-only transactions
-	connectionInfo_ +=
-	    " connect_timeout=5 options='-c statement_timeout=20000 -c "
-	    "default_transaction_read_only=on'";
+	host_ = env;
+	if((env = getenv("DCS_ARCHIVE_DATABASE_PORT")))
+		port_ = env;
+	env     = getenv("DCS_ARCHIVE_DATABASE");
+	dbname_ = (env && env[0]) ? env : "dcs_archive";
+	if((env = getenv("DCS_ARCHIVE_DATABASE_READER_USER")))
+		user_ = env;
+	if((env = getenv("DCS_ARCHIVE_DATABASE_READER_PWD")))
+		password_ = env;
+	if(user_ == "")
+	{
+		disabledReason_ =
+		    "not configured (environment variable DCS_ARCHIVE_DATABASE_READER_USER is not set)";
+		return;
+	}
 	enabled_ = true;
 #else
 	disabledReason_ = "libpq was not found at compile time";
@@ -174,7 +171,20 @@ std::string ArchiveHistoryReader::getHistoryJSON(const std::string& pvName,
 		problem = disabledReason_;
 	else
 	{
-		connection = PQconnectdb(connectionInfo_.c_str());
+		// protect the database: short timeouts and read-only transactions
+		//	(if the password is empty, libpq looks for it in ~/.pgpass)
+		const char* const keywords[] = {
+		    "host", "port", "dbname", "user", "password", "connect_timeout", "options", nullptr};
+		const char* const values[] = {
+		    host_.c_str(),
+		    port_.c_str(),
+		    dbname_.c_str(),
+		    user_.c_str(),
+		    password_.c_str(),
+		    "5",
+		    "-c statement_timeout=20000 -c default_transaction_read_only=on",
+		    nullptr};
+		connection = PQconnectdbParams(keywords, values, 0 /*expand_dbname*/);
 		if(PQstatus(connection) != CONNECTION_OK)
 			problem = "cannot connect: " + firstLine(PQerrorMessage(connection));
 	}
