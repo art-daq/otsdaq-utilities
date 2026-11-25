@@ -1150,6 +1150,12 @@ std::string SlowControlsDashboardSupervisor::getLiveJSONFields(const std::string
 		state = "the controls plugin failed to give the value";
 	}
 
+	// the value of some PVs (e.g., char records) may have control characters, which are illegal in JSON
+	for(auto* field : {&value, &severity})
+		for(auto& c : *field)
+			if((unsigned char)c < 0x20 || c == 0x7f)
+				c = ' ';
+
 	return "\"liveValue\":\"" + StringMacros::escapeJSONStringEntities(value) +
 	       "\",\"liveTime\":" + valueTime + ",\"liveSeverity\":\"" +
 	       StringMacros::escapeJSONStringEntities(severity) + "\",\"liveState\":\"" +
