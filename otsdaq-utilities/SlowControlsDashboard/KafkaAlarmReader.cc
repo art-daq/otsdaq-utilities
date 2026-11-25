@@ -465,14 +465,20 @@ bool KafkaAlarmReader::isAcknowledged(const std::string& severity)
 /// isAlarmMatch
 ///	Returns true if the pv is in alarm (i.e. latched severity is not OK) and matches
 /// 	the filter. See getAlarmsJSON() for the parameters.
+///
+///	With onlyCurrentOk, only the alarms of pvs that are OK now match, i.e. the latched
+/// 	alarms that are only waiting for the acknowledge.
 bool KafkaAlarmReader::isAlarmMatch(const std::string&           path,
                                     const AlarmState_t&          state,
                                     const AlarmConfig_t&         config,
                                     const std::set<std::string>& severities,
                                     bool                         includeAcknowledged,
-                                    const std::string&           lowerCaseTextFilter)
+                                    const std::string&           lowerCaseTextFilter,
+                                    bool                         onlyCurrentOk)
 {
 	if(state.severity == "OK" || state.severity == "")
+		return false;
+	if(onlyCurrentOk && state.currentSeverity != "OK")
 		return false;
 
 	const bool        acknowledged = isAcknowledged(state.severity);
@@ -531,6 +537,7 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
     const std::set<std::string>& severities,
     bool                         includeAcknowledged,
     const std::string&           textFilter,
+    bool                         onlyCurrentOk,
     bool                         showAll,
     const std::set<std::string>& openPaths,
     bool                         openRoots,
@@ -572,7 +579,8 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 			                 configIt->second,
 			                 severities,
 			                 includeAcknowledged,
-			                 filter))
+			                 filter,
+			                 onlyCurrentOk))
 				continue;
 			const bool acknowledged = isAcknowledged(state.severity);
 			for(std::string node = getParentPath(statePair.first); node != "";
@@ -603,7 +611,8 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 			                    configIt->second,
 			                    severities,
 			                    includeAcknowledged,
-			                    filter);
+			                    filter,
+			                    onlyCurrentOk);
 		};  // end isVisible()
 
 		std::function<void(const std::string&, int)> emit =
@@ -709,13 +718,18 @@ std::string KafkaAlarmReader::getAlarmTreeJSON(
 /// 	or nodes of the alarm tree (i.e. all the alarms below). Paths that are not known, or
 /// 	not in alarm, are skipped, as are the alarms already acknowledged (or, for
 /// 	unacknowledge, not acknowledged).
+///
+///	With onlyCurrentOk, the command is only for the alarms of pvs that are OK now: so
+/// 	it is sent for each of such alarms below a node, and not for the node as a whole.
 std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                            acknowledge,
                                                   const std::string&              user,
-                                                  const std::vector<std::string>& paths)
+                                                  const std::vector<std::string>& paths,
+                                                  bool                            onlyCurrentOk)
 {
 	start();
 
 	std::vector<std::pair<std::string, std::string>> targets;
+	std::set<std::string>                            targetPaths;  //to send only once
 	size_t                                           skippedCount = 0;
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -740,7 +754,37 @@ std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                          
 				++skippedCount;
 				continue;
 			}
-			if(!stateIt->second.isLeaf)
+			if(!stateIt->second.isLeaf && onlyCurrentOk)
+			{
+				// a node of the alarm tree: acts on each alarm below it that is OK now
+				const std::string prefix     = path + "/";
+				size_t            belowCount = 0;
+				for(const auto& statePair : topicIt->second.states)
+				{
+					if(!statePair.second.isLeaf ||
+					   statePair.first.compare(0, prefix.size(), prefix))
+						continue;
+					auto belowConfigIt = topicIt->second.configs.find(statePair.first);
+					if(belowConfigIt == topicIt->second.configs.end() ||
+					   !belowConfigIt->second.enabled ||
+					   !isAlarmMatch(statePair.first,
+					                 statePair.second,
+					                 belowConfigIt->second,
+					                 {},
+					                 true,
+					                 "",
+					                 true /*onlyCurrentOk*/) ||
+					   isAcknowledged(statePair.second.severity) == acknowledge)
+						continue;
+					++belowCount;
+					if(targetPaths.insert(statePair.first).second)
+						targets.push_back(std::make_pair(topic, statePair.first));
+				}
+				if(!belowCount)
+					++skippedCount;
+				continue;
+			}
+			else if(!stateIt->second.isLeaf)
 			{
 				// a node of the alarm tree: acts on all the alarms below it
 				size_t activeCount, acknowledgedCount;
@@ -752,13 +796,20 @@ std::string KafkaAlarmReader::sendAcknowledgeJSON(bool                          
 				}
 			}
 			else if(configIt == topicIt->second.configs.end() ||
-			        !isAlarmMatch(path, stateIt->second, configIt->second, {}, true, "") ||
+			        !isAlarmMatch(path,
+			                      stateIt->second,
+			                      configIt->second,
+			                      {},
+			                      true,
+			                      "",
+			                      onlyCurrentOk) ||
 			        isAcknowledged(stateIt->second.severity) == acknowledge)
 			{
 				++skippedCount;
 				continue;
 			}
-			targets.push_back(std::make_pair(topic, path));
+			if(targetPaths.insert(path).second)
+				targets.push_back(std::make_pair(topic, path));
 		}
 	}
 	return sendCommands(acknowledge, user, targets, skippedCount, "");
@@ -779,6 +830,7 @@ std::string KafkaAlarmReader::sendAcknowledgeByFilterJSON(
     const std::set<std::string>& severities,
     bool                         includeAcknowledged,
     const std::string&           textFilter,
+    bool                         onlyCurrentOk,
     size_t                       expectedCount)
 {
 	start();
@@ -805,7 +857,8 @@ std::string KafkaAlarmReader::sendAcknowledgeByFilterJSON(
 				                 configIt->second,
 				                 severities,
 				                 includeAcknowledged,
-				                 filter) ||
+				                 filter,
+				                 onlyCurrentOk) ||
 				   isAcknowledged(statePair.second.severity) == acknowledge)
 					continue;
 				targets.push_back(std::make_pair(topicPair.first, statePair.first));
@@ -948,10 +1001,12 @@ std::string KafkaAlarmReader::sendCommands(
 ///	topicFilter is one alarm configuration name, or "" for all.
 ///	severities is the set of severities to include, without the _ACK suffix (empty set
 /// 	for all severities except OK).
+///	onlyCurrentOk is to include only the alarms of pvs that are OK now (latched alarms).
 std::string KafkaAlarmReader::getAlarmsJSON(const std::string&           topicFilter,
                                             const std::set<std::string>& severities,
                                             bool                         includeAcknowledged,
                                             const std::string&           textFilter,
+                                            bool                         onlyCurrentOk,
                                             size_t                       maxRows,
                                             const std::function<std::string(const std::string&)>&
                                                 getExtraJSONFields)
@@ -997,7 +1052,8 @@ std::string KafkaAlarmReader::getAlarmsJSON(const std::string&           topicFi
 			                 configIt->second,
 			                 severities,
 			                 includeAcknowledged,
-			                 filter))
+			                 filter,
+			                 onlyCurrentOk))
 				continue;
 
 			rows.push_back(Row_t{&topicPair.first,

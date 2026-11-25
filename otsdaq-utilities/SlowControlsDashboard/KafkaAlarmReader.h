@@ -53,19 +53,20 @@ class KafkaAlarmReader
 
 	/// returns JSON object with topic summaries and the (filtered) list of pv alarms
 	std::string						getAlarmsJSON						(const std::string& topicFilter, const std::set<std::string>& severities,
-																		 bool includeAcknowledged, const std::string& textFilter, size_t maxRows,
+																		 bool includeAcknowledged, const std::string& textFilter, bool onlyCurrentOk, size_t maxRows,
 																		 const std::function<std::string(const std::string& /*pv*/)>& getExtraJSONFields = nullptr); ///< extra fields are added to each alarm
 	/// returns JSON object with the rows (in display order) of the alarm tree, as in the Phoebus alarm tree: only the children of the open nodes are listed
 	std::string						getAlarmTreeJSON					(const std::string& topicFilter, const std::set<std::string>& severities,
-																		 bool includeAcknowledged, const std::string& textFilter, bool showAll,
+																		 bool includeAcknowledged, const std::string& textFilter, bool onlyCurrentOk, bool showAll,
 																		 const std::set<std::string>& openPaths, bool openRoots, size_t maxRows,
 																		 const std::function<std::string(const std::string& /*pv*/)>& getExtraJSONFields = nullptr); ///< extra fields are added to each pv row
 	/// sends the command for the alarms (pv paths) given, returns JSON object with sentCount, skippedCount and error
-	std::string						sendAcknowledgeJSON					(bool acknowledge, const std::string& user, const std::vector<std::string>& paths);
+	std::string						sendAcknowledgeJSON					(bool acknowledge, const std::string& user, const std::vector<std::string>& paths,
+																		 bool onlyCurrentOk = false); ///< onlyCurrentOk skips the alarms of pvs that are not OK now, also below nodes
 	/// sends the command for all alarms that match the filter (as getAlarmsJSON), if not many more than expectedCount
 	std::string						sendAcknowledgeByFilterJSON			(bool acknowledge, const std::string& user, const std::string& topicFilter,
 																		 const std::set<std::string>& severities, bool includeAcknowledged,
-																		 const std::string& textFilter, size_t expectedCount);
+																		 const std::string& textFilter, bool onlyCurrentOk, size_t expectedCount);
 
 	/// returns JSON object with the most recent ots error records, newest first
 	std::string						getOtsErrorsJSON					(const std::string& textFilter, size_t maxRows);
@@ -112,7 +113,8 @@ class KafkaAlarmReader
 	static bool 					isAcknowledged						(const std::string& severity);
 	static void 					countBelow							(const Topic_t& topic, const std::string& nodePath, size_t& activeCount, size_t& acknowledgedCount);
 	static bool 					isAlarmMatch						(const std::string& path, const AlarmState_t& state, const AlarmConfig_t& config,
-																		 const std::set<std::string>& severities, bool includeAcknowledged, const std::string& lowerCaseTextFilter);
+																		 const std::set<std::string>& severities, bool includeAcknowledged, const std::string& lowerCaseTextFilter,
+																		 bool onlyCurrentOk = false);
 	std::string 					sendCommands						(bool acknowledge, const std::string& user,
 																		 const std::vector<std::pair<std::string /*topic*/, std::string /*path*/>>& targets,
 																		 size_t skippedCount, std::string error);

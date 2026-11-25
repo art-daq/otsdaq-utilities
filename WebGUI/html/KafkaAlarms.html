@@ -77,6 +77,7 @@
 		#chartToolbar button.active { background: var(--row-selected); font-weight: bold; }
 		#chartToolbar .spacer { flex: 1; }
 		#chartNote 			{ font-size: 12px; color: var(--text-secondary); padding: 0 12px 2px 12px; min-height: 16px; }
+		#chartNote .problem	{ display: inline-block; font-size: 13px; font-weight: bold; color: rgb(30, 20, 0); background-color: rgb(255, 190, 60); border-radius: 3px; padding: 2px 8px; margin-right: 6px; }
 		#chartArea 			{ position: relative; flex: 1; min-height: 0; }
 		#chartCanvas 		{ position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
 		#chartCanvas.loading { opacity: 0.55; }
@@ -107,6 +108,10 @@
 	//		The alarms are shown as a table, or as the alarm tree defined in Phoebus (view tree):
 	//		click on a node to open or close it, only the open nodes are read from the server.
 	//		Each node shows the count of alarms below it, and can be acknowledged as a whole.
+	//
+	//		With the "only OK now" filter, only the alarms of pvs that are OK now are shown and
+	//		counted, i.e. the latched alarms that are only waiting for the acknowledge: the
+	//		acknowledge commands then act only on those, also below the selected tree nodes.
 	//
 	//		Click on an alarm to see the time chart of its pv, from the archiver database
 	//		(drag to zoom on a time interval, wheel to zoom, double click to go back).
@@ -260,6 +265,7 @@
 			_alarmQuery = "topic=" + encodeURIComponent(_topic) +
 				"&severities=" + severities.join(",") +
 				"&showAck=" + (document.getElementById("showAck").checked ? "1" : "0") +
+				"&currentOk=" + (document.getElementById("currentOk").checked ? "1" : "0") +
 				"&filter=" + filter;
 			if(_view == "tree")
 				DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaAlarmTree",
@@ -661,9 +667,11 @@
 		var acknowledge = command == "acknowledge";
 		var data = "command=" + command + "&mode=" + mode;
 		var count = 0, prompt;
+		var currentOk = !!_matched && _matched.query.indexOf("currentOk=1") >= 0; //as for the rows and counts shown
 
 		if(mode == "selected")
 		{
+			data += "&currentOk=" + (currentOk ? "1" : "0");
 			var selection = getSelection();
 			var paths = acknowledge ? selection.ackPaths : selection.unackPaths;
 			count = acknowledge ? selection.ackCount : selection.unackCount;
@@ -676,7 +684,8 @@
 			}
 			if(selection.nodeCount)
 				prompt += "<br><br>The selection includes " + selection.nodeCount + " node" + (selection.nodeCount == 1 ? "" : "s") +
-					" of the alarm tree: the command acts on all the alarms below " + (selection.nodeCount == 1 ? "it" : "them") + ".";
+					" of the alarm tree: the command acts on all the alarms below " + (selection.nodeCount == 1 ? "it" : "them") +
+					(currentOk ? " of pvs that are OK now" : "") + ".";
 		}
 		else
 		{
@@ -687,7 +696,8 @@
 			prompt = "Do you want to " + command + " ALL the " + count + " alarm" + (count == 1 ? "" : "s") +
 				" that match the filters, including the ones not shown in the table?<br><br>" +
 				"Configuration: " + (_topic ? _topic.replace(/[<>&]/g, "") : "all") +
-				(filterText ? "<br>Filter text: " + filterText.replace(/[<>&]/g, "") : "");
+				(filterText ? "<br>Filter text: " + filterText.replace(/[<>&]/g, "") : "") +
+				(currentOk ? "<br>Only the alarms of pvs that are OK now" : "");
 		}
 		if(!count) return;
 
@@ -771,6 +781,7 @@
 			</span>
 			<span id="severityChecks"></span>
 			<label><input type="checkbox" id="showAck" checked onchange="poll()"> acknowledged</label>
+			<label title="Only the alarms of pvs that are OK now, i.e. the latched alarms that are only waiting for the acknowledge. The acknowledge commands then act only on those, also below the selected tree nodes."><input type="checkbox" id="currentOk" onchange="_selectedPaths = {}; poll()"> only OK now</label>
 		</span>
 		<input type="text" id="filter" placeholder="filter text..." oninput="poll()">
 	</div>
@@ -929,7 +940,8 @@
 	    chart.highLimit = reply.highLimit === null || reply.highLimit === undefined ? NaN : reply.highLimit;
 	    document.getElementById('chartUnits').textContent = (chart.units ? '[' + chart.units + ']  ' : '') + chart.description;
 	    const noteParts = [];
-	    if (reply.archiveProblem) noteParts.push('Archiver history: ' + reply.archiveProblem + '.');
+	    let problemText = '';
+	    if (reply.archiveProblem) problemText = 'Archiver history: ' + reply.archiveProblem + '.';
 	    else if (!chart.points.some(point => point[1] !== null && point[0] >= chart.viewFrom)) {
 	      const lastPoint = chart.points[chart.points.length - 1];
 	      noteParts.push('No archived values in this time interval' + (!lastPoint ? '.' :
@@ -937,7 +949,14 @@
 	        (lastPoint[1] === null ? ' (pv disconnected, or not archived since then).' : ', and its value holds.')));
 	    }
 	    if (reply.reducedToBuckets) noteParts.push('Many points: line = mean, band = minimum to maximum. Zoom in for single samples.');
-	    chartNote.textContent = noteParts.join(' ');
+	    chartNote.textContent = '';
+	    if (problemText) { // shown evidently, since the chart is then empty
+	      const problemEl = document.createElement('span');
+	      problemEl.className = 'problem';
+	      problemEl.textContent = problemText;
+	      chartNote.appendChild(problemEl);
+	    }
+	    chartNote.appendChild(document.createTextNode(noteParts.join(' ')));
 	  }
 	  chartCanvas.classList.remove('loading');
 	  drawChart();

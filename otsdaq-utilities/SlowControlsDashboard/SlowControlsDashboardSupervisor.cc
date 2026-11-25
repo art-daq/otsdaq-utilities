@@ -871,6 +871,7 @@ void SlowControlsDashboardSupervisor::GetAlarmsCheck(HttpXmlDocument& xmlOut)
 ///		severities	:= comma-separated severities to include (empty for all except OK)
 ///		showAck		:= 1 to include acknowledged alarms
 ///		filter		:= text to search for in pv path, description and message
+///		currentOk	:= 1 to include only the alarms of pvs that are OK now (latched alarms)
 ///		maxRows		:= maximum number of alarms to return
 ///
 ///	The live value of each returned pv is added (from the controls plugin).
@@ -908,6 +909,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
 	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
 	        StringMacros::decodeURIComponent(
 	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1",
 	        maxRows,
 	        liveFields)));
 }  // end GetKafkaAlarms()
@@ -923,6 +925,8 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
 ///		mode		:= selected (the alarms in paths), or filter (all alarms that match the filter)
 ///		paths		:= for mode selected, newline-separated alarm paths, e.g. /Calo/path/to/pv
 ///		topic, severities, showAck, filter := for mode filter, as for GetKafkaAlarms
+///		currentOk	:= 1 to only act on the alarms of pvs that are OK now (both modes): for
+///						mode selected, also for the alarms below the selected nodes
 ///		expectedCount := for mode filter, the count of alarms that the user confirmed
 void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
     cgicc::Cgicc&                    cgiIn,
@@ -950,7 +954,8 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 		           << "'." << __E__;
 		__SUP_SS_THROW__;
 	}
-	const bool acknowledge = command == "acknowledge";
+	const bool acknowledge   = command == "acknowledge";
+	const bool onlyCurrentOk = CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1";
 
 	std::string json;
 	if(mode == "selected")
@@ -964,10 +969,11 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 				paths.push_back(path);
 
 		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
-		                  << command << " " << paths.size() << " selected alarms."
+		                  << command << " " << paths.size() << " selected alarms"
+		                  << (onlyCurrentOk ? " (only of pvs that are OK now)." : ".")
 		                  << __E__;
 		json = kafkaAlarmReader_.sendAcknowledgeJSON(
-		    acknowledge, userInfo.username_, paths);
+		    acknowledge, userInfo.username_, paths, onlyCurrentOk);
 	}
 	else
 	{
@@ -982,7 +988,9 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
 		                  << command << " all alarms that match configuration '" << topic
 		                  << "', severities {" << StringMacros::setToString(severities)
-		                  << "}, text '" << filter << "'." << __E__;
+		                  << "}, text '" << filter << "'"
+		                  << (onlyCurrentOk ? " (only of pvs that are OK now)." : ".")
+		                  << __E__;
 		json = kafkaAlarmReader_.sendAcknowledgeByFilterJSON(
 		    acknowledge,
 		    userInfo.username_,
@@ -990,6 +998,7 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 		    severities,
 		    CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
 		    filter,
+		    onlyCurrentOk,
 		    CgiDataUtilities::getOrPostDataAsInt(cgiIn, "expectedCount"));
 	}
 	xmlOut.addTextElementToData("JSON", StringMacros::encodeURIComponent(json));
@@ -1000,7 +1009,7 @@ void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
 ///	Returns the rows of the Phoebus alarm tree read from Kafka, as (URI encoded) JSON.
 ///
 ///	Parameters:
-///		topic, severities, showAck, filter := as for GetKafkaAlarms
+///		topic, severities, showAck, filter, currentOk := as for GetKafkaAlarms
 ///		showAll		:= 1 to list also the nodes and pvs that are not in alarm
 ///		open		:= newline-separated paths of the open nodes (their children are listed)
 ///		openRoots	:= 1 to open the root of each alarm configuration
@@ -1049,6 +1058,7 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
 	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
 	        StringMacros::decodeURIComponent(
 	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1",
 	        CgiDataUtilities::getOrPostData(cgiIn, "showAll") == "1",
 	        openPaths,
 	        CgiDataUtilities::getOrPostData(cgiIn, "openRoots") == "1",
