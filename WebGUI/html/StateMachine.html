@@ -604,10 +604,8 @@
 					else //default to js default
 						toggleViewMode(_altStateDrawingMode);
 
-					if(!DesktopContent.getParameter(0, "fsm_name")) {
-						_fsmName = DesktopContent.getXMLValue(req, "Default_FSM_Name");
-						Debug.log("Loaded FSM Name preference",_fsmName);
-					}
+					//note: the FSM name is not a per-user preference; it is the system-wide
+					//	run type shared with Subsystem Launch (see localFinishInit())
 
 					//delay get system aliases because it makes the GUI load experience more responsive to users
 					window.setTimeout(
@@ -627,6 +625,28 @@
 
 				if(!DesktopContent.getParameter(0, "fsm_name"))
 				{
+					//get the system-wide run type (shared by all users and with Subsystem Launch)
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=subsystemLaunchRunType", "",
+						function(req, reqParam, errStr) {
+							var sharedFsmName = (req && !errStr) ? DesktopContent.getXMLValue(req, "subsystemLaunchRunType") : "";
+							Debug.log("Loaded system-wide run type", sharedFsmName);
+							if(sharedFsmName)
+								_fsmName = sharedFsmName;
+							localGetStateMachineNames();
+						},
+						0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/);
+				}
+				else //get state machine from server
+					DesktopContent.XMLHttpRequest(
+						"Request?RequestType=getStateMachine" +
+						"&fsmName=" + _fsmName, "",
+						smRequestHandler);
+
+			} //end localFinishInit()
+
+			//=====================
+			function localGetStateMachineNames() {
 					//get possible state machine names
 					DesktopContent.XMLHttpRequest(
 						"Request?RequestType=getStateMachineNames", "",
@@ -669,14 +689,7 @@
 								"&fsmName=" + _fsmName, "",
 								smRequestHandler);
 						}); //end getStateMachineNames request
-				}
-				else //get state machine from server
-					DesktopContent.XMLHttpRequest(
-						"Request?RequestType=getStateMachine" +
-						"&fsmName=" + _fsmName, "",
-						smRequestHandler);
-
-			} //end localFinishInit()
+			} //end localGetStateMachineNames()
 
 		} //end init()
 
@@ -743,6 +756,7 @@
 		//	then code launches requests to fill parameters, _transitionParameterValues
 		var _transParamsHtmlStr;
 		var _previousTransitionParameterValues = [];
+		var _configAliasChangePending = false; //true while a config alias change by this user is being sent to the Gateway
 		function initTransitionParameters(req) {
 			if (!req) //first time
 			{
@@ -838,7 +852,7 @@
 				// _transParamsHtmlStr += "<tr><td>" + _TRANSITION_PARAMETERS[_parameterInitCount] +
 				//         "</td><td><select onchange='handleTransitionParameterChange(" +
 				//         _parameterInitCount + ",this);'>";
-				_transParamsHtmlStr += "<select onchange='handleTransitionParameterChange(" +
+				_transParamsHtmlStr += "<select id='config-alias-select' onchange='handleTransitionParameterChange(" +
 					_parameterInitCount + ",this);'";
 				_transParamsHtmlStr += ` style='
 					font-family: "Donegal One", arial;
@@ -866,9 +880,10 @@
 						var userLastConfigAlias =
 							DesktopContent.getXMLValue(req, "UserLastConfigAlias");
 
-						//take last configured alias, if user has not selected anything yet
+						//take the system-wide selected config alias for this run type (shared by all users),
+						//	only keep the previous selection here if the Gateway has no value
 						if (!userLastConfigAlias) userLastConfigAlias = "";
-						if (_previousTransitionParameterValues[0] === undefined)
+						if (userLastConfigAlias || _previousTransitionParameterValues[0] === undefined)
 							_previousTransitionParameterValues[0] = userLastConfigAlias;
 
 						var alias;
@@ -968,8 +983,32 @@
 				case 0: //ConfigurationAlias
 					Debug.log("handleTransitionParameterChange ConfigurationAlias " +
 						el.options[el.selectedIndex].value);
-					_transitionParameterValues[paramIndex] = el.options[el.selectedIndex].value;
-					fetchGlobalFieldsForAlias(_transitionParameterValues[paramIndex]);
+					//save system-wide so all users' State Machine and Subsystem Launch pages follow this selection
+					//	(only the user with the lock may change it; if refused, go back to the shared value)
+					var selectedConfigAlias = el.options[el.selectedIndex].value;
+					var previousConfigAlias = _transitionParameterValues[paramIndex];
+					_configAliasChangePending = true;
+					DesktopContent.XMLHttpRequest("Request?RequestType=setSelectedConfigAlias" +
+						"&fsmName=" + _fsmName +
+						"&configAlias=" + encodeURIComponent(selectedConfigAlias),
+						"",
+						function (req, reqParam, errStr) {
+							_configAliasChangePending = false;
+							var err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+							if(err)
+							{
+								Debug.log("The config alias was not changed to '" + selectedConfigAlias +
+									"'. Only the user with the lock can change the config alias for all users.\n\n" +
+									err, Debug.HIGH_PRIORITY);
+								if(previousConfigAlias !== undefined)
+									el.value = previousConfigAlias;
+								return;
+							}
+
+							_transitionParameterValues[paramIndex] = selectedConfigAlias;
+							fetchGlobalFieldsForAlias(_transitionParameterValues[paramIndex]);
+						},
+						0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/);
 					break;
 				default:
 					Debug.log("handleTransitionParameterChange UNKNOWN?!");
@@ -1278,6 +1317,41 @@
 
 			var cs = DesktopContent.getXMLValue(req, "current_state");
 			var inTrans = DesktopContent.getXMLValue(req, "in_transition") == "1";
+
+			//system-wide run type (follow a change made by the user with the lock, here or in Subsystem Launch)
+			if(!DesktopContent.getParameter(0, "fsm_name"))
+			{
+				var sharedFsmName = DesktopContent.getXMLValue(req, "subsystemLaunchRunType");
+				//only follow a value that is a valid FSM name here, otherwise this would reload every poll
+				//	(and wait for a running transition to finish before switching the drawing)
+				if(!inTrans && sharedFsmName && sharedFsmName != _fsmName &&
+					_fsmNameArr && _fsmNameArr.indexOf(sharedFsmName) >= 0)
+				{
+					Debug.log("Run type was changed system-wide to '" + sharedFsmName +
+						"' (was '" + _fsmName + "'), reloading the State Machine.", Debug.INFO_PRIORITY);
+					loadSelectedFsm(sharedFsmName);
+					return;
+				}
+			}
+
+			//system-wide selected config alias for this run type (follow a change made by the user with the lock,
+			//	here or in Subsystem Launch, or made by a Configure)
+			{
+				var sharedConfigAlias = DesktopContent.getXMLValue(req, "selectedConfigAlias");
+				var configAliasSelectElement = document.getElementById("config-alias-select");
+				//only follow a value that is a valid alias for this run type
+				if(!inTrans && !_configAliasChangePending && configAliasSelectElement &&
+					sharedConfigAlias && _transitionParameterValues &&
+					sharedConfigAlias != _transitionParameterValues[0] &&
+					_aliasTranslationMap[sharedConfigAlias] !== undefined)
+				{
+					Debug.log("Config alias was changed system-wide to '" + sharedConfigAlias +
+						"' (was '" + _transitionParameterValues[0] + "').", Debug.INFO_PRIORITY);
+					_transitionParameterValues[0] = sharedConfigAlias;
+					configAliasSelectElement.value = sharedConfigAlias;
+					fetchGlobalFieldsForAlias(sharedConfigAlias);
+				}
+			}
 
 			//check if FSM names changed (e.g. due to Context Common Table override)
 			{
@@ -3064,25 +3138,50 @@
 			Debug.log("handleFSMSelection()", selectedValue);
 
 			if (selectedValue) {
-				// Set the fsmName and reload the page with the selected FSM
-				_fsmName = selectedValue;
+				//save system-wide so all users' State Machine and Subsystem Launch pages follow this selection
+				//	(only the user with the lock may change it; if refused, go back to the shared value)
+				var previousFsmName = _fsmName;
+				DesktopContent.XMLHttpRequest("Request?RequestType=setSubsystemLaunchRunType" +
+					"&runType=" + encodeURIComponent(selectedValue),
+					"",
+					function (req, reqParam, errStr) {
+						var err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+						if(err)
+						{
+							Debug.log("The run type was not changed to '" + selectedValue +
+								"'. Only the user with the lock can change the run type for all users.\n\n" +
+								err, Debug.HIGH_PRIORITY);
+							var selectElement = document.getElementById('fsm-select');
+							if(selectElement)
+								selectElement.value = previousFsmName;
+							return;
+						}
 
-				//assume this toggle is caused by user
-				//save setting to server for user
-				DesktopContent.XMLHttpRequest("Request?RequestType=stateMachinePreferences" +
-					"&set=1" +
-					"&Default_FSM_Name=" + _fsmName,
-					"");
-
-				// Get the state machine from server with the selected FSM name
-				DesktopContent.XMLHttpRequest(
-					"Request?RequestType=getStateMachine" +
-					"&fsmName=" + _fsmName, "",
-					smRequestHandler);
-
-				initTransitionParameters();
+						loadSelectedFsm(DesktopContent.getXMLValue(req, "subsystemLaunchRunType") || selectedValue);
+					},
+					0 /*reqParam*/, 0 /*progressHandler*/, true /*callHandlerOnErr*/);
 			}
 		} //end handleFSMSelection()
+
+		//=====================================================================================
+		//loadSelectedFsm() ~~
+		//	show the given FSM (the system-wide run type) and get it from the server
+		function loadSelectedFsm(fsmName) {
+			Debug.log("loadSelectedFsm()", fsmName);
+			_fsmName = fsmName;
+
+			var selectElement = document.getElementById('fsm-select');
+			if(selectElement)
+				selectElement.value = _fsmName;
+
+			// Get the state machine from server with the selected FSM name
+			DesktopContent.XMLHttpRequest(
+				"Request?RequestType=getStateMachine" +
+				"&fsmName=" + _fsmName, "",
+				smRequestHandler);
+
+			initTransitionParameters();
+		} //end loadSelectedFsm()
 
 	</script>
 </head>

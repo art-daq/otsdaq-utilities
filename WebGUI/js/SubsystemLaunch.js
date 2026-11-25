@@ -91,6 +91,7 @@ SubsystemLaunch.create = function() {
 	//		'public' member functions: -------
 	//	this.handleSubsystemActionSelect(el, subsystemIndex)
 	//	this.handleSystemConfigAliasSelect(value)
+	//	this.handleSystemConfigAliasChange(value)
 	//	this.handleSubsystemConfigAliasSelect(value, subsystemIndex)
 	//	this.getSubsystemConfigAliasSelectInfo(subsystemIndex)
 	//	this.bootSubsystem(subsystemIndex)
@@ -124,6 +125,7 @@ SubsystemLaunch.create = function() {
 	var _fsmNameArr;
 	var _getStatusTimer = 0;
 	var _statusRequestNonce = 0; //increments to invalidate stale async status callbacks
+	var _configAliasChangePending = false; //true while a system config alias change by this user is being sent to the Gateway
 	var _getAutoInitCount = 2; // allow 2 auto inits to happen before giving up
 
 	var _dotDotDot = "..."; //to add growing ... feedback to user
@@ -569,7 +571,7 @@ SubsystemLaunch.create = function() {
 				{
 					str += "Configure Alias:<br>";
 					str += "<select id='systemConfigAliasSelect' style='padding: 4px; font-size: 14px;' "+
-						"onchange='SubsystemLaunch.launcher.handleSystemConfigAliasSelect(this.value);'>";
+						"onchange='SubsystemLaunch.launcher.handleSystemConfigAliasChange(this.value);'>";
 					if (SubsystemLaunch.system.systemAliases.length == 0) {
 						str += "<option ></option>"; //empty option to start
 						Debug.warn("No System Configure Aliases were found. " +
@@ -1393,6 +1395,27 @@ SubsystemLaunch.create = function() {
 				}
 			} //end system-wide run type ----------
 
+			//system-wide selected config alias for this run type (follow a change made by the user
+			//	with the lock, here or in State Machine, or made by a Configure) ----------
+			{
+				var sharedConfigAlias = DesktopContent.getXMLValue(req, "selectedConfigAlias");
+				var configAliasSelectElement = document.getElementById("systemConfigAliasSelect");
+				//only follow a value that is a valid alias for this run type
+				var sharedConfigAliasIsValid = false;
+				for(var aliasIndex = 0; sharedConfigAlias && SubsystemLaunch.system.systemAliases &&
+					aliasIndex < SubsystemLaunch.system.systemAliases.length; ++aliasIndex)
+					if(SubsystemLaunch.system.systemAliases[aliasIndex].name == sharedConfigAlias)
+						sharedConfigAliasIsValid = true;
+
+				if(!_configAliasChangePending && configAliasSelectElement && sharedConfigAliasIsValid &&
+					sharedConfigAlias != SubsystemLaunch.system.selectedSystemAlias) {
+					Debug.log("Config alias was changed system-wide to '" + sharedConfigAlias +
+						"' (was '" + SubsystemLaunch.system.selectedSystemAlias + "').", Debug.INFO_PRIORITY);
+					configAliasSelectElement.value = sharedConfigAlias;
+					SubsystemLaunch.launcher.handleSystemConfigAliasSelect(sharedConfigAlias);
+				}
+			} //end system-wide selected config alias ----------
+
 			//system state ------------------------
 			{
 				SubsystemLaunch.extractSystemStatus(req);
@@ -1964,28 +1987,35 @@ SubsystemLaunch.create = function() {
 	function handleFSMSelectionSubsystem(selectedValue) {
 		Debug.log("handleFSMSelectionSubsystem()",selectedValue)
 		if (selectedValue) {
-			// Set the fsmName and reload the page with the selected FSM
-			_fsmName = selectedValue;
-
-			//assume this toggle is caused by user
-			//save system-wide so all users' Subsystem Launch pages follow this selection
-			DesktopContent.XMLHttpRequest("Request?RequestType=subsystemLaunchRunType" +
-				"&set=1" +
-				"&runType=" + _fsmName,
+			//save system-wide so all users' Subsystem Launch and State Machine pages follow this selection
+			//	(only the user with the lock may change it; if refused, go back to the shared value)
+			let previousFsmName = _fsmName;
+			DesktopContent.XMLHttpRequest("Request?RequestType=setSubsystemLaunchRunType" +
+				"&runType=" + encodeURIComponent(selectedValue),
 				"",
 				function (req, reqParam, errStr) {
 					let err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
-					if(err) //e.g. older Gateway without system-wide run type support
-						Debug.log("Could not save system-wide run type at Gateway: " + err);
+					if(err)
+					{
+						Debug.log("The run type was not changed to '" + selectedValue +
+							"'. Only the user with the lock can change the run type for all users.\n\n" +
+							err, Debug.HIGH_PRIORITY);
+						let selectElement = document.getElementById("fsm-dropdown");
+						if(selectElement)
+							selectElement.value = previousFsmName;
+						return;
+					}
+
+					_fsmName = DesktopContent.getXMLValue(req, "subsystemLaunchRunType") || selectedValue;
+
+					//re-init for fsmName change
+					init();
 				} /*returnHandler*/,
 				0 /*reqParam*/,
 				0 /*progressHandler*/,
 				true /*callHandlerOnErr*/,
 				true /*doNotShowLoadingOverlay*/,
 				true /*targetGatewaySupervisor*/);
-
-			//re-init for fsmName change
-			init();
 		}
 	} //end handleFSMSelectionSubsystem()
 
@@ -2017,6 +2047,44 @@ SubsystemLaunch.create = function() {
 		); //end setRemoteSubsystemFsmControl request
 
 	}	//end handleSubsystemConfigAliasSelect()
+
+	//=====================================================================================
+	//handleSystemConfigAliasChange ~~
+	// Handles a user change of the system config alias dropdown:
+	//	save system-wide so all users' Subsystem Launch and State Machine pages follow this selection
+	//	(only the user with the lock may change it; if refused, go back to the shared value)
+	this.handleSystemConfigAliasChange = function (value) {
+		Debug.log("handleSystemConfigAliasChange()", value);
+		if(!value) return;
+
+		let previousConfigAlias = SubsystemLaunch.system.selectedSystemAlias;
+		_configAliasChangePending = true;
+		DesktopContent.XMLHttpRequest("Request?RequestType=setSelectedConfigAlias" +
+				"&fsmName=" + _fsmName +
+				"&configAlias=" + encodeURIComponent(value),
+				"",
+			function (req, reqParam, errStr) {
+					_configAliasChangePending = false;
+					let err = errStr || (req ? DesktopContent.getXMLValue(req, "Error") : "");
+					if(err)
+					{
+						Debug.log("The config alias was not changed to '" + value +
+							"'. Only the user with the lock can change the config alias for all users.\n\n" +
+							err, Debug.HIGH_PRIORITY);
+						let selectElement = document.getElementById("systemConfigAliasSelect");
+						if(selectElement)
+							selectElement.value = previousConfigAlias;
+						return;
+					}
+
+					SubsystemLaunch.launcher.handleSystemConfigAliasSelect(value);
+				} /*returnHandler*/,
+				0 /*reqParam*/,
+				0 /*progressHandler*/,
+				true /*callHandlerOnErr*/,
+				true /*doNotShowLoadingOverlay*/,
+				true /*targetGatewaySupervisor*/);
+	}	//end handleSystemConfigAliasChange()
 
 	//=====================================================================================
 	this.handleSystemConfigAliasSelect = function (value) {

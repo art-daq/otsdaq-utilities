@@ -1144,6 +1144,12 @@
 				Debug.err("No history kept for Activated Config Aliases, please choose <b>Configured</b> or <b>Started</b> as the group action.");
 				return;
 			}
+			if((groupAction == "Activated" || groupAction == "Attempted Configure") &&
+				groupType == "Run Type")
+			{
+				Debug.err("No history kept for " + groupAction + " Run Types, please choose <b>Configured</b> or <b>Started</b> as the group action.");
+				return;
+			}
 
 			var el = document.getElementById("display");
 
@@ -1191,7 +1197,7 @@
 					str += "<div style='margin-bottom:10px;'>Click on a group history entry below to view the associated group of tables.</div>";
 
 					var groupActions = ["Activated", "Attempted Configure", "Configured", "Started", "Configured or Started"];
-					var groupTypes = ["Configuration", "Context", "Backbone", "Iterate", "Config Alias"];
+					var groupTypes = ["Configuration", "Context", "Backbone", "Iterate", "Config Alias", "Run Type"];
 					//dropdown for each group action
 					str += "<div style='margin-bottom:20px;'><label for='groupHistoryActionSelect'>Select a group action: </label>" +
 						"<select id='groupHistoryActionSelect' onchange='setupGroupHistory(this)'>";
@@ -1215,7 +1221,7 @@
 					str += "<br><br>";
 
 					if (groupHistory.length == 0)
-						str += "No history found for " + groupAction + " &apos;" + groupType + "&apos; groups.";
+						str += "No history found for " + groupAction + " &apos;" + groupType + "&apos; " + (groupType == "Run Type" ? "records." : "groups.");
 					else {
 
 						var returnToHereLink = "setupGroupHistory(0, \\\"" + groupAction + "\\\",\\\"" +
@@ -1226,6 +1232,8 @@
 							groupAction;
 						if(groupType == "Config Alias")
 							str += " Alias";
+						else if(groupType == "Run Type")
+							str += " Run Type";
 						else
 							str += " Group";
 						str += "</th>" +
@@ -1233,9 +1241,9 @@
 							"<th style='text-align:center; border-bottom:1px solid black;'>User</th></tr>";
 						for (var i = groupHistory.length - 1; i >= 0; --i) {
 
-							if(groupType == "Config Alias")
+							if(groupType == "Config Alias" || groupType == "Run Type")
 								str += "<tr><td style='border-left: 0;'>" + //hide first column border-left
-									"&quot;" + groupHistory[i].groupName + "&quot;" + //groupName is alias, no groupKey
+									"&quot;" + groupHistory[i].groupName + "&quot;" + //groupName is alias or run type, no groupKey
 									"</td><td style='border-left: 0;'></td>"; //empty links (for now)
 							else
 							{
@@ -4834,6 +4842,22 @@
 
 						var groupName;
 
+						//need at least two keys of this group type to compare (this one, and another)
+						var diffGroupKeyTotal = 0;
+						for (var j = 0; j < groupNames.length; ++j)
+							if (types[j].getAttribute("value") == treeGroupType_)
+								++diffGroupKeyTotal;
+						if (diffGroupKeyTotal < 2) {
+							str += "<div id='popUpDialog-div'><center>No groups to compare: the count of " +
+								treeGroupType_ + " group keys is " + diffGroupKeyTotal +
+								".<br>Make a second key of &apos;" + treeGroupName_ +
+								"&apos; first, then try again.</center></div><br><br>";
+							el.innerHTML = str;
+							document.getElementById("display").appendChild(el); //add element to display div
+							el.style.display = "block";
+							return;
+						}
+
 						//Two group types here:	"Context" "Configuration"
 
 						str += "<div id='popUpDialog-div'>";
@@ -4850,29 +4874,25 @@
 							},
 							"" /*innerHTML*/,
 							false /*doCloseTag*/);
-						var groupNameKeyCount = 0;
+						//one option per group name of the right type, in order, with its number of keys
+						var diffGroupNameList = [];
+						var diffGroupNameKeyCounts = {};
 						for (var j = 0; j < groupNames.length; ++j) {
-							if (types[j].getAttribute("value") == treeGroupType_) {
-								var tmpGroupName = groupNames[j].getAttribute("value");
-								if (tmpGroupName == groupName) {
-									++groupNameKeyCount;
-									continue; //only add new group names
-								}
-
-								if (groupNameKeyCount == 0)  //skip first change
-								{
-									groupNameKeyCount = 1;
-									continue;
-								}
-
-								str += "<option value='" + groupName + "' " +
-									(groupName == treeGroupName_ ? "selected" : "") +
-									">";
-								str += groupName + " (" + groupNameKeyCount + " keys)";	//can display however
-								str += "</option>";
-								groupName = tmpGroupName;
-								groupNameKeyCount = 1;
+							if (types[j].getAttribute("value") != treeGroupType_)
+								continue;
+							var diffGroupNameFound = groupNames[j].getAttribute("value");
+							if (diffGroupNameKeyCounts[diffGroupNameFound] === undefined) {
+								diffGroupNameList.push(diffGroupNameFound);
+								diffGroupNameKeyCounts[diffGroupNameFound] = 0;
 							}
+							++diffGroupNameKeyCounts[diffGroupNameFound];
+						}
+						for (var j = 0; j < diffGroupNameList.length; ++j) {
+							str += "<option value='" + diffGroupNameList[j] + "' " +
+								(diffGroupNameList[j] == treeGroupName_ ? "selected" : "") +
+								">";
+							str += diffGroupNameList[j] + " (" + diffGroupNameKeyCounts[diffGroupNameList[j]] + " keys)";	//can display however
+							str += "</option>";
 						}
 						str += "</select><br><br>";
 
