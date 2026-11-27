@@ -17,8 +17,10 @@ using namespace ots;
 #define PAGES_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/"
 #define PAGES_PUBLIC_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/public/"
 #define PAGES_PRIVATE_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/private/"
-#define CHANNEL_COMMAND_RULES_FILE \
-	CONTROLS_SUPERVISOR_DATA_PATH + "channelCommandRules.txt"
+// the channel command rules are with the masks of the views of the user web pages,
+//	one optional file for each view: <USER_WEB_PATH>/masks/<view>/channelCommandRules.txt
+#define CHANNEL_COMMAND_RULES_DIRECTORY std::string(__ENV__("USER_WEB_PATH")) + "/masks/"
+#define CHANNEL_COMMAND_RULES_FILE_NAME "channelCommandRules.txt"
 
 XDAQ_INSTANTIATOR_IMPL(SlowControlsDashboardSupervisor)
 
@@ -1197,27 +1199,24 @@ bool isSameChannelValue(const std::string& a, const std::string& b)
 }  // end isSameChannelValue()
 
 //==============================================================================
-/// loadChannelCommandRules
-///	Returns the rules of the channel command rules file, which is read at each call so
-/// 	that it can be changed while running. Without file, or if any of its lines is
-/// 	illegal, there are no rules (i.e., no channel can be written) and problem is set.
+/// loadChannelCommandRulesFile
+///	Appends to rules the rules of a channel command rules file and returns true, or sets
+/// 	problem and returns false if the file can not be read or any of its lines is illegal.
 ///
 ///	One rule per line, fields separated by semicolon (lines that start with # are comments):
 ///		channel regular expression ; value ; required channel = value ; ...
 ///	The first rule that matches both channel (whole name) and value decides, e.g.:
 ///		Mu2e:CALO:(HV|LV):(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 0
 ///		Mu2e:CALO:HV:(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 1 ; Mu2e:CALO:INTERLOCK:PERMIT = 1 ; Mu2e:CALO:LV:$1:STAT = ON
-std::vector<ChannelCommandRule> loadChannelCommandRules(const std::string& fileName,
-                                                        std::string&       problem)
+bool loadChannelCommandRulesFile(const std::string&               fileName,
+                                 std::vector<ChannelCommandRule>& rules,
+                                 std::string&                     problem)
 {
-	std::vector<ChannelCommandRule> rules;
-	problem = "";
-
 	std::ifstream file(fileName);
 	if(!file.is_open())
 	{
-		problem = "there is no channel command rules file " + fileName;
-		return rules;
+		problem = "the channel command rules file " + fileName + " can not be read";
+		return false;
 	}
 
 	std::string line;
@@ -1264,11 +1263,53 @@ std::vector<ChannelCommandRule> loadChannelCommandRules(const std::string& fileN
 		{
 			problem = "line " + std::to_string(lineNumber) +
 			          " of the channel command rules file " + fileName + " is illegal";
-			rules.clear();
-			return rules;
+			return false;
 		}
 		rules.push_back(rule);
 	}
+	return true;
+}  // end loadChannelCommandRulesFile()
+
+//==============================================================================
+/// loadChannelCommandRules
+///	Returns the rules of all the channel command rules files, i.e., the file
+/// 	channelCommandRules.txt in each folder of the masks of the user web pages (in
+/// 	alphabetical order of the folders), see loadChannelCommandRulesFile().
+///	The files are read at each call so that they can be changed while running. Without
+/// 	files, or if any line of any file is illegal, there are no rules (i.e., no channel
+/// 	can be written) and problem is set.
+std::vector<ChannelCommandRule> loadChannelCommandRules(std::string& problem)
+{
+	std::vector<ChannelCommandRule> rules;
+	problem = "";
+
+	const std::string     directory = CHANNEL_COMMAND_RULES_DIRECTORY;
+	std::set<std::string> fileNames;  // sorted
+	DIR*                  dir = opendir(directory.c_str());
+	if(dir)
+	{
+		struct dirent* entry;
+		struct stat    fileStat;
+		while((entry = readdir(dir)))
+		{
+			const std::string fileName =
+			    directory + entry->d_name + "/" + CHANNEL_COMMAND_RULES_FILE_NAME;
+			if(entry->d_name[0] != '.' && stat(fileName.c_str(), &fileStat) == 0)
+				fileNames.insert(fileName);
+		}
+		closedir(dir);
+	}
+
+	if(fileNames.empty())
+		problem = "there is no channel command rules file " + directory + "<view>/" +
+		          CHANNEL_COMMAND_RULES_FILE_NAME;
+
+	for(const auto& fileName : fileNames)
+		if(!loadChannelCommandRulesFile(fileName, rules, problem))
+		{
+			rules.clear();
+			break;
+		}
 	return rules;
 }  // end loadChannelCommandRules()
 }  // end anonymous namespace
@@ -1286,8 +1327,7 @@ std::string SlowControlsDashboardSupervisor::checkChannelCommand(
     const std::string& channel, const std::string& value, bool onlyRequestChannels)
 {
 	std::string                           problem;
-	const std::vector<ChannelCommandRule> rules =
-	    loadChannelCommandRules(CHANNEL_COMMAND_RULES_FILE, problem);
+	const std::vector<ChannelCommandRule> rules = loadChannelCommandRules(problem);
 	if(problem != "")
 		return problem;
 
@@ -1348,7 +1388,7 @@ void SlowControlsDashboardSupervisor::GetChannelCommandInfo(
 	        userInfo.username_ == "")
 		reason = "commands are only for logged-in users with expert permission level";
 	else
-		loadChannelCommandRules(CHANNEL_COMMAND_RULES_FILE, reason);
+		loadChannelCommandRules(reason);
 
 	if(reason == "")
 	{
