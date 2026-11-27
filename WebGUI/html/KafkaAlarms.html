@@ -116,6 +116,10 @@
 	//		Click on an alarm to see the time chart of its pv, from the archiver database
 	//		(drag to zoom on a time interval, wheel to zoom, double click to go back).
 	//
+	//		The Alarm History tab shows what the alarm logger (mu2e-dcs apps/AlarmLogger) saved
+	//		from Kafka to the archiver database: the commands (who acknowledged what, and when),
+	//		the alarm state changes of the pvs, and the changes of the alarm configuration.
+	//
 	//		The requests are handled by a Slow Controls Dashboard Supervisor, so this page
 	//		must be opened with its urn parameter, e.g. /WebPath/html/KafkaAlarms.html?urn=282
 	//
@@ -126,6 +130,8 @@
 	//		poll()
 	//		alarmsHandler(req, reqParam, errStr)
 	//		errorsHandler(req, reqParam, errStr)
+	//		selectHistoryType(type)
+	//		historyTableHandler(req, reqParam, errStr)
 	//		selectView(view)
 	//		treeHandler(req, reqParam, errStr)
 	//		getSelection()
@@ -133,9 +139,11 @@
 	//		sendAcknowledge(command, mode)
 
 	var REFRESH_PERIOD_MS 	= 3000;
+	var HISTORY_REFRESH_PERIOD_MS = 10000; //the alarm history is read from the database
 	var SEVERITIES 			= ["MAJOR", "MINOR", "INVALID", "UNDEFINED"];
 
-	var _tab 				= "alarms"; //or "errors"
+	var _tab 				= "alarms"; //or "errors" or "history"
+	var _historyType 		= "commands"; //or "states" or "configs"
 	var _topic 				= ""; //selected alarm configuration, or "" for all
 	var _pollTimer 			= 0;
 	var _requestPending 	= false;
@@ -179,6 +187,9 @@
 		if(window.closeChart) closeChart();
 		document.getElementById("tab-alarms").className = "tab" + (tab == "alarms" ? " selected" : "");
 		document.getElementById("tab-errors").className = "tab" + (tab == "errors" ? " selected" : "");
+		document.getElementById("tab-history").className = "tab" + (tab == "history" ? " selected" : "");
+		document.getElementById("historyControls").style.display = tab == "history" ? "inline" : "none";
+		_requestPending = false; //the response of the other tab is dropped
 		document.getElementById("topics").style.display = (tab == "alarms" && _view == "table") ? "block" : "none";
 		document.getElementById("alarmControls").style.display = tab == "alarms" ? "inline" : "none";
 		document.getElementById("tableBody").textContent = "";
@@ -189,7 +200,8 @@
 
 		var headers = tab == "alarms" ?
 			["Severity", "PV", "Description", "Alarm Time", "Alarm Value", "Alarm Status", "Current Value", "Current Severity", "Current Status", "Configuration"] :
-			["Time", "Type", "Subsystem", "Gateway", "Source", "Message", "Repeats", "Location"];
+			(tab == "history" ? HISTORY_HEADERS[_historyType] :
+			["Time", "Type", "Subsystem", "Gateway", "Source", "Message", "Repeats", "Location"]);
 		var row = document.getElementById("tableHead");
 		row.textContent = "";
 		if(tab == "alarms")
@@ -246,7 +258,7 @@
 	function poll()
 	{
 		window.clearTimeout(_pollTimer);
-		_pollTimer = window.setTimeout(poll, REFRESH_PERIOD_MS);
+		_pollTimer = window.setTimeout(poll, _tab == "history" ? HISTORY_REFRESH_PERIOD_MS : REFRESH_PERIOD_MS);
 
 		if(_requestPending) return;
 		_requestPending = true;
@@ -280,6 +292,11 @@
 				alarmsHandler, {tab: _tab, query: _alarmQuery, view: _view} /*reqParam*/, 0 /*progressHandler*/,
 				true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
 		}
+		else if(_tab == "history")
+			DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaAlarmHistory",
+				"type=" + _historyType + "&filter=" + filter + "&maxRows=500",
+				historyTableHandler, {tab: _tab, type: _historyType} /*reqParam*/, 0 /*progressHandler*/,
+				true /*callHandlerOnErr*/, true /*doNotShowLoadingOverlay*/);
 		else
 			DesktopContent.XMLHttpRequest("Request?RequestType=getKafkaOtsErrors",
 				"filter=" + filter + "&maxRows=500",
@@ -310,6 +327,13 @@
 			statusEl.className = "problem";
 			statusEl.textContent = "Request failed at " + (new Date()).toLocaleTimeString() + ": " + errStr;
 			return undefined;
+		}
+		if(json.columns) //alarm history, from the database and not from Kafka
+		{
+			statusEl.className = json.problem ? "problem" : "";
+			statusEl.textContent = json.problem ? "No alarm history: " + json.problem :
+				"Alarm history from the archiver database - updated " + (new Date()).toLocaleTimeString();
+			return json;
 		}
 		document.body.classList.toggle("canAck", DesktopContent.getXMLValue(req, "canAcknowledge") == "1");
 		if(!json.enabled)
@@ -760,6 +784,73 @@
 			" ots errors in topic " + json.errorTopic + ", newest first."));
 	} //end errorsHandler()
 
+	//=====================================================================================
+	//	table headers of the alarm history, in the order of the columns shown (see historyTableHandler)
+	var HISTORY_HEADERS = {
+		commands: ["Time", "Command", "User", "Host", "Configuration", "Path"],
+		states:   ["Time", "Severity", "PV", "Alarm Time", "Alarm Value", "Alarm Status", "Current Severity", "Current Status", "Configuration", "Path"],
+		configs:  ["Time", "Action", "User", "Host", "Configuration", "Path", "Value"]
+	};
+
+	//=====================================================================================
+	//selectHistoryType ~~
+	//	type is commands, states or configs
+	function selectHistoryType(type)
+	{
+		_historyType = type;
+		selectTab("history");
+	} //end selectHistoryType()
+
+	//=====================================================================================
+	//historyTableHandler ~~
+	//	shows the rows of the alarm history, see getAlarmHistoryJSON() of the controls plugin
+	function historyTableHandler(req, reqParam, errStr)
+	{
+		var json = getResponse(req, errStr);
+		if(!json || reqParam.tab != _tab || reqParam.type != _historyType || json.type != _historyType) return;
+
+		var body = document.createElement("tbody");
+		body.id = "tableBody";
+		for(var i = 0; i < json.rows.length; ++i)
+		{
+			var record = {};
+			for(var j = 0; j < json.columns.length; ++j)
+				record[json.columns[j]] = json.rows[i][j];
+
+			var row = body.insertRow(-1);
+			addCell(row, getTimeString(record.time), "nowrap");
+			if(_historyType == "states")
+			{
+				addSeverityCell(row, record.severity);
+				addCell(row, record.pv, "nowrap");
+				addCell(row, getTimeString(record.alarmTime), "nowrap");
+				addCell(row, record.value);
+				addCell(row, record.status);
+				addSeverityCell(row, record.currentSeverity);
+				addCell(row, record.currentStatus);
+			}
+			else
+			{
+				addCell(row, _historyType == "commands" ? record.command : record.action, "nowrap");
+				addCell(row, record.user, "nowrap");
+				addCell(row, record.host, "nowrap");
+			}
+			addCell(row, record.configuration, "nowrap");
+			addCell(row, record.path, "path");
+			if(_historyType == "configs")
+				addCell(row, record.value, "path");
+		}
+		var oldBody = document.getElementById("tableBody");
+		oldBody.parentNode.replaceChild(body, oldBody);
+
+		var what = {commands: "alarm commands", states: "alarm state changes", configs: "alarm configuration changes"}[_historyType];
+		document.getElementById("summary").textContent = json.problem ? "" :
+			("Showing the last " + json.rows.length + " " + what +
+			(document.getElementById("filter").value ? " that match the filter" : "") +
+			(json.rows.length >= json.maxRows ? " (there may be more)" : "") + ", newest first." +
+			(_historyType == "states" ? " Only the most recent state changes are searched." : ""));
+	} //end historyTableHandler()
+
 	</script>
 </head>
 
@@ -769,6 +860,7 @@
 		<span id="title">Alarms</span>
 		<span id="tab-alarms" class="tab" onclick="selectTab('alarms')">Phoebus Alarms</span>
 		<span id="tab-errors" class="tab" onclick="selectTab('errors')">ots Errors</span>
+		<span id="tab-history" class="tab" onclick="selectTab('history')" title="Who acknowledged what and when, alarm state changes and alarm configuration changes, as saved by the alarm logger">Alarm History</span>
 		<span id="status"></span>
 	</div>
 	<div id="topics"></div>
@@ -782,6 +874,11 @@
 			<span id="severityChecks"></span>
 			<label><input type="checkbox" id="showAck" checked onchange="poll()"> acknowledged</label>
 			<label title="Only the alarms of pvs that are OK now, i.e. the latched alarms that are only waiting for the acknowledge. The acknowledge commands then act only on those, also below the selected tree nodes."><input type="checkbox" id="currentOk" onchange="_selectedPaths = {}; poll()"> only OK now</label>
+		</span>
+		<span id="historyControls" style="display: none">
+			<label title="Commands sent to the alarm servers (e.g., acknowledge), with user and host"><input type="radio" name="historyType" checked onchange="selectHistoryType('commands')"> commands</label>
+			<label title="Alarm state changes of the pvs"><input type="radio" name="historyType" onchange="selectHistoryType('states')"> state changes</label>
+			<label title="Changes of the alarm configuration (e.g., pv added, limits or enable changed)"><input type="radio" name="historyType" onchange="selectHistoryType('configs')"> configuration changes</label>
 		</span>
 		<input type="text" id="filter" placeholder="filter text..." oninput="poll()">
 	</div>

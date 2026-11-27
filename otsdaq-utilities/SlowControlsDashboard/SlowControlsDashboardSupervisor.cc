@@ -332,7 +332,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 	CorePropertySupervisorBase::setSupervisorProperty(
 	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
 	    "poll | getKafkaAlarms | getKafkaAlarmTree | getKafkaOtsErrors | "
-	    "getArchiveHistory");
+	    "getArchiveHistory | getKafkaAlarmHistory");
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
@@ -341,7 +341,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 | getKafkaAlarmHistory=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
@@ -366,7 +366,7 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 	//	(the live values need the plugin lock, see GetKafkaAlarms)
 	if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree" ||
 	   requestType == "getKafkaOtsErrors" || requestType == "getArchiveHistory" ||
-	   requestType == "acknowledgeKafkaAlarms")
+	   requestType == "getKafkaAlarmHistory" || requestType == "acknowledgeKafkaAlarms")
 	{
 		try
 		{
@@ -388,6 +388,8 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 				AcknowledgeKafkaAlarms(cgiIn, xmlOut, userInfo);
 			else if(requestType == "getKafkaOtsErrors")
 				GetKafkaOtsErrors(cgiIn, xmlOut);
+			else if(requestType == "getKafkaAlarmHistory")
+				GetKafkaAlarmHistory(cgiIn, xmlOut);
 			else
 				GetArchiveHistory(cgiIn, xmlOut);
 		}
@@ -1122,6 +1124,38 @@ void SlowControlsDashboardSupervisor::GetArchiveHistory(cgicc::Cgicc&    cgiIn,
 	                            StringMacros::encodeURIComponent(
 	                                interface_->getChannelHistoryJSON(pv, from, to)));
 }  // end GetArchiveHistory()
+
+//==============================================================================
+/// GetKafkaAlarmHistory
+///	Returns the most recent entries of the history of the Phoebus alarm system (as logged
+/// 	from Kafka to the archiver database by the alarm logger), as (URI encoded) JSON.
+///
+///	Parameters:
+///		type		:= commands (e.g., acknowledge), states or configs
+///		filter		:= text to search for in the entries
+///		maxRows		:= maximum number of entries to return
+void SlowControlsDashboardSupervisor::GetKafkaAlarmHistory(cgicc::Cgicc&    cgiIn,
+                                                           HttpXmlDocument& xmlOut)
+{
+	const std::string type   = CgiDataUtilities::getOrPostData(cgiIn, "type");
+	const std::string filter = StringMacros::decodeURIComponent(
+	    CgiDataUtilities::getOrPostData(cgiIn, "filter"));
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 500;
+
+	if(filter.size() > 200)
+	{
+		__SUP_SS__ << "Illegal filter for alarm history request." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	// Note: no plugin lock, since the plugin call is independent of the plugin state
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(
+	        interface_->getAlarmHistoryJSON(type, filter, maxRows)));
+}  // end GetKafkaAlarmHistory()
 
 //==============================================================================
 /// getLiveJSONFields

@@ -59,6 +59,7 @@ class SlowControlsDashboardSupervisor : public CoreSupervisorBase
 	                                   HttpXmlDocument&                 xmlOut,
 	                                   const WebUsers::RequestUserInfo& userInfo);
 	void        GetArchiveHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
+	void        GetKafkaAlarmHistory(cgicc::Cgicc& cgiIn, HttpXmlDocument& xmlOut);
 	std::string getLiveJSONFields(const std::string& channel);
 	void        GetUserPermissions(cgicc::Cgicc&                    cgiIn,
 	                               HttpXmlDocument&                 xmlOut,
