@@ -1,7 +1,9 @@
 #include "otsdaq-utilities/SlowControlsDashboard/SlowControlsDashboardSupervisor.h"
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for stat() quickly checking if file exists
-#include <thread>      //for std::thread
+#include <fstream>
+#include <sstream>
+#include <thread>  //for std::thread
 
 #include "otsdaq/SlowControlsCore/MakeSlowControls.h"
 #include "otsdaq/SlowControlsCore/SlowControlsVInterface.h"
@@ -15,6 +17,10 @@ using namespace ots;
 #define PAGES_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/"
 #define PAGES_PUBLIC_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/public/"
 #define PAGES_PRIVATE_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/private/"
+// the channel command rules are with the masks of the views of the user web pages,
+//	one optional file for each view: <USER_WEB_PATH>/masks/<view>/channelCommandRules.txt
+#define CHANNEL_COMMAND_RULES_DIRECTORY std::string(__ENV__("USER_WEB_PATH")) + "/masks/"
+#define CHANNEL_COMMAND_RULES_FILE_NAME "channelCommandRules.txt"
 
 XDAQ_INSTANTIATOR_IMPL(SlowControlsDashboardSupervisor)
 
@@ -329,7 +335,9 @@ void SlowControlsDashboardSupervisor::setSupervisorPropertyDefaults()
 void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 {
 	CorePropertySupervisorBase::setSupervisorProperty(
-	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes, "poll");
+	    CorePropertySupervisorBase::SUPERVISOR_PROPERTIES.AutomatedRequestTypes,
+	    "poll | getKafkaAlarms | getKafkaAlarmTree | getKafkaOtsErrors | "
+	    "getArchiveHistory | getKafkaAlarmHistory");
 
 	if(CorePropertySupervisorBase::isReadOnly())
 	{
@@ -338,7 +346,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 | getKafkaAlarmHistory=1 | getChannelCommandInfo=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
@@ -358,6 +366,48 @@ void SlowControlsDashboardSupervisor::request(const std::string& requestType,
 {
 	__SUP_COUT__ << "requestType: " << requestType << ", "
 	             << "userInfo.username_: " << userInfo.username_ << __E__;
+
+	// Kafka and archive history requests are handled without failing when the plugin is busy
+	//	(the live values need the plugin lock, see GetKafkaAlarms)
+	if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree" ||
+	   requestType == "getKafkaOtsErrors" || requestType == "getArchiveHistory" ||
+	   requestType == "getKafkaAlarmHistory" || requestType == "acknowledgeKafkaAlarms")
+	{
+		try
+		{
+			if(requestType == "getKafkaAlarms" || requestType == "getKafkaAlarmTree")
+			{
+				if(requestType == "getKafkaAlarms")
+					GetKafkaAlarms(cgiIn, xmlOut);
+				else
+					GetKafkaAlarmTree(cgiIn, xmlOut);
+				// so that the page only offers acknowledge to who is allowed
+				xmlOut.addTextElementToData(
+				    "canAcknowledge",
+				    (!CorePropertySupervisorBase::isReadOnly() &&
+				     userInfo.permissionLevel_ >= WebUsers::PERMISSION_LEVEL_EXPERT)
+				        ? "1"
+				        : "0");
+			}
+			else if(requestType == "acknowledgeKafkaAlarms")
+				AcknowledgeKafkaAlarms(cgiIn, xmlOut, userInfo);
+			else if(requestType == "getKafkaOtsErrors")
+				GetKafkaOtsErrors(cgiIn, xmlOut);
+			else if(requestType == "getKafkaAlarmHistory")
+				GetKafkaAlarmHistory(cgiIn, xmlOut);
+			else
+				GetArchiveHistory(cgiIn, xmlOut);
+		}
+		catch(const std::exception& e)
+		{
+			__SUP_SS__ << "Error occurred handling request '" << requestType
+			           << "': " << e.what() << __E__;
+			__SUP_COUT__ << ss.str();
+			xmlOut.addTextElementToData("Error", ss.str());
+		}
+		return;
+	}
+
 	try
 	{
 		if(requestType != "getPages" && !pluginBusyMutex_.try_lock())
@@ -510,6 +560,14 @@ void SlowControlsDashboardSupervisor::handleRequest(
 	{
 		__SUP_COUT__ << "Alarms Data requested from server! " << __E__;
 		GetAlarmsCheck(xmlOut);
+	}
+	else if(Command == "getChannelCommandInfo")
+	{
+		GetChannelCommandInfo(cgiIn, xmlOut, userInfo);
+	}
+	else if(Command == "setChannelValues")
+	{
+		SetChannelValues(cgiIn, xmlOut, userInfo);
 	}
 	else if(Command == "saveImageFile")
 	{
@@ -819,6 +877,666 @@ void SlowControlsDashboardSupervisor::GetAlarmsCheck(HttpXmlDocument& xmlOut)
 	JSONMessage += "}";
 	xmlOut.addTextElementToData("JSON", JSONMessage);  // add to response
 }  // end GetAlarmsCheck()
+
+//==============================================================================
+/// GetKafkaAlarms
+///	Returns the Phoebus alarm state read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		topic		:= Phoebus alarm configuration name (empty for all)
+///		severities	:= comma-separated severities to include (empty for all except OK)
+///		showAck		:= 1 to include acknowledged alarms
+///		filter		:= text to search for in pv path, description and message
+///		currentOk	:= 1 to include only the alarms of pvs that are OK now (latched alarms)
+///		maxRows		:= maximum number of alarms to return
+///
+///	The live value of each returned pv is added (from the controls plugin).
+void SlowControlsDashboardSupervisor::GetKafkaAlarms(cgicc::Cgicc&    cgiIn,
+                                                     HttpXmlDocument& xmlOut)
+{
+	std::set<std::string> severities;
+	StringMacros::getSetFromString(CgiDataUtilities::getOrPostData(cgiIn, "severities"),
+	                               severities);
+	severities.erase("");
+
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 500;
+
+	// the live values come from the plugin, so not available while the plugin is busy (e.g., initializing)
+	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
+	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
+		usleep(10 * 1000);
+	const bool                                     pluginBusy = !pluginLock.owns_lock();
+	std::function<std::string(const std::string&)> liveFields =
+	    [this, pluginBusy](const std::string& pv) {
+		    if(pluginBusy)
+			    return std::string(
+			        "\"liveValue\":\"\",\"liveTime\":0,\"liveSeverity\":\"\","
+			        "\"liveState\":\"the controls plugin is busy (e.g., initializing)\"");
+		    return getLiveJSONFields(pv);
+	    };
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmsJSON(
+	        CgiDataUtilities::getOrPostData(cgiIn, "topic"),
+	        severities,
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1",
+	        maxRows,
+	        liveFields)));
+}  // end GetKafkaAlarms()
+
+//==============================================================================
+/// AcknowledgeKafkaAlarms
+///	Sends the acknowledge (or unacknowledge) command to the Phoebus alarm servers,
+/// 	through Kafka. Only for users with expert permission level, and never from a
+/// 	read-only supervisor. Returns (URI encoded) JSON with sentCount, skippedCount and error.
+///
+///	Parameters:
+///		command		:= acknowledge or unacknowledge
+///		mode		:= selected (the alarms in paths), or filter (all alarms that match the filter)
+///		paths		:= for mode selected, newline-separated alarm paths, e.g. /Calo/path/to/pv
+///		topic, severities, showAck, filter := for mode filter, as for GetKafkaAlarms
+///		currentOk	:= 1 to only act on the alarms of pvs that are OK now (both modes): for
+///						mode selected, also for the alarms below the selected nodes
+///		expectedCount := for mode filter, the count of alarms that the user confirmed
+void SlowControlsDashboardSupervisor::AcknowledgeKafkaAlarms(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	if(CorePropertySupervisorBase::isReadOnly() ||
+	   userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	   userInfo.username_ == "")
+	{
+		__SUP_SS__
+		    << "Alarms can only be acknowledged by a logged-in user with expert "
+		       "permission level ("
+		    << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
+		    << "), and not from a read-only supervisor. The permission level of user '"
+		    << userInfo.username_ << "' is " << unsigned(userInfo.permissionLevel_) << "."
+		    << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	const std::string command = CgiDataUtilities::getOrPostData(cgiIn, "command");
+	const std::string mode    = CgiDataUtilities::getOrPostData(cgiIn, "mode");
+	if((command != "acknowledge" && command != "unacknowledge") ||
+	   (mode != "selected" && mode != "filter"))
+	{
+		__SUP_SS__ << "Illegal alarm command '" << command << "' or mode '" << mode
+		           << "'." << __E__;
+		__SUP_SS_THROW__;
+	}
+	const bool acknowledge   = command == "acknowledge";
+	const bool onlyCurrentOk = CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1";
+
+	std::string json;
+	if(mode == "selected")
+	{
+		std::vector<std::string> paths;
+		std::istringstream       pathStream(StringMacros::decodeURIComponent(
+            CgiDataUtilities::getOrPostData(cgiIn, "paths")));
+		std::string              path;
+		while(std::getline(pathStream, path))
+			if(path != "")
+				paths.push_back(path);
+
+		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
+		                  << command << " " << paths.size() << " selected alarms"
+		                  << (onlyCurrentOk ? " (only of pvs that are OK now)." : ".")
+		                  << __E__;
+		json = kafkaAlarmReader_.sendAcknowledgeJSON(
+		    acknowledge, userInfo.username_, paths, onlyCurrentOk);
+	}
+	else
+	{
+		std::set<std::string> severities;
+		StringMacros::getSetFromString(
+		    CgiDataUtilities::getOrPostData(cgiIn, "severities"), severities);
+		severities.erase("");
+		const std::string topic  = CgiDataUtilities::getOrPostData(cgiIn, "topic");
+		const std::string filter = StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getOrPostData(cgiIn, "filter"));
+
+		__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to "
+		                  << command << " all alarms that match configuration '" << topic
+		                  << "', severities {" << StringMacros::setToString(severities)
+		                  << "}, text '" << filter << "'"
+		                  << (onlyCurrentOk ? " (only of pvs that are OK now)." : ".")
+		                  << __E__;
+		json = kafkaAlarmReader_.sendAcknowledgeByFilterJSON(
+		    acknowledge,
+		    userInfo.username_,
+		    topic,
+		    severities,
+		    CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+		    filter,
+		    onlyCurrentOk,
+		    CgiDataUtilities::getOrPostDataAsInt(cgiIn, "expectedCount"));
+	}
+	xmlOut.addTextElementToData("JSON", StringMacros::encodeURIComponent(json));
+}  // end AcknowledgeKafkaAlarms()
+
+//==============================================================================
+/// GetKafkaAlarmTree
+///	Returns the rows of the Phoebus alarm tree read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		topic, severities, showAck, filter, currentOk := as for GetKafkaAlarms
+///		showAll		:= 1 to list also the nodes and pvs that are not in alarm
+///		open		:= newline-separated paths of the open nodes (their children are listed)
+///		openRoots	:= 1 to open the root of each alarm configuration
+///		maxRows		:= maximum number of rows to return
+void SlowControlsDashboardSupervisor::GetKafkaAlarmTree(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	std::set<std::string> severities;
+	StringMacros::getSetFromString(CgiDataUtilities::getOrPostData(cgiIn, "severities"),
+	                               severities);
+	severities.erase("");
+
+	std::set<std::string> openPaths;
+	{
+		std::istringstream pathStream(StringMacros::decodeURIComponent(
+		    CgiDataUtilities::getOrPostData(cgiIn, "open")));
+		std::string        path;
+		while(std::getline(pathStream, path) && openPaths.size() < 2000)
+			if(path != "")
+				openPaths.insert(path);
+	}
+
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 3000;
+
+	// the live values come from the plugin, so not available while the plugin is busy (e.g., initializing)
+	std::unique_lock<std::mutex> pluginLock(pluginBusyMutex_, std::defer_lock);
+	for(int i = 0; i < 50 && !pluginLock.try_lock(); ++i)
+		usleep(10 * 1000);
+	const bool                                     pluginBusy = !pluginLock.owns_lock();
+	std::function<std::string(const std::string&)> liveFields =
+	    [this, pluginBusy](const std::string& pv) {
+		    if(pluginBusy)
+			    return std::string(
+			        "\"liveValue\":\"\",\"liveTime\":0,\"liveSeverity\":\"\","
+			        "\"liveState\":\"the controls plugin is busy (e.g., initializing)\"");
+		    return getLiveJSONFields(pv);
+	    };
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getAlarmTreeJSON(
+	        CgiDataUtilities::getOrPostData(cgiIn, "topic"),
+	        severities,
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAck") == "1",
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        CgiDataUtilities::getOrPostData(cgiIn, "currentOk") == "1",
+	        CgiDataUtilities::getOrPostData(cgiIn, "showAll") == "1",
+	        openPaths,
+	        CgiDataUtilities::getOrPostData(cgiIn, "openRoots") == "1",
+	        maxRows,
+	        liveFields)));
+}  // end GetKafkaAlarmTree()
+
+//==============================================================================
+/// GetKafkaOtsErrors
+///	Returns the most recent ots errors read from Kafka, as (URI encoded) JSON.
+///
+///	Parameters:
+///		filter		:= text to search for in the error record
+///		maxRows		:= maximum number of errors to return
+void SlowControlsDashboardSupervisor::GetKafkaOtsErrors(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 200;
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(kafkaAlarmReader_.getOtsErrorsJSON(
+	        StringMacros::decodeURIComponent(
+	            CgiDataUtilities::getOrPostData(cgiIn, "filter")),
+	        maxRows)));
+}  // end GetKafkaOtsErrors()
+
+//==============================================================================
+/// GetArchiveHistory
+///	Returns the history of one pv read from the archiver database, as (URI encoded) JSON.
+///
+///	Parameters:
+///		pv			:= pv name
+///		from, to	:= time window [s since epoch]
+void SlowControlsDashboardSupervisor::GetArchiveHistory(cgicc::Cgicc&    cgiIn,
+                                                        HttpXmlDocument& xmlOut)
+{
+	const std::string pv =
+	    StringMacros::decodeURIComponent(CgiDataUtilities::getOrPostData(cgiIn, "pv"));
+	const double now  = time(0);
+	double       to   = atof(CgiDataUtilities::getOrPostData(cgiIn, "to").c_str());
+	double       from = atof(CgiDataUtilities::getOrPostData(cgiIn, "from").c_str());
+	if(!(to > 0) || to > now + 60)
+		to = now + 60;
+	if(!(from > 0) || !(from < to))
+		from = to - 3600;
+
+	if(pv == "" || pv.size() > 200)
+	{
+		__SUP_SS__ << "Illegal pv name for archive history request." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	// Note: no plugin lock, since the plugin call is independent of the plugin state
+	xmlOut.addTextElementToData("JSON",
+	                            StringMacros::encodeURIComponent(
+	                                interface_->getChannelHistoryJSON(pv, from, to)));
+}  // end GetArchiveHistory()
+
+//==============================================================================
+/// GetKafkaAlarmHistory
+///	Returns the most recent entries of the history of the Phoebus alarm system (as logged
+/// 	from Kafka to the archiver database by the alarm logger), as (URI encoded) JSON.
+///
+///	Parameters:
+///		type		:= commands (e.g., acknowledge), states or configs
+///		filter		:= text to search for in the entries
+///		maxRows		:= maximum number of entries to return
+void SlowControlsDashboardSupervisor::GetKafkaAlarmHistory(cgicc::Cgicc&    cgiIn,
+                                                           HttpXmlDocument& xmlOut)
+{
+	const std::string type   = CgiDataUtilities::getOrPostData(cgiIn, "type");
+	const std::string filter = StringMacros::decodeURIComponent(
+	    CgiDataUtilities::getOrPostData(cgiIn, "filter"));
+	size_t maxRows = CgiDataUtilities::getOrPostDataAsInt(cgiIn, "maxRows");
+	if(maxRows < 1 || maxRows > 10000)
+		maxRows = 500;
+
+	if(filter.size() > 200)
+	{
+		__SUP_SS__ << "Illegal filter for alarm history request." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	// Note: no plugin lock, since the plugin call is independent of the plugin state
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(
+	        interface_->getAlarmHistoryJSON(type, filter, maxRows)));
+}  // end GetKafkaAlarmHistory()
+
+//==============================================================================
+namespace
+{
+/// The maximum count of channels of one command request
+const size_t MAX_COMMAND_CHANNELS = 200;
+
+/// One line of the channel command rules file: value may be written to the channels that
+///	match the regular expression, if each of the required channels has the required value
+struct ChannelCommandRule
+{
+	boost::regex channel;
+	std::string  value;
+	std::vector<std::pair<std::string, std::string>>
+	    requirements;  // channel (may refer to the groups of the regular expression, e.g. $1) and value
+};
+
+//==============================================================================
+/// Returns true if the two values of a channel are the same number or the same text
+bool isSameChannelValue(const std::string& a, const std::string& b)
+{
+	char *       endA = NULL, *endB = NULL;
+	const double numberA = strtod(a.c_str(), &endA);
+	const double numberB = strtod(b.c_str(), &endB);
+	if(a.size() && b.size() && *endA == '\0' && *endB == '\0')
+		return numberA == numberB;
+	return a == b;
+}  // end isSameChannelValue()
+
+//==============================================================================
+/// loadChannelCommandRulesFile
+///	Appends to rules the rules of a channel command rules file and returns true, or sets
+/// 	problem and returns false if the file can not be read or any of its lines is illegal.
+///
+///	One rule per line, fields separated by semicolon (lines that start with # are comments):
+///		channel regular expression ; value ; required channel = value ; ...
+///	The first rule that matches both channel (whole name) and value decides, e.g.:
+///		Mu2e:CALO:(HV|LV):(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 0
+///		Mu2e:CALO:HV:(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 1 ; Mu2e:CALO:INTERLOCK:PERMIT = 1 ; Mu2e:CALO:LV:$1:STAT = ON
+bool loadChannelCommandRulesFile(const std::string&               fileName,
+                                 std::vector<ChannelCommandRule>& rules,
+                                 std::string&                     problem)
+{
+	std::ifstream file(fileName);
+	if(!file.is_open())
+	{
+		problem = "the channel command rules file " + fileName + " can not be read";
+		return false;
+	}
+
+	std::string line;
+	for(size_t lineNumber = 1; std::getline(file, line); ++lineNumber)
+	{
+		StringMacros::trim(line);
+		if(line == "" || line[0] == '#')
+			continue;
+
+		std::vector<std::string> fields;
+		std::istringstream       lineStream(line);
+		for(std::string field; std::getline(lineStream, field, ';');)
+			fields.push_back(StringMacros::trim(field));
+
+		ChannelCommandRule rule;
+		bool legal = fields.size() >= 2 && fields[0] != "" && fields[1] != "";
+		for(size_t f = 2; legal && f < fields.size(); ++f)
+		{
+			const size_t equal = fields[f].find('=');
+			if(equal == std::string::npos)
+			{
+				legal = false;
+				break;
+			}
+			std::string channel = fields[f].substr(0, equal);
+			std::string value   = fields[f].substr(equal + 1);
+			StringMacros::trim(channel);
+			StringMacros::trim(value);
+			legal = channel != "" && value != "";
+			rule.requirements.push_back(std::make_pair(channel, value));
+		}
+		if(legal)
+			try
+			{
+				rule.channel = boost::regex(fields[0]);
+				rule.value   = fields[1];
+			}
+			catch(const std::exception&)
+			{
+				legal = false;
+			}
+
+		if(!legal)
+		{
+			problem = "line " + std::to_string(lineNumber) +
+			          " of the channel command rules file " + fileName + " is illegal";
+			return false;
+		}
+		rules.push_back(rule);
+	}
+	return true;
+}  // end loadChannelCommandRulesFile()
+
+//==============================================================================
+/// loadChannelCommandRules
+///	Returns the rules of all the channel command rules files, i.e., the file
+/// 	channelCommandRules.txt in each folder of the masks of the user web pages (in
+/// 	alphabetical order of the folders), see loadChannelCommandRulesFile().
+///	The files are read at each call so that they can be changed while running. Without
+/// 	files, or if any line of any file is illegal, there are no rules (i.e., no channel
+/// 	can be written) and problem is set.
+std::vector<ChannelCommandRule> loadChannelCommandRules(std::string& problem)
+{
+	std::vector<ChannelCommandRule> rules;
+	problem = "";
+
+	const std::string     directory = CHANNEL_COMMAND_RULES_DIRECTORY;
+	std::set<std::string> fileNames;  // sorted
+	DIR*                  dir = opendir(directory.c_str());
+	if(dir)
+	{
+		struct dirent* entry;
+		struct stat    fileStat;
+		while((entry = readdir(dir)))
+		{
+			const std::string fileName =
+			    directory + entry->d_name + "/" + CHANNEL_COMMAND_RULES_FILE_NAME;
+			if(entry->d_name[0] != '.' && stat(fileName.c_str(), &fileStat) == 0)
+				fileNames.insert(fileName);
+		}
+		closedir(dir);
+	}
+
+	if(fileNames.empty())
+		problem = "there is no channel command rules file " + directory + "<view>/" +
+		          CHANNEL_COMMAND_RULES_FILE_NAME;
+
+	for(const auto& fileName : fileNames)
+		if(!loadChannelCommandRulesFile(fileName, rules, problem))
+		{
+			rules.clear();
+			break;
+		}
+	return rules;
+}  // end loadChannelCommandRules()
+}  // end anonymous namespace
+
+//==============================================================================
+/// checkChannelCommand
+///	Returns an empty string if the rules allow to write value to the channel now, else
+/// 	the reason of the refusal, see loadChannelCommandRules().
+///	If onlyRequestChannels, then value is ignored and the channel and the channels
+/// 	required by its rules are only requested from the plugin, so that they are
+/// 	connected when the command is given.
+///
+///	Note: must be called with the plugin lock.
+std::string SlowControlsDashboardSupervisor::checkChannelCommand(
+    const std::string& channel, const std::string& value, bool onlyRequestChannels)
+{
+	std::string                           problem;
+	const std::vector<ChannelCommandRule> rules = loadChannelCommandRules(problem);
+	if(problem != "")
+		return problem;
+
+	for(const auto& rule : rules)
+	{
+		boost::smatch match;
+		if(!boost::regex_match(channel, match, rule.channel))
+			continue;
+		if(onlyRequestChannels)
+			interface_->getCurrentValue(channel);
+		else if(!isSameChannelValue(rule.value, value))
+			continue;
+
+		for(const auto& requirement : rule.requirements)
+		{
+			const std::string required = match.format(requirement.first);
+			// Time, Value, Status, Severity
+			const std::array<std::string, 4> current =
+			    interface_->getCurrentValue(required);
+			if(onlyRequestChannels)
+				continue;
+
+			if(current[0] == "PV Not Found" || current[1] == "NF")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is not known to the controls plugin";
+			if(current[2] == "DC" || current[0] == "N/a")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is not connected";
+			if(current[3] == "INVALID")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is invalid";
+			if(!isSameChannelValue(current[1], requirement.second))
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is " + current[1];
+		}
+		if(!onlyRequestChannels)
+			return "";  // the first rule that matches channel and value decides
+	}
+
+	return onlyRequestChannels ? "" : "the channel command rules do not allow this value";
+}  // end checkChannelCommand()
+
+//==============================================================================
+/// GetChannelCommandInfo
+///	Tells the page if the user may command channels, see SetChannelValues(): returns
+/// 	JSON with canCommand and, if not, the reason.
+///	If the user may, the channels of pvList (and the channels that their rules require)
+/// 	are requested from the plugin, so that they are connected when the command is given.
+void SlowControlsDashboardSupervisor::GetChannelCommandInfo(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	std::string reason;
+	if(CorePropertySupervisorBase::isReadOnly())
+		reason = "the supervisor is read-only";
+	else if(userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	        userInfo.username_ == "")
+		reason = "commands are only for logged-in users with expert permission level";
+	else
+		loadChannelCommandRules(reason);
+
+	if(reason == "")
+	{
+		std::set<std::string> channels;
+		StringMacros::getSetFromString(
+		    CgiDataUtilities::postData(cgiIn, "pvList"), channels, {','});
+		channels.erase("");
+		if(channels.size() <= MAX_COMMAND_CHANNELS)
+			for(const auto& channel : channels)
+				checkChannelCommand(channel, "" /*value*/, true /*onlyRequestChannels*/);
+	}
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(
+	        std::string("{\"canCommand\":") + (reason == "" ? "true" : "false") +
+	        ",\"reason\":\"" + StringMacros::escapeJSONStringEntities(reason) + "\"}"));
+}  // end GetChannelCommandInfo()
+
+//==============================================================================
+/// SetChannelValues
+///	Writes value to the channels of pvList (comma-separated), e.g. to switch power
+/// 	supplies on or off. Only for users with expert permission level, and never from a
+/// 	read-only supervisor.
+///	Each channel is written only if the channel command rules file allows it, see
+/// 	loadChannelCommandRules(): the rules are the list of the channels that can be
+/// 	written, with the conditions (e.g., the permit of an interlock) to write each value.
+///	Returns (URI encoded) JSON with writtenCount and refused, the array of { pv, reason }.
+///
+///	Note: the effect of the write is not awaited, the page follows the state of the channels.
+void SlowControlsDashboardSupervisor::SetChannelValues(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	if(CorePropertySupervisorBase::isReadOnly() ||
+	   userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	   userInfo.username_ == "")
+	{
+		__SUP_SS__
+		    << "Channels can only be commanded by a logged-in user with expert "
+		       "permission level ("
+		    << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
+		    << "), and not from a read-only supervisor. The permission level of user '"
+		    << userInfo.username_ << "' is " << unsigned(userInfo.permissionLevel_) << "."
+		    << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	std::string value = CgiDataUtilities::postData(cgiIn, "value");
+	StringMacros::trim(value);
+	std::set<std::string> channels;
+	StringMacros::getSetFromString(
+	    CgiDataUtilities::postData(cgiIn, "pvList"), channels, {','});
+	channels.erase("");
+	if(value == "" || channels.empty() || channels.size() > MAX_COMMAND_CHANNELS)
+	{
+		__SUP_SS__ << "Illegal channel command: value '" << value << "' for "
+		           << channels.size() << " channels (at most " << MAX_COMMAND_CHANNELS
+		           << ")." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to write '"
+	                  << value << "' to " << channels.size()
+	                  << " channels: " << StringMacros::setToString(channels) << __E__;
+
+	size_t      writtenCount = 0;
+	std::string refused;
+	for(const auto& channel : channels)
+	{
+		std::string reason = checkChannelCommand(channel, value);
+		if(reason == "")
+			reason = interface_->setChannelValue(channel, value);
+		if(reason == "")
+		{
+			++writtenCount;
+			continue;
+		}
+
+		__SUP_COUT_WARN__ << "Refused to write '" << value << "' to " << channel
+		                  << " for user '" << userInfo.username_ << "': " << reason
+		                  << __E__;
+		refused += std::string(refused == "" ? "" : ",") + "{\"pv\":\"" +
+		           StringMacros::escapeJSONStringEntities(channel) + "\",\"reason\":\"" +
+		           StringMacros::escapeJSONStringEntities(reason) + "\"}";
+	}
+
+	__SUP_COUT_INFO__ << "Wrote '" << value << "' to " << writtenCount << " of "
+	                  << channels.size() << " channels for user '" << userInfo.username_
+	                  << "'." << __E__;
+
+	xmlOut.addTextElementToData("JSON",
+	                            StringMacros::encodeURIComponent(
+	                                "{\"writtenCount\":" + std::to_string(writtenCount) +
+	                                ",\"refused\":[" + refused + "]}"));
+}  // end SetChannelValues()
+
+//==============================================================================
+/// getLiveJSONFields
+///	Returns JSON fields (no braces) liveValue, liveTime [s since epoch], liveSeverity,
+/// 	liveState with the current value of the channel in the controls plugin.
+///	liveState is one of: connected, connecting (no value received so far), or the
+/// 	reason why there is no value.
+///
+///	Note: must be called with the plugin lock.
+std::string SlowControlsDashboardSupervisor::getLiveJSONFields(const std::string& channel)
+{
+	// the alarm server pv names may have a protocol prefix
+	std::string name = channel;
+	if(name.find("://") != std::string::npos)
+		name = name.substr(name.find("://") + 3);
+
+	std::string value, severity, state, valueTime = "0";
+	try
+	{
+		// Time, Value, Status, Severity
+		const std::array<std::string, 4> current = interface_->getCurrentValue(name);
+		if(current[0] == "PV Not Found" || current[1] == "NF")
+			state = "not known to the controls plugin";
+		else if(current[2] == "DC" || current[0] == "N/a")
+			state = "connecting";
+		else
+		{
+			state    = "connected";
+			value    = current[1];
+			severity = current[3] == "NO_ALARM" ? "" : current[3];
+			if(current[0].find_first_not_of("0123456789") == std::string::npos &&
+			   current[0].size() && current[0].size() < 12)
+				valueTime = current[0];
+		}
+	}
+	catch(...)
+	{
+		state = "the controls plugin failed to give the value";
+	}
+
+	// the value of some PVs (e.g., char records) may have control characters, which are illegal in JSON
+	for(auto* field : {&value, &severity})
+		for(auto& c : *field)
+			if((unsigned char)c < 0x20 || c == 0x7f)
+				c = ' ';
+
+	return "\"liveValue\":\"" + StringMacros::escapeJSONStringEntities(value) +
+	       "\",\"liveTime\":" + valueTime + ",\"liveSeverity\":\"" +
+	       StringMacros::escapeJSONStringEntities(severity) + "\",\"liveState\":\"" +
+	       StringMacros::escapeJSONStringEntities(state) + "\"";
+}  // end getLiveJSONFields()
 
 //==============================================================================
 void SlowControlsDashboardSupervisor::GetAlarmsLogData(cgicc::Cgicc&    cgiIn,
