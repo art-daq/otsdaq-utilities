@@ -1,6 +1,7 @@
 #include "otsdaq-utilities/SlowControlsDashboard/SlowControlsDashboardSupervisor.h"
 #include <dirent.h>    //for DIR
 #include <sys/stat.h>  //for stat() quickly checking if file exists
+#include <fstream>
 #include <sstream>
 #include <thread>  //for std::thread
 
@@ -16,6 +17,8 @@ using namespace ots;
 #define PAGES_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/"
 #define PAGES_PUBLIC_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/public/"
 #define PAGES_PRIVATE_DIRECTORY CONTROLS_SUPERVISOR_DATA_PATH + "pages/private/"
+#define CHANNEL_COMMAND_RULES_FILE \
+	CONTROLS_SUPERVISOR_DATA_PATH + "channelCommandRules.txt"
 
 XDAQ_INSTANTIATOR_IMPL(SlowControlsDashboardSupervisor)
 
@@ -341,7 +344,7 @@ void SlowControlsDashboardSupervisor::forceSupervisorPropertyValues()
 		        CorePropertySupervisorBase::SUPERVISOR_PROPERTIES
 		            .UserPermissionsThreshold,
 		        "*=0 | getPages=1 | loadPhoebusPage=1 | getList=1 | getPVSettings=1 | getPvArchiverData=1 | generateUID=1 | getUserPermissions=1 |\
-			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 | getKafkaAlarmHistory=1 ");
+			 userActivityHeartbeat=1 | poll=1 | uid=1 | isUserAdmin=1 | getLastAlarmsData=1 | getAlarmsLogData=1 | getAlarmsCheck=1 | getPvData=1 | getKafkaAlarms=1 | getKafkaAlarmTree=1 | getKafkaOtsErrors=1 | getArchiveHistory=1 | getKafkaAlarmHistory=1 | getChannelCommandInfo=1 ");
 
 		CorePropertySupervisorBase::
 		    setSupervisorProperty(  // allow no login on certain requests (i.e. standAloneMode pages)
@@ -555,6 +558,14 @@ void SlowControlsDashboardSupervisor::handleRequest(
 	{
 		__SUP_COUT__ << "Alarms Data requested from server! " << __E__;
 		GetAlarmsCheck(xmlOut);
+	}
+	else if(Command == "getChannelCommandInfo")
+	{
+		GetChannelCommandInfo(cgiIn, xmlOut, userInfo);
+	}
+	else if(Command == "setChannelValues")
+	{
+		SetChannelValues(cgiIn, xmlOut, userInfo);
 	}
 	else if(Command == "saveImageFile")
 	{
@@ -1156,6 +1167,285 @@ void SlowControlsDashboardSupervisor::GetKafkaAlarmHistory(cgicc::Cgicc&    cgiI
 	    StringMacros::encodeURIComponent(
 	        interface_->getAlarmHistoryJSON(type, filter, maxRows)));
 }  // end GetKafkaAlarmHistory()
+
+//==============================================================================
+namespace
+{
+/// The maximum count of channels of one command request
+const size_t MAX_COMMAND_CHANNELS = 200;
+
+/// One line of the channel command rules file: value may be written to the channels that
+///	match the regular expression, if each of the required channels has the required value
+struct ChannelCommandRule
+{
+	boost::regex channel;
+	std::string  value;
+	std::vector<std::pair<std::string, std::string>>
+	    requirements;  // channel (may refer to the groups of the regular expression, e.g. $1) and value
+};
+
+//==============================================================================
+/// Returns true if the two values of a channel are the same number or the same text
+bool isSameChannelValue(const std::string& a, const std::string& b)
+{
+	char *       endA = NULL, *endB = NULL;
+	const double numberA = strtod(a.c_str(), &endA);
+	const double numberB = strtod(b.c_str(), &endB);
+	if(a.size() && b.size() && *endA == '\0' && *endB == '\0')
+		return numberA == numberB;
+	return a == b;
+}  // end isSameChannelValue()
+
+//==============================================================================
+/// loadChannelCommandRules
+///	Returns the rules of the channel command rules file, which is read at each call so
+/// 	that it can be changed while running. Without file, or if any of its lines is
+/// 	illegal, there are no rules (i.e., no channel can be written) and problem is set.
+///
+///	One rule per line, fields separated by semicolon (lines that start with # are comments):
+///		channel regular expression ; value ; required channel = value ; ...
+///	The first rule that matches both channel (whole name) and value decides, e.g.:
+///		Mu2e:CALO:(HV|LV):(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 0
+///		Mu2e:CALO:HV:(D[01]:P[01]:C[0-4]:S[01]):ENABLE ; 1 ; Mu2e:CALO:INTERLOCK:PERMIT = 1 ; Mu2e:CALO:LV:$1:STAT = ON
+std::vector<ChannelCommandRule> loadChannelCommandRules(const std::string& fileName,
+                                                        std::string&       problem)
+{
+	std::vector<ChannelCommandRule> rules;
+	problem = "";
+
+	std::ifstream file(fileName);
+	if(!file.is_open())
+	{
+		problem = "there is no channel command rules file " + fileName;
+		return rules;
+	}
+
+	std::string line;
+	for(size_t lineNumber = 1; std::getline(file, line); ++lineNumber)
+	{
+		StringMacros::trim(line);
+		if(line == "" || line[0] == '#')
+			continue;
+
+		std::vector<std::string> fields;
+		std::istringstream       lineStream(line);
+		for(std::string field; std::getline(lineStream, field, ';');)
+			fields.push_back(StringMacros::trim(field));
+
+		ChannelCommandRule rule;
+		bool legal = fields.size() >= 2 && fields[0] != "" && fields[1] != "";
+		for(size_t f = 2; legal && f < fields.size(); ++f)
+		{
+			const size_t equal = fields[f].find('=');
+			if(equal == std::string::npos)
+			{
+				legal = false;
+				break;
+			}
+			std::string channel = fields[f].substr(0, equal);
+			std::string value   = fields[f].substr(equal + 1);
+			StringMacros::trim(channel);
+			StringMacros::trim(value);
+			legal = channel != "" && value != "";
+			rule.requirements.push_back(std::make_pair(channel, value));
+		}
+		if(legal)
+			try
+			{
+				rule.channel = boost::regex(fields[0]);
+				rule.value   = fields[1];
+			}
+			catch(const std::exception&)
+			{
+				legal = false;
+			}
+
+		if(!legal)
+		{
+			problem = "line " + std::to_string(lineNumber) +
+			          " of the channel command rules file " + fileName + " is illegal";
+			rules.clear();
+			return rules;
+		}
+		rules.push_back(rule);
+	}
+	return rules;
+}  // end loadChannelCommandRules()
+}  // end anonymous namespace
+
+//==============================================================================
+/// checkChannelCommand
+///	Returns an empty string if the rules allow to write value to the channel now, else
+/// 	the reason of the refusal, see loadChannelCommandRules().
+///	If onlyRequestChannels, then value is ignored and the channel and the channels
+/// 	required by its rules are only requested from the plugin, so that they are
+/// 	connected when the command is given.
+///
+///	Note: must be called with the plugin lock.
+std::string SlowControlsDashboardSupervisor::checkChannelCommand(
+    const std::string& channel, const std::string& value, bool onlyRequestChannels)
+{
+	std::string                           problem;
+	const std::vector<ChannelCommandRule> rules =
+	    loadChannelCommandRules(CHANNEL_COMMAND_RULES_FILE, problem);
+	if(problem != "")
+		return problem;
+
+	for(const auto& rule : rules)
+	{
+		boost::smatch match;
+		if(!boost::regex_match(channel, match, rule.channel))
+			continue;
+		if(onlyRequestChannels)
+			interface_->getCurrentValue(channel);
+		else if(!isSameChannelValue(rule.value, value))
+			continue;
+
+		for(const auto& requirement : rule.requirements)
+		{
+			const std::string required = match.format(requirement.first);
+			// Time, Value, Status, Severity
+			const std::array<std::string, 4> current =
+			    interface_->getCurrentValue(required);
+			if(onlyRequestChannels)
+				continue;
+
+			if(current[0] == "PV Not Found" || current[1] == "NF")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is not known to the controls plugin";
+			if(current[2] == "DC" || current[0] == "N/a")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is not connected";
+			if(current[3] == "INVALID")
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is invalid";
+			if(!isSameChannelValue(current[1], requirement.second))
+				return "it requires " + required + " = " + requirement.second +
+				       ", which is " + current[1];
+		}
+		if(!onlyRequestChannels)
+			return "";  // the first rule that matches channel and value decides
+	}
+
+	return onlyRequestChannels ? "" : "the channel command rules do not allow this value";
+}  // end checkChannelCommand()
+
+//==============================================================================
+/// GetChannelCommandInfo
+///	Tells the page if the user may command channels, see SetChannelValues(): returns
+/// 	JSON with canCommand and, if not, the reason.
+///	If the user may, the channels of pvList (and the channels that their rules require)
+/// 	are requested from the plugin, so that they are connected when the command is given.
+void SlowControlsDashboardSupervisor::GetChannelCommandInfo(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	std::string reason;
+	if(CorePropertySupervisorBase::isReadOnly())
+		reason = "the supervisor is read-only";
+	else if(userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	        userInfo.username_ == "")
+		reason = "commands are only for logged-in users with expert permission level";
+	else
+		loadChannelCommandRules(CHANNEL_COMMAND_RULES_FILE, reason);
+
+	if(reason == "")
+	{
+		std::set<std::string> channels;
+		StringMacros::getSetFromString(
+		    CgiDataUtilities::postData(cgiIn, "pvList"), channels, {','});
+		channels.erase("");
+		if(channels.size() <= MAX_COMMAND_CHANNELS)
+			for(const auto& channel : channels)
+				checkChannelCommand(channel, "" /*value*/, true /*onlyRequestChannels*/);
+	}
+
+	xmlOut.addTextElementToData(
+	    "JSON",
+	    StringMacros::encodeURIComponent(
+	        std::string("{\"canCommand\":") + (reason == "" ? "true" : "false") +
+	        ",\"reason\":\"" + StringMacros::escapeJSONStringEntities(reason) + "\"}"));
+}  // end GetChannelCommandInfo()
+
+//==============================================================================
+/// SetChannelValues
+///	Writes value to the channels of pvList (comma-separated), e.g. to switch power
+/// 	supplies on or off. Only for users with expert permission level, and never from a
+/// 	read-only supervisor.
+///	Each channel is written only if the channel command rules file allows it, see
+/// 	loadChannelCommandRules(): the rules are the list of the channels that can be
+/// 	written, with the conditions (e.g., the permit of an interlock) to write each value.
+///	Returns (URI encoded) JSON with writtenCount and refused, the array of { pv, reason }.
+///
+///	Note: the effect of the write is not awaited, the page follows the state of the channels.
+void SlowControlsDashboardSupervisor::SetChannelValues(
+    cgicc::Cgicc&                    cgiIn,
+    HttpXmlDocument&                 xmlOut,
+    const WebUsers::RequestUserInfo& userInfo)
+{
+	if(CorePropertySupervisorBase::isReadOnly() ||
+	   userInfo.permissionLevel_ < WebUsers::PERMISSION_LEVEL_EXPERT ||
+	   userInfo.username_ == "")
+	{
+		__SUP_SS__
+		    << "Channels can only be commanded by a logged-in user with expert "
+		       "permission level ("
+		    << unsigned(WebUsers::PERMISSION_LEVEL_EXPERT)
+		    << "), and not from a read-only supervisor. The permission level of user '"
+		    << userInfo.username_ << "' is " << unsigned(userInfo.permissionLevel_) << "."
+		    << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	std::string value = CgiDataUtilities::postData(cgiIn, "value");
+	StringMacros::trim(value);
+	std::set<std::string> channels;
+	StringMacros::getSetFromString(
+	    CgiDataUtilities::postData(cgiIn, "pvList"), channels, {','});
+	channels.erase("");
+	if(value == "" || channels.empty() || channels.size() > MAX_COMMAND_CHANNELS)
+	{
+		__SUP_SS__ << "Illegal channel command: value '" << value << "' for "
+		           << channels.size() << " channels (at most " << MAX_COMMAND_CHANNELS
+		           << ")." << __E__;
+		__SUP_SS_THROW__;
+	}
+
+	__SUP_COUT_INFO__ << "User '" << userInfo.username_ << "' requested to write '"
+	                  << value << "' to " << channels.size()
+	                  << " channels: " << StringMacros::setToString(channels) << __E__;
+
+	size_t      writtenCount = 0;
+	std::string refused;
+	for(const auto& channel : channels)
+	{
+		std::string reason = checkChannelCommand(channel, value);
+		if(reason == "")
+			reason = interface_->setChannelValue(channel, value);
+		if(reason == "")
+		{
+			++writtenCount;
+			continue;
+		}
+
+		__SUP_COUT_WARN__ << "Refused to write '" << value << "' to " << channel
+		                  << " for user '" << userInfo.username_ << "': " << reason
+		                  << __E__;
+		refused += std::string(refused == "" ? "" : ",") + "{\"pv\":\"" +
+		           StringMacros::escapeJSONStringEntities(channel) + "\",\"reason\":\"" +
+		           StringMacros::escapeJSONStringEntities(reason) + "\"}";
+	}
+
+	__SUP_COUT_INFO__ << "Wrote '" << value << "' to " << writtenCount << " of "
+	                  << channels.size() << " channels for user '" << userInfo.username_
+	                  << "'." << __E__;
+
+	xmlOut.addTextElementToData("JSON",
+	                            StringMacros::encodeURIComponent(
+	                                "{\"writtenCount\":" + std::to_string(writtenCount) +
+	                                ",\"refused\":[" + refused + "]}"));
+}  // end SetChannelValues()
 
 //==============================================================================
 /// getLiveJSONFields
